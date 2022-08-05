@@ -36,9 +36,11 @@ export class SafeTransactionService {
         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
         // http.ClientRequest in node.js
         console.log(error.request);
+        throw new HttpException('Service unavailable', 503);
       } else {
         // Something happened in setting up the request that triggered an Error
         console.log('Error', error.message);
+        throw new HttpException('Service unavailable', 503);
       }
     }
   }
