@@ -49,21 +49,31 @@ describe('SafeTransactionService', () => {
   });
 
   it('should throw an HttpException when an http error is catch', async () => {
+    const errMessage = 'testMessage';
+    const errStatusCode = 400;
+
     mockHttpService.axiosRef.get = jest.fn().mockImplementationOnce(() => {
       throw new AxiosError(
         'Request failed with status code 400',
         'ERR_BAD_REQUEST',
         null,
         null,
-        <AxiosResponse>{ data: { message: 'testMessage' }, status: 400 },
+        <AxiosResponse>{ data: { message: errMessage }, status: errStatusCode },
       );
     });
-    await expect(service.getBalances('test', true, true)).rejects.toEqual(
-      new HttpException('testMessage', 400),
-    );
+
+    try {
+      await service.getBalances('test', true, true);
+    } catch (err) {
+      expect(err.message).toBe(errMessage);
+      expect(err.status).toBe(errStatusCode);
+    }
   });
 
   it('should throw an HttpException when no response is received', async () => {
+    const errMessage = 'Service unavailable';
+    const errStatusCode = 503;
+
     mockHttpService.axiosRef.get = jest.fn().mockImplementationOnce(() => {
       throw new AxiosError(
         'Request failed with status code 500',
@@ -77,12 +87,15 @@ describe('SafeTransactionService', () => {
     try {
       await service.getBalances('test', true, true);
     } catch (err) {
-      expect(err.message).toBe('Service unavailable');
-      expect(err.status).toBe(503);
+      expect(err.message).toBe(errMessage);
+      expect(err.status).toBe(errStatusCode);
     }
   });
 
   it('should throw an HttpException when an arbitrary error happens while doing the request', async () => {
+    const errMessage = 'Service unavailable';
+    const errStatusCode = 503;
+
     mockHttpService.axiosRef.get = jest.fn().mockImplementationOnce(() => {
       throw new Error('Random error');
     });
@@ -90,8 +103,8 @@ describe('SafeTransactionService', () => {
     try {
       await service.getBalances('test', true, true);
     } catch (err) {
-      expect(err.message).toBe('Service unavailable');
-      expect(err.status).toBe(503);
+      expect(err.message).toBe(errMessage);
+      expect(err.status).toBe(errStatusCode);
     }
   });
 });
