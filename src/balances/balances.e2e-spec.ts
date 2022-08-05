@@ -22,7 +22,7 @@ describe('AppController (e2e)', () => {
     const chainId = 1;
     const safeAddress = '0x00000';
     const balance = {};
-    axios.get.mockResolvedValueOnce(balance);
+    // axios.get.mockResolvedValueOnce(balance);
 
     return request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances`)

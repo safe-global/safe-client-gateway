@@ -1,12 +1,12 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException } from '@nestjs/common';
+import { HttpException, Inject } from '@nestjs/common';
 import { Balance } from './entities/balance.entity';
 
 // TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
 export class SafeTransactionService {
   constructor(
-    private readonly baseUrl: string,
-    private readonly httpService: HttpService,
+    @Inject('baseUrl') private readonly baseUrl: string,
+    @Inject('httpService') private readonly httpService: HttpService,
   ) {}
 
   async getBalances(
