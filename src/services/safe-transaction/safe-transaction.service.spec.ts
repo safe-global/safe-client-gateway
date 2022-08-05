@@ -1,8 +1,8 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Balance } from './entities/balance.entity';
+import { HttpErrorMapper } from './mappers/http-error-mapper';
 import { SafeTransactionService } from './safe-transaction.service';
 
 const BALANCES: Balance[] = [
@@ -18,6 +18,7 @@ const mockHttpService = {
 describe('SafeTransactionService', () => {
   let service: SafeTransactionService;
   let httpService: HttpService;
+  let httpErrorMapper: HttpErrorMapper;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,6 +28,7 @@ describe('SafeTransactionService', () => {
           provide: HttpService,
           useValue: mockHttpService,
         },
+        HttpErrorMapper,
       ],
     })
       .useMocker((token) => {
@@ -35,12 +37,15 @@ describe('SafeTransactionService', () => {
             return mockHttpService;
           case 'baseUrl':
             return 'mockBaseUrl';
+          case 'httpErrorMapper':
+            return new HttpErrorMapper();
         }
       })
       .compile();
 
     service = module.get<SafeTransactionService>(SafeTransactionService);
     httpService = module.get<HttpService>(HttpService);
+    httpErrorMapper = module.get<HttpErrorMapper>(HttpErrorMapper);
   });
 
   it('should return the data retrieved', async () => {
