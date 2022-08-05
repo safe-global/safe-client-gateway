@@ -6,7 +6,7 @@ import { SafeConfigChain } from './entities/chain.entity';
 @Injectable()
 export class SafeConfigService {
   constructor(
-    @Inject('BASE_URL') private readonly baseUrl,
+    @Inject('SAFE_CONFIG_BASE_URL') private readonly baseUrl,
     private readonly httpService: HttpService,
   ) {}
 

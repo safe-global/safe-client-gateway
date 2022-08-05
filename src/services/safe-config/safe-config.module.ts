@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { SafeConfigService } from './safe-config.service';
 
 const BASE_URL_PROVIDER = {
-  provide: 'BASE_URL',
+  provide: 'SAFE_CONFIG_BASE_URL',
   useValue: 'https://safe-config.gnosis.io', // TODO extract to a config file
 };
 
