@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Balance } from './entities/balance.entity';
-import { HttpErrorMapper } from './mappers/http-error-mapper';
+import { HttpErrorMapper } from '../errors/http-error-mapper';
 import { SafeTransactionService } from './safe-transaction.service';
 
 const BALANCES: Balance[] = [

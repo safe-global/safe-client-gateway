@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { Balance } from './entities/balance.entity';
-import { HttpErrorMapper } from './mappers/http-error-mapper';
+import { HttpErrorMapper } from '../errors/http-error-mapper';
 
 // TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
 export class SafeTransactionService {

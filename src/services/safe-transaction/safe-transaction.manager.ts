@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
 import { SafeConfigService } from '../safe-config/safe-config.service';
-import { HttpErrorMapper } from './mappers/http-error-mapper';
+import { HttpErrorMapper } from '../errors/http-error-mapper';
 import { SafeTransactionService } from './safe-transaction.service';
 
 @Injectable()
