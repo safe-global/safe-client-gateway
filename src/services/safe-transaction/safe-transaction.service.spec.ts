@@ -13,7 +13,7 @@ const mockHttpService = {
 } as unknown as HttpService;
 
 const mockHttpErrorHandler = {
-  mapError: jest.fn(),
+  handle: jest.fn(),
 } as unknown as HttpErrorHandler;
 
 describe('SafeTransactionService', () => {
