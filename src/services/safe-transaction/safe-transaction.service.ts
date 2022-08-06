@@ -6,10 +6,9 @@ import { HttpErrorMapper } from '../errors/http-error-mapper';
 // TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
 export class SafeTransactionService {
   constructor(
-    @Inject('baseUrl') private readonly baseUrl: string,
-    @Inject('httpService') private readonly httpService: HttpService,
-    @Inject('httpErrorMapper')
-    private readonly httpErrorMapper: HttpErrorMapper,
+    @Inject() private readonly baseUrl: string,
+    @Inject() private readonly httpService: HttpService,
+    @Inject() private readonly httpErrorMapper: HttpErrorMapper,
   ) {}
 
   async getBalances(
