@@ -1,10 +1,10 @@
 import { HttpStatus } from '@nestjs/common';
 import { AxiosError, AxiosResponse } from 'axios';
-import { HttpErrorMapper } from './http-error-mapper';
+import { HttpErrorHandler } from './http-error-handler';
 import { HttpServiceErrorResponseData } from './interfaces/http-service-error-response.interface';
 
-describe('HttpErrorMapper', () => {
-  const errorMapper: HttpErrorMapper = new HttpErrorMapper();
+describe('HttpErrorHandler', () => {
+  const errorHandler: HttpErrorHandler = new HttpErrorHandler();
 
   it('should throw an HttpException when a controlled http error is catch', async () => {
     const errMessage = 'testMessage';
@@ -23,7 +23,7 @@ describe('HttpErrorMapper', () => {
     );
 
     try {
-      errorMapper.mapError(httpError);
+      errorHandler.handle(httpError);
     } catch (err) {
       expect(err.message).toBe(errMessage);
       expect(err.status).toBe(errStatusCode);
@@ -40,7 +40,7 @@ describe('HttpErrorMapper', () => {
     );
 
     try {
-      errorMapper.mapError(httpError);
+      errorHandler.handle(httpError);
     } catch (err) {
       expect(err.message).toBe('Service unavailable');
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
@@ -53,7 +53,7 @@ describe('HttpErrorMapper', () => {
     const randomError = new Error();
 
     try {
-      errorMapper.mapError(randomError);
+      errorHandler.handle(randomError);
     } catch (err) {
       expect(err.message).toBe('Service unavailable');
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);

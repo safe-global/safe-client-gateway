@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
-import { HttpErrorMapper } from '../errors/http-error-mapper';
+import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeTransactionService } from './safe-transaction.service';
 
 const BALANCES: Balance[] = [
@@ -12,15 +12,15 @@ const mockHttpService = {
   axiosRef: { get: jest.fn().mockResolvedValue({ data: BALANCES }) },
 } as unknown as HttpService;
 
-const mockHttpErrorMapper = {
+const mockHttpErrorHandler = {
   mapError: jest.fn(),
-} as unknown as HttpErrorMapper;
+} as unknown as HttpErrorHandler;
 
 describe('SafeTransactionService', () => {
   const service: SafeTransactionService = new SafeTransactionService(
     'baseUrl',
     mockHttpService,
-    mockHttpErrorMapper,
+    mockHttpErrorHandler,
   );
 
   it('should return the data retrieved', async () => {
@@ -28,12 +28,12 @@ describe('SafeTransactionService', () => {
     expect(data).toBe(BALANCES);
   });
 
-  it('should call error mapper when an error happens', async () => {
+  it('should call error handler when an error happens', async () => {
     mockHttpService.axiosRef.get = jest.fn().mockImplementationOnce(() => {
       throw new Error();
     });
 
     await service.getBalances('test', true, true);
-    expect(mockHttpErrorMapper.mapError).toHaveBeenCalledTimes(1);
+    expect(mockHttpErrorHandler.handle).toHaveBeenCalledTimes(1);
   });
 });

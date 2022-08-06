@@ -1,14 +1,14 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject } from '@nestjs/common';
 import { Balance } from './entities/balance.entity';
-import { HttpErrorMapper } from '../errors/http-error-mapper';
+import { HttpErrorHandler } from '../errors/http-error-handler';
 
 // TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
 export class SafeTransactionService {
   constructor(
     @Inject() private readonly baseUrl: string,
     @Inject() private readonly httpService: HttpService,
-    @Inject() private readonly httpErrorMapper: HttpErrorMapper,
+    @Inject() private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
   async getBalances(
@@ -23,7 +23,7 @@ export class SafeTransactionService {
       });
       return data;
     } catch (err) {
-      this.httpErrorMapper.mapError(err);
+      this.httpErrorHandler.handle(err);
     }
   }
 }

@@ -4,13 +4,13 @@ import { BaseError } from './interfaces/base-error.interface';
 import { HttpServiceErrorResponseData } from './interfaces/http-service-error-response.interface';
 
 /**
- * Maps an http error response coming from another service.
+ * Handles an http error response coming from another service.
  * If an error response it's received, it gets parsed, and the status code is kept.
  * Otherwise, a default error data with 503 http status code is returned.
  */
 @Injectable()
-export class HttpErrorMapper {
-  #buildError(err: AxiosError | Error): BaseError {
+export class HttpErrorHandler {
+  #mapError(err: AxiosError | Error): BaseError {
     if (axios.isAxiosError(err) && err.response) {
       const axiosError = err as AxiosError;
       const errData = axiosError.response.data as HttpServiceErrorResponseData;
@@ -27,8 +27,8 @@ export class HttpErrorMapper {
     }
   }
 
-  mapError(err: AxiosError | Error) {
-    const error = this.#buildError(err);
+  handle(err: AxiosError | Error) {
+    const error = this.#mapError(err);
     throw new HttpException(error, error.statusCode);
   }
 }
