@@ -10,7 +10,7 @@ import { HttpServiceErrorResponseData } from './interfaces/http-service-error-re
  */
 @Injectable()
 export class HttpErrorHandler {
-  #mapError(err: AxiosError | Error): BaseError {
+  private mapError(err: AxiosError | Error): BaseError {
     if (axios.isAxiosError(err) && err.response) {
       const axiosError = err as AxiosError;
       const errData = axiosError.response.data as HttpServiceErrorResponseData;
@@ -28,7 +28,7 @@ export class HttpErrorHandler {
   }
 
   handle(err: AxiosError | Error) {
-    const error = this.#mapError(err);
+    const error = this.mapError(err);
     throw new HttpException(error, error.statusCode);
   }
 }
