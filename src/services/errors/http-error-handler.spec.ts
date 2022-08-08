@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import { AxiosError, AxiosResponse } from 'axios';
 import { HttpErrorHandler } from './http-error-handler';
-import { HttpServiceErrorResponseData } from './interfaces/http-service-error-response.interface';
+import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
 
 describe('HttpErrorHandler', () => {
   const errorHandler: HttpErrorHandler = new HttpErrorHandler();
@@ -16,7 +16,7 @@ describe('HttpErrorHandler', () => {
       'ERR_BAD_REQUEST',
       null,
       null,
-      <AxiosResponse<HttpServiceErrorResponseData>>{
+      <AxiosResponse<HttpExceptionPayload>>{
         data: { message: errMessage, arguments: errArguments },
         status: errStatusCode,
       },

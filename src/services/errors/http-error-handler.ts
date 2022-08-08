@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
-import { HttpServiceErrorResponseData } from './interfaces/http-service-error-response.interface';
 
 /**
  * Handles an http error response coming from another service.
@@ -13,7 +12,7 @@ export class HttpErrorHandler {
   private mapError(err: AxiosError | Error): HttpExceptionPayload {
     if (axios.isAxiosError(err) && err.response) {
       const axiosError = err as AxiosError;
-      const errData = axiosError.response.data as HttpServiceErrorResponseData;
+      const errData = axiosError.response.data as HttpExceptionPayload;
       return <HttpExceptionPayload>{
         message: errData.message,
         code: axiosError.response.status,
