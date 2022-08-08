@@ -9,7 +9,10 @@ const BASE_URL_PROVIDER = {
 
 @Module({
   imports: [HttpModule],
-  providers: [SafeConfigService, BASE_URL_PROVIDER],
-  exports: [SafeConfigService, BASE_URL_PROVIDER],
+  providers: [
+    { provide: 'ISafeConfigService', useClass: SafeConfigService },
+    BASE_URL_PROVIDER,
+  ],
+  exports: ['ISafeConfigService', BASE_URL_PROVIDER],
 })
 export class SafeConfigModule {}

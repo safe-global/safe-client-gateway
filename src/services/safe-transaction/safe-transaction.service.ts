@@ -2,8 +2,15 @@ import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 
-// TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
-export class SafeTransactionService {
+export interface ISafeTransactionService {
+  getBalances(
+    safeAddress: string,
+    trusted?: boolean,
+    excludeSpam?: boolean,
+  ): Promise<Balance[]>;
+}
+
+export class SafeTransactionService implements ISafeTransactionService {
   constructor(
     private readonly baseUrl: string,
     private readonly httpService: HttpService,

@@ -3,6 +3,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { SafeConfigPage } from './entities/page.entity';
 import { SafeConfigChain } from './entities/chain.entity';
 
+export interface ISafeConfigService {
+  getChains(): Promise<SafeConfigPage<SafeConfigChain>>;
+  getChain(chainId: string): Promise<SafeConfigChain>;
+}
+
 @Injectable()
 export class SafeConfigService {
   constructor(
