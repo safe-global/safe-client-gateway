@@ -27,7 +27,7 @@ describe('HttpErrorHandler', () => {
     } catch (err) {
       expect(err.message).toBe(errMessage);
       expect(err.status).toBe(errStatusCode);
-      expect(err.response.statusCode).toBe(errStatusCode);
+      expect(err.response.code).toBe(errStatusCode);
       expect(err.response.message).toBe(errMessage);
       expect(err.response.arguments).toBe(errArguments);
     }
@@ -44,7 +44,7 @@ describe('HttpErrorHandler', () => {
     } catch (err) {
       expect(err.message).toBe('Service unavailable');
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
       expect(err.response.message).toBe('Service unavailable');
     }
   });
@@ -57,7 +57,7 @@ describe('HttpErrorHandler', () => {
     } catch (err) {
       expect(err.message).toBe('Service unavailable');
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
       expect(err.response.message).toBe('Service unavailable');
     }
   });
