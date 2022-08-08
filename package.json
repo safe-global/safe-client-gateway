@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" --no-error-on-unmatched-pattern",
     "format-check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" --no-error-on-unmatched-pattern",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -20,7 +20,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "postinstall": "husky install"
   },
   "dependencies": {
     "@nestjs/axios": "^0.1.0",
@@ -45,6 +46,7 @@
     "eslint": "^8.21.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^8.0.0",
     "jest": "28.1.2",
     "prettier": "^2.3.2",
     "source-map-support": "^0.5.20",
