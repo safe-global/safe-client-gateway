@@ -5,20 +5,35 @@ on:
   pull_request:
 
 jobs:
-  build:
+  prettier:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16.x'
           cache: 'yarn'
-      - name: Install dependencies
-        run: yarn --frozen-lockfile
-      - name: Lint check (ESLint)
-        run: yarn run lint-check
-      - name: Style check (Prettier)
-        run: yarn run format-check
-      - name: Tests
-        run: yarn run test
+      - run: yarn --frozen-lockfile
+      - run: yarn run format-check
+
+  es-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          cache: 'yarn'
+      - run: yarn --frozen-lockfile
+      - run: yarn run lint-check
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          cache: 'yarn'
+      - run: yarn --frozen-lockfile
+      - run: yarn run test
