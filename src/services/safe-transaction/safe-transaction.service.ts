@@ -6,9 +6,9 @@ import { HttpErrorHandler } from '../errors/http-error-handler';
 // TODO: we might be able to use DI for this one (Assisted Dependency Injection/multibinding)
 export class SafeTransactionService {
   constructor(
-    @Inject() private readonly baseUrl: string,
-    @Inject() private readonly httpService: HttpService,
-    @Inject() private readonly httpErrorHandler: HttpErrorHandler,
+    private readonly baseUrl: string,
+    private readonly httpService: HttpService,
+    private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
   async getBalances(
