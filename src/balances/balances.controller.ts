@@ -4,11 +4,12 @@ import { BalancesService } from './balances.service';
 
 @Controller({
   path: '',
+  version: '1',
 })
 export class BalancesController {
   constructor(private readonly balancesService: BalancesService) {}
 
-  @Get('v1/chains/:chainId/safes/:safeAddress/balances')
+  @Get('chains/:chainId/safes/:safeAddress/balances')
   async getBalances(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,

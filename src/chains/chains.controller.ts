@@ -3,7 +3,10 @@ import { ChainsService } from './chains.service';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
 
-@Controller('chains')
+@Controller({
+  path: 'chains',
+  version: '1',
+})
 export class ChainsController {
   constructor(private readonly chainsService: ChainsService) {}
 
