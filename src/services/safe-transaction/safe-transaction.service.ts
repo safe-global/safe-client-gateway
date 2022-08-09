@@ -1,5 +1,4 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject } from '@nestjs/common';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 
