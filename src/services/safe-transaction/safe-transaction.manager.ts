@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
 import { SafeConfigService } from '../safe-config/safe-config.service';
+import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeTransactionService } from './safe-transaction.service';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class SafeTransactionManager {
   constructor(
     private readonly safeConfigService: SafeConfigService,
     private readonly httpService: HttpService,
+    private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
   async getTransactionService(
@@ -29,6 +31,7 @@ export class SafeTransactionManager {
     this.transactionServiceMap[chainId] = new SafeTransactionService(
       chain.transactionService,
       this.httpService,
+      this.httpErrorHandler,
     );
     return this.transactionServiceMap[chainId];
   }
