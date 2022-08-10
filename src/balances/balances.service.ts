@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Balance } from 'src/services/safe-transaction/entities/balance.entity';
-import { SafeTransactionManager } from './../services/safe-transaction/safe-transaction.manager';
+import { SafeTransactionManager } from '../services/safe-transaction/safe-transaction.manager';
 
 @Injectable()
 export class BalancesService {

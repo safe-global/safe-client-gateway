@@ -1,8 +1,8 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
 import { SafeConfigService } from '../safe-config/safe-config.service';
-import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeTransactionService } from './safe-transaction.service';
 
 @Injectable()
