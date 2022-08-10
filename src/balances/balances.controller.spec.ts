@@ -21,10 +21,36 @@ describe('Balances Controller (Unit)', () => {
 
   it(`GET /balances`, async () => {
     const chainId = 1;
-    const safeAddress = '0x0000000';
+    const safeAddress = '0x0000000000000000000000000000000000000001';
     const safeTransactionServiceBalancesResponse = {
-      data: [{ tokenAddress: '0x000000', balance: '1' }],
+      data: [
+        {
+          tokenAddress: `0x6810e776880C02933D47DB1b9fc05908e5386b96`,
+          token: {
+            name: 'Gnosis',
+            symbol: 'GNO',
+            decimals: 16,
+            logo_uri: null,
+          },
+          balance: 1,
+          fiatBalance: 100,
+          fiatConversion: 2,
+        },
+      ],
     };
+
+    const exchangeResponse = {
+      data: {
+        success: true,
+        timestamp: 1660567445,
+        base: 'EUR',
+        date: '2022-08-15',
+        rates: {
+          USD: 2,
+        },
+      },
+    };
+
     const safeConfigServiceResponse = {
       data: {
         chainId: '1',
@@ -38,18 +64,37 @@ describe('Balances Controller (Unit)', () => {
         return Promise.resolve(safeConfigServiceResponse);
       } else if (
         url ==
-        `https://test.safe.transaction.service/api/v1/safes/${safeAddress}/balances/usd/`
+        `https://test.safe.transaction.service/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`
       ) {
         return Promise.resolve(safeTransactionServiceBalancesResponse);
+      } else if (url == 'http://api.exchangeratesapi.io/latest') {
+        return Promise.resolve(exchangeResponse);
       } else {
         return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/balances`)
+      .get(`/chains/${chainId}/safes/${safeAddress}/balances/USD`)
       .expect(200)
-      .expect([{ tokenAddress: '0x000000', balance: '1' }]);
+      .expect({
+        fiatTotal: 100,
+        items: [
+          {
+            tokenInfo: {
+              tokenType: 'ERC20',
+              address: '0x6810e776880C02933D47DB1b9fc05908e5386b96',
+              decimals: 16,
+              symbol: 'GNO',
+              name: 'Gnosis',
+              logoUri: null,
+            },
+            balance: 1,
+            fiatBalance: 100,
+            fiatConversion: 2,
+          },
+        ],
+      });
 
     expect(axiosMock.get.mock.calls[0][0]).toBe(
       'https://safe-config.gnosis.io/api/v1/chains/1',

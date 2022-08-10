@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { Balance } from '../services/transaction-service/entities/balance.entity'; // TODO expose different entity
 import { BalancesService } from './balances.service';
+import { Balances } from './entities/balances.entity';
 
 @Controller({
   path: '',
@@ -9,11 +9,12 @@ import { BalancesService } from './balances.service';
 export class BalancesController {
   constructor(private readonly balancesService: BalancesService) {}
 
-  @Get('chains/:chainId/safes/:safeAddress/balances')
+  @Get('chains/:chainId/safes/:safeAddress/balances/:fiatCode')
   async getBalances(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-  ): Promise<Balance[]> {
-    return this.balancesService.getBalances(chainId, safeAddress);
+    @Param('fiatCode') fiatCode: string,
+  ): Promise<Balances> {
+    return this.balancesService.getBalances(chainId, safeAddress, fiatCode);
   }
 }
