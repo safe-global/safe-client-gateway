@@ -1,28 +1,23 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
-import { ISafeConfigService } from '../safe-config/safe-config.service';
-import { ISafeTransactionManager } from './safe-transaction.manager.interface';
-import {
-  ISafeTransactionService,
-  SafeTransactionService,
-} from './safe-transaction.service';
+import { SafeConfigService } from '../safe-config/safe-config.service';
+import { SafeTransactionService } from './safe-transaction.service';
 
 @Injectable()
-export class SafeTransactionManager implements ISafeTransactionManager {
-  private transactionServiceMap: Record<string, ISafeTransactionService> = {};
+export class SafeTransactionManager {
+  private transactionServiceMap: Record<string, SafeTransactionService> = {};
 
   constructor(
-    @Inject('ISafeConfigService')
-    private readonly safeConfigService: ISafeConfigService,
+    private readonly safeConfigService: SafeConfigService,
     private readonly httpService: HttpService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
   async getTransactionService(
     chainId: string,
-  ): Promise<ISafeTransactionService> {
+  ): Promise<SafeTransactionService> {
     console.log(`Getting TransactionService instance for chain ${chainId}`);
     const transactionService = this.transactionServiceMap[chainId];
     if (transactionService !== undefined) return transactionService;

@@ -1,12 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Balance } from 'src/services/safe-transaction/entities/balance.entity';
-import { ISafeTransactionManager } from 'src/services/safe-transaction/safe-transaction.manager.interface';
+import { SafeTransactionManager } from '../services/safe-transaction/safe-transaction.manager';
 
 @Injectable()
 export class BalancesService {
   constructor(
-    @Inject('ISafeTransactionManager')
-    private readonly safeTransactionManager: ISafeTransactionManager,
+    private readonly safeTransactionManager: SafeTransactionManager,
   ) {}
 
   async getBalances(chainId: string, safeAddress: string): Promise<Balance[]> {

@@ -6,10 +6,7 @@ import { SafeTransactionManager } from './safe-transaction.manager';
 
 @Module({
   imports: [SafeConfigModule, HttpModule],
-  providers: [
-    { provide: 'ISafeTransactionManager', useClass: SafeTransactionManager },
-    HttpErrorHandler,
-  ],
-  exports: ['ISafeTransactionManager'],
+  providers: [SafeTransactionManager, HttpErrorHandler],
+  exports: [SafeTransactionManager],
 })
 export class SafeTransactionModule {}

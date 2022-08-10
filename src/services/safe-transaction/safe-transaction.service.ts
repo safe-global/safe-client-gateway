@@ -2,15 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 
-export interface ISafeTransactionService {
-  getBalances(
-    safeAddress: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Balance[]>;
-}
-
-export class SafeTransactionService implements ISafeTransactionService {
+export class SafeTransactionService {
   constructor(
     private readonly baseUrl: string,
     private readonly httpService: HttpService,
