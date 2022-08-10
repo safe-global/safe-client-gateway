@@ -7,7 +7,7 @@ import { BalancesModule } from './balances.module';
 jest.mock('axios');
 const axiosMock = axios as jest.Mocked<typeof axios>;
 
-describe('AppController (e2e)', () => {
+describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
