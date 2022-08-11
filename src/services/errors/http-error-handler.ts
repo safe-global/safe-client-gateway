@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
 
@@ -9,6 +9,8 @@ import { HttpExceptionPayload } from './interfaces/http-exception-payload.interf
  */
 @Injectable()
 export class HttpErrorHandler {
+  private readonly logger = new Logger(HttpErrorHandler.name);
+
   private mapError(err: AxiosError | Error): HttpExceptionPayload {
     if (axios.isAxiosError(err) && err.response) {
       const axiosError = err as AxiosError;
@@ -27,7 +29,8 @@ export class HttpErrorHandler {
   }
 
   handle(err: AxiosError | Error) {
-    const error = this.mapError(err);
-    throw new HttpException(error, error.code);
+    const errPayload = this.mapError(err);
+    this.logger.error(errPayload);
+    throw new HttpException(errPayload, errPayload.code);
   }
 }

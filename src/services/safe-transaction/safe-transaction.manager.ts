@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
 import { SafeConfigService } from '../safe-config/safe-config.service';
@@ -7,6 +7,7 @@ import { SafeTransactionService } from './safe-transaction.service';
 
 @Injectable()
 export class SafeTransactionManager {
+  private readonly logger = new Logger(SafeTransactionService.name);
   private transactionServiceMap: Record<string, SafeTransactionService> = {};
 
   constructor(
@@ -18,11 +19,11 @@ export class SafeTransactionManager {
   async getTransactionService(
     chainId: string,
   ): Promise<SafeTransactionService> {
-    console.log(`Getting TransactionService instance for chain ${chainId}`);
+    this.logger.log(`Getting TransactionService instance for chain ${chainId}`);
     const transactionService = this.transactionServiceMap[chainId];
     if (transactionService !== undefined) return transactionService;
 
-    console.log(
+    this.logger.log(
       `Transaction Service for chain ${chainId} not available. Getting from the SafeConfigService`,
     );
     const chain: SafeConfigChain = await this.safeConfigService.getChain(

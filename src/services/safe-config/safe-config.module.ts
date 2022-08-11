@@ -1,5 +1,6 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeConfigService } from './safe-config.service';
 
 const BASE_URL_PROVIDER = {
@@ -9,7 +10,7 @@ const BASE_URL_PROVIDER = {
 
 @Module({
   imports: [HttpModule],
-  providers: [SafeConfigService, BASE_URL_PROVIDER],
+  providers: [SafeConfigService, BASE_URL_PROVIDER, HttpErrorHandler],
   exports: [SafeConfigService, BASE_URL_PROVIDER],
 })
 export class SafeConfigModule {}
