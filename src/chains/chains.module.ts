@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ChainsService } from './chains.service';
 import { ChainsController } from './chains.controller';
-import { SafeConfigModule } from '../services/safe-config/safe-config.module';
+import { ConfigServiceModule } from '../services/config-service/config-service.module';
 
 @Module({
-  imports: [SafeConfigModule],
+  imports: [ConfigServiceModule],
   controllers: [ChainsController],
   providers: [ChainsService],
 })

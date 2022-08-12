@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SafeConfigService } from '../services/safe-config/safe-config.service';
+import { ConfigService } from '../services/config-service/config-service.service';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
 
 @Injectable()
 export class ChainsService {
-  constructor(private readonly safeConfigService: SafeConfigService) {}
+  constructor(private readonly safeConfigService: ConfigService) {}
 
   async getChains(): Promise<Page<Chain>> {
     const result = await this.safeConfigService.getChains();
