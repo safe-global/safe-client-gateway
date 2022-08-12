@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SafeConfigModule } from '../services/safe-config/safe-config.module';
+import { ConfigServiceModule } from '../services/config-service/config-service.module';
 import { ChainsService } from './chains.service';
 
 describe('ChainsService', () => {
@@ -7,7 +7,7 @@ describe('ChainsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [SafeConfigModule],
+      imports: [ConfigServiceModule],
       providers: [ChainsService],
     }).compile();
 
