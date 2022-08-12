@@ -2,11 +2,11 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { SafeConfigModule } from '../safe-config/safe-config.module';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { SafeTransactionManager } from './safe-transaction.manager';
+import { TransactionServiceManager } from './transaction-service.manager';
 
 @Module({
   imports: [SafeConfigModule, HttpModule],
-  providers: [SafeTransactionManager, HttpErrorHandler],
-  exports: [SafeTransactionManager],
+  providers: [TransactionServiceManager, HttpErrorHandler],
+  exports: [TransactionServiceManager],
 })
-export class SafeTransactionModule {}
+export class TransactionServiceModule {}

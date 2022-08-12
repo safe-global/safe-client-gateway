@@ -3,12 +3,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { SafeConfigChain } from '../safe-config/entities/chain.entity';
 import { SafeConfigService } from '../safe-config/safe-config.service';
-import { SafeTransactionService } from './safe-transaction.service';
+import { TransactionService } from './transaction-service.service';
 
 @Injectable()
-export class SafeTransactionManager {
-  private readonly logger = new Logger(SafeTransactionService.name);
-  private transactionServiceMap: Record<string, SafeTransactionService> = {};
+export class TransactionServiceManager {
+  private readonly logger = new Logger(TransactionService.name);
+  private transactionServiceMap: Record<string, TransactionService> = {};
 
   constructor(
     private readonly safeConfigService: SafeConfigService,
@@ -16,9 +16,7 @@ export class SafeTransactionManager {
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
-  async getTransactionService(
-    chainId: string,
-  ): Promise<SafeTransactionService> {
+  async getTransactionService(chainId: string): Promise<TransactionService> {
     this.logger.log(`Getting TransactionService instance for chain ${chainId}`);
     const transactionService = this.transactionServiceMap[chainId];
     if (transactionService !== undefined) return transactionService;
@@ -29,7 +27,7 @@ export class SafeTransactionManager {
     const chain: SafeConfigChain = await this.safeConfigService.getChain(
       chainId,
     );
-    this.transactionServiceMap[chainId] = new SafeTransactionService(
+    this.transactionServiceMap[chainId] = new TransactionService(
       chain.transactionService,
       this.httpService,
       this.httpErrorHandler,
