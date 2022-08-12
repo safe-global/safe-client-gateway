@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SafeConfigService } from '../services/safe-config/safe-config.service';
+import { Backbone } from './entities/backbone.entity';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
 
@@ -23,5 +24,9 @@ export class ChainsService {
       ),
     };
     return page;
+  }
+
+  async getBackbone(): Promise<Backbone> {
+    return null;
   }
 }

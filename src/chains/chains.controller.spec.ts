@@ -3,6 +3,7 @@ import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
 import { ChainsController } from './chains.controller';
 import { ChainsService } from './chains.service';
+import { Backbone } from './entities/backbone.entity';
 
 describe('ChainsController (Unit)', () => {
   let chainsController: ChainsController;
@@ -21,6 +22,16 @@ describe('ChainsController (Unit)', () => {
     ],
   };
 
+  const backboneResponse: Backbone = {
+    name: 'Service Name',
+    version: '4.6.1',
+    api_version: 'v1',
+    secure: false,
+    host: 'service.host',
+    headers: ['header1', 'header2'],
+    settings: { key1: 'value1', key2: 'value2' },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ChainsController],
@@ -29,6 +40,7 @@ describe('ChainsController (Unit)', () => {
           provide: ChainsService,
           useValue: {
             getChains: jest.fn().mockResolvedValue(chainsResponse),
+            getBackbone: jest.fn().mockResolvedValue(backboneResponse),
           },
         },
       ],
@@ -44,6 +56,7 @@ describe('ChainsController (Unit)', () => {
   });
 
   it('should get backbone for an specific chain', async () => {
-    throw new Error('unimplemented');
+    expect(await chainsController.getBackbone()).toBe(backboneResponse);
+    expect(chainsService.getBackbone).toHaveBeenCalledTimes(1);
   });
 });
