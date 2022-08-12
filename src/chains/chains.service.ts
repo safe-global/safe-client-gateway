@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { SafeConfigChain } from '../services/safe-config/entities/chain.entity';
 import { SafeConfigService } from '../services/safe-config/safe-config.service';
+import { SafeTransactionManager } from '../services/safe-transaction/safe-transaction.manager';
 import { Backbone } from './entities/backbone.entity';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
+// TODO: merge imports by adding an index?
 
 @Injectable()
 export class ChainsService {
-  constructor(private readonly safeConfigService: SafeConfigService) {}
+  constructor(
+    private readonly safeConfigService: SafeConfigService,
+    private readonly safeTransactionManager: SafeTransactionManager,
+  ) {}
 
   async getChains(): Promise<Page<Chain>> {
     const result = await this.safeConfigService.getChains();
@@ -26,7 +32,10 @@ export class ChainsService {
     return page;
   }
 
-  async getBackbone(): Promise<Backbone> {
-    return null;
+  async getBackbone(chainId: string): Promise<Backbone> {
+    const transactionService =
+      await this.safeTransactionManager.getTransactionService(chainId);
+
+    return transactionService.getBackbone();
   }
 }

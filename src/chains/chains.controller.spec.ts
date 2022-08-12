@@ -56,7 +56,7 @@ describe('ChainsController (Unit)', () => {
   });
 
   it('should get backbone for an specific chain', async () => {
-    expect(await chainsController.getBackbone()).toBe(backboneResponse);
+    expect(await chainsController.getBackbone('1')).toBe(backboneResponse);
     expect(chainsService.getBackbone).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ChainsService } from './chains.service';
 import { Backbone } from './entities/backbone.entity';
 import { Chain } from './entities/chain.entity';
@@ -16,8 +16,8 @@ export class ChainsController {
     return this.chainsService.getChains();
   }
 
-  @Get()
-  async getBackbone(): Promise<Backbone> {
-    return this.chainsService.getBackbone();
+  @Get('/:chainId/about/backbone')
+  async getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
+    return this.chainsService.getBackbone(chainId);
   }
 }
