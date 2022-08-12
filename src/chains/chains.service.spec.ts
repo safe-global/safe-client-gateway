@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SafeConfigModule } from '../services/safe-config/safe-config.module';
-import { SafeTransactionModule } from '../services/safe-transaction/safe-transaction.module';
+import { ConfigServiceModule } from '../services/config-service/config-service.module';
+import { TransactionServiceModule } from '../services/transaction-service/transaction-service.module';
 import { ChainsService } from './chains.service';
 
 describe('ChainsService', () => {
@@ -8,7 +8,7 @@ describe('ChainsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [SafeConfigModule, SafeTransactionModule],
+      imports: [ConfigServiceModule, TransactionServiceModule],
       providers: [ChainsService],
     }).compile();
 

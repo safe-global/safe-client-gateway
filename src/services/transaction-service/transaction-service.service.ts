@@ -3,7 +3,7 @@ import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { Backbone } from '../../chains/entities/backbone.entity';
 
-export class SafeTransactionService {
+export class TransactionService {
   constructor(
     private readonly baseUrl: string,
     private readonly httpService: HttpService,

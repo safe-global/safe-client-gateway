@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { SafeTransactionService } from './safe-transaction.service';
+import { TransactionService } from './transaction-service.service';
 import { Backbone } from '../../chains/entities/backbone.entity';
 
 const BALANCES: Balance[] = [
@@ -27,8 +27,8 @@ const mockHttpErrorHandler = {
   handle: jest.fn(),
 } as unknown as HttpErrorHandler;
 
-describe('SafeTransactionService', () => {
-  const service: SafeTransactionService = new SafeTransactionService(
+describe('TransactionService', () => {
+  const service: TransactionService = new TransactionService(
     'baseUrl',
     mockHttpService,
     mockHttpErrorHandler,

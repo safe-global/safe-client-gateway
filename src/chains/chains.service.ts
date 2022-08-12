@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SafeConfigService } from '../services/safe-config/safe-config.service';
-import { SafeTransactionManager } from '../services/safe-transaction/safe-transaction.manager';
+import { ConfigService } from '../services/config-service/config-service.service';
+import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
 import { Backbone } from './entities/backbone.entity';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
@@ -9,8 +9,8 @@ import { Page } from './entities/page.entity';
 @Injectable()
 export class ChainsService {
   constructor(
-    private readonly safeConfigService: SafeConfigService,
-    private readonly safeTransactionManager: SafeTransactionManager,
+    private readonly safeConfigService: ConfigService,
+    private readonly transactionServiceManager: TransactionServiceManager,
   ) {}
 
   async getChains(): Promise<Page<Chain>> {
@@ -33,7 +33,7 @@ export class ChainsService {
 
   async getBackbone(chainId: string): Promise<Backbone> {
     const transactionService =
-      await this.safeTransactionManager.getTransactionService(chainId);
+      await this.transactionServiceManager.getTransactionService(chainId);
     return transactionService.getBackbone();
   }
 }

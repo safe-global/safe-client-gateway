@@ -1,18 +1,18 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeConfigPage } from './entities/page.entity';
-import { SafeConfigChain } from './entities/chain.entity';
+import { Page } from './entities/page.entity';
+import { Chain } from './entities/chain.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 
 @Injectable()
-export class SafeConfigService {
+export class ConfigService {
   constructor(
     @Inject('SAFE_CONFIG_BASE_URL') private readonly baseUrl,
     private readonly httpService: HttpService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
-  async getChains(): Promise<SafeConfigPage<SafeConfigChain>> {
+  async getChains(): Promise<Page<Chain>> {
     try {
       const url = this.baseUrl + '/api/v1/chains';
       const response = await this.httpService.axiosRef.get(url);
@@ -22,7 +22,7 @@ export class SafeConfigService {
     }
   }
 
-  async getChain(chainId: string): Promise<SafeConfigChain> {
+  async getChain(chainId: string): Promise<Chain> {
     try {
       const url = this.baseUrl + `/api/v1/chains/${chainId}`;
       const response = await this.httpService.axiosRef.get(url);

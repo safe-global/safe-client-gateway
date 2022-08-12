@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { Balance } from '../services/safe-transaction/entities/balance.entity'; // TODO expose different entity
+import { Balance } from '../services/transaction-service/entities/balance.entity'; // TODO expose different entity
 import { BalancesService } from './balances.service';
 
 @Controller({
