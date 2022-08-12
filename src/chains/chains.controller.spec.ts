@@ -1,47 +1,49 @@
-import axios from 'axios';
-import * as request from 'supertest';
-import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChainsModule } from './chains.module';
 import { Chain } from './entities/chain.entity';
 import { Page } from './entities/page.entity';
-
-jest.mock('axios');
-const axiosMock = axios as jest.Mocked<typeof axios>;
+import { ChainsController } from './chains.controller';
+import { ChainsService } from './chains.service';
 
 describe('ChainsController (Unit)', () => {
-  let app: INestApplication;
+  let chainsController: ChainsController;
+  let chainsService: ChainsService;
+
+  const chainsResponse: Page<Chain> = {
+    count: 2,
+    next: null,
+    previous: null,
+    results: [
+      <Chain>{
+        chainId: '1',
+        chainName: 'testChain',
+        vpcTransactionService: 'http://test-endpoint.local',
+      },
+    ],
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ChainsModule],
-    }).compile();
-
-    app = module.createNestApplication();
-    await app.init();
-  });
-
-  it('/GET chains', async () => {
-    const safeConfigServiceResponse: Page<Chain> = {
-      count: 2,
-      next: null,
-      previous: null,
-      results: [
-        <Chain>{
-          chainId: '1',
-          chainName: 'testChain',
-          vpcTransactionService: 'http://test-endpoint.local',
+      controllers: [ChainsController],
+      providers: [
+        {
+          provide: ChainsService,
+          useValue: {
+            getChains: jest.fn().mockResolvedValue(chainsResponse),
+          },
         },
       ],
-    };
+    }).compile();
 
-    axiosMock.get = jest
-      .fn()
-      .mockResolvedValue({ data: safeConfigServiceResponse });
+    chainsController = module.get<ChainsController>(ChainsController);
+    chainsService = module.get<ChainsService>(ChainsService);
+  });
 
-    await request(app.getHttpServer())
-      .get('/chains')
-      .expect(200)
-      .expect(safeConfigServiceResponse);
+  it('should get chains from service', async () => {
+    expect(await chainsController.getChains()).toBe(chainsResponse);
+    expect(chainsService.getChains).toHaveBeenCalledTimes(1);
+  });
+
+  it('should get backbone for an specific chain', async () => {
+    throw new Error('unimplemented');
   });
 });
