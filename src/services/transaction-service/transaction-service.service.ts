@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 
-export class SafeTransactionService {
+export class TransactionService {
   constructor(
     private readonly baseUrl: string,
     private readonly httpService: HttpService,
