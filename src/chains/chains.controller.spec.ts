@@ -1,22 +1,47 @@
+import axios from 'axios';
+import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SafeConfigModule } from '../services/safe-config/safe-config.module';
-import { ChainsController } from './chains.controller';
-import { ChainsService } from './chains.service';
+import { ChainsModule } from './chains.module';
+import { Chain } from './entities/chain.entity';
+import { Page } from './entities/page.entity';
 
-describe('ChainsController', () => {
-  let controller: ChainsController;
+jest.mock('axios');
+const axiosMock = axios as jest.Mocked<typeof axios>;
+
+describe('ChainsController (Unit)', () => {
+  let app: INestApplication;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [SafeConfigModule],
-      controllers: [ChainsController],
-      providers: [ChainsService],
+      imports: [ChainsModule],
     }).compile();
 
-    controller = module.get<ChainsController>(ChainsController);
+    app = module.createNestApplication();
+    await app.init();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('/GET chains', async () => {
+    const safeConfigServiceResponse: Page<Chain> = {
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        <Chain>{
+          chainId: '1',
+          chainName: 'testChain',
+          vpcTransactionService: 'http://test-endpoint.local',
+        },
+      ],
+    };
+
+    axiosMock.get = jest
+      .fn()
+      .mockResolvedValue({ data: safeConfigServiceResponse });
+
+    await request(app.getHttpServer())
+      .get('/chains')
+      .expect(200)
+      .expect(safeConfigServiceResponse);
   });
 });
