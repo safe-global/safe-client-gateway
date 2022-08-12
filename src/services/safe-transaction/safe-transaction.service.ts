@@ -15,7 +15,7 @@ export class SafeTransactionService {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Balance[]> {
-    const url = this.baseUrl + `/api/v1/safes/${safeAddress}/balances/usd/`;
+    const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
     try {
       const res = await this.httpService.axiosRef.get(url, {
         params: { trusted: trusted, excludeSpam: excludeSpam },
@@ -27,7 +27,7 @@ export class SafeTransactionService {
   }
 
   async getBackbone(): Promise<Backbone> {
-    const url = this.baseUrl + `/api/v1/about`;
+    const url = `${this.baseUrl}/api/v1/about`;
     try {
       const res = await this.httpService.axiosRef.get(url);
       return res?.data;

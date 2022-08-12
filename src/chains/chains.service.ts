@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { SafeConfigChain } from '../services/safe-config/entities/chain.entity';
 import { SafeConfigService } from '../services/safe-config/safe-config.service';
 import { SafeTransactionManager } from '../services/safe-transaction/safe-transaction.manager';
 import { Backbone } from './entities/backbone.entity';
@@ -35,7 +34,6 @@ export class ChainsService {
   async getBackbone(chainId: string): Promise<Backbone> {
     const transactionService =
       await this.safeTransactionManager.getTransactionService(chainId);
-
     return transactionService.getBackbone();
   }
 }
