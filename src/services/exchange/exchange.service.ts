@@ -19,12 +19,12 @@ export class ExchangeService {
     if (exchangeResult.rates === undefined)
       throw new InternalServerErrorException(`Exchange rates unavailable`);
 
-    const fromExchangeRate = exchangeResult.rates[from];
+    const fromExchangeRate = exchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
         `Exchange rate for ${from} is not available`,
       );
-    const toExchangeRate = exchangeResult.rates[to];
+    const toExchangeRate = exchangeResult.rates[to.toUpperCase()];
     if (toExchangeRate === undefined)
       throw new InternalServerErrorException(
         `Exchange rate for ${to} is not available`,
