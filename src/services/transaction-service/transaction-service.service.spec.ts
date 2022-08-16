@@ -4,8 +4,20 @@ import { HttpErrorHandler } from '../errors/http-error-handler';
 import { TransactionService } from './transaction-service.service';
 
 const BALANCES: Balance[] = [
-  { tokenAddress: 'tokenAddress1', balance: 'balanceStr1' },
-  { tokenAddress: 'tokenAddress2', balance: 'balanceStr2' },
+  {
+    tokenAddress: 'tokenAddress1',
+    balance: 'balanceStr1',
+    token: null,
+    fiatBalance: 0,
+    fiatConversion: 0,
+  },
+  {
+    tokenAddress: 'tokenAddress2',
+    balance: 'balanceStr2',
+    token: null,
+    fiatBalance: 0,
+    fiatConversion: 0,
+  },
 ];
 
 const mockHttpService = {
