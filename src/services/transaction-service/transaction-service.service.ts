@@ -17,10 +17,10 @@ export class TransactionService {
   ): Promise<Balance[]> {
     const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
     try {
-      const res = await this.httpService.axiosRef.get(url, {
+      const { data } = await this.httpService.axiosRef.get(url, {
         params: { trusted: trusted, excludeSpam: excludeSpam },
       });
-      return res?.data;
+      return data;
     } catch (err) {
       this.httpErrorHandler.handle(err);
     }
@@ -29,8 +29,8 @@ export class TransactionService {
   async getBackbone(): Promise<Backbone> {
     const url = `${this.baseUrl}/api/v1/about`;
     try {
-      const res = await this.httpService.axiosRef.get(url);
-      return res?.data;
+      const { data } = await this.httpService.axiosRef.get(url);
+      return data;
     } catch (err) {
       this.httpErrorHandler.handle(err);
     }
