@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '../services/config-service/config-service.service';
 import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
-import { Backbone } from './entities/backbone.entity';
-import { Chain } from './entities/chain.entity';
-import { Page } from './entities/page.entity';
-// TODO: merge imports by adding an index?
+import { Backbone, Chain, Page } from './entities';
 
 @Injectable()
 export class ChainsService {
