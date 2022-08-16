@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: '16.x'
           cache: 'yarn'
-      - run: yarn --frozen-lockfile
+      - run: yarn install --immutable
       - run: yarn run format-check
 
   es-lint:
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '16.x'
           cache: 'yarn'
-      - run: yarn --frozen-lockfile
+      - run: yarn install --immutable
       - run: yarn run lint-check
 
   tests:
@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: '16.x'
           cache: 'yarn'
-      - run: yarn --frozen-lockfile
+      - run: yarn install --immutable
       - run: yarn run test:cov
       - name: Upload coverage
         uses: coverallsapp/github-action@1.1.3
