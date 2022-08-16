@@ -1,9 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Chain } from './entities/chain.entity';
-import { Page } from './entities/page.entity';
 import { ChainsController } from './chains.controller';
 import { ChainsService } from './chains.service';
-import { Backbone } from './entities/backbone.entity';
+import { Backbone, Chain, Page } from './entities';
 
 describe('ChainsController (Unit)', () => {
   let chainsController: ChainsController;
