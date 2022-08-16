@@ -11,6 +11,8 @@ import { Balance } from './entities/balance.entity';
 
 @Injectable()
 export class BalancesService {
+  static readonly fromRateCurrencyCode: string = 'USD';
+
   constructor(
     private readonly safeConfigService: ConfigService,
     private readonly safeTransactionManager: TransactionServiceManager,
@@ -29,7 +31,7 @@ export class BalancesService {
 
     const usdToFiatRate: number = await this.exchangeService.convertRates(
       fiatCode,
-      'USD',
+      BalancesService.fromRateCurrencyCode,
     );
     const nativeCurrency: NativeCurrency = (
       await this.safeConfigService.getChain(chainId)
