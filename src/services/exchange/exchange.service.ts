@@ -20,7 +20,7 @@ export class ExchangeService {
       throw new InternalServerErrorException(`Exchange rates unavailable`);
 
     const fromExchangeRate = exchangeResult.rates[from];
-    if (fromExchangeRate === undefined)
+    if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
         `Exchange rate for ${from} is not available`,
       );
