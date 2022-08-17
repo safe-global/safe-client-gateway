@@ -1,4 +1,3 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { ConfigService } from './config-service.service';
@@ -7,7 +6,6 @@ import configuration from '../../config/configuration';
 
 @Module({
   imports: [
-    HttpModule,
     ConfigModule.forRoot({
       load: [configuration],
     }),

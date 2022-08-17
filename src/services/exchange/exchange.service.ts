@@ -1,15 +1,22 @@
-import { HttpService } from '@nestjs/axios';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { ExchangeResult } from './entities/exchange.entity';
+import {
+  INetworkService,
+  NetworkService,
+} from '../../common/network/network.service.interface';
 
 @Injectable()
 export class ExchangeService {
   // TODO can we depend on the base url instead?
   constructor(
     private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
@@ -38,7 +45,7 @@ export class ExchangeService {
     const apiKey = this.configService.get<string>('exchange.apiKey');
 
     try {
-      const { data } = await this.httpService.axiosRef.get(baseUrl, {
+      const { data } = await this.networkService.get(baseUrl, {
         params: { access_key: apiKey },
       });
       return data;

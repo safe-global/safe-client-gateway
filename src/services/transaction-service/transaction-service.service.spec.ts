@@ -1,8 +1,8 @@
-import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { TransactionService } from './transaction-service.service';
 import { Backbone } from '../../chains/entities';
+import { mockNetworkService } from '../../common/network/__tests__/TestNetworkModule';
 
 const BALANCES: Balance[] = [
   {
@@ -31,10 +31,6 @@ const BACKBONE: Backbone = {
   settings: undefined,
 };
 
-const mockHttpService = {
-  axiosRef: { get: jest.fn() },
-} as unknown as HttpService;
-
 const mockHttpErrorHandler = {
   handle: jest.fn(),
 } as unknown as HttpErrorHandler;
@@ -42,30 +38,26 @@ const mockHttpErrorHandler = {
 describe('TransactionService', () => {
   const service: TransactionService = new TransactionService(
     'baseUrl',
-    mockHttpService,
+    mockNetworkService,
     mockHttpErrorHandler,
   );
 
   it('should return the balances retrieved', async () => {
-    mockHttpService.axiosRef.get = jest
-      .fn()
-      .mockResolvedValue({ data: BALANCES });
+    mockNetworkService.get.mockResolvedValue({ data: BALANCES });
 
     const balances = await service.getBalances('test', true, true);
     expect(balances).toBe(BALANCES);
   });
 
   it('should return the backbone retrieved', async () => {
-    mockHttpService.axiosRef.get = jest
-      .fn()
-      .mockResolvedValueOnce({ data: BACKBONE });
+    mockNetworkService.get.mockResolvedValueOnce({ data: BACKBONE });
 
     const backbone = await service.getBackbone();
     expect(backbone).toBe(BACKBONE);
   });
 
   it('should call error handler when an error happens', async () => {
-    mockHttpService.axiosRef.get = jest.fn().mockImplementationOnce(() => {
+    mockNetworkService.get = jest.fn().mockImplementationOnce(() => {
       throw new Error();
     });
 

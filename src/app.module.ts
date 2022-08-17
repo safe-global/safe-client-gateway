@@ -8,9 +8,10 @@ import {
 import { ChainsModule } from './chains/chains.module';
 import { BalancesModule } from './balances/balances.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { NetworkModule } from './common/network/network.module';
 
 @Module({
-  imports: [ChainsModule, BalancesModule],
+  imports: [BalancesModule, ChainsModule, NetworkModule],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

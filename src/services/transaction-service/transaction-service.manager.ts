@@ -1,9 +1,12 @@
-import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { Chain } from '../config-service/entities/chain.entity';
 import { ConfigService } from '../config-service/config-service.service';
 import { TransactionService } from './transaction-service.service';
+import {
+  INetworkService,
+  NetworkService,
+} from '../../common/network/network.service.interface';
 
 @Injectable()
 export class TransactionServiceManager {
@@ -12,7 +15,7 @@ export class TransactionServiceManager {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
@@ -27,7 +30,7 @@ export class TransactionServiceManager {
     const chain: Chain = await this.configService.getChain(chainId);
     this.transactionServiceMap[chainId] = new TransactionService(
       chain.transactionService,
-      this.httpService,
+      this.networkService,
       this.httpErrorHandler,
     );
     return this.transactionServiceMap[chainId];
