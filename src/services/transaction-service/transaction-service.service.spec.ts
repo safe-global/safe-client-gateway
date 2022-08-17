@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { TransactionService } from './transaction-service.service';
-import { Backbone } from '../../chains/entities/backbone.entity';
+import { Backbone } from '../../chains/entities';
 
 const BALANCES: Balance[] = [
   { tokenAddress: 'tokenAddress1', balance: 'balanceStr1' },

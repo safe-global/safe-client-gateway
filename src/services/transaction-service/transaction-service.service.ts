@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { Backbone } from '../../chains/entities/backbone.entity';
+import { Backbone } from '../../chains/entities';
 
 export class TransactionService {
   constructor(

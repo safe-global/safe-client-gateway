@@ -2,7 +2,7 @@ import { ConfigService } from '../services/config-service/config-service.service
 import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
 import { TransactionService } from '../services/transaction-service/transaction-service.service';
 import { ChainsService } from './chains.service';
-import { Backbone } from './entities/backbone.entity';
+import { Backbone } from './entities';
 
 const BACKBONE: Backbone = {
   name: 'testName',
