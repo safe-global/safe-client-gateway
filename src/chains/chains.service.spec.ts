@@ -3,16 +3,9 @@ import { TransactionServiceManager } from '../services/transaction-service/trans
 import { TransactionService } from '../services/transaction-service/transaction-service.service';
 import { ChainsService } from './chains.service';
 import { Backbone } from './entities';
+import backboneFactory from './entities/__tests__/backbone.factory';
 
-const BACKBONE: Backbone = {
-  name: 'testName',
-  version: '',
-  api_version: '',
-  secure: false,
-  host: '',
-  headers: [],
-  settings: undefined,
-};
+const BACKBONE: Backbone = backboneFactory();
 
 describe('ChainsService', () => {
   const configService = {} as unknown as ConfigService;
