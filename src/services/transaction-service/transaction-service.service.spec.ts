@@ -5,8 +5,20 @@ import { TransactionService } from './transaction-service.service';
 import { Backbone } from '../../chains/entities';
 
 const BALANCES: Balance[] = [
-  { tokenAddress: 'tokenAddress1', balance: 'balanceStr1' },
-  { tokenAddress: 'tokenAddress2', balance: 'balanceStr2' },
+  {
+    tokenAddress: 'tokenAddress1',
+    balance: BigInt(100),
+    token: null,
+    fiatBalance: 0,
+    fiatConversion: 0,
+  },
+  {
+    tokenAddress: 'tokenAddress2',
+    balance: BigInt(100),
+    token: null,
+    fiatBalance: 0,
+    fiatConversion: 0,
+  },
 ];
 
 const BACKBONE: Backbone = {
