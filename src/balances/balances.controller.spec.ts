@@ -31,7 +31,7 @@ describe('Balances Controller (Unit)', () => {
     it(`Success`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
-      const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+      const transactionServiceBalancesResponse = safeBalanceFactory(1);
       const exchangeResponse = exchangeResultFactory({ USD: 2.0 });
       const chainResponse = chainFactory(chainId);
       axiosMock.get.mockImplementation((url) => {
@@ -42,7 +42,7 @@ describe('Balances Controller (Unit)', () => {
           `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
         ) {
           return Promise.resolve({
-            data: safeTransactionServiceBalancesResponse,
+            data: transactionServiceBalancesResponse,
           });
         } else if (url == configuration().exchange.baseUri) {
           return Promise.resolve({ data: exchangeResponse });
@@ -51,29 +51,25 @@ describe('Balances Controller (Unit)', () => {
         }
       });
 
+      const expectedBalance = transactionServiceBalancesResponse[0];
       await request(app.getHttpServer())
         .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
         .expect(200)
         .expect({
-          fiatTotal: safeTransactionServiceBalancesResponse[0].fiatBalance,
+          fiatTotal: expectedBalance.fiatBalance,
           items: [
             {
               tokenInfo: {
                 tokenType: 'ERC20',
-                address: safeTransactionServiceBalancesResponse[0].tokenAddress,
-                decimals:
-                  safeTransactionServiceBalancesResponse[0].token.decimals,
-                symbol: safeTransactionServiceBalancesResponse[0].token.symbol,
-                name: safeTransactionServiceBalancesResponse[0].token.name,
-                logoUri:
-                  safeTransactionServiceBalancesResponse[0].token.logo_uri,
+                address: expectedBalance.tokenAddress,
+                decimals: expectedBalance.token.decimals,
+                symbol: expectedBalance.token.symbol,
+                name: expectedBalance.token.name,
+                logoUri: expectedBalance.token.logo_uri,
               },
-              balance:
-                safeTransactionServiceBalancesResponse[0].balance.toString(),
-              fiatBalance:
-                safeTransactionServiceBalancesResponse[0].fiatBalance,
-              fiatConversion:
-                safeTransactionServiceBalancesResponse[0].fiatConversion,
+              balance: expectedBalance.balance.toString(),
+              fiatBalance: expectedBalance.fiatBalance,
+              fiatConversion: expectedBalance.fiatConversion,
             },
           ],
         });
@@ -99,7 +95,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+        const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const chainResponse = chainFactory(chainId);
         axiosMock.get.mockImplementation((url) => {
           if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
@@ -109,7 +105,7 @@ describe('Balances Controller (Unit)', () => {
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
-              data: safeTransactionServiceBalancesResponse,
+              data: transactionServiceBalancesResponse,
             });
           } else if (url == configuration().exchange.baseUri) {
             return Promise.reject({ status: 500 });
@@ -132,7 +128,7 @@ describe('Balances Controller (Unit)', () => {
       it(`No rates returned`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+        const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const exchangeResponse = {}; // no rates
         const chainResponse = chainFactory(chainId);
         axiosMock.get.mockImplementation((url) => {
@@ -143,7 +139,7 @@ describe('Balances Controller (Unit)', () => {
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
-              data: safeTransactionServiceBalancesResponse,
+              data: transactionServiceBalancesResponse,
             });
           } else if (url == configuration().exchange.baseUri) {
             return Promise.resolve({ data: exchangeResponse });
@@ -167,7 +163,7 @@ describe('Balances Controller (Unit)', () => {
       it(`from-rate missing`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+        const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const exchangeResponse = exchangeResultFactory({ XYZ: 2 }); // Returns different rate than USD
         const chainResponse = chainFactory(chainId);
         axiosMock.get.mockImplementation((url) => {
@@ -178,7 +174,7 @@ describe('Balances Controller (Unit)', () => {
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
-              data: safeTransactionServiceBalancesResponse,
+              data: transactionServiceBalancesResponse,
             });
           } else if (url == configuration().exchange.baseUri) {
             return Promise.resolve({ data: exchangeResponse });
@@ -202,7 +198,7 @@ describe('Balances Controller (Unit)', () => {
       it(`from-rate is 0`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+        const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const exchangeResponse = exchangeResultFactory({ USD: 0 }); // rate is zero
         const chainResponse = chainFactory(chainId);
         axiosMock.get.mockImplementation((url) => {
@@ -213,7 +209,7 @@ describe('Balances Controller (Unit)', () => {
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
-              data: safeTransactionServiceBalancesResponse,
+              data: transactionServiceBalancesResponse,
             });
           } else if (url == configuration().exchange.baseUri) {
             return Promise.resolve({ data: exchangeResponse });
@@ -238,7 +234,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const toRate = 'XYZ';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const safeTransactionServiceBalancesResponse = safeBalanceFactory(1);
+        const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const exchangeResponse = exchangeResultFactory({ USD: 2 }); // Returns different rate than XYZ
         const chainResponse = chainFactory(chainId);
         axiosMock.get.mockImplementation((url) => {
@@ -249,7 +245,7 @@ describe('Balances Controller (Unit)', () => {
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
-              data: safeTransactionServiceBalancesResponse,
+              data: transactionServiceBalancesResponse,
             });
           } else if (url == configuration().exchange.baseUri) {
             return Promise.resolve({ data: exchangeResponse });
