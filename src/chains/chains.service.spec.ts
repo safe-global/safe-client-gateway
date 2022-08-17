@@ -32,6 +32,7 @@ describe('ChainsService', () => {
 
   it('should retrieve the backbone metadata from the proper TransactionService', async () => {
     const chainId = '1';
+
     const backbone = await service.getBackbone(chainId);
 
     expect(backbone).toBe(BACKBONE);
