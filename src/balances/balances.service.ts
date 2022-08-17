@@ -83,7 +83,7 @@ export class BalancesService {
         name: txBalance.token?.name,
         logoUri: logoUri,
       },
-      balance: txBalance.balance,
+      balance: txBalance.balance.toString(),
       fiatBalance: fiatBalance,
       fiatConversion: fiatConversion,
     };

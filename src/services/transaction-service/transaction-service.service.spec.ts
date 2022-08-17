@@ -6,14 +6,14 @@ import { TransactionService } from './transaction-service.service';
 const BALANCES: Balance[] = [
   {
     tokenAddress: 'tokenAddress1',
-    balance: 'balanceStr1',
+    balance: BigInt(100),
     token: null,
     fiatBalance: 0,
     fiatConversion: 0,
   },
   {
     tokenAddress: 'tokenAddress2',
-    balance: 'balanceStr2',
+    balance: BigInt(100),
     token: null,
     fiatBalance: 0,
     fiatConversion: 0,
