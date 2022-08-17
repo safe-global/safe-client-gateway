@@ -1,60 +1,139 @@
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChainsController } from './chains.controller';
-import { ChainsService } from './chains.service';
+import axios from 'axios';
+import * as request from 'supertest';
+import chainFactory from '../services/config-service/entities/__tests__/chain.factory';
+import { ChainsModule } from './chains.module';
 import { Backbone, Chain, Page } from './entities';
+import backboneFactory from './entities/__tests__/backbone.factory';
 
-describe('ChainsController (Unit)', () => {
-  let chainsController: ChainsController;
-  let chainsService: ChainsService;
+jest.mock('axios');
+const axiosMock = axios as jest.Mocked<typeof axios>;
+
+describe('Chains Controller (Unit)', () => {
+  let app: INestApplication;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
     next: null,
     previous: null,
-    results: [
-      <Chain>{
-        chainId: '1',
-        chainName: 'testChain',
-        vpcTransactionService: 'http://test-endpoint.local',
-      },
-    ],
+    results: [chainFactory(), chainFactory()],
   };
 
-  const backboneResponse: Backbone = {
-    name: 'Service Name',
-    version: '4.6.1',
-    api_version: 'v1',
-    secure: false,
-    host: 'service.host',
-    headers: ['header1', 'header2'],
-    settings: { key1: 'value1', key2: 'value2' },
-  };
+  const chainResponse: Chain = chainFactory();
+  const backboneResponse: Backbone = backboneFactory();
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ChainsController],
-      providers: [
-        {
-          provide: ChainsService,
-          useValue: {
-            getChains: jest.fn().mockResolvedValue(chainsResponse),
-            getBackbone: jest.fn().mockResolvedValue(backboneResponse),
-          },
-        },
-      ],
+    jest.clearAllMocks();
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [ChainsModule],
     }).compile();
 
-    chainsController = module.get<ChainsController>(ChainsController);
-    chainsService = module.get<ChainsService>(ChainsService);
+    app = moduleFixture.createNestApplication();
+    await app.init();
   });
 
-  it('should get chains from service', async () => {
-    expect(await chainsController.getChains()).toBe(chainsResponse);
-    expect(chainsService.getChains).toHaveBeenCalledTimes(1);
+  describe('GET /chains', () => {
+    it('Success', async () => {
+      axiosMock.get.mockResolvedValueOnce({ data: chainsResponse });
+
+      await request(app.getHttpServer())
+        .get('/chains')
+        .expect(HttpStatus.OK)
+        .expect({
+          ...chainsResponse,
+          results: chainsResponse.results.map((result) => ({
+            chainId: result.chainId,
+            chainName: result.chainName,
+            vpcTransactionService: result.vpcTransactionService,
+          })),
+        });
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains'),
+      );
+    });
+
+    it('Failure', async () => {
+      axiosMock.get.mockRejectedValueOnce({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+
+      await request(app.getHttpServer())
+        .get('/chains')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains'),
+      );
+    });
   });
 
-  it('should get backbone for an specific chain', async () => {
-    expect(await chainsController.getBackbone('1')).toBe(backboneResponse);
-    expect(chainsService.getBackbone).toHaveBeenCalledTimes(1);
+  describe('GET /:chainId/about/backbone', () => {
+    it('Success', async () => {
+      axiosMock.get.mockResolvedValueOnce({ data: chainResponse });
+      axiosMock.get.mockResolvedValueOnce({ data: backboneResponse });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.OK)
+        .expect(backboneResponse);
+
+      expect(axiosMock.get).toBeCalledTimes(2);
+      expect(axiosMock.get).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/api/v1/chains/1'),
+      );
+      expect(axiosMock.get).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/api/v1/about'),
+      );
+    });
+
+    it('Failure getting the chain', async () => {
+      axiosMock.get.mockRejectedValueOnce({ status: HttpStatus.BAD_REQUEST });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains/1'),
+      );
+    });
+
+    it('Failure getting the backbone data', async () => {
+      axiosMock.get.mockResolvedValueOnce({ data: chainResponse });
+      axiosMock.get.mockRejectedValueOnce({ status: HttpStatus.BAD_GATEWAY });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
+
+      expect(axiosMock.get).toBeCalledTimes(2);
+      expect(axiosMock.get).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/api/v1/chains/1'),
+      );
+      expect(axiosMock.get).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/api/v1/about'),
+      );
+    });
   });
 });
