@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '../services/config-service/config-service.service';
-import { Chain } from './entities/chain.entity';
-import { Page } from './entities/page.entity';
+import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
+import { Backbone, Chain, Page } from './entities';
 
 @Injectable()
 export class ChainsService {
-  constructor(private readonly safeConfigService: ConfigService) {}
+  constructor(
+    private readonly safeConfigService: ConfigService,
+    private readonly transactionServiceManager: TransactionServiceManager,
+  ) {}
 
   async getChains(): Promise<Page<Chain>> {
     const result = await this.safeConfigService.getChains();
@@ -23,5 +26,11 @@ export class ChainsService {
       ),
     };
     return page;
+  }
+
+  async getBackbone(chainId: string): Promise<Backbone> {
+    const transactionService =
+      await this.transactionServiceManager.getTransactionService(chainId);
+    return transactionService.getBackbone();
   }
 }
