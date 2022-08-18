@@ -5,4 +5,8 @@ export default () => ({
       'http://api.exchangeratesapi.io/latest',
     apiKey: process.env.EXCHANGE_API_KEY,
   },
+  safeConfig: {
+    baseUri:
+      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.gnosis.io',
+  },
 });
