@@ -2,7 +2,7 @@ import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { TransactionService } from './transaction-service.service';
 import { Backbone } from '../../chains/entities';
-import { mockNetworkService } from '../../common/network/__tests__/TestNetworkModule';
+import { mockNetworkService } from '../../common/network/__tests__/test.network.module';
 
 const BALANCES: Balance[] = [
   {
