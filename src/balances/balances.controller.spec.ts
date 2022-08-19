@@ -4,20 +4,38 @@ import * as request from 'supertest';
 import safeBalanceFactory from '../services/transaction-service/entities/__tests__/balance.factory';
 import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange.factory';
 import chainFactory from '../services/config-service/entities/__tests__/chain.factory';
-import configuration from '../config/configuration';
 import {
   mockNetworkService,
   TestNetworkModule,
 } from '../common/network/__tests__/test.network.module';
 import { BalancesModule } from './balances.module';
+import {
+  fakeConfigurationService,
+  TestConfigurationModule,
+} from '../common/config/__tests__/test.configuration.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
 
+  beforeAll(async () => {
+    fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
+    fakeConfigurationService.set(
+      'safeConfig.baseUri',
+      'https://test.safe.config',
+    );
+  });
+
   beforeEach(async () => {
     jest.clearAllMocks();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [BalancesModule, TestNetworkModule],
+      imports: [
+        // feature
+        BalancesModule,
+        // common
+        TestConfigurationModule,
+        TestNetworkModule,
+      ],
     }).compile();
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -35,7 +53,7 @@ describe('Balances Controller (Unit)', () => {
       const exchangeResponse = exchangeResultFactory({ USD: 2.0 });
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockImplementation((url) => {
-        if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+        if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
         } else if (
           url ==
@@ -44,7 +62,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionServiceBalancesResponse,
           });
-        } else if (url == configuration().exchange.baseUri) {
+        } else if (url == 'https://test.exchange') {
           return Promise.resolve({ data: exchangeResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -78,7 +96,7 @@ describe('Balances Controller (Unit)', () => {
       // Once caching is in place we don't need to retrieve the Chain Data again
       expect(mockNetworkService.get.mock.calls.length).toBe(4);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://safe-config.gnosis.io/api/v1/chains/1',
+        'https://test.safe.config/api/v1/chains/1',
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
@@ -87,7 +105,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: undefined, excludeSpam: undefined },
       });
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        configuration().exchange.baseUri,
+        'https://test.exchange',
       );
     });
 
@@ -98,7 +116,7 @@ describe('Balances Controller (Unit)', () => {
         const transactionServiceBalancesResponse = safeBalanceFactory(1);
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -107,7 +125,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.reject({ status: 500 });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -132,7 +150,7 @@ describe('Balances Controller (Unit)', () => {
         const exchangeResponse = {}; // no rates
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -141,7 +159,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -167,7 +185,7 @@ describe('Balances Controller (Unit)', () => {
         const exchangeResponse = exchangeResultFactory({ XYZ: 2 }); // Returns different rate than USD
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -176,7 +194,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -202,7 +220,7 @@ describe('Balances Controller (Unit)', () => {
         const exchangeResponse = exchangeResultFactory({ USD: 0 }); // rate is zero
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -211,7 +229,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -238,7 +256,7 @@ describe('Balances Controller (Unit)', () => {
         const exchangeResponse = exchangeResultFactory({ USD: 2 }); // Returns different rate than XYZ
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -247,7 +265,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -274,14 +292,14 @@ describe('Balances Controller (Unit)', () => {
         const exchangeResponse = exchangeResultFactory({ USD: 2.0 });
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://safe-config.gnosis.io/api/v1/chains/${chainId}`) {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.reject({ status: 500 });
-          } else if (url == configuration().exchange.baseUri) {
+          } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));

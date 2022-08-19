@@ -3,19 +3,20 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { ExchangeResult } from './entities/exchange.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
+import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
 export class ExchangeService {
   // TODO can we depend on the base url instead?
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
@@ -41,8 +42,8 @@ export class ExchangeService {
   }
 
   private async getExchangeResult(): Promise<ExchangeResult> {
-    const baseUrl = this.configService.get<string>('exchange.baseUri');
-    const apiKey = this.configService.get<string>('exchange.apiKey');
+    const baseUrl = this.configurationService.get<string>('exchange.baseUri');
+    const apiKey = this.configurationService.get<string>('exchange.apiKey');
 
     try {
       const { data } = await this.networkService.get(baseUrl, {

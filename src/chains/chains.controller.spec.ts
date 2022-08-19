@@ -9,6 +9,7 @@ import {
   mockNetworkService,
   TestNetworkModule,
 } from '../common/network/__tests__/test.network.module';
+import { ConfigurationModule } from '../common/config/configuration.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -26,7 +27,13 @@ describe('Chains Controller (Unit)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [ChainsModule, TestNetworkModule],
+      imports: [
+        // feature
+        ChainsModule,
+        // common
+        ConfigurationModule,
+        TestNetworkModule,
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();

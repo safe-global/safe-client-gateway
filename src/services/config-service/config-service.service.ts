@@ -2,23 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { Page } from './entities/page.entity';
 import { Chain } from './entities/chain.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { ConfigService as NestConfigService } from '@nestjs/config';
 import { Inject } from '@nestjs/common';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
+import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
 export class ConfigService {
   private readonly baseUri: string;
 
   constructor(
-    private readonly nestConfigService: NestConfigService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {
-    this.baseUri = nestConfigService.getOrThrow<string>('safeConfig.baseUri');
+    this.baseUri =
+      configurationService.getOrThrow<string>('safeConfig.baseUri');
   }
 
   async getChains(): Promise<Page<Chain>> {
