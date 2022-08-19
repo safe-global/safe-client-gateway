@@ -9,6 +9,10 @@ import {
   mockNetworkService,
   TestNetworkModule,
 } from '../common/network/__tests__/test.network.module';
+import {
+  fakeConfigurationService,
+  TestConfigurationModule,
+} from '../common/config/__tests__/test.configuration.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -23,10 +27,23 @@ describe('Chains Controller (Unit)', () => {
   const chainResponse: Chain = chainFactory();
   const backboneResponse: Backbone = backboneFactory();
 
+  beforeAll(async () => {
+    fakeConfigurationService.set(
+      'safeConfig.baseUri',
+      'https://test.safe.config',
+    );
+  });
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [ChainsModule, TestNetworkModule],
+      imports: [
+        // feature
+        ChainsModule,
+        // common
+        TestConfigurationModule,
+        TestNetworkModule,
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
