@@ -8,7 +8,7 @@ import configuration from '../config/configuration';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../common/network/__tests__/TestNetworkModule';
+} from '../common/network/__tests__/test.network.module';
 import { BalancesModule } from './balances.module';
 
 describe('Balances Controller (Unit)', () => {

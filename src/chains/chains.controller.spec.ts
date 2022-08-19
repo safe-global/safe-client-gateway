@@ -8,7 +8,7 @@ import backboneFactory from './entities/__tests__/backbone.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../common/network/__tests__/TestNetworkModule';
+} from '../common/network/__tests__/test.network.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
