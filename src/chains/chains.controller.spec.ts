@@ -84,10 +84,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({ data: backboneResponse });
 
-      await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
-        .expect(HttpStatus.OK)
-        .expect(backboneResponse);
+      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.OK).expect(backboneResponse);
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, expect.stringContaining('/api/v1/chains/1'));
@@ -99,13 +96,10 @@ describe('Chains Controller (Unit)', () => {
         status: HttpStatus.BAD_REQUEST,
       });
 
-      await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
-        .expect({
-          message: 'Service unavailable',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
-        });
+      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.SERVICE_UNAVAILABLE).expect({
+        message: 'Service unavailable',
+        code: HttpStatus.SERVICE_UNAVAILABLE,
+      });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(expect.stringContaining('/api/v1/chains/1'));
@@ -117,13 +111,10 @@ describe('Chains Controller (Unit)', () => {
         status: HttpStatus.BAD_GATEWAY,
       });
 
-      await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
-        .expect({
-          message: 'Service unavailable',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
-        });
+      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.SERVICE_UNAVAILABLE).expect({
+        message: 'Service unavailable',
+        code: HttpStatus.SERVICE_UNAVAILABLE,
+      });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, expect.stringContaining('/api/v1/chains/1'));
