@@ -36,11 +36,7 @@ const mockHttpErrorHandler = {
 } as unknown as HttpErrorHandler;
 
 describe('TransactionService', () => {
-  const service: TransactionService = new TransactionService(
-    'baseUrl',
-    mockNetworkService,
-    mockHttpErrorHandler,
-  );
+  const service: TransactionService = new TransactionService('baseUrl', mockNetworkService, mockHttpErrorHandler);
 
   it('should return the balances retrieved', async () => {
     mockNetworkService.get.mockResolvedValue({ data: BALANCES });

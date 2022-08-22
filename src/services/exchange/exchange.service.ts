@@ -17,8 +17,9 @@ export class ExchangeService {
   async convertRates(to: string, from: string): Promise<number> {
     const exchangeResult = await this.getExchangeResult();
 
-    if (exchangeResult.rates === undefined)
+    if (exchangeResult.rates === undefined) {
       throw new InternalServerErrorException(`Exchange rates unavailable`);
+    }
 
     const fromExchangeRate = exchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)

@@ -21,9 +21,7 @@ export class TransactionServiceManager {
     const transactionService = this.transactionServiceMap[chainId];
     if (transactionService !== undefined) return transactionService;
 
-    this.logger.log(
-      `Transaction Service for chain ${chainId} not available. Fetching from the Config Service`,
-    );
+    this.logger.log(`Transaction Service for chain ${chainId} not available. Fetching from the Config Service`);
     const chain: Chain = await this.configService.getChain(chainId);
     this.transactionServiceMap[chainId] = new TransactionService(
       chain.transactionService,
