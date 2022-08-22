@@ -22,7 +22,7 @@ export class HttpErrorHandler {
       };
     } else {
       return <HttpExceptionPayload>{
-        message: 'Service unavailable',
+        message: err.message || 'Service unavailable',
         code: HttpStatus.SERVICE_UNAVAILABLE,
       };
     }

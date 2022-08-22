@@ -34,18 +34,16 @@ describe('HttpErrorHandler', () => {
   });
 
   it('should throw an HttpException with 503 status when no response is received', async () => {
-    const httpError: AxiosError = new AxiosError(
-      'Request failed with status code 400',
-      'ERR_BAD_REQUEST',
-    );
+    const errMessage = 'Request failed with status code 400';
+    const httpError: AxiosError = new AxiosError(errMessage, 'ERR_BAD_REQUEST');
 
     try {
       errorHandler.handle(httpError);
     } catch (err) {
-      expect(err.message).toBe('Service unavailable');
+      expect(err.message).toBe(errMessage);
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
       expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.message).toBe('Service unavailable');
+      expect(err.response.message).toBe(errMessage);
     }
   });
 
@@ -59,6 +57,20 @@ describe('HttpErrorHandler', () => {
       expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
       expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
       expect(err.response.message).toBe('Service unavailable');
+    }
+  });
+
+  it('should throw an HttpException with 503 status and custom message when an arbitrary error happens', async () => {
+    const errMessage = 'Custom error message';
+    const randomError = new Error(errMessage);
+
+    try {
+      errorHandler.handle(randomError);
+    } catch (err) {
+      expect(err.message).toBe(errMessage);
+      expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(err.response.message).toBe(errMessage);
     }
   });
 });

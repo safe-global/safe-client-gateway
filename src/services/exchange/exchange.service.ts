@@ -41,6 +41,10 @@ export class ExchangeService {
     return toExchangeRate / fromExchangeRate;
   }
 
+  async getFiatCodes(): Promise<string[]> {
+    return ['foo']; // TODO: implement this
+  }
+
   private async getExchangeResult(): Promise<ExchangeResult> {
     const baseUrl = this.configurationService.get<string>('exchange.baseUri');
     const apiKey = this.configurationService.get<string>('exchange.apiKey');
@@ -49,6 +53,13 @@ export class ExchangeService {
       const { data } = await this.networkService.get(baseUrl, {
         params: { access_key: apiKey },
       });
+
+      if (!data?.success) {
+        throw new InternalServerErrorException(
+          'Unsuccessful response from Exchange',
+        );
+      }
+
       return data;
     } catch (error) {
       this.httpErrorHandler.handle(error);

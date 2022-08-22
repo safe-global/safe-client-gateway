@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import safeBalanceFactory from '../services/transaction-service/entities/__tests__/balance.factory';
 import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange.factory';
@@ -50,7 +50,7 @@ describe('Balances Controller (Unit)', () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
       const transactionServiceBalancesResponse = safeBalanceFactory(1);
-      const exchangeResponse = exchangeResultFactory({ USD: 2.0 });
+      const exchangeResponse = exchangeResultFactory(true, { USD: 2.0 });
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockImplementation((url) => {
         if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -126,7 +126,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionServiceBalancesResponse,
             });
           } else if (url == 'https://test.exchange') {
-            return Promise.reject({ status: 500 });
+            return Promise.reject({ status: HttpStatus.INTERNAL_SERVER_ERROR });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -134,10 +134,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(503)
+          .expect(HttpStatus.SERVICE_UNAVAILABLE)
           .expect({
             message: 'Service unavailable',
-            code: 503,
+            code: HttpStatus.SERVICE_UNAVAILABLE,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -168,11 +168,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
+          .expect(HttpStatus.SERVICE_UNAVAILABLE)
           .expect({
-            statusCode: 500,
+            code: HttpStatus.SERVICE_UNAVAILABLE,
             message: 'Exchange rates unavailable',
-            error: 'Internal Server Error',
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -182,7 +181,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionServiceBalancesResponse = safeBalanceFactory(1);
-        const exchangeResponse = exchangeResultFactory({ XYZ: 2 }); // Returns different rate than USD
+        const exchangeResponse = exchangeResultFactory(true, { XYZ: 2 }); // Returns different rate than USD
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -203,9 +202,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
+          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
           .expect({
-            statusCode: 500,
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Exchange rate for USD is not available',
             error: 'Internal Server Error',
           });
@@ -217,7 +216,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionServiceBalancesResponse = safeBalanceFactory(1);
-        const exchangeResponse = exchangeResultFactory({ USD: 0 }); // rate is zero
+        const exchangeResponse = exchangeResultFactory(true, { USD: 0 }); // rate is zero
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -238,9 +237,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
+          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
           .expect({
-            statusCode: 500,
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Exchange rate for USD is not available',
             error: 'Internal Server Error',
           });
@@ -253,7 +252,7 @@ describe('Balances Controller (Unit)', () => {
         const toRate = 'XYZ';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionServiceBalancesResponse = safeBalanceFactory(1);
-        const exchangeResponse = exchangeResultFactory({ USD: 2 }); // Returns different rate than XYZ
+        const exchangeResponse = exchangeResultFactory(true, { USD: 2 }); // Returns different rate than XYZ
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -274,9 +273,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/${toRate}`)
-          .expect(500)
+          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
           .expect({
-            statusCode: 500,
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Exchange rate for XYZ is not available',
             error: 'Internal Server Error',
           });
@@ -289,7 +288,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const exchangeResponse = exchangeResultFactory({ USD: 2.0 });
+        const exchangeResponse = exchangeResultFactory(true, { USD: 2.0 });
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -298,7 +297,7 @@ describe('Balances Controller (Unit)', () => {
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
-            return Promise.reject({ status: 500 });
+            return Promise.reject({ status: HttpStatus.INTERNAL_SERVER_ERROR });
           } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
@@ -308,8 +307,11 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(503)
-          .expect({ message: 'Service unavailable', code: 503 });
+          .expect(HttpStatus.SERVICE_UNAVAILABLE)
+          .expect({
+            message: 'Service unavailable',
+            code: HttpStatus.SERVICE_UNAVAILABLE,
+          });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
       });
