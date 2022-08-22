@@ -19,23 +19,17 @@ export class BalancesService {
     private readonly exchangeService: ExchangeService,
   ) {}
 
-  async getBalances(
-    chainId: string,
-    safeAddress: string,
-    fiatCode: string,
-  ): Promise<Balances> {
-    const safeTransactionService =
-      await this.safeTransactionManager.getTransactionService(chainId);
-    const txServiceBalances: TransactionServiceBalance[] =
-      await safeTransactionService.getBalances(safeAddress);
+  async getBalances(chainId: string, safeAddress: string, fiatCode: string): Promise<Balances> {
+    const safeTransactionService = await this.safeTransactionManager.getTransactionService(chainId);
+    const txServiceBalances: TransactionServiceBalance[] = await safeTransactionService.getBalances(
+      safeAddress,
+    );
 
     const usdToFiatRate: number = await this.exchangeService.convertRates(
       fiatCode,
       BalancesService.fromRateCurrencyCode,
     );
-    const nativeCurrency: NativeCurrency = (
-      await this.safeConfigService.getChain(chainId)
-    ).nativeCurrency;
+    const nativeCurrency: NativeCurrency = (await this.safeConfigService.getChain(chainId)).nativeCurrency;
 
     // Map balances payload
     const balances: Balance[] = txServiceBalances.map((balance) =>
@@ -65,14 +59,8 @@ export class BalancesService {
   ): Balance {
     const fiatConversion = txBalance.fiatConversion * usdToFiatRate;
     const fiatBalance = txBalance.fiatBalance * usdToFiatRate;
-    const tokenType =
-      txBalance.tokenAddress === undefined
-        ? TokenType.NativeToken
-        : TokenType.Erc20;
-    const logoUri =
-      tokenType === TokenType.NativeToken
-        ? nativeCurrency.logoUri
-        : txBalance.token?.logo_uri;
+    const tokenType = txBalance.tokenAddress === undefined ? TokenType.NativeToken : TokenType.Erc20;
+    const logoUri = tokenType === TokenType.NativeToken ? nativeCurrency.logoUri : txBalance.token?.logo_uri;
 
     return <Balance>{
       tokenInfo: <TokenInfo>{

@@ -3,10 +3,7 @@ import { HttpErrorHandler } from '../errors/http-error-handler';
 import { Chain } from '../config-service/entities/chain.entity';
 import { ConfigService } from '../config-service/config-service.service';
 import { TransactionService } from './transaction-service.service';
-import {
-  INetworkService,
-  NetworkService,
-} from '../../common/network/network.service.interface';
+import { INetworkService, NetworkService } from '../../common/network/network.service.interface';
 
 @Injectable()
 export class TransactionServiceManager {

@@ -29,8 +29,7 @@ export class ChainsService {
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    const transactionService =
-      await this.transactionServiceManager.getTransactionService(chainId);
+    const transactionService = await this.transactionServiceManager.getTransactionService(chainId);
     return transactionService.getBackbone();
   }
 }

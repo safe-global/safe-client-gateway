@@ -34,10 +34,7 @@ describe('HttpErrorHandler', () => {
   });
 
   it('should throw an HttpException with 503 status when no response is received', async () => {
-    const httpError: AxiosError = new AxiosError(
-      'Request failed with status code 400',
-      'ERR_BAD_REQUEST',
-    );
+    const httpError: AxiosError = new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST');
 
     try {
       errorHandler.handle(httpError);

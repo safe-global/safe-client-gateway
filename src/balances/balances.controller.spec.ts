@@ -4,10 +4,7 @@ import * as request from 'supertest';
 import safeBalanceFactory from '../services/transaction-service/entities/__tests__/balance.factory';
 import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange.factory';
 import chainFactory from '../services/config-service/entities/__tests__/chain.factory';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../common/network/__tests__/test.network.module';
+import { mockNetworkService, TestNetworkModule } from '../common/network/__tests__/test.network.module';
 import { BalancesModule } from './balances.module';
 import {
   fakeConfigurationService,
@@ -19,10 +16,7 @@ describe('Balances Controller (Unit)', () => {
 
   beforeAll(async () => {
     fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
-    fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
-    );
+    fakeConfigurationService.set('safeConfig.baseUri', 'https://test.safe.config');
   });
 
   beforeEach(async () => {
@@ -55,10 +49,7 @@ describe('Balances Controller (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
-        } else if (
-          url ==
-          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-        ) {
+        } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
           return Promise.resolve({
             data: transactionServiceBalancesResponse,
           });
@@ -92,21 +83,18 @@ describe('Balances Controller (Unit)', () => {
           ],
         });
 
-      // 4 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API, 4. Chain data (Native Currency)
+      // 4 Network calls are expected
+      // (1. Chain data, 2. Balances, 3. Exchange API, 4. Chain data (Native Currency)
       // Once caching is in place we don't need to retrieve the Chain Data again
       expect(mockNetworkService.get.mock.calls.length).toBe(4);
-      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
-      );
+      expect(mockNetworkService.get.mock.calls[0][0]).toBe('https://test.safe.config/api/v1/chains/1');
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
+        `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`,
       );
       expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
         params: { trusted: undefined, excludeSpam: undefined },
       });
-      expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        'https://test.exchange',
-      );
+      expect(mockNetworkService.get.mock.calls[2][0]).toBe('https://test.exchange');
     });
 
     describe('Exchange API Error', () => {
@@ -118,10 +106,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
@@ -152,10 +137,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
@@ -187,10 +169,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
@@ -222,10 +201,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
@@ -258,10 +234,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
@@ -294,10 +267,7 @@ describe('Balances Controller (Unit)', () => {
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
+          } else if (url == `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`) {
             return Promise.reject({ status: 500 });
           } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });

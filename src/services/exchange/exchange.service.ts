@@ -1,14 +1,7 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { ExchangeResult } from './entities/exchange.entity';
-import {
-  INetworkService,
-  NetworkService,
-} from '../../common/network/network.service.interface';
+import { INetworkService, NetworkService } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
@@ -29,14 +22,10 @@ export class ExchangeService {
 
     const fromExchangeRate = exchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
-      throw new InternalServerErrorException(
-        `Exchange rate for ${from} is not available`,
-      );
+      throw new InternalServerErrorException(`Exchange rate for ${from} is not available`);
     const toExchangeRate = exchangeResult.rates[to.toUpperCase()];
     if (toExchangeRate === undefined)
-      throw new InternalServerErrorException(
-        `Exchange rate for ${to} is not available`,
-      );
+      throw new InternalServerErrorException(`Exchange rate for ${to} is not available`);
 
     return toExchangeRate / fromExchangeRate;
   }
