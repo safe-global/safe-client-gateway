@@ -21,9 +21,7 @@ export class BalancesService {
 
   async getBalances(chainId: string, safeAddress: string, fiatCode: string): Promise<Balances> {
     const safeTransactionService = await this.safeTransactionManager.getTransactionService(chainId);
-    const txServiceBalances: TransactionServiceBalance[] = await safeTransactionService.getBalances(
-      safeAddress,
-    );
+    const txServiceBalances: TransactionServiceBalance[] = await safeTransactionService.getBalances(safeAddress);
 
     const usdToFiatRate: number = await this.exchangeService.convertRates(
       fiatCode,
