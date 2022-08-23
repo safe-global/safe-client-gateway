@@ -172,7 +172,7 @@ describe('Balances Controller (Unit)', () => {
           .expect(HttpStatus.SERVICE_UNAVAILABLE)
           .expect({
             code: HttpStatus.SERVICE_UNAVAILABLE,
-            message: 'Unsuccessful response from Exchange',
+            message: 'Bad response from Exchange',
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -328,6 +328,19 @@ describe('Balances Controller (Unit)', () => {
         .get('/balances/supported-fiat-codes')
         .expect(HttpStatus.OK)
         .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
+    });
+
+    it('Failure getting fiat currencies data', async () => {
+      const fiatCodesResult = fiatCodesResultFactory(false);
+      mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
+
+      await request(app.getHttpServer())
+        .get('/balances/supported-fiat-codes')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Bad response from Exchange',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
     });
   });
 });

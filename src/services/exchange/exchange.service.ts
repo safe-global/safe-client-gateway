@@ -64,9 +64,7 @@ export class ExchangeService {
       });
 
       if (!data?.success) {
-        throw new InternalServerErrorException(
-          'Unsuccessful response from Exchange',
-        );
+        throw new InternalServerErrorException('Bad response from Exchange');
       }
 
       return data;
