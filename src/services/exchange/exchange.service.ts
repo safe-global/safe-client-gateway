@@ -10,7 +10,7 @@ import {
   NetworkService,
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
-import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entitiy';
+import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 
 @Injectable()
 export class ExchangeService {

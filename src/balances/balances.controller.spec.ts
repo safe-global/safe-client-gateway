@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import safeBalanceFactory from '../services/transaction-service/entities/__tests__/balance.factory';
-import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange.factory';
+import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange-result.factory';
 import chainFactory from '../services/config-service/entities/__tests__/chain.factory';
 import {
   mockNetworkService,

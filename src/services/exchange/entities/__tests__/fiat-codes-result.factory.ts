@@ -1,4 +1,4 @@
-import { FiatCodesExchangeResult } from '../fiat-codes-result.entitiy';
+import { FiatCodesExchangeResult } from '../fiat-codes-result.entity';
 
 export default function (
   success?: boolean,
