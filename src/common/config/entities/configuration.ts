@@ -8,4 +8,11 @@ export default () => ({
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.gnosis.io',
   },
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || '6379',
+  },
+  expirationTimeInSeconds: {
+    default: process.env.EXPIRATION_TIME_DEFAULT_SECONDS || 60,
+  },
 });

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '../config-api/config-api.module';
-import { HttpErrorFactory } from '../errors/http-error-factory';
 import { TransactionApiManager } from './transaction-api.manager';
+import { CacheFirstDataSourceModule } from '../cache/cacheFirstDataSourceModule';
 
 @Module({
-  imports: [ConfigApiModule],
-  providers: [TransactionApiManager, HttpErrorFactory],
+  imports: [ConfigApiModule, CacheFirstDataSourceModule],
+  providers: [TransactionApiManager],
   exports: [TransactionApiManager],
 })
 export class TransactionApiModule {}

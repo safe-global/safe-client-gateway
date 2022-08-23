@@ -10,6 +10,7 @@ import { BalancesModule } from './balances/balances.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { NetworkModule } from './common/network/network.module';
 import { ConfigurationModule } from './common/config/configuration.module';
+import { CacheModule } from './common/cache/cache.module';
 
 @Module({
   imports: [
@@ -17,8 +18,9 @@ import { ConfigurationModule } from './common/config/configuration.module';
     BalancesModule,
     ChainsModule,
     // common
-    NetworkModule,
+    CacheModule,
     ConfigurationModule,
+    NetworkModule,
   ],
 })
 export class AppModule implements NestModule {

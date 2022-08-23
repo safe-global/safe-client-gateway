@@ -1,8 +1,7 @@
 import { Balance } from './entities/balance.entity';
-import { HttpErrorFactory } from '../errors/http-error-factory';
 import { TransactionApi } from './transaction-api.service';
 import { Backbone } from '../../chains/entities';
-import { mockNetworkService } from '../../common/network/__tests__/test.network.module';
+import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 
 const BALANCES: Balance[] = [
   {
@@ -31,19 +30,21 @@ const BACKBONE: Backbone = {
   settings: {},
 };
 
-const mockHttpErrorFactory = {
-  from: jest.fn().mockReturnValue(new Error('testErr')),
-} as unknown as HttpErrorFactory;
+const dataSource = {
+  get: jest.fn(),
+} as unknown as CacheFirstDataSource;
+
+const mockDataSource = jest.mocked(dataSource);
 
 describe('TransactionApi', () => {
   const service: TransactionApi = new TransactionApi(
+    '1',
     'baseUrl',
-    mockNetworkService,
-    mockHttpErrorFactory,
+    mockDataSource,
   );
 
   it('should return the balances retrieved', async () => {
-    mockNetworkService.get.mockResolvedValue({ data: BALANCES });
+    mockDataSource.get.mockResolvedValue(BALANCES);
 
     const balances = await service.getBalances('test', true, true);
 
@@ -51,22 +52,22 @@ describe('TransactionApi', () => {
   });
 
   it('should return the backbone retrieved', async () => {
-    mockNetworkService.get.mockResolvedValueOnce({ data: BACKBONE });
+    mockDataSource.get.mockResolvedValueOnce(BACKBONE);
 
     const backbone = await service.getBackbone();
 
     expect(backbone).toBe(BACKBONE);
   });
 
-  it('should throw an error when receiving an error from the network service', async () => {
-    mockNetworkService.get = jest.fn().mockImplementationOnce(() => {
-      throw new Error();
-    });
+  it('should forward error', async () => {
+    mockDataSource.get = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('Some error'));
 
     await expect(service.getBalances('test', true, true)).rejects.toThrow(
-      'testErr',
+      'Some error',
     );
 
-    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
   });
 });

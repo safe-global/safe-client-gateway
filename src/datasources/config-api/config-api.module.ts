@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { HttpErrorFactory } from '../errors/http-error-factory';
 import { ConfigApi } from './config-api.service';
+import { CacheFirstDataSourceModule } from '../cache/cacheFirstDataSourceModule';
 
 @Module({
-  providers: [ConfigApi, HttpErrorFactory],
+  imports: [CacheFirstDataSourceModule],
+  providers: [ConfigApi],
   exports: [ConfigApi],
 })
 export class ConfigApiModule {}
