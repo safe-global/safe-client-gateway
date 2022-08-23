@@ -62,7 +62,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionServiceBalancesResponse,
           });
-        } else if (url == 'https://test.exchange') {
+        } else if (url == 'https://test.exchange/latest') {
           return Promise.resolve({ data: exchangeResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -105,7 +105,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: undefined, excludeSpam: undefined },
       });
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        'https://test.exchange',
+        'https://test.exchange/latest',
       );
     });
 
@@ -125,7 +125,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.reject({ status: HttpStatus.INTERNAL_SERVER_ERROR });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -159,7 +159,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -171,7 +171,7 @@ describe('Balances Controller (Unit)', () => {
           .expect(HttpStatus.SERVICE_UNAVAILABLE)
           .expect({
             code: HttpStatus.SERVICE_UNAVAILABLE,
-            message: 'Exchange rates unavailable',
+            message: 'Unsuccessful response from Exchange',
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -193,7 +193,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -228,7 +228,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -264,7 +264,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -315,6 +315,12 @@ describe('Balances Controller (Unit)', () => {
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
       });
+    });
+  });
+
+  describe('GET /balances/', () => {
+    it('Success', async () => {
+      // mockNetworkService.get.mockResolvedValueOnce() // TODO: based on the endpoint code a factory / response interface
     });
   });
 });

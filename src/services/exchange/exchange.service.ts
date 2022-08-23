@@ -4,12 +4,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { ExchangeResult } from './entities/exchange.entity';
+import { ExchangeResult } from './entities/exchange-result.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
+import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entitiy';
 
 @Injectable()
 export class ExchangeService {
@@ -22,7 +23,9 @@ export class ExchangeService {
   ) {}
 
   async convertRates(to: string, from: string): Promise<number> {
-    const exchangeResult = await this.getExchangeResult();
+    const exchangeResult: ExchangeResult = (await this.getExchangeResult(
+      'latest',
+    )) as ExchangeResult;
 
     if (exchangeResult.rates === undefined)
       throw new InternalServerErrorException(`Exchange rates unavailable`);
@@ -42,15 +45,21 @@ export class ExchangeService {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    return ['foo']; // TODO: implement this
+    const fiatCodesResult: FiatCodesExchangeResult =
+      (await this.getExchangeResult('symbols')) as FiatCodesExchangeResult;
+
+    return Object.keys(fiatCodesResult.symbols);
   }
 
-  private async getExchangeResult(): Promise<ExchangeResult> {
+  private async getExchangeResult(
+    path?: string,
+  ): Promise<ExchangeResult | FiatCodesExchangeResult> {
     const baseUrl = this.configurationService.get<string>('exchange.baseUri');
     const apiKey = this.configurationService.get<string>('exchange.apiKey');
+    const url = path ? `${baseUrl}/${path}` : baseUrl;
 
     try {
-      const { data } = await this.networkService.get(baseUrl, {
+      const { data } = await this.networkService.get(url, {
         params: { access_key: apiKey },
       });
 
@@ -62,7 +71,7 @@ export class ExchangeService {
 
       return data;
     } catch (error) {
-      this.httpErrorHandler.handle(error);
+      this.httpErrorHandler.handle(error); // TODO: use a different error handler for exchange?
     }
   }
 }

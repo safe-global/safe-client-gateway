@@ -1,9 +1,8 @@
 import { ConfigService } from '../services/config-service/config-service.service';
+import fiatCodesFactory from '../services/exchange/entities/__tests__/fiat-codes.factory';
 import { ExchangeService } from '../services/exchange/exchange.service';
 import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
 import { BalancesService } from './balances.service';
-
-const FIAT_CODES_RESPONSE: string[] = ['AED', 'AFN', 'EUR', 'ALL', 'USD'];
 
 describe('BalancesService', () => {
   const exchangeService = {} as unknown as ExchangeService;
@@ -17,9 +16,10 @@ describe('BalancesService', () => {
   );
 
   it('should get ordered supported fiat codes', async () => {
+    const fiatCodesResult = fiatCodesFactory();
     exchangeService.getFiatCodes = jest
       .fn()
-      .mockResolvedValueOnce(FIAT_CODES_RESPONSE);
+      .mockResolvedValueOnce(fiatCodesResult.symbols);
 
     const res = await service.getSupportedFiatCodes();
 

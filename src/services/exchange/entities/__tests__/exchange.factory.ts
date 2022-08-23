@@ -1,4 +1,4 @@
-import { ExchangeResult } from '../exchange.entity';
+import { ExchangeResult } from '../exchange-result.entity';
 
 export default function (
   success?: boolean,

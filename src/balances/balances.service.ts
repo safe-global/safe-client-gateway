@@ -94,7 +94,7 @@ export class BalancesService {
     const mainCurrencies: string[] = ['USD', 'EUR'];
     return [
       ...mainCurrencies,
-      ...fiatCodes.filter((i) => !mainCurrencies.includes(i)).sort(),
+      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
     ];
   }
 }
