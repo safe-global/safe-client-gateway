@@ -1,4 +1,4 @@
 export interface FiatCodesExchangeResult {
   success: boolean;
-  symbols: string[];
+  symbols: Record<string, string>;
 }

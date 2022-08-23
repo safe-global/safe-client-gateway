@@ -13,6 +13,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
+import fiatCodesResultFactory from '../services/exchange/entities/__tests__/fiat-codes-result.factory';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -320,7 +321,13 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/', () => {
     it('Success', async () => {
-      // mockNetworkService.get.mockResolvedValueOnce() // TODO: based on the endpoint code a factory / response interface
+      const fiatCodesResult = fiatCodesResultFactory();
+      mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
+
+      await request(app.getHttpServer())
+        .get('/balances/supported-fiat-codes')
+        .expect(HttpStatus.OK)
+        .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
     });
   });
 });

@@ -71,7 +71,7 @@ export class ExchangeService {
 
       return data;
     } catch (error) {
-      this.httpErrorHandler.handle(error); // TODO: use a different error handler for exchange?
+      this.httpErrorHandler.handle(error);
     }
   }
 }
