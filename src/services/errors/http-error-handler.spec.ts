@@ -11,12 +11,16 @@ describe('HttpErrorHandler', () => {
     const errStatusCode = 400;
     const errArguments = ['arg1', 'arg2'];
 
-    const httpError: AxiosError = new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST', null, null, <
-      AxiosResponse<HttpExceptionPayload>
-    >{
-      data: { message: errMessage, arguments: errArguments },
-      status: errStatusCode,
-    });
+    const httpError: AxiosError = new AxiosError(
+      'Request failed with status code 400',
+      'ERR_BAD_REQUEST',
+      null,
+      null,
+      <AxiosResponse<HttpExceptionPayload>>{
+        data: { message: errMessage, arguments: errArguments },
+        status: errStatusCode,
+      },
+    );
 
     try {
       errorHandler.handle(httpError);
@@ -30,7 +34,10 @@ describe('HttpErrorHandler', () => {
   });
 
   it('should throw an HttpException with 503 status when no response is received', async () => {
-    const httpError: AxiosError = new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST');
+    const httpError: AxiosError = new AxiosError(
+      'Request failed with status code 400',
+      'ERR_BAD_REQUEST',
+    );
 
     try {
       errorHandler.handle(httpError);

@@ -24,7 +24,9 @@ export const fakeConfigurationService = new FakeConfigurationService();
  */
 @Global()
 @Module({
-  providers: [{ provide: IConfigurationService, useValue: fakeConfigurationService }],
+  providers: [
+    { provide: IConfigurationService, useValue: fakeConfigurationService },
+  ],
   exports: [IConfigurationService],
 })
 export class TestConfigurationModule {}

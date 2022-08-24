@@ -5,7 +5,10 @@ import chainFactory from '../services/config-service/entities/__tests__/chain.fa
 import { ChainsModule } from './chains.module';
 import { Backbone, Chain, Page } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';
-import { mockNetworkService, TestNetworkModule } from '../common/network/__tests__/test.network.module';
+import {
+  mockNetworkService,
+  TestNetworkModule,
+} from '../common/network/__tests__/test.network.module';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -25,7 +28,10 @@ describe('Chains Controller (Unit)', () => {
   const backboneResponse: Backbone = backboneFactory();
 
   beforeAll(async () => {
-    fakeConfigurationService.set('safeConfig.baseUri', 'https://test.safe.config');
+    fakeConfigurationService.set(
+      'safeConfig.baseUri',
+      'https://test.safe.config',
+    );
   });
 
   beforeEach(async () => {
@@ -61,7 +67,9 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
-      expect(mockNetworkService.get).toBeCalledWith(expect.stringContaining('/api/v1/chains'));
+      expect(mockNetworkService.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains'),
+      );
     });
 
     it('Failure', async () => {
@@ -69,13 +77,18 @@ describe('Chains Controller (Unit)', () => {
         status: HttpStatus.INTERNAL_SERVER_ERROR,
       });
 
-      await request(app.getHttpServer()).get('/chains').expect(HttpStatus.SERVICE_UNAVAILABLE).expect({
-        message: 'Service unavailable',
-        code: HttpStatus.SERVICE_UNAVAILABLE,
-      });
+      await request(app.getHttpServer())
+        .get('/chains')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
-      expect(mockNetworkService.get).toBeCalledWith(expect.stringContaining('/api/v1/chains'));
+      expect(mockNetworkService.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains'),
+      );
     });
   });
 
@@ -84,11 +97,20 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({ data: backboneResponse });
 
-      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.OK).expect(backboneResponse);
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.OK)
+        .expect(backboneResponse);
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, expect.stringContaining('/api/v1/chains/1'));
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(2, expect.stringContaining('/api/v1/about'));
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/api/v1/chains/1'),
+      );
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/api/v1/about'),
+      );
     });
 
     it('Failure getting the chain', async () => {
@@ -96,13 +118,18 @@ describe('Chains Controller (Unit)', () => {
         status: HttpStatus.BAD_REQUEST,
       });
 
-      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.SERVICE_UNAVAILABLE).expect({
-        message: 'Service unavailable',
-        code: HttpStatus.SERVICE_UNAVAILABLE,
-      });
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
-      expect(mockNetworkService.get).toBeCalledWith(expect.stringContaining('/api/v1/chains/1'));
+      expect(mockNetworkService.get).toBeCalledWith(
+        expect.stringContaining('/api/v1/chains/1'),
+      );
     });
 
     it('Failure getting the backbone data', async () => {
@@ -111,14 +138,23 @@ describe('Chains Controller (Unit)', () => {
         status: HttpStatus.BAD_GATEWAY,
       });
 
-      await request(app.getHttpServer()).get('/chains/1/about/backbone').expect(HttpStatus.SERVICE_UNAVAILABLE).expect({
-        message: 'Service unavailable',
-        code: HttpStatus.SERVICE_UNAVAILABLE,
-      });
+      await request(app.getHttpServer())
+        .get('/chains/1/about/backbone')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect({
+          message: 'Service unavailable',
+          code: HttpStatus.SERVICE_UNAVAILABLE,
+        });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, expect.stringContaining('/api/v1/chains/1'));
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(2, expect.stringContaining('/api/v1/about'));
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/api/v1/chains/1'),
+      );
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/api/v1/about'),
+      );
     });
   });
 });

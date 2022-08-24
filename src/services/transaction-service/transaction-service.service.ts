@@ -10,7 +10,11 @@ export class TransactionService {
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
-  async getBalances(safeAddress: string, trusted?: boolean, excludeSpam?: boolean): Promise<Balance[]> {
+  async getBalances(
+    safeAddress: string,
+    trusted?: boolean,
+    excludeSpam?: boolean,
+  ): Promise<Balance[]> {
     const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
     try {
       const { data } = await this.networkService.get(url, {

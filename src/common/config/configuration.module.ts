@@ -18,7 +18,9 @@ import configuration from './entities/configuration';
       load: [configuration],
     }),
   ],
-  providers: [{ provide: IConfigurationService, useClass: NestConfigurationService }],
+  providers: [
+    { provide: IConfigurationService, useClass: NestConfigurationService },
+  ],
   exports: [IConfigurationService],
 })
 export class ConfigurationModule {}

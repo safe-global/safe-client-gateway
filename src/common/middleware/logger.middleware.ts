@@ -5,7 +5,8 @@ import { NextFunction, Request, Response } from 'express';
 export class LoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger(LoggerMiddleware.name);
 
-  private formatRequestMessage = (req: Request) => `[==>] ${req.method} ${req.url}`;
+  private formatRequestMessage = (req: Request) =>
+    `[==>] ${req.method} ${req.url}`;
 
   private formatResponseMessage = (res: Response) => {
     const contentLength = res.get('content-length') || '';

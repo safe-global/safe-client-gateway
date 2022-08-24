@@ -3,7 +3,10 @@ import { Page } from './entities/page.entity';
 import { Chain } from './entities/chain.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { Inject } from '@nestjs/common';
-import { INetworkService, NetworkService } from '../../common/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
@@ -16,7 +19,8 @@ export class ConfigService {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {
-    this.baseUri = configurationService.getOrThrow<string>('safeConfig.baseUri');
+    this.baseUri =
+      configurationService.getOrThrow<string>('safeConfig.baseUri');
   }
 
   async getChains(): Promise<Page<Chain>> {

@@ -11,7 +11,10 @@ import { NetworkRequest } from './entities/network.request.entity';
 export class AxiosNetworkService implements INetworkService {
   constructor(private readonly httpService: HttpService) {}
 
-  async get<T = any, R = NetworkResponse<T>>(url: string, config?: NetworkRequest): Promise<R> {
+  async get<T = any, R = NetworkResponse<T>>(
+    url: string,
+    config?: NetworkRequest,
+  ): Promise<R> {
     return this.httpService.axiosRef.get(url, config);
   }
 }
