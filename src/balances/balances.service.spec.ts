@@ -2,7 +2,6 @@ import { ConfigService } from '../services/config-service/config-service.service
 import { ExchangeService } from '../services/exchange/exchange.service';
 import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
 import { BalancesService } from './balances.service';
-import fiatCodesFactory from './entities/__tests__/fiat-codes.factory';
 
 describe('BalancesService', () => {
   const exchangeService = {} as unknown as ExchangeService;
@@ -16,7 +15,7 @@ describe('BalancesService', () => {
   );
 
   it('should get ordered supported fiat codes', async () => {
-    const fiatCodesResult = fiatCodesFactory();
+    const fiatCodesResult = ['AED', 'AFN', 'EUR', 'ALL', 'USD'];
     exchangeService.getFiatCodes = jest
       .fn()
       .mockResolvedValueOnce(fiatCodesResult);

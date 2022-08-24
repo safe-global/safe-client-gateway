@@ -15,17 +15,21 @@ import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 @Injectable()
 export class ExchangeService {
   // TODO can we depend on the base url instead?
+
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly httpErrorHandler: HttpErrorHandler,
-  ) {}
+  ) {
+    this.baseUrl = this.configurationService.get<string>('exchange.baseUri');
+    this.apiKey = this.configurationService.get<string>('exchange.apiKey');
+  }
 
   async convertRates(to: string, from: string): Promise<number> {
-    const exchangeResult: ExchangeResult = (await this.getExchangeResult(
-      'latest',
-    )) as ExchangeResult;
+    const exchangeResult = await this.getExchangeResult();
 
     if (exchangeResult.rates === undefined)
       throw new InternalServerErrorException(`Exchange rates unavailable`);
@@ -45,31 +49,24 @@ export class ExchangeService {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    const fiatCodesResult: FiatCodesExchangeResult =
-      (await this.getExchangeResult('symbols')) as FiatCodesExchangeResult;
+    const fiatCodesResult = await this.getFiatCodesExchangeResult();
 
     return Object.keys(fiatCodesResult.symbols);
   }
 
-  private async getExchangeResult(
-    path?: string,
-  ): Promise<ExchangeResult | FiatCodesExchangeResult> {
-    const baseUrl = this.configurationService.get<string>('exchange.baseUri');
-    const apiKey = this.configurationService.get<string>('exchange.apiKey');
-    const url = path ? `${baseUrl}/${path}` : baseUrl;
+  private async getExchangeResult(): Promise<ExchangeResult> {
+    const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
+      params: { access_key: this.apiKey },
+    });
 
-    try {
-      const { data } = await this.networkService.get(url, {
-        params: { access_key: apiKey },
-      });
+    return data;
+  }
 
-      if (!data?.success) {
-        throw new InternalServerErrorException('Bad response from Exchange');
-      }
+  private async getFiatCodesExchangeResult(): Promise<FiatCodesExchangeResult> {
+    const { data } = await this.networkService.get(`${this.baseUrl}/symbols`, {
+      params: { access_key: this.apiKey },
+    });
 
-      return data;
-    } catch (error) {
-      this.httpErrorHandler.handle(error);
-    }
+    return data;
   }
 }

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import safeBalanceFactory from '../services/transaction-service/entities/__tests__/balance.factory';
 import exchangeResultFactory from '../services/exchange/entities/__tests__/exchange-result.factory';
@@ -13,7 +13,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
-import fiatCodesResultFactory from '../services/exchange/entities/__tests__/fiat-codes-result.factory';
+import { FiatCodesExchangeResult } from '../services/exchange/entities/fiat-codes-result.entity';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -127,7 +127,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionServiceBalancesResponse,
             });
           } else if (url == 'https://test.exchange/latest') {
-            return Promise.reject({ status: HttpStatus.INTERNAL_SERVER_ERROR });
+            return Promise.reject({ status: 500 });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -135,10 +135,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(HttpStatus.SERVICE_UNAVAILABLE)
+          .expect(500)
           .expect({
-            message: 'Service unavailable',
-            code: HttpStatus.SERVICE_UNAVAILABLE,
+            message: 'Internal server error',
+            statusCode: 500,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -169,10 +169,11 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(HttpStatus.SERVICE_UNAVAILABLE)
+          .expect(500)
           .expect({
-            code: HttpStatus.SERVICE_UNAVAILABLE,
-            message: 'Bad response from Exchange',
+            statusCode: 500,
+            message: 'Exchange rates unavailable',
+            error: 'Internal Server Error',
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -203,9 +204,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+          .expect(500)
           .expect({
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            statusCode: 500,
             message: 'Exchange rate for USD is not available',
             error: 'Internal Server Error',
           });
@@ -238,9 +239,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+          .expect(500)
           .expect({
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            statusCode: 500,
             message: 'Exchange rate for USD is not available',
             error: 'Internal Server Error',
           });
@@ -274,9 +275,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/${toRate}`)
-          .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+          .expect(500)
           .expect({
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            statusCode: 500,
             message: 'Exchange rate for XYZ is not available',
             error: 'Internal Server Error',
           });
@@ -298,7 +299,7 @@ describe('Balances Controller (Unit)', () => {
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
-            return Promise.reject({ status: HttpStatus.INTERNAL_SERVER_ERROR });
+            return Promise.reject({ status: 500 });
           } else if (url == 'https://test.exchange') {
             return Promise.resolve({ data: exchangeResponse });
           } else {
@@ -308,10 +309,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(HttpStatus.SERVICE_UNAVAILABLE)
+          .expect(503)
           .expect({
             message: 'Service unavailable',
-            code: HttpStatus.SERVICE_UNAVAILABLE,
+            code: 503,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
@@ -321,25 +322,35 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/', () => {
     it('Success', async () => {
-      const fiatCodesResult = fiatCodesResultFactory();
+      const fiatCodesResult: FiatCodesExchangeResult = {
+        success: true,
+        symbols: {
+          AED: 'United Arab Emirates Dirham',
+          USD: 'United States Dollar',
+          AFN: 'Afghan Afghani',
+          EUR: 'Euro',
+          ALL: 'Albanian Lek',
+        },
+      };
       mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
 
       await request(app.getHttpServer())
         .get('/balances/supported-fiat-codes')
-        .expect(HttpStatus.OK)
+        .expect(200)
         .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
     });
 
     it('Failure getting fiat currencies data', async () => {
-      const fiatCodesResult = fiatCodesResultFactory(false);
-      mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
+      mockNetworkService.get.mockImplementationOnce(() => {
+        throw new Error();
+      });
 
       await request(app.getHttpServer())
         .get('/balances/supported-fiat-codes')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect(500)
         .expect({
-          message: 'Bad response from Exchange',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
+          message: 'Internal server error',
+          statusCode: 500,
         });
     });
   });

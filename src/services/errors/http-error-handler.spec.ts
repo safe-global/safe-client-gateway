@@ -1,4 +1,3 @@
-import { HttpStatus } from '@nestjs/common';
 import { AxiosError, AxiosResponse } from 'axios';
 import { HttpErrorHandler } from './http-error-handler';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
@@ -34,43 +33,30 @@ describe('HttpErrorHandler', () => {
   });
 
   it('should throw an HttpException with 503 status when no response is received', async () => {
-    const errMessage = 'Request failed with status code 400';
-    const httpError: AxiosError = new AxiosError(errMessage, 'ERR_BAD_REQUEST');
+    const expectedErrorMessage = 'Service unavailable';
+    const httpError: AxiosError = new AxiosError('someMessage', 'ERR_BAD_REQUEST');
 
     try {
       errorHandler.handle(httpError);
     } catch (err) {
-      expect(err.message).toBe(errMessage);
-      expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.message).toBe(errMessage);
+      expect(err.message).toBe(expectedErrorMessage);
+      expect(err.status).toBe(503);
+      expect(err.response.code).toBe(503);
+      expect(err.response.message).toBe(expectedErrorMessage);
     }
   });
 
   it('should throw an HttpException with 503 status when an arbitrary error happens', async () => {
+    const expectedErrorMessage = 'Service unavailable';
     const randomError = new Error();
 
     try {
       errorHandler.handle(randomError);
     } catch (err) {
-      expect(err.message).toBe('Service unavailable');
-      expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.message).toBe('Service unavailable');
-    }
-  });
-
-  it('should throw an HttpException with 503 status and custom message when an arbitrary error happens', async () => {
-    const errMessage = 'Custom error message';
-    const randomError = new Error(errMessage);
-
-    try {
-      errorHandler.handle(randomError);
-    } catch (err) {
-      expect(err.message).toBe(errMessage);
-      expect(err.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.code).toBe(HttpStatus.SERVICE_UNAVAILABLE);
-      expect(err.response.message).toBe(errMessage);
+      expect(err.message).toBe(expectedErrorMessage);
+      expect(err.status).toBe(503);
+      expect(err.response.code).toBe(503);
+      expect(err.response.message).toBe(expectedErrorMessage);
     }
   });
 });
