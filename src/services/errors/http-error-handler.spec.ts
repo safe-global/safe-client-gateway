@@ -34,7 +34,10 @@ describe('HttpErrorHandler', () => {
 
   it('should throw an HttpException with 503 status when no response is received', async () => {
     const expectedErrorMessage = 'Service unavailable';
-    const httpError: AxiosError = new AxiosError('someMessage', 'ERR_BAD_REQUEST');
+    const httpError: AxiosError = new AxiosError(
+      'someMessage',
+      'ERR_BAD_REQUEST',
+    );
 
     try {
       errorHandler.handle(httpError);
