@@ -93,7 +93,6 @@ describe('Balances Controller (Unit)', () => {
         });
 
       // 4 Network calls are expected
-
       // (1. Chain data, 2. Balances, 3. Exchange API, 4. Chain data (Native Currency)
       // Once caching is in place we don't need to retrieve the Chain Data again
       expect(mockNetworkService.get.mock.calls.length).toBe(4);
@@ -101,7 +100,7 @@ describe('Balances Controller (Unit)', () => {
         'https://test.safe.config/api/v1/chains/1',
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`,
+        `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
       );
       expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
         params: { trusted: undefined, excludeSpam: undefined },
@@ -122,7 +121,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
-            `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`
+            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({
               data: transactionServiceBalancesResponse,
