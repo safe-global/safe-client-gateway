@@ -46,8 +46,6 @@
     "@typescript-eslint/eslint-plugin": "^5.32.0",
     "@typescript-eslint/parser": "^5.32.0",
     "eslint": "^8.21.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "husky": "^8.0.0",
     "jest": "28.1.2",
     "prettier": "^2.3.2",
@@ -74,7 +72,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "coveragePathIgnorePatterns": ["index.ts"],
+    "coveragePathIgnorePatterns": [
+      "index.ts"
+    ],
     "testEnvironment": "node"
   },
   "main": "main.ts",
