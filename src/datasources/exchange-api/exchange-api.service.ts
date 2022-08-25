@@ -29,11 +29,11 @@ export class ExchangeApi {
     this.apiKey = this.configurationService.get<string>('exchange.apiKey');
 
     if (!this.baseUrl) {
-      this.logger.warn('exchange.baseUri configuration parameter is not set')
+      this.logger.warn('exchange.baseUri configuration parameter is not set');
     }
 
     if (!this.apiKey) {
-      this.logger.warn('exchange.apiKey configuration parameter is not set')
+      this.logger.warn('exchange.apiKey configuration parameter is not set');
     }
   }
 

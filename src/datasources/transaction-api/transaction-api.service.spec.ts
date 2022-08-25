@@ -63,7 +63,9 @@ describe('TransactionApi', () => {
       throw new Error();
     });
 
-    await expect(service.getBalances('test', true, true)).rejects.toThrow('testErr');
+    await expect(service.getBalances('test', true, true)).rejects.toThrow(
+      'testErr',
+    );
 
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
   });
