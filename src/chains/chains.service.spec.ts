@@ -1,6 +1,6 @@
 import { ConfigService } from '../datasources/config-service/config-service.service';
-import { TransactionServiceManager } from '../datasources/transaction-service/transaction-service.manager';
-import { TransactionService } from '../datasources/transaction-service/transaction-service.service';
+import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
+import { TransactionApi } from '../datasources/transaction-api/transaction-api.service';
 import { ChainsService } from './chains.service';
 import { Backbone } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';
@@ -12,11 +12,11 @@ describe('ChainsService', () => {
 
   const transactionService = {
     getBackbone: jest.fn().mockResolvedValue(BACKBONE),
-  } as unknown as TransactionService;
+  } as unknown as TransactionApi;
 
   const transactionManager = {
     getTransactionService: jest.fn().mockResolvedValue(transactionService),
-  } as unknown as TransactionServiceManager;
+  } as unknown as TransactionApiManager;
 
   const service: ChainsService = new ChainsService(
     configService,

@@ -1,6 +1,6 @@
 import { Balance } from './entities/balance.entity';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { TransactionService } from './transaction-service.service';
+import { TransactionApi } from './transaction-api.service';
 import { Backbone } from '../../chains/entities';
 import { mockNetworkService } from '../../common/network/__tests__/test.network.module';
 
@@ -35,8 +35,8 @@ const mockHttpErrorHandler = {
   handle: jest.fn(),
 } as unknown as HttpErrorHandler;
 
-describe('TransactionService', () => {
-  const service: TransactionService = new TransactionService(
+describe('TransactionApi', () => {
+  const service: TransactionApi = new TransactionApi(
     'baseUrl',
     mockNetworkService,
     mockHttpErrorHandler,

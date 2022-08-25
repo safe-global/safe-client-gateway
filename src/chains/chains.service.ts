@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '../datasources/config-service/config-service.service';
-import { TransactionServiceManager } from '../datasources/transaction-service/transaction-service.manager';
+import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { Backbone, Chain, Page } from './entities';
 
 @Injectable()
 export class ChainsService {
   constructor(
     private readonly safeConfigService: ConfigService,
-    private readonly transactionServiceManager: TransactionServiceManager,
+    private readonly transactionServiceManager: TransactionApiManager,
   ) {}
 
   async getChains(): Promise<Page<Chain>> {
