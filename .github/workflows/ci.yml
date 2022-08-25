@@ -36,6 +36,7 @@ jobs:
           node-version: '16.x'
           cache: 'yarn'
       - run: yarn install --immutable
+      - run: yarn run build
       - run: yarn run test:cov
       - name: Upload coverage
         uses: coverallsapp/github-action@1.1.3
