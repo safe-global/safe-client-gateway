@@ -3,11 +3,11 @@ import { BalancesService } from './balances.service';
 import { BalancesController } from './balances.controller';
 import { TransactionApiModule } from '../datasources/transaction-api/transaction-api.module';
 import { ConfigApiModule } from '../datasources/config-api/config-api.module';
-import { ExchangeModule } from '../datasources/exchange-api/exchange.module';
+import { ExchangeApiModule } from '../datasources/exchange-api/exchange-api.module';
 
 @Module({
   controllers: [BalancesController],
   providers: [BalancesService],
-  imports: [TransactionApiModule, ExchangeModule, ConfigApiModule],
+  imports: [TransactionApiModule, ExchangeApiModule, ConfigApiModule],
 })
 export class BalancesModule {}

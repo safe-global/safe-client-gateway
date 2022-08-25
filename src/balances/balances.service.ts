@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Balance as TransactionApiBalance } from '../datasources/transaction-api/entities/balance.entity';
-import { ExchangeApi } from '../datasources/exchange-api/exchange.service';
+import { ExchangeApi } from '../datasources/exchange-api/exchange-api.service';
 import { TokenInfo } from '../common/entities/tokeninfo.entity';
 import { TokenType } from '../common/entities/tokentype.entity';
 import { Balances } from './entities/balances.entity';
