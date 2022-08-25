@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Page } from './entities/page.entity';
 import { Chain } from './entities/chain.entity';
-import { HttpErrorHandler } from '../errors/http-error-handler';
+import { HttpErrorFactory } from '../errors/http-error-factory';
 import { Inject } from '@nestjs/common';
 import {
   INetworkService,
@@ -17,7 +17,7 @@ export class ConfigApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly httpErrorHandler: HttpErrorHandler,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('safeConfig.baseUri');
@@ -29,7 +29,7 @@ export class ConfigApi {
       const response = await this.networkService.get(url);
       return response.data;
     } catch (err) {
-      this.httpErrorHandler.handle(err);
+      throw this.httpErrorFactory.from(err);
     }
   }
 
@@ -39,7 +39,7 @@ export class ConfigApi {
       const response = await this.networkService.get(url);
       return response.data;
     } catch (err) {
-      this.httpErrorHandler.handle(err);
+      throw this.httpErrorFactory.from(err);
     }
   }
 }
