@@ -88,4 +88,13 @@ export class BalancesService {
       fiatConversion: fiatConversion,
     };
   }
+
+  async getSupportedFiatCodes(): Promise<string[]> {
+    const fiatCodes: string[] = await this.exchangeService.getFiatCodes();
+    const mainCurrencies: string[] = ['USD', 'EUR'];
+    return [
+      ...mainCurrencies,
+      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
+    ];
+  }
 }

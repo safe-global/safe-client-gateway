@@ -17,4 +17,9 @@ export class BalancesController {
   ): Promise<Balances> {
     return this.balancesService.getBalances(chainId, safeAddress, fiatCode);
   }
+
+  @Get('balances/supported-fiat-codes')
+  async getSupportedFiatCodes(): Promise<string[]> {
+    return this.balancesService.getSupportedFiatCodes();
+  }
 }

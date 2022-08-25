@@ -3,23 +3,29 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { HttpErrorHandler } from '../errors/http-error-handler';
-import { ExchangeResult } from './entities/exchange.entity';
+import { ExchangeResult } from './entities/exchange-result.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
+import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 
 @Injectable()
 export class ExchangeService {
   // TODO can we depend on the base url instead?
+
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly httpErrorHandler: HttpErrorHandler,
-  ) {}
+  ) {
+    this.baseUrl = this.configurationService.get<string>('exchange.baseUri');
+    this.apiKey = this.configurationService.get<string>('exchange.apiKey');
+  }
 
   async convertRates(to: string, from: string): Promise<number> {
     const exchangeResult = await this.getExchangeResult();
@@ -41,17 +47,25 @@ export class ExchangeService {
     return toExchangeRate / fromExchangeRate;
   }
 
-  private async getExchangeResult(): Promise<ExchangeResult> {
-    const baseUrl = this.configurationService.get<string>('exchange.baseUri');
-    const apiKey = this.configurationService.get<string>('exchange.apiKey');
+  async getFiatCodes(): Promise<string[]> {
+    const fiatCodesResult = await this.getFiatCodesExchangeResult();
 
-    try {
-      const { data } = await this.networkService.get(baseUrl, {
-        params: { access_key: apiKey },
-      });
-      return data;
-    } catch (error) {
-      this.httpErrorHandler.handle(error);
-    }
+    return Object.keys(fiatCodesResult.symbols);
+  }
+
+  private async getExchangeResult(): Promise<ExchangeResult> {
+    const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
+      params: { access_key: this.apiKey },
+    });
+
+    return data;
+  }
+
+  private async getFiatCodesExchangeResult(): Promise<FiatCodesExchangeResult> {
+    const { data } = await this.networkService.get(`${this.baseUrl}/symbols`, {
+      params: { access_key: this.apiKey },
+    });
+
+    return data;
   }
 }
