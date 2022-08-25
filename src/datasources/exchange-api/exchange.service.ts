@@ -12,7 +12,7 @@ import {
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
-export class ExchangeService {
+export class ExchangeApi {
   // TODO can we depend on the base url instead?
   constructor(
     @Inject(IConfigurationService)

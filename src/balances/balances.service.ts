@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Balance as TransactionServiceBalance } from '../datasources/transaction-api/entities/balance.entity';
-import { ExchangeService } from '../datasources/exchange/exchange.service';
+import { ExchangeApi } from '../datasources/exchange-api/exchange.service';
 import { TokenInfo } from '../common/entities/tokeninfo.entity';
 import { TokenType } from '../common/entities/tokentype.entity';
 import { Balances } from './entities/balances.entity';
@@ -16,7 +16,7 @@ export class BalancesService {
   constructor(
     private readonly safeConfigService: ConfigService,
     private readonly safeTransactionManager: TransactionApiManager,
-    private readonly exchangeService: ExchangeService,
+    private readonly exchangeApi: ExchangeApi,
   ) {}
 
   async getBalances(
@@ -29,7 +29,7 @@ export class BalancesService {
     const txServiceBalances: TransactionServiceBalance[] =
       await safeTransactionService.getBalances(safeAddress);
 
-    const usdToFiatRate: number = await this.exchangeService.convertRates(
+    const usdToFiatRate: number = await this.exchangeApi.convertRates(
       fiatCode,
       BalancesService.fromRateCurrencyCode,
     );
