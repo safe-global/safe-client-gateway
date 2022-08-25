@@ -1,7 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import chainFactory from '../services/config-service/entities/__tests__/chain.factory';
+import chainFactory from '../datasources/config-service/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
 import { Backbone, Chain, Page } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';

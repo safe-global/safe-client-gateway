@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Balance as TransactionServiceBalance } from '../services/transaction-service/entities/balance.entity';
-import { ExchangeService } from '../services/exchange/exchange.service';
+import { Balance as TransactionServiceBalance } from '../datasources/transaction-service/entities/balance.entity';
+import { ExchangeService } from '../datasources/exchange/exchange.service';
 import { TokenInfo } from '../common/entities/tokeninfo.entity';
 import { TokenType } from '../common/entities/tokentype.entity';
 import { Balances } from './entities/balances.entity';
-import { ConfigService } from '../services/config-service/config-service.service';
-import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
-import { NativeCurrency } from '../services/config-service/entities/native.currency.entity';
+import { ConfigService } from '../datasources/config-service/config-service.service';
+import { TransactionServiceManager } from '../datasources/transaction-service/transaction-service.manager';
+import { NativeCurrency } from '../datasources/config-service/entities/native.currency.entity';
 import { Balance } from './entities/balance.entity';
 
 @Injectable()

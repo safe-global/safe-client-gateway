@@ -1,6 +1,6 @@
-import { ConfigService } from '../services/config-service/config-service.service';
-import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
-import { TransactionService } from '../services/transaction-service/transaction-service.service';
+import { ConfigService } from '../datasources/config-service/config-service.service';
+import { TransactionServiceManager } from '../datasources/transaction-service/transaction-service.manager';
+import { TransactionService } from '../datasources/transaction-service/transaction-service.service';
 import { ChainsService } from './chains.service';
 import { Backbone } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '../services/config-service/config-service.service';
-import { TransactionServiceManager } from '../services/transaction-service/transaction-service.manager';
+import { ConfigService } from '../datasources/config-service/config-service.service';
+import { TransactionServiceManager } from '../datasources/transaction-service/transaction-service.manager';
 import { Backbone, Chain, Page } from './entities';
 
 @Injectable()
