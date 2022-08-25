@@ -7,14 +7,14 @@ import { mockNetworkService } from '../../common/network/__tests__/test.network.
 const BALANCES: Balance[] = [
   {
     tokenAddress: 'tokenAddress1',
-    balance: BigInt(100),
+    balance: 100,
     token: undefined,
     fiatBalance: 0,
     fiatConversion: 0,
   },
   {
     tokenAddress: 'tokenAddress2',
-    balance: BigInt(100),
+    balance: 100,
     token: undefined,
     fiatBalance: 0,
     fiatConversion: 0,
