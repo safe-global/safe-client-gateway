@@ -3,7 +3,6 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { HttpErrorHandler } from '../errors/http-error-handler';
 import { ExchangeResult } from './entities/exchange-result.entity';
 import {
   INetworkService,
