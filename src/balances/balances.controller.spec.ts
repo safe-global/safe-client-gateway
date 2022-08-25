@@ -320,7 +320,7 @@ describe('Balances Controller (Unit)', () => {
     });
   });
 
-  describe('GET /balances/', () => {
+  describe('GET /balances/supported-fiat-codes', () => {
     it('Success', async () => {
       const fiatCodesResult: FiatCodesExchangeResult = {
         success: true,
