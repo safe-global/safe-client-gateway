@@ -3,7 +3,7 @@ import { HttpErrorHandler } from '../errors/http-error-handler';
 import { Backbone } from '../../chains/entities';
 import { INetworkService } from '../../common/network/network.service.interface';
 
-export class TransactionService {
+export class TransactionApi {
   constructor(
     private readonly baseUrl: string,
     private readonly networkService: INetworkService,
