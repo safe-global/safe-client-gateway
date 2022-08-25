@@ -12,7 +12,7 @@ import { IConfigurationService } from '../../common/config/configuration.service
 import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 
 @Injectable()
-export class ExchangeService {
+export class ExchangeApi {
   // TODO can we depend on the base url instead?
 
   private readonly baseUrl: string;
