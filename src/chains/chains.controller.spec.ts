@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
@@ -56,7 +56,7 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains')
-        .expect(HttpStatus.OK)
+        .expect(200)
         .expect({
           ...chainsResponse,
           results: chainsResponse.results.map((result) => ({
@@ -74,16 +74,13 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure', async () => {
       mockNetworkService.get.mockRejectedValueOnce({
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        status: 500,
       });
 
-      await request(app.getHttpServer())
-        .get('/chains')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
-        .expect({
-          message: 'Service unavailable',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
-        });
+      await request(app.getHttpServer()).get('/chains').expect(503).expect({
+        message: 'Service unavailable',
+        code: 503,
+      });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
@@ -99,7 +96,7 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains/1/about/backbone')
-        .expect(HttpStatus.OK)
+        .expect(200)
         .expect(backboneResponse);
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
@@ -115,15 +112,15 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure getting the chain', async () => {
       mockNetworkService.get.mockRejectedValueOnce({
-        status: HttpStatus.BAD_REQUEST,
+        status: 400,
       });
 
       await request(app.getHttpServer())
         .get('/chains/1/about/backbone')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect(503)
         .expect({
           message: 'Service unavailable',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
+          code: 503,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
@@ -135,15 +132,15 @@ describe('Chains Controller (Unit)', () => {
     it('Failure getting the backbone data', async () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
-        status: HttpStatus.BAD_GATEWAY,
+        status: 502,
       });
 
       await request(app.getHttpServer())
         .get('/chains/1/about/backbone')
-        .expect(HttpStatus.SERVICE_UNAVAILABLE)
+        .expect(503)
         .expect({
           message: 'Service unavailable',
-          code: HttpStatus.SERVICE_UNAVAILABLE,
+          code: 503,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);

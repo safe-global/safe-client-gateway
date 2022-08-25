@@ -15,7 +15,7 @@ export class BalancesService {
 
   constructor(
     private readonly configApi: ConfigApi,
-    private readonly safeTransactionManager: TransactionApiManager,
+    private readonly transactionApiManager: TransactionApiManager,
     private readonly exchangeApi: ExchangeApi,
   ) {}
 
@@ -24,7 +24,7 @@ export class BalancesService {
     safeAddress: string,
     fiatCode: string,
   ): Promise<Balances> {
-    const transactionApi = await this.safeTransactionManager.getTransactionApi(
+    const transactionApi = await this.transactionApiManager.getTransactionApi(
       chainId,
     );
     const txServiceBalances: TransactionApiBalance[] =
@@ -88,5 +88,14 @@ export class BalancesService {
       fiatBalance: fiatBalance,
       fiatConversion: fiatConversion,
     };
+  }
+
+  async getSupportedFiatCodes(): Promise<string[]> {
+    const fiatCodes: string[] = await this.exchangeApi.getFiatCodes();
+    const mainCurrencies: string[] = ['USD', 'EUR'];
+    return [
+      ...mainCurrencies,
+      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
+    ];
   }
 }
