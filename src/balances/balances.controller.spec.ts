@@ -13,6 +13,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
+import { FiatCodesExchangeResult } from '../datasources/exchange-api/entities/fiat-codes-result.entity';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -50,7 +51,7 @@ describe('Balances Controller (Unit)', () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
       const transactionApiBalancesResponse = safeBalanceFactory(1);
-      const exchangeApiResponse = exchangeResultFactory({ USD: 2.0 });
+      const exchangeApiResponse = exchangeResultFactory(true, { USD: 2.0 });
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockImplementation((url) => {
         if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -62,7 +63,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == 'https://test.exchange') {
+        } else if (url == 'https://test.exchange/latest') {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -105,7 +106,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: undefined, excludeSpam: undefined },
       });
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        'https://test.exchange',
+        'https://test.exchange/latest',
       );
     });
 
@@ -125,7 +126,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.reject({ status: 500 });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -134,10 +135,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(503)
+          .expect(500)
           .expect({
-            message: 'Service unavailable',
-            code: 503,
+            message: 'Internal server error',
+            statusCode: 500,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -159,7 +160,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -182,7 +183,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionApiBalancesResponse = safeBalanceFactory(1);
-        const exchangeApiResponse = exchangeResultFactory({ XYZ: 2 }); // Returns different rate than USD
+        const exchangeApiResponse = exchangeResultFactory(true, { XYZ: 2 }); // Returns different rate than USD
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -194,7 +195,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -217,7 +218,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionApiBalancesResponse = safeBalanceFactory(1);
-        const exchangeApiResponse = exchangeResultFactory({ USD: 0 }); // rate is zero
+        const exchangeApiResponse = exchangeResultFactory(true, { USD: 0 }); // rate is zero
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -229,7 +230,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -253,7 +254,7 @@ describe('Balances Controller (Unit)', () => {
         const toRate = 'XYZ';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionApiBalancesResponse = safeBalanceFactory(1);
-        const exchangeApiResponse = exchangeResultFactory({ USD: 2 }); // Returns different rate than XYZ
+        const exchangeApiResponse = exchangeResultFactory(true, { USD: 2 }); // Returns different rate than XYZ
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -265,7 +266,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == 'https://test.exchange/latest') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -289,7 +290,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const exchangeApiResponse = exchangeResultFactory({ USD: 2.0 });
+        const exchangeApiResponse = exchangeResultFactory(true, { USD: 2.0 });
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -309,10 +310,48 @@ describe('Balances Controller (Unit)', () => {
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(503)
-          .expect({ message: 'Service unavailable', code: 503 });
+          .expect({
+            message: 'Service unavailable',
+            code: 503,
+          });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
       });
+    });
+  });
+
+  describe('GET /balances/supported-fiat-codes', () => {
+    it('Success', async () => {
+      const fiatCodesResult: FiatCodesExchangeResult = {
+        success: true,
+        symbols: {
+          AED: 'United Arab Emirates Dirham',
+          USD: 'United States Dollar',
+          AFN: 'Afghan Afghani',
+          EUR: 'Euro',
+          ALL: 'Albanian Lek',
+        },
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
+
+      await request(app.getHttpServer())
+        .get('/balances/supported-fiat-codes')
+        .expect(200)
+        .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
+    });
+
+    it('Failure getting fiat currencies data', async () => {
+      mockNetworkService.get.mockImplementationOnce(() => {
+        throw new Error();
+      });
+
+      await request(app.getHttpServer())
+        .get('/balances/supported-fiat-codes')
+        .expect(500)
+        .expect({
+          message: 'Internal server error',
+          statusCode: 500,
+        });
     });
   });
 });

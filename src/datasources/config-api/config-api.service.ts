@@ -20,7 +20,7 @@ export class ConfigApi {
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {
     this.baseUri =
-      configurationService.getOrThrow<string>('safeConfig.baseUri');
+      this.configurationService.getOrThrow<string>('safeConfig.baseUri');
   }
 
   async getChains(): Promise<Page<Chain>> {
