@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigServiceModule } from '../config-service/config-service.module';
+import { ConfigApiModule } from '../config-api/config-api.module';
 import { HttpErrorHandler } from '../errors/http-error-handler';
 import { TransactionApiManager } from './transaction-api.manager';
 
 @Module({
-  imports: [ConfigServiceModule],
+  imports: [ConfigApiModule],
   providers: [TransactionApiManager, HttpErrorHandler],
   exports: [TransactionApiManager],
 })

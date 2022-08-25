@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import safeBalanceFactory from '../datasources/transaction-api/entities/__tests__/balance.factory';
 import exchangeResultFactory from '../datasources/exchange-api/entities/__tests__/exchange.factory';
-import chainFactory from '../datasources/config-service/entities/__tests__/chain.factory';
+import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
   TestNetworkModule,

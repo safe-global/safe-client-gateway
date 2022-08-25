@@ -1,4 +1,4 @@
-import { ConfigService } from '../datasources/config-service/config-service.service';
+import { ConfigApi } from '../datasources/config-api/config-api.service';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { TransactionApi } from '../datasources/transaction-api/transaction-api.service';
 import { ChainsService } from './chains.service';
@@ -8,19 +8,19 @@ import backboneFactory from './entities/__tests__/backbone.factory';
 const BACKBONE: Backbone = backboneFactory();
 
 describe('ChainsService', () => {
-  const configService = {} as unknown as ConfigService;
+  const configApi = {} as unknown as ConfigApi;
 
-  const transactionService = {
+  const transactionApi = {
     getBackbone: jest.fn().mockResolvedValue(BACKBONE),
   } as unknown as TransactionApi;
 
-  const transactionManager = {
-    getTransactionService: jest.fn().mockResolvedValue(transactionService),
+  const transactionApiManager = {
+    getTransactionService: jest.fn().mockResolvedValue(transactionApi),
   } as unknown as TransactionApiManager;
 
   const service: ChainsService = new ChainsService(
-    configService,
-    transactionManager,
+    configApi,
+    transactionApiManager,
   );
 
   it('should retrieve the backbone metadata from the proper TransactionService', async () => {
@@ -29,8 +29,8 @@ describe('ChainsService', () => {
     const backbone = await service.getBackbone(chainId);
 
     expect(backbone).toBe(BACKBONE);
-    expect(transactionService.getBackbone).toBeCalledTimes(1);
-    expect(transactionManager.getTransactionService).toHaveBeenCalledWith(
+    expect(transactionApi.getBackbone).toBeCalledTimes(1);
+    expect(transactionApiManager.getTransactionService).toHaveBeenCalledWith(
       chainId,
     );
   });

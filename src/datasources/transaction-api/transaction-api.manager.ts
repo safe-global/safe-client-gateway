@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpErrorHandler } from '../errors/http-error-handler';
-import { Chain } from '../config-service/entities/chain.entity';
-import { ConfigService } from '../config-service/config-service.service';
+import { Chain } from '../config-api/entities/chain.entity';
+import { ConfigApi } from '../config-api/config-api.service';
 import { TransactionApi } from './transaction-api.service';
 import {
   INetworkService,
@@ -14,7 +14,7 @@ export class TransactionApiManager {
   private transactionApiMap: Record<string, TransactionApi> = {};
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly configApi: ConfigApi,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
@@ -27,7 +27,7 @@ export class TransactionApiManager {
     this.logger.log(
       `Transaction Service for chain ${chainId} not available. Fetching from the Config Service`,
     );
-    const chain: Chain = await this.configService.getChain(chainId);
+    const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(
       chain.transactionService,
       this.networkService,

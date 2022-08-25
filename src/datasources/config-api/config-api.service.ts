@@ -10,7 +10,7 @@ import {
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 
 @Injectable()
-export class ConfigService {
+export class ConfigApi {
   private readonly baseUri: string;
 
   constructor(
