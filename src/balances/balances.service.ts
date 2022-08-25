@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Balance as TransactionServiceBalance } from '../datasources/transaction-api/entities/balance.entity';
+import { Balance as TransactionApiBalance } from '../datasources/transaction-api/entities/balance.entity';
 import { ExchangeApi } from '../datasources/exchange-api/exchange.service';
 import { TokenInfo } from '../common/entities/tokeninfo.entity';
 import { TokenType } from '../common/entities/tokentype.entity';
@@ -24,10 +24,11 @@ export class BalancesService {
     safeAddress: string,
     fiatCode: string,
   ): Promise<Balances> {
-    const safeTransactionService =
-      await this.safeTransactionManager.getTransactionService(chainId);
-    const txServiceBalances: TransactionServiceBalance[] =
-      await safeTransactionService.getBalances(safeAddress);
+    const transactionApi = await this.safeTransactionManager.getTransactionApi(
+      chainId,
+    );
+    const txServiceBalances: TransactionApiBalance[] =
+      await transactionApi.getBalances(safeAddress);
 
     const usdToFiatRate: number = await this.exchangeApi.convertRates(
       fiatCode,
@@ -59,7 +60,7 @@ export class BalancesService {
   }
 
   private mapBalance(
-    txBalance: TransactionServiceBalance,
+    txBalance: TransactionApiBalance,
     usdToFiatRate: number,
     nativeCurrency: NativeCurrency,
   ): Balance {

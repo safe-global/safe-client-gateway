@@ -19,13 +19,13 @@ export class TransactionApiManager {
     private readonly httpErrorHandler: HttpErrorHandler,
   ) {}
 
-  async getTransactionService(chainId: string): Promise<TransactionApi> {
-    this.logger.log(`Getting TransactionService instance for chain ${chainId}`);
-    const transactionService = this.transactionApiMap[chainId];
-    if (transactionService !== undefined) return transactionService;
+  async getTransactionApi(chainId: string): Promise<TransactionApi> {
+    this.logger.log(`Getting TransactionApi instance for chain ${chainId}`);
+    const transactionApi = this.transactionApiMap[chainId];
+    if (transactionApi !== undefined) return transactionApi;
 
     this.logger.log(
-      `Transaction Service for chain ${chainId} not available. Fetching from the Config Service`,
+      `Transaction API for chain ${chainId} not available. Fetching from the Config Service`,
     );
     const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(

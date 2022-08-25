@@ -7,7 +7,7 @@ import { Backbone, Chain, Page } from './entities';
 export class ChainsService {
   constructor(
     private readonly configApi: ConfigApi,
-    private readonly transactionServiceManager: TransactionApiManager,
+    private readonly transactionApiManager: TransactionApiManager,
   ) {}
 
   async getChains(): Promise<Page<Chain>> {
@@ -29,8 +29,9 @@ export class ChainsService {
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    const transactionService =
-      await this.transactionServiceManager.getTransactionService(chainId);
-    return transactionService.getBackbone();
+    const transactionApi = await this.transactionApiManager.getTransactionApi(
+      chainId,
+    );
+    return transactionApi.getBackbone();
   }
 }

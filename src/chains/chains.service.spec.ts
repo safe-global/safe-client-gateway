@@ -15,7 +15,7 @@ describe('ChainsService', () => {
   } as unknown as TransactionApi;
 
   const transactionApiManager = {
-    getTransactionService: jest.fn().mockResolvedValue(transactionApi),
+    getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
   } as unknown as TransactionApiManager;
 
   const service: ChainsService = new ChainsService(
@@ -23,14 +23,14 @@ describe('ChainsService', () => {
     transactionApiManager,
   );
 
-  it('should retrieve the backbone metadata from the proper TransactionService', async () => {
+  it('should retrieve the backbone metadata from the proper TransactionApi', async () => {
     const chainId = '1';
 
     const backbone = await service.getBackbone(chainId);
 
     expect(backbone).toBe(BACKBONE);
     expect(transactionApi.getBackbone).toBeCalledTimes(1);
-    expect(transactionApiManager.getTransactionService).toHaveBeenCalledWith(
+    expect(transactionApiManager.getTransactionApi).toHaveBeenCalledWith(
       chainId,
     );
   });
