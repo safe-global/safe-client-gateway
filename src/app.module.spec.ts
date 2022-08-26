@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from './app.module';
-import { fakeConfigurationService, TestConfigurationModule } from './common/config/__tests__/test.configuration.module';
+import {
+  fakeConfigurationService,
+  TestConfigurationModule,
+} from './common/config/__tests__/test.configuration.module';
 
 describe('AppModule', () => {
   beforeAll(async () => {
