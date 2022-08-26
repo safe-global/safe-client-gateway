@@ -2,7 +2,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  Logger,
 } from '@nestjs/common';
 import { ExchangeResult } from './entities/exchange-result.entity';
 import {
@@ -16,25 +15,16 @@ import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 export class ExchangeApi {
   // TODO can we depend on the base url instead?
 
-  private readonly baseUrl: string | undefined;
-  private readonly apiKey: string | undefined;
-  private readonly logger = new Logger(ExchangeApi.name);
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
   ) {
-    this.baseUrl = this.configurationService.get<string>('exchange.baseUri');
-    this.apiKey = this.configurationService.get<string>('exchange.apiKey');
-
-    if (!this.baseUrl) {
-      this.logger.warn('exchange.baseUri configuration parameter is not set');
-    }
-
-    if (!this.apiKey) {
-      this.logger.warn('exchange.apiKey configuration parameter is not set');
-    }
+    this.baseUrl = this.configurationService.getOrThrow<string>('exchange.baseUri');
+    this.apiKey = this.configurationService.getOrThrow<string>('exchange.apiKey');
   }
 
   async convertRates(to: string, from: string): Promise<number> {

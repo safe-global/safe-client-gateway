@@ -17,7 +17,7 @@ export class HttpErrorFactory {
       const errData = axiosError?.response?.data as HttpExceptionPayload;
       return <HttpExceptionPayload>{
         message: errData.message,
-        code: axiosError?.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        code: axiosError.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
         arguments: errData.arguments,
       };
     } else {
