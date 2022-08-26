@@ -1,8 +1,7 @@
 export default () => ({
   exchange: {
     baseUri:
-      process.env.EXCHANGE_API_BASE_URI ||
-      'http://api.exchangeratesapi.io/latest',
+      process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
     apiKey: process.env.EXCHANGE_API_KEY,
   },
   safeConfig: {
