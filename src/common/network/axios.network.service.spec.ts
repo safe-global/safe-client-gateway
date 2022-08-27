@@ -44,14 +44,13 @@ describe('AxiosNetworkService', () => {
     expect(axiosRefMock.get).toBeCalledWith(url, request);
   });
 
-  // TODO Property 'mockResolvedValueOnce' does not exist on type '<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<D>) => Promise<R>'
-  // it(`get forwards error`, async () => {
-  //   const url = faker.internet.url();
-  //   axiosRefMock.get.mockResolvedValueOnce();
-  //
-  //   await target.get(url);
-  //
-  //   expect(axiosRefMock.get).toBeCalledTimes(1);
-  //   expect(axiosRefMock.get).toBeCalledWith(url);
-  // });
+  it(`get forwards error`, async () => {
+    const url = faker.internet.url();
+    (axiosRefMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
+
+    await expect(target.get(url)).rejects.toThrow('Axios error');
+
+    expect(axiosRefMock.get).toBeCalledTimes(1);
+    expect(axiosRefMock.get).toBeCalledWith(url, undefined);
+  });
 });
