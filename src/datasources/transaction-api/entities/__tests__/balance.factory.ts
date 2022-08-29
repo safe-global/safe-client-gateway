@@ -10,14 +10,14 @@ export default function factory(size?: number): Balance[] {
 export function balanceFactory(
   tokenAddress?: string,
   token?: BalanceToken,
-  balance?: bigint,
+  balance?: number,
   fiatBalance?: number,
   fiatConversion?: number,
 ): Balance {
   return <Balance>{
     tokenAddress: tokenAddress || faker.finance.ethereumAddress(),
     token: token || balanceTokenFactory(),
-    balance: balance || faker.datatype.bigInt(),
+    balance: balance || faker.datatype.number(),
     fiatBalance: fiatBalance || faker.datatype.number(),
     fiatConversion: fiatConversion || faker.datatype.number(),
   };

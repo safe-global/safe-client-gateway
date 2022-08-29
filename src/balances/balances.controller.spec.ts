@@ -20,6 +20,7 @@ describe('Balances Controller (Unit)', () => {
 
   beforeAll(async () => {
     fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
+    fakeConfigurationService.set('exchange.apiKey', 'testKey');
     fakeConfigurationService.set(
       'safeConfig.baseUri',
       'https://test.safe.config',
@@ -81,10 +82,10 @@ describe('Balances Controller (Unit)', () => {
               tokenInfo: {
                 tokenType: 'ERC20',
                 address: expectedBalance.tokenAddress,
-                decimals: expectedBalance.token.decimals,
-                symbol: expectedBalance.token.symbol,
-                name: expectedBalance.token.name,
-                logoUri: expectedBalance.token.logo_uri,
+                decimals: expectedBalance.token?.decimals,
+                symbol: expectedBalance.token?.symbol,
+                name: expectedBalance.token?.name,
+                logoUri: expectedBalance?.token?.logo_uri,
               },
               balance: expectedBalance.balance.toString(),
               fiatBalance: expectedBalance.fiatBalance,
