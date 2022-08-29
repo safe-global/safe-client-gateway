@@ -2,7 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from './app.module';
 
 describe('AppModule', () => {
-  it(`AppModule is successfully created`, async () => {
+  // Skipping this test as it tests with the real common modules
+  // meaning that networking and local environment should be provided
+  it.skip(`AppModule is successfully created`, async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
