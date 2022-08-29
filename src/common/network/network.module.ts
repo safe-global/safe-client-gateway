@@ -1,7 +1,15 @@
 import { Global, Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
 import { AxiosNetworkService } from './axios.network.service';
 import { NetworkService } from './network.service.interface';
+import axios, { Axios } from 'axios';
+
+/**
+ * Use this factory to add any default parameter to the
+ * {@link Axios} instance
+ */
+function axiosFactory(): Axios {
+  return axios.create();
+}
 
 /**
  * A {@link Global} Module which provides HTTP support via {@link NetworkService}
@@ -12,8 +20,10 @@ import { NetworkService } from './network.service.interface';
  */
 @Global()
 @Module({
-  imports: [HttpModule],
-  providers: [{ provide: NetworkService, useClass: AxiosNetworkService }],
+  providers: [
+    { provide: 'AxiosClient', useFactory: axiosFactory },
+    { provide: NetworkService, useClass: AxiosNetworkService },
+  ],
   exports: [NetworkService],
 })
 export class NetworkModule {}
