@@ -14,7 +14,10 @@ import {
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
 import { FiatCodesExchangeResult } from '../datasources/exchange-api/entities/fiat-codes-result.entity';
-import { TestCacheModule } from '../common/cache/__tests__/test.cache.module';
+import {
+  fakeCacheService,
+  TestCacheModule,
+} from '../common/cache/__tests__/test.cache.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -30,6 +33,7 @@ describe('Balances Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [

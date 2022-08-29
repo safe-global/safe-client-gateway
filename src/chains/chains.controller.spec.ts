@@ -13,7 +13,10 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
-import { TestCacheModule } from '../common/cache/__tests__/test.cache.module';
+import {
+  fakeCacheService,
+  TestCacheModule,
+} from '../common/cache/__tests__/test.cache.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -37,6 +40,8 @@ describe('Chains Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    fakeCacheService.clear();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         // feature
