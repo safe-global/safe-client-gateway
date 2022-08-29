@@ -1,26 +1,21 @@
 import { AxiosNetworkService } from './axios.network.service';
-import { AxiosInstance } from 'axios';
-import { HttpService } from '@nestjs/axios';
+import { Axios } from 'axios';
 import { faker } from '@faker-js/faker';
 import { NetworkRequest } from './entities/network.request.entity';
 import { jest } from '@jest/globals';
 
-const axiosRef = {
+const axios = {
   get: jest.fn(),
-} as unknown as AxiosInstance;
+} as unknown as Axios;
 
-const httpService = {
-  axiosRef: axiosRef,
-} as unknown as HttpService;
-const httpServiceMock = jest.mocked<HttpService>(httpService);
-const axiosRefMock = jest.mocked<AxiosInstance>(httpServiceMock.axiosRef);
+const axiosMock = jest.mocked<Axios>(axios);
 
 describe('AxiosNetworkService', () => {
   let target: AxiosNetworkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    target = new AxiosNetworkService(httpServiceMock);
+    target = new AxiosNetworkService(axiosMock);
   });
 
   it(`get calls axios get`, async () => {
@@ -28,8 +23,8 @@ describe('AxiosNetworkService', () => {
 
     await target.get(url);
 
-    expect(axiosRefMock.get).toBeCalledTimes(1);
-    expect(axiosRefMock.get).toBeCalledWith(url, undefined);
+    expect(axiosMock.get).toBeCalledTimes(1);
+    expect(axiosMock.get).toBeCalledWith(url, undefined);
   });
 
   it(`get calls axios get with request`, async () => {
@@ -40,17 +35,17 @@ describe('AxiosNetworkService', () => {
 
     await target.get(url, request);
 
-    expect(axiosRefMock.get).toBeCalledTimes(1);
-    expect(axiosRefMock.get).toBeCalledWith(url, request);
+    expect(axiosMock.get).toBeCalledTimes(1);
+    expect(axiosMock.get).toBeCalledWith(url, request);
   });
 
   it(`get forwards error`, async () => {
     const url = faker.internet.url();
-    (axiosRefMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
+    (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
 
     await expect(target.get(url)).rejects.toThrow('Axios error');
 
-    expect(axiosRefMock.get).toBeCalledTimes(1);
-    expect(axiosRefMock.get).toBeCalledWith(url, undefined);
+    expect(axiosMock.get).toBeCalledTimes(1);
+    expect(axiosMock.get).toBeCalledWith(url, undefined);
   });
 });

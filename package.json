@@ -24,7 +24,6 @@
     "postinstall": "husky install"
   },
   "dependencies": {
-    "@nestjs/axios": "^0.1.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.0",
@@ -73,7 +72,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "coveragePathIgnorePatterns": ["index.ts"],
+    "coveragePathIgnorePatterns": [
+      "index.ts"
+    ],
     "testEnvironment": "node"
   },
   "main": "main.ts",

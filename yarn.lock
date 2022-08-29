@@ -849,19 +849,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/axios@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@nestjs/axios@npm:0.1.0"
-  dependencies:
-    axios: 0.27.2
-  peerDependencies:
-    "@nestjs/common": ^7.0.0 || ^8.0.0 || ^9.0.0
-    reflect-metadata: ^0.1.12
-    rxjs: ^6.0.0 || ^7.0.0
-  checksum: 72929b25caacb85517bae962b13d865a31aa3984aa9e55305e0a2306e54338fe51a7eb38ca38cab0fe8b4116fb35219bd02c8b0c4cac70e7b5aeb84d03a1db3f
-  languageName: node
-  linkType: hard
-
 "@nestjs/cli@npm:^9.0.0":
   version: 9.0.0
   resolution: "@nestjs/cli@npm:9.0.0"
@@ -1959,7 +1946,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:0.27.2, axios@npm:^0.27.2":
+"axios@npm:^0.27.2":
   version: 0.27.2
   resolution: "axios@npm:0.27.2"
   dependencies:
@@ -5790,7 +5777,6 @@ __metadata:
   resolution: "safe-client-gateway@workspace:."
   dependencies:
     "@faker-js/faker": ^7.4.0
-    "@nestjs/axios": ^0.1.0
     "@nestjs/cli": ^9.0.0
     "@nestjs/common": ^9.0.0
     "@nestjs/config": ^2.2.0
