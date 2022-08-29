@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { HttpErrorHandler } from '../errors/http-error-handler';
+import { HttpErrorFactory } from '../errors/http-error-factory';
 import { ExchangeApi } from './exchange-api.service';
 
 @Module({
-  providers: [HttpErrorHandler, ExchangeApi],
+  providers: [HttpErrorFactory, ExchangeApi],
   exports: [ExchangeApi],
 })
 export class ExchangeApiModule {}

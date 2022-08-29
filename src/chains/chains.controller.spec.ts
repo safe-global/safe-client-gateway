@@ -19,8 +19,8 @@ describe('Chains Controller (Unit)', () => {
 
   const chainsResponse: Page<Chain> = {
     count: 2,
-    next: null,
-    previous: null,
+    next: undefined,
+    previous: undefined,
     results: [chainFactory(), chainFactory()],
   };
 
@@ -58,7 +58,7 @@ describe('Chains Controller (Unit)', () => {
         .get('/chains')
         .expect(200)
         .expect({
-          ...chainsResponse,
+          count: chainsResponse.count,
           results: chainsResponse.results.map((result) => ({
             chainId: result.chainId,
             chainName: result.chainName,

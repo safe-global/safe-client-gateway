@@ -23,8 +23,10 @@ export class ExchangeApi {
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
   ) {
-    this.baseUrl = this.configurationService.get<string>('exchange.baseUri');
-    this.apiKey = this.configurationService.get<string>('exchange.apiKey');
+    this.baseUrl =
+      this.configurationService.getOrThrow<string>('exchange.baseUri');
+    this.apiKey =
+      this.configurationService.getOrThrow<string>('exchange.apiKey');
   }
 
   async convertRates(to: string, from: string): Promise<number> {

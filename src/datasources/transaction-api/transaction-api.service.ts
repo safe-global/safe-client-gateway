@@ -1,5 +1,5 @@
 import { Balance } from './entities/balance.entity';
-import { HttpErrorHandler } from '../errors/http-error-handler';
+import { HttpErrorFactory } from '../errors/http-error-factory';
 import { Backbone } from '../../chains/entities';
 import { INetworkService } from '../../common/network/network.service.interface';
 
@@ -7,7 +7,7 @@ export class TransactionApi {
   constructor(
     private readonly baseUrl: string,
     private readonly networkService: INetworkService,
-    private readonly httpErrorHandler: HttpErrorHandler,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
 
   async getBalances(
@@ -22,7 +22,7 @@ export class TransactionApi {
       });
       return data;
     } catch (err) {
-      this.httpErrorHandler.handle(err);
+      throw this.httpErrorFactory.from(err);
     }
   }
 
@@ -32,7 +32,7 @@ export class TransactionApi {
       const { data } = await this.networkService.get(url);
       return data;
     } catch (err) {
-      this.httpErrorHandler.handle(err);
+      throw this.httpErrorFactory.from(err);
     }
   }
 }

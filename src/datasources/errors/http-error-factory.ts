@@ -3,21 +3,21 @@ import axios, { AxiosError } from 'axios';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
 
 /**
- * Handles an http error response coming from another service.
+ * Creates an HttpError from an http error response coming from another service.
  * If an error response it's received, it gets parsed, and the status code is kept.
  * Otherwise, a default error data with 503 http status code is returned.
  */
 @Injectable()
-export class HttpErrorHandler {
-  private readonly logger = new Logger(HttpErrorHandler.name);
+export class HttpErrorFactory {
+  private readonly logger = new Logger(HttpErrorFactory.name);
 
   private mapError(err: AxiosError | Error): HttpExceptionPayload {
     if (axios.isAxiosError(err) && err.response) {
       const axiosError = err as AxiosError;
-      const errData = axiosError.response.data as HttpExceptionPayload;
+      const errData = axiosError?.response?.data as HttpExceptionPayload;
       return <HttpExceptionPayload>{
         message: errData.message,
-        code: axiosError.response.status,
+        code: axiosError.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
         arguments: errData.arguments,
       };
     } else {
@@ -28,9 +28,9 @@ export class HttpErrorHandler {
     }
   }
 
-  handle(err: AxiosError | Error) {
+  from(err: AxiosError | Error) {
     const errPayload = this.mapError(err);
     this.logger.error(errPayload);
-    throw new HttpException(errPayload, errPayload.code);
+    return new HttpException(errPayload, errPayload.code);
   }
 }
