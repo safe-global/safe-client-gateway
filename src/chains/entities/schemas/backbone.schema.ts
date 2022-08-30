@@ -7,7 +7,7 @@ const backboneSchema: JSONSchemaType<Backbone> = {
   type: 'object',
   properties: {
     name: { type: 'string' },
-    version: { type: 'string'},
+    version: { type: 'string' },
     api_version: { type: 'string' },
     secure: { type: 'boolean' },
     host: { type: 'string' },

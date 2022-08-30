@@ -17,9 +17,9 @@ export class ValidationErrorFactory {
       message: 'Validation failed',
       code: this.VALIDATION_ERROR_CODE,
       arguments: [],
-    }
+    };
 
-    const detail = errors.map(err => JSON.stringify(err));
+    const detail = errors.map((err) => JSON.stringify(err));
     this.logger.error({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }
