@@ -1,12 +1,8 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { Injectable, Logger } from '@nestjs/common';
 import { Chain } from '../config-api/entities/chain.entity';
 import { ConfigApi } from '../config-api/config-api.service';
 import { TransactionApi } from './transaction-api.service';
-import {
-  INetworkService,
-  NetworkService,
-} from '../../common/network/network.service.interface';
+import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 
 @Injectable()
 export class TransactionApiManager {
@@ -15,8 +11,7 @@ export class TransactionApiManager {
 
   constructor(
     private readonly configApi: ConfigApi,
-    @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly httpErrorFactory: HttpErrorFactory,
+    private readonly dataSource: CacheFirstDataSource,
   ) {}
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
@@ -29,9 +24,9 @@ export class TransactionApiManager {
     );
     const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(
+      chainId,
       chain.transactionService,
-      this.networkService,
-      this.httpErrorFactory,
+      this.dataSource,
     );
     return this.transactionApiMap[chainId];
   }
