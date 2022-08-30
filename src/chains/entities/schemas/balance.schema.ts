@@ -26,7 +26,7 @@ const tokenInfoSchema: JSONSchemaType<TokenInfo> = {
   required: [],
 };
 
-ajv.addSchema(tokenInfoSchema, 'tokenInfo')
+ajv.addSchema(tokenInfoSchema, 'tokenInfo');
 
 const balanceSchema: JSONSchemaType<Balance> = {
   type: 'object',

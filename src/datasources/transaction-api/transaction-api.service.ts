@@ -32,7 +32,7 @@ export class TransactionApi {
       },
     });
 
-    if (!balances.every(balance => isValidBalance(balance))) {
+    if (!balances.every((balance) => isValidBalance(balance))) {
       // TODO: probably we want to invalidate cache at this point
       const errors = isValidBalance.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
