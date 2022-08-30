@@ -5,6 +5,7 @@ import isValidBackbone from '../../chains/entities/schemas/backbone.schema';
 import { Logger } from '@nestjs/common';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError } from 'ajv';
+import isValidBalance from '../../chains/entities/schemas/balance.schema';
 
 export class TransactionApi {
   private readonly logger = new Logger(TransactionApi.name);
@@ -24,12 +25,20 @@ export class TransactionApi {
     // TODO key is not final
     const cacheKey = `balances-${this.chainId}-${safeAddress}-${trusted}-${excludeSpam}`;
     const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
-    return await this.dataSource.get<Balance[]>(cacheKey, url, {
+    const balances: [] = await this.dataSource.get(cacheKey, url, {
       params: {
         trusted: trusted,
         excludeSpam: excludeSpam,
       },
     });
+
+    if (!balances.every(balance => isValidBalance(balance))) {
+      // TODO: probably we want to invalidate cache at this point
+      const errors = isValidBalance.errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
+
+    return balances;
   }
 
   async getBackbone(): Promise<Backbone> {
@@ -39,6 +48,7 @@ export class TransactionApi {
     const backbone = await this.dataSource.get(cacheKey, url);
 
     if (!isValidBackbone(backbone)) {
+      // TODO: probably we want to invalidate cache at this point
       const errors = isValidBackbone.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }

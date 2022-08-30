@@ -3,6 +3,7 @@ import { Chain } from '../config-api/entities/chain.entity';
 import { ConfigApi } from '../config-api/config-api.service';
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
 
 @Injectable()
 export class TransactionApiManager {
@@ -12,6 +13,7 @@ export class TransactionApiManager {
   constructor(
     private readonly configApi: ConfigApi,
     private readonly dataSource: CacheFirstDataSource,
+    private readonly validationErrorFactory: ValidationErrorFactory,
   ) {}
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
@@ -27,6 +29,7 @@ export class TransactionApiManager {
       chainId,
       chain.transactionService,
       this.dataSource,
+      this.validationErrorFactory,
     );
     return this.transactionApiMap[chainId];
   }
