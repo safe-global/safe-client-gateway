@@ -5,5 +5,5 @@ export interface Backbone {
   secure: boolean;
   host: string;
   headers: string[];
-  settings: Record<string, string>;
+  settings: object;
 }
