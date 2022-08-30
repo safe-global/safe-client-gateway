@@ -14,6 +14,10 @@ import {
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
 import { FiatCodesExchangeResult } from '../datasources/exchange-api/entities/fiat-codes-result.entity';
+import {
+  fakeCacheService,
+  TestCacheModule,
+} from '../common/cache/__tests__/test.cache.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -29,12 +33,14 @@ describe('Balances Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         // feature
         BalancesModule,
         // common
+        TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
       ],
@@ -94,9 +100,8 @@ describe('Balances Controller (Unit)', () => {
           ],
         });
 
-      // 4 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API, 4. Chain data (Native Currency)
-      // Once caching is in place we don't need to retrieve the Chain Data again
-      expect(mockNetworkService.get.mock.calls.length).toBe(4);
+      // 3 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API
+      expect(mockNetworkService.get.mock.calls.length).toBe(3);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
         'https://test.safe.config/api/v1/chains/1',
       );

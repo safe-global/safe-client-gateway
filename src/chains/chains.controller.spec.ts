@@ -13,6 +13,10 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
+import {
+  fakeCacheService,
+  TestCacheModule,
+} from '../common/cache/__tests__/test.cache.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -36,11 +40,14 @@ describe('Chains Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    fakeCacheService.clear();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         // feature
         ChainsModule,
         // common
+        TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
       ],
@@ -68,7 +75,8 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        expect.stringContaining('/api/v1/chains'),
+        'https://test.safe.config/api/v1/chains',
+        undefined,
       );
     });
 
@@ -84,7 +92,8 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        expect.stringContaining('/api/v1/chains'),
+        'https://test.safe.config/api/v1/chains',
+        undefined,
       );
     });
   });
@@ -100,14 +109,13 @@ describe('Chains Controller (Unit)', () => {
         .expect(backboneResponse);
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
-        1,
-        expect.stringContaining('/api/v1/chains/1'),
+      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
+        'https://test.safe.config/api/v1/chains/1',
       );
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
-        2,
-        expect.stringContaining('/api/v1/about'),
+      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/about`,
       );
+      expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
     });
 
     it('Failure getting the chain', async () => {
@@ -125,7 +133,8 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        expect.stringContaining('/api/v1/chains/1'),
+        'https://test.safe.config/api/v1/chains/1',
+        undefined,
       );
     });
 
@@ -144,14 +153,13 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
-        1,
-        expect.stringContaining('/api/v1/chains/1'),
+      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
+        'https://test.safe.config/api/v1/chains/1',
       );
-      expect(mockNetworkService.get).toHaveBeenNthCalledWith(
-        2,
-        expect.stringContaining('/api/v1/about'),
+      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/about`,
       );
+      expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
     });
   });
 });
