@@ -7,17 +7,17 @@ const backboneSchema: JSONSchemaType<Backbone> = {
   type: 'object',
   properties: {
     name: { type: 'string' },
-    version: { type: 'string' },
+    version: { type: 'string'},
     api_version: { type: 'string' },
     secure: { type: 'boolean' },
     host: { type: 'string' },
     headers: { type: 'array', items: { type: 'string' } },
     settings: { type: 'object' },
   },
-  required: ['name'],
+  required: [],
   additionalProperties: false,
 };
 
-const backboneValidator = ajv.compile(backboneSchema);
+const isValidBackbone = ajv.compile(backboneSchema);
 
-export default backboneValidator;
+export default isValidBackbone;

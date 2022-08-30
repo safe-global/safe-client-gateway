@@ -1,12 +1,19 @@
 import { Balance } from './entities/balance.entity';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import isValidBackbone from '../../chains/entities/schemas/backbone.schema';
+import { Logger } from '@nestjs/common';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { DefinedError } from 'ajv';
 
 export class TransactionApi {
+  private readonly logger = new Logger(TransactionApi.name);
+
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
     private readonly dataSource: CacheFirstDataSource,
+    private readonly validationErrorFactory: ValidationErrorFactory,
   ) {}
 
   async getBalances(
@@ -29,6 +36,13 @@ export class TransactionApi {
     // TODO key is not final
     const cacheKey = `backbone-${this.chainId}`;
     const url = `${this.baseUrl}/api/v1/about`;
-    return await this.dataSource.get<Backbone>(cacheKey, url);
+    const backbone = await this.dataSource.get(cacheKey, url);
+
+    if (!isValidBackbone(backbone)) {
+      const errors = isValidBackbone.errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
+
+    return backbone;
   }
 }

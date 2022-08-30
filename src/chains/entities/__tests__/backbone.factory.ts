@@ -16,7 +16,7 @@ export default function (
     api_version: api_version || faker.system.semver(),
     secure: secure || faker.datatype.boolean(),
     host: host || faker.internet.url(),
-    headers: headers || faker.datatype.array(),
+    headers: headers || [...Array(3).keys()].map(() => faker.random.word()),
     settings: settings || JSON.parse(faker.datatype.json()),
   };
 }

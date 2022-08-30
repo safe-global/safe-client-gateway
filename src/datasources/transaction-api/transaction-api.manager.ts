@@ -6,7 +6,7 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 
 @Injectable()
 export class TransactionApiManager {
-  private readonly logger = new Logger(TransactionApi.name);
+  private readonly logger = new Logger(TransactionApiManager.name);
   private transactionApiMap: Record<string, TransactionApi> = {};
 
   constructor(
