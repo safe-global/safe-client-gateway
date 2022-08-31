@@ -10,7 +10,7 @@ export default function (
   nativeCurrency?: NativeCurrency,
 ): Chain {
   return <Chain>{
-    chainId: chainId || faker.datatype.number(),
+    chainId: chainId || faker.datatype.number().toString(),
     chainName: chainId || faker.company.name(),
     transactionService: transactionService || faker.internet.url(),
     vpcTransactionService: vpcTransactionService || faker.internet.url(),
