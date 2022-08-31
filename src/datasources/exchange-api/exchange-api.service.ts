@@ -10,6 +10,10 @@ import {
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
+import isValidExchangeResult from './entities/schemas/exchange-result.schema';
+import { DefinedError } from 'ajv';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import isValidFiatCodesExchangeResult from './entities/schemas/fiat-codes-exchange-result.schema';
 
 @Injectable()
 export class ExchangeApi {
@@ -22,6 +26,7 @@ export class ExchangeApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
+    private readonly validationErrorFactory: ValidationErrorFactory,
   ) {
     this.baseUrl =
       this.configurationService.getOrThrow<string>('exchange.baseUri');
@@ -60,6 +65,11 @@ export class ExchangeApi {
       params: { access_key: this.apiKey },
     });
 
+    if (!isValidExchangeResult(data)) {
+      const errors = isValidExchangeResult.errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
+
     return data;
   }
 
@@ -67,6 +77,11 @@ export class ExchangeApi {
     const { data } = await this.networkService.get(`${this.baseUrl}/symbols`, {
       params: { access_key: this.apiKey },
     });
+
+    if (!isValidFiatCodesExchangeResult(data)) {
+      const errors = isValidFiatCodesExchangeResult.errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
 
     return data;
   }
