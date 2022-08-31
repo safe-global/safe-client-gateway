@@ -1,5 +1,5 @@
 import Ajv, { JSONSchemaType } from 'ajv';
-import { Balance } from '../../../balances/entities/balance.entity';
+import { Balance } from '../balance.entity';
 import { TokenInfo } from '../../../common/entities/token-info.entity';
 import { TokenType } from '../../../common/entities/token-type.entity';
 

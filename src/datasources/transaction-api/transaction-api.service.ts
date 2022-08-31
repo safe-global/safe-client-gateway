@@ -4,7 +4,7 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import isValidBackbone from '../../chains/entities/schemas/backbone.schema';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError } from 'ajv';
-import isValidBalance from '../../chains/entities/schemas/balance.schema';
+import isValidBalance from '../../balances/entities/schemas/balance.schema';
 
 export class TransactionApi {
   constructor(
