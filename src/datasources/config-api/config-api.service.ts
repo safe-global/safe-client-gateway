@@ -20,13 +20,17 @@ export class ConfigApi {
 
   async getChains(): Promise<Page<Chain>> {
     const key = 'chains'; // TODO key is not final
-    const url = this.baseUri + '/api/v1/chains';
-    return await this.dataSource.get(key, url);
+    const url = `${this.baseUri}/api/v1/chains`;
+    const page: Page<Chain> = await this.dataSource.get(key, url);
+
+    return page;
   }
 
   async getChain(chainId: string): Promise<Chain> {
     const key = `chains-${chainId}`; // TODO key is not final
-    const url = this.baseUri + `/api/v1/chains/${chainId}`;
-    return await this.dataSource.get(key, url);
+    const url = `${this.baseUri}/api/v1/chains/${chainId}`;
+    const chain: Chain = await this.dataSource.get(key, url);
+
+    return chain;
   }
 }

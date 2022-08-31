@@ -30,38 +30,65 @@ describe('TransactionApi', () => {
     mockValidationErrorFactory,
   );
 
-  it('should return the balances retrieved', async () => {
-    mockDataSource.get.mockResolvedValue(BALANCES);
-    const balances = await service.getBalances('test', true, true);
-    expect(balances).toBe(BALANCES);
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('should return the backbone retrieved', async () => {
-    mockDataSource.get.mockResolvedValueOnce(BACKBONE);
-    const backbone = await service.getBackbone();
-    expect(backbone).toBe(BACKBONE);
-  });
-
-  it('should forward error', async () => {
-    mockDataSource.get = jest
-      .fn()
-      .mockRejectedValueOnce(new Error('Some error'));
-
-    await expect(service.getBalances('test', true, true)).rejects.toThrow(
-      'Some error',
-    );
-
-    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-  });
-
-  it('should throw a validation error when a unexpected payload arrives', async () => {
-    mockDataSource.get.mockResolvedValueOnce({
-      ...BACKBONE,
-      additionalProp: 'unexpectedProp',
+  describe('Balances', () => {
+    it('should return the balances retrieved', async () => {
+      mockDataSource.get.mockResolvedValue(BALANCES);
+      const balances = await service.getBalances('test', true, true);
+      expect(balances).toBe(BALANCES);
     });
 
-    await expect(service.getBackbone()).rejects.toThrow();
+    it('should throw a validation error when a unexpected payload arrives', async () => {
+      const invalidBalances = [
+        ...BALANCES,
+        {
+          ...balanceFactory(),
+          fiatBalance: {},
+        },
+      ];
+      mockDataSource.get.mockResolvedValueOnce(invalidBalances);
+      await expect(service.getBackbone()).rejects.toThrow();
+      expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    });
 
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    it('should forward error', async () => {
+      mockDataSource.get = jest
+        .fn()
+        .mockRejectedValueOnce(new Error('Some error'));
+
+      await expect(service.getBalances('test', true, true)).rejects.toThrow(
+        'Some error',
+      );
+
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Backbone', () => {
+    it('should return the backbone retrieved', async () => {
+      mockDataSource.get.mockResolvedValueOnce(BACKBONE);
+      const backbone = await service.getBackbone();
+      expect(backbone).toBe(BACKBONE);
+    });
+
+    it('should throw a validation error when a unexpected payload arrives', async () => {
+      const invalidBackbone = {
+        ...BACKBONE,
+        name: [],
+      };
+      mockDataSource.get.mockResolvedValueOnce(invalidBackbone);
+      await expect(service.getBackbone()).rejects.toThrow();
+      expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward error', async () => {
+      const err = new Error('testErr');
+      mockDataSource.get = jest.fn().mockRejectedValueOnce(err);
+      await expect(service.getBackbone()).rejects.toThrow(err.message);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    });
   });
 });
