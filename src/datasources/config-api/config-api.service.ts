@@ -26,9 +26,8 @@ export class ConfigApi {
     const key = 'chains'; // TODO key is not final
     const url = `${this.baseUri}/api/v1/chains`;
     const page: Page<Chain> = await this.dataSource.get(key, url);
-    const chains = page.results;
 
-    if (!chains.every((chain) => isValidChain(chain))) {
+    if (!page?.results.every((chain) => isValidChain(chain))) {
       // TODO: probably we want to invalidate cache at this point
       const errors = isValidChain.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
@@ -40,14 +39,14 @@ export class ConfigApi {
   async getChain(chainId: string): Promise<Chain> {
     const key = `chains-${chainId}`; // TODO key is not final
     const url = `${this.baseUri}/api/v1/chains/${chainId}`;
-    const chain: Chain = await this.dataSource.get(key, url);
+    const data = await this.dataSource.get(key, url);
 
-    if (!isValidChain(chain)) {
+    if (!isValidChain(data)) {
       // TODO: probably we want to invalidate cache at this point
       const errors = isValidChain.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
 
-    return chain;
+    return data;
   }
 }
