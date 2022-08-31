@@ -5,24 +5,9 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { HttpException } from '@nestjs/common';
 import backboneFactory from '../../chains/entities/__tests__/backbone.factory';
+import { balanceFactory } from './entities/__tests__/balance.factory';
 
-const BALANCES: Balance[] = [
-  {
-    tokenAddress: 'tokenAddress1',
-    balance: 100,
-    token: undefined,
-    fiatBalance: 0,
-    fiatConversion: 0,
-  },
-  {
-    tokenAddress: 'tokenAddress2',
-    balance: 100,
-    token: undefined,
-    fiatBalance: 0,
-    fiatConversion: 0,
-  },
-];
-
+const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 const BACKBONE: Backbone = backboneFactory();
 
 const dataSource = {
