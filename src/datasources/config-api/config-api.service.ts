@@ -18,10 +18,15 @@ export class ConfigApi {
       this.configurationService.getOrThrow<string>('safeConfig.baseUri');
   }
 
-  async getChains(): Promise<Page<Chain>> {
-    const key = 'chains'; // TODO key is not final
+  async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
+    const key = `chains-limit=${limit}-offset=${offset}`; // TODO key is not final
     const url = this.baseUri + '/api/v1/chains';
-    return await this.dataSource.get(key, url);
+    return await this.dataSource.get(key, url, {
+      params: {
+        limit: limit,
+        offset: offset,
+      },
+    });
   }
 
   async getChain(chainId: string): Promise<Chain> {
