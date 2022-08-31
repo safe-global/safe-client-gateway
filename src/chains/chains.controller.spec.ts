@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
-import { Backbone, Chain, Page } from './entities';
+import { Backbone, Chain } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';
 import {
   mockNetworkService,
@@ -17,6 +17,7 @@ import {
   fakeCacheService,
   TestCacheModule,
 } from '../common/cache/__tests__/test.cache.module';
+import { Page } from '../common/entities/page.entity';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { Page } from '../common/entities/page.entity';
 import { ConfigApi } from '../datasources/config-api/config-api.service';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
-import { Backbone, Chain, Page } from './entities';
+import { Backbone, Chain } from './entities';
 
 @Injectable()
 export class ChainsService {

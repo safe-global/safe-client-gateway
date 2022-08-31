@@ -1,6 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { Page } from '../common/entities/page.entity';
 import { ChainsService } from './chains.service';
-import { Backbone, Chain, Page } from './entities';
+import { Backbone, Chain } from './entities';
 
 @Controller({
   path: 'chains',

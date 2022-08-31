@@ -2,14 +2,11 @@ import { Balance } from './entities/balance.entity';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import isValidBackbone from '../../chains/entities/schemas/backbone.schema';
-import { Logger } from '@nestjs/common';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError } from 'ajv';
 import isValidBalance from '../../chains/entities/schemas/balance.schema';
 
 export class TransactionApi {
-  private readonly logger = new Logger(TransactionApi.name);
-
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,

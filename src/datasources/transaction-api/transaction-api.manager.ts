@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Chain } from '../config-api/entities/chain.entity';
 import { ConfigApi } from '../config-api/config-api.service';
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { Chain } from '../../chains/entities';
 
 @Injectable()
 export class TransactionApiManager {
