@@ -15,7 +15,7 @@ const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   required: [],
 };
 
-ajv.addSchema(nativeCurrencySchema, 'nativeCurrency')
+ajv.addSchema(nativeCurrencySchema, 'nativeCurrency');
 
 const chainSchema: JSONSchemaType<Chain> = {
   type: 'object',
@@ -24,7 +24,7 @@ const chainSchema: JSONSchemaType<Chain> = {
     chainName: { type: 'string' },
     transactionService: { type: 'string' },
     vpcTransactionService: { type: 'string' },
-    nativeCurrency: { $ref: 'nativeCurrency'},
+    nativeCurrency: { $ref: 'nativeCurrency' },
   },
   required: ['chainId', 'chainName', 'transactionService'],
 };
