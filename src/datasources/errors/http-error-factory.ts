@@ -3,7 +3,7 @@ import axios, { AxiosError } from 'axios';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
 
 /**
- * Creates an HttpException from an http error response coming from another service.
+ * Creates an {@link HttpException} from an http error response coming from another service.
  * If an error response it's received, it gets parsed, and the status code is kept.
  * Otherwise, a default error data with 503 http status code is returned.
  */

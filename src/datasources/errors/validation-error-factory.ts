@@ -3,7 +3,7 @@ import { DefinedError } from 'ajv';
 import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
 
 /**
- * Creates an HttpException from an array of validation errors.
+ * Creates an {@link HttpException} from an array of validation errors.
  * Both http status and internal error code are fixed.
  * Details about the validation error are logged but hidden from the client response.
  */
