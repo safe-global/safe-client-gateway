@@ -1,8 +1,6 @@
-import Ajv, { JSONSchemaType } from 'ajv';
+import { JSONSchemaType } from 'ajv';
 import { Chain } from '../chain.entity';
 import { NativeCurrency } from '../native.currency.entity';
-
-const ajv = new Ajv();
 
 const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   type: 'object',
@@ -14,8 +12,6 @@ const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   },
   required: [],
 };
-
-ajv.addSchema(nativeCurrencySchema, 'nativeCurrency');
 
 const chainSchema: JSONSchemaType<Chain> = {
   type: 'object',
@@ -29,6 +25,4 @@ const chainSchema: JSONSchemaType<Chain> = {
   required: ['chainId', 'chainName', 'transactionService'],
 };
 
-const isValidChain = ajv.compile(chainSchema);
-
-export default isValidChain;
+export { chainSchema, nativeCurrencySchema };

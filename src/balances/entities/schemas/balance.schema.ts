@@ -1,9 +1,7 @@
-import Ajv, { JSONSchemaType } from 'ajv';
+import { JSONSchemaType } from 'ajv';
 import { Balance } from '../balance.entity';
 import { TokenInfo } from '../../../common/entities/token-info.entity';
 import { TokenType } from '../../../common/entities/token-type.entity';
-
-const ajv = new Ajv({ coerceTypes: true });
 
 const tokenInfoSchema: JSONSchemaType<TokenInfo> = {
   type: 'object',
@@ -26,8 +24,6 @@ const tokenInfoSchema: JSONSchemaType<TokenInfo> = {
   required: [],
 };
 
-ajv.addSchema(tokenInfoSchema, 'tokenInfo');
-
 const balanceSchema: JSONSchemaType<Balance> = {
   type: 'object',
   properties: {
@@ -39,6 +35,4 @@ const balanceSchema: JSONSchemaType<Balance> = {
   required: [],
 };
 
-const isValidBalance = ajv.compile(balanceSchema);
-
-export default isValidBalance;
+export { balanceSchema, tokenInfoSchema };

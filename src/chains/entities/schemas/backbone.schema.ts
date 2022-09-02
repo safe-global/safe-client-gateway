@@ -1,7 +1,5 @@
-import Ajv, { JSONSchemaType } from 'ajv';
+import { JSONSchemaType } from 'ajv';
 import { Backbone } from '../backbone.entity';
-
-const ajv = new Ajv();
 
 const backboneSchema: JSONSchemaType<Backbone> = {
   type: 'object',
@@ -18,6 +16,4 @@ const backboneSchema: JSONSchemaType<Backbone> = {
   additionalProperties: false,
 };
 
-const isValidBackbone = ajv.compile(backboneSchema);
-
-export default isValidBackbone;
+export { backboneSchema };

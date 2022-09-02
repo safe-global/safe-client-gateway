@@ -1,18 +1,34 @@
 import { Balance } from './entities/balance.entity';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import isValidBackbone from '../../chains/entities/schemas/backbone.schema';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
-import { DefinedError } from 'ajv';
-import isValidBalance from '../../balances/entities/schemas/balance.schema';
+import { DefinedError, ValidateFunction } from 'ajv';
+import { JsonSchemaService } from '../common/json-schema.service';
+import {
+  balanceSchema,
+  tokenInfoSchema,
+} from '../../balances/entities/schemas/balance.schema';
+import { backboneSchema } from '../../chains/entities/schemas/backbone.schema';
 
 export class TransactionApi {
+  private readonly isValidBalance: ValidateFunction<Balance>;
+  private readonly isValidBackbone: ValidateFunction<Backbone>;
+
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
     private readonly dataSource: CacheFirstDataSource,
     private readonly validationErrorFactory: ValidationErrorFactory,
-  ) {}
+    private readonly jsonSchemaService: JsonSchemaService,
+  ) {
+    this.jsonSchemaService.addSchema(tokenInfoSchema, 'tokenInfo');
+    this.isValidBalance = this.jsonSchemaService.compile(
+      balanceSchema,
+    ) as ValidateFunction<Balance>;
+    this.isValidBackbone = this.jsonSchemaService.compile(
+      backboneSchema,
+    ) as ValidateFunction<Backbone>;
+  }
 
   async getBalances(
     safeAddress: string,
@@ -29,9 +45,9 @@ export class TransactionApi {
       },
     });
 
-    if (!balances.every((balance) => isValidBalance(balance))) {
+    if (!balances.every((balance) => this.isValidBalance(balance))) {
       // TODO: probably we want to invalidate cache at this point
-      const errors = isValidBalance.errors as DefinedError[];
+      const errors = this.isValidBalance.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
 
@@ -44,9 +60,9 @@ export class TransactionApi {
     const url = `${this.baseUrl}/api/v1/about`;
     const backbone = await this.dataSource.get(cacheKey, url);
 
-    if (!isValidBackbone(backbone)) {
+    if (!this.isValidBackbone(backbone)) {
       // TODO: probably we want to invalidate cache at this point
-      const errors = isValidBackbone.errors as DefinedError[];
+      const errors = this.isValidBackbone.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
 

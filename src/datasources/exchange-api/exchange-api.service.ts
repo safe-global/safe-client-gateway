@@ -10,10 +10,11 @@ import {
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
-import isValidExchangeResult from './entities/schemas/exchange-result.schema';
-import { DefinedError } from 'ajv';
+import { DefinedError, ValidateFunction } from 'ajv';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
-import isValidFiatCodesExchangeResult from './entities/schemas/fiat-codes-exchange-result.schema';
+import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
+import { JsonSchemaService } from '../common/json-schema.service';
+import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
 
 @Injectable()
 export class ExchangeApi {
@@ -21,17 +22,28 @@ export class ExchangeApi {
 
   private readonly baseUrl: string;
   private readonly apiKey: string;
+  private readonly isValidExchangeResult: ValidateFunction<ExchangeResult>;
+  private readonly isValidFiatCodesExchangeResult: ValidateFunction<FiatCodesExchangeResult>;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.baseUrl =
       this.configurationService.getOrThrow<string>('exchange.baseUri');
     this.apiKey =
       this.configurationService.getOrThrow<string>('exchange.apiKey');
+
+    this.isValidExchangeResult = this.jsonSchemaService.compile(
+      exchangeResultSchema,
+    ) as ValidateFunction<ExchangeResult>;
+
+    this.isValidFiatCodesExchangeResult = this.jsonSchemaService.compile(
+      fiatCodesExchangeResultSchema,
+    ) as ValidateFunction<FiatCodesExchangeResult>;
   }
 
   async convertRates(to: string, from: string): Promise<number> {
@@ -65,8 +77,8 @@ export class ExchangeApi {
       params: { access_key: this.apiKey },
     });
 
-    if (!isValidExchangeResult(data)) {
-      const errors = isValidExchangeResult.errors as DefinedError[];
+    if (!this.isValidExchangeResult(data)) {
+      const errors = this.isValidExchangeResult.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
 
@@ -78,8 +90,9 @@ export class ExchangeApi {
       params: { access_key: this.apiKey },
     });
 
-    if (!isValidFiatCodesExchangeResult(data)) {
-      const errors = isValidFiatCodesExchangeResult.errors as DefinedError[];
+    if (!this.isValidFiatCodesExchangeResult(data)) {
+      const errors = this.isValidFiatCodesExchangeResult
+        .errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
 

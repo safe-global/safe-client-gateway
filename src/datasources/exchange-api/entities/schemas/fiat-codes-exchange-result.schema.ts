@@ -1,7 +1,5 @@
-import Ajv, { JSONSchemaType } from 'ajv';
+import { JSONSchemaType } from 'ajv';
 import { FiatCodesExchangeResult } from '../fiat-codes-result.entity';
-
-const ajv = new Ajv();
 
 const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
   type: 'object',
@@ -12,8 +10,4 @@ const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
   required: [],
 };
 
-const isValidFiatCodesExchangeResult = ajv.compile(
-  fiatCodesExchangeResultSchema,
-);
-
-export default isValidFiatCodesExchangeResult;
+export { fiatCodesExchangeResultSchema };

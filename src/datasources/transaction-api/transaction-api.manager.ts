@@ -4,6 +4,7 @@ import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { Chain } from '../../chains/entities';
+import { JsonSchemaService } from '../common/json-schema.service';
 
 @Injectable()
 export class TransactionApiManager {
@@ -14,6 +15,7 @@ export class TransactionApiManager {
     private readonly configApi: ConfigApi,
     private readonly dataSource: CacheFirstDataSource,
     private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly jsonSchemaService: JsonSchemaService,
   ) {}
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
@@ -30,6 +32,7 @@ export class TransactionApiManager {
       chain.transactionService,
       this.dataSource,
       this.validationErrorFactory,
+      this.jsonSchemaService,
     );
     return this.transactionApiMap[chainId];
   }

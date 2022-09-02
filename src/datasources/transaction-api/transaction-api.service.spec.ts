@@ -6,6 +6,7 @@ import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { HttpException } from '@nestjs/common';
 import backboneFactory from '../../chains/entities/__tests__/backbone.factory';
 import { balanceFactory } from './entities/__tests__/balance.factory';
+import { JsonSchemaService } from '../common/json-schema.service';
 
 const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 const BACKBONE: Backbone = backboneFactory();
@@ -14,13 +15,21 @@ const dataSource = {
   get: jest.fn(),
 } as unknown as CacheFirstDataSource;
 
-const mockDataSource = jest.mocked(dataSource);
-
 const validationErrorFactory = {
   from: jest.fn().mockReturnValue(new HttpException('testErr', 500)),
 } as unknown as ValidationErrorFactory;
 
+const validationFunction = jest.fn();
+validationFunction.mockImplementation(() => true);
+
+const jsonSchemaService = {
+  addSchema: jest.fn(),
+  compile: jest.fn().mockImplementation(() => validationFunction),
+} as unknown as JsonSchemaService;
+
+const mockDataSource = jest.mocked(dataSource);
 const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
+const mockJsonSchemaService = jest.mocked(jsonSchemaService);
 
 describe('TransactionApi', () => {
   const service: TransactionApi = new TransactionApi(
@@ -28,6 +37,7 @@ describe('TransactionApi', () => {
     'baseUrl',
     mockDataSource,
     mockValidationErrorFactory,
+    mockJsonSchemaService,
   );
 
   beforeEach(() => {
@@ -41,15 +51,9 @@ describe('TransactionApi', () => {
       expect(balances).toBe(BALANCES);
     });
 
-    it('should throw a validation error when a unexpected payload arrives', async () => {
-      const invalidBalances = [
-        ...BALANCES,
-        {
-          ...balanceFactory(),
-          fiatBalance: {},
-        },
-      ];
-      mockDataSource.get.mockResolvedValueOnce(invalidBalances);
+    it('should throw a validation error when validation fails', async () => {
+      mockDataSource.get.mockResolvedValueOnce(BALANCES);
+      validationFunction.mockImplementationOnce(() => false);
       await expect(service.getBackbone()).rejects.toThrow();
       expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
     });
@@ -74,12 +78,9 @@ describe('TransactionApi', () => {
       expect(backbone).toBe(BACKBONE);
     });
 
-    it('should throw a validation error when a unexpected payload arrives', async () => {
-      const invalidBackbone = {
-        ...BACKBONE,
-        name: [],
-      };
-      mockDataSource.get.mockResolvedValueOnce(invalidBackbone);
+    it('should throw a validation error when validation fails', async () => {
+      mockDataSource.get.mockResolvedValueOnce(BACKBONE);
+      validationFunction.mockImplementation(() => false);
       await expect(service.getBackbone()).rejects.toThrow();
       expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
     });
