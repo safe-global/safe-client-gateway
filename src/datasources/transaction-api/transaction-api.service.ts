@@ -3,7 +3,7 @@ import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../common/json-schema.service';
+import { JsonSchemaService } from '../../common/schema/json-schema.service';
 import {
   balanceSchema,
   tokenInfoSchema,

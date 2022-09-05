@@ -19,7 +19,12 @@ export class ValidationErrorFactory {
       arguments: [],
     };
 
-    const detail = errors.map((err) => JSON.stringify(err));
+    const detail = errors.map(({ instancePath, schemaPath, message }) => ({
+      instancePath,
+      schemaPath,
+      message,
+    }));
+
     this.logger.error({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }

@@ -4,7 +4,7 @@ import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { Chain } from '../../chains/entities';
-import { JsonSchemaService } from '../common/json-schema.service';
+import { JsonSchemaService } from '../../common/schema/json-schema.service';
 
 @Injectable()
 export class TransactionApiManager {
