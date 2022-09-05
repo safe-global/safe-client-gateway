@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Page } from './entities/page.entity';
 import { Chain } from './entities/chain.entity';
-import { Inject } from '@nestjs/common';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 
@@ -23,8 +22,8 @@ export class ConfigApi {
     const url = this.baseUri + '/api/v1/chains';
     return await this.dataSource.get(key, url, {
       params: {
-        limit: limit,
-        offset: offset,
+        limit,
+        offset,
       },
     });
   }
