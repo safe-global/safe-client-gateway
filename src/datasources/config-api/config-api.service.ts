@@ -10,7 +10,7 @@ import { JsonSchemaService } from '../../common/schema/json-schema.service';
 import {
   chainSchema,
   nativeCurrencySchema,
-} from '../../chains/entities/schemas/chain.schema';
+} from './entities/schemas/chain.schema';
 
 @Injectable()
 export class ConfigApi {
