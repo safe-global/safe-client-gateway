@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Page } from '../common/entities/page.entity';
 import { ConfigApi } from '../datasources/config-api/config-api.service';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
-import { Backbone } from './entities';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { Chain } from '../datasources/config-api/entities/chain.entity';
+import { Backbone } from '../datasources/transaction-api/entities/backbone.entity';
 
 @Injectable()
 export class ChainsService {

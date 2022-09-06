@@ -1,8 +1,8 @@
 import { ConfigApi } from '../datasources/config-api/config-api.service';
+import { Backbone } from '../datasources/transaction-api/entities/backbone.entity';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { TransactionApi } from '../datasources/transaction-api/transaction-api.service';
 import { ChainsService } from './chains.service';
-import { Backbone } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';
 
 const BACKBONE: Backbone = backboneFactory();

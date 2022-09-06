@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Backbone } from '../backbone.entity';
+import { Backbone } from '../../../datasources/transaction-api/entities/backbone.entity';
 
 export default function (
   name?: string,

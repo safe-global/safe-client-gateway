@@ -1,5 +1,4 @@
 import { Balance } from './entities/balance.entity';
-import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError, ValidateFunction } from 'ajv';
@@ -7,6 +6,7 @@ import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { balanceSchema } from './entities/schemas/balance.schema';
 import { backboneSchema } from './entities/schemas/backbone.schema';
 import { tokenInfoSchema } from '../../common/schemas/token-info.schema';
+import { Backbone } from './entities/backbone.entity';
 
 export class TransactionApi {
   private readonly isValidBalance: ValidateFunction<Balance>;
