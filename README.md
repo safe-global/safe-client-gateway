@@ -1,6 +1,6 @@
 # Safe Client Gateway
 
-[![Coverage Status](https://coveralls.io/repos/github/5afe/safe-client-gateway-nest/badge.svg?branch=coverage-action)](https://coveralls.io/github/5afe/safe-client-gateway-nest?branch=coverage-action)
+[![Coverage Status](https://coveralls.io/repos/github/5afe/safe-client-gateway-nest/badge.svg?branch=main)](https://coveralls.io/github/5afe/safe-client-gateway-nest?branch=main)
 
 ## Requirements
 - Node 16.16.0 – https://nodejs.org/en/

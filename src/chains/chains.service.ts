@@ -3,6 +3,10 @@ import { Page } from '../common/entities/page.entity';
 import { ConfigApi } from '../datasources/config-api/config-api.service';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { Backbone, Chain } from './entities';
+import {
+  cursorUrlFromLimitAndOffset,
+  PaginationData,
+} from '../common/pagination/pagination.data';
 
 @Injectable()
 export class ChainsService {
@@ -11,12 +15,22 @@ export class ChainsService {
     private readonly transactionApiManager: TransactionApiManager,
   ) {}
 
-  async getChains(): Promise<Page<Chain>> {
-    const result = await this.configApi.getChains();
-    const page: Page<Chain> = {
+  async getChains(
+    routeUrl: Readonly<URL>,
+    paginationData?: PaginationData,
+  ): Promise<Page<Chain>> {
+    const result = await this.configApi.getChains(
+      paginationData?.limit,
+      paginationData?.offset,
+    );
+
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, result.next);
+    const previousURL = cursorUrlFromLimitAndOffset(routeUrl, result.previous);
+
+    return {
       count: result.count,
-      next: result.next,
-      previous: result.previous,
+      next: nextURL?.toString(),
+      previous: previousURL?.toString(),
       results: result.results.map(
         (chain) =>
           <Chain>{
@@ -26,7 +40,6 @@ export class ChainsService {
           },
       ),
     };
-    return page;
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {

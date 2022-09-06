@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { Page } from '../../common/entities/page.entity';
@@ -32,10 +31,15 @@ export class ConfigApi {
     ) as ValidateFunction<Chain>;
   }
 
-  async getChains(): Promise<Page<Chain>> {
-    const key = 'chains'; // TODO key is not final
+  async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
+    const key = `chains-limit=${limit}-offset=${offset}`; // TODO key is not final
     const url = `${this.baseUri}/api/v1/chains`;
-    const page: Page<Chain> = await this.dataSource.get(key, url);
+    const page: Page<Chain> = await this.dataSource.get(key, url, {
+      params: {
+        limit,
+        offset,
+      },
+    });
 
     if (!page?.results.every((chain) => this.isValidChain(chain))) {
       // TODO: probably we want to invalidate cache at this point

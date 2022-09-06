@@ -2,9 +2,12 @@
   "name": "safe-client-gateway",
   "version": "0.0.1",
   "description": "",
-  "author": "fmrsabino <3332770+fmrsabino@users.noreply.github.com>",
+  "contributors": [
+    {"name": "Frederico Sabino", "url": "https://github.com/fmrsabino"},
+    {"name": "Héctor Gómez", "url": "https://github.com/hectorgomezv"}
+  ],
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
