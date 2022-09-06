@@ -115,7 +115,7 @@ describe('Chains Controller (Unit)', () => {
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
         'https://test.safe.config/api/v1/chains',
-        undefined,
+        { params: { limit: undefined, offset: undefined } },
       );
     });
   });
