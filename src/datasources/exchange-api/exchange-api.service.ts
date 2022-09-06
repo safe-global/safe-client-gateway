@@ -3,14 +3,14 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ExchangeResult } from '../../domain/entities/exchange-result.entity';
+import { ExchangeResult } from '../../domain/exchange/entities/exchange-result.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
-import { FiatCodesExchangeResult } from '../../domain/entities/fiat-codes-result.entity';
-import { IExchangeApi } from '../../domain/exchange-api.interface';
+import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
+import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {

@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Chain } from '../../domain/entities/chain.entity';
+import { Chain } from '../../domain/chains/entities/chain.entity';
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ITransactionApiManager } from '../../domain/transaction-api.manager.interface';
-import { IConfigApi } from '../../domain/config-api.interface';
+import { ITransactionApiManager } from '../../domain/interfaces/transaction-api.manager.interface';
+import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {

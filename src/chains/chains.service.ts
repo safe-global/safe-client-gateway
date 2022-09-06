@@ -4,19 +4,23 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import { IDomainRepository } from '../domain/domain.repository.interface';
+import { IChainsRepository } from '../domain/chains/chains.repository.interface';
+import { IBackboneRepository } from '../domain/backbone/backbone.repository.interface';
 
 @Injectable()
 export class ChainsService {
   constructor(
-    @Inject(IDomainRepository) private readonly repository: IDomainRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(IBackboneRepository)
+    private readonly backboneRepository: IBackboneRepository,
   ) {}
 
   async getChains(
     routeUrl: Readonly<URL>,
     paginationData?: PaginationData,
   ): Promise<Page<Chain>> {
-    const result = await this.repository.getChains(
+    const result = await this.chainsRepository.getChains(
       paginationData?.limit,
       paginationData?.offset,
     );
@@ -40,6 +44,6 @@ export class ChainsService {
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    return this.repository.getBackbone(chainId);
+    return this.backboneRepository.getBackbone(chainId);
   }
 }

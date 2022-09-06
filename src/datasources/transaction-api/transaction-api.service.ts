@@ -1,7 +1,7 @@
-import { Balance } from '../../domain/entities/balance.entity';
+import { Balance } from '../../domain/balances/entities/balance.entity';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ITransactionApi } from '../../domain/transaction-api.interface';
+import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
 
 export class TransactionApi implements ITransactionApi {
   constructor(

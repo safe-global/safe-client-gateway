@@ -1,5 +1,5 @@
-import { Page } from './entities/page.entity';
-import { Chain } from './entities/chain.entity';
+import { Page } from '../entities/page.entity';
+import { Chain } from '../chains/entities/chain.entity';
 
 export const IConfigApi = Symbol('IConfigApi');
 

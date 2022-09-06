@@ -1,19 +1,25 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Balance as TransactionApiBalance } from '../domain/entities/balance.entity';
+import { Balance as TransactionApiBalance } from '../domain/balances/entities/balance.entity';
 import { TokenInfo } from '../common/entities/tokeninfo.entity';
 import { TokenType } from '../common/entities/tokentype.entity';
 import { Balances } from './entities/balances.entity';
-import { NativeCurrency } from '../domain/entities/native.currency.entity';
+import { NativeCurrency } from '../domain/chains/entities/native.currency.entity';
 import { Balance } from './entities/balance.entity';
-import { IDomainRepository } from '../domain/domain.repository.interface';
+import { IBalancesRepository } from '../domain/balances/balances.repository.interface';
+import { IExchangeRepository } from '../domain/exchange/exchange.repository.interface';
+import { IChainsRepository } from '../domain/chains/chains.repository.interface';
 
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
 
   constructor(
-    @Inject(IDomainRepository)
-    private readonly repository: IDomainRepository,
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(IExchangeRepository)
+    private readonly exchangeRepository: IExchangeRepository,
   ) {}
 
   async getBalances(
@@ -21,17 +27,17 @@ export class BalancesService {
     safeAddress: string,
     fiatCode: string,
   ): Promise<Balances> {
-    const txServiceBalances = await this.repository.getBalances(
+    const txServiceBalances = await this.balancesRepository.getBalances(
       chainId,
       safeAddress,
     );
 
-    const usdToFiatRate: number = await this.repository.convertRates(
+    const usdToFiatRate: number = await this.exchangeRepository.convertRates(
       fiatCode,
       BalancesService.fromRateCurrencyCode,
     );
     const nativeCurrency: NativeCurrency = (
-      await this.repository.getChain(chainId)
+      await this.chainsRepository.getChain(chainId)
     ).nativeCurrency;
 
     // Map balances payload
@@ -87,7 +93,7 @@ export class BalancesService {
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
-    const fiatCodes: string[] = await this.repository.getFiatCodes();
+    const fiatCodes: string[] = await this.exchangeRepository.getFiatCodes();
     const mainCurrencies: string[] = ['USD', 'EUR'];
     return [
       ...mainCurrencies,

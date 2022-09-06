@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '../../domain/entities/page.entity';
-import { Chain } from '../../domain/entities/chain.entity';
+import { Chain } from '../../domain/chains/entities/chain.entity';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { IConfigApi } from '../../domain/config-api.interface';
+import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {

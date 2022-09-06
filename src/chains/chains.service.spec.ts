@@ -1,14 +1,25 @@
 import { ChainsService } from './chains.service';
 import backboneFactory from './entities/__tests__/backbone.factory';
-import { IDomainRepository } from '../domain/domain.repository.interface';
+import { IChainsRepository } from '../domain/chains/chains.repository.interface';
+import { IBackboneRepository } from '../domain/backbone/backbone.repository.interface';
 
-const repository = {
+const chainsRepository = {
+  getChains: jest.fn(),
+} as unknown as IChainsRepository;
+
+const chainsRepositoryMock = jest.mocked(chainsRepository);
+
+const backboneRepository = {
   getBackbone: jest.fn(),
-} as unknown as IDomainRepository;
-const repositoryMock = jest.mocked(repository);
+} as unknown as IBackboneRepository;
+
+const backboneRepositoryMock = jest.mocked(backboneRepository);
 
 describe('ChainsService', () => {
-  const service: ChainsService = new ChainsService(repositoryMock);
+  const service: ChainsService = new ChainsService(
+    chainsRepositoryMock,
+    backboneRepositoryMock,
+  );
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -17,11 +28,11 @@ describe('ChainsService', () => {
   it('should retrieve the backbone metadata', async () => {
     const chainId = '1';
     const backbone = backboneFactory();
-    repositoryMock.getBackbone.mockResolvedValueOnce(backbone);
+    backboneRepositoryMock.getBackbone.mockResolvedValueOnce(backbone);
 
     const actual = await service.getBackbone(chainId);
 
     expect(actual).toBe(backbone);
-    expect(repositoryMock.getBackbone).toBeCalledTimes(1);
+    expect(backboneRepositoryMock.getBackbone).toBeCalledTimes(1);
   });
 });

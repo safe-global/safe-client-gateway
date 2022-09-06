@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { ExchangeApi } from './exchange-api.service';
-import { IExchangeApi } from '../../domain/exchange-api.interface';
+import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 
 @Global()
 @Module({
