@@ -124,7 +124,9 @@ describe('Balances Controller (Unit)', () => {
           ...chainFactory(chainId),
           nativeCurrency: 1, // nativeCurrency should be an object
         };
-        mockNetworkService.get.mockImplementation(() => Promise.resolve({ data: invalidChainResponse }));
+        mockNetworkService.get.mockImplementation(() =>
+          Promise.resolve({ data: invalidChainResponse }),
+        );
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)

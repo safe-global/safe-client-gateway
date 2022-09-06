@@ -1,6 +1,6 @@
-import { JSONSchemaType } from "ajv";
-import { TokenInfo } from "../entities/token-info.entity";
-import { TokenType } from "../entities/token-type.entity";
+import { JSONSchemaType } from 'ajv';
+import { TokenInfo } from '../entities/token-info.entity';
+import { TokenType } from '../entities/token-type.entity';
 
 const tokenInfoSchema: JSONSchemaType<TokenInfo> = {
   type: 'object',
