@@ -13,7 +13,7 @@ import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 import { DefinedError, ValidateFunction } from 'ajv';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
-import { JsonSchemaService } from '../../common/schema/json-schema.service';
+import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
 
 @Injectable()

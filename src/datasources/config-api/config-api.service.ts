@@ -6,7 +6,7 @@ import { Page } from '../../common/entities/page.entity';
 import { Chain } from '../../chains/entities';
 import { DefinedError, ValidateFunction } from 'ajv';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
-import { JsonSchemaService } from '../../common/schema/json-schema.service';
+import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import {
   chainSchema,
   nativeCurrencySchema,

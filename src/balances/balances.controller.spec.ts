@@ -116,6 +116,29 @@ describe('Balances Controller (Unit)', () => {
       );
     });
 
+    describe('Config API Error', () => {
+      it('500 error if chain validation fails', async () => {
+        const chainId = '1';
+        const safeAddress = '0x0000000000000000000000000000000000000001';
+        const invalidChainResponse = {
+          ...chainFactory(chainId),
+          nativeCurrency: 1, // nativeCurrency should be an object
+        };
+        mockNetworkService.get.mockImplementation(() => Promise.resolve({ data: invalidChainResponse }));
+
+        await request(app.getHttpServer())
+          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .expect(500)
+          .expect({
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
+          });
+
+        expect(mockNetworkService.get.mock.calls.length).toBe(1);
+      });
+    });
+
     describe('Exchange API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';

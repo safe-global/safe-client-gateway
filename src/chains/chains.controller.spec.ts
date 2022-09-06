@@ -81,7 +81,7 @@ describe('Chains Controller (Unit)', () => {
       );
     });
 
-    it('Failure', async () => {
+    it('Failure: network service fails', async () => {
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
       });
@@ -89,6 +89,27 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer()).get('/chains').expect(503).expect({
         message: 'Service unavailable',
         code: 503,
+      });
+
+      expect(mockNetworkService.get).toBeCalledTimes(1);
+      expect(mockNetworkService.get).toBeCalledWith(
+        'https://test.safe.config/api/v1/chains',
+        undefined,
+      );
+    });
+
+    it('Failure: received data is not valid', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: {
+          ...chainsResponse,
+          results: [...chainsResponse.results, { invalid: 'item' }],
+        },
+      });
+
+      await request(app.getHttpServer()).get('/chains').expect(500).expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
       });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);

@@ -3,12 +3,10 @@ import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../../common/schema/json-schema.service';
-import {
-  balanceSchema,
-  tokenInfoSchema,
-} from '../../balances/entities/schemas/balance.schema';
+import { JsonSchemaService } from '../../common/schemas/json-schema.service';
+import { balanceSchema } from '../../balances/entities/schemas/balance.schema';
 import { backboneSchema } from '../../chains/entities/schemas/backbone.schema';
+import { tokenInfoSchema } from '../../common/schemas/token-info.schema';
 
 export class TransactionApi {
   private readonly isValidBalance: ValidateFunction<Balance>;
