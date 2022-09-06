@@ -1,37 +1,27 @@
-import { ConfigApi } from '../datasources/config-api/config-api.service';
-import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
-import { TransactionApi } from '../datasources/transaction-api/transaction-api.service';
 import { ChainsService } from './chains.service';
-import { Backbone } from './entities';
 import backboneFactory from './entities/__tests__/backbone.factory';
+import { IDomainRepository } from '../domain/domain.repository.interface';
 
-const BACKBONE: Backbone = backboneFactory();
+const repository = {
+  getBackbone: jest.fn(),
+} as unknown as IDomainRepository;
+const repositoryMock = jest.mocked(repository);
 
 describe('ChainsService', () => {
-  const configApi = {} as unknown as ConfigApi;
+  const service: ChainsService = new ChainsService(repositoryMock);
 
-  const transactionApi = {
-    getBackbone: jest.fn().mockResolvedValue(BACKBONE),
-  } as unknown as TransactionApi;
+  beforeEach(async () => {
+    jest.clearAllMocks();
+  });
 
-  const transactionApiManager = {
-    getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
-  } as unknown as TransactionApiManager;
-
-  const service: ChainsService = new ChainsService(
-    configApi,
-    transactionApiManager,
-  );
-
-  it('should retrieve the backbone metadata from the proper TransactionApi', async () => {
+  it('should retrieve the backbone metadata', async () => {
     const chainId = '1';
+    const backbone = backboneFactory();
+    repositoryMock.getBackbone.mockResolvedValueOnce(backbone);
 
-    const backbone = await service.getBackbone(chainId);
+    const actual = await service.getBackbone(chainId);
 
-    expect(backbone).toBe(BACKBONE);
-    expect(transactionApi.getBackbone).toBeCalledTimes(1);
-    expect(transactionApiManager.getTransactionApi).toHaveBeenCalledWith(
-      chainId,
-    );
+    expect(actual).toBe(backbone);
+    expect(repositoryMock.getBackbone).toBeCalledTimes(1);
   });
 });

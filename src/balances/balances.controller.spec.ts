@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import safeBalanceFactory from '../datasources/transaction-api/entities/__tests__/balance.factory';
-import exchangeResultFactory from '../datasources/exchange-api/entities/__tests__/exchange.factory';
-import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
+import safeBalanceFactory from '../domain/entities/__tests__/balance.factory';
+import exchangeResultFactory from '../domain/entities/__tests__/exchange.factory';
+import chainFactory from '../domain/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -13,11 +13,12 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
-import { FiatCodesExchangeResult } from '../datasources/exchange-api/entities/fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../domain/entities/fiat-codes-result.entity';
 import {
   fakeCacheService,
   TestCacheModule,
 } from '../common/cache/__tests__/test.cache.module';
+import { DomainModule } from '../domain.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -40,6 +41,7 @@ describe('Balances Controller (Unit)', () => {
         // feature
         BalancesModule,
         // common
+        DomainModule,
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,

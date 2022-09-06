@@ -1,8 +1,9 @@
-import { Balance } from './entities/balance.entity';
+import { Balance } from '../../domain/entities/balance.entity';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { ITransactionApi } from '../../domain/transaction-api.interface';
 
-export class TransactionApi {
+export class TransactionApi implements ITransactionApi {
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,

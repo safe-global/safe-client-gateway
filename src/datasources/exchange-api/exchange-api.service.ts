@@ -3,16 +3,17 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ExchangeResult } from './entities/exchange-result.entity';
+import { ExchangeResult } from '../../domain/entities/exchange-result.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../../common/network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
-import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../../domain/entities/fiat-codes-result.entity';
+import { IExchangeApi } from '../../domain/exchange-api.interface';
 
 @Injectable()
-export class ExchangeApi {
+export class ExchangeApi implements IExchangeApi {
   // TODO can we depend on the base url instead?
 
   private readonly baseUrl: string;

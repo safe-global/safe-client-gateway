@@ -1,24 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigApi } from '../datasources/config-api/config-api.service';
-import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
+import { Inject, Injectable } from '@nestjs/common';
 import { Backbone, Chain, Page } from './entities';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
+import { IDomainRepository } from '../domain/domain.repository.interface';
 
 @Injectable()
 export class ChainsService {
   constructor(
-    private readonly configApi: ConfigApi,
-    private readonly transactionApiManager: TransactionApiManager,
+    @Inject(IDomainRepository) private readonly repository: IDomainRepository,
   ) {}
 
   async getChains(
     routeUrl: Readonly<URL>,
     paginationData?: PaginationData,
   ): Promise<Page<Chain>> {
-    const result = await this.configApi.getChains(
+    const result = await this.repository.getChains(
       paginationData?.limit,
       paginationData?.offset,
     );
@@ -42,9 +40,6 @@ export class ChainsService {
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    const transactionApi = await this.transactionApiManager.getTransactionApi(
-      chainId,
-    );
-    return transactionApi.getBackbone();
+    return this.repository.getBackbone(chainId);
   }
 }
