@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { NativeCurrency } from '../../../../chains/entities';
+import { NativeCurrency } from '../native.currency.entity';
 
 export default function (
   name?: string,

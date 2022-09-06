@@ -3,8 +3,8 @@ import { ConfigApi } from '../config-api/config-api.service';
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
-import { Chain } from '../../chains/entities';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
+import { Chain } from '../config-api/entities/chain.entity';
 
 @Injectable()
 export class TransactionApiManager {

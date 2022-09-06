@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { Balance } from '../balance.entity';
+import { Balance } from '../../../../balances/entities/balance.entity';
 
 const balanceSchema: JSONSchemaType<Balance> = {
   type: 'object',

@@ -6,8 +6,8 @@ import { Balances } from './entities/balances.entity';
 import { ConfigApi } from '../datasources/config-api/config-api.service';
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { Balance } from './entities/balance.entity';
-import { NativeCurrency } from '../chains/entities';
 import { TokenInfo } from '../common/entities/token-info.entity';
+import { NativeCurrency } from '../datasources/config-api/entities/native.currency.entity';
 
 @Injectable()
 export class BalancesService {

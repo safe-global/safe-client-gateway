@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { Page } from '../../common/entities/page.entity';
-import { Chain } from '../../chains/entities';
 import { DefinedError, ValidateFunction } from 'ajv';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
@@ -10,6 +9,7 @@ import {
   chainSchema,
   nativeCurrencySchema,
 } from './entities/schemas/chain.schema';
+import { Chain } from './entities/chain.entity';
 
 @Injectable()
 export class ConfigApi {
