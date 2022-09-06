@@ -3,9 +3,8 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { DefinedError, ValidateFunction } from 'ajv';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { balanceSchema } from './entities/schemas/balance.schema';
+import { balanceSchema, balanceTokenSchema } from './entities/schemas/balance.schema';
 import { backboneSchema } from './entities/schemas/backbone.schema';
-import { tokenInfoSchema } from '../../common/schemas/token-info.schema';
 import { Backbone } from './entities/backbone.entity';
 
 export class TransactionApi {
@@ -19,7 +18,7 @@ export class TransactionApi {
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.jsonSchemaService.addSchema(tokenInfoSchema, 'tokenInfo');
+    this.jsonSchemaService.addSchema(balanceTokenSchema, 'balanceToken');
     this.isValidBalance = this.jsonSchemaService.compile(
       balanceSchema,
     ) as ValidateFunction<Balance>;

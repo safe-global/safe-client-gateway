@@ -3,10 +3,10 @@ import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { HttpException } from '@nestjs/common';
-import backboneFactory from '../../chains/entities/__tests__/backbone.factory';
 import { balanceFactory } from './entities/__tests__/balance.factory';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { Backbone } from './entities/backbone.entity';
+import backboneFactory from './entities/__tests__/backbone.factory';
 
 const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 const BACKBONE: Backbone = backboneFactory();

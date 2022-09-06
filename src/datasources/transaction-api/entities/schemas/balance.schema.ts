@@ -1,15 +1,27 @@
-import { JSONSchemaType } from 'ajv';
-import { Balance } from '../../../../balances/entities/balance.entity';
+import { JSONSchemaType, Schema } from 'ajv';
+import { BalanceToken } from '../balance.token.entity';
 
-const balanceSchema: JSONSchemaType<Balance> = {
+const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
   type: 'object',
   properties: {
-    tokenInfo: { $ref: 'tokenInfo' },
-    balance: { type: 'string' },
+    name: { type: 'string' },
+    symbol: { type: 'string' },
+    decimals: { type: 'number' },
+    logo_uri: { type: 'string' },
+  },
+  required: [],
+};
+
+const balanceSchema: Schema = {
+  type: 'object',
+  properties: {
+    tokenAddress: { type: 'string', nullable: true },
+    token: { anyOf: [{ type: 'null' }, { $ref: 'balanceToken' }] },
+    balance: { type: 'number' },
     fiatBalance: { type: 'number' },
     fiatConversion: { type: 'number' },
   },
   required: [],
 };
 
-export { balanceSchema };
+export { balanceSchema, balanceTokenSchema };

@@ -3,7 +3,7 @@ import { Backbone } from '../datasources/transaction-api/entities/backbone.entit
 import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
 import { TransactionApi } from '../datasources/transaction-api/transaction-api.service';
 import { ChainsService } from './chains.service';
-import backboneFactory from './entities/__tests__/backbone.factory';
+import backboneFactory from '../datasources/transaction-api/entities/__tests__/backbone.factory';
 
 const BACKBONE: Backbone = backboneFactory();
 

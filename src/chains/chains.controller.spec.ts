@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
-import backboneFactory from './entities/__tests__/backbone.factory';
+import backboneFactory from '../datasources/transaction-api/entities/__tests__/backbone.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
