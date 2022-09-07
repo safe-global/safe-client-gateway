@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { Backbone } from '../../chains/entities';
+import { Backbone } from './entities/backbone.entity';
 
 @Injectable()
 export class BackboneRepository {

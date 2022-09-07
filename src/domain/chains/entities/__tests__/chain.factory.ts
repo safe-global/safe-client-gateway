@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { Chain } from '../chain.entity';
 import { NativeCurrency } from '../native.currency.entity';
-import { faker } from '@faker-js/faker';
 import nativeCurrencyFactory from './native.currency.factory';
 
 export default function (
@@ -11,7 +11,7 @@ export default function (
   nativeCurrency?: NativeCurrency,
 ): Chain {
   return <Chain>{
-    chainId: chainId || faker.datatype.number(),
+    chainId: chainId || faker.datatype.number().toString(),
     chainName: chainId || faker.company.name(),
     transactionService: transactionService || faker.internet.url(),
     vpcTransactionService: vpcTransactionService || faker.internet.url(),

@@ -1,5 +1,5 @@
+import { Backbone } from '../backbone/entities/backbone.entity';
 import { Balance } from '../balances/entities/balance.entity';
-import { Backbone } from '../../chains/entities';
 
 export interface ITransactionApi {
   getBalances(

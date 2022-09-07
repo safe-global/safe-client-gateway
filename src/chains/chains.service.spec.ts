@@ -1,7 +1,7 @@
 import { ChainsService } from './chains.service';
-import backboneFactory from './entities/__tests__/backbone.factory';
 import { IChainsRepository } from '../domain/chains/chains.repository.interface';
 import { IBackboneRepository } from '../domain/backbone/backbone.repository.interface';
+import backboneFactory from '../domain/balances/entities/__tests__/backbone.factory';
 
 const chainsRepository = {
   getChains: jest.fn(),

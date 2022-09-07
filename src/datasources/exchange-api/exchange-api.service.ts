@@ -11,6 +11,11 @@ import {
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
+import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
+import { JsonSchemaService } from '../../common/schemas/json-schema.service';
+import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {
@@ -18,16 +23,28 @@ export class ExchangeApi implements IExchangeApi {
 
   private readonly baseUrl: string;
   private readonly apiKey: string;
+  private readonly isValidExchangeResult: ValidateFunction<ExchangeResult>;
+  private readonly isValidFiatCodesExchangeResult: ValidateFunction<FiatCodesExchangeResult>;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
+    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.baseUrl =
       this.configurationService.getOrThrow<string>('exchange.baseUri');
     this.apiKey =
       this.configurationService.getOrThrow<string>('exchange.apiKey');
+
+    this.isValidExchangeResult = this.jsonSchemaService.compile(
+      exchangeResultSchema,
+    ) as ValidateFunction<ExchangeResult>;
+
+    this.isValidFiatCodesExchangeResult = this.jsonSchemaService.compile(
+      fiatCodesExchangeResultSchema,
+    ) as ValidateFunction<FiatCodesExchangeResult>;
   }
 
   async convertRates(to: string, from: string): Promise<number> {
@@ -61,6 +78,11 @@ export class ExchangeApi implements IExchangeApi {
       params: { access_key: this.apiKey },
     });
 
+    if (!this.isValidExchangeResult(data)) {
+      const errors = this.isValidExchangeResult.errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
+
     return data;
   }
 
@@ -68,6 +90,12 @@ export class ExchangeApi implements IExchangeApi {
     const { data } = await this.networkService.get(`${this.baseUrl}/symbols`, {
       params: { access_key: this.apiKey },
     });
+
+    if (!this.isValidFiatCodesExchangeResult(data)) {
+      const errors = this.isValidFiatCodesExchangeResult
+        .errors as DefinedError[];
+      throw this.validationErrorFactory.from(errors);
+    }
 
     return data;
   }

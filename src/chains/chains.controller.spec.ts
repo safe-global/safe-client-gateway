@@ -3,8 +3,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
-import { Backbone, Chain, Page } from './entities';
-import backboneFactory from './entities/__tests__/backbone.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -18,6 +16,10 @@ import {
   TestCacheModule,
 } from '../common/cache/__tests__/test.cache.module';
 import { DomainModule } from '../domain.module';
+import { Page } from '../domain/entities/page.entity';
+import { Chain } from '../domain/chains/entities/chain.entity';
+import { Backbone } from '../domain/backbone/entities/backbone.entity';
+import backboneFactory from '../domain/balances/entities/__tests__/backbone.factory';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -89,7 +91,7 @@ describe('Chains Controller (Unit)', () => {
       );
     });
 
-    it('Failure', async () => {
+    it('Failure: network service fails', async () => {
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
       });
@@ -97,6 +99,27 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer()).get('/chains').expect(503).expect({
         message: 'Service unavailable',
         code: 503,
+      });
+
+      expect(mockNetworkService.get).toBeCalledTimes(1);
+      expect(mockNetworkService.get).toBeCalledWith(
+        'https://test.safe.config/api/v1/chains',
+        { params: { limit: undefined, offset: undefined } },
+      );
+    });
+
+    it('Failure: received data is not valid', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: {
+          ...chainsResponse,
+          results: [...chainsResponse.results, { invalid: 'item' }],
+        },
+      });
+
+      await request(app.getHttpServer()).get('/chains').expect(500).expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
       });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);

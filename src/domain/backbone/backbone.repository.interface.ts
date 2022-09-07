@@ -1,4 +1,4 @@
-import { Backbone } from '../../chains/entities';
+import { Backbone } from './entities/backbone.entity';
 
 export const IBackboneRepository = Symbol('IBackboneRepository');
 

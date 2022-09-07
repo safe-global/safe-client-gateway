@@ -1,4 +1,4 @@
-import { TokenType } from './tokentype.entity';
+import { TokenType } from './token-type.entity';
 
 export interface TokenInfo {
   tokenType: TokenType;

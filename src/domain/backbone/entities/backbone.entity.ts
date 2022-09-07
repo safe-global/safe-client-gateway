@@ -5,5 +5,6 @@ export interface Backbone {
   secure: boolean;
   host: string;
   headers: string[];
-  settings: Record<string, string>;
+  // TODO: use Record<string, string>, define a compatible JSONSchema
+  settings: object;
 }

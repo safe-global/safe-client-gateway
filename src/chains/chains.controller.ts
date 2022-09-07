@@ -1,9 +1,11 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { Page } from '../common/entities/page.entity';
 import { ChainsService } from './chains.service';
-import { Backbone, Chain, Page } from './entities';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
+import { Backbone } from '../domain/backbone/entities/backbone.entity';
+import { Chain } from '../domain/chains/entities/chain.entity';
 
 @Controller({
   path: 'chains',

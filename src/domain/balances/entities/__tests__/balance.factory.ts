@@ -3,10 +3,6 @@ import { faker } from '@faker-js/faker';
 import balanceTokenFactory from './balance.token.factory';
 import { BalanceToken } from '../balance.token.entity';
 
-export default function factory(size?: number): Balance[] {
-  return [...Array(size ?? 1).keys()].map(() => balanceFactory());
-}
-
 export function balanceFactory(
   tokenAddress?: string,
   token?: BalanceToken,

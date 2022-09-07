@@ -1,4 +1,5 @@
 export interface FiatCodesExchangeResult {
   success: boolean;
-  symbols: Record<string, string>;
+  // TODO: use Record<string, string>, define a compatible JSONSchema
+  symbols: object;
 }

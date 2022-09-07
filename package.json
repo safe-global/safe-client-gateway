@@ -32,6 +32,7 @@
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
     "@node-redis/json": "^1.0.2",
+    "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "redis": "^4.2.0",
     "reflect-metadata": "^0.1.13",

@@ -1854,7 +1854,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:8.11.0, ajv@npm:^8.0.0":
+"ajv@npm:8.11.0, ajv@npm:^8.0.0, ajv@npm:^8.11.0":
   version: 8.11.0
   resolution: "ajv@npm:8.11.0"
   dependencies:
@@ -5884,6 +5884,7 @@ __metadata:
     "@types/supertest": ^2.0.11
     "@typescript-eslint/eslint-plugin": ^5.32.0
     "@typescript-eslint/parser": ^5.32.0
+    ajv: ^8.11.0
     axios: ^0.27.2
     eslint: ^8.21.0
     eslint-config-prettier: ^8.5.0
