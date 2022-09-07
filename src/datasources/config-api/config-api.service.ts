@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '../../domain/entities/page.entity';
 import { Chain } from '../../domain/chains/entities/chain.entity';
-import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 import { DefinedError, ValidateFunction } from 'ajv';
@@ -14,18 +13,15 @@ import {
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
-  private readonly baseUri: string;
   private readonly isValidChain: ValidateFunction<Chain>;
 
   constructor(
+    @Inject('CONFIG_API_BASE_URL')
+    private readonly baseUri: string,
     private readonly dataSource: CacheFirstDataSource,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.baseUri =
-      this.configurationService.getOrThrow<string>('safeConfig.baseUri');
     this.jsonSchemaService.addSchema(nativeCurrencySchema, 'nativeCurrency');
     this.isValidChain = this.jsonSchemaService.compile(
       chainSchema,
