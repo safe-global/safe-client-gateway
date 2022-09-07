@@ -1,26 +1,28 @@
-import { Injectable } from '@nestjs/common';
-import { Page } from '../common/entities/page.entity';
-import { ConfigApi } from '../datasources/config-api/config-api.service';
-import { TransactionApiManager } from '../datasources/transaction-api/transaction-api.manager';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import { Chain } from '../datasources/config-api/entities/chain.entity';
-import { Backbone } from '../datasources/transaction-api/entities/backbone.entity';
+import { IChainsRepository } from '../domain/chains/chains.repository.interface';
+import { IBackboneRepository } from '../domain/backbone/backbone.repository.interface';
+import { Page } from '../domain/entities/page.entity';
+import { Chain } from '../domain/chains/entities/chain.entity';
+import { Backbone } from '../domain/backbone/entities/backbone.entity';
 
 @Injectable()
 export class ChainsService {
   constructor(
-    private readonly configApi: ConfigApi,
-    private readonly transactionApiManager: TransactionApiManager,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(IBackboneRepository)
+    private readonly backboneRepository: IBackboneRepository,
   ) {}
 
   async getChains(
     routeUrl: Readonly<URL>,
     paginationData?: PaginationData,
   ): Promise<Page<Chain>> {
-    const result = await this.configApi.getChains(
+    const result = await this.chainsRepository.getChains(
       paginationData?.limit,
       paginationData?.offset,
     );
@@ -44,9 +46,6 @@ export class ChainsService {
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    const transactionApi = await this.transactionApiManager.getTransactionApi(
-      chainId,
-    );
-    return transactionApi.getBackbone();
+    return this.backboneRepository.getBackbone(chainId);
   }
 }

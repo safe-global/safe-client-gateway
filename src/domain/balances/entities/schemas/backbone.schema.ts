@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { Backbone } from '../backbone.entity';
+import { Backbone } from '../../../backbone/entities/backbone.entity';
 
 const backboneSchema: JSONSchemaType<Backbone> = {
   type: 'object',

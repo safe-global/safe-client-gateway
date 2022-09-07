@@ -1,16 +1,17 @@
-import { Balance } from './entities/balance.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
+import { Balance } from '../../domain/balances/entities/balance.entity';
+import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import {
   balanceSchema,
   balanceTokenSchema,
-} from './entities/schemas/balance.schema';
-import { backboneSchema } from './entities/schemas/backbone.schema';
-import { Backbone } from './entities/backbone.entity';
+} from '../../domain/balances/entities/schemas/balance.schema';
+import { backboneSchema } from '../../domain/balances/entities/schemas/backbone.schema';
 
-export class TransactionApi {
+export class TransactionApi implements ITransactionApi {
   private readonly isValidBalance: ValidateFunction<Balance>;
   private readonly isValidBackbone: ValidateFunction<Backbone>;
 

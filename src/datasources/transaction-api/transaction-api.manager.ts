@@ -1,18 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigApi } from '../config-api/config-api.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Chain } from '../../domain/chains/entities/chain.entity';
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { ITransactionApiManager } from '../../domain/interfaces/transaction-api.manager.interface';
+import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { Chain } from '../config-api/entities/chain.entity';
 
 @Injectable()
-export class TransactionApiManager {
+export class TransactionApiManager implements ITransactionApiManager {
   private readonly logger = new Logger(TransactionApiManager.name);
   private transactionApiMap: Record<string, TransactionApi> = {};
 
   constructor(
-    private readonly configApi: ConfigApi,
+    @Inject(IConfigApi) private readonly configApi: IConfigApi,
     private readonly dataSource: CacheFirstDataSource,
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,

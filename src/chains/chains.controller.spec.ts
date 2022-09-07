@@ -1,9 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
+import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
-import backboneFactory from '../datasources/transaction-api/entities/__tests__/backbone.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -16,9 +15,11 @@ import {
   fakeCacheService,
   TestCacheModule,
 } from '../common/cache/__tests__/test.cache.module';
-import { Page } from '../common/entities/page.entity';
-import { Chain } from '../datasources/config-api/entities/chain.entity';
-import { Backbone } from '../datasources/transaction-api/entities/backbone.entity';
+import { DomainModule } from '../domain.module';
+import { Page } from '../domain/entities/page.entity';
+import { Chain } from '../domain/chains/entities/chain.entity';
+import { Backbone } from '../domain/backbone/entities/backbone.entity';
+import backboneFactory from '../domain/balances/entities/__tests__/backbone.factory';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -38,6 +39,13 @@ describe('Chains Controller (Unit)', () => {
       'safeConfig.baseUri',
       'https://test.safe.config',
     );
+
+    fakeConfigurationService.set(
+      'exchange.baseUri',
+      'https://test.exchange.service',
+    );
+
+    fakeConfigurationService.set('exchange.apiKey', 'https://test.api.key');
   });
 
   beforeEach(async () => {
@@ -49,6 +57,7 @@ describe('Chains Controller (Unit)', () => {
         // feature
         ChainsModule,
         // common
+        DomainModule,
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,

@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { Chain } from '../chain.entity';
-import { NativeCurrency } from '../native.currency.entity';
+import { Chain } from '../../../../domain/chains/entities/chain.entity';
+import { NativeCurrency } from '../../../../domain/chains/entities/native.currency.entity';
 
 const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   type: 'object',

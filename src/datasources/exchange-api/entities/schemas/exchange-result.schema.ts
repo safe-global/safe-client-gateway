@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { ExchangeResult } from '../exchange-result.entity';
+import { ExchangeResult } from '../../../../domain/exchange/entities/exchange-result.entity';
 
 const exchangeResultSchema: JSONSchemaType<ExchangeResult> = {
   type: 'object',

@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import safeBalanceFactory from '../datasources/transaction-api/entities/__tests__/balance.factory';
-import exchangeResultFactory from '../datasources/exchange-api/entities/__tests__/exchange.factory';
-import chainFactory from '../datasources/config-api/entities/__tests__/chain.factory';
+import exchangeResultFactory from '../domain/exchange/entities/__tests__/exchange.factory';
+import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -13,11 +12,13 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
-import { FiatCodesExchangeResult } from '../datasources/exchange-api/entities/fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../domain/exchange/entities/fiat-codes-result.entity';
 import {
   fakeCacheService,
   TestCacheModule,
 } from '../common/cache/__tests__/test.cache.module';
+import { DomainModule } from '../domain.module';
+import { balanceFactory } from '../domain/balances/entities/__tests__/balance.factory';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -40,6 +41,7 @@ describe('Balances Controller (Unit)', () => {
         // feature
         BalancesModule,
         // common
+        DomainModule,
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
@@ -57,7 +59,7 @@ describe('Balances Controller (Unit)', () => {
     it(`Success`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
-      const transactionApiBalancesResponse = safeBalanceFactory(1);
+      const transactionApiBalancesResponse = [balanceFactory()];
       const exchangeApiResponse = exchangeResultFactory(true, { USD: 2.0 });
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockImplementation((url) => {
@@ -145,7 +147,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = safeBalanceFactory(1);
+        const transactionApiBalancesResponse = [balanceFactory()];
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -178,7 +180,7 @@ describe('Balances Controller (Unit)', () => {
       it(`No rates returned`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = safeBalanceFactory(1);
+        const transactionApiBalancesResponse = [balanceFactory()];
         const exchangeApiResponse = {}; // no rates
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
@@ -213,7 +215,7 @@ describe('Balances Controller (Unit)', () => {
       it(`from-rate missing`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = safeBalanceFactory(1);
+        const transactionApiBalancesResponse = [balanceFactory()];
         const exchangeApiResponse = exchangeResultFactory(true, { XYZ: 2 }); // Returns different rate than USD
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
@@ -248,7 +250,7 @@ describe('Balances Controller (Unit)', () => {
       it(`from-rate is 0`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = safeBalanceFactory(1);
+        const transactionApiBalancesResponse = [balanceFactory()];
         const exchangeApiResponse = exchangeResultFactory(true, { USD: 0 }); // rate is zero
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
@@ -284,7 +286,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const toRate = 'XYZ';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = safeBalanceFactory(1);
+        const transactionApiBalancesResponse = [balanceFactory()];
         const exchangeApiResponse = exchangeResultFactory(true, { USD: 2 }); // Returns different rate than XYZ
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {

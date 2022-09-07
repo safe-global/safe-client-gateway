@@ -4,8 +4,8 @@ import { ChainsService } from './chains.service';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { Chain } from '../datasources/config-api/entities/chain.entity';
-import { Backbone } from '../datasources/transaction-api/entities/backbone.entity';
+import { Backbone } from '../domain/backbone/entities/backbone.entity';
+import { Chain } from '../domain/chains/entities/chain.entity';
 
 @Controller({
   path: 'chains',
