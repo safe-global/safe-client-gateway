@@ -11,6 +11,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { NetworkModule } from './common/network/network.module';
 import { ConfigurationModule } from './common/config/configuration.module';
 import { CacheModule } from './common/cache/cache.module';
+import { DomainModule } from './domain.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CacheModule } from './common/cache/cache.module';
     // common
     CacheModule,
     ConfigurationModule,
+    DomainModule,
     NetworkModule,
   ],
 })

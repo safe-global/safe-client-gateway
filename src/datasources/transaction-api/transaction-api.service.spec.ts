@@ -1,4 +1,4 @@
-import { Balance } from './entities/balance.entity';
+import { Balance } from '../../domain/balances/entities/balance.entity';
 import { TransactionApi } from './transaction-api.service';
 import { Backbone } from '../../chains/entities';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
