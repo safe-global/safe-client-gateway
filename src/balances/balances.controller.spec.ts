@@ -7,7 +7,7 @@ import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../common/network/__tests__/test.network.module';
+} from '../datasources/network/__tests__/test.network.module';
 import { BalancesModule } from './balances.module';
 import {
   fakeConfigurationService,
@@ -17,7 +17,7 @@ import { FiatCodesExchangeResult } from '../domain/exchange/entities/fiat-codes-
 import {
   fakeCacheService,
   TestCacheModule,
-} from '../common/cache/__tests__/test.cache.module';
+} from '../datasources/cache/__tests__/test.cache.module';
 import { DomainModule } from '../domain.module';
 
 describe('Balances Controller (Unit)', () => {

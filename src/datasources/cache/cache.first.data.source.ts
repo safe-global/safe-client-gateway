@@ -1,12 +1,9 @@
-import { NetworkRequest } from '../../common/network/entities/network.request.entity';
-import {
-  CacheService,
-  ICacheService,
-} from '../../common/cache/cache.service.interface';
+import { NetworkRequest } from '../network/entities/network.request.entity';
+import { CacheService, ICacheService } from './cache.service.interface';
 import {
   INetworkService,
   NetworkService,
-} from '../../common/network/network.service.interface';
+} from '../network/network.service.interface';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { LoggerMiddleware } from '../../common/middleware/logger.middleware';
 import { HttpErrorFactory } from '../errors/http-error-factory';
