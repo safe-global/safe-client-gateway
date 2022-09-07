@@ -10,6 +10,8 @@ import { IExchangeRepository } from './domain/exchange/exchange.repository.inter
 import { ExchangeRepository } from './domain/exchange/exchange.repository';
 import { IBackboneRepository } from './domain/backbone/backbone.repository.interface';
 import { BackboneRepository } from './domain/backbone/backbone.repository';
+import { ValidationErrorFactory } from './datasources/errors/validation-error-factory';
+import { JsonSchemaService } from './common/schemas/json-schema.service';
 
 @Global()
 @Module({
@@ -19,6 +21,8 @@ import { BackboneRepository } from './domain/backbone/backbone.repository';
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    ValidationErrorFactory,
+    JsonSchemaService,
   ],
   exports: [
     IBackboneRepository,
