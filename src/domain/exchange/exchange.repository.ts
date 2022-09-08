@@ -1,5 +1,9 @@
 import { IExchangeRepository } from './exchange.repository.interface';
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
 import { ValidateFunction, DefinedError } from 'ajv';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';

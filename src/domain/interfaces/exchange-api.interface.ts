@@ -1,5 +1,5 @@
-import { ExchangeResult } from "../exchange/entities/exchange-result.entity";
-import { FiatCodesExchangeResult } from "../exchange/entities/fiat-codes-result.entity";
+import { ExchangeResult } from '../exchange/entities/exchange-result.entity';
+import { FiatCodesExchangeResult } from '../exchange/entities/fiat-codes-result.entity';
 
 export const IExchangeApi = Symbol('IExchangeApi');
 
