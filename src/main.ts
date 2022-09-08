@@ -8,9 +8,7 @@ async function bootstrap() {
     type: VersioningType.URI,
   });
 
-  // Starts listening for shutdown hooks
   app.enableShutdownHooks();
-
   await app.listen(3000);
 }
 bootstrap();
