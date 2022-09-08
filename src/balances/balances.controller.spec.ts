@@ -179,9 +179,9 @@ describe('Balances Controller (Unit)', () => {
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
-            statusCode: 500,
-            message: 'Exchange rates unavailable',
-            error: 'Internal Server Error',
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);

@@ -1,14 +1,14 @@
 import { JSONSchemaType } from 'ajv';
-import { ExchangeResult } from '../../../../domain/exchange/entities/exchange-result.entity';
+import { ExchangeResult } from '../exchange-result.entity';
 
 const exchangeResultSchema: JSONSchemaType<ExchangeResult> = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
-    rates: { type: 'object', nullable: true },
+    rates: { type: 'object' },
     base: { type: 'string' },
   },
-  required: ['success', 'base'],
+  required: ['success', 'base', 'rates'],
 };
 
 export { exchangeResultSchema };
