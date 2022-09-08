@@ -58,11 +58,7 @@ describe('ConfigApi', () => {
   it('should error if configuration is not defined', async () => {
     const fakeConfigurationService = new FakeConfigurationService();
     await expect(
-      () =>
-        new ConfigApi(
-          dataSource,
-          fakeConfigurationService,
-        ),
+      () => new ConfigApi(dataSource, fakeConfigurationService),
     ).toThrow();
   });
 
