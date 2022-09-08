@@ -19,8 +19,6 @@ import { exchangeResultSchema } from './entities/schemas/exchange-result.schema'
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {
-  // TODO can we depend on the base url instead?
-
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly isValidExchangeResult: ValidateFunction<ExchangeResult>;
