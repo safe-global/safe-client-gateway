@@ -48,10 +48,7 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
    */
   async onModuleDestroy(): Promise<void> {
     this.logger.verbose('Closing Redis connection');
-    setTimeout(
-      this.forceQuit.bind(this),
-      this.quitTimeoutInSeconds * 1000,
-    );
+    setTimeout(this.forceQuit.bind(this), this.quitTimeoutInSeconds * 1000);
     await this.client.quit();
     this.logger.verbose('Redis connection closed');
   }
