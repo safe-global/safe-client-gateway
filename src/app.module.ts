@@ -5,8 +5,8 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 
-import { ChainsModule } from './chains/chains.module';
-import { BalancesModule } from './balances/balances.module';
+import { ChainsModule } from './routes/chains/chains.module';
+import { BalancesModule } from './routes/balances/balances.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { NetworkModule } from './datasources/network/network.module';
 import { ConfigurationModule } from './common/config/configuration.module';

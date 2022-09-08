@@ -1,24 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import exchangeResultFactory from '../domain/exchange/entities/__tests__/exchange.factory';
-import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
+import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
+import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../datasources/network/__tests__/test.network.module';
+} from '../../datasources/network/__tests__/test.network.module';
 import { BalancesModule } from './balances.module';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
-} from '../common/config/__tests__/test.configuration.module';
-import { FiatCodesExchangeResult } from '../domain/exchange/entities/fiat-codes-result.entity';
+} from '../../common/config/__tests__/test.configuration.module';
+import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
 import {
   fakeCacheService,
   TestCacheModule,
-} from '../datasources/cache/__tests__/test.cache.module';
-import { DomainModule } from '../domain.module';
-import { balanceFactory } from '../domain/balances/entities/__tests__/balance.factory';
+} from '../../datasources/cache/__tests__/test.cache.module';
+import { DomainModule } from '../../domain.module';
+import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
