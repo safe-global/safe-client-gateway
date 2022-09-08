@@ -8,7 +8,7 @@ const exchangeResultSchema: JSONSchemaType<ExchangeResult> = {
     rates: { type: 'object', nullable: true },
     base: { type: 'string' },
   },
-  required: [],
+  required: ['success', 'base'],
 };
 
 export { exchangeResultSchema };

@@ -10,7 +10,7 @@ const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
     decimals: { type: 'number' },
     logoUri: { type: 'string' },
   },
-  required: [],
+  required: ['name', 'symbol', 'decimals', 'logoUri'],
 };
 
 const chainSchema: JSONSchemaType<Chain> = {

@@ -7,7 +7,7 @@ const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
     success: { type: 'boolean' },
     symbols: { type: 'object' },
   },
-  required: [],
+  required: ['success', 'symbols'],
 };
 
 export { fiatCodesExchangeResultSchema };
