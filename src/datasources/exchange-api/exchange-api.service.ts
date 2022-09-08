@@ -3,7 +3,7 @@ import { ExchangeResult } from '../../domain/exchange/entities/exchange-result.e
 import {
   INetworkService,
   NetworkService,
-} from '../../common/network/network.service.interface';
+} from '../network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';

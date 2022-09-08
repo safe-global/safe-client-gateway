@@ -6,7 +6,7 @@ import { ChainsModule } from './chains.module';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../common/network/__tests__/test.network.module';
+} from '../datasources/network/__tests__/test.network.module';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -14,7 +14,7 @@ import {
 import {
   fakeCacheService,
   TestCacheModule,
-} from '../common/cache/__tests__/test.cache.module';
+} from '../datasources/cache/__tests__/test.cache.module';
 import { DomainModule } from '../domain.module';
 import { Page } from '../domain/entities/page.entity';
 import { Chain } from '../domain/chains/entities/chain.entity';
