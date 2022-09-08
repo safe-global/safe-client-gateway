@@ -10,7 +10,7 @@ import { IExchangeRepository } from './domain/exchange/exchange.repository.inter
 import { ExchangeRepository } from './domain/exchange/exchange.repository';
 import { IBackboneRepository } from './domain/backbone/backbone.repository.interface';
 import { BackboneRepository } from './domain/backbone/backbone.repository';
-import { ValidationErrorFactory } from './datasources/errors/validation-error-factory';
+import { ValidationErrorFactory } from './domain/errors/validation-error-factory';
 import { JsonSchemaService } from './common/schemas/json-schema.service';
 
 @Global()

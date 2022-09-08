@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { HttpException } from '@nestjs/common';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../../datasources/errors/validation-error-factory';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';

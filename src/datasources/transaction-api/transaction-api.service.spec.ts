@@ -1,7 +1,7 @@
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
+import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import { Balance } from '../../domain/balances/entities/balance.entity';
 import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
 

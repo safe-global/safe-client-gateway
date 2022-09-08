@@ -7,9 +7,9 @@ import { ValidateFunction, DefinedError } from 'ajv';
 import {
   nativeCurrencySchema,
   chainSchema,
-} from '../../datasources/config-api/entities/schemas/chain.schema';
+} from './entities/schemas/chain.schema';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../../datasources/errors/validation-error-factory';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {

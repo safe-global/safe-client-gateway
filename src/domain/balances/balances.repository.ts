@@ -4,7 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { DefinedError, ValidateFunction } from 'ajv';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../../datasources/errors/validation-error-factory';
+import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import {
   balanceTokenSchema,
   balanceSchema,

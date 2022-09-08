@@ -12,7 +12,7 @@ import { IConfigurationService } from '../../common/config/configuration.service
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { ValidationErrorFactory } from '../../domain/errors/validation-error-factory';
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
