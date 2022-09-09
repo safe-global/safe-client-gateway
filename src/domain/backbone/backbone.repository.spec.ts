@@ -13,7 +13,7 @@ const transactionApi = {
 } as unknown as ITransactionApi;
 
 const transactionApiManager = {
-  getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
+  getTransactionApi: jest.fn(),
 } as unknown as ITransactionApiManager;
 
 const backboneValidator = {
@@ -30,7 +30,12 @@ describe('Backbone Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      transactionApi,
+    );
+
     const data = await repository.getBackbone(faker.random.word());
+
     expect(mockBackboneValidator.validate).toBeCalledTimes(1);
     expect(data).toBe(BACKBONE);
   });
