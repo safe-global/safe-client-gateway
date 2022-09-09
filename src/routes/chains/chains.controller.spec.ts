@@ -1,25 +1,25 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import chainFactory from '../domain/chains/entities/__tests__/chain.factory';
+import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
 import {
   mockNetworkService,
   TestNetworkModule,
-} from '../datasources/network/__tests__/test.network.module';
+} from '../../datasources/network/__tests__/test.network.module';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
-} from '../common/config/__tests__/test.configuration.module';
+} from '../../common/config/__tests__/test.configuration.module';
 import {
   fakeCacheService,
   TestCacheModule,
-} from '../datasources/cache/__tests__/test.cache.module';
-import { DomainModule } from '../domain.module';
-import { Page } from '../domain/entities/page.entity';
-import { Chain } from '../domain/chains/entities/chain.entity';
-import { Backbone } from '../domain/backbone/entities/backbone.entity';
-import backboneFactory from '../domain/balances/entities/__tests__/backbone.factory';
+} from '../../datasources/cache/__tests__/test.cache.module';
+import { DomainModule } from '../../domain.module';
+import { Page } from '../../domain/entities/page.entity';
+import { Chain } from '../../domain/chains/entities/chain.entity';
+import { Backbone } from '../../domain/backbone/entities/backbone.entity';
+import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
