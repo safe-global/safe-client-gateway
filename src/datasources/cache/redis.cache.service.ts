@@ -60,9 +60,9 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
-  private forceQuit() {
+  private async forceQuit() {
     this.logger.verbose('Forcing Redis connection close');
-    this.client.disconnect();
+    await this.client.disconnect();
     this.logger.verbose('Redis connection closed');
   }
 }
