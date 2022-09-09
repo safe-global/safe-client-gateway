@@ -36,7 +36,6 @@ export class BalancesRepository implements IBalancesRepository {
     const balances = await api.getBalances(safeAddress, trusted, excludeSpam);
 
     if (!balances.every((balance) => this.isValidBalance(balance))) {
-      // TODO: probably we want to invalidate cache at this point
       const errors = this.isValidBalance.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }

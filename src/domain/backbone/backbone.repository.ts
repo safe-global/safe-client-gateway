@@ -26,7 +26,6 @@ export class BackboneRepository {
     const backbone = await api.getBackbone();
 
     if (!this.isValidBackbone(backbone)) {
-      // TODO: probably we want to invalidate cache at this point
       const errors = this.isValidBackbone.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }

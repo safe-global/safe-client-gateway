@@ -118,6 +118,26 @@ describe('Balances Controller (Unit)', () => {
       );
     });
 
+    describe('Config API Error', () => {
+      it(`500 error response`, async () => {
+        const chainId = '1';
+        const safeAddress = '0x0000000000000000000000000000000000000001';
+        mockNetworkService.get.mockImplementation(() =>
+          Promise.reject({ status: 500 }),
+        );
+
+        await request(app.getHttpServer())
+          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .expect(503)
+          .expect({
+            message: 'Service unavailable',
+            code: 503,
+          });
+
+        expect(mockNetworkService.get.mock.calls.length).toBe(1);
+      });
+    });
+
     describe('Exchange API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';

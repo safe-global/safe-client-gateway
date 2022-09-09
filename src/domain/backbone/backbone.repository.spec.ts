@@ -15,11 +15,11 @@ const transactionApi = {
 } as unknown as ITransactionApi;
 
 const transactionApiManager = {
-  getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
+  getTransactionApi: jest.fn(),
 } as unknown as ITransactionApiManager;
 
 const validationErrorFactory = {
-  from: jest.fn().mockReturnValue(new HttpException('testErr', 500)),
+  from: jest.fn(),
 } as unknown as ValidationErrorFactory;
 
 const validationFunction = jest.fn();
@@ -42,14 +42,21 @@ describe('Backbone Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(transactionApi)
+    mockValidationErrorFactory.from.mockReturnValue(new HttpException('testErr', 500));
+
     const data = await repository.getBackbone(faker.random.word());
 
     expect(data).toBe(BACKBONE);
   });
 
   it('should throw a validation error when validation fails', async () => {
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(transactionApi)
+    mockValidationErrorFactory.from.mockReturnValue(new HttpException('testErr', 500));
     validationFunction.mockImplementationOnce(() => false);
+
     await expect(repository.getBackbone(faker.random.word())).rejects.toThrow();
+
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 });

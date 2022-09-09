@@ -30,7 +30,6 @@ export class ChainsRepository implements IChainsRepository {
     const chain = await this.configApi.getChain(chainId);
 
     if (!this.isValidChain(chain)) {
-      // TODO: probably we want to invalidate cache at this point
       const errors = this.isValidChain.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
@@ -42,7 +41,6 @@ export class ChainsRepository implements IChainsRepository {
     const page = await this.configApi.getChains(limit, offset);
 
     if (!page?.results.every((chain) => this.isValidChain(chain))) {
-      // TODO: probably we want to invalidate cache at this point
       const errors = this.isValidChain.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
