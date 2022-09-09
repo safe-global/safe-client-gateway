@@ -42,8 +42,12 @@ describe('Backbone Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
-    mockTransactionApiManager.getTransactionApi.mockResolvedValue(transactionApi)
-    mockValidationErrorFactory.from.mockReturnValue(new HttpException('testErr', 500));
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      transactionApi,
+    );
+    mockValidationErrorFactory.from.mockReturnValue(
+      new HttpException('testErr', 500),
+    );
 
     const data = await repository.getBackbone(faker.random.word());
 
@@ -51,8 +55,12 @@ describe('Backbone Repository', () => {
   });
 
   it('should throw a validation error when validation fails', async () => {
-    mockTransactionApiManager.getTransactionApi.mockResolvedValue(transactionApi)
-    mockValidationErrorFactory.from.mockReturnValue(new HttpException('testErr', 500));
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      transactionApi,
+    );
+    mockValidationErrorFactory.from.mockReturnValue(
+      new HttpException('testErr', 500),
+    );
     validationFunction.mockImplementationOnce(() => false);
 
     await expect(repository.getBackbone(faker.random.word())).rejects.toThrow();
