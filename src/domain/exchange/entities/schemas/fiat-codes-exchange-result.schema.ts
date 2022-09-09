@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { FiatCodesExchangeResult } from '../fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../fiat-codes-exchange-result.entity';
 
 const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
   type: 'object',

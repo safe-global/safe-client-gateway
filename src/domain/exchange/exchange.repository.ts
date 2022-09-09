@@ -15,16 +15,16 @@ export class ExchangeRepository implements IExchangeRepository {
   ) {}
 
   async convertRates(to: string, from: string): Promise<number> {
-    const exchangeResult = await this.exchangeApi.getExchangeResult();
-    this.validator.validate(exchangeResult);
+    const ratesExchangeResult = await this.exchangeApi.getRates();
+    this.validator.validate(ratesExchangeResult);
 
-    const fromExchangeRate = exchangeResult.rates[from.toUpperCase()];
+    const fromExchangeRate = ratesExchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
         `Exchange rate for ${from} is not available`,
       );
 
-    const toExchangeRate = exchangeResult.rates[to.toUpperCase()];
+    const toExchangeRate = ratesExchangeResult.rates[to.toUpperCase()];
     if (toExchangeRate === undefined)
       throw new InternalServerErrorException(
         `Exchange rate for ${to} is not available`,

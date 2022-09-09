@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ExchangeResult } from '../../domain/exchange/entities/exchange-result.entity';
+import { RatesExchangeResult } from '../../domain/exchange/entities/rates-exchange-result.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
-import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-exchange-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class ExchangeApi implements IExchangeApi {
     return data;
   }
 
-  async getExchangeResult(): Promise<ExchangeResult> {
+  async getRates(): Promise<RatesExchangeResult> {
     const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
       params: { access_key: this.apiKey },
     });

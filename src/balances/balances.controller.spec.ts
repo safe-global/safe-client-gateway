@@ -12,7 +12,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../common/config/__tests__/test.configuration.module';
-import { FiatCodesExchangeResult } from '../domain/exchange/entities/fiat-codes-result.entity';
+import { FiatCodesExchangeResult } from '../domain/exchange/entities/fiat-codes-exchange-result.entity';
 import {
   fakeCacheService,
   TestCacheModule,
