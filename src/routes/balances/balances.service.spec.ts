@@ -1,7 +1,7 @@
 import { BalancesService } from './balances.service';
-import { IExchangeRepository } from '../domain/exchange/exchange.repository.interface';
-import { IBalancesRepository } from '../domain/balances/balances.repository.interface';
-import { IChainsRepository } from '../domain/chains/chains.repository.interface';
+import { IExchangeRepository } from '../../domain/exchange/exchange.repository.interface';
+import { IBalancesRepository } from '../../domain/balances/balances.repository.interface';
+import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 
 const balancesRepository = {} as unknown as IBalancesRepository;
 const balancesRepositoryMock = jest.mocked(balancesRepository);

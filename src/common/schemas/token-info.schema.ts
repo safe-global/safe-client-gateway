@@ -20,7 +20,7 @@ const tokenInfoSchema: JSONSchemaType<TokenInfo> = {
     name: { type: 'string' },
     logoUri: { type: 'string', nullable: true },
   },
-  required: [],
+  required: ['address', 'decimals', 'symbol', 'name'],
 };
 
 export { tokenInfoSchema };

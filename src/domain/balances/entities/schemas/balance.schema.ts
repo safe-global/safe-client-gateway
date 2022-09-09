@@ -9,7 +9,7 @@ const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
     decimals: { type: 'number' },
     logo_uri: { type: 'string' },
   },
-  required: [],
+  required: ['name', 'symbol', 'decimals', 'logo_uri'],
 };
 
 const balanceSchema: Schema = {
@@ -21,7 +21,7 @@ const balanceSchema: Schema = {
     fiatBalance: { type: 'number' },
     fiatConversion: { type: 'number' },
   },
-  required: [],
+  required: ['balance', 'fiatBalance', 'fiatConversion'],
 };
 
 export { balanceSchema, balanceTokenSchema };

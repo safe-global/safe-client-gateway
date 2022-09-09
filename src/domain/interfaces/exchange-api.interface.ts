@@ -1,6 +1,9 @@
+import { ExchangeResult } from '../exchange/entities/exchange-result.entity';
+import { FiatCodesExchangeResult } from '../exchange/entities/fiat-codes-result.entity';
+
 export const IExchangeApi = Symbol('IExchangeApi');
 
 export interface IExchangeApi {
-  convertRates(to: string, from: string): Promise<number>;
-  getFiatCodes(): Promise<string[]>;
+  getFiatCodes(): Promise<FiatCodesExchangeResult>;
+  getExchangeResult(): Promise<ExchangeResult>;
 }
