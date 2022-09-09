@@ -118,31 +118,6 @@ describe('Balances Controller (Unit)', () => {
       );
     });
 
-    describe('Config API Error', () => {
-      it('500 error if chain validation fails', async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const invalidChainResponse = {
-          ...chainFactory(chainId),
-          nativeCurrency: 1, // nativeCurrency should be an object
-        };
-        mockNetworkService.get.mockImplementation(() =>
-          Promise.resolve({ data: invalidChainResponse }),
-        );
-
-        await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
-          .expect({
-            message: 'Validation failed',
-            code: 42,
-            arguments: [],
-          });
-
-        expect(mockNetworkService.get.mock.calls.length).toBe(1);
-      });
-    });
-
     describe('Exchange API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
@@ -181,7 +156,7 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionApiBalancesResponse = [balanceFactory()];
-        const exchangeApiResponse = {}; // no rates
+        const exchangeApiResponse = { success: true, base: 'USD' }; // no rates
         const chainResponse = chainFactory(chainId);
         mockNetworkService.get.mockImplementation((url) => {
           if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
@@ -204,9 +179,9 @@ describe('Balances Controller (Unit)', () => {
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
-            statusCode: 500,
-            message: 'Exchange rates unavailable',
-            error: 'Internal Server Error',
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -346,6 +321,38 @@ describe('Balances Controller (Unit)', () => {
           .expect({
             message: 'Service unavailable',
             code: 503,
+          });
+
+        expect(mockNetworkService.get.mock.calls.length).toBe(2);
+      });
+
+      it(`500 error if validation fails`, async () => {
+        const chainId = '1';
+        const safeAddress = '0x0000000000000000000000000000000000000001';
+        const exchangeApiResponse = exchangeResultFactory(true, { USD: 2.0 });
+        const chainResponse = chainFactory(chainId);
+        mockNetworkService.get.mockImplementation((url) => {
+          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+            return Promise.resolve({ data: chainResponse });
+          } else if (
+            url ==
+            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
+          ) {
+            return Promise.resolve({ data: [{ invalid: 'data' }] });
+          } else if (url == 'https://test.exchange') {
+            return Promise.resolve({ data: exchangeApiResponse });
+          } else {
+            return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .expect(500)
+          .expect({
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
