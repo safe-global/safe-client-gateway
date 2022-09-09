@@ -13,6 +13,7 @@ import { BackboneRepository } from './domain/backbone/backbone.repository';
 import { ValidationErrorFactory } from './domain/errors/validation-error-factory';
 import { JsonSchemaService } from './common/schemas/json-schema.service';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
+import { BalancesValidator } from './domain/balances/balances.validator';
 
 @Global()
 @Module({
@@ -23,6 +24,7 @@ import { BackboneValidator } from './domain/backbone/backbone.validator';
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     BackboneValidator,
+    BalancesValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
