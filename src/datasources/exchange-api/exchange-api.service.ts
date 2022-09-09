@@ -10,8 +10,6 @@ import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {
-  // TODO can we depend on the base url instead?
-
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
