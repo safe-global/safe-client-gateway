@@ -5,9 +5,9 @@ import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { IValidator } from '../interfaces/validator.interface';
 import { RatesExchangeResult } from './entities/rates-exchange-result.entity';
 import { FiatCodesExchangeResult } from './entities/fiat-codes-exchange-result.entity';
-import { exchangeResultSchema } from './entities/schemas/rates-exchange-result.schema';
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
 import { ExchangeResult } from './entities/exchange-result.entity';
+import { ratesExchangeResultSchema } from './entities/schemas/rates-exchange-result.schema';
 
 @Injectable()
 export class ExchangeValidator implements IValidator<ExchangeResult> {
@@ -19,7 +19,7 @@ export class ExchangeValidator implements IValidator<ExchangeResult> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidExchangeResult = this.jsonSchemaService.compile(
-      exchangeResultSchema,
+      ratesExchangeResultSchema,
     ) as ValidateFunction<RatesExchangeResult>;
 
     this.isValidFiatCodesExchangeResult = this.jsonSchemaService.compile(

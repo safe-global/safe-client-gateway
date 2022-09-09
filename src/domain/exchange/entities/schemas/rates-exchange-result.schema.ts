@@ -11,4 +11,4 @@ const ratesExchangeResultSchema: JSONSchemaType<RatesExchangeResult> = {
   required: ['success', 'base', 'rates'],
 };
 
-export { ratesExchangeResultSchema as exchangeResultSchema };
+export { ratesExchangeResultSchema };
