@@ -12,7 +12,7 @@ const backboneSchema: JSONSchemaType<Backbone> = {
     headers: { type: 'array', items: { type: 'string' } },
     settings: { type: 'object' },
   },
-  required: [],
+  required: ['name', 'version', 'api_version', 'secure', 'host'],
   additionalProperties: false,
 };
 

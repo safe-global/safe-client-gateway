@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { DefinedError } from 'ajv';
-import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
+import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-exception-payload.interface';
 
 /**
  * Creates an {@link HttpException} from an array of validation errors.

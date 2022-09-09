@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { Chain } from '../../../../domain/chains/entities/chain.entity';
-import { NativeCurrency } from '../../../../domain/chains/entities/native.currency.entity';
+import { Chain } from '../chain.entity';
+import { NativeCurrency } from '../native.currency.entity';
 
 const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   type: 'object',
@@ -10,7 +10,7 @@ const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
     decimals: { type: 'number' },
     logoUri: { type: 'string' },
   },
-  required: [],
+  required: ['name', 'symbol', 'decimals', 'logoUri'],
 };
 
 const chainSchema: JSONSchemaType<Chain> = {
