@@ -35,6 +35,7 @@ describe('Balances Repository', () => {
       faker.random.word(),
     );
 
+    expect(mockBalancesValidator.validateMany).toBeCalledTimes(1);
     expect(data).toBe(BALANCES);
   });
 });

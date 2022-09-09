@@ -14,6 +14,7 @@ import { ValidationErrorFactory } from './domain/errors/validation-error-factory
 import { JsonSchemaService } from './common/schemas/json-schema.service';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
 import { BalancesValidator } from './domain/balances/balances.validator';
+import { ChainsValidator } from './domain/chains/chains.validator';
 
 @Global()
 @Module({
@@ -25,6 +26,7 @@ import { BalancesValidator } from './domain/balances/balances.validator';
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     BackboneValidator,
     BalancesValidator,
+    ChainsValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
