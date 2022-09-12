@@ -15,10 +15,10 @@ export class TransactionApi implements ITransactionApi {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Balance[]> {
-    // TODO key is not final
-    const cacheKey = `balances-${this.chainId}-${safeAddress}-${trusted}-${excludeSpam}`;
+    const cacheKey = `${this.chainId}_${safeAddress}_balances`;
+    const cacheKeyField = `${trusted}_${excludeSpam}`;
     const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
-    return this.dataSource.get(cacheKey, url, {
+    return this.dataSource.get(cacheKey, cacheKeyField, url, {
       params: {
         trusted: trusted,
         excludeSpam: excludeSpam,
@@ -27,9 +27,9 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getBackbone(): Promise<Backbone> {
-    // TODO key is not final
-    const cacheKey = `backbone-${this.chainId}`;
+    const cacheKey = `${this.chainId}_backbone`;
+    const field = '';
     const url = `${this.baseUrl}/api/v1/about`;
-    return this.dataSource.get(cacheKey, url);
+    return this.dataSource.get(cacheKey, field, url);
   }
 }

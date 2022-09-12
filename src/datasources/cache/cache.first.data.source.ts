@@ -28,11 +28,13 @@ export class CacheFirstDataSource {
   ) {}
 
   /**
-   * Gets the JSON payload behind {@link key}. If the value is not
-   * present tries to get the respective JSON payload from {@link url}
+   * Gets the cached value behind the {@link field} of {@link key}.
+   * If the value is not present, it tries to get the respective JSON
+   * payload from {@link url}.
    * Errors are not cached.
    *
    * @param key - the key to be used to retrieve from cache
+   * @param field - the field to get from {@link key}
    * @param url - the HTTP endpoint to retrieve the JSON payload
    * @param params - the parameters to be used for the HTTP request
    * @param expireTimeSeconds - the time to live in seconds for the payload
@@ -40,19 +42,21 @@ export class CacheFirstDataSource {
    */
   async get<T>(
     key: string,
+    field: string,
     url: string,
     params?: NetworkRequest,
     expireTimeSeconds?: number,
   ): Promise<T> {
     try {
-      const cached = await this.cacheService.get<T>(key);
+      const cached = await this.cacheService.get(key, field);
       if (cached != null) {
         this.logger.debug(`[Cache] Cache hit: ${key}`);
-        return cached;
+        return JSON.parse(cached);
       }
       this.logger.debug(`[Cache] Cache miss: ${key}`);
       const { data } = await this.networkService.get(url, params);
-      await this.cacheService.set(key, data, expireTimeSeconds);
+      const rawJson = JSON.stringify(data);
+      await this.cacheService.set(key, field, rawJson, expireTimeSeconds);
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
