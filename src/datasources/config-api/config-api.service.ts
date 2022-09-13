@@ -19,9 +19,10 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
-    const key = `chains-limit=${limit}-offset=${offset}`; // TODO key is not final
+    const key = `chains`;
+    const field = `${limit}_${offset}`;
     const url = `${this.baseUri}/api/v1/chains`;
-    return this.dataSource.get(key, url, {
+    return this.dataSource.get(key, field, url, {
       params: {
         limit,
         offset,
@@ -30,8 +31,9 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChain(chainId: string): Promise<Chain> {
-    const key = `chains-${chainId}`; // TODO key is not final
+    const key = `${chainId}_chain`;
+    const field = '';
     const url = `${this.baseUri}/api/v1/chains/${chainId}`;
-    return this.dataSource.get(key, url);
+    return this.dataSource.get(key, field, url);
   }
 }
