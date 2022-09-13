@@ -93,7 +93,7 @@ describe('Balances Controller (Unit)', () => {
                 decimals: expectedBalance.token?.decimals,
                 symbol: expectedBalance.token?.symbol,
                 name: expectedBalance.token?.name,
-                logoUri: expectedBalance?.token?.logo_uri,
+                logoUri: expectedBalance?.token?.logoUri,
               },
               balance: expectedBalance.balance.toString(),
               fiatBalance: expectedBalance.fiatBalance,

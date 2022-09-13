@@ -9,7 +9,7 @@ export default function (
 ): BalanceToken {
   return <BalanceToken>{
     decimals: decimals || faker.datatype.number(),
-    logo_uri: logo_uri || faker.internet.url(),
+    logoUri: logo_uri || faker.internet.url(),
     name: name || faker.finance.currencyName(),
     symbol: symbol || faker.finance.currencySymbol(),
   };
