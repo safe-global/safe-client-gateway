@@ -75,7 +75,7 @@ export class BalancesService {
     const logoUri =
       tokenType === TokenType.NativeToken
         ? nativeCurrency.logoUri
-        : txBalance.token?.logo_uri;
+        : txBalance.token?.logoUri;
 
     return <Balance>{
       tokenInfo: <TokenInfo>{

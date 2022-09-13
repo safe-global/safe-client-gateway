@@ -7,9 +7,9 @@ const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
     name: { type: 'string' },
     symbol: { type: 'string' },
     decimals: { type: 'number' },
-    logo_uri: { type: 'string' },
+    logoUri: { type: 'string' },
   },
-  required: ['name', 'symbol', 'decimals', 'logo_uri'],
+  required: ['name', 'symbol', 'decimals', 'logoUri'],
 };
 
 const balanceSchema: Schema = {
