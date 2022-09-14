@@ -8,5 +8,7 @@ export interface ITransactionApi {
     excludeSpam?: boolean,
   ): Promise<Balance[]>;
 
+  clearLocalBalances(safeAddress: string): Promise<void>;
+
   getBackbone(): Promise<Backbone>;
 }

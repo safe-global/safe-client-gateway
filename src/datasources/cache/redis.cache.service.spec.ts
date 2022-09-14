@@ -9,6 +9,7 @@ const redisClientType = {
   hSet: jest.fn(),
   hDel: jest.fn(),
   expire: jest.fn(),
+  unlink: jest.fn(),
   quit: jest.fn(),
 } as unknown as RedisClientType;
 const redisClientTypeMock = jest.mocked(redisClientType);
@@ -49,6 +50,7 @@ describe('RedisCacheService', () => {
     );
     expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
   it(`Setting key with expireTimeSeconds`, async () => {
@@ -65,6 +67,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.expire).toBeCalledWith(key, expireTime);
     expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
   it(`Setting key throws on expire`, async () => {
@@ -86,6 +89,7 @@ describe('RedisCacheService', () => {
     );
     expect(redisClientTypeMock.hDel).toBeCalledTimes(1);
     expect(redisClientTypeMock.hDel).toBeCalledWith(key, field);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
   it(`Setting key throws on set`, async () => {
@@ -103,9 +107,10 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.expire).toBeCalledTimes(0);
     expect(redisClientTypeMock.hDel).toBeCalledTimes(1);
     expect(redisClientTypeMock.hDel).toBeCalledWith(key, field);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Getting key calls json.get`, async () => {
+  it(`Getting key calls hGet`, async () => {
     const key = faker.random.alphaNumeric();
     const field = faker.datatype.string();
 
@@ -115,6 +120,19 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.hGet).toBeCalledWith(key, field);
     expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
     expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+  });
+
+  it(`Deleting key calls delete`, async () => {
+    const key = faker.random.alphaNumeric();
+
+    await redisCacheService.delete(key);
+
+    expect(redisClientTypeMock.unlink).toBeCalledTimes(1);
+    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
   it(`When Module gets destroyed, redis connection is closed`, async () => {
