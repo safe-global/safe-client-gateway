@@ -6,8 +6,8 @@ import { DefinedError, ValidateFunction } from 'ajv';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import {
-  balanceTokenSchema,
   balanceSchema,
+  balanceTokenSchema,
 } from './entities/schemas/balance.schema';
 
 @Injectable()
@@ -41,5 +41,13 @@ export class BalancesRepository implements IBalancesRepository {
     }
 
     return balances;
+  }
+
+  async clearLocalBalances(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(chainId);
+    await api.clearLocalBalances(safeAddress);
   }
 }

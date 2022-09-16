@@ -14,7 +14,7 @@ export class JsonSchemaService {
     this.ajv.addSchema(schema, name);
   }
 
-  compile<T>(schema: Schema | JSONSchemaType<T>): ValidateFunction {
+  compile<T>(schema: Schema | JSONSchemaType<T>): ValidateFunction<T> {
     return this.ajv.compile(schema);
   }
 }
