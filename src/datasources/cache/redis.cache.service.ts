@@ -42,6 +42,11 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
     return await this.client.hGet(key, field);
   }
 
+  async delete(key: string): Promise<number> {
+    // see https://redis.io/commands/unlink/
+    return await this.client.unlink(key);
+  }
+
   /**
    * Closes the connection to Redis when the module associated with this service
    * is destroyed. This tries to gracefully close the connection. If the Redis

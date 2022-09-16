@@ -12,11 +12,13 @@ import { NetworkModule } from './datasources/network/network.module';
 import { ConfigurationModule } from './common/config/configuration.module';
 import { CacheModule } from './datasources/cache/cache.module';
 import { DomainModule } from './domain.module';
+import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
 
 @Module({
   imports: [
     // features
     BalancesModule,
+    CacheHooksModule,
     ChainsModule,
     // common
     CacheModule,

@@ -9,4 +9,6 @@ export interface ICacheService {
   ): Promise<void>;
 
   get(key: string, field: string): Promise<string | undefined>;
+
+  delete(key: string): Promise<number>;
 }

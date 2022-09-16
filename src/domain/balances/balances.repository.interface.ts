@@ -18,4 +18,12 @@ export interface IBalancesRepository {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Balance[]>;
+
+  /**
+   * Clears any stored local balance data of {@link safeAddress} on {@link chainId}
+   *
+   * @param chainId
+   * @param safeAddress
+   */
+  clearLocalBalances(chainId: string, safeAddress: string): Promise<void>;
 }
