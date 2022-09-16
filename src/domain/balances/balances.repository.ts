@@ -31,12 +31,4 @@ export class BalancesRepository implements IBalancesRepository {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
     await api.clearLocalBalances(safeAddress);
   }
-
-  async clearLocalBalances(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<void> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    await api.clearLocalBalances(safeAddress);
-  }
 }
