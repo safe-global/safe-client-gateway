@@ -22,23 +22,24 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
 
   async set(
     key: string,
-    value: any,
+    field: string,
+    value: string,
     expireTimeSeconds?: number,
   ): Promise<void> {
     try {
-      await this.client.json.set(key, '$', value);
+      await this.client.hSet(key, field, value);
       await this.client.expire(
         key,
         expireTimeSeconds ?? this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
-      await this.client.json.del(key, '$');
+      await this.client.hDel(key, field);
       throw error;
     }
   }
 
-  async get<T>(key: string): Promise<T> {
-    return (await this.client.json.get(key)) as unknown as T;
+  async get(key: string, field: string): Promise<string | undefined> {
+    return await this.client.hGet(key, field);
   }
 
   /**
