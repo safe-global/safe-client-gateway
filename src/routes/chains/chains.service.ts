@@ -30,18 +30,11 @@ export class ChainsService {
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, result.next);
     const previousURL = cursorUrlFromLimitAndOffset(routeUrl, result.previous);
 
-    return {
+    return <Page<Chain>>{
       count: result.count,
       next: nextURL?.toString(),
       previous: previousURL?.toString(),
-      results: result.results.map(
-        (chain) =>
-          <Chain>{
-            chainId: chain.chainId,
-            chainName: chain.chainName,
-            vpcTransactionService: chain.vpcTransactionService,
-          },
-      ),
+      results: result.results,
     };
   }
 

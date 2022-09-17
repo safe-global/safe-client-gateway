@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Ajv, { JSONSchemaType, Schema, ValidateFunction } from 'ajv';
+import addFormats from 'ajv-formats';
 
 @Injectable()
 export class JsonSchemaService {
@@ -8,6 +9,7 @@ export class JsonSchemaService {
   constructor() {
     // coerceTypes param shouldn't be necessary when serialization is implemented.
     this.ajv = new Ajv({ coerceTypes: true });
+    addFormats(this.ajv, { formats: ['uri'] });
   }
 
   addSchema<T>(schema: JSONSchemaType<T>, name: string): void {

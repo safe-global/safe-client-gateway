@@ -75,13 +75,9 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/chains')
         .expect(200)
-        .expect({
+        .expect(<Page<Chain>>{
           count: chainsResponse.count,
-          results: chainsResponse.results.map((result) => ({
-            chainId: result.chainId,
-            chainName: result.chainName,
-            vpcTransactionService: result.vpcTransactionService,
-          })),
+          results: chainsResponse.results,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
