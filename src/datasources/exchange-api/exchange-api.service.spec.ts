@@ -1,6 +1,6 @@
 import { ExchangeApi } from './exchange-api.service';
 import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
-import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
+import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes.factory';
 import { FakeConfigurationService } from '../../common/config/__tests__/fake.configuration.service';
 import { mockNetworkService } from '../../datasources/network/__tests__/test.network.module';
 
@@ -27,10 +27,7 @@ describe('ExchangeApi', () => {
   });
 
   it('Should return the fiatcodes', async () => {
-    const expectedFiatCodes: FiatCodesExchangeResult = {
-      success: true,
-      symbols: {},
-    };
+    const expectedFiatCodes = exchangeFiatCodesFactory(true, { USD: 'Dollar' });
     mockNetworkService.get.mockResolvedValue({ data: expectedFiatCodes });
 
     const fiatcodes = await service.getFiatCodes();
