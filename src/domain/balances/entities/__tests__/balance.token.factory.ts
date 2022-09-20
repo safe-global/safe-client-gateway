@@ -8,9 +8,9 @@ export default function (
   symbol?: string,
 ): BalanceToken {
   return <BalanceToken>{
-    decimals: decimals || faker.datatype.number(),
-    logoUri: logo_uri || faker.internet.url(),
-    name: name || faker.finance.currencyName(),
-    symbol: symbol || faker.finance.currencySymbol(),
+    decimals: decimals ?? faker.datatype.number(),
+    logoUri: logo_uri ?? faker.internet.url(),
+    name: name ?? faker.finance.currencyName(),
+    symbol: symbol ?? faker.finance.currencySymbol(),
   };
 }
