@@ -1,5 +1,7 @@
 import { Backbone } from '../backbone/entities/backbone.entity';
 import { Balance } from '../balances/entities/balance.entity';
+import { Page } from '../entities/page.entity';
+import { Collectible } from '../collectibles/entities/collectible.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -9,6 +11,14 @@ export interface ITransactionApi {
   ): Promise<Balance[]>;
 
   clearLocalBalances(safeAddress: string): Promise<void>;
+
+  getCollectibles(
+    safeAddress: string,
+    limit?: number,
+    offset?: number,
+    trusted?: boolean,
+    excludeSpam?: boolean,
+  ): Promise<Page<Collectible>>;
 
   getBackbone(): Promise<Backbone>;
 }

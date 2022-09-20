@@ -13,6 +13,7 @@ import { ConfigurationModule } from './config/configuration.module';
 import { CacheModule } from './datasources/cache/cache.module';
 import { DomainModule } from './domain.module';
 import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
+import { CollectiblesModule } from './routes/collectibles/collectibles.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
     BalancesModule,
     CacheHooksModule,
     ChainsModule,
+    CollectiblesModule,
     // common
     CacheModule,
     ConfigurationModule,
