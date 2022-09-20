@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { GasPriceFixed } from '../gas-price-fixed.entity';
 import { faker } from '@faker-js/faker';
 

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { BlockExplorerUriTemplate } from '../block-explorer-uri-template.entity';
 import { faker } from '@faker-js/faker';
 

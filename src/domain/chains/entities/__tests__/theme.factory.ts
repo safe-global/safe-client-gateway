@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { Theme } from '../theme.entity';
 import { faker } from '@faker-js/faker';
 

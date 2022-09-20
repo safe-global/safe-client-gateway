@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { RpcUri } from '../../../../routes/chains/openapi/api-rpc-uri';
 import { faker } from '@faker-js/faker';
 import { RpcUriAuthentication } from '../rpc-uri-authentication.entity';
