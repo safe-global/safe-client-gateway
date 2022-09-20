@@ -12,7 +12,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../common/config/__tests__/test.configuration.module';
-import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
+import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes.factory';
 import {
   fakeCacheService,
   TestCacheModule,
@@ -382,16 +382,13 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/supported-fiat-codes', () => {
     it('Success', async () => {
-      const fiatCodesResult: FiatCodesExchangeResult = {
-        success: true,
-        symbols: {
-          AED: 'United Arab Emirates Dirham',
-          USD: 'United States Dollar',
-          AFN: 'Afghan Afghani',
-          EUR: 'Euro',
-          ALL: 'Albanian Lek',
-        },
-      };
+      const fiatCodesResult = exchangeFiatCodesFactory(true, {
+        AED: 'United Arab Emirates Dirham',
+        USD: 'United States Dollar',
+        AFN: 'Afghan Afghani',
+        EUR: 'Euro',
+        ALL: 'Albanian Lek',
+      });
       mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodesResult });
 
       await request(app.getHttpServer())
