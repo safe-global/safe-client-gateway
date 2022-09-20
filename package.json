@@ -90,7 +90,8 @@
     ],
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
-      "index.ts"
+      "index.ts",
+      ".+\\/__tests__\\/.+\\.factory.(t|j)s"
     ],
     "testEnvironment": "node"
   },
