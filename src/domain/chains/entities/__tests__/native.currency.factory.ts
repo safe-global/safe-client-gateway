@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import { faker } from '@faker-js/faker';
 import { NativeCurrency } from '../native.currency.entity';
 

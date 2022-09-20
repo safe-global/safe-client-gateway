@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import { GasPriceOracle } from '../gas-price-oracle.entity';
 import { faker } from '@faker-js/faker';
 
