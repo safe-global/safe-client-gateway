@@ -3,10 +3,14 @@ import { Chain } from './entities/chain.entity';
 import { Page } from '../entities/page.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigApi } from '../interfaces/config-api.interface';
-import { ValidateFunction, DefinedError } from 'ajv';
+import { DefinedError, ValidateFunction } from 'ajv';
 import {
-  nativeCurrencySchema,
+  blockExplorerUriTemplateSchema,
   chainSchema,
+  gasPriceSchema,
+  nativeCurrencySchema,
+  rpcUriSchema,
+  themeSchema,
 } from './entities/schemas/chain.schema';
 import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import { ValidationErrorFactory } from '../errors/validation-error-factory';
@@ -20,7 +24,17 @@ export class ChainsRepository implements IChainsRepository {
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.jsonSchemaService.addSchema(nativeCurrencySchema, 'nativeCurrency');
+    this.jsonSchemaService.addSchema(
+      nativeCurrencySchema,
+      'nativeCurrencySchema',
+    );
+    this.jsonSchemaService.addSchema(rpcUriSchema, 'rpcUriSchema');
+    this.jsonSchemaService.addSchema(
+      blockExplorerUriTemplateSchema,
+      'blockExplorerUriTemplateSchema',
+    );
+    this.jsonSchemaService.addSchema(themeSchema, 'themeSchema');
+    this.jsonSchemaService.addSchema(gasPriceSchema, 'gasPriceSchema');
     this.isValidChain = this.jsonSchemaService.compile(
       chainSchema,
     ) as ValidateFunction<Chain>;
