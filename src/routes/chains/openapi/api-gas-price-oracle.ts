@@ -7,7 +7,7 @@ export class GasPriceOracle implements DomainGasPriceOracle {
   @ApiProperty()
   gasParameter: string;
   @ApiProperty()
-  gweiFactor: number;
+  gweiFactor: string;
   @ApiProperty()
   uri: string;
 }

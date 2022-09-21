@@ -18,7 +18,7 @@ export interface Chain {
   vpcTransactionService: string;
   theme: Theme;
   gasPrice: Array<GasPriceOracle | GasPriceFixed>;
-  ensRegistryAddress: string;
+  ensRegistryAddress?: string;
   disabledWallets: string[];
   features: string[];
 }

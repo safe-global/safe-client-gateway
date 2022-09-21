@@ -8,7 +8,7 @@ export class JsonSchemaService {
 
   constructor() {
     // coerceTypes param shouldn't be necessary when serialization is implemented.
-    this.ajv = new Ajv({ coerceTypes: true });
+    this.ajv = new Ajv({ coerceTypes: true, useDefaults: true });
     addFormats(this.ajv, { formats: ['uri'] });
   }
 

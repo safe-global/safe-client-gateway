@@ -24,6 +24,7 @@ export const rpcUriSchema: JSONSchemaType<RpcUri> = {
   properties: {
     authentication: {
       type: 'string',
+      default: RpcUriAuthentication.Unknown,
       enum: Object.values(RpcUriAuthentication),
     },
     value: { type: 'string' },
@@ -71,7 +72,7 @@ export const gasPriceSchema: JSONSchemaType<
           type: { const: 'oracle', type: 'string' },
           uri: { type: 'string', format: 'uri' },
           gasParameter: { type: 'string' },
-          gweiFactor: { type: 'number' },
+          gweiFactor: { type: 'string' },
         },
         required: ['type', 'uri', 'gasParameter', 'gweiFactor'],
       },
@@ -94,7 +95,7 @@ export const chainSchema: JSONSchemaType<Chain> = {
     vpcTransactionService: { type: 'string', format: 'uri' },
     theme: { $ref: 'themeSchema' },
     gasPrice: { $ref: 'gasPriceSchema' },
-    ensRegistryAddress: { type: 'string' },
+    ensRegistryAddress: { type: 'string', nullable: true },
     disabledWallets: { type: 'array', items: { type: 'string' } },
     features: { type: 'array', items: { type: 'string' } },
   },
@@ -111,7 +112,6 @@ export const chainSchema: JSONSchemaType<Chain> = {
     'vpcTransactionService',
     'theme',
     'gasPrice',
-    'ensRegistryAddress',
     'disabledWallets',
     'features',
   ],

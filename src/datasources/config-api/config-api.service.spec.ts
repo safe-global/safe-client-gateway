@@ -10,16 +10,17 @@ const dataSource = {
 const mockDataSource = jest.mocked(dataSource);
 
 describe('ConfigApi', () => {
-  const fakeConfigurationService = new FakeConfigurationService();
-  fakeConfigurationService.set('safeConfig.baseUri', 'https://example.url');
+  let fakeConfigurationService;
+  let service: ConfigApi;
 
-  const service: ConfigApi = new ConfigApi(
-    dataSource,
-    fakeConfigurationService,
-  );
+  beforeAll(async () => {
+    fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('safeConfig.baseUri', 'https://example.url');
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    service = new ConfigApi(dataSource, fakeConfigurationService);
   });
 
   it('should error if configuration is not defined', async () => {
