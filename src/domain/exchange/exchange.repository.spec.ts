@@ -12,7 +12,6 @@ const validationErrorFactory = {
 } as unknown as ValidationErrorFactory;
 
 const validationFunction = jest.fn();
-validationFunction.mockImplementation(() => true);
 
 const jsonSchemaService = {
   addSchema: jest.fn(),
@@ -38,6 +37,7 @@ describe('Exchange Repository', () => {
       mockValidationErrorFactory,
       mockJsonSchemaService,
     );
+    validationFunction.mockImplementation(() => true);
   });
 
   it('should return the Fiat Codes', async () => {
@@ -51,6 +51,12 @@ describe('Exchange Repository', () => {
     expect(Object.keys(exchangeFiatCodes.symbols)).toStrictEqual(result);
   });
 
+  it('getFiatCodes should throw validation error', async () => {
+    validationFunction.mockImplementationOnce(() => false);
+
+    await expect(exchangeRepository.getFiatCodes()).rejects.toThrow();
+  });
+
   it('Should return convert rate', async () => {
     const exchangeResult = exchangeResultFactory(true, {
       BIG: 10,
@@ -60,5 +66,28 @@ describe('Exchange Repository', () => {
 
     const result = await exchangeRepository.convertRates('LIT', 'BIG');
     expect(0.1).toBe(result);
+  });
+
+  it('ConvertRates should throw validation error', async () => {
+    validationFunction.mockImplementationOnce(() => false);
+
+    await expect(
+      exchangeRepository.convertRates('LIT', 'BIG'),
+    ).rejects.toThrow();
+  });
+
+  it('ConvertRates should throw exchange rate no available', async () => {
+    const exchangeResult = exchangeResultFactory(true, {
+      BIG: 10,
+      LIT: 1,
+    });
+    mockExchangeApi.getExchangeResult.mockResolvedValue(exchangeResult);
+
+    await expect(exchangeRepository.convertRates('TO', 'BIG')).rejects.toThrow(
+      'Exchange rate for TO is not available',
+    );
+    await expect(
+      exchangeRepository.convertRates('BIG', 'FROM'),
+    ).rejects.toThrow('Exchange rate for FROM is not available');
   });
 });
