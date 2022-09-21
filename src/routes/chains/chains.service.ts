@@ -5,9 +5,9 @@ import {
 } from '../../common/pagination/pagination.data';
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
-import { Page } from '../../domain/entities/page.entity';
 import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
+import { Page } from '../../domain/entities/page.entity';
 
 @Injectable()
 export class ChainsService {

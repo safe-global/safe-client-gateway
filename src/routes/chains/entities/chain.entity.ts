@@ -5,12 +5,12 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { NativeCurrency as ApiNativeCurrency } from './api-native-currency';
-import { BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate } from './api-block-explorer-uri-template';
-import { GasPriceOracle as ApiGasPriceOracle } from './api-gas-price-oracle';
-import { GasPriceFixed as ApiGasPriceFixed } from './api-gas-price-fixed';
-import { RpcUri as ApiRpcUri } from './api-rpc-uri';
-import { Theme as ApiTheme } from './api-theme';
+import { NativeCurrency as ApiNativeCurrency } from './native-currency.entity';
+import { BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate } from './block-explorer-uri-template.entity';
+import { GasPriceOracle as ApiGasPriceOracle } from './gas-price-oracle.entity';
+import { GasPriceFixed as ApiGasPriceFixed } from './gas-price-fixed.entity';
+import { RpcUri as ApiRpcUri } from './rpc-uri.entity';
+import { Theme as ApiTheme } from './theme.entity';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed)
 export class Chain implements DomainChain {
