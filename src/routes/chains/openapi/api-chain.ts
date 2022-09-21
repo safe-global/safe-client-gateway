@@ -1,5 +1,10 @@
 import { Chain as DomainChain } from '../../../domain/chains/entities/chain.entity';
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { NativeCurrency as ApiNativeCurrency } from './api-native-currency';
 import { BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate } from './api-block-explorer-uri-template';
 import { GasPriceOracle as ApiGasPriceOracle } from './api-gas-price-oracle';
@@ -23,8 +28,8 @@ export class Chain implements DomainChain {
   blockExplorerUriTemplate: ApiBlockExplorerUriTemplate;
   @ApiProperty()
   disabledWallets: string[];
-  @ApiProperty()
-  ensRegistryAddress: string;
+  @ApiPropertyOptional()
+  ensRegistryAddress?: string;
   @ApiProperty()
   features: string[];
   @ApiProperty({
