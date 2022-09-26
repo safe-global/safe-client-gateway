@@ -5,7 +5,11 @@ const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
-    symbols: { type: 'object' },
+    symbols: {
+      type: 'object',
+      propertyNames: { type: 'string' },
+      required: [],
+    },
   },
   required: ['success', 'symbols'],
 };

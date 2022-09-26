@@ -13,7 +13,7 @@ export class Backbone implements DomainBackbone {
   @ApiProperty()
   secure: boolean;
   @ApiProperty()
-  settings: object;
+  settings: Record<string, string>;
   @ApiProperty()
   version: string;
 }
