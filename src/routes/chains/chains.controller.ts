@@ -9,6 +9,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Backbone as ApiBackbone } from './entities/backbone.entity';
 import { Page } from '../../domain/entities/page.entity';
 import { ChainPage } from './entities/chain-page.entity';
+import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 
 @ApiTags('chains')
 @Controller({
@@ -18,6 +19,11 @@ import { ChainPage } from './entities/chain-page.entity';
 export class ChainsController {
   constructor(private readonly chainsService: ChainsService) {}
 
+  @ApiImplicitQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+  })
   @ApiOkResponse({ type: ChainPage })
   @Get()
   async getChains(
