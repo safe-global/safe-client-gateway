@@ -20,6 +20,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
+import { DataSourceErrorFilter } from '../../common/filters/data-source-error.filter';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -65,6 +66,8 @@ describe('Chains Controller (Unit)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new DataSourceErrorFilter());
+
     await app.init();
   });
 

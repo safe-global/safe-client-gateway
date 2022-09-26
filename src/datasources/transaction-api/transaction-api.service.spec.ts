@@ -1,14 +1,11 @@
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { Balance } from '../../domain/balances/entities/balance.entity';
 import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
 import { ICacheService } from '../cache/cache.service.interface';
 import { faker } from '@faker-js/faker';
-
-const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
-const BACKBONE: Backbone = backboneFactory();
+import { HttpErrorFactory } from '../errors/http-error-factory';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 
 const dataSource = {
   get: jest.fn(),
@@ -20,12 +17,18 @@ const cacheService = {
 } as unknown as ICacheService;
 const mockCacheService = jest.mocked(cacheService);
 
+const httpErrorFactory = {
+  from: jest.fn(),
+} as unknown as HttpErrorFactory;
+const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
+
 describe('TransactionApi', () => {
   const service: TransactionApi = new TransactionApi(
     '1',
     'baseUrl',
     mockDataSource,
     mockCacheService,
+    mockHttpErrorFactory,
   );
 
   beforeEach(() => {
@@ -34,36 +37,49 @@ describe('TransactionApi', () => {
 
   describe('Balances', () => {
     it('should return the balances retrieved', async () => {
-      mockDataSource.get.mockResolvedValue(BALANCES);
-      const balances = await service.getBalances('test', true, true);
-      expect(balances).toBe(BALANCES);
+      const data = [balanceFactory(), balanceFactory()];
+      mockDataSource.get.mockResolvedValue(data);
+
+      const actual = await service.getBalances('test', true, true);
+
+      expect(actual).toBe(data);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
 
     it('should forward error', async () => {
-      mockDataSource.get = jest
-        .fn()
-        .mockRejectedValueOnce(new Error('Some error'));
+      const expected = new DataSourceError('something happened');
+      mockDataSource.get.mockRejectedValueOnce(new Error('Some error'));
+      mockHttpErrorFactory.from.mockReturnValue(expected);
 
-      await expect(service.getBalances('test', true, true)).rejects.toThrow(
-        'Some error',
-      );
+      await expect(
+        service.getBalances('test', true, true),
+      ).rejects.toThrowError(expected);
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
     });
   });
 
   describe('Backbone', () => {
     it('should return the backbone retrieved', async () => {
-      mockDataSource.get.mockResolvedValueOnce(BACKBONE);
-      const backbone = await service.getBackbone();
-      expect(backbone).toBe(BACKBONE);
+      const data = backboneFactory();
+      mockDataSource.get.mockResolvedValueOnce(data);
+
+      const actual = await service.getBackbone();
+
+      expect(actual).toBe(data);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
 
     it('should forward error', async () => {
-      const err = new Error('testErr');
-      mockDataSource.get = jest.fn().mockRejectedValueOnce(err);
-      await expect(service.getBackbone()).rejects.toThrow(err.message);
+      const expected = new DataSourceError('something happened');
+      mockHttpErrorFactory.from.mockReturnValue(expected);
+      mockDataSource.get.mockRejectedValueOnce(new Error('testErr'));
+
+      await expect(service.getBackbone()).rejects.toThrowError(expected);
+
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
     });
   });
 
@@ -78,6 +94,7 @@ describe('TransactionApi', () => {
       expect(mockCacheService.delete).toBeCalledWith(
         `1_${safeAddress}_balances`,
       );
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
   });
 });
