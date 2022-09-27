@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Balance as TransactionApiBalance } from '../../domain/balances/entities/balance.entity';
-import { TokenInfo } from '../../common/entities/token-info.entity';
-import { TokenType } from '../../common/entities/token-type.entity';
+import { TokenInfo } from './entities/token-info.entity';
+import { TokenType } from './entities/token-type.entity';
 import { Balances } from './entities/balances.entity';
 import { NativeCurrency } from '../../domain/chains/entities/native.currency.entity';
 import { Balance } from './entities/balance.entity';

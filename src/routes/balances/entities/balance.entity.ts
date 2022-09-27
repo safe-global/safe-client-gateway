@@ -1,4 +1,4 @@
-import { TokenInfo } from '../../../common/entities/token-info.entity';
+import { TokenInfo } from './token-info.entity';
 
 export interface Balance {
   tokenInfo: TokenInfo;
