@@ -1,5 +1,5 @@
 import { ConfigApi } from './config-api.service';
-import { FakeConfigurationService } from '../../common/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 

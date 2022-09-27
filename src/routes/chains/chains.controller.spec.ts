@@ -10,7 +10,7 @@ import {
 import {
   fakeConfigurationService,
   TestConfigurationModule,
-} from '../../common/config/__tests__/test.configuration.module';
+} from '../../config/__tests__/test.configuration.module';
 import {
   fakeCacheService,
   TestCacheModule,

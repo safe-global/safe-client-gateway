@@ -4,7 +4,7 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { IConfigurationService } from '../../common/config/configuration.service.interface';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 

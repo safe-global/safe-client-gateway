@@ -9,7 +9,7 @@ import { ChainsModule } from './routes/chains/chains.module';
 import { BalancesModule } from './routes/balances/balances.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { NetworkModule } from './datasources/network/network.module';
-import { ConfigurationModule } from './common/config/configuration.module';
+import { ConfigurationModule } from './config/configuration.module';
 import { CacheModule } from './datasources/cache/cache.module';
 import { DomainModule } from './domain.module';
 import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
