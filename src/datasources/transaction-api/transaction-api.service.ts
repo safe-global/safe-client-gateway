@@ -28,7 +28,7 @@ export class TransactionApi implements ITransactionApi {
     return this.dataSource.get(cacheKey, cacheKeyField, url, {
       params: {
         trusted: trusted,
-        excludeSpam: excludeSpam,
+        exclude_spam: excludeSpam,
       },
     });
   }

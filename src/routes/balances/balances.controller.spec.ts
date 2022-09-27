@@ -111,7 +111,7 @@ describe('Balances Controller (Unit)', () => {
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
       );
       expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
-        params: { trusted: undefined, excludeSpam: undefined },
+        params: { trusted: undefined, exclude_spam: undefined },
       });
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
         'https://test.exchange/latest',
