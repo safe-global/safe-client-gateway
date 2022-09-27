@@ -10,8 +10,8 @@ import { IExchangeRepository } from './domain/exchange/exchange.repository.inter
 import { ExchangeRepository } from './domain/exchange/exchange.repository';
 import { IBackboneRepository } from './domain/backbone/backbone.repository.interface';
 import { BackboneRepository } from './domain/backbone/backbone.repository';
-import { ValidationErrorFactory } from './domain/errors/validation-error-factory';
-import { JsonSchemaService } from './common/schemas/json-schema.service';
+import { ValidationErrorFactory } from './domain/schema/validation-error-factory';
+import { JsonSchemaService } from './domain/schema/json-schema.service';
 
 @Global()
 @Module({

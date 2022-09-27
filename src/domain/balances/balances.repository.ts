@@ -3,8 +3,8 @@ import { Balance } from './entities/balance.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import {
   balanceSchema,
   balanceTokenSchema,
