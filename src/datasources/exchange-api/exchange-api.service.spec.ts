@@ -1,8 +1,8 @@
 import { ExchangeApi } from './exchange-api.service';
 import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
 import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes.factory';
-import { FakeConfigurationService } from '../../common/config/__tests__/fake.configuration.service';
-import { mockNetworkService } from '../../datasources/network/__tests__/test.network.module';
+import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
+import { mockNetworkService } from '../network/__tests__/test.network.module';
 
 describe('ExchangeApi', () => {
   let service: ExchangeApi;
