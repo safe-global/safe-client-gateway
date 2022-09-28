@@ -23,16 +23,18 @@ const httpErrorFactory = {
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('TransactionApi', () => {
-  const service: TransactionApi = new TransactionApi(
-    '1',
-    'baseUrl',
-    mockDataSource,
-    mockCacheService,
-    mockHttpErrorFactory,
-  );
+  let service: TransactionApi;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    service = new TransactionApi(
+      '1',
+      'baseUrl',
+      mockDataSource,
+      mockCacheService,
+      mockHttpErrorFactory,
+    );
   });
 
   describe('Balances', () => {
