@@ -3,6 +3,11 @@ import { INetworkService } from './network.service.interface';
 import { NetworkResponse } from './entities/network.response.entity';
 import { NetworkRequest } from './entities/network.request.entity';
 import { Axios } from 'axios';
+import {
+  NetworkOtherError,
+  NetworkRequestError,
+  NetworkResponseError,
+} from './entities/network.error.entity';
 
 /**
  * A {@link INetworkService} which uses Axios as the main HTTP client
@@ -15,6 +20,19 @@ export class AxiosNetworkService implements INetworkService {
     url: string,
     config?: NetworkRequest,
   ): Promise<R> {
-    return this.client.get(url, config);
+    try {
+      return await this.client.get(url, config);
+    } catch (error) {
+      if (error.response) {
+        throw new NetworkResponseError(
+          error.response.data,
+          error.response.status,
+        );
+      } else if (error.request) {
+        throw new NetworkRequestError(error.request);
+      } else {
+        throw new NetworkOtherError(error.message);
+      }
+    }
   }
 }

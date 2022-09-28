@@ -19,6 +19,7 @@ import {
 } from '../../datasources/cache/__tests__/test.cache.module';
 import { DomainModule } from '../../domain.module';
 import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
+import { DataSourceErrorFilter } from '../../common/filters/data-source-error.filter';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -48,6 +49,7 @@ describe('Balances Controller (Unit)', () => {
       ],
     }).compile();
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new DataSourceErrorFilter());
     await app.init();
   });
 
@@ -163,10 +165,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
+          .expect(503)
           .expect({
-            message: 'Internal server error',
-            statusCode: 500,
+            message: 'Error getting exchange data',
+            code: 503,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
@@ -398,16 +400,14 @@ describe('Balances Controller (Unit)', () => {
     });
 
     it('Failure getting fiat currencies data', async () => {
-      mockNetworkService.get.mockImplementationOnce(() => {
-        throw new Error();
-      });
+      mockNetworkService.get.mockRejectedValueOnce(new Error());
 
       await request(app.getHttpServer())
         .get('/balances/supported-fiat-codes')
-        .expect(500)
+        .expect(503)
         .expect({
-          message: 'Internal server error',
-          statusCode: 500,
+          code: 503,
+          message: 'Error getting Fiat Codes from exchange',
         });
     });
   });
