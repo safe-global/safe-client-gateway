@@ -5,7 +5,7 @@ import {
   NetworkService,
 } from '../network/network.service.interface';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { LoggerMiddleware } from '../../common/middleware/logger.middleware';
+import { LoggerMiddleware } from '../../middleware/logger.middleware';
 
 /**
  * A data source which tries to retrieve values from cache using

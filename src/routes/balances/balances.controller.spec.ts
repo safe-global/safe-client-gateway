@@ -19,7 +19,7 @@ import {
 } from '../../datasources/cache/__tests__/test.cache.module';
 import { DomainModule } from '../../domain.module';
 import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
-import { DataSourceErrorFilter } from '../../common/filters/data-source-error.filter';
+import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;

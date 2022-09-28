@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '../../common/pagination/pagination.data';
+} from '../common/pagination/pagination.data';
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
 import { Chain } from '../../domain/chains/entities/chain.entity';
