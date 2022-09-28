@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
 import { ValidateFunction, DefinedError } from 'ajv';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
 import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';

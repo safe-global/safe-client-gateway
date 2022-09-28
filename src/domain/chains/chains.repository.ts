@@ -12,8 +12,8 @@ import {
   rpcUriSchema,
   themeSchema,
 } from './entities/schemas/chain.schema';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {

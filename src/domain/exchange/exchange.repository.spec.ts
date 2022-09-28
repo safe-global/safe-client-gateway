@@ -1,6 +1,6 @@
 import { HttpException } from '@nestjs/common';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
 import { ExchangeRepository } from './exchange.repository';
 import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
