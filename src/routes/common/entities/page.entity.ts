@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Page as DomainPage } from '../../domain/entities/page.entity';
+import { Page as DomainPage } from '../../../domain/entities/page.entity';
 
 /**
  * The SwaggerModule cannot generate model definitions based on Generics

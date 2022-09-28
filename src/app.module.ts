@@ -7,7 +7,7 @@ import {
 
 import { ChainsModule } from './routes/chains/chains.module';
 import { BalancesModule } from './routes/balances/balances.module';
-import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { LoggerMiddleware } from './middleware/logger.middleware';
 import { NetworkModule } from './datasources/network/network.module';
 import { ConfigurationModule } from './config/configuration.module';
 import { CacheModule } from './datasources/cache/cache.module';

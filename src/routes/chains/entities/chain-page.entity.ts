@@ -1,4 +1,4 @@
-import { Page } from '../../../common/entities/page.entity';
+import { Page } from '../../common/entities/page.entity';
 import { Chain } from './chain.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
