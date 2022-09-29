@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '../../../../__tests__/builder';
 import { ERC721Transfer } from '../transfer.entity';
 
-export function erc721TransferTransferBuilder(): IBuilder<ERC721Transfer> {
+export function erc721TransferBuilder(): IBuilder<ERC721Transfer> {
   return Builder.new<ERC721Transfer>()
     .with('blockNumber', faker.datatype.number())
     .with('executionDate', faker.date.recent())

@@ -11,7 +11,7 @@ import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity'
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { TransferInfoMapper } from './transfer-info.mapper';
 import { erc20TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferTransferBuilder } from '../../../../domain/safe/entities/__tests__/erc721-transfer.builder';
+import { erc721TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '../../../../domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
@@ -64,7 +64,7 @@ describe('Transfer Info mapper (Unit)', () => {
 
   it('should build an ERC721 TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
-    const transfer = erc721TransferTransferBuilder().build();
+    const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenBuilder().build();

@@ -11,3 +11,11 @@ export function ethereumTransactionBuilder(): IBuilder<EthereumTransaction> {
     .with('transfers', [])
     .with('txHash', faker.datatype.hexadecimal());
 }
+
+export function toJson(ethereumTransaction: EthereumTransaction): unknown {
+  return {
+    ...ethereumTransaction,
+    txType: 'ETHEREUM_TRANSACTION',
+    executionDate: ethereumTransaction.executionDate.toISOString(),
+  };
+}

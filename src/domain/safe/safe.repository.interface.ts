@@ -47,6 +47,13 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
 
+  getTransactionHistoryByExecutionDate(
+    chainId: string,
+    safeAddress: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transaction>>;
+
   getCreationTransaction(
     chainId: string,
     safeAddress: string,

@@ -22,6 +22,7 @@ export function moduleTransactionBuilder(): IBuilder<ModuleTransaction> {
 export function toJson(moduleTransaction: ModuleTransaction): unknown {
   return {
     ...moduleTransaction,
+    txType: 'MODULE_TRANSACTION',
     created: moduleTransaction.created.toISOString(),
     executionDate: moduleTransaction.executionDate.toISOString(),
   };

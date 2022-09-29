@@ -23,4 +23,5 @@ export interface Chain {
   ensRegistryAddress: string | null;
   disabledWallets: string[];
   features: string[];
+  recommendedMasterCopyVersion: string;
 }
