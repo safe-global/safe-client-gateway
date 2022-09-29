@@ -12,6 +12,8 @@ import { IBackboneRepository } from './domain/backbone/backbone.repository.inter
 import { BackboneRepository } from './domain/backbone/backbone.repository';
 import { ValidationErrorFactory } from './domain/schema/validation-error-factory';
 import { JsonSchemaService } from './domain/schema/json-schema.service';
+import { ICollectiblesRepository } from './domain/collectibles/collectibles.repository.interface';
+import { CollectiblesRepository } from './domain/collectibles/collectibles.repository';
 
 @Global()
 @Module({
@@ -20,6 +22,7 @@ import { JsonSchemaService } from './domain/schema/json-schema.service';
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
+    { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     ValidationErrorFactory,
     JsonSchemaService,
@@ -28,6 +31,7 @@ import { JsonSchemaService } from './domain/schema/json-schema.service';
     IBackboneRepository,
     IBalancesRepository,
     IChainsRepository,
+    ICollectiblesRepository,
     IExchangeRepository,
   ],
 })
