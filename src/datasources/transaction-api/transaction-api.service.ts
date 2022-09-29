@@ -7,9 +7,14 @@ import { HttpErrorFactory } from '../errors/http-error-factory';
 import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
 import { Page } from '../../domain/entities/page.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
+import { Safe } from '../../domain/safe/entities/safe.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
+}
+
+function safeCacheKey(chainId: string, safeAddress: string): string {
+  return `${chainId}_${safeAddress}_safe`;
 }
 
 export class TransactionApi implements ITransactionApi {
@@ -87,6 +92,16 @@ export class TransactionApi implements ITransactionApi {
       const field = '';
       const url = `${this.baseUrl}/api/v1/about/master-copies/`;
       return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getSafe(safeAddress: string): Promise<Safe> {
+    try {
+      const cacheKey = safeCacheKey(this.chainId, safeAddress);
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+      return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

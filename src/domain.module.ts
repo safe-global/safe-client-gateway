@@ -14,6 +14,8 @@ import { ValidationErrorFactory } from './domain/schema/validation-error-factory
 import { JsonSchemaService } from './domain/schema/json-schema.service';
 import { ICollectiblesRepository } from './domain/collectibles/collectibles.repository.interface';
 import { CollectiblesRepository } from './domain/collectibles/collectibles.repository';
+import { ISafeRepository } from './domain/safe/safe.repository.interface';
+import { SafeRepository } from './domain/safe/safe.repository';
 
 @Global()
 @Module({
@@ -24,6 +26,7 @@ import { CollectiblesRepository } from './domain/collectibles/collectibles.repos
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: ISafeRepository, useClass: SafeRepository },
     ValidationErrorFactory,
     JsonSchemaService,
   ],
@@ -33,6 +36,7 @@ import { CollectiblesRepository } from './domain/collectibles/collectibles.repos
     IChainsRepository,
     ICollectiblesRepository,
     IExchangeRepository,
+    ISafeRepository,
   ],
 })
 export class DomainModule {}
