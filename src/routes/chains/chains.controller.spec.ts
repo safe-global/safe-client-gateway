@@ -21,6 +21,9 @@ import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
+import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/master-copies.entity';
+import masterCopyFactory from '../../domain/chains/entities/__tests__/master-copy.factory';
+import { MasterCopy } from './entities/master-copy.entity';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -191,6 +194,107 @@ describe('Chains Controller (Unit)', () => {
         `${chainResponse.transactionService}/api/v1/about`,
       );
       expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
+    });
+  });
+
+  describe('GET /:chainId/about/master-copies', () => {
+    it('Success', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      const domainMasterCopiesResponse: DomainMasterCopy[] = [
+        masterCopyFactory('test_address_1', 'test_version_1'),
+        masterCopyFactory('test_address_2', 'test_version_2'),
+      ];
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: domainMasterCopiesResponse,
+      });
+      const masterCopiesResponse = [
+        <MasterCopy>{
+          address: 'test_address_1',
+          version: 'test_version_1',
+        },
+        <MasterCopy>{
+          address: 'test_address_2',
+          version: 'test_version_2',
+        },
+      ];
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/master-copies')
+        .expect(200)
+        .expect(masterCopiesResponse);
+
+      expect(mockNetworkService.get).toBeCalledTimes(2);
+      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
+        'https://test.safe.config/api/v1/chains/1',
+      );
+      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+      );
+      expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
+    });
+
+    it('Failure getting the chain', async () => {
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 400,
+      });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/master-copies')
+        .expect(503)
+        .expect({
+          message: 'Service unavailable',
+          code: 503,
+        });
+
+      expect(mockNetworkService.get).toBeCalledTimes(1);
+      expect(mockNetworkService.get).toBeCalledWith(
+        'https://test.safe.config/api/v1/chains/1',
+        undefined,
+      );
+    });
+
+    it('Should fail getting the master-copies data', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 502,
+      });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/master-copies')
+        .expect(503)
+        .expect({
+          message: 'Service unavailable',
+          code: 503,
+        });
+
+      expect(mockNetworkService.get).toBeCalledTimes(2);
+      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
+        'https://test.safe.config/api/v1/chains/1',
+      );
+      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+      );
+      expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
+    });
+
+    it('Should return invalidate error', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      const domainMasterCopiesResponse = [
+        { address: 1223, safe: 'error' },
+        masterCopyFactory('test_address_2', 'test_version_2'),
+      ];
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: domainMasterCopiesResponse,
+      });
+
+      await request(app.getHttpServer())
+        .get('/chains/1/about/master-copies')
+        .expect(500)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
     });
   });
 });
