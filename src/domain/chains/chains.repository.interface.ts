@@ -1,5 +1,6 @@
 import { Page } from '../entities/page.entity';
 import { Chain } from './entities/chain.entity';
+import { MasterCopy } from './entities/master-copies.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 
@@ -18,4 +19,11 @@ export interface IChainsRepository {
    * @param chainId
    */
   getChain(chainId: string): Promise<Chain>;
+
+  /**
+   * Gets the supported {@link MasterCopy} associated with {@link chainId}
+   *
+   * @param chainId
+   */
+  getMasterCopies(chainId: string): Promise<MasterCopy[]>;
 }
