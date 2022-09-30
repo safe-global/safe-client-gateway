@@ -3,6 +3,7 @@ import { Balance } from '../balances/entities/balance.entity';
 import { Page } from '../entities/page.entity';
 import { Collectible } from '../collectibles/entities/collectible.entity';
 import { MasterCopy } from '../chains/entities/master-copies.entity';
+import { Safe } from '../safe/entities/safe.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -24,4 +25,6 @@ export interface ITransactionApi {
   getBackbone(): Promise<Backbone>;
 
   getMasterCopies(): Promise<MasterCopy[]>;
+
+  getSafe(safeAddress: string): Promise<Safe>;
 }
