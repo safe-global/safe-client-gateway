@@ -9,6 +9,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Backbone as ApiBackbone } from './entities/backbone.entity';
 import { Page } from '../../domain/entities/page.entity';
 import { ChainPage } from './entities/chain-page.entity';
+import { MasterCopy } from './entities/master-copy.entity';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 
 @ApiTags('chains')
@@ -37,5 +38,12 @@ export class ChainsController {
   @Get('/:chainId/about/backbone')
   async getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
     return this.chainsService.getBackbone(chainId);
+  }
+
+  @Get('/:chainId/about/master-copies')
+  async getMasterCopies(
+    @Param('chainId') chainId: string,
+  ): Promise<MasterCopy[]> {
+    return this.chainsService.getMasterCopies(chainId);
   }
 }
