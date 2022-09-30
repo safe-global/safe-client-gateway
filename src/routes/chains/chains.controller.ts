@@ -40,6 +40,7 @@ export class ChainsController {
     return this.chainsService.getBackbone(chainId);
   }
 
+  @ApiOkResponse({ type: MasterCopy, isArray: true })
   @Get('/:chainId/about/master-copies')
   async getMasterCopies(
     @Param('chainId') chainId: string,
