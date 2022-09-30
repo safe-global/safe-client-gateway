@@ -82,9 +82,13 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getMasterCopies(): Promise<MasterCopy[]> {
-    const cacheKey = `${this.chainId}_master-copies`;
-    const field = '';
-    const url = `${this.baseUrl}/api/v1/about/master-copies/`;
-    return this.dataSource.get(cacheKey, field, url);
+    try {
+      const cacheKey = `${this.chainId}_master-copies`;
+      const field = '';
+      const url = `${this.baseUrl}/api/v1/about/master-copies/`;
+      return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 }
