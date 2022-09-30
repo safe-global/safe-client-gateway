@@ -12,7 +12,7 @@ export const safeSchema: JSONSchemaType<Safe> = {
     modules: { type: 'array', nullable: true, items: { type: 'string' } },
     fallbackHandler: { type: 'string' },
     guard: { type: 'string' },
-    version: { type: 'string', nullable: true },
+    version: { type: 'string' },
   },
   required: [
     'address',
@@ -22,5 +22,6 @@ export const safeSchema: JSONSchemaType<Safe> = {
     'masterCopy',
     'fallbackHandler',
     'guard',
+    'version',
   ],
 };

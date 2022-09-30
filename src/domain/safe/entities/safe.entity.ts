@@ -7,5 +7,5 @@ export interface Safe {
   modules?: string[];
   fallbackHandler: string;
   guard: string;
-  version?: string;
+  version: string;
 }
