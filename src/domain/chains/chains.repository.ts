@@ -14,6 +14,8 @@ import {
 } from './entities/schemas/chain.schema';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { MasterCopy } from './entities/master-copies.entity';
+import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
@@ -21,6 +23,8 @@ export class ChainsRepository implements IChainsRepository {
 
   constructor(
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(ITransactionApiManager)
+    private readonly transactionApiManager: ITransactionApiManager,
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
@@ -60,5 +64,14 @@ export class ChainsRepository implements IChainsRepository {
     }
 
     return page;
+  }
+
+  async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
+    const transactionApi = await this.transactionApiManager.getTransactionApi(
+      chainId,
+    );
+    const masterCopies = await transactionApi.getMasterCopies();
+
+    return masterCopies;
   }
 }
