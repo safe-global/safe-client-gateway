@@ -2,7 +2,6 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { BalancesService } from './balances.service';
 import { Balances } from './entities/balances.entity';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Balances as ApiBalances } from './openapi/api-balances';
 
 @ApiTags('balances')
 @Controller({
@@ -12,7 +11,7 @@ import { Balances as ApiBalances } from './openapi/api-balances';
 export class BalancesController {
   constructor(private readonly balancesService: BalancesService) {}
 
-  @ApiOkResponse({ type: ApiBalances })
+  @ApiOkResponse({ type: Balances })
   @Get('chains/:chainId/safes/:safeAddress/balances/:fiatCode')
   async getBalances(
     @Param('chainId') chainId: string,

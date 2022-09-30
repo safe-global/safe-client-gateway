@@ -1,10 +1,18 @@
+import { TokenInfo as DomainTokenInfo } from '../entities/token-info.entity';
+import { ApiProperty } from '@nestjs/swagger';
 import { TokenType } from './token-type.entity';
 
-export interface TokenInfo {
-  tokenType: TokenType;
+export class TokenInfo implements DomainTokenInfo {
+  @ApiProperty()
   address: string;
+  @ApiProperty()
   decimals: number;
-  symbol: string;
+  @ApiProperty()
+  logoUri: string;
+  @ApiProperty()
   name: string;
-  logoUri?: string;
+  @ApiProperty()
+  symbol: string;
+  @ApiProperty({ enum: Object.values(TokenType) })
+  tokenType: TokenType;
 }
