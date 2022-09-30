@@ -6,6 +6,7 @@ import { ICacheService } from '../cache/cache.service.interface';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
 import { Page } from '../../domain/entities/page.entity';
+import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -74,6 +75,17 @@ export class TransactionApi implements ITransactionApi {
       const cacheKey = `${this.chainId}_backbone`;
       const field = '';
       const url = `${this.baseUrl}/api/v1/about`;
+      return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getMasterCopies(): Promise<MasterCopy[]> {
+    try {
+      const cacheKey = `${this.chainId}_master-copies`;
+      const field = '';
+      const url = `${this.baseUrl}/api/v1/about/master-copies/`;
       return await this.dataSource.get(cacheKey, field, url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
