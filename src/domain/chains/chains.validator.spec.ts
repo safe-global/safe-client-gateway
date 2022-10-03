@@ -44,7 +44,7 @@ describe('Chains validator', () => {
   it('should return the data when validation succeed for an array of items', () => {
     validationFunction.mockImplementationOnce(() => true);
 
-    const result = validator.validateMany(chains);
+    const result = chains.map((chain) => validator.validate(chain));
 
     expect(result).toEqual(chains);
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
@@ -60,7 +60,9 @@ describe('Chains validator', () => {
   it('should throw a validation error when validation fails for an array of items', async () => {
     validationFunction.mockImplementationOnce(() => false);
 
-    expect(() => validator.validateMany(chains)).toThrow(expectedErrMessage);
+    expect(() => chains.map((chain) => validator.validate(chain))).toThrow(
+      expectedErrMessage,
+    );
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 });

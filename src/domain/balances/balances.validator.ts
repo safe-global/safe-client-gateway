@@ -31,8 +31,4 @@ export class BalancesValidator implements IValidator<Balance> {
 
     return data as Balance;
   }
-
-  validateMany(data: unknown[]): Balance[] {
-    return data.map((item) => this.validate(item));
-  }
 }

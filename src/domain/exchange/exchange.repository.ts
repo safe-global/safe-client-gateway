@@ -5,18 +5,20 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
-import { ExchangeValidator } from './exchange.validator';
+import { RatesExchangeResultValidator } from './rates-exchange-result.validator';
+import { FiatCodesExchangeResultValidator } from './fiat-codes-exchange-result.validator';
 
 @Injectable()
 export class ExchangeRepository implements IExchangeRepository {
   constructor(
     @Inject(IExchangeApi) private readonly exchangeApi: IExchangeApi,
-    private readonly validator: ExchangeValidator,
+    private readonly ratesExchangeResultValidator: RatesExchangeResultValidator,
+    private readonly fiatCodesExchangeResultValidator: FiatCodesExchangeResultValidator,
   ) {}
 
   async convertRates(to: string, from: string): Promise<number> {
     const ratesExchangeResult = await this.exchangeApi.getRates();
-    this.validator.validate(ratesExchangeResult);
+    this.ratesExchangeResultValidator.validate(ratesExchangeResult);
 
     const fromExchangeRate = ratesExchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
@@ -35,7 +37,7 @@ export class ExchangeRepository implements IExchangeRepository {
 
   async getFiatCodes(): Promise<string[]> {
     const data = await this.exchangeApi.getFiatCodes();
-    this.validator.validate(data);
+    this.fiatCodesExchangeResultValidator.validate(data);
     return Object.keys(data.symbols);
   }
 }

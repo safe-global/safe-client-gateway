@@ -31,8 +31,4 @@ export class ChainsValidator implements IValidator<Chain> {
 
     return data as Chain;
   }
-
-  validateMany(data: unknown[]): Chain[] {
-    return data.map((item) => this.validate(item));
-  }
 }

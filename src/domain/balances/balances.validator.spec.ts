@@ -32,16 +32,18 @@ describe('Balances validator', () => {
   it('should return the data when validation succeed', () => {
     validationFunction.mockImplementationOnce(() => true);
 
-    const result = validator.validateMany(balances);
+    const result = validator.validate(balances[0]);
 
-    expect(result).toEqual(balances);
+    expect(result).toEqual(balances[0]);
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
   it('should throw a validation error when validation fails', async () => {
     validationFunction.mockImplementationOnce(() => false);
 
-    expect(() => validator.validateMany(balances)).toThrow(expectedErrMessage);
+    expect(() =>
+      balances.map((balance) => validator.validate(balance)),
+    ).toThrow(expectedErrMessage);
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 });

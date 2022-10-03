@@ -9,18 +9,18 @@ import { BalancesValidator } from './balances.validator';
 const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 
 const transactionApi = {
-  getBalances: jest.fn().mockResolvedValue(BALANCES),
+  getBalances: jest.fn(),
 } as unknown as ITransactionApi;
+const mockTransactionApi = jest.mocked(transactionApi);
 
 const transactionApiManager = {
-  getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
+  getTransactionApi: jest.fn(),
 } as unknown as ITransactionApiManager;
+const mockTransactionApiManager = jest.mocked(transactionApiManager);
 
 const balancesValidator = {
-  validateMany: jest.fn().mockResolvedValue(BALANCES),
+  validate: jest.fn(),
 } as unknown as BalancesValidator;
-
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
 const mockBalancesValidator = jest.mocked(balancesValidator);
 
 describe('Balances Repository', () => {
@@ -30,12 +30,20 @@ describe('Balances Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
+    mockTransactionApi.getBalances.mockResolvedValue(BALANCES);
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      transactionApi,
+    );
+    mockBalancesValidator.validate = jest
+      .fn()
+      .mockImplementation((balance) => balance);
+
     const data = await repository.getBalances(
       faker.random.word(),
       faker.random.word(),
     );
 
-    expect(mockBalancesValidator.validateMany).toBeCalledTimes(1);
-    expect(data).toBe(BALANCES);
+    expect(mockBalancesValidator.validate).toBeCalledTimes(BALANCES.length);
+    expect(data).toEqual(BALANCES);
   });
 });

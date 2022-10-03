@@ -7,18 +7,16 @@ import { BackboneValidator } from './backbone.validator';
 const expectedErrMessage = 'testErrMessage';
 
 const validationErrorFactory = {
-  from: jest.fn().mockReturnValue(new HttpException(expectedErrMessage, 500)),
+  from: jest.fn(),
 } as unknown as ValidationErrorFactory;
+const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
 
 const validationFunction = jest.fn();
-validationFunction.mockImplementation(() => true);
 
 const jsonSchemaService = {
   addSchema: jest.fn(),
   compile: jest.fn().mockImplementation(() => validationFunction),
 } as unknown as JsonSchemaService;
-
-const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
 const mockJsonSchemaService = jest.mocked(jsonSchemaService);
 
 describe('Backbone validator', () => {
@@ -30,6 +28,9 @@ describe('Backbone validator', () => {
   const backbone = backboneFactory();
 
   it('should return the data when validation succeed', () => {
+    mockValidationErrorFactory.from.mockReturnValue(
+      new HttpException(expectedErrMessage, 500),
+    );
     validationFunction.mockImplementationOnce(() => true);
 
     const result = validator.validate(backbone);

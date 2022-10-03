@@ -27,8 +27,4 @@ export class BackboneValidator implements IValidator<Backbone> {
 
     return data as Backbone;
   }
-
-  validateMany(data: unknown[]): Backbone[] {
-    return data.map((item) => this.validate(item));
-  }
 }

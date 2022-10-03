@@ -19,7 +19,7 @@ export class ChainsRepository implements IChainsRepository {
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     const page = await this.configApi.getChains(limit, offset);
-    this.validator.validateMany(page?.results);
+    page?.results.map((result) => this.validator.validate(result));
     return page;
   }
 }

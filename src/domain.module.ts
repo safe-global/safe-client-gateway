@@ -15,7 +15,8 @@ import { JsonSchemaService } from './common/schemas/json-schema.service';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
 import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
-import { ExchangeValidator } from './domain/exchange/exchange.validator';
+import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-result.validator';
+import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
 
 @Global()
 @Module({
@@ -27,7 +28,8 @@ import { ExchangeValidator } from './domain/exchange/exchange.validator';
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     BackboneValidator,
     BalancesValidator,
-    ExchangeValidator,
+    RatesExchangeResultValidator,
+    FiatCodesExchangeResultValidator,
     ChainsValidator,
     ValidationErrorFactory,
     JsonSchemaService,

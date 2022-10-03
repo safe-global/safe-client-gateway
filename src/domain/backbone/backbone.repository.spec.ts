@@ -9,18 +9,18 @@ import { Backbone } from './entities/backbone.entity';
 const BACKBONE: Backbone = backboneFactory();
 
 const transactionApi = {
-  getBackbone: jest.fn().mockResolvedValue(BACKBONE),
+  getBackbone: jest.fn(),
 } as unknown as ITransactionApi;
+const mockTransactionApi = jest.mocked(transactionApi);
 
 const transactionApiManager = {
   getTransactionApi: jest.fn(),
 } as unknown as ITransactionApiManager;
+const mockTransactionApiManager = jest.mocked(transactionApiManager);
 
 const backboneValidator = {
-  validate: jest.fn().mockResolvedValue(BACKBONE),
+  validate: jest.fn(),
 } as unknown as BackboneValidator;
-
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
 const mockBackboneValidator = jest.mocked(backboneValidator);
 
 describe('Backbone Repository', () => {
@@ -30,6 +30,8 @@ describe('Backbone Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
+    mockTransactionApi.getBackbone.mockResolvedValue(BACKBONE);
+    mockBackboneValidator.validate = jest.fn().mockResolvedValue(BACKBONE);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(
       transactionApi,
     );

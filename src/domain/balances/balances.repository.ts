@@ -21,7 +21,7 @@ export class BalancesRepository implements IBalancesRepository {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
     const balances = await api.getBalances(safeAddress, trusted, excludeSpam);
 
-    return this.validator.validateMany(balances);
+    return balances.map((balance) => this.validator.validate(balance));
   }
 
   async clearLocalBalances(
