@@ -7,6 +7,7 @@ import {
 import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-exchange-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {
@@ -25,18 +26,28 @@ export class ExchangeApi implements IExchangeApi {
   }
 
   async getFiatCodes(): Promise<FiatCodesExchangeResult> {
-    const { data } = await this.networkService.get(`${this.baseUrl}/symbols`, {
-      params: { access_key: this.apiKey },
-    });
-
-    return data;
+    try {
+      const { data } = await this.networkService.get(
+        `${this.baseUrl}/symbols`,
+        {
+          params: { access_key: this.apiKey },
+        },
+      );
+      return data;
+    } catch (error) {
+      throw new DataSourceError('Error getting Fiat Codes from exchange');
+    }
   }
 
   async getRates(): Promise<RatesExchangeResult> {
-    const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
-      params: { access_key: this.apiKey },
-    });
+    try {
+      const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
+        params: { access_key: this.apiKey },
+      });
 
-    return data;
+      return data;
+    } catch (error) {
+      throw new DataSourceError('Error getting exchange data');
+    }
   }
 }

@@ -11,10 +11,10 @@ export function balanceFactory(
   fiatConversion?: number,
 ): Balance {
   return <Balance>{
-    tokenAddress: tokenAddress || faker.finance.ethereumAddress(),
-    token: token || balanceTokenFactory(),
-    balance: balance || faker.datatype.number(),
-    fiatBalance: fiatBalance || faker.datatype.number(),
-    fiatConversion: fiatConversion || faker.datatype.number(),
+    tokenAddress: tokenAddress ?? faker.finance.ethereumAddress(),
+    token: token ?? balanceTokenFactory(),
+    balance: balance ?? faker.datatype.number(),
+    fiatBalance: fiatBalance ?? faker.datatype.number(),
+    fiatConversion: fiatConversion ?? faker.datatype.number(),
   };
 }

@@ -1,6 +1,5 @@
-export class RatesExchangeResult {
-  // TODO: use Record<string, number>, define a compatible JSONSchema
+export interface ExchangeResult {
   success: boolean;
-  rates: object;
+  rates: Record<string, number>;
   base: string;
 }

@@ -5,8 +5,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
-import { RatesExchangeResultValidator } from './rates-exchange-result.validator';
-import { FiatCodesExchangeResultValidator } from './fiat-codes-exchange-result.validator';
+import { ValidateFunction, DefinedError } from 'ajv';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
+import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
+import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
+import { ExchangeResult } from './entities/exchange-result.entity';
 
 @Injectable()
 export class ExchangeRepository implements IExchangeRepository {

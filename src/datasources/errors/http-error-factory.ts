@@ -1,36 +1,44 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosError } from 'axios';
-import { HttpExceptionPayload } from './interfaces/http-exception-payload.interface';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  NetworkError,
+  NetworkResponseError,
+} from '../network/entities/network.error.entity';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 
 /**
- * Creates an {@link HttpException} from an http error response coming from another service.
- * If an error response it's received, it gets parsed, and the status code is kept.
+ * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}
+ *
+ * If the error comes from a response (i.e.: HTTP status code is an error)
+ * then the status code is forwarded alongside a message field if available
+ * in the body of the response.
+ *
  * Otherwise, a default error data with 503 http status code is returned.
  */
 @Injectable()
 export class HttpErrorFactory {
   private readonly logger = new Logger(HttpErrorFactory.name);
 
-  private mapError(err: AxiosError | Error): HttpExceptionPayload {
-    if (axios.isAxiosError(err) && err.response) {
-      const axiosError = err as AxiosError;
-      const errData = axiosError?.response?.data as HttpExceptionPayload;
-      return <HttpExceptionPayload>{
-        message: errData.message,
-        code: axiosError.response?.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
-        arguments: errData.arguments,
-      };
+  private mapError(error: NetworkError | Error): DataSourceError {
+    if (isNetworkResponseError(error)) {
+      return new DataSourceError(error.data.message, error.status);
     } else {
-      return <HttpExceptionPayload>{
-        message: 'Service unavailable',
-        code: HttpStatus.SERVICE_UNAVAILABLE,
-      };
+      return new DataSourceError(
+        'Service unavailable',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
   }
 
-  from(err: AxiosError | Error): HttpException {
-    const errPayload = this.mapError(err);
-    this.logger.error(errPayload);
-    return new HttpException(errPayload, errPayload.code);
+  from(source: NetworkError | Error): DataSourceError {
+    const error = this.mapError(source);
+    this.logger.error(error);
+    return error;
   }
+}
+
+function isNetworkResponseError(
+  error: NetworkError,
+): error is NetworkResponseError {
+  const e = error as NetworkResponseError;
+  return e.data !== undefined && e.status !== undefined;
 }

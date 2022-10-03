@@ -1,90 +1,92 @@
 import { ConfigApi } from './config-api.service';
-import { FakeConfigurationService } from '../../common/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { Chain } from '../../domain/chains/entities/chain.entity';
-import { Page } from '../../common/entities/page.entity';
-
-const CHAINS: Page<Chain> = {
-  count: 2,
-  results: [
-    {
-      chainId: '1',
-      chainName: 'Ethereum',
-      transactionService: 'https://safe-transaction.mainnet.gnosis.io',
-      vpcTransactionService:
-        'http://mainnet-safe-transaction-web.safe.svc.cluster.local',
-      nativeCurrency: {
-        name: 'Ether',
-        symbol: 'ETH',
-        decimals: 18,
-        logoUri:
-          'https://safe-transaction-assets.gnosis-safe.io/chains/1/currency_logo.png',
-      },
-    },
-    {
-      chainId: '100',
-      chainName: 'Gnosis Chain',
-      transactionService: 'https://safe-transaction.xdai.gnosis.io',
-      vpcTransactionService:
-        'http://xdai-safe-transaction-web.safe.svc.cluster.local',
-      nativeCurrency: {
-        name: 'xDai',
-        symbol: 'XDAI',
-        decimals: 18,
-        logoUri:
-          'https://safe-transaction-assets.gnosis-safe.io/chains/100/currency_logo.png',
-      },
-    },
-  ],
-};
-
-const CHAIN: Chain = CHAINS.results[0];
+import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
+import { HttpErrorFactory } from '../errors/http-error-factory';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 
 const dataSource = {
   get: jest.fn(),
 } as unknown as CacheFirstDataSource;
-
 const mockDataSource = jest.mocked(dataSource);
 
-describe('ConfigApi', () => {
-  const fakeConfigurationService = new FakeConfigurationService();
-  fakeConfigurationService.set('safeConfig.baseUri', 'nothing');
+const httpErrorFactory = {
+  from: jest.fn(),
+} as unknown as HttpErrorFactory;
+const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
-  const service: ConfigApi = new ConfigApi(
-    dataSource,
-    fakeConfigurationService,
-  );
+describe('ConfigApi', () => {
+  let fakeConfigurationService;
+  let service: ConfigApi;
+
+  beforeAll(async () => {
+    fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('safeConfig.baseUri', 'https://example.url');
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    service = new ConfigApi(
+      dataSource,
+      fakeConfigurationService,
+      mockHttpErrorFactory,
+    );
+  });
 
   it('should error if configuration is not defined', async () => {
     const fakeConfigurationService = new FakeConfigurationService();
+
     await expect(
-      () => new ConfigApi(dataSource, fakeConfigurationService),
+      () =>
+        new ConfigApi(
+          dataSource,
+          fakeConfigurationService,
+          mockHttpErrorFactory,
+        ),
     ).toThrow();
   });
 
   it('should return the chains retrieved', async () => {
-    mockDataSource.get.mockResolvedValue(CHAINS);
+    const data = [chainFactory(), chainFactory()];
+    mockDataSource.get.mockResolvedValue(data);
 
-    const chains = await service.getChains();
+    const actual = await service.getChains();
 
-    expect(chains).toBe(CHAINS);
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toBeCalledTimes(1);
+    expect(mockDataSource.get).toBeCalledWith(
+      'chains',
+      'undefined_undefined',
+      `https://example.url/api/v1/chains`,
+      { params: { limit: undefined, offset: undefined } },
+    );
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
   it('should return the chain retrieved', async () => {
-    mockDataSource.get.mockResolvedValue(CHAIN);
+    const data = chainFactory();
+    mockDataSource.get.mockResolvedValue(data);
 
-    const chain = await service.getChain('1');
+    const actual = await service.getChain(data.chainId);
 
-    expect(chain).toBe(CHAIN);
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toBeCalledTimes(1);
+    expect(mockDataSource.get).toBeCalledWith(
+      `${data.chainId}_chain`,
+      '',
+      `https://example.url/api/v1/chains/${data.chainId}`,
+    );
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
   it('should forward error', async () => {
-    mockDataSource.get = jest
-      .fn()
-      .mockRejectedValueOnce(new Error('Some error'));
+    const expected = new DataSourceError('some unexpected error');
+    mockHttpErrorFactory.from.mockReturnValue(expected);
+    mockDataSource.get.mockRejectedValueOnce(new Error('Some error'));
 
-    await expect(service.getChains()).rejects.toThrow('Some error');
+    await expect(service.getChains()).rejects.toThrowError(expected);
 
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
   });
 });

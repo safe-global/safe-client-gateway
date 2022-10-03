@@ -10,7 +10,7 @@ import {
 import {
   fakeConfigurationService,
   TestConfigurationModule,
-} from '../../common/config/__tests__/test.configuration.module';
+} from '../../config/__tests__/test.configuration.module';
 import {
   fakeCacheService,
   TestCacheModule,
@@ -20,6 +20,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
+import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -65,6 +66,8 @@ describe('Chains Controller (Unit)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new DataSourceErrorFilter());
+
     await app.init();
   });
 
@@ -75,13 +78,9 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/chains')
         .expect(200)
-        .expect({
+        .expect(<Page<Chain>>{
           count: chainsResponse.count,
-          results: chainsResponse.results.map((result) => ({
-            chainId: result.chainId,
-            chainName: result.chainName,
-            vpcTransactionService: result.vpcTransactionService,
-          })),
+          results: chainsResponse.results,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);

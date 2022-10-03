@@ -5,8 +5,7 @@ import {
   NetworkService,
 } from '../network/network.service.interface';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { LoggerMiddleware } from '../../common/middleware/logger.middleware';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { LoggerMiddleware } from '../../middleware/logger.middleware';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -24,7 +23,6 @@ export class CacheFirstDataSource {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
 
   /**
@@ -47,19 +45,15 @@ export class CacheFirstDataSource {
     params?: NetworkRequest,
     expireTimeSeconds?: number,
   ): Promise<T> {
-    try {
-      const cached = await this.cacheService.get(key, field);
-      if (cached != null) {
-        this.logger.debug(`[Cache] Cache hit: ${key}`);
-        return JSON.parse(cached);
-      }
-      this.logger.debug(`[Cache] Cache miss: ${key}`);
-      const { data } = await this.networkService.get(url, params);
-      const rawJson = JSON.stringify(data);
-      await this.cacheService.set(key, field, rawJson, expireTimeSeconds);
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
+    const cached = await this.cacheService.get(key, field);
+    if (cached != null) {
+      this.logger.debug(`[Cache] Cache hit: ${key}`);
+      return JSON.parse(cached);
     }
+    this.logger.debug(`[Cache] Cache miss: ${key}`);
+    const { data } = await this.networkService.get(url, params);
+    const rawJson = JSON.stringify(data);
+    await this.cacheService.set(key, field, rawJson, expireTimeSeconds);
+    return data;
   }
 }

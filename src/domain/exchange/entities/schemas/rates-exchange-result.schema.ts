@@ -5,7 +5,11 @@ const ratesExchangeResultSchema: JSONSchemaType<RatesExchangeResult> = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
-    rates: { type: 'object' },
+    rates: {
+      type: 'object',
+      propertyNames: { type: 'string' },
+      required: [],
+    },
     base: { type: 'string' },
   },
   required: ['success', 'base', 'rates'],

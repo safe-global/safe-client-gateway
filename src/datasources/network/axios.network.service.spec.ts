@@ -3,6 +3,11 @@ import { Axios } from 'axios';
 import { faker } from '@faker-js/faker';
 import { NetworkRequest } from './entities/network.request.entity';
 import { jest } from '@jest/globals';
+import {
+  NetworkOtherError,
+  NetworkRequestError,
+  NetworkResponseError,
+} from './entities/network.error.entity';
 
 const axios = {
   get: jest.fn(),
@@ -39,11 +44,43 @@ describe('AxiosNetworkService', () => {
     expect(axiosMock.get).toBeCalledWith(url, request);
   });
 
-  it(`get forwards error`, async () => {
+  it(`get forwards unknown error as NetworkOtherError`, async () => {
     const url = faker.internet.url();
     (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
 
-    await expect(target.get(url)).rejects.toThrow('Axios error');
+    await expect(target.get(url)).rejects.toThrowError(
+      new NetworkOtherError('Axios error'),
+    );
+
+    expect(axiosMock.get).toBeCalledTimes(1);
+    expect(axiosMock.get).toBeCalledWith(url, undefined);
+  });
+
+  it(`get forwards response error as NetworkResponseError`, async () => {
+    const url = faker.internet.url();
+    const error = {
+      response: { data: 'data', status: 100 },
+    };
+    (axiosMock.get as any).mockRejectedValueOnce(error);
+
+    await expect(target.get(url)).rejects.toThrowError(
+      new NetworkResponseError(error.response.data, error.response.status),
+    );
+
+    expect(axiosMock.get).toBeCalledTimes(1);
+    expect(axiosMock.get).toBeCalledWith(url, undefined);
+  });
+
+  it(`get forwards response error as NetworkRequestError`, async () => {
+    const url = faker.internet.url();
+    const error = {
+      request: 'some error',
+    };
+    (axiosMock.get as any).mockRejectedValueOnce(error);
+
+    await expect(target.get(url)).rejects.toThrowError(
+      new NetworkRequestError(error.request),
+    );
 
     expect(axiosMock.get).toBeCalledTimes(1);
     expect(axiosMock.get).toBeCalledWith(url, undefined);

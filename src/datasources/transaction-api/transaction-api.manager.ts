@@ -5,6 +5,7 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ITransactionApiManager } from '../../domain/interfaces/transaction-api.manager.interface';
 import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 import { CacheService, ICacheService } from '../cache/cache.service.interface';
+import { HttpErrorFactory } from '../errors/http-error-factory';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
@@ -15,6 +16,7 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
@@ -31,6 +33,7 @@ export class TransactionApiManager implements ITransactionApiManager {
       chain.transactionService,
       this.dataSource,
       this.cacheService,
+      this.httpErrorFactory,
     );
     return this.transactionApiMap[chainId];
   }

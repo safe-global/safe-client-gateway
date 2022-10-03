@@ -2,11 +2,19 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
 import { Balance } from '../../domain/balances/entities/balance.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { Inject } from '@nestjs/common';
-import { CacheService, ICacheService } from '../cache/cache.service.interface';
+import { ICacheService } from '../cache/cache.service.interface';
+import { HttpErrorFactory } from '../errors/http-error-factory';
+import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
+import { Page } from '../../domain/entities/page.entity';
+import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
+import { Safe } from '../../domain/safe/entities/safe.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
+}
+
+function safeCacheKey(chainId: string, safeAddress: string): string {
+  return `${chainId}_${safeAddress}_safe`;
 }
 
 export class TransactionApi implements ITransactionApi {
@@ -14,7 +22,8 @@ export class TransactionApi implements ITransactionApi {
     private readonly chainId: string,
     private readonly baseUrl: string,
     private readonly dataSource: CacheFirstDataSource,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
+    private readonly cacheService: ICacheService,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
 
   async getBalances(
@@ -22,15 +31,19 @@ export class TransactionApi implements ITransactionApi {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Balance[]> {
-    const cacheKey = balanceCacheKey(this.chainId, safeAddress);
-    const cacheKeyField = `${trusted}_${excludeSpam}`;
-    const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
-    return this.dataSource.get(cacheKey, cacheKeyField, url, {
-      params: {
-        trusted: trusted,
-        excludeSpam: excludeSpam,
-      },
-    });
+    try {
+      const cacheKey = balanceCacheKey(this.chainId, safeAddress);
+      const cacheKeyField = `${trusted}_${excludeSpam}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          trusted: trusted,
+          exclude_spam: excludeSpam,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 
   async clearLocalBalances(safeAddress: string): Promise<void> {
@@ -38,10 +51,59 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.delete(cacheKey);
   }
 
+  async getCollectibles(
+    safeAddress: string,
+    limit?: number,
+    offset?: number,
+    trusted?: boolean,
+    excludeSpam?: boolean,
+  ): Promise<Page<Collectible>> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_collectibles`;
+      const cacheKeyField = `${limit}_${offset}_${trusted}_${excludeSpam}`;
+      const url = `${this.baseUrl}/api/v2/safes/${safeAddress}/collectibles/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          limit: limit,
+          offset: offset,
+          trusted: trusted,
+          exclude_spam: excludeSpam,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getBackbone(): Promise<Backbone> {
-    const cacheKey = `${this.chainId}_backbone`;
-    const field = '';
-    const url = `${this.baseUrl}/api/v1/about`;
-    return this.dataSource.get(cacheKey, field, url);
+    try {
+      const cacheKey = `${this.chainId}_backbone`;
+      const field = '';
+      const url = `${this.baseUrl}/api/v1/about`;
+      return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getMasterCopies(): Promise<MasterCopy[]> {
+    try {
+      const cacheKey = `${this.chainId}_master-copies`;
+      const field = '';
+      const url = `${this.baseUrl}/api/v1/about/master-copies/`;
+      return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getSafe(safeAddress: string): Promise<Safe> {
+    try {
+      const cacheKey = safeCacheKey(this.chainId, safeAddress);
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+      return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 }
