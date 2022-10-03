@@ -23,6 +23,7 @@ import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-r
 import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectibleValidator } from './domain/collectibles/collectible.validator';
+import { SafeValidator } from './domain/safe/safe.validator';
 
 @Global()
 @Module({
@@ -41,6 +42,7 @@ import { CollectibleValidator } from './domain/collectibles/collectible.validato
     ChainsValidator,
     MasterCopyValidator,
     CollectibleValidator,
+    SafeValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
