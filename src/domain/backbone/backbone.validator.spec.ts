@@ -1,7 +1,7 @@
 import { HttpException } from '@nestjs/common';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
 import backboneFactory from '../balances/entities/__tests__/backbone.factory';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { BackboneValidator } from './backbone.validator';
 
 const expectedErrMessage = 'testErrMessage';

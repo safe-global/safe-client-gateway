@@ -4,10 +4,10 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { IConfigurationService } from '../../common/config/configuration.service.interface';
 import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-exchange-result.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 import { DataSourceError } from '../../domain/errors/data-source.error';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {

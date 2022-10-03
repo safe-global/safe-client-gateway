@@ -21,6 +21,8 @@ import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
 import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-result.validator';
 import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
+import { MasterCopyValidator } from './domain/chains/master-copy.validator';
+import { CollectibleValidator } from './domain/collectibles/collectible.validator';
 
 @Global()
 @Module({
@@ -37,6 +39,8 @@ import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-e
     RatesExchangeResultValidator,
     FiatCodesExchangeResultValidator,
     ChainsValidator,
+    MasterCopyValidator,
+    CollectibleValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],

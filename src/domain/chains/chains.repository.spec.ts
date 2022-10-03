@@ -2,9 +2,11 @@ import { faker } from '@faker-js/faker';
 import { IConfigApi } from '../interfaces/config-api.interface';
 import { ChainsRepository } from './chains.repository';
 import { ChainsValidator } from './chains.validator';
-import { Page } from '../../common/entities/page.entity';
 import chainFactory from './entities/__tests__/chain.factory';
 import { Chain } from './entities/chain.entity';
+import { Page } from '../entities/page.entity';
+import { MasterCopyValidator } from './master-copy.validator';
+import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 
 const CHAIN = chainFactory();
 const CHAINS: Page<Chain> = {
@@ -12,20 +14,31 @@ const CHAINS: Page<Chain> = {
   results: [chainFactory(), chainFactory()],
 };
 
-const configApi = {
+const mockConfigApi = jest.mocked({
   getChain: jest.fn(),
   getChains: jest.fn(),
-} as unknown as IConfigApi;
+} as unknown as IConfigApi);
 
-const chainValidator = {
+const transactionApiManager = {
+  getTransactionApi: jest.fn(),
+} as unknown as ITransactionApiManager;
+const mockTransactionApiManager = jest.mocked(transactionApiManager);
+
+const mockChainValidator = jest.mocked({
   validate: jest.fn(),
-} as unknown as ChainsValidator;
+} as unknown as ChainsValidator);
 
-const mockConfigApi = jest.mocked(configApi);
-const mockChainValidator = jest.mocked(chainValidator);
+const mockMasterCopyValidator = jest.mocked({
+  validate: jest.fn(),
+} as unknown as MasterCopyValidator);
 
 describe('Chain Repository', () => {
-  const repository = new ChainsRepository(mockConfigApi, mockChainValidator);
+  const repository = new ChainsRepository(
+    mockConfigApi,
+    mockTransactionApiManager,
+    mockChainValidator,
+    mockMasterCopyValidator,
+  );
 
   it('should return and validate a Chain from ConfigAPI', async () => {
     mockConfigApi.getChain.mockResolvedValue(CHAIN);

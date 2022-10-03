@@ -1,6 +1,6 @@
 import { ExchangeApi } from './exchange-api.service';
-import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
-import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes.factory';
+import exchangeResultFactory from '../../domain/exchange/entities/__tests__/rates-exchange-result.factory';
+import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes-exchange-result.factory';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { mockNetworkService } from '../network/__tests__/test.network.module';
 
@@ -26,7 +26,7 @@ describe('ExchangeApi', () => {
     ).toThrow();
   });
 
-  it('Should return the fiatcodes', async () => {
+  it('Should return the fiat codes', async () => {
     const expectedFiatCodes = exchangeFiatCodesFactory(true, { USD: 'Dollar' });
     mockNetworkService.get.mockResolvedValue({ data: expectedFiatCodes });
 
@@ -35,12 +35,12 @@ describe('ExchangeApi', () => {
     expect(fiatcodes).toBe(expectedFiatCodes);
   });
 
-  it('Should return the exchange result', async () => {
-    const expectedExchangeResult = exchangeResultFactory(true, { USD: 2.0 });
-    mockNetworkService.get.mockResolvedValue({ data: expectedExchangeResult });
+  it('Should return the rates exchange result', async () => {
+    const expectedRates = exchangeResultFactory(true, { USD: 2.0 });
+    mockNetworkService.get.mockResolvedValue({ data: expectedRates });
 
-    const exchangeresult = await service.getExchangeResult();
+    const rates = await service.getRates();
 
-    expect(exchangeresult).toBe(expectedExchangeResult);
+    expect(rates).toBe(expectedRates);
   });
 });

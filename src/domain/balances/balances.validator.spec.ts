@@ -1,6 +1,6 @@
 import { HttpException } from '@nestjs/common';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { BalancesValidator } from './balances.validator';
 import { balanceFactory } from './entities/__tests__/balance.factory';
 

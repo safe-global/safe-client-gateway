@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import exchangeResultFactory from '../../domain/exchange/entities/__tests__/exchange.factory';
+import exchangeResultFactory from '../../domain/exchange/entities/__tests__/rates-exchange-result.factory';
 import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import {
   mockNetworkService,
@@ -12,7 +12,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../config/__tests__/test.configuration.module';
-import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes.factory';
+import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/fiat-codes-exchange-result.factory';
 import {
   fakeCacheService,
   TestCacheModule,

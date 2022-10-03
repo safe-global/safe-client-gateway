@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction, DefinedError } from 'ajv';
-import { JsonSchemaService } from '../../common/schemas/json-schema.service';
-import { ValidationErrorFactory } from '../errors/validation-error-factory';
 import { IValidator } from '../interfaces/validator.interface';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { RatesExchangeResult } from './entities/rates-exchange-result.entity';
 import { ratesExchangeResultSchema } from './entities/schemas/rates-exchange-result.schema';
 
