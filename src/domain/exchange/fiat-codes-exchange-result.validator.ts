@@ -7,7 +7,9 @@ import { FiatCodesExchangeResult } from './entities/fiat-codes-exchange-result.e
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
 
 @Injectable()
-export class FiatCodesExchangeResultValidator implements IValidator<FiatCodesExchangeResult> {
+export class FiatCodesExchangeResultValidator
+  implements IValidator<FiatCodesExchangeResult>
+{
   private readonly isValidFiatCodesExchangeResult: ValidateFunction<FiatCodesExchangeResult>;
 
   constructor(

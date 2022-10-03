@@ -7,7 +7,9 @@ import { RatesExchangeResult } from './entities/rates-exchange-result.entity';
 import { ratesExchangeResultSchema } from './entities/schemas/rates-exchange-result.schema';
 
 @Injectable()
-export class RatesExchangeResultValidator implements IValidator<RatesExchangeResult> {
+export class RatesExchangeResultValidator
+  implements IValidator<RatesExchangeResult>
+{
   private readonly isValidRatesExchangeResult: ValidateFunction<RatesExchangeResult>;
 
   constructor(
