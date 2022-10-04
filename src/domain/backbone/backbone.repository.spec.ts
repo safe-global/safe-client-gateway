@@ -8,20 +8,17 @@ import { Backbone } from './entities/backbone.entity';
 
 const BACKBONE: Backbone = backboneFactory();
 
-const transactionApi = {
+const mockTransactionApi = jest.mocked({
   getBackbone: jest.fn(),
-} as unknown as ITransactionApi;
-const mockTransactionApi = jest.mocked(transactionApi);
+} as unknown as ITransactionApi);
 
-const transactionApiManager = {
+const mockTransactionApiManager = jest.mocked({
   getTransactionApi: jest.fn(),
-} as unknown as ITransactionApiManager;
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
+} as unknown as ITransactionApiManager);
 
-const backboneValidator = {
+const mockBackboneValidator = jest.mocked({
   validate: jest.fn(),
-} as unknown as BackboneValidator;
-const mockBackboneValidator = jest.mocked(backboneValidator);
+} as unknown as BackboneValidator);
 
 describe('Backbone Repository', () => {
   const repository = new BackboneRepository(
@@ -33,7 +30,7 @@ describe('Backbone Repository', () => {
     mockTransactionApi.getBackbone.mockResolvedValue(BACKBONE);
     mockBackboneValidator.validate = jest.fn().mockResolvedValue(BACKBONE);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(
-      transactionApi,
+      mockTransactionApi,
     );
 
     const data = await repository.getBackbone(faker.random.word());

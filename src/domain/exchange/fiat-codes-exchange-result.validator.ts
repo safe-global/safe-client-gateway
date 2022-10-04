@@ -20,11 +20,7 @@ export class FiatCodesExchangeResultValidator
       fiatCodesExchangeResultSchema,
     ) as ValidateFunction<FiatCodesExchangeResult>;
   }
-  /**
-   * Validates arbitrary data against {@link FiatCodesExchangeResult}
-   * @param data arbitrary data to be validated
-   * @returns a validated {@link FiatCodesExchangeResult}
-   */
+
   validate(data: unknown): FiatCodesExchangeResult {
     if (!this.isValidFiatCodesExchangeResult(data)) {
       const errors = this.isValidFiatCodesExchangeResult

@@ -21,11 +21,6 @@ export class RatesExchangeResultValidator
     ) as ValidateFunction<RatesExchangeResult>;
   }
 
-  /**
-   * Validates arbitrary data against {@link RatesExchangeResult}
-   * @param data arbitrary data to be validated
-   * @returns a validated {@link RatesExchangeResult}
-   */
   validate(data: unknown): RatesExchangeResult {
     if (!this.isValidRatesExchangeResult(data)) {
       const errors = this.isValidRatesExchangeResult.errors as DefinedError[];

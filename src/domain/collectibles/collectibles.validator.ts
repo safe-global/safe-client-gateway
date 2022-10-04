@@ -7,7 +7,7 @@ import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { collectibleSchema } from './entities/schemas/collectible.schema';
 
 @Injectable()
-export class CollectibleValidator implements IValidator<Collectible> {
+export class CollectiblesValidator implements IValidator<Collectible> {
   private readonly isValidCollectible: ValidateFunction<Collectible>;
 
   constructor(

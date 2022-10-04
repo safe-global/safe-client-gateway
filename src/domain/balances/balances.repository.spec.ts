@@ -8,20 +8,17 @@ import { BalancesValidator } from './balances.validator';
 
 const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 
-const transactionApi = {
+const mockTransactionApi = jest.mocked({
   getBalances: jest.fn(),
-} as unknown as ITransactionApi;
-const mockTransactionApi = jest.mocked(transactionApi);
+} as unknown as ITransactionApi);
 
-const transactionApiManager = {
+const mockTransactionApiManager = jest.mocked({
   getTransactionApi: jest.fn(),
-} as unknown as ITransactionApiManager;
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
+} as unknown as ITransactionApiManager);
 
-const balancesValidator = {
+const mockBalancesValidator = jest.mocked({
   validate: jest.fn(),
-} as unknown as BalancesValidator;
-const mockBalancesValidator = jest.mocked(balancesValidator);
+} as unknown as BalancesValidator);
 
 describe('Balances Repository', () => {
   const repository = new BalancesRepository(
@@ -32,7 +29,7 @@ describe('Balances Repository', () => {
   it('should return the data coming from the TransactionAPI', async () => {
     mockTransactionApi.getBalances.mockResolvedValue(BALANCES);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(
-      transactionApi,
+      mockTransactionApi,
     );
     mockBalancesValidator.validate = jest
       .fn()

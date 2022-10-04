@@ -6,20 +6,15 @@ import { balanceFactory } from './entities/__tests__/balance.factory';
 
 const expectedErrMessage = 'testErrMessage';
 
-const validationErrorFactory = {
+const mockValidationErrorFactory = jest.mocked({
   from: jest.fn().mockReturnValue(new HttpException(expectedErrMessage, 500)),
-} as unknown as ValidationErrorFactory;
+} as unknown as ValidationErrorFactory);
 
 const validationFunction = jest.fn();
-validationFunction.mockImplementation(() => true);
-
-const jsonSchemaService = {
+const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
   compile: jest.fn().mockImplementation(() => validationFunction),
-} as unknown as JsonSchemaService;
-
-const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
-const mockJsonSchemaService = jest.mocked(jsonSchemaService);
+} as unknown as JsonSchemaService);
 
 describe('Balances validator', () => {
   const validator = new BalancesValidator(

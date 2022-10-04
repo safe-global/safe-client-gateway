@@ -3,14 +3,14 @@ import { ITransactionApiManager } from '../interfaces/transaction-api.manager.in
 import { Collectible } from './entities/collectible.entity';
 import { Page } from '../entities/page.entity';
 import { ICollectiblesRepository } from './collectibles.repository.interface';
-import { CollectibleValidator } from './collectible.validator';
+import { CollectiblesValidator } from './collectibles.validator';
 
 @Injectable()
 export class CollectiblesRepository implements ICollectiblesRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly validator: CollectibleValidator,
+    private readonly validator: CollectiblesValidator,
   ) {}
 
   async getCollectibles(

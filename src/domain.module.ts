@@ -22,7 +22,7 @@ import { ChainsValidator } from './domain/chains/chains.validator';
 import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-result.validator';
 import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
-import { CollectibleValidator } from './domain/collectibles/collectible.validator';
+import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
 
 @Global()
@@ -41,7 +41,7 @@ import { SafeValidator } from './domain/safe/safe.validator';
     FiatCodesExchangeResultValidator,
     ChainsValidator,
     MasterCopyValidator,
-    CollectibleValidator,
+    CollectiblesValidator,
     SafeValidator,
     ValidationErrorFactory,
     JsonSchemaService,

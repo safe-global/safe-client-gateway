@@ -19,10 +19,9 @@ const mockConfigApi = jest.mocked({
   getChains: jest.fn(),
 } as unknown as IConfigApi);
 
-const transactionApiManager = {
+const mockTransactionApiManager = jest.mocked({
   getTransactionApi: jest.fn(),
-} as unknown as ITransactionApiManager;
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
+} as unknown as ITransactionApiManager);
 
 const mockChainValidator = jest.mocked({
   validate: jest.fn(),

@@ -6,18 +6,15 @@ import { BackboneValidator } from './backbone.validator';
 
 const expectedErrMessage = 'testErrMessage';
 
-const validationErrorFactory = {
+const mockValidationErrorFactory = jest.mocked({
   from: jest.fn(),
-} as unknown as ValidationErrorFactory;
-const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
+} as unknown as ValidationErrorFactory);
 
 const validationFunction = jest.fn();
-
-const jsonSchemaService = {
+const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
   compile: jest.fn().mockImplementation(() => validationFunction),
-} as unknown as JsonSchemaService;
-const mockJsonSchemaService = jest.mocked(jsonSchemaService);
+} as unknown as JsonSchemaService);
 
 describe('Backbone validator', () => {
   const validator = new BackboneValidator(
