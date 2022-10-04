@@ -8,6 +8,7 @@ import { IBackboneRepository } from '../../domain/backbone/backbone.repository.i
 import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import { Page } from '../../domain/entities/page.entity';
+import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 
 @Injectable()
 export class ChainsService {
@@ -40,5 +41,21 @@ export class ChainsService {
 
   async getBackbone(chainId: string): Promise<Backbone> {
     return this.backboneRepository.getBackbone(chainId);
+  }
+
+  async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
+    const result = await this.chainsRepository.getMasterCopies(chainId);
+
+    const masterCopies = Promise.all(
+      result.map(
+        async (masterCopy) =>
+          <MasterCopy>{
+            address: masterCopy.address,
+            version: masterCopy.version,
+          },
+      ),
+    );
+
+    return masterCopies;
   }
 }
