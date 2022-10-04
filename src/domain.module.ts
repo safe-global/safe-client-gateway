@@ -16,6 +16,8 @@ import { ICollectiblesRepository } from './domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from './domain/collectibles/collectibles.repository';
 import { ISafeRepository } from './domain/safe/safe.repository.interface';
 import { SafeRepository } from './domain/safe/safe.repository';
+import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
+import { ContractsRepository } from './domain/contracts/contracts.repository';
 
 @Global()
 @Module({
@@ -27,6 +29,7 @@ import { SafeRepository } from './domain/safe/safe.repository';
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
+    { provide: IContractsRepository, useClass: ContractsRepository },
     ValidationErrorFactory,
     JsonSchemaService,
   ],
@@ -37,6 +40,7 @@ import { SafeRepository } from './domain/safe/safe.repository';
     ICollectiblesRepository,
     IExchangeRepository,
     ISafeRepository,
+    IContractsRepository,
   ],
 })
 export class DomainModule {}

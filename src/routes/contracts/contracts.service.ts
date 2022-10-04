@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ContractsRepository } from '../../domain/contracts/contracts.repository';
+import { IContractsRepository } from '../../domain/contracts/contracts.repository.interface';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
 
 @Injectable()
 export class ContractsService {
-  constructor(private readonly contractsRepository: ContractsRepository) {}
+  constructor(
+    @Inject(IContractsRepository)
+    private readonly contractsRepository: ContractsRepository,
+  ) {}
 
   async getContract(
     chainId: string,
