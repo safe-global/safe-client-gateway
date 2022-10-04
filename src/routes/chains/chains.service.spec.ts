@@ -41,9 +41,9 @@ describe('ChainsService', () => {
 
   it('should retrieve the mastercopies', async () => {
     const chainId = '1';
-    const mastercopies = [masterCopyFactory(), masterCopyFactory()];
-    chainsRepositoryMock.getMasterCopies.mockResolvedValueOnce(mastercopies);
-    const expected = mastercopies.map(
+    const masterCopies = [masterCopyFactory(), masterCopyFactory()];
+    chainsRepositoryMock.getMasterCopies.mockResolvedValueOnce(masterCopies);
+    const expected = masterCopies.map(
       (masterCopy) =>
         <MasterCopy>{
           address: masterCopy.address,

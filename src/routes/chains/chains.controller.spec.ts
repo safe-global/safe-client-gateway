@@ -277,7 +277,7 @@ describe('Chains Controller (Unit)', () => {
       expect(mockNetworkService.get.mock.calls[1][1]).toBe(undefined);
     });
 
-    it('Should return invalidate error', async () => {
+    it('Should return validation error', async () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const domainMasterCopiesResponse = [
         { address: 1223, safe: 'error' },
