@@ -20,7 +20,6 @@ export class BalancesRepository implements IBalancesRepository {
   ): Promise<Balance[]> {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
     const balances = await api.getBalances(safeAddress, trusted, excludeSpam);
-
     return balances.map((balance) => this.validator.validate(balance));
   }
 

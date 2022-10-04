@@ -34,7 +34,6 @@ export class ChainsRepository implements IChainsRepository {
       chainId,
     );
     const masterCopies = await transactionApi.getMasterCopies();
-
     return masterCopies.map((masterCopy) =>
       this.masterCopyValidator.validate(masterCopy),
     );
