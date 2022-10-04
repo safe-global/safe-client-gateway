@@ -1,9 +1,9 @@
-import { faker } from '@faker-js/faker';
-import { HttpException } from '@nestjs/common';
-import backboneFactory from '../balances/entities/__tests__/backbone.factory';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
-import { BackboneValidator } from './backbone.validator';
+import { faker } from "@faker-js/faker";
+import { HttpException } from "@nestjs/common";
+import { JsonSchemaService } from "../schema/json-schema.service";
+import { ValidationErrorFactory } from "../schema/validation-error-factory";
+import safeFactory from "./entities/__tests__/safe.factory";
+import { SafeValidator } from "./safe.validator";
 
 const mockValidationErrorFactory = jest.mocked({
   from: jest.fn(),
@@ -15,31 +15,31 @@ const mockJsonSchemaService = jest.mocked({
   compile: jest.fn().mockImplementation(() => validationFunction),
 } as unknown as JsonSchemaService);
 
-describe('Backbone validator', () => {
-  const validator = new BackboneValidator(
+describe('Safe validator', () => {
+  const validator = new SafeValidator(
     mockValidationErrorFactory,
     mockJsonSchemaService,
   );
 
   it('should return the data when validation succeed', () => {
-    const backbone = backboneFactory();
+    const safe = safeFactory();
     validationFunction.mockImplementationOnce(() => true);
 
-    const result = validator.validate(backbone);
+    const result = validator.validate(safe);
 
-    expect(result).toBe(backbone);
+    expect(result).toBe(safe);
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
   it('should throw a validation error when validation fails', async () => {
-    const backbone = backboneFactory();
+    const safe = safeFactory();
     const errMsg = faker.random.words();
     mockValidationErrorFactory.from.mockReturnValueOnce(
       new HttpException(errMsg, 500),
     );
     validationFunction.mockImplementationOnce(() => false);
 
-    expect(() => validator.validate(backbone)).toThrow(errMsg);
+    expect(() => validator.validate(safe)).toThrow(errMsg);
     expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 });

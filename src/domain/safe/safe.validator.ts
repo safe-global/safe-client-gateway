@@ -4,6 +4,7 @@ import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { Safe } from './entities/safe.entity';
+import { safeSchema } from './entities/schemas/safe.schema';
 
 @Injectable()
 export class SafeValidator implements IValidator<Safe> {
@@ -12,7 +13,11 @@ export class SafeValidator implements IValidator<Safe> {
   constructor(
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
-  ) {}
+  ) {
+    this.isValidSafe = this.jsonSchemaService.compile(
+      safeSchema,
+    ) as ValidateFunction<Safe>;
+  }
 
   validate(data: unknown): Safe {
     if (!this.isValidSafe(data)) {
