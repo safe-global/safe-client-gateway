@@ -1,9 +1,9 @@
-import { faker } from "@faker-js/faker";
-import { HttpException } from "@nestjs/common";
-import { JsonSchemaService } from "../schema/json-schema.service";
-import { ValidationErrorFactory } from "../schema/validation-error-factory";
-import { CollectiblesValidator } from "./collectibles.validator";
-import collectibleFactory from "./entities/__tests__/collectible.factory";
+import { faker } from '@faker-js/faker';
+import { HttpException } from '@nestjs/common';
+import { JsonSchemaService } from '../schema/json-schema.service';
+import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { CollectiblesValidator } from './collectibles.validator';
+import collectibleFactory from './entities/__tests__/collectible.factory';
 
 const mockValidationErrorFactory = jest.mocked({
   from: jest.fn(),
