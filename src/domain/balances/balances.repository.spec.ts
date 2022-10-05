@@ -1,62 +1,46 @@
-import { HttpException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { BalancesRepository } from './balances.repository';
 import { Balance } from './entities/balance.entity';
 import { balanceFactory } from './entities/__tests__/balance.factory';
+import { BalancesValidator } from './balances.validator';
 
 const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
 
-const transactionApi = {
-  getBalances: jest.fn().mockResolvedValue(BALANCES),
-} as unknown as ITransactionApi;
+const mockTransactionApi = jest.mocked({
+  getBalances: jest.fn(),
+} as unknown as ITransactionApi);
 
-const transactionApiManager = {
-  getTransactionApi: jest.fn().mockResolvedValue(transactionApi),
-} as unknown as ITransactionApiManager;
+const mockTransactionApiManager = jest.mocked({
+  getTransactionApi: jest.fn(),
+} as unknown as ITransactionApiManager);
 
-const validationErrorFactory = {
-  from: jest.fn().mockReturnValue(new HttpException('testErr', 500)),
-} as unknown as ValidationErrorFactory;
-
-const validationFunction = jest.fn();
-validationFunction.mockImplementation(() => true);
-
-const jsonSchemaService = {
-  addSchema: jest.fn(),
-  compile: jest.fn().mockImplementation(() => validationFunction),
-} as unknown as JsonSchemaService;
-
-const mockTransactionApiManager = jest.mocked(transactionApiManager);
-const mockValidationErrorFactory = jest.mocked(validationErrorFactory);
-const mockJsonSchemaService = jest.mocked(jsonSchemaService);
+const mockBalancesValidator = jest.mocked({
+  validate: jest.fn(),
+} as unknown as BalancesValidator);
 
 describe('Balances Repository', () => {
   const repository = new BalancesRepository(
     mockTransactionApiManager,
-    mockValidationErrorFactory,
-    mockJsonSchemaService,
+    mockBalancesValidator,
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
+    mockTransactionApi.getBalances.mockResolvedValue(BALANCES);
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      mockTransactionApi,
+    );
+    mockBalancesValidator.validate = jest
+      .fn()
+      .mockImplementation((balance) => balance);
+
     const data = await repository.getBalances(
       faker.random.word(),
       faker.random.word(),
     );
 
-    expect(data).toBe(BALANCES);
-  });
-
-  it('should throw a validation error when validation fails', async () => {
-    validationFunction.mockImplementationOnce(() => false);
-
-    await expect(
-      repository.getBalances(faker.random.word(), faker.random.word()),
-    ).rejects.toThrow();
-
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    expect(mockBalancesValidator.validate).toBeCalledTimes(BALANCES.length);
+    expect(data).toEqual(BALANCES);
   });
 });

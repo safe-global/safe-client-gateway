@@ -16,6 +16,14 @@ import { ICollectiblesRepository } from './domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from './domain/collectibles/collectibles.repository';
 import { ISafeRepository } from './domain/safe/safe.repository.interface';
 import { SafeRepository } from './domain/safe/safe.repository';
+import { BackboneValidator } from './domain/backbone/backbone.validator';
+import { BalancesValidator } from './domain/balances/balances.validator';
+import { ChainsValidator } from './domain/chains/chains.validator';
+import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-result.validator';
+import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
+import { MasterCopyValidator } from './domain/chains/master-copy.validator';
+import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
+import { SafeValidator } from './domain/safe/safe.validator';
 
 @Global()
 @Module({
@@ -27,6 +35,14 @@ import { SafeRepository } from './domain/safe/safe.repository';
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
+    BackboneValidator,
+    BalancesValidator,
+    RatesExchangeResultValidator,
+    FiatCodesExchangeResultValidator,
+    ChainsValidator,
+    MasterCopyValidator,
+    CollectiblesValidator,
+    SafeValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],

@@ -5,47 +5,28 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
-import { ValidateFunction, DefinedError } from 'ajv';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
-import { FiatCodesExchangeResult } from './entities/fiat-codes-result.entity';
-import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
-import { exchangeResultSchema } from './entities/schemas/exchange-result.schema';
-import { ExchangeResult } from './entities/exchange-result.entity';
+import { FiatCodesExchangeResultValidator } from './fiat-codes-exchange-result.validator';
+import { RatesExchangeResultValidator } from './rates-exchange-result.validator';
 
 @Injectable()
 export class ExchangeRepository implements IExchangeRepository {
-  private readonly isValidExchangeResult: ValidateFunction<ExchangeResult>;
-  private readonly isValidFiatCodesExchangeResult: ValidateFunction<FiatCodesExchangeResult>;
-
   constructor(
     @Inject(IExchangeApi) private readonly exchangeApi: IExchangeApi,
-    private readonly validationErrorFactory: ValidationErrorFactory,
-    private readonly jsonSchemaService: JsonSchemaService,
-  ) {
-    this.isValidExchangeResult = this.jsonSchemaService.compile(
-      exchangeResultSchema,
-    ) as ValidateFunction<ExchangeResult>;
-
-    this.isValidFiatCodesExchangeResult = this.jsonSchemaService.compile(
-      fiatCodesExchangeResultSchema,
-    ) as ValidateFunction<FiatCodesExchangeResult>;
-  }
+    private readonly ratesExchangeResultValidator: RatesExchangeResultValidator,
+    private readonly fiatCodesExchangeResultValidator: FiatCodesExchangeResultValidator,
+  ) {}
 
   async convertRates(to: string, from: string): Promise<number> {
-    const exchangeResult = await this.exchangeApi.getExchangeResult();
+    const ratesExchangeResult = await this.exchangeApi.getRates();
+    this.ratesExchangeResultValidator.validate(ratesExchangeResult);
 
-    if (!this.isValidExchangeResult(exchangeResult)) {
-      const errors = this.isValidExchangeResult.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
-    const fromExchangeRate = exchangeResult.rates[from.toUpperCase()];
+    const fromExchangeRate = ratesExchangeResult.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
         `Exchange rate for ${from} is not available`,
       );
-    const toExchangeRate = exchangeResult.rates[to.toUpperCase()];
+
+    const toExchangeRate = ratesExchangeResult.rates[to.toUpperCase()];
     if (toExchangeRate === undefined)
       throw new InternalServerErrorException(
         `Exchange rate for ${to} is not available`,
@@ -56,13 +37,7 @@ export class ExchangeRepository implements IExchangeRepository {
 
   async getFiatCodes(): Promise<string[]> {
     const data = await this.exchangeApi.getFiatCodes();
-
-    if (!this.isValidFiatCodesExchangeResult(data)) {
-      const errors = this.isValidFiatCodesExchangeResult
-        .errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
+    this.fiatCodesExchangeResultValidator.validate(data);
     return Object.keys(data.symbols);
   }
 }
