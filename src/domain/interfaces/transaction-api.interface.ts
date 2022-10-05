@@ -4,6 +4,7 @@ import { Page } from '../entities/page.entity';
 import { Collectible } from '../collectibles/entities/collectible.entity';
 import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
+import { Contract } from '../contracts/entities/contract.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -27,4 +28,6 @@ export interface ITransactionApi {
   getMasterCopies(): Promise<MasterCopy[]>;
 
   getSafe(safeAddress: string): Promise<Safe>;
+
+  getContract(contractAddress: string): Promise<Contract>;
 }

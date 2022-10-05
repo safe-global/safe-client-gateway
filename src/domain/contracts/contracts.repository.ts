@@ -1,18 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { IContractsRepository } from './contracts.repository.interface';
+import { ContractsValidator } from './contracts.validator';
 import { Contract } from './entities/contract.entity';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
-  getContract(chainId: string, contractAddress: string): Promise<Contract> {
-    // TODO: implement this
-    console.log(chainId, contractAddress);
+  constructor(
+    @Inject(ITransactionApiManager)
+    private readonly transactionApiManager: ITransactionApiManager,
+    private readonly validator: ContractsValidator,
+  ) {}
 
-    return Promise.resolve(<Contract>{
-      address: 'foo',
-      name: 'bar',
-      displayName: 'foo',
-      trustedForDelegateCall: false,
-    });
+  async getContract(chainId: string, contractAddress: string): Promise<Contract> {
+    const api = await this.transactionApiManager.getTransactionApi(chainId);
+    const data = await api.getContract(contractAddress);
+    return this.validator.validate(data);
   }
 }

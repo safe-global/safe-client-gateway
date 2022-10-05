@@ -8,6 +8,7 @@ import { Collectible } from '../../domain/collectibles/entities/collectible.enti
 import { Page } from '../../domain/entities/page.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
+import { Contract } from '../../domain/contracts/entities/contract.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -15,6 +16,10 @@ function balanceCacheKey(chainId: string, safeAddress: string): string {
 
 function safeCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_safe`;
+}
+
+function contractCacheKey(chainId: string, contractAddress: string): string {
+  return `${chainId}_${contractAddress}_contract`;
 }
 
 export class TransactionApi implements ITransactionApi {
@@ -101,6 +106,16 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheKey = safeCacheKey(this.chainId, safeAddress);
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+      return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getContract(contractAddress: string): Promise<Contract> {
+    try {
+      const cacheKey = contractCacheKey(this.chainId, contractAddress);
+      const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
       return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);

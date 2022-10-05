@@ -18,6 +18,7 @@ import { ISafeRepository } from './domain/safe/safe.repository.interface';
 import { SafeRepository } from './domain/safe/safe.repository';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
+import { ContractsValidator } from './domain/contracts/contracts.validator';
 
 @Global()
 @Module({
@@ -30,6 +31,7 @@ import { ContractsRepository } from './domain/contracts/contracts.repository';
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: IContractsRepository, useClass: ContractsRepository },
+    ContractsValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
