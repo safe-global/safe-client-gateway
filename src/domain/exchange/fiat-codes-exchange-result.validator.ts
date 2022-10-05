@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ValidateFunction, DefinedError } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { FiatCodesExchangeResult } from './entities/fiat-codes-exchange-result.entity';
 import { fiatCodesExchangeResultSchema } from './entities/schemas/fiat-codes-exchange-result.schema';
 
@@ -13,7 +13,7 @@ export class FiatCodesExchangeResultValidator
   private readonly isValidFiatCodesExchangeResult: ValidateFunction<FiatCodesExchangeResult>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly simpleValidator: SimpleValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidFiatCodesExchangeResult = this.jsonSchemaService.compile(
@@ -22,12 +22,7 @@ export class FiatCodesExchangeResultValidator
   }
 
   validate(data: unknown): FiatCodesExchangeResult {
-    if (!this.isValidFiatCodesExchangeResult(data)) {
-      const errors = this.isValidFiatCodesExchangeResult
-        .errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
+    this.simpleValidator.execute(this.isValidFiatCodesExchangeResult, data);
     return data as FiatCodesExchangeResult;
   }
 }
