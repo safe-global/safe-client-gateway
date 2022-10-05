@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { Balance } from './entities/balance.entity';
 import {
   balanceTokenSchema,
@@ -14,7 +14,7 @@ export class BalancesValidator implements IValidator<Balance> {
   private readonly isValidBalance: ValidateFunction<Balance>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly simpleValidator: SimpleValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.addSchema(balanceTokenSchema, 'balanceToken');
@@ -24,11 +24,7 @@ export class BalancesValidator implements IValidator<Balance> {
   }
 
   validate(data: unknown): Balance {
-    if (!this.isValidBalance(data)) {
-      const errors = this.isValidBalance.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
+    this.simpleValidator.execute(this.isValidBalance, data);
     return data as Balance;
   }
 }

@@ -1,69 +1,29 @@
-import { HttpException } from '@nestjs/common';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { ChainsValidator } from './chains.validator';
 import chainFactory from './entities/__tests__/chain.factory';
 
-const mockValidationErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as unknown as ValidationErrorFactory);
+const mockSimpleValidator = jest.mocked({
+  execute: jest.fn(),
+} as unknown as SimpleValidator);
 
-const validationFunction = jest.fn();
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
-  compile: jest.fn().mockImplementation(() => validationFunction),
+  compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
 describe('Chains validator', () => {
   const validator = new ChainsValidator(
-    mockValidationErrorFactory,
+    mockSimpleValidator,
     mockJsonSchemaService,
   );
 
-  const chain = chainFactory();
-  const chains = [chainFactory(), chainFactory()];
-
-  beforeEach(() => jest.clearAllMocks());
-
   it('should return the data when validation succeed', () => {
-    validationFunction.mockImplementation(() => true);
+    const chain = chainFactory();
 
     const result = validator.validate(chain);
 
     expect(result).toEqual(chain);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
-  });
-
-  it('should return the data when validation succeed for an array of items', () => {
-    validationFunction.mockImplementation(() => true);
-
-    const result = chains.map((chain) => validator.validate(chain));
-
-    expect(result).toEqual(chains);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
-  });
-
-  it('should throw a validation error when validation fails', async () => {
-    const expectedErrMessage = 'testErrMessage';
-    validationFunction.mockImplementation(() => false);
-    mockValidationErrorFactory.from.mockReturnValue(
-      new HttpException(expectedErrMessage, 500),
-    );
-
-    expect(() => validator.validate(chain)).toThrow(expectedErrMessage);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
-  });
-
-  it('should throw a validation error when validation fails for an array of items', async () => {
-    const expectedErrMessage = 'testErrMessage';
-    validationFunction.mockImplementation(() => false);
-    mockValidationErrorFactory.from.mockReturnValue(
-      new HttpException(expectedErrMessage, 500),
-    );
-
-    expect(() => chains.map((chain) => validator.validate(chain))).toThrow(
-      expectedErrMessage,
-    );
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

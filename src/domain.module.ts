@@ -24,6 +24,7 @@ import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-e
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
+import { SimpleValidator } from './domain/schema/simple.validator';
 
 @Global()
 @Module({
@@ -37,12 +38,13 @@ import { SafeValidator } from './domain/safe/safe.validator';
     { provide: ISafeRepository, useClass: SafeRepository },
     BackboneValidator,
     BalancesValidator,
-    RatesExchangeResultValidator,
-    FiatCodesExchangeResultValidator,
     ChainsValidator,
-    MasterCopyValidator,
     CollectiblesValidator,
+    FiatCodesExchangeResultValidator,
+    MasterCopyValidator,
+    RatesExchangeResultValidator,
     SafeValidator,
+    SimpleValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],

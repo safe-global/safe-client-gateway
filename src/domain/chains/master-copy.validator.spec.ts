@@ -1,7 +1,7 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { SimpleValidator } from '../schema/simple.validator';
-import { BalancesValidator } from './balances.validator';
-import { balanceFactory } from './entities/__tests__/balance.factory';
+import masterCopyFactory from './entities/__tests__/master-copy.factory';
+import { MasterCopyValidator } from './master-copy.validator';
 
 const mockSimpleValidator = jest.mocked({
   execute: jest.fn(),
@@ -12,17 +12,17 @@ const mockJsonSchemaService = jest.mocked({
   compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
-describe('Balances validator', () => {
-  const validator = new BalancesValidator(
+describe('MasterCopy validator', () => {
+  const validator = new MasterCopyValidator(
     mockSimpleValidator,
     mockJsonSchemaService,
   );
 
   it('should return the data when validation succeed', () => {
-    const balance = balanceFactory();
-    const result = validator.validate(balance);
+    const masterCopy = masterCopyFactory();
+    const result = validator.validate(masterCopy);
 
-    expect(result).toEqual(balance);
+    expect(result).toEqual(masterCopy);
     expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

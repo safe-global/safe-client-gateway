@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { Safe } from './entities/safe.entity';
 import { safeSchema } from './entities/schemas/safe.schema';
 
@@ -11,7 +11,7 @@ export class SafeValidator implements IValidator<Safe> {
   private readonly isValidSafe: ValidateFunction<Safe>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly simpleValidator: SimpleValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidSafe = this.jsonSchemaService.compile(
@@ -20,11 +20,7 @@ export class SafeValidator implements IValidator<Safe> {
   }
 
   validate(data: unknown): Safe {
-    if (!this.isValidSafe(data)) {
-      const errors = this.isValidSafe.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
+    this.simpleValidator.execute(this.isValidSafe, data);
     return data as Safe;
   }
 }
