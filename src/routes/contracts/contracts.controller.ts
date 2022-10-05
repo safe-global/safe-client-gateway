@@ -1,7 +1,8 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ContractsService } from './contracts.service';
+import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { Contract as ApiContract } from './entities/contract.entity';
 
 @ApiTags('contracts')
 @Controller({
@@ -11,7 +12,7 @@ import { ContractsService } from './contracts.service';
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
-  //@ApiOkResponse({ type: ApiContract })
+  @ApiOkResponse({ type: ApiContract })
   @Get('chains/:chainId/contracts/:contractAddress')
   async getContract(
     @Param('chainId') chainId: string,
