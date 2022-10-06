@@ -8,12 +8,6 @@ import { Page } from '../entities/page.entity';
 import { MasterCopyValidator } from './master-copy.validator';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 
-const CHAIN = chainFactory();
-const CHAINS: Page<Chain> = {
-  count: faker.datatype.number(),
-  results: [chainFactory(), chainFactory()],
-};
-
 const mockConfigApi = jest.mocked({
   getChain: jest.fn(),
   getChains: jest.fn(),
@@ -40,24 +34,30 @@ describe('Chain Repository', () => {
   );
 
   it('should return and validate a Chain from ConfigAPI', async () => {
-    mockConfigApi.getChain.mockResolvedValue(CHAIN);
-    mockChainValidator.validate = jest.fn().mockResolvedValue(CHAIN);
+    const chain = chainFactory();
+    mockConfigApi.getChain.mockResolvedValue(chain);
+    mockChainValidator.validate = jest.fn().mockResolvedValue(chain);
 
     const data = await repository.getChain(faker.random.word());
 
     expect(mockChainValidator.validate).toBeCalledTimes(1);
-    expect(data).toBe(CHAIN);
+    expect(data).toBe(chain);
   });
 
   it('should return and validate a Chain[] from ConfigAPI', async () => {
-    mockConfigApi.getChains.mockResolvedValue(CHAINS);
+    const chains: Page<Chain> = {
+      count: faker.datatype.number(),
+      results: [chainFactory(), chainFactory()],
+    };
+
+    mockConfigApi.getChains.mockResolvedValue(chains);
     mockChainValidator.validate = jest
       .fn()
-      .mockResolvedValue(CHAINS.results[0]);
+      .mockResolvedValue(chains.results[0]);
 
     const data = await repository.getChains();
 
-    expect(mockChainValidator.validate).toBeCalledTimes(CHAINS.results.length);
-    expect(data).toBe(CHAINS);
+    expect(mockChainValidator.validate).toBeCalledTimes(chains.results.length);
+    expect(data).toBe(chains);
   });
 });
