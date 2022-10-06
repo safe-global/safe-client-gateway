@@ -22,6 +22,7 @@ describe('Chains validator', () => {
 
   it('should return the data when validation succeed', () => {
     const chain = chainFactory();
+    validationFunction.mockImplementation(() => true);
 
     const result = validator.validate(chain);
 
@@ -31,6 +32,7 @@ describe('Chains validator', () => {
 
   it('should return the data when validation succeed for an array of items', () => {
     const chains = [chainFactory(), chainFactory()];
+    validationFunction.mockImplementation(() => true);
 
     const result = chains.map((chain) => validator.validate(chain));
 
