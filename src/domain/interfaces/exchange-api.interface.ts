@@ -1,9 +1,9 @@
-import { ExchangeResult } from '../exchange/entities/exchange-result.entity';
-import { FiatCodesExchangeResult } from '../exchange/entities/fiat-codes-result.entity';
+import { ExchangeRates } from '../exchange/entities/exchange-rates.entity';
+import { ExchangeFiatCodes } from '../exchange/entities/exchange-fiat-codes.entity';
 
 export const IExchangeApi = Symbol('IExchangeApi');
 
 export interface IExchangeApi {
-  getFiatCodes(): Promise<FiatCodesExchangeResult>;
-  getExchangeResult(): Promise<ExchangeResult>;
+  getFiatCodes(): Promise<ExchangeFiatCodes>;
+  getRates(): Promise<ExchangeRates>;
 }
