@@ -1,7 +1,7 @@
 import { JSONSchemaType } from 'ajv';
-import { RatesExchangeResult } from '../rates-exchange-result.entity';
+import { ExchangeRates } from '../exchange-rates.entity';
 
-const ratesExchangeResultSchema: JSONSchemaType<RatesExchangeResult> = {
+const exchangeRatesSchema: JSONSchemaType<ExchangeRates> = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
@@ -15,4 +15,4 @@ const ratesExchangeResultSchema: JSONSchemaType<RatesExchangeResult> = {
   required: ['success', 'base', 'rates'],
 };
 
-export { ratesExchangeResultSchema };
+export { exchangeRatesSchema };

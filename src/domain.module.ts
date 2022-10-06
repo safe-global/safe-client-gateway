@@ -19,12 +19,12 @@ import { SafeRepository } from './domain/safe/safe.repository';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
 import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
-import { RatesExchangeResultValidator } from './domain/exchange/rates-exchange-result.validator';
-import { FiatCodesExchangeResultValidator } from './domain/exchange/fiat-codes-exchange-result.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
 import { SimpleValidator } from './domain/schema/simple.validator';
+import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
+import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 
 @Global()
 @Module({
@@ -40,9 +40,10 @@ import { SimpleValidator } from './domain/schema/simple.validator';
     BalancesValidator,
     ChainsValidator,
     CollectiblesValidator,
-    FiatCodesExchangeResultValidator,
+    CollectiblesValidator,
+    ExchangeFiatCodesValidator,
+    ExchangeRatesValidator,
     MasterCopyValidator,
-    RatesExchangeResultValidator,
     SafeValidator,
     SimpleValidator,
     ValidationErrorFactory,

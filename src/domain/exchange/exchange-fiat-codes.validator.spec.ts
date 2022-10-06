@@ -1,7 +1,7 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { SimpleValidator } from '../schema/simple.validator';
-import fiatCodesExchangeResultFactory from './entities/__tests__/fiat-codes-exchange-result.factory';
-import { FiatCodesExchangeResultValidator } from './fiat-codes-exchange-result.validator';
+import exchangeFiatCodesFactory from './entities/__tests__/exchange-fiat-codes.factory';
+import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
 
 const mockSimpleValidator = jest.mocked({
   execute: jest.fn(),
@@ -13,13 +13,13 @@ const mockJsonSchemaService = jest.mocked({
 } as unknown as JsonSchemaService);
 
 describe('Fiat Codes Exchange Result validator', () => {
-  const validator = new FiatCodesExchangeResultValidator(
+  const validator = new ExchangeFiatCodesValidator(
     mockSimpleValidator,
     mockJsonSchemaService,
   );
 
   it('should return the data when validation succeed', () => {
-    const fiatCodes = fiatCodesExchangeResultFactory();
+    const fiatCodes = exchangeFiatCodesFactory();
 
     const result = validator.validate(fiatCodes);
 

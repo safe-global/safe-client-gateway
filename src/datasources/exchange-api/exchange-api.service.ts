@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RatesExchangeResult } from '../../domain/exchange/entities/rates-exchange-result.entity';
+import { ExchangeRates } from '../../domain/exchange/entities/exchange-rates.entity';
 import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { FiatCodesExchangeResult } from '../../domain/exchange/entities/fiat-codes-exchange-result.entity';
+import { ExchangeFiatCodes } from '../../domain/exchange/entities/exchange-fiat-codes.entity';
 import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
 import { DataSourceError } from '../../domain/errors/data-source.error';
 import { IConfigurationService } from '../../config/configuration.service.interface';
@@ -25,7 +25,7 @@ export class ExchangeApi implements IExchangeApi {
       this.configurationService.getOrThrow<string>('exchange.apiKey');
   }
 
-  async getFiatCodes(): Promise<FiatCodesExchangeResult> {
+  async getFiatCodes(): Promise<ExchangeFiatCodes> {
     try {
       const { data } = await this.networkService.get(
         `${this.baseUrl}/symbols`,
@@ -39,7 +39,7 @@ export class ExchangeApi implements IExchangeApi {
     }
   }
 
-  async getRates(): Promise<RatesExchangeResult> {
+  async getRates(): Promise<ExchangeRates> {
     try {
       const { data } = await this.networkService.get(`${this.baseUrl}/latest`, {
         params: { access_key: this.apiKey },
