@@ -1,7 +1,7 @@
 import { JSONSchemaType } from 'ajv';
-import { FiatCodesExchangeResult } from '../fiat-codes-result.entity';
+import { ExchangeFiatCodes } from '../exchange-fiat-codes.entity';
 
-const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
+const exchangeFiatCodesSchema: JSONSchemaType<ExchangeFiatCodes> = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
@@ -14,4 +14,4 @@ const fiatCodesExchangeResultSchema: JSONSchemaType<FiatCodesExchangeResult> = {
   required: ['success', 'symbols'],
 };
 
-export { fiatCodesExchangeResultSchema };
+export { exchangeFiatCodesSchema };

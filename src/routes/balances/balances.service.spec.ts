@@ -22,8 +22,8 @@ describe('BalancesService', () => {
   );
 
   it('should get ordered supported fiat codes', async () => {
-    const fiatCodesResult = ['AED', 'AFN', 'EUR', 'ALL', 'USD'];
-    exchangeRepositoryMock.getFiatCodes.mockResolvedValueOnce(fiatCodesResult);
+    const fiatCodes = ['AED', 'AFN', 'EUR', 'ALL', 'USD'];
+    exchangeRepositoryMock.getFiatCodes.mockResolvedValueOnce(fiatCodes);
 
     const res = await service.getSupportedFiatCodes();
 
