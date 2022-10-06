@@ -22,9 +22,8 @@ describe('Balances validator', () => {
     mockJsonSchemaService,
   );
 
-  const balances = [balanceFactory(), balanceFactory()];
-
   it('should return the data when validation succeed', () => {
+    const balances = [balanceFactory(), balanceFactory()];
     validationFunction.mockImplementationOnce(() => true);
 
     const result = validator.validate(balances[0]);
@@ -34,6 +33,7 @@ describe('Balances validator', () => {
   });
 
   it('should throw a validation error when validation fails', async () => {
+    const balances = [balanceFactory(), balanceFactory()];
     validationFunction.mockImplementationOnce(() => false);
 
     expect(() =>
