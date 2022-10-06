@@ -20,12 +20,10 @@ describe('Chains validator', () => {
     mockJsonSchemaService,
   );
 
-  const chain = chainFactory();
-  const chains = [chainFactory(), chainFactory()];
-
   beforeEach(() => jest.clearAllMocks());
 
   it('should return the data when validation succeed', () => {
+    const chain = chainFactory();
     validationFunction.mockImplementation(() => true);
 
     const result = validator.validate(chain);
@@ -35,6 +33,7 @@ describe('Chains validator', () => {
   });
 
   it('should return the data when validation succeed for an array of items', () => {
+    const chains = [chainFactory(), chainFactory()];
     validationFunction.mockImplementation(() => true);
 
     const result = chains.map((chain) => validator.validate(chain));
@@ -44,6 +43,7 @@ describe('Chains validator', () => {
   });
 
   it('should throw a validation error when validation fails', async () => {
+    const chain = chainFactory();
     const expectedErrMessage = 'testErrMessage';
     validationFunction.mockImplementation(() => false);
     mockValidationErrorFactory.from.mockReturnValue(
@@ -55,6 +55,7 @@ describe('Chains validator', () => {
   });
 
   it('should throw a validation error when validation fails for an array of items', async () => {
+    const chains = [chainFactory(), chainFactory()];
     const expectedErrMessage = 'testErrMessage';
     validationFunction.mockImplementation(() => false);
     mockValidationErrorFactory.from.mockReturnValue(

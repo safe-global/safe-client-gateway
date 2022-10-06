@@ -4,10 +4,8 @@ import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { BalancesValidator } from './balances.validator';
 import { balanceFactory } from './entities/__tests__/balance.factory';
 
-const expectedErrMessage = 'testErrMessage';
-
 const mockValidationErrorFactory = jest.mocked({
-  from: jest.fn().mockReturnValue(new HttpException(expectedErrMessage, 500)),
+  from: jest.fn(),
 } as unknown as ValidationErrorFactory);
 
 const validationFunction = jest.fn();
@@ -22,9 +20,12 @@ describe('Balances validator', () => {
     mockJsonSchemaService,
   );
 
-  const balances = [balanceFactory(), balanceFactory()];
-
   it('should return the data when validation succeed', () => {
+    const balances = [balanceFactory(), balanceFactory()];
+    const expectedErrMessage = 'testErrMessage';
+    mockValidationErrorFactory.from.mockReturnValueOnce(
+      new HttpException(expectedErrMessage, 500),
+    );
     validationFunction.mockImplementationOnce(() => true);
 
     const result = validator.validate(balances[0]);
@@ -34,6 +35,11 @@ describe('Balances validator', () => {
   });
 
   it('should throw a validation error when validation fails', async () => {
+    const balances = [balanceFactory(), balanceFactory()];
+    const expectedErrMessage = 'testErrMessage';
+    mockValidationErrorFactory.from.mockReturnValueOnce(
+      new HttpException(expectedErrMessage, 500),
+    );
     validationFunction.mockImplementationOnce(() => false);
 
     expect(() =>
