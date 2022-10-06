@@ -5,28 +5,28 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
-import { FiatCodesExchangeResultValidator } from './fiat-codes-exchange-result.validator';
-import { RatesExchangeResultValidator } from './rates-exchange-result.validator';
+import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
+import { ExchangeRatesValidator } from './exchange-rates.validator';
 
 @Injectable()
 export class ExchangeRepository implements IExchangeRepository {
   constructor(
     @Inject(IExchangeApi) private readonly exchangeApi: IExchangeApi,
-    private readonly ratesExchangeResultValidator: RatesExchangeResultValidator,
-    private readonly fiatCodesExchangeResultValidator: FiatCodesExchangeResultValidator,
+    private readonly exchangeRatesValidator: ExchangeRatesValidator,
+    private readonly exchangeFiatCodesValidator: ExchangeFiatCodesValidator,
   ) {}
 
   async convertRates(to: string, from: string): Promise<number> {
-    const ratesExchangeResult = await this.exchangeApi.getRates();
-    this.ratesExchangeResultValidator.validate(ratesExchangeResult);
+    const exchangeRates = await this.exchangeApi.getRates();
+    this.exchangeRatesValidator.validate(exchangeRates);
 
-    const fromExchangeRate = ratesExchangeResult.rates[from.toUpperCase()];
+    const fromExchangeRate = exchangeRates.rates[from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
         `Exchange rate for ${from} is not available`,
       );
 
-    const toExchangeRate = ratesExchangeResult.rates[to.toUpperCase()];
+    const toExchangeRate = exchangeRates.rates[to.toUpperCase()];
     if (toExchangeRate === undefined)
       throw new InternalServerErrorException(
         `Exchange rate for ${to} is not available`,
@@ -37,7 +37,7 @@ export class ExchangeRepository implements IExchangeRepository {
 
   async getFiatCodes(): Promise<string[]> {
     const data = await this.exchangeApi.getFiatCodes();
-    this.fiatCodesExchangeResultValidator.validate(data);
+    this.exchangeFiatCodesValidator.validate(data);
     return Object.keys(data.symbols);
   }
 }

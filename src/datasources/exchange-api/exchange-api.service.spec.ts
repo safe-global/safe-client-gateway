@@ -1,6 +1,6 @@
 import { ExchangeApi } from './exchange-api.service';
-import ratesExchangeResultFactory from '../../domain/exchange/entities/__tests__/rates-exchange-result.factory';
-import fiatCodesExchangeResultFactory from '../../domain/exchange/entities/__tests__/fiat-codes-exchange-result.factory';
+import exchangeRatesFactory from '../../domain/exchange/entities/__tests__/exchange-rates.factory';
+import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.factory';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { faker } from '@faker-js/faker';
@@ -31,7 +31,7 @@ describe('ExchangeApi', () => {
   });
 
   it('Should return the fiatCodes', async () => {
-    const expectedFiatCodes = fiatCodesExchangeResultFactory(true, {
+    const expectedFiatCodes = exchangeFiatCodesFactory(true, {
       USD: 'Dollar',
     });
     mockNetworkService.get.mockResolvedValue({ data: expectedFiatCodes });
@@ -41,8 +41,8 @@ describe('ExchangeApi', () => {
     expect(fiatCodes).toBe(expectedFiatCodes);
   });
 
-  it('Should return the rates exchange result', async () => {
-    const expectedRates = ratesExchangeResultFactory(true, {
+  it('Should return the exchange rates', async () => {
+    const expectedRates = exchangeRatesFactory(true, {
       USD: faker.datatype.number(),
     });
     mockNetworkService.get.mockResolvedValue({ data: expectedRates });
