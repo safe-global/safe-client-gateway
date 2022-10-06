@@ -18,6 +18,8 @@ describe('Chains validator', () => {
     mockJsonSchemaService,
   );
 
+  beforeEach(() => jest.clearAllMocks());
+
   it('should return the data when validation succeed', () => {
     const chain = chainFactory();
 
@@ -25,5 +27,14 @@ describe('Chains validator', () => {
 
     expect(result).toEqual(chain);
     expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return the data when validation succeed for an array of items', () => {
+    const chains = [chainFactory(), chainFactory()];
+
+    const result = chains.map((chain) => validator.validate(chain));
+
+    expect(result).toEqual(chains);
+    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(chains.length);
   });
 });

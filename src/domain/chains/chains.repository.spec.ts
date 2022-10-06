@@ -7,11 +7,17 @@ import { Chain } from './entities/chain.entity';
 import { Page } from '../entities/page.entity';
 import { MasterCopyValidator } from './master-copy.validator';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
+import masterCopyFactory from './entities/__tests__/master-copy.factory';
+import { TransactionApi } from '../../datasources/transaction-api/transaction-api.service';
 
 const mockConfigApi = jest.mocked({
   getChain: jest.fn(),
   getChains: jest.fn(),
 } as unknown as IConfigApi);
+
+const mockTransactionApi = jest.mocked({
+  getMasterCopies: jest.fn(),
+} as unknown as TransactionApi);
 
 const mockTransactionApiManager = jest.mocked({
   getTransactionApi: jest.fn(),
@@ -49,15 +55,30 @@ describe('Chain Repository', () => {
       count: faker.datatype.number(),
       results: [chainFactory(), chainFactory()],
     };
-
     mockConfigApi.getChains.mockResolvedValue(chains);
     mockChainValidator.validate = jest
       .fn()
-      .mockResolvedValue(chains.results[0]);
+      .mockReturnValueOnce(chains.results[0]);
 
     const data = await repository.getChains();
 
     expect(mockChainValidator.validate).toBeCalledTimes(chains.results.length);
     expect(data).toBe(chains);
+  });
+
+  it('should return and validate a MasterCopy from TransactionAPI', async () => {
+    const masterCopy = masterCopyFactory();
+    mockTransactionApi.getMasterCopies.mockResolvedValueOnce([masterCopy]);
+    mockTransactionApiManager.getTransactionApi.mockResolvedValue(
+      mockTransactionApi,
+    );
+    mockMasterCopyValidator.validate = jest
+      .fn()
+      .mockReturnValueOnce(masterCopy);
+
+    const data = await repository.getMasterCopies(faker.random.word());
+
+    expect(mockMasterCopyValidator.validate).toBeCalledTimes(1);
+    expect(data).toEqual([masterCopy]);
   });
 });
