@@ -1,13 +1,11 @@
-import { faker } from '@faker-js/faker';
-import { HttpException } from '@nestjs/common';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { ContractsValidator } from './contracts.validator';
 import contractFactory from './entities/__tests__/contract.factory';
 
-const mockValidationErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as unknown as ValidationErrorFactory);
+const mockSimpleValidator = jest.mocked({
+  execute: jest.fn(),
+} as unknown as SimpleValidator);
 
 const validationFunction = jest.fn();
 const mockJsonSchemaService = jest.mocked({
@@ -17,29 +15,15 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Contracts validator', () => {
   const validator = new ContractsValidator(
-    mockValidationErrorFactory,
+    mockSimpleValidator,
     mockJsonSchemaService,
   );
 
   it('should return the data when validation succeed', () => {
     const contract = contractFactory();
-    validationFunction.mockImplementationOnce(() => true);
-
     const result = validator.validate(contract);
 
     expect(result).toBe(contract);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
-  });
-
-  it('should throw a validation error when validation fails', async () => {
-    const contract = contractFactory();
-    const errMsg = faker.random.words();
-    mockValidationErrorFactory.from.mockReturnValueOnce(
-      new HttpException(errMsg, 500),
-    );
-    validationFunction.mockImplementationOnce(() => false);
-
-    expect(() => validator.validate(contract)).toThrow(errMsg);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
   });
 });
