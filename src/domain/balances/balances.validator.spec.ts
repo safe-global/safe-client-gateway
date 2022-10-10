@@ -22,10 +22,6 @@ describe('Balances validator', () => {
 
   it('should return the data when validation succeed', () => {
     const balances = [balanceFactory(), balanceFactory()];
-    const expectedErrMessage = 'testErrMessage';
-    mockValidationErrorFactory.from.mockReturnValueOnce(
-      new HttpException(expectedErrMessage, 500),
-    );
     validationFunction.mockImplementationOnce(() => true);
 
     const result = validator.validate(balances[0]);

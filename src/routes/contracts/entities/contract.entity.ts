@@ -9,7 +9,7 @@ export class Contract implements DomainContract {
   @ApiProperty()
   displayName: string;
   @ApiProperty()
-  logoUri?: string;
+  logoUri: string;
   @ApiProperty()
   contractAbi?: object;
   @ApiProperty()
