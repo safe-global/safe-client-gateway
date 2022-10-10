@@ -24,6 +24,9 @@ import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-code
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
+import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
+import { ContractsRepository } from './domain/contracts/contracts.repository';
+import { ContractsValidator } from './domain/contracts/contracts.validator';
 
 @Global()
 @Module({
@@ -33,15 +36,17 @@ import { SafeValidator } from './domain/safe/safe.validator';
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
+    { provide: IContractsRepository, useClass: ContractsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     BackboneValidator,
     BalancesValidator,
-    ExchangeRatesValidator,
-    ExchangeFiatCodesValidator,
     ChainsValidator,
-    MasterCopyValidator,
     CollectiblesValidator,
+    ContractsValidator,
+    ExchangeFiatCodesValidator,
+    ExchangeRatesValidator,
+    MasterCopyValidator,
     SafeValidator,
     ValidationErrorFactory,
     JsonSchemaService,
@@ -53,6 +58,7 @@ import { SafeValidator } from './domain/safe/safe.validator';
     ICollectiblesRepository,
     IExchangeRepository,
     ISafeRepository,
+    IContractsRepository,
   ],
 })
 export class DomainModule {}
