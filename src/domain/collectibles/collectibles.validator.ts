@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { Collectible } from '../../routes/collectibles/entities/collectible.entity';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { SimpleValidator } from '../schema/simple.validator';
 import { collectibleSchema } from './entities/schemas/collectible.schema';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class CollectiblesValidator implements IValidator<Collectible> {
   private readonly isValidCollectible: ValidateFunction<Collectible>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly simpleValidator: SimpleValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidCollectible = this.jsonSchemaService.compile(
@@ -20,11 +20,7 @@ export class CollectiblesValidator implements IValidator<Collectible> {
   }
 
   validate(data: unknown): Collectible {
-    if (!this.isValidCollectible(data)) {
-      const errors = this.isValidCollectible.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
+    this.simpleValidator.execute(this.isValidCollectible, data);
     return data as Collectible;
   }
 }
