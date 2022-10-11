@@ -30,7 +30,7 @@ export interface ITransactionApi {
   getSafe(safeAddress: string): Promise<Safe>;
 
   getContract(contractAddress: string): Promise<Contract>;
-  
+
   getDelegates(
     safeAddress?: string,
     delegate?: string,

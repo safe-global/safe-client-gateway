@@ -113,7 +113,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
- async getContract(contractAddress: string): Promise<Contract> {
+  async getContract(contractAddress: string): Promise<Contract> {
     try {
       const cacheKey = contractCacheKey(this.chainId, contractAddress);
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
@@ -133,7 +133,7 @@ export class TransactionApi implements ITransactionApi {
   ): Promise<Page<Delegate>> {
     try {
       const cacheKey = `${this.chainId}_delegates`;
-      const cacheKeyField = `${safeAddress}_${delegate}_${delegator}_${label}`;
+      const cacheKeyField = `${safeAddress}_${delegate}_${delegator}_${label}_${limit}_${offset}`;
       const url = `${this.baseUrl}/api/v1/delegates/`;
       return await this.dataSource.get(cacheKey, cacheKeyField, url, {
         params: {
