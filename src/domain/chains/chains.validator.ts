@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { Chain } from './entities/chain.entity';
 import {
   nativeCurrencySchema,
@@ -18,7 +18,7 @@ export class ChainsValidator implements IValidator<Chain> {
   private readonly isValidChain: ValidateFunction<Chain>;
 
   constructor(
-    private readonly simpleValidator: SimpleValidator,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.addSchema(
@@ -39,7 +39,7 @@ export class ChainsValidator implements IValidator<Chain> {
   }
 
   validate(data: unknown): Chain {
-    this.simpleValidator.execute(this.isValidChain, data);
+    this.genericValidator.execute(this.isValidChain, data);
     return data as Chain;
   }
 }

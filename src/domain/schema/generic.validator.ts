@@ -3,7 +3,7 @@ import { DefinedError, ValidateFunction } from 'ajv';
 import { ValidationErrorFactory } from './validation-error-factory';
 
 @Injectable()
-export class SimpleValidator {
+export class GenericValidator {
   constructor(
     private readonly validationErrorFactory: ValidationErrorFactory,
   ) {}

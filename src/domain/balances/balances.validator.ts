@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { Balance } from './entities/balance.entity';
 import {
   balanceTokenSchema,
@@ -14,7 +14,7 @@ export class BalancesValidator implements IValidator<Balance> {
   private readonly isValidBalance: ValidateFunction<Balance>;
 
   constructor(
-    private readonly simpleValidator: SimpleValidator,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.addSchema(balanceTokenSchema, 'balanceToken');
@@ -24,7 +24,7 @@ export class BalancesValidator implements IValidator<Balance> {
   }
 
   validate(data: unknown): Balance {
-    this.simpleValidator.execute(this.isValidBalance, data);
+    this.genericValidator.execute(this.isValidBalance, data);
     return data as Balance;
   }
 }

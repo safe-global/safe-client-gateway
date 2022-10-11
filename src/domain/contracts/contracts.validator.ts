@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { Contract } from './entities/contract.entity';
 import { contractSchema } from './entities/schemas/contract.schema';
 
@@ -11,7 +11,7 @@ export class ContractsValidator implements IValidator<Contract> {
   private readonly isValidContract: ValidateFunction<Contract>;
 
   constructor(
-    private readonly simpleValidator: SimpleValidator,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidContract = this.jsonSchemaService.compile(
@@ -20,7 +20,7 @@ export class ContractsValidator implements IValidator<Contract> {
   }
 
   validate(data: unknown): Contract {
-    this.simpleValidator.execute(this.isValidContract, data);
+    this.genericValidator.execute(this.isValidContract, data);
     return data as Contract;
   }
 }

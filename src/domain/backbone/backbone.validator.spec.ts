@@ -1,12 +1,12 @@
 import { backboneSchema } from '../balances/entities/schemas/backbone.schema';
 import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { BackboneValidator } from './backbone.validator';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -15,7 +15,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Backbone validator', () => {
   const validator = new BackboneValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -29,6 +29,6 @@ describe('Backbone validator', () => {
     const result = validator.validate(backbone);
 
     expect(result).toBe(backbone);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

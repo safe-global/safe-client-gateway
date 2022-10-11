@@ -1,11 +1,11 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { SafeValidator } from './safe.validator';
 import safeFactory from './entities/__tests__/safe.factory';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -14,7 +14,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Safe validator', () => {
   const validator = new SafeValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -24,6 +24,6 @@ describe('Safe validator', () => {
     const result = validator.validate(safe);
 
     expect(result).toBe(safe);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

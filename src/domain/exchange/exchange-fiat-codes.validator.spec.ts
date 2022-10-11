@@ -1,12 +1,12 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { exchangeFiatCodesSchema } from './entities/schemas/exchange-fiat-codes.schema';
 import exchangeFiatCodesFactory from './entities/__tests__/exchange-fiat-codes.factory';
 import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -15,7 +15,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Fiat Codes Exchange Result validator', () => {
   const validator = new ExchangeFiatCodesValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -31,6 +31,6 @@ describe('Fiat Codes Exchange Result validator', () => {
     const result = validator.validate(fiatCodes);
 
     expect(result).toBe(fiatCodes);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

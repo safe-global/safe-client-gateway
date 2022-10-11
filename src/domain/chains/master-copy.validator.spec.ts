@@ -1,12 +1,12 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { masterCopySchema } from './entities/schemas/master-copy.schema';
 import masterCopyFactory from './entities/__tests__/master-copy.factory';
 import { MasterCopyValidator } from './master-copy.validator';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -15,7 +15,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('MasterCopy validator', () => {
   const validator = new MasterCopyValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -24,7 +24,7 @@ describe('MasterCopy validator', () => {
     const result = validator.validate(masterCopy);
 
     expect(result).toEqual(masterCopy);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 
   it('should mount the proper schema', () => {

@@ -1,12 +1,12 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { CollectiblesValidator } from './collectibles.validator';
 import { collectibleSchema } from './entities/schemas/collectible.schema';
 import collectibleFactory from './entities/__tests__/collectible.factory';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -15,7 +15,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Collectibles validator', () => {
   const validator = new CollectiblesValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -30,6 +30,6 @@ describe('Collectibles validator', () => {
     const result = validator.validate(collectible);
 
     expect(result).toBe(collectible);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

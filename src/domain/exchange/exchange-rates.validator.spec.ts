@@ -1,12 +1,12 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { exchangeRatesSchema } from './entities/schemas/exchange-rates.schema';
 import exchangeRatesFactory from './entities/__tests__/exchange-rates.factory';
 import { ExchangeRatesValidator } from './exchange-rates.validator';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
@@ -15,7 +15,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Rates Exchange Result validator', () => {
   const validator = new ExchangeRatesValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -31,6 +31,6 @@ describe('Rates Exchange Result validator', () => {
     const result = validator.validate(rates);
 
     expect(result).toBe(rates);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });

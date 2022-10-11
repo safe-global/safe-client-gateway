@@ -25,7 +25,7 @@ import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
-import { SimpleValidator } from './domain/schema/simple.validator';
+import { GenericValidator } from './domain/schema/generic.validator';
 import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
 import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 
@@ -49,7 +49,7 @@ import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-code
     ExchangeRatesValidator,
     MasterCopyValidator,
     SafeValidator,
-    SimpleValidator,
+    GenericValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],

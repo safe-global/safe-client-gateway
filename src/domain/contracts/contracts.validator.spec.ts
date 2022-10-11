@@ -1,12 +1,12 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { SimpleValidator } from '../schema/simple.validator';
+import { GenericValidator } from '../schema/generic.validator';
 import { ContractsValidator } from './contracts.validator';
 import { contractSchema } from './entities/schemas/contract.schema';
 import contractFactory from './entities/__tests__/contract.factory';
 
-const mockSimpleValidator = jest.mocked({
+const mockGenericValidator = jest.mocked({
   execute: jest.fn(),
-} as unknown as SimpleValidator);
+} as unknown as GenericValidator);
 
 const validationFunction = jest.fn();
 const mockJsonSchemaService = jest.mocked({
@@ -16,7 +16,7 @@ const mockJsonSchemaService = jest.mocked({
 
 describe('Contracts validator', () => {
   const validator = new ContractsValidator(
-    mockSimpleValidator,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
@@ -29,6 +29,6 @@ describe('Contracts validator', () => {
     const result = validator.validate(contract);
 
     expect(result).toBe(contract);
-    expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
   });
 });
