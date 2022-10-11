@@ -1,5 +1,6 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { SimpleValidator } from '../schema/simple.validator';
+import { masterCopySchema } from './entities/schemas/master-copy.schema';
 import masterCopyFactory from './entities/__tests__/master-copy.factory';
 import { MasterCopyValidator } from './master-copy.validator';
 
@@ -24,5 +25,11 @@ describe('MasterCopy validator', () => {
 
     expect(result).toEqual(masterCopy);
     expect(mockSimpleValidator.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should mount the proper schema', () => {
+    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(
+      masterCopySchema,
+    );
   });
 });

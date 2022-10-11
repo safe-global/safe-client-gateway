@@ -1,6 +1,7 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { SimpleValidator } from '../schema/simple.validator';
 import { CollectiblesValidator } from './collectibles.validator';
+import { collectibleSchema } from './entities/schemas/collectible.schema';
 import collectibleFactory from './entities/__tests__/collectible.factory';
 
 const mockSimpleValidator = jest.mocked({
@@ -17,6 +18,12 @@ describe('Collectibles validator', () => {
     mockSimpleValidator,
     mockJsonSchemaService,
   );
+
+  it('should mount the proper schema', () => {
+    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(
+      collectibleSchema,
+    );
+  });
 
   it('should return the data when validation succeed', () => {
     const collectible = collectibleFactory();
