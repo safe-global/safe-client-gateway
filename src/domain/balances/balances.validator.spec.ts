@@ -20,9 +20,7 @@ describe('Balances validator', () => {
   );
 
   it('should mount the proper schema', () => {
-    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(
-      balanceSchema,
-    );
+    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(balanceSchema);
   });
 
   it('should return the data when validation succeed', () => {
