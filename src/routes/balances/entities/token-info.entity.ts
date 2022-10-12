@@ -7,7 +7,7 @@ export class TokenInfo {
   @ApiProperty()
   decimals: number;
   @ApiProperty()
-  logoUri: string;
+  logoUri?: string;
   @ApiProperty()
   name: string;
   @ApiProperty()
