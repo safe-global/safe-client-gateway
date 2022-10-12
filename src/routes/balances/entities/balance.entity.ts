@@ -1,8 +1,7 @@
-import { Balance as DomainBalance } from '../entities/balance.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { TokenInfo } from './token-info.entity';
 
-export class Balance implements DomainBalance {
+export class Balance {
   @ApiProperty()
   balance: string;
   @ApiProperty()
