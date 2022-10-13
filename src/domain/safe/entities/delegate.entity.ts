@@ -1,5 +1,5 @@
 export interface Delegate {
-  safe: string;
+  safe?: string;
   delegate: string;
   delegator: string;
   label: string;
