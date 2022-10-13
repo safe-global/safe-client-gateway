@@ -5,6 +5,7 @@ import { Collectible } from '../collectibles/entities/collectible.entity';
 import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
+import { Transfer } from '../safe/entities/transfer.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -39,4 +40,12 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   );
+
+  getTransfers(
+    safeAddress: string,
+    onlyErc20?: boolean,
+    onlyErc721?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>>;
 }

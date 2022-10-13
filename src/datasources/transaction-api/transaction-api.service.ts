@@ -10,6 +10,7 @@ import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
 import { Delegate } from '../../domain/delegate/entities/delegate.entity';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -141,6 +142,30 @@ export class TransactionApi implements ITransactionApi {
           delegate: delegate,
           delegator: delegator,
           label: label,
+          limit: limit,
+          offset: offset,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getTransfers(
+    safeAddress: string,
+    onlyErc20: boolean,
+    onlyErc721: boolean,
+    limit: number,
+    offset: number,
+  ): Promise<Page<Transfer>> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_transfers`;
+      const cacheKeyField = `${onlyErc20}_${onlyErc721}_${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          erc20: onlyErc20,
+          erc721: onlyErc721,
           limit: limit,
           offset: offset,
         },
