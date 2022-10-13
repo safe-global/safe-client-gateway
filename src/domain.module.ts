@@ -28,6 +28,7 @@ import { ContractsValidator } from './domain/contracts/contracts.validator';
 import { GenericValidator } from './domain/schema/generic.validator';
 import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
 import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
+import { DelegateValidator } from './domain/safe/delegate.validator';
 
 @Global()
 @Module({
@@ -50,6 +51,7 @@ import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-code
     MasterCopyValidator,
     SafeValidator,
     GenericValidator,
+    DelegateValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
