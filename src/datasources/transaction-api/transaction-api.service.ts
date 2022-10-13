@@ -9,6 +9,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { Delegate } from '../../domain/safe/entities/delegate.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -117,6 +118,33 @@ export class TransactionApi implements ITransactionApi {
       const cacheKey = contractCacheKey(this.chainId, contractAddress);
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
       return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getDelegates(
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    label?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Delegate>> {
+    try {
+      const cacheKey = `${this.chainId}_delegates`;
+      const cacheKeyField = `${safeAddress}_${delegate}_${delegator}_${label}_${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/delegates/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          safe: safeAddress,
+          delegate: delegate,
+          delegator: delegator,
+          label: label,
+          limit: limit,
+          offset: offset,
+        },
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

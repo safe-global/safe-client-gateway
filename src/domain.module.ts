@@ -27,6 +27,7 @@ import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
+import { DelegateValidator } from './domain/safe/delegate.validator';
 
 @Global()
 @Module({
@@ -48,6 +49,7 @@ import { ContractsValidator } from './domain/contracts/contracts.validator';
     ExchangeRatesValidator,
     MasterCopyValidator,
     SafeValidator,
+    DelegateValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],

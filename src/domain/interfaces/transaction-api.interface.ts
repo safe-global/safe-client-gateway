@@ -30,4 +30,13 @@ export interface ITransactionApi {
   getSafe(safeAddress: string): Promise<Safe>;
 
   getContract(contractAddress: string): Promise<Contract>;
+
+  getDelegates(
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    label?: string,
+    limit?: number,
+    offset?: number,
+  );
 }
