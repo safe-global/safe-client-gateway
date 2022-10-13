@@ -20,7 +20,7 @@ describe('Generic validator', () => {
     validationFunction.mockImplementationOnce(() => false);
 
     expect(() =>
-      genericValidator.execute(
+      genericValidator.validate(
         validationFunction as unknown as ValidateFunction,
         {},
       ),

@@ -22,7 +22,6 @@ export class ExchangeFiatCodesValidator
   }
 
   validate(data: unknown): ExchangeFiatCodes {
-    this.genericValidator.execute(this.isValidExchangeFiatCodes, data);
-    return data as ExchangeFiatCodes;
+    return this.genericValidator.validate(this.isValidExchangeFiatCodes, data);
   }
 }

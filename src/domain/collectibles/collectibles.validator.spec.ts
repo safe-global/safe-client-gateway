@@ -5,7 +5,7 @@ import { collectibleSchema } from './entities/schemas/collectible.schema';
 import collectibleFactory from './entities/__tests__/collectible.factory';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -27,9 +27,11 @@ describe('Collectibles validator', () => {
 
   it('should return the data when validation succeed', () => {
     const collectible = collectibleFactory();
+    mockGenericValidator.validate.mockReturnValue(collectible);
+
     const result = validator.validate(collectible);
 
     expect(result).toBe(collectible);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

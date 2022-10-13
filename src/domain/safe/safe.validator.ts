@@ -20,7 +20,6 @@ export class SafeValidator implements IValidator<Safe> {
   }
 
   validate(data: unknown): Safe {
-    this.genericValidator.execute(this.isValidSafe, data);
-    return data as Safe;
+    return this.genericValidator.validate(this.isValidSafe, data);
   }
 }

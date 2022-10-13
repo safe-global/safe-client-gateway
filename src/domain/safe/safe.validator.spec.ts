@@ -4,7 +4,7 @@ import { SafeValidator } from './safe.validator';
 import safeFactory from './entities/__tests__/safe.factory';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -20,10 +20,11 @@ describe('Safe validator', () => {
 
   it('should return the data when validation succeed', () => {
     const safe = safeFactory();
+    mockGenericValidator.validate.mockReturnValue(safe);
 
     const result = validator.validate(safe);
 
     expect(result).toBe(safe);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

@@ -20,7 +20,6 @@ export class ExchangeRatesValidator implements IValidator<ExchangeRates> {
   }
 
   validate(data: unknown): ExchangeRates {
-    this.genericValidator.execute(this.isValidExchangeRates, data);
-    return data as ExchangeRates;
+    return this.genericValidator.validate(this.isValidExchangeRates, data);
   }
 }

@@ -5,7 +5,7 @@ import { balanceSchema } from './entities/schemas/balance.schema';
 import { balanceFactory } from './entities/__tests__/balance.factory';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -25,9 +25,11 @@ describe('Balances validator', () => {
 
   it('should return the data when validation succeed', () => {
     const balance = balanceFactory();
+    mockGenericValidator.validate.mockReturnValue(balance);
+
     const result = validator.validate(balance);
 
     expect(result).toEqual(balance);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

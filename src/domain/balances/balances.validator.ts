@@ -24,7 +24,6 @@ export class BalancesValidator implements IValidator<Balance> {
   }
 
   validate(data: unknown): Balance {
-    this.genericValidator.execute(this.isValidBalance, data);
-    return data as Balance;
+    return this.genericValidator.validate(this.isValidBalance, data);
   }
 }

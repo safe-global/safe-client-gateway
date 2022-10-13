@@ -20,7 +20,6 @@ export class ContractsValidator implements IValidator<Contract> {
   }
 
   validate(data: unknown): Contract {
-    this.genericValidator.execute(this.isValidContract, data);
-    return data as Contract;
+    return this.genericValidator.validate(this.isValidContract, data);
   }
 }

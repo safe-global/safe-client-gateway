@@ -5,7 +5,7 @@ import { chainSchema } from './entities/schemas/chain.schema';
 import chainFactory from './entities/__tests__/chain.factory';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -25,9 +25,11 @@ describe('Chains validator', () => {
 
   it('should return the data when validation succeed', () => {
     const chain = chainFactory();
+    mockGenericValidator.validate.mockReturnValue(chain);
+
     const result = validator.validate(chain);
 
     expect(result).toEqual(chain);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

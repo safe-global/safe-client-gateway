@@ -5,7 +5,7 @@ import exchangeRatesFactory from './entities/__tests__/exchange-rates.factory';
 import { ExchangeRatesValidator } from './exchange-rates.validator';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -27,10 +27,11 @@ describe('Rates Exchange Result validator', () => {
 
   it('should return the data when validation succeed', () => {
     const rates = exchangeRatesFactory();
+    mockGenericValidator.validate.mockReturnValue(rates);
 
     const result = validator.validate(rates);
 
     expect(result).toBe(rates);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

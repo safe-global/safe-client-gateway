@@ -20,7 +20,6 @@ export class BackboneValidator implements IValidator<Backbone> {
   }
 
   validate(data: unknown): Backbone {
-    this.genericValidator.execute(this.isValidBackbone, data);
-    return data as Backbone;
+    return this.genericValidator.validate(this.isValidBackbone, data);
   }
 }

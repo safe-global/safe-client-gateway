@@ -5,7 +5,7 @@ import { GenericValidator } from '../schema/generic.validator';
 import { BackboneValidator } from './backbone.validator';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const mockJsonSchemaService = jest.mocked({
@@ -25,10 +25,11 @@ describe('Backbone validator', () => {
 
   it('should return the data when validation succeed', () => {
     const backbone = backboneFactory();
+    mockGenericValidator.validate.mockReturnValue(backbone);
 
     const result = validator.validate(backbone);
 
     expect(result).toBe(backbone);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

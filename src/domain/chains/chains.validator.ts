@@ -39,7 +39,6 @@ export class ChainsValidator implements IValidator<Chain> {
   }
 
   validate(data: unknown): Chain {
-    this.genericValidator.execute(this.isValidChain, data);
-    return data as Chain;
+    return this.genericValidator.validate(this.isValidChain, data);
   }
 }

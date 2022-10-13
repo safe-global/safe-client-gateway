@@ -8,10 +8,12 @@ export class GenericValidator {
     private readonly validationErrorFactory: ValidationErrorFactory,
   ) {}
 
-  execute(fn: ValidateFunction, data: unknown): void {
+  validate<T>(fn: ValidateFunction, data: unknown): T {
     if (!fn(data)) {
       const errors = fn.errors as DefinedError[];
       throw this.validationErrorFactory.from(errors);
     }
+
+    return data as T;
   }
 }

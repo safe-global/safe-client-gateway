@@ -5,7 +5,7 @@ import { contractSchema } from './entities/schemas/contract.schema';
 import contractFactory from './entities/__tests__/contract.factory';
 
 const mockGenericValidator = jest.mocked({
-  execute: jest.fn(),
+  validate: jest.fn(),
 } as unknown as GenericValidator);
 
 const validationFunction = jest.fn();
@@ -26,9 +26,11 @@ describe('Contracts validator', () => {
 
   it('should return the data when validation succeed', () => {
     const contract = contractFactory();
+    mockGenericValidator.validate.mockReturnValue(contract);
+
     const result = validator.validate(contract);
 
     expect(result).toBe(contract);
-    expect(mockGenericValidator.execute).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

@@ -20,7 +20,6 @@ export class MasterCopyValidator implements IValidator<MasterCopy> {
   }
 
   validate(data: unknown): MasterCopy {
-    this.genericValidator.execute(this.isValidMasterCopy, data);
-    return data as MasterCopy;
+    return this.genericValidator.validate(this.isValidMasterCopy, data);
   }
 }
