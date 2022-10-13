@@ -11,6 +11,7 @@ export const dataDecodedParameterSchema: JSONSchemaType<DataDecodedParameter> =
       value_decoded: { type: 'object', nullable: true },
     },
     required: ['name', 'param_type', 'value'],
+    additionalProperties: true,
   };
 
 export const dataDecodedSchema: Schema = {
