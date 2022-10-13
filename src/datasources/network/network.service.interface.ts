@@ -8,4 +8,10 @@ export interface INetworkService {
     url: string,
     config?: NetworkRequest,
   ): Promise<R>;
+
+  post<T = any, R = NetworkResponse<T>>(
+    url: string,
+    data: object,
+    config?: NetworkRequest,
+  ): Promise<R>;
 }

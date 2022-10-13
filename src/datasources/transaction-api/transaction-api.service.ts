@@ -9,6 +9,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -54,6 +55,15 @@ export class TransactionApi implements ITransactionApi {
   async clearLocalBalances(safeAddress: string): Promise<void> {
     const cacheKey = balanceCacheKey(this.chainId, safeAddress);
     await this.cacheService.delete(cacheKey);
+  }
+
+  async decode(data: string, to: string): Promise<DataDecoded> {
+    try {
+      const url = `${this.baseUrl}/api/v1/data-decoder/`;
+      return await this.dataSource.post(url, { data, to });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 
   async getCollectibles(
