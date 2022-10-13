@@ -9,13 +9,13 @@ export class SafeRepository implements ISafeRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly validator: SafeValidator,
+    private readonly safeValidator: SafeValidator,
   ) {}
 
   async getSafe(chainId: string, address: string): Promise<Safe> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
     const safe: Safe = await transactionService.getSafe(address);
-    return this.validator.validate(safe);
+    return this.safeValidator.validate(safe);
   }
 }
