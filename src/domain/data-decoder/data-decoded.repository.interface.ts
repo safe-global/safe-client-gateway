@@ -1,8 +1,8 @@
 import { DataDecoded } from './entities/data-decoded.entity';
 
-export const IDataDecoderRepository = Symbol('IDataDecoderRepository');
+export const IDataDecodedRepository = Symbol('IDataDecodedRepository');
 
-export interface IDataDecoderRepository {
+export interface IDataDecodedRepository {
   /**
    * Gets the {@link DataDecoded} associated with {@link chainId} the for the {@link data}
    * and the address pointed by {@link to}.

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { IDataDecoderRepository } from './data-decoder.repository.interface';
-import { DataDecodedValidator } from './date-decoder.validator';
+import { IDataDecodedRepository } from './data-decoded.repository.interface';
+import { DataDecodedValidator } from './data-decoded.validator';
 import { DataDecoded } from './entities/data-decoded.entity';
 
 @Injectable()
-export class DataDecoderRepository implements IDataDecoderRepository {
+export class DataDecodedRepository implements IDataDecodedRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,

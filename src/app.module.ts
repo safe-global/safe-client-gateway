@@ -15,7 +15,7 @@ import { DomainModule } from './domain.module';
 import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
 import { CollectiblesModule } from './routes/collectibles/collectibles.module';
 import { ContractsModule } from './routes/contracts/contracts.module';
-import { DataDecoderModule } from './routes/data-decoder/data-decoder.module';
+import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
 
 @Module({
   imports: [
@@ -25,7 +25,7 @@ import { DataDecoderModule } from './routes/data-decoder/data-decoder.module';
     ChainsModule,
     CollectiblesModule,
     ContractsModule,
-    DataDecoderModule,
+    DataDecodedModule,
     // common
     CacheModule,
     ConfigurationModule,
