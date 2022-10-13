@@ -27,7 +27,9 @@ import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
-import { DelegateValidator } from './domain/safe/delegate.validator';
+import { DelegateValidator } from './domain/delegate/delegate.validator';
+import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
+import { DelegateRepository } from './domain/delegate/delegate.repository';
 
 @Global()
 @Module({
@@ -40,6 +42,7 @@ import { DelegateValidator } from './domain/safe/delegate.validator';
     { provide: IContractsRepository, useClass: ContractsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
+    { provide: IDelegateRepository, useClass: DelegateRepository },
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
