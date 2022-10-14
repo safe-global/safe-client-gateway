@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
+import { GenericValidator } from '../schema/generic.validator';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
 import { DataDecoded } from './entities/data-decoded.entity';
 import {
   dataDecodedParameterSchema,
@@ -14,7 +14,7 @@ export class DataDecodedValidator implements IValidator<DataDecoded> {
   private readonly isValidDataDecoded: ValidateFunction<DataDecoded>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.addSchema(
@@ -27,11 +27,6 @@ export class DataDecodedValidator implements IValidator<DataDecoded> {
   }
 
   validate(data: unknown): DataDecoded {
-    if (!this.isValidDataDecoded(data)) {
-      const errors = this.isValidDataDecoded.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
-    return data as DataDecoded;
+    return this.genericValidator.validate(this.isValidDataDecoded, data);
   }
 }
