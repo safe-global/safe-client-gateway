@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ValidateFunction, DefinedError } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { GenericValidator } from '../schema/generic.validator';
 import { ExchangeRates } from './entities/exchange-rates.entity';
 import { exchangeRatesSchema } from './entities/schemas/exchange-rates.schema';
 
@@ -11,7 +11,7 @@ export class ExchangeRatesValidator implements IValidator<ExchangeRates> {
   private readonly isValidExchangeRates: ValidateFunction<ExchangeRates>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidExchangeRates = this.jsonSchemaService.compile(
@@ -20,11 +20,6 @@ export class ExchangeRatesValidator implements IValidator<ExchangeRates> {
   }
 
   validate(data: unknown): ExchangeRates {
-    if (!this.isValidExchangeRates(data)) {
-      const errors = this.isValidExchangeRates.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
-    return data as ExchangeRates;
+    return this.genericValidator.validate(this.isValidExchangeRates, data);
   }
 }

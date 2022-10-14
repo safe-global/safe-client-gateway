@@ -1,45 +1,30 @@
-import { faker } from '@faker-js/faker';
-import { HttpException } from '@nestjs/common';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
-import safeFactory from './entities/__tests__/safe.factory';
+import { GenericValidator } from '../schema/generic.validator';
 import { SafeValidator } from './safe.validator';
+import safeFactory from './entities/__tests__/safe.factory';
 
-const mockValidationErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as unknown as ValidationErrorFactory);
+const mockGenericValidator = jest.mocked({
+  validate: jest.fn(),
+} as unknown as GenericValidator);
 
-const validationFunction = jest.fn();
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
-  compile: jest.fn().mockImplementation(() => validationFunction),
+  compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
 describe('Safe validator', () => {
   const validator = new SafeValidator(
-    mockValidationErrorFactory,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
   it('should return the data when validation succeed', () => {
     const safe = safeFactory();
-    validationFunction.mockImplementationOnce(() => true);
+    mockGenericValidator.validate.mockReturnValue(safe);
 
     const result = validator.validate(safe);
 
     expect(result).toBe(safe);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
-  });
-
-  it('should throw a validation error when validation fails', async () => {
-    const safe = safeFactory();
-    const errMsg = faker.random.words();
-    mockValidationErrorFactory.from.mockReturnValueOnce(
-      new HttpException(errMsg, 500),
-    );
-    validationFunction.mockImplementationOnce(() => false);
-
-    expect(() => validator.validate(safe)).toThrow(errMsg);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });
