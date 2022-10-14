@@ -10,7 +10,7 @@ export const dataDecodedParameterSchema: JSONSchemaType<DataDecodedParameter> =
       value: { anyOf: [{ type: 'string' }, { type: 'number' }] },
       value_decoded: { type: 'object', nullable: true },
     },
-    required: ['name', 'param_type', 'value'],
+    required: ['name', 'value'],
     additionalProperties: true,
   };
 
@@ -18,6 +18,11 @@ export const dataDecodedSchema: Schema = {
   type: 'object',
   properties: {
     method: { type: 'string' },
-    parameters: { anyOf: [{ type: 'null' }, { $ref: 'dataDecodedParameter' }] },
+    parameters: {
+      anyOf: [
+        { type: 'null' },
+        { type: 'array', items: { $ref: 'dataDecodedParameter' } },
+      ],
+    },
   },
 };

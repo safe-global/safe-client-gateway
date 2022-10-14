@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository';
 import { IDataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository.interface';
-import { CreateDataDecodedDto } from '../../domain/data-decoder/entities/create-data-decoded.dto';
+import { CreateDataDecodedDto } from './entities/create-data-decoded.dto';
 import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 
 @Injectable()

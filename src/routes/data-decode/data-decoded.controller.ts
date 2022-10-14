@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { CreateDataDecodedDto } from '../../domain/data-decoder/entities/create-data-decoded.dto';
+import { CreateDataDecodedDto } from './entities/create-data-decoded.dto';
 import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 import { DataDecodedService } from './data-decoded.service';
 import { DataDecoded as ApiDataDecoded } from './entities/data-decoded.entity';

@@ -3,6 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
+import { CreateDataDecodedDto } from '../entities/create-data-decoded.dto';
+import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
 
 describe('Portfolios e2e tests', () => {
   let app: INestApplication;
@@ -21,7 +23,7 @@ describe('Portfolios e2e tests', () => {
   });
 
   it('POST /data-decoder', async () => {
-    const requestBody = JSON.parse(
+    const requestBody: CreateDataDecodedDto = JSON.parse(
       readFileSync(
         'src/routes/data-decode/__tests__/resources/data-decode-request-body.json',
         {
@@ -29,7 +31,7 @@ describe('Portfolios e2e tests', () => {
         },
       ),
     );
-    const expectedResponse = JSON.parse(
+    const expectedResponse: DataDecoded = JSON.parse(
       readFileSync(
         'src/routes/data-decode/__tests__/resources/data-decode-expected-response.json',
         {

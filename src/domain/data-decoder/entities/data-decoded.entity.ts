@@ -1,11 +1,11 @@
-export class DataDecodedParameter {
+export interface DataDecodedParameter {
   name: string;
   param_type: string;
   value: string | number;
   value_decoded?: Record<string, any>;
 }
 
-export class DataDecoded {
+export interface DataDecoded {
   method: string;
   parameters?: DataDecodedParameter[];
 }
