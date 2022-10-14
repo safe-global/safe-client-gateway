@@ -1,8 +1,8 @@
-import { backboneSchema } from '../balances/entities/schemas/backbone.schema';
-import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
-import { BackboneValidator } from './backbone.validator';
+import { exchangeRatesSchema } from './entities/schemas/exchange-rates.schema';
+import exchangeRatesFactory from './entities/__tests__/exchange-rates.factory';
+import { ExchangeRatesValidator } from './exchange-rates.validator';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -13,23 +13,25 @@ const mockJsonSchemaService = jest.mocked({
   compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
-describe('Backbone validator', () => {
-  const validator = new BackboneValidator(
+describe('Rates Exchange Result validator', () => {
+  const validator = new ExchangeRatesValidator(
     mockGenericValidator,
     mockJsonSchemaService,
   );
 
   it('should mount the proper schema', () => {
-    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(backboneSchema);
+    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(
+      exchangeRatesSchema,
+    );
   });
 
   it('should return the data when validation succeed', () => {
-    const backbone = backboneFactory();
-    mockGenericValidator.validate.mockReturnValue(backbone);
+    const rates = exchangeRatesFactory();
+    mockGenericValidator.validate.mockReturnValue(rates);
 
-    const result = validator.validate(backbone);
+    const result = validator.validate(rates);
 
-    expect(result).toBe(backbone);
+    expect(result).toBe(rates);
     expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

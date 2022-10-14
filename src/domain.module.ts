@@ -19,14 +19,15 @@ import { SafeRepository } from './domain/safe/safe.repository';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
 import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
-import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
-import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
+import { GenericValidator } from './domain/schema/generic.validator';
+import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
+import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 import { DelegateValidator } from './domain/delegate/delegate.validator';
 import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from './domain/delegate/delegate.repository';
@@ -56,6 +57,7 @@ import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validat
     ExchangeRatesValidator,
     MasterCopyValidator,
     SafeValidator,
+    GenericValidator,
     DelegateValidator,
     DataDecodedValidator,
     ValidationErrorFactory,

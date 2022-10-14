@@ -1,8 +1,8 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
-import { CollectiblesValidator } from './collectibles.validator';
-import { collectibleSchema } from './entities/schemas/collectible.schema';
-import collectibleFactory from './entities/__tests__/collectible.factory';
+import { exchangeFiatCodesSchema } from './entities/schemas/exchange-fiat-codes.schema';
+import exchangeFiatCodesFactory from './entities/__tests__/exchange-fiat-codes.factory';
+import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -13,25 +13,25 @@ const mockJsonSchemaService = jest.mocked({
   compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
-describe('Collectibles validator', () => {
-  const validator = new CollectiblesValidator(
+describe('Fiat Codes Exchange Result validator', () => {
+  const validator = new ExchangeFiatCodesValidator(
     mockGenericValidator,
     mockJsonSchemaService,
   );
 
   it('should mount the proper schema', () => {
     expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(
-      collectibleSchema,
+      exchangeFiatCodesSchema,
     );
   });
 
   it('should return the data when validation succeed', () => {
-    const collectible = collectibleFactory();
-    mockGenericValidator.validate.mockReturnValue(collectible);
+    const fiatCodes = exchangeFiatCodesFactory();
+    mockGenericValidator.validate.mockReturnValue(fiatCodes);
 
-    const result = validator.validate(collectible);
+    const result = validator.validate(fiatCodes);
 
-    expect(result).toBe(collectible);
+    expect(result).toBe(fiatCodes);
     expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });

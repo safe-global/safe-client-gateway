@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DefinedError, ValidateFunction } from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { backboneSchema } from '../balances/entities/schemas/backbone.schema';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { GenericValidator } from '../schema/generic.validator';
 import { Backbone } from './entities/backbone.entity';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class BackboneValidator implements IValidator<Backbone> {
   private readonly isValidBackbone: ValidateFunction<Backbone>;
 
   constructor(
-    private readonly validationErrorFactory: ValidationErrorFactory,
+    private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidBackbone = this.jsonSchemaService.compile(
@@ -20,11 +20,6 @@ export class BackboneValidator implements IValidator<Backbone> {
   }
 
   validate(data: unknown): Backbone {
-    if (!this.isValidBackbone(data)) {
-      const errors = this.isValidBackbone.errors as DefinedError[];
-      throw this.validationErrorFactory.from(errors);
-    }
-
-    return data as Backbone;
+    return this.genericValidator.validate(this.isValidBackbone, data);
   }
 }

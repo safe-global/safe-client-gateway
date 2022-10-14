@@ -1,46 +1,35 @@
-import { HttpException } from '@nestjs/common';
 import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { GenericValidator } from '../schema/generic.validator';
 import { BalancesValidator } from './balances.validator';
+import { balanceSchema } from './entities/schemas/balance.schema';
 import { balanceFactory } from './entities/__tests__/balance.factory';
 
-const mockValidationErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as unknown as ValidationErrorFactory);
+const mockGenericValidator = jest.mocked({
+  validate: jest.fn(),
+} as unknown as GenericValidator);
 
-const validationFunction = jest.fn();
 const mockJsonSchemaService = jest.mocked({
   addSchema: jest.fn(),
-  compile: jest.fn().mockImplementation(() => validationFunction),
+  compile: jest.fn(),
 } as unknown as JsonSchemaService);
 
 describe('Balances validator', () => {
   const validator = new BalancesValidator(
-    mockValidationErrorFactory,
+    mockGenericValidator,
     mockJsonSchemaService,
   );
 
-  it('should return the data when validation succeed', () => {
-    const balances = [balanceFactory(), balanceFactory()];
-    validationFunction.mockImplementationOnce(() => true);
-
-    const result = validator.validate(balances[0]);
-
-    expect(result).toEqual(balances[0]);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(0);
+  it('should mount the proper schema', () => {
+    expect(mockJsonSchemaService.compile).toHaveBeenCalledWith(balanceSchema);
   });
 
-  it('should throw a validation error when validation fails', async () => {
-    const balances = [balanceFactory(), balanceFactory()];
-    const expectedErrMessage = 'testErrMessage';
-    mockValidationErrorFactory.from.mockReturnValueOnce(
-      new HttpException(expectedErrMessage, 500),
-    );
-    validationFunction.mockImplementationOnce(() => false);
+  it('should return the data when validation succeed', () => {
+    const balance = balanceFactory();
+    mockGenericValidator.validate.mockReturnValue(balance);
 
-    expect(() =>
-      balances.map((balance) => validator.validate(balance)),
-    ).toThrow(expectedErrMessage);
-    expect(mockValidationErrorFactory.from).toHaveBeenCalledTimes(1);
+    const result = validator.validate(balance);
+
+    expect(result).toEqual(balance);
+    expect(mockGenericValidator.validate).toHaveBeenCalledTimes(1);
   });
 });
