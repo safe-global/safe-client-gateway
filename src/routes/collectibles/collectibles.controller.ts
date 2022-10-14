@@ -33,7 +33,7 @@ export class CollectiblesController {
     type: String,
   })
   @Get('chains/:chainId/safes/:safeAddress/collectibles')
-  async getChains(
+  async getCollectibles(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @RouteUrlDecorator() routeUrl: URL,
