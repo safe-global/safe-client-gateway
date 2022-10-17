@@ -11,11 +11,11 @@ export class DataDecodedService {
     private readonly dataDecodedRepository: DataDecodedRepository,
   ) {}
 
-  async decode(
+  async getDataDecoded(
     chainId: string,
     createDataDecodedDto: CreateDataDecodedDto,
   ): Promise<DataDecoded> {
     const { data, to } = createDataDecodedDto;
-    return this.dataDecodedRepository.decode(chainId, data, to);
+    return this.dataDecodedRepository.getDataDecoded(chainId, data, to);
   }
 }

@@ -11,6 +11,7 @@ import { Safe } from '../../domain/safe/entities/safe.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
 import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../../domain/delegate/entities/delegate.entity';
+import { INetworkService } from '../network/network.service.interface';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -31,6 +32,7 @@ export class TransactionApi implements ITransactionApi {
     private readonly dataSource: CacheFirstDataSource,
     private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    private readonly networkService: INetworkService,
   ) {}
 
   async getBalances(
@@ -58,10 +60,14 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.delete(cacheKey);
   }
 
-  async decode(data: string, to: string): Promise<DataDecoded> {
+  async getDataDecoded(data: string, to: string): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
-      return await this.dataSource.post(url, { data, to });
+      const { data: dataDecoded } = await this.networkService.post(url, {
+        data,
+        to,
+      });
+      return dataDecoded;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

@@ -5,7 +5,7 @@ import { DataDecodedService } from './data-decoded.service';
 import createDataDecodedDtoFactory from './__tests__/create-data-decoded.dto.factory';
 
 const mockDataDecodedRepository = jest.mocked({
-  decode: jest.fn(),
+  getDataDecoded: jest.fn(),
 } as unknown as DataDecodedRepository);
 
 describe('DataDecoded Service', () => {
@@ -17,11 +17,11 @@ describe('DataDecoded Service', () => {
     const chainId = faker.datatype.string();
     const dataDecoded = dataDecodedFactory();
     const createDataDecodedDto = createDataDecodedDtoFactory();
-    mockDataDecodedRepository.decode.mockResolvedValueOnce(dataDecoded);
+    mockDataDecodedRepository.getDataDecoded.mockResolvedValueOnce(dataDecoded);
 
-    const actual = await service.decode(chainId, createDataDecodedDto);
+    const actual = await service.getDataDecoded(chainId, createDataDecodedDto);
 
     expect(actual).toBe(dataDecoded);
-    expect(mockDataDecodedRepository.decode).toBeCalledTimes(1);
+    expect(mockDataDecodedRepository.getDataDecoded).toBeCalledTimes(1);
   });
 });

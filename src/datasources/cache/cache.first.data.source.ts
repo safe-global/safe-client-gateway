@@ -56,26 +56,4 @@ export class CacheFirstDataSource {
     await this.cacheService.set(key, field, rawJson, expireTimeSeconds);
     return data;
   }
-
-  /**
-   * Executes a POST request against an {@link url}, by using
-   * the injected NetworkService.
-   * Cache is not used by this function.
-   *
-   * @param url - the HTTP endpoint to retrieve the JSON payload
-   * @param data - data to send as request body for the HTTP request
-   * @param params - the parameters to be used for the HTTP request
-   */
-  async post<T>(
-    url: string,
-    data: object,
-    params?: NetworkRequest,
-  ): Promise<T> {
-    const { data: responseData } = await this.networkService.post(
-      url,
-      data,
-      params,
-    );
-    return responseData;
-  }
 }

@@ -11,5 +11,9 @@ export interface IDataDecodedRepository {
    * @param data
    * @param to
    */
-  decode(chainId: string, data: string, to: string): Promise<DataDecoded>;
+  getDataDecoded(
+    chainId: string,
+    data: string,
+    to: string,
+  ): Promise<DataDecoded>;
 }

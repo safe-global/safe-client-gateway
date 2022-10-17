@@ -20,6 +20,9 @@ export class DataDecodedController {
     @Param('chainId') chainId: string,
     @Body() createDataDecodedDto: CreateDataDecodedDto,
   ): Promise<DataDecoded> {
-    return this.dataDecodedService.decode(chainId, createDataDecodedDto);
+    return this.dataDecodedService.getDataDecoded(
+      chainId,
+      createDataDecodedDto,
+    );
   }
 }

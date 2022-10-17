@@ -16,7 +16,7 @@ export interface ITransactionApi {
 
   clearLocalBalances(safeAddress: string): Promise<void>;
 
-  decode(data: string, to: string): Promise<DataDecoded>;
+  getDataDecoded(data: string, to: string): Promise<DataDecoded>;
 
   getCollectibles(
     safeAddress: string,

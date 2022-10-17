@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   DataDecoded as DomainDataDecoded,
   DataDecodedParameter,
@@ -7,6 +7,6 @@ import {
 export class DataDecoded implements DomainDataDecoded {
   @ApiProperty()
   method: string;
-  @ApiProperty()
-  parameters?: DataDecodedParameter[] | undefined;
+  @ApiPropertyOptional()
+  parameters?: DataDecodedParameter[];
 }
