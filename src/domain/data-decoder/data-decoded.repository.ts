@@ -18,7 +18,7 @@ export class DataDecodedRepository implements IDataDecodedRepository {
     to: string,
   ): Promise<DataDecoded> {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const result = await api.decode(data, to);
-    return this.validator.validate(result);
+    const dataDecoded = await api.decode(data, to);
+    return this.validator.validate(dataDecoded);
   }
 }

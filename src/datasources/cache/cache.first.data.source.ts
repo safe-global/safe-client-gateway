@@ -71,7 +71,11 @@ export class CacheFirstDataSource {
     data: object,
     params?: NetworkRequest,
   ): Promise<T> {
-    const { data: result } = await this.networkService.post(url, data, params);
-    return result;
+    const { data: responseData } = await this.networkService.post(
+      url,
+      data,
+      params,
+    );
+    return responseData;
   }
 }
