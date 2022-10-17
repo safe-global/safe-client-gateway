@@ -6,6 +6,7 @@ import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
+import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -48,4 +49,13 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+
+  getMultisigTransactions(
+    safeAddress: string,
+    ordering?: string,
+    executed?: boolean,
+    trusted?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<MultisigTransaction>>;
 }

@@ -32,6 +32,7 @@ import { DelegateValidator } from './domain/delegate/delegate.validator';
 import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from './domain/delegate/delegate.repository';
 import { TransferValidator } from './domain/safe/transfer.validator';
+import { MultisigTransactionValidator } from './domain/safe/multisig-transaction.validator';
 
 @Global()
 @Module({
@@ -55,6 +56,7 @@ import { TransferValidator } from './domain/safe/transfer.validator';
     ExchangeRatesValidator,
     GenericValidator,
     MasterCopyValidator,
+    MultisigTransactionValidator,
     SafeValidator,
     TransferValidator,
     ValidationErrorFactory,
