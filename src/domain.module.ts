@@ -31,6 +31,7 @@ import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-code
 import { DelegateValidator } from './domain/delegate/delegate.validator';
 import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from './domain/delegate/delegate.repository';
+import { TransferValidator } from './domain/safe/transfer.validator';
 
 @Global()
 @Module({
@@ -49,12 +50,13 @@ import { DelegateRepository } from './domain/delegate/delegate.repository';
     ChainsValidator,
     CollectiblesValidator,
     ContractsValidator,
+    DelegateValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
+    GenericValidator,
     MasterCopyValidator,
     SafeValidator,
-    GenericValidator,
-    DelegateValidator,
+    TransferValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
