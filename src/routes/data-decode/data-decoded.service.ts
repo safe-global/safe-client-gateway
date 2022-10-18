@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository';
 import { IDataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository.interface';
 import { CreateDataDecodedDto } from './entities/create-data-decoded.dto';
-import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from './entities/data-decoded.entity';
 
 @Injectable()
 export class DataDecodedService {
@@ -16,6 +16,16 @@ export class DataDecodedService {
     createDataDecodedDto: CreateDataDecodedDto,
   ): Promise<DataDecoded> {
     const { data, to } = createDataDecodedDto;
-    return this.dataDecodedRepository.getDataDecoded(chainId, data, to);
+    const dataDecoded = await this.dataDecodedRepository.getDataDecoded(
+      chainId,
+      data,
+      to,
+    );
+    return {
+      ...dataDecoded,
+      parameters: dataDecoded.parameters?.map(
+        ({ type: paramType, ...rest }) => ({ ...rest, paramType }),
+      ),
+    };
   }
 }
