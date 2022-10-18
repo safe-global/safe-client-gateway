@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateDataDecodedDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Hexadecimal value' })
   data: string;
-  @ApiProperty()
+  @ApiProperty({ description: 'Hexadecimal value' })
   to: string;
 
   constructor(data: string, to: string) {
