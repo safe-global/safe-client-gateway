@@ -6,6 +6,7 @@ import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
 import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
+import { Transfer } from '../safe/entities/transfer.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -42,4 +43,12 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   );
+
+  getTransfers(
+    safeAddress: string,
+    onlyErc20?: boolean,
+    onlyErc721?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>>;
 }

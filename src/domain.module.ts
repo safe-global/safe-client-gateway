@@ -34,6 +34,7 @@ import { DelegateRepository } from './domain/delegate/delegate.repository';
 import { IDataDecodedRepository } from './domain/data-decoder/data-decoded.repository.interface';
 import { DataDecodedRepository } from './domain/data-decoder/data-decoded.repository';
 import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validator';
+import { TransferValidator } from './domain/safe/transfer.validator';
 
 @Global()
 @Module({
@@ -60,6 +61,7 @@ import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validat
     GenericValidator,
     MasterCopyValidator,
     SafeValidator,
+    TransferValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
