@@ -29,6 +29,30 @@ describe('DataDecoded Service', () => {
     });
     expect(mockDataDecodedRepository.getDataDecoded).toBeCalledTimes(1);
   });
+
+  it('should throw an error on invalid payload', async () => {
+    const chainId = faker.datatype.string();
+    const createDataDecodedDto = createDataDecodedDtoFactory(
+      undefined,
+      faker.random.word(),
+    );
+
+    await expect(
+      service.getDataDecoded(chainId, createDataDecodedDto),
+    ).rejects.toThrow('Invalid payload');
+  });
+
+  it('should throw an error on invalid payload (2)', async () => {
+    const chainId = faker.datatype.string();
+    const createDataDecodedDto = createDataDecodedDtoFactory(
+      faker.random.words(),
+      faker.random.word(),
+    );
+
+    await expect(
+      service.getDataDecoded(chainId, createDataDecodedDto),
+    ).rejects.toThrow('Invalid payload');
+  });
 });
 
 function getExpectedSerializedParameters(

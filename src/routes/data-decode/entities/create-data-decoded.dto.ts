@@ -11,3 +11,13 @@ export class CreateDataDecodedDto {
     this.to = to;
   }
 }
+
+export function isCreateDataDecodeDto(
+  dto: CreateDataDecodedDto,
+): dto is CreateDataDecodedDto {
+  return isHex(dto.data) && isHex(dto.to);
+}
+
+function isHex(value: unknown): boolean {
+  return typeof value === 'string' && value.startsWith('0x');
+}
