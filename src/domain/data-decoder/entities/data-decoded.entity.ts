@@ -1,6 +1,6 @@
 export interface DataDecodedParameter {
   name: string;
-  param_type: string;
+  type: string;
   value: string | number;
   valueDecoded?: Record<string, any> | Record<string, any>[];
 }

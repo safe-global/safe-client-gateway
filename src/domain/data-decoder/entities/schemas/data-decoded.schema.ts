@@ -4,14 +4,9 @@ export const dataDecodedParameterSchema: Schema = {
   type: 'object',
   properties: {
     name: { type: 'string' },
-    param_type: { type: 'string' },
+    type: { type: 'string' },
     value: { anyOf: [{ type: 'string' }, { type: 'number' }] },
-    valueDecoded: {
-      anyOf: [
-        { type: 'object', nullable: true },
-        { type: 'array', nullable: true },
-      ],
-    },
+    valueDecoded: { type: ['object', 'array', 'null'] },
   },
   required: ['name', 'value'],
   additionalProperties: true,

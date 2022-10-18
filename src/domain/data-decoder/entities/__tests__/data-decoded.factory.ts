@@ -15,7 +15,7 @@ export default function (
 function dataDecodedParameterFactory(): DataDecodedParameter {
   return <DataDecodedParameter>{
     name: faker.random.alphaNumeric(),
-    param_type: faker.random.alphaNumeric(),
+    type: faker.random.alphaNumeric(),
     value: faker.random.alphaNumeric(),
     valueDecoded: {
       [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
