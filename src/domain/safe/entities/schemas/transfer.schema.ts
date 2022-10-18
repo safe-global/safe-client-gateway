@@ -20,7 +20,7 @@ export const transferSchema: JSONSchemaType<
         to: { type: 'string' },
         from: { type: 'string' },
         tokenId: { type: 'string' },
-        tokenAddress: { type: 'string' },
+        tokenAddress: { type: 'string', nullable: true },
       },
       required: [
         'type',
@@ -30,7 +30,6 @@ export const transferSchema: JSONSchemaType<
         'to',
         'from',
         'tokenId',
-        'tokenAddress',
       ],
     },
     {
