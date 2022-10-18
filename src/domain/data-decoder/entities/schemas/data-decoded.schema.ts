@@ -1,18 +1,21 @@
-import { JSONSchemaType, Schema } from 'ajv';
-import { DataDecodedParameter } from '../data-decoded.entity';
+import { Schema } from 'ajv';
 
-export const dataDecodedParameterSchema: JSONSchemaType<DataDecodedParameter> =
-  {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      param_type: { type: 'string' },
-      value: { anyOf: [{ type: 'string' }, { type: 'number' }] },
-      value_decoded: { type: 'object', nullable: true },
+export const dataDecodedParameterSchema: Schema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    param_type: { type: 'string' },
+    value: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+    valueDecoded: {
+      anyOf: [
+        { type: 'object', nullable: true },
+        { type: 'array', nullable: true },
+      ],
     },
-    required: ['name', 'value'],
-    additionalProperties: true,
-  };
+  },
+  required: ['name', 'value'],
+  additionalProperties: true,
+};
 
 export const dataDecodedSchema: Schema = {
   type: 'object',

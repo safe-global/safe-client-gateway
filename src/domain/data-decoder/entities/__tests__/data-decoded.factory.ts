@@ -17,7 +17,7 @@ function dataDecodedParameterFactory(): DataDecodedParameter {
     name: faker.random.alphaNumeric(),
     param_type: faker.random.alphaNumeric(),
     value: faker.random.alphaNumeric(),
-    value_decoded: {
+    valueDecoded: {
       [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
       [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
       [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),

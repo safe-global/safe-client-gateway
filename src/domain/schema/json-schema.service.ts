@@ -12,7 +12,7 @@ export class JsonSchemaService {
     addFormats(this.ajv, { formats: ['uri'] });
   }
 
-  addSchema<T>(schema: JSONSchemaType<T>, name: string): void {
+  addSchema<T>(schema: Schema | JSONSchemaType<T>, name: string): void {
     this.ajv.addSchema(schema, name);
   }
 
