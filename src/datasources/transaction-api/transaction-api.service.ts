@@ -155,8 +155,8 @@ export class TransactionApi implements ITransactionApi {
     safeAddress: string,
     onlyErc20: boolean,
     onlyErc721: boolean,
-    limit: number,
-    offset: number,
+    limit?: number,
+    offset?: number,
   ): Promise<Page<Transfer>> {
     try {
       const cacheKey = `${this.chainId}_${safeAddress}_transfers`;
