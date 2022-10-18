@@ -9,7 +9,7 @@ import { PaginationDataDecorator } from '../common/decorators/pagination.data.de
 import { PaginationData } from '../common/pagination/pagination.data';
 import { Page } from '../common/entities/page.entity';
 
-@ApiTags('Delegates')
+@ApiTags('delegates')
 @Controller({
   version: '1',
 })
