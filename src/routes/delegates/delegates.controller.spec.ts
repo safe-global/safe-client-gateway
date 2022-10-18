@@ -20,6 +20,7 @@ import { Delegate } from './entities/delegate.entity';
 import { Page } from '../../domain/entities/page.entity';
 import { DomainModule } from '../../domain.module';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
+import { faker } from '@faker-js/faker';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -62,7 +63,7 @@ describe('Delegates controller', () => {
 
   describe('GET delegates for a Safe', () => {
     it('Success', async () => {
-      const safe = '0x5afe3855358e112b5647b952709e6165e1c1eeee';
+      const safe = faker.finance.ethereumAddress();
       const chainId = '1';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -76,28 +77,10 @@ describe('Delegates controller', () => {
         .get(`/chains/${chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(pageDelegates);
-
-      expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
-      );
-      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/delegates/`,
-      );
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
-        params: {
-          safe: safe,
-          delegate: undefined,
-          delegator: undefined,
-          label: undefined,
-          limit: undefined,
-          offset: undefined,
-        },
-      });
     });
 
     it('Should return empty result', async () => {
-      const safe = '0x5afe3855358e112b5647b952709e6165e1c1eeee';
+      const safe = faker.finance.ethereumAddress();
       const chainId = '1';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -111,27 +94,9 @@ describe('Delegates controller', () => {
         .get(`/chains/${chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(pageDelegates);
-
-      expect(mockNetworkService.get).toBeCalledTimes(2);
-      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
-      );
-      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/delegates/`,
-      );
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
-        params: {
-          safe: safe,
-          delegate: undefined,
-          delegator: undefined,
-          label: undefined,
-          limit: undefined,
-          offset: undefined,
-        },
-      });
     });
 
-    it('Should failure with bad request', async () => {
+    it('Should fail with bad request', async () => {
       const chainId = '1';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });

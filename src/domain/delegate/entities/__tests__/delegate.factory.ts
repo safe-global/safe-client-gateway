@@ -7,9 +7,9 @@ export default function (
   label?: boolean,
 ): Delegate {
   return <Delegate>{
-    safe: safe ?? faker.random.word(),
-    delegate: delegate ?? faker.random.word(),
-    delegator: delegator ?? faker.random.word(),
+    safe: safe ?? faker.finance.ethereumAddress(),
+    delegate: delegate ?? faker.finance.ethereumAddress(),
+    delegator: delegator ?? faker.finance.ethereumAddress(),
     label: label ?? faker.random.word(),
   };
 }
