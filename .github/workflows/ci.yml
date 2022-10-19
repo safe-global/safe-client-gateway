@@ -52,8 +52,11 @@ jobs:
       - run: yarn run build
       - run: yarn run test:cov
         env:
+          EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
+          EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           REDIS_HOST: redis
           REDIS_PORT: 6379
+          SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
       - name: Upload coverage
         uses: coverallsapp/github-action@1.1.3
         with:
