@@ -11,6 +11,7 @@ import {
 
 const axios = {
   get: jest.fn(),
+  post: jest.fn(),
 } as unknown as Axios;
 
 const axiosMock = jest.mocked<Axios>(axios);
@@ -23,66 +24,138 @@ describe('AxiosNetworkService', () => {
     target = new AxiosNetworkService(axiosMock);
   });
 
-  it(`get calls axios get`, async () => {
-    const url = faker.internet.url();
+  describe('GET requests', () => {
+    it(`get calls axios get`, async () => {
+      const url = faker.internet.url();
 
-    await target.get(url);
+      await target.get(url);
 
-    expect(axiosMock.get).toBeCalledTimes(1);
-    expect(axiosMock.get).toBeCalledWith(url, undefined);
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(url, undefined);
+    });
+
+    it(`get calls axios get with request`, async () => {
+      const url = faker.internet.url();
+      const request = <NetworkRequest>{
+        params: { some_query_param: 'query_param' },
+      };
+
+      await target.get(url, request);
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(url, request);
+    });
+
+    it(`get forwards unknown error as NetworkOtherError`, async () => {
+      const url = faker.internet.url();
+      (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
+
+      await expect(target.get(url)).rejects.toThrowError(
+        new NetworkOtherError('Axios error'),
+      );
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(url, undefined);
+    });
+
+    it(`get forwards response error as NetworkResponseError`, async () => {
+      const url = faker.internet.url();
+      const error = {
+        response: { data: 'data', status: 100 },
+      };
+      (axiosMock.get as any).mockRejectedValueOnce(error);
+
+      await expect(target.get(url)).rejects.toThrowError(
+        new NetworkResponseError(error.response.data, error.response.status),
+      );
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(url, undefined);
+    });
+
+    it(`get forwards response error as NetworkRequestError`, async () => {
+      const url = faker.internet.url();
+      const error = {
+        request: 'some error',
+      };
+      (axiosMock.get as any).mockRejectedValueOnce(error);
+
+      await expect(target.get(url)).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(axiosMock.get).toBeCalledTimes(1);
+      expect(axiosMock.get).toBeCalledWith(url, undefined);
+    });
   });
 
-  it(`get calls axios get with request`, async () => {
-    const url = faker.internet.url();
-    const request = <NetworkRequest>{
-      params: { some_query_param: 'query_param' },
-    };
+  describe('POST requests', () => {
+    it(`post calls axios post`, async () => {
+      const url = faker.internet.url();
+      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
 
-    await target.get(url, request);
+      await target.post(url, data);
 
-    expect(axiosMock.get).toBeCalledTimes(1);
-    expect(axiosMock.get).toBeCalledWith(url, request);
-  });
+      expect(axiosMock.post).toBeCalledTimes(1);
+      expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
 
-  it(`get forwards unknown error as NetworkOtherError`, async () => {
-    const url = faker.internet.url();
-    (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
+    it(`post calls axios post with request`, async () => {
+      const url = faker.internet.url();
+      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const request = <NetworkRequest>{
+        params: { some_query_param: 'query_param' },
+      };
 
-    await expect(target.get(url)).rejects.toThrowError(
-      new NetworkOtherError('Axios error'),
-    );
+      await target.post(url, data, request);
 
-    expect(axiosMock.get).toBeCalledTimes(1);
-    expect(axiosMock.get).toBeCalledWith(url, undefined);
-  });
+      expect(axiosMock.post).toBeCalledTimes(1);
+      expect(axiosMock.post).toBeCalledWith(url, data, request);
+    });
 
-  it(`get forwards response error as NetworkResponseError`, async () => {
-    const url = faker.internet.url();
-    const error = {
-      response: { data: 'data', status: 100 },
-    };
-    (axiosMock.get as any).mockRejectedValueOnce(error);
+    it(`post forwards unknown error as NetworkOtherError`, async () => {
+      const url = faker.internet.url();
+      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      (axiosMock.post as any).mockRejectedValueOnce(new Error('Axios error'));
 
-    await expect(target.get(url)).rejects.toThrowError(
-      new NetworkResponseError(error.response.data, error.response.status),
-    );
+      await expect(target.post(url, data)).rejects.toThrowError(
+        new NetworkOtherError('Axios error'),
+      );
 
-    expect(axiosMock.get).toBeCalledTimes(1);
-    expect(axiosMock.get).toBeCalledWith(url, undefined);
-  });
+      expect(axiosMock.post).toBeCalledTimes(1);
+      expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
 
-  it(`get forwards response error as NetworkRequestError`, async () => {
-    const url = faker.internet.url();
-    const error = {
-      request: 'some error',
-    };
-    (axiosMock.get as any).mockRejectedValueOnce(error);
+    it(`post forwards response error as NetworkResponseError`, async () => {
+      const url = faker.internet.url();
+      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const error = {
+        response: { data: 'data', status: 100 },
+      };
+      (axiosMock.post as any).mockRejectedValueOnce(error);
 
-    await expect(target.get(url)).rejects.toThrowError(
-      new NetworkRequestError(error.request),
-    );
+      await expect(target.post(url, data)).rejects.toThrowError(
+        new NetworkResponseError(error.response.data, error.response.status),
+      );
 
-    expect(axiosMock.get).toBeCalledTimes(1);
-    expect(axiosMock.get).toBeCalledWith(url, undefined);
+      expect(axiosMock.post).toBeCalledTimes(1);
+      expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
+
+    it(`post forwards response error as NetworkRequestError`, async () => {
+      const url = faker.internet.url();
+      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const error = {
+        request: 'some error',
+      };
+      (axiosMock.post as any).mockRejectedValueOnce(error);
+
+      await expect(target.post(url, data)).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(axiosMock.post).toBeCalledTimes(1);
+      expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
   });
 });

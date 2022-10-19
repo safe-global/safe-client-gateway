@@ -23,16 +23,32 @@ export class AxiosNetworkService implements INetworkService {
     try {
       return await this.client.get(url, config);
     } catch (error) {
-      if (error.response) {
-        throw new NetworkResponseError(
-          error.response.data,
-          error.response.status,
-        );
-      } else if (error.request) {
-        throw new NetworkRequestError(error.request);
-      } else {
-        throw new NetworkOtherError(error.message);
-      }
+      this.handleError(error);
+    }
+  }
+
+  async post<T = any, R = NetworkResponse<T>>(
+    url: string,
+    data: object,
+    config?: NetworkRequest,
+  ): Promise<R> {
+    try {
+      return await this.client.post(url, data, config);
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  private handleError(error): never {
+    if (error.response) {
+      throw new NetworkResponseError(
+        error.response.data,
+        error.response.status,
+      );
+    } else if (error.request) {
+      throw new NetworkRequestError(error.request);
+    } else {
+      throw new NetworkOtherError(error.message);
     }
   }
 }

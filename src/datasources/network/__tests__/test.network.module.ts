@@ -3,6 +3,7 @@ import { NetworkService, INetworkService } from '../network.service.interface';
 
 const networkService: INetworkService = {
   get: jest.fn(),
+  post: jest.fn(),
 };
 
 /**

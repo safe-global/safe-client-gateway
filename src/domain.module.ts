@@ -31,6 +31,9 @@ import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-code
 import { DelegateValidator } from './domain/delegate/delegate.validator';
 import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from './domain/delegate/delegate.repository';
+import { IDataDecodedRepository } from './domain/data-decoder/data-decoded.repository.interface';
+import { DataDecodedRepository } from './domain/data-decoder/data-decoded.repository';
+import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validator';
 import { TransferValidator } from './domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from './domain/safe/multisig-transaction.validator';
 
@@ -43,14 +46,16 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IContractsRepository, useClass: ContractsRepository },
+    { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
+    { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
-    { provide: IDelegateRepository, useClass: DelegateRepository },
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
     CollectiblesValidator,
     ContractsValidator,
+    DataDecodedValidator,
     DelegateValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
@@ -67,9 +72,11 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     IBalancesRepository,
     IChainsRepository,
     ICollectiblesRepository,
+    IContractsRepository,
+    IDataDecodedRepository,
+    IDelegateRepository,
     IExchangeRepository,
     ISafeRepository,
-    IContractsRepository,
   ],
 })
 export class DomainModule {}
