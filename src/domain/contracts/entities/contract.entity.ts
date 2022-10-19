@@ -1,4 +1,4 @@
-export class Contract {
+export interface Contract {
   address: string;
   name: string;
   displayName: string;

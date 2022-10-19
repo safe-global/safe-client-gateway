@@ -5,6 +5,7 @@ import { Collectible } from '../collectibles/entities/collectible.entity';
 import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
+import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 
 export interface ITransactionApi {
@@ -15,6 +16,8 @@ export interface ITransactionApi {
   ): Promise<Balance[]>;
 
   clearLocalBalances(safeAddress: string): Promise<void>;
+
+  getDataDecoded(data: string, to: string): Promise<DataDecoded>;
 
   getCollectibles(
     safeAddress: string,

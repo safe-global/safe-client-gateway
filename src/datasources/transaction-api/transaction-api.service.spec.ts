@@ -7,6 +7,7 @@ import { faker } from '@faker-js/faker';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { DataSourceError } from '../../domain/errors/data-source.error';
 import safeFactory from '../../domain/safe/entities/__tests__/safe.factory';
+import { AxiosNetworkService } from '../network/axios.network.service';
 
 const dataSource = {
   get: jest.fn(),
@@ -23,6 +24,10 @@ const httpErrorFactory = {
 } as unknown as HttpErrorFactory;
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
+const networkService = jest.mocked({
+  post: jest.fn(),
+}) as unknown as AxiosNetworkService;
+
 describe('TransactionApi', () => {
   const chainId = '1';
   const baseUrl = faker.internet.url();
@@ -37,6 +42,7 @@ describe('TransactionApi', () => {
       mockDataSource,
       mockCacheService,
       mockHttpErrorFactory,
+      networkService,
     );
   });
 
