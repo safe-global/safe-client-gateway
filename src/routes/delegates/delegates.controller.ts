@@ -8,6 +8,7 @@ import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { Page } from '../common/entities/page.entity';
+import { DelegateParamsDto } from './entities/delegate-params.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -46,19 +47,13 @@ export class DelegatesController {
   async getDelegates(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
+    @Query() delegateParamsDto: DelegateParamsDto,
     @PaginationDataDecorator() paginationData?: PaginationData,
-    @Query('safe') safe?: string,
-    @Query('delegate') delegate?: string,
-    @Query('delegator') delegator?: string,
-    @Query('label') label?: string,
   ): Promise<Page<Delegate>> {
     return this.service.getDelegates(
       chainId,
       routeUrl,
-      safe,
-      delegate,
-      delegator,
-      label,
+      delegateParamsDto,
       paginationData,
     );
   }

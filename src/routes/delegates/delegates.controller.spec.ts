@@ -100,16 +100,14 @@ describe('Delegates controller', () => {
       const chainId = '1';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-      mockNetworkService.get.mockRejectedValueOnce({
-        data: {},
-        status: 400,
-      });
 
       await request(app.getHttpServer())
         .get(`/chains/${chainId}/delegates`)
-        .expect(400);
-
-      expect(mockNetworkService.get).toBeCalledTimes(2);
+        .expect(400)
+        .expect({
+          message: 'At least one query param must be provided',
+          statusCode: 400,
+        });
     });
   });
 });

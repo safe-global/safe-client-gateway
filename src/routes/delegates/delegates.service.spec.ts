@@ -4,6 +4,7 @@ import { IDelegateRepository } from '../../domain/delegate/delegate.repository.i
 import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.factory';
 import { faker } from '@faker-js/faker';
 import { Page } from '../common/entities/page.entity';
+import { DelegateParamsDto } from './entities/delegate-params.entity';
 
 const delegateRepository = {
   getDelegates: jest.fn(),
@@ -31,7 +32,8 @@ describe('DelegatesService', () => {
     };
     delegateRepositoryMock.getDelegates.mockResolvedValueOnce(delegates);
 
-    const actual = await service.getDelegates(chainId, routeUrl, safe);
+    const params = new DelegateParamsDto(safe);
+    const actual = await service.getDelegates(chainId, routeUrl, params);
 
     expect(actual).toEqual(delegates);
     expect(delegateRepositoryMock.getDelegates).toBeCalledTimes(1);
