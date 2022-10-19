@@ -23,7 +23,7 @@ describe('DelegatesService', () => {
 
   it('should retrieve the delegates from a safe', async () => {
     const chainId = '1';
-    const safe = '0x5afe3855358e112b5647b952709e6165e1c1eeee';
+    const safe = faker.finance.ethereumAddress();
     const url = faker.internet.url();
     const routeUrl: Readonly<URL> = new URL(url);
     const delegates = <Page<Delegate>>{
