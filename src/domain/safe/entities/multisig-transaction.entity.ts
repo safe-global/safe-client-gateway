@@ -15,7 +15,7 @@ export interface MultisigTransaction {
   to: string;
   value?: string;
   data?: string;
-  dataDecoded?: unknown; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
+  dataDecoded?: any; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
   operation: Operation;
   gasToken?: string;
   safeTxGas?: number;
