@@ -100,15 +100,14 @@ describe('Delegates controller', () => {
       const chainId = '1';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-      mockNetworkService.get.mockRejectedValueOnce({ status: 400 });
+      mockNetworkService.get.mockRejectedValueOnce({
+        data: {},
+        status: 400,
+      });
 
       await request(app.getHttpServer())
         .get(`/chains/${chainId}/delegates`)
-        .expect(503)
-        .expect({
-          message: 'Service unavailable',
-          code: 503,
-        });
+        .expect(400);
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
     });
