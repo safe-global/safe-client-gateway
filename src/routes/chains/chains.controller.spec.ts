@@ -24,6 +24,7 @@ import { DataSourceErrorFilter } from '../common/filters/data-source-error.filte
 import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import masterCopyFactory from '../../domain/chains/entities/__tests__/master-copy.factory';
 import { MasterCopy } from './entities/master-copy.entity';
+import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -94,13 +95,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure: network service fails', async () => {
-      mockNetworkService.get.mockRejectedValueOnce({
+      mockNetworkService.get.mockRejectedValueOnce(<NetworkResponseError>{
         status: 500,
       });
 
-      await request(app.getHttpServer()).get('/chains').expect(503).expect({
-        message: 'Service unavailable',
-        code: 503,
+      await request(app.getHttpServer()).get('/chains').expect(500).expect({
+        message: 'An error occurred',
+        code: 500,
       });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
@@ -159,10 +160,10 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains/1/about/backbone')
-        .expect(503)
+        .expect(400)
         .expect({
-          message: 'Service unavailable',
-          code: 503,
+          message: 'An error occurred',
+          code: 400,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
@@ -180,10 +181,10 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains/1/about/backbone')
-        .expect(503)
+        .expect(502)
         .expect({
-          message: 'Service unavailable',
-          code: 503,
+          message: 'An error occurred',
+          code: 502,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
@@ -240,10 +241,10 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains/1/about/master-copies')
-        .expect(503)
+        .expect(400)
         .expect({
-          message: 'Service unavailable',
-          code: 503,
+          message: 'An error occurred',
+          code: 400,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
@@ -261,10 +262,10 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/chains/1/about/master-copies')
-        .expect(503)
+        .expect(502)
         .expect({
-          message: 'Service unavailable',
-          code: 503,
+          message: 'An error occurred',
+          code: 502,
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
