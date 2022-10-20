@@ -42,8 +42,8 @@ export class AxiosNetworkService implements INetworkService {
   private handleError(error): never {
     if (error.response) {
       throw new NetworkResponseError(
-        error.response.data,
         error.response.status,
+        error.response.data,
       );
     } else if (error.request) {
       throw new NetworkRequestError(error.request);
