@@ -1,5 +1,5 @@
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { DelegatesService } from './delegates.service';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 import { Delegate } from './entities/delegate.entity';
@@ -9,6 +9,8 @@ import { PaginationDataDecorator } from '../common/decorators/pagination.data.de
 import { PaginationData } from '../common/pagination/pagination.data';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { CreateDelegateDto } from './entities/create-delegate.entity';
+import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -56,5 +58,14 @@ export class DelegatesController {
       delegateParamsDto,
       paginationData,
     );
+  }
+
+  @ApiCreatedResponse()
+  @Post('chains/:chainId/delegates')
+  async getDataDecoded(
+    @Param('chainId') chainId: string,
+    @Body() createDelegateDto: CreateDelegateDto,
+  ): Promise<NetworkResponse> {
+    return this.service.postDelegates(chainId, createDelegateDto);
   }
 }

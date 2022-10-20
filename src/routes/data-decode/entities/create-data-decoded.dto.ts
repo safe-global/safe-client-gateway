@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { isHex } from '../../common/utils/utils';
 
 export class CreateDataDecodedDto {
   @ApiProperty({ description: 'Hexadecimal value' })
@@ -16,8 +17,4 @@ export function isCreateDataDecodeDto(
   dto: CreateDataDecodedDto,
 ): dto is CreateDataDecodedDto {
   return isHex(dto.data) && isHex(dto.to);
-}
-
-function isHex(value: unknown): boolean {
-  return typeof value === 'string' && value.startsWith('0x');
 }

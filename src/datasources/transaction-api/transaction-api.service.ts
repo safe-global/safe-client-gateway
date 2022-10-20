@@ -14,6 +14,7 @@ import { Delegate } from '../../domain/delegate/entities/delegate.entity';
 import { INetworkService } from '../network/network.service.interface';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { NetworkResponse } from '../network/entities/network.response.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -162,6 +163,27 @@ export class TransactionApi implements ITransactionApi {
           limit: limit,
           offset: offset,
         },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async postDelegates(
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<NetworkResponse<any>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/delegates/`;
+      return await this.networkService.post(url, {
+        safe: safeAddress,
+        delegate: delegate,
+        delegator: delegator,
+        signature: signature,
+        label: label,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);

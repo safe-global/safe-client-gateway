@@ -5,6 +5,7 @@ import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.f
 import { faker } from '@faker-js/faker';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
+import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
 
 const delegateRepository = {
   getDelegates: jest.fn(),
@@ -37,5 +38,13 @@ describe('DelegatesService', () => {
 
     expect(actual).toEqual(delegates);
     expect(delegateRepositoryMock.getDelegates).toBeCalledTimes(1);
+  });
+
+  it('should throw an error on invalid payload', async () => {
+    const chainId = faker.datatype.string();
+    const createDelegateDto = createDelegateDtoFactory('hola');
+    await expect(
+      service.postDelegates(chainId, createDelegateDto),
+    ).rejects.toThrow('Invalid payload');
   });
 });

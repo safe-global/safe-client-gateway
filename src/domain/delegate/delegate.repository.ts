@@ -4,6 +4,7 @@ import { IDelegateRepository } from './delegate.repository.interface';
 import { Delegate } from './entities/delegate.entity';
 import { Page } from '../entities/page.entity';
 import { DelegateValidator } from './delegate.validator';
+import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {
@@ -35,5 +36,25 @@ export class DelegateRepository implements IDelegateRepository {
 
     page?.results.map((result) => this.delegateValidator.validate(result));
     return page;
+  }
+
+  async postDelegates(
+    chainId: string,
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<NetworkResponse<any>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const result = await transactionService.postDelegates(
+      safeAddress,
+      delegate,
+      delegator,
+      signature,
+      label,
+    );
+    return result;
   }
 }
