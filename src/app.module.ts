@@ -16,6 +16,7 @@ import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
 import { CollectiblesModule } from './routes/collectibles/collectibles.module';
 import { ContractsModule } from './routes/contracts/contracts.module';
 import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
+import { DelegatesModule } from './routes/delegates/delegates.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
     CollectiblesModule,
     ContractsModule,
     DataDecodedModule,
+    DelegatesModule,
     // common
     CacheModule,
     ConfigurationModule,
