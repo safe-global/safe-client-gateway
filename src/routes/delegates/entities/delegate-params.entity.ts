@@ -22,9 +22,3 @@ export class DelegateParamsDto {
     this.label = label;
   }
 }
-
-export function isDelegateParamsDto(
-  dto: DelegateParamsDto,
-): dto is DelegateParamsDto {
-  return !!(dto.safe || dto.delegate || dto.delegator || dto.label);
-}

@@ -6,10 +6,7 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import {
-  DelegateParamsDto,
-  isDelegateParamsDto,
-} from './entities/delegate-params.entity';
+import { DelegateParamsDto } from './entities/delegate-params.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -24,7 +21,14 @@ export class DelegatesService {
     delegateParams: DelegateParamsDto,
     paginationData?: PaginationData,
   ): Promise<Page<Delegate>> {
-    if (!isDelegateParamsDto(delegateParams)) {
+    if (
+      !(
+        delegateParams.safe ||
+        delegateParams.delegate ||
+        delegateParams.delegator ||
+        delegateParams.label
+      )
+    ) {
       throw new HttpException(
         'At least one query param must be provided',
         HttpStatus.BAD_REQUEST,
