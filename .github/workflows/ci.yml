@@ -51,6 +51,7 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run build
       - run: yarn run test:cov
+      - run: yarn run test:e2e
         env:
           EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
