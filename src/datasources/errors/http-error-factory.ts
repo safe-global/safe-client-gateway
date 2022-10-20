@@ -37,8 +37,9 @@ export class HttpErrorFactory {
   }
 }
 
-function isNetworkResponseError(error: any): error is NetworkResponseError {
-  return (
-    error.status !== undefined && error.status >= 400 && error.status < 600
-  );
+function isNetworkResponseError(
+  error: NetworkError | Error,
+): error is NetworkResponseError {
+  const responseError = error as NetworkResponseError;
+  return responseError.status >= 400 && responseError.status < 600;
 }
