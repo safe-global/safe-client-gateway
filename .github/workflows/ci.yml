@@ -29,9 +29,6 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -48,9 +45,6 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
     services:
       redis:
         image: redis
@@ -76,7 +70,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
-      - name: Upload coverage
-        uses: coverallsapp/github-action@1.1.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Upload coverage
+      #   uses: coverallsapp/github-action@1.1.3
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
