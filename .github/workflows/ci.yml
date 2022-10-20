@@ -27,23 +27,7 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run lint-check
 
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          cache: 'yarn'
-      - run: yarn install --immutable
-      - run: yarn run build
-      - run: yarn run test:cov
-      - name: Upload coverage
-        uses: coverallsapp/github-action@1.1.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  e2e-tests:
+  tests:
     runs-on: ubuntu-latest
     services:
       redis:
@@ -63,6 +47,7 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - run: yarn run build
+      - run: yarn run test:cov
       - run: yarn run test:e2e
         env:
           EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
@@ -70,7 +55,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
-      # - name: Upload coverage
-      #   uses: coverallsapp/github-action@1.1.3
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload coverage
+        uses: coverallsapp/github-action@1.1.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
