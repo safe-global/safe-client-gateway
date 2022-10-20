@@ -11,8 +11,8 @@ describe('HttpErrorFactory', () => {
 
   it('should create an HttpException when there is an error with the response', async () => {
     const httpError = new NetworkResponseError(
-      { message: faker.random.words() },
       faker.internet.httpStatusCode({ types: ['serverError', 'clientError'] }),
+      { message: faker.random.words() },
     );
 
     const actual = httpErrorFactory.from(httpError);

@@ -20,7 +20,8 @@ export class HttpErrorFactory {
 
   private mapError(error: NetworkError | Error): DataSourceError {
     if (isNetworkResponseError(error)) {
-      return new DataSourceError(error.data.message, error.status);
+      const errorMessage: string = error.data?.message ?? 'An error occurred';
+      return new DataSourceError(errorMessage, error.status);
     } else {
       return new DataSourceError(
         'Service unavailable',
@@ -37,8 +38,8 @@ export class HttpErrorFactory {
 }
 
 function isNetworkResponseError(
-  error: NetworkError,
+  error: NetworkError | Error,
 ): error is NetworkResponseError {
-  const e = error as NetworkResponseError;
-  return e.data !== undefined && e.status !== undefined;
+  const responseError = error as NetworkResponseError;
+  return responseError.status >= 400 && responseError.status < 600;
 }
