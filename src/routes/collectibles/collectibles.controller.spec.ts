@@ -185,10 +185,9 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainFactory(chainId);
-      const transactionServiceError = new NetworkResponseError(
-        { message: 'some collectibles error' },
-        400,
-      );
+      const transactionServiceError = new NetworkResponseError(400, {
+        message: 'some collectibles error',
+      });
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case `https://test.safe.config/api/v1/chains/${chainId}`:

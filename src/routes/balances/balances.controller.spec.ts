@@ -130,10 +130,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(503)
+          .expect(500)
           .expect({
-            message: 'Service unavailable',
-            code: 503,
+            message: 'An error occurred',
+            code: 500,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(1);
@@ -339,10 +339,10 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(503)
+          .expect(500)
           .expect({
-            message: 'Service unavailable',
-            code: 503,
+            message: 'An error occurred',
+            code: 500,
           });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);

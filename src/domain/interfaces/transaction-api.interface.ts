@@ -6,6 +6,7 @@ import { MasterCopy } from '../chains/entities/master-copies.entity';
 import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
 import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
+import { Delegate } from '../delegate/entities/delegate.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
 
@@ -43,7 +44,7 @@ export interface ITransactionApi {
     label?: string,
     limit?: number,
     offset?: number,
-  );
+  ): Promise<Page<Delegate>>;
 
   getTransfers(
     safeAddress: string,
