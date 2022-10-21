@@ -7,7 +7,7 @@ const contractSchema: JSONSchemaType<Contract> = {
     address: { type: 'string' },
     name: { type: 'string' },
     displayName: { type: 'string' },
-    logoUri: { type: 'string' },
+    logoUri: { type: 'string', nullable: true },
     contractAbi: { type: 'object', nullable: true },
     trustedForDelegateCall: { type: 'boolean' },
   },
