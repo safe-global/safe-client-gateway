@@ -21,7 +21,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { DomainModule } from '../../domain.module';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { faker } from '@faker-js/faker';
-import { CreateDelegateDto } from './entities/create-delegate.entity';
+import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -114,18 +114,21 @@ describe('Delegates controller', () => {
 
   describe('POST delegates for a Safe', () => {
     it('Success', async () => {
-      const safe = faker.finance.ethereumAddress();
-      const delegate = faker.finance.ethereumAddress();
-      const delegator = faker.finance.ethereumAddress();
-      const signature = faker.finance.ethereumAddress();
-      const label = faker.random.word();
-      const body = new CreateDelegateDto(
-        delegate,
-        delegator,
-        signature,
-        label,
-        safe,
-      );
+      const body = createDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(201);
+    });
+
+    it('Success with safe undefined', async () => {
+      const body = createDelegateDtoFactory();
+      body.safe = undefined;
       const chainId = '99';
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });

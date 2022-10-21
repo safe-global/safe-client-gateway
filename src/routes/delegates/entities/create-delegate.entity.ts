@@ -31,20 +31,20 @@ export class CreateDelegateDto {
 export function isCreateDelegateDto(
   dto: CreateDelegateDto,
 ): dto is CreateDelegateDto {
-  if (dto.safe) {
+  if (!dto.safe) {
     return (
       isHex(dto.delegate) &&
       isHex(dto.delegator) &&
       isHex(dto.signature) &&
-      isHex(dto.safe) &&
-      dto.label === 'string'
+      typeof dto.label === 'string'
     );
   } else {
     return (
       isHex(dto.delegate) &&
       isHex(dto.delegator) &&
       isHex(dto.signature) &&
-      dto.label === 'string'
+      isHex(dto.safe) &&
+      typeof dto.label === 'string'
     );
   }
 }

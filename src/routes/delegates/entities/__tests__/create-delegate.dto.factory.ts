@@ -9,10 +9,10 @@ export default function (
   label?: string,
 ): CreateDelegateDto {
   return new CreateDelegateDto(
-    safe ?? faker.finance.ethereumAddress(),
     delegate ?? faker.finance.ethereumAddress(),
     delegator ?? faker.finance.ethereumAddress(),
     signature ?? faker.datatype.hexadecimal(),
     label ?? faker.random.word(),
+    safe ?? faker.finance.ethereumAddress(),
   );
 }
