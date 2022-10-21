@@ -19,10 +19,6 @@ describe('Data decode e2e tests', () => {
     await app.init();
   });
 
-  it('should init the app', () => {
-    expect(app).toBeDefined();
-  });
-
   it('POST /data-decoder', async () => {
     const requestBody: CreateDataDecodedDto = JSON.parse(
       readFileSync(
