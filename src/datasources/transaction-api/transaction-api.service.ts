@@ -14,7 +14,6 @@ import { Delegate } from '../../domain/delegate/entities/delegate.entity';
 import { INetworkService } from '../network/network.service.interface';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { NetworkResponse } from '../network/entities/network.response.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -175,7 +174,7 @@ export class TransactionApi implements ITransactionApi {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<NetworkResponse<any>> {
+  ): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
       return await this.networkService.post(url, {

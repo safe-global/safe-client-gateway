@@ -1,4 +1,3 @@
-import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
 import { Page } from '../entities/page.entity';
 import { Delegate } from './entities/delegate.entity';
 
@@ -22,5 +21,5 @@ export interface IDelegateRepository {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<NetworkResponse<any>>;
+  ): Promise<unknown>;
 }

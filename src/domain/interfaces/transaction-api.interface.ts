@@ -9,7 +9,6 @@ import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../delegate/entities/delegate.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
-import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -53,7 +52,7 @@ export interface ITransactionApi {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<NetworkResponse<any>>;
+  ): Promise<unknown>;
 
   getTransfers(
     safeAddress: string,

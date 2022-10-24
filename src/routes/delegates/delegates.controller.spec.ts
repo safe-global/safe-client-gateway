@@ -139,5 +139,45 @@ describe('Delegates controller', () => {
         .send(body)
         .expect(201);
     });
+
+    it('Should return the tx-service error message', async () => {
+      const body = {
+        delegate: 'wrong delegate',
+        safe: 1,
+      };
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockRejectedValueOnce({
+        data: { message: 'Malformed body', status: 400 },
+        status: 400,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(400)
+        .expect({
+          message: 'Malformed body',
+          code: 400,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const body = createDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockRejectedValueOnce({ status: 503 });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
+        });
+    });
   });
 });

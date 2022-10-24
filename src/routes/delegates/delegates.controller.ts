@@ -10,7 +10,6 @@ import { PaginationData } from '../common/pagination/pagination.data';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
-import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -62,10 +61,10 @@ export class DelegatesController {
 
   @ApiCreatedResponse()
   @Post('chains/:chainId/delegates')
-  async getDataDecoded(
+  async postDelegate(
     @Param('chainId') chainId: string,
     @Body() createDelegateDto: CreateDelegateDto,
-  ): Promise<NetworkResponse> {
+  ): Promise<unknown> {
     return this.service.postDelegates(chainId, createDelegateDto);
   }
 }

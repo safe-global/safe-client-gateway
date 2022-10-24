@@ -7,11 +7,7 @@ import {
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
-import {
-  CreateDelegateDto,
-  isCreateDelegateDto,
-} from './entities/create-delegate.entity';
-import { NetworkResponse } from '../../datasources/network/entities/network.response.entity';
+import { CreateDelegateDto } from './entities/create-delegate.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -67,14 +63,7 @@ export class DelegatesService {
   async postDelegates(
     chainId: string,
     createDelegateDto: CreateDelegateDto,
-  ): Promise<NetworkResponse> {
-    if (!isCreateDelegateDto(createDelegateDto)) {
-      throw new HttpException(
-        'Invalid payload',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
+  ): Promise<unknown> {
     return await this.repository.postDelegates(
       chainId,
       createDelegateDto.safe,
