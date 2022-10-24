@@ -48,12 +48,9 @@ describe('Get contract e2e test', () => {
     expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
   });
 
-  afterEach(async () => {
-    await redisClient.flushAll();
-  });
-
   afterAll(async () => {
     await app.close();
+    await redisClient.flushAll();
     await redisClient.quit();
   });
 });
