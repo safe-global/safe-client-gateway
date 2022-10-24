@@ -13,4 +13,13 @@ export interface IDelegateRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<Delegate>>;
+
+  postDelegates(
+    chainId: string,
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<unknown>;
 }

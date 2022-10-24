@@ -168,6 +168,27 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async postDelegates(
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<unknown> {
+    try {
+      const url = `${this.baseUrl}/api/v1/delegates/`;
+      return await this.networkService.post(url, {
+        safe: safeAddress,
+        delegate: delegate,
+        delegator: delegator,
+        signature: signature,
+        label: label,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getTransfers(
     safeAddress: string,
     onlyErc20: boolean,

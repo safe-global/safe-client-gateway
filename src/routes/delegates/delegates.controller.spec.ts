@@ -21,6 +21,7 @@ import { Page } from '../../domain/entities/page.entity';
 import { DomainModule } from '../../domain.module';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { faker } from '@faker-js/faker';
+import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -107,6 +108,75 @@ describe('Delegates controller', () => {
         .expect({
           message: 'At least one query param must be provided',
           statusCode: 400,
+        });
+    });
+  });
+
+  describe('POST delegates for a Safe', () => {
+    it('Success', async () => {
+      const body = createDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(201);
+    });
+
+    it('Success with safe undefined', async () => {
+      const body = createDelegateDtoFactory();
+      body.safe = undefined;
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(201);
+    });
+
+    it('Should return the tx-service error message', async () => {
+      const body = {
+        delegate: 'wrong delegate',
+        safe: 1,
+      };
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockRejectedValueOnce({
+        data: { message: 'Malformed body', status: 400 },
+        status: 400,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(400)
+        .expect({
+          message: 'Malformed body',
+          code: 400,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const body = createDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.post.mockRejectedValueOnce({ status: 503 });
+
+      await request(app.getHttpServer())
+        .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
         });
     });
   });

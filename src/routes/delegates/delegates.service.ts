@@ -7,6 +7,7 @@ import {
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { CreateDelegateDto } from './entities/create-delegate.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -57,5 +58,19 @@ export class DelegatesService {
       previous: previousURL?.toString(),
       results: delegates.results,
     };
+  }
+
+  async postDelegates(
+    chainId: string,
+    createDelegateDto: CreateDelegateDto,
+  ): Promise<unknown> {
+    return await this.repository.postDelegates(
+      chainId,
+      createDelegateDto.safe,
+      createDelegateDto.delegate,
+      createDelegateDto.delegator,
+      createDelegateDto.signature,
+      createDelegateDto.label,
+    );
   }
 }

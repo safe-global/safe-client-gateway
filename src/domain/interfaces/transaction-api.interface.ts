@@ -46,6 +46,14 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Delegate>>;
 
+  postDelegates(
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<unknown>;
+
   getTransfers(
     safeAddress: string,
     onlyErc20?: boolean,

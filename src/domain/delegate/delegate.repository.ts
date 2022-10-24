@@ -36,4 +36,24 @@ export class DelegateRepository implements IDelegateRepository {
     page?.results.map((result) => this.delegateValidator.validate(result));
     return page;
   }
+
+  async postDelegates(
+    chainId: string,
+    safeAddress?: string,
+    delegate?: string,
+    delegator?: string,
+    signature?: string,
+    label?: string,
+  ): Promise<unknown> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const result = await transactionService.postDelegates(
+      safeAddress,
+      delegate,
+      delegator,
+      signature,
+      label,
+    );
+    return result;
+  }
 }
