@@ -15,7 +15,7 @@ describe('Get contract e2e test', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    
+
     app = moduleRef.createNestApplication();
     await app.init();
     redisClient = await redisClientFactory();
