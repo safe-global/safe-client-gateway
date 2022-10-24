@@ -56,4 +56,20 @@ export class DelegateRepository implements IDelegateRepository {
     );
     return result;
   }
+
+  async deleteDelegates(
+    chainId: string,
+    delegate: string,
+    delegator: string,
+    signature: string,
+  ): Promise<unknown> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const result = await transactionService.deleteDelegates(
+      delegate,
+      delegator,
+      signature,
+    );
+    return result;
+  }
 }

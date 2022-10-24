@@ -189,6 +189,23 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async deleteDelegates(
+    delegate: string,
+    delegator: string,
+    signature: string,
+  ): Promise<unknown> {
+    try {
+      const url = `${this.baseUrl}/api/v1/delegates/${delegate}`;
+      return await this.networkService.delete(url, {
+        delegate: delegate,
+        delegator: delegator,
+        signature: signature,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getTransfers(
     safeAddress: string,
     onlyErc20: boolean,

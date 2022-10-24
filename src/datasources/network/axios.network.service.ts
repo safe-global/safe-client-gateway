@@ -39,6 +39,17 @@ export class AxiosNetworkService implements INetworkService {
     }
   }
 
+  async delete<T = any, R = NetworkResponse<T>>(
+    url: string,
+    data?: object,
+  ): Promise<R> {
+    try {
+      return await this.client.delete(url, { data: data });
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   private handleError(error): never {
     if (error.response) {
       throw new NetworkResponseError(

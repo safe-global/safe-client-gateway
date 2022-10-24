@@ -1,5 +1,13 @@
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { DelegatesService } from './delegates.service';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 import { Delegate } from './entities/delegate.entity';
@@ -10,6 +18,7 @@ import { PaginationData } from '../common/pagination/pagination.data';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
+import { DeleteDelegateDto } from './entities/delete-delegate.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -66,5 +75,19 @@ export class DelegatesController {
     @Body() createDelegateDto: CreateDelegateDto,
   ): Promise<unknown> {
     return this.service.postDelegates(chainId, createDelegateDto);
+  }
+
+  @ApiCreatedResponse()
+  @Delete('chains/:chainId/delegates/:delegate_address')
+  async deleteDelegate(
+    @Param('chainId') chainId: string,
+    @Param('delegate_address') delegateAddress: string,
+    @Body() deleteDelegateDto: DeleteDelegateDto,
+  ): Promise<unknown> {
+    return this.service.deleteDelegates(
+      chainId,
+      delegateAddress,
+      deleteDelegateDto,
+    );
   }
 }
