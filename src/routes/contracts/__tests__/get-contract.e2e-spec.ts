@@ -15,11 +15,13 @@ describe('Get contract e2e test', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-
+    
     app = moduleRef.createNestApplication();
     await app.init();
-
     redisClient = await redisClientFactory();
+  });
+
+  beforeEach(async () => {
     await redisClient.flushAll();
   });
 
@@ -46,9 +48,12 @@ describe('Get contract e2e test', () => {
     expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
   });
 
+  afterEach(async () => {
+    await redisClient.flushAll();
+  });
+
   afterAll(async () => {
     await app.close();
-    await redisClient.flushAll();
     await redisClient.quit();
   });
 });
