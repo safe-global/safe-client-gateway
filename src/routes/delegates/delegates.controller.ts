@@ -1,4 +1,4 @@
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -69,7 +69,7 @@ export class DelegatesController {
     );
   }
 
-  @ApiCreatedResponse()
+  @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
     @Param('chainId') chainId: string,
@@ -78,7 +78,7 @@ export class DelegatesController {
     return this.service.postDelegate(chainId, createDelegateDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete('chains/:chainId/delegates/:delegate_address')
   async deleteDelegate(
     @Param('chainId') chainId: string,

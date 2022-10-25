@@ -124,7 +124,7 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .post(`/chains/${chainId}/delegates/`)
         .send(body)
-        .expect(201);
+        .expect(200);
     });
 
     it('Success with safe undefined', async () => {
@@ -138,7 +138,7 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .post(`/chains/${chainId}/delegates/`)
         .send(body)
-        .expect(201);
+        .expect(200);
     });
 
     it('Should return the tx-service error message', async () => {
@@ -196,7 +196,7 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .delete(`/chains/${chainId}/delegates/${body.delegate}`)
         .send(body)
-        .expect(204);
+        .expect(200);
     });
 
     it('Should return the tx-service error message', async () => {
