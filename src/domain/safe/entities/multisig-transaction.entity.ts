@@ -1,6 +1,4 @@
-export type Call = 0;
-export type Delegate = 1;
-export type Operation = Call | Delegate;
+import { Operation } from './operation.entity';
 
 export interface Confirmation {
   owner: string;
@@ -10,7 +8,7 @@ export interface Confirmation {
   signature?: string;
 }
 
-export interface MultisigTransaction {
+export type MultisigTransaction = {
   safe: string;
   to: string;
   value?: string;
@@ -39,4 +37,8 @@ export interface MultisigTransaction {
   confirmationsRequired?: number;
   confirmations?: Confirmation[];
   signatures?: string;
-}
+};
+
+export type MultisigTransactionType = MultisigTransaction & {
+  txType: 'MULTISIG_TRANSACTION';
+};

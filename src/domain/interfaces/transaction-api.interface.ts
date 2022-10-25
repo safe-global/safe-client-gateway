@@ -9,6 +9,7 @@ import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../delegate/entities/delegate.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
+import { TransactionType } from '../safe/entities/transaction-type.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -76,4 +77,13 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
+
+  getAllTransactions(
+    safeAddress: string,
+    ordering?: string,
+    executed?: boolean,
+    queued?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<TransactionType>>;
 }

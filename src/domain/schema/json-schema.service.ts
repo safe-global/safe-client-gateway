@@ -12,6 +12,7 @@ export class JsonSchemaService {
       allowUnionTypes: true,
       coerceTypes: true,
       useDefaults: true,
+      discriminator: true,
     });
     addFormats(this.ajv, { formats: ['uri'] });
   }

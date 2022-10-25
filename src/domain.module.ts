@@ -36,6 +36,7 @@ import { DataDecodedRepository } from './domain/data-decoder/data-decoded.reposi
 import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validator';
 import { TransferValidator } from './domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from './domain/safe/multisig-transaction.validator';
+import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
 
 @Global()
 @Module({
@@ -64,6 +65,7 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     MultisigTransactionValidator,
     SafeValidator,
     TransferValidator,
+    TransactionTypeValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
