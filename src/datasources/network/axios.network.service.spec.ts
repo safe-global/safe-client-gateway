@@ -12,6 +12,7 @@ import {
 const axios = {
   get: jest.fn(),
   post: jest.fn(),
+  delete: jest.fn(),
 } as unknown as Axios;
 
 const axiosMock = jest.mocked<Axios>(axios);
@@ -156,6 +157,63 @@ describe('AxiosNetworkService', () => {
 
       expect(axiosMock.post).toBeCalledTimes(1);
       expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
+  });
+
+  describe('DELETE requests', () => {
+    it(`delete calls axios delete`, async () => {
+      const url = faker.internet.url();
+      const data = { some_data: 'some_data' };
+
+      await target.delete(url, data);
+
+      expect(axiosMock.delete).toBeCalledTimes(1);
+      expect(axiosMock.delete).toBeCalledWith(url, { data: data });
+    });
+
+    it(`delete forwards unknown error as NetworkOtherError`, async () => {
+      const url = faker.internet.url();
+      const data = { some_data: 'some_data' };
+      (axiosMock.delete as any).mockRejectedValueOnce(new Error('Axios error'));
+
+      await expect(target.delete(url, data)).rejects.toThrowError(
+        new NetworkOtherError('Axios error'),
+      );
+
+      expect(axiosMock.delete).toBeCalledTimes(1);
+      expect(axiosMock.delete).toBeCalledWith(url, { data: data });
+    });
+
+    it(`delete forwards response error as NetworkResponseError`, async () => {
+      const url = faker.internet.url();
+      const data = { some_data: 'some_data' };
+      const error = {
+        response: { data: 'data', status: 100 },
+      };
+      (axiosMock.delete as any).mockRejectedValueOnce(error);
+
+      await expect(target.delete(url, data)).rejects.toThrowError(
+        new NetworkResponseError(error.response.data, error.response.status),
+      );
+
+      expect(axiosMock.delete).toBeCalledTimes(1);
+      expect(axiosMock.delete).toBeCalledWith(url, { data: data });
+    });
+
+    it(`delete forwards response error as NetworkRequestError`, async () => {
+      const url = faker.internet.url();
+      const data = { some_data: 'some_data' };
+      const error = {
+        request: 'some error',
+      };
+      (axiosMock.delete as any).mockRejectedValueOnce(error);
+
+      await expect(target.delete(url, data)).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(axiosMock.delete).toBeCalledTimes(1);
+      expect(axiosMock.delete).toBeCalledWith(url, { data: data });
     });
   });
 });
