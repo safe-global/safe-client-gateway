@@ -22,6 +22,7 @@ import { DomainModule } from '../../domain.module';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { faker } from '@faker-js/faker';
 import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
+import deleteDelegateDtoFactory from './entities/__tests__/delete-delegate.dto.factory';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -172,6 +173,66 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/${chainId}/delegates/`)
+        .send(body)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
+        });
+    });
+  });
+
+  describe('Delete delegates', () => {
+    it('Success', async () => {
+      const body = deleteDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.delete.mockResolvedValueOnce({
+        data: {},
+        status: 204,
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
+        .send(body)
+        .expect(204);
+    });
+
+    it('Should return the tx-service error message', async () => {
+      const delegate = faker.finance.ethereumAddress();
+      const body = {
+        delegate: delegate,
+        delegator: 'delegator',
+        signature: 'signature',
+      };
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.delete.mockRejectedValueOnce({
+        data: { message: 'Malformed body', status: 400 },
+        status: 400,
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
+        .send(body)
+        .expect(400)
+        .expect({
+          message: 'Malformed body',
+          code: 400,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const body = deleteDelegateDtoFactory();
+      const chainId = '99';
+      const chainResponse = chainFactory(chainId);
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.delete.mockRejectedValueOnce({ status: 503 });
+
+      await request(app.getHttpServer())
+        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
         .send(body)
         .expect(503)
         .expect({

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -78,6 +79,7 @@ export class DelegatesController {
   }
 
   @ApiCreatedResponse()
+  @HttpCode(204)
   @Delete('chains/:chainId/delegates/:delegate_address')
   async deleteDelegate(
     @Param('chainId') chainId: string,
