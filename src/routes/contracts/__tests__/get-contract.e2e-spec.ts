@@ -18,8 +18,10 @@ describe('Get contract e2e test', () => {
 
     app = moduleRef.createNestApplication();
     await app.init();
-
     redisClient = await redisClientFactory();
+  });
+
+  beforeEach(async () => {
     await redisClient.flushAll();
   });
 
