@@ -14,7 +14,7 @@ export interface IDelegateRepository {
     offset?: number,
   ): Promise<Page<Delegate>>;
 
-  postDelegates(
+  postDelegate(
     chainId: string,
     safeAddress?: string,
     delegate?: string,
@@ -23,7 +23,7 @@ export interface IDelegateRepository {
     label?: string,
   ): Promise<unknown>;
 
-  deleteDelegates(
+  deleteDelegate(
     chainId: string,
     delegate: string,
     delegator: string,

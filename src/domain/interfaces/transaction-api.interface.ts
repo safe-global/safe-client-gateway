@@ -46,7 +46,7 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Delegate>>;
 
-  postDelegates(
+  postDelegate(
     safeAddress?: string,
     delegate?: string,
     delegator?: string,
@@ -54,7 +54,7 @@ export interface ITransactionApi {
     label?: string,
   ): Promise<unknown>;
 
-  deleteDelegates(
+  deleteDelegate(
     delegate: string,
     delegator: string,
     signature: string,

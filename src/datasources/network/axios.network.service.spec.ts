@@ -174,7 +174,7 @@ describe('AxiosNetworkService', () => {
     it(`delete forwards unknown error as NetworkOtherError`, async () => {
       const url = faker.internet.url();
       const data = { some_data: 'some_data' };
-      (axiosMock.delete as any).mockRejectedValueOnce(new Error('Axios error'));
+      axiosMock.delete.mockRejectedValueOnce(new Error('Axios error'));
 
       await expect(target.delete(url, data)).rejects.toThrowError(
         new NetworkOtherError('Axios error'),
@@ -190,7 +190,7 @@ describe('AxiosNetworkService', () => {
       const error = {
         response: { data: 'data', status: 100 },
       };
-      (axiosMock.delete as any).mockRejectedValueOnce(error);
+      axiosMock.delete.mockRejectedValueOnce(error);
 
       await expect(target.delete(url, data)).rejects.toThrowError(
         new NetworkResponseError(error.response.data, error.response.status),
@@ -206,7 +206,7 @@ describe('AxiosNetworkService', () => {
       const error = {
         request: 'some error',
       };
-      (axiosMock.delete as any).mockRejectedValueOnce(error);
+      axiosMock.delete.mockRejectedValueOnce(error);
 
       await expect(target.delete(url, data)).rejects.toThrowError(
         new NetworkRequestError(error.request),

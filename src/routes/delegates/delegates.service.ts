@@ -61,11 +61,11 @@ export class DelegatesService {
     };
   }
 
-  async postDelegates(
+  async postDelegate(
     chainId: string,
     createDelegateDto: CreateDelegateDto,
   ): Promise<unknown> {
-    return await this.repository.postDelegates(
+    return await this.repository.postDelegate(
       chainId,
       createDelegateDto.safe,
       createDelegateDto.delegate,
@@ -75,12 +75,12 @@ export class DelegatesService {
     );
   }
 
-  async deleteDelegates(
+  async deleteDelegate(
     chainId: string,
     delegateAddress: string,
     deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
-    return await this.repository.deleteDelegates(
+    return await this.repository.deleteDelegate(
       chainId,
       delegateAddress,
       deleteDelegateDto.delegator,

@@ -168,7 +168,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postDelegates(
+  async postDelegate(
     safeAddress?: string,
     delegate?: string,
     delegator?: string,
@@ -189,7 +189,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async deleteDelegates(
+  async deleteDelegate(
     delegate: string,
     delegator: string,
     signature: string,

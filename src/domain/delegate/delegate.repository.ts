@@ -37,7 +37,7 @@ export class DelegateRepository implements IDelegateRepository {
     return page;
   }
 
-  async postDelegates(
+  async postDelegate(
     chainId: string,
     safeAddress?: string,
     delegate?: string,
@@ -47,7 +47,7 @@ export class DelegateRepository implements IDelegateRepository {
   ): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const result = await transactionService.postDelegates(
+    const result = await transactionService.postDelegate(
       safeAddress,
       delegate,
       delegator,
@@ -57,7 +57,7 @@ export class DelegateRepository implements IDelegateRepository {
     return result;
   }
 
-  async deleteDelegates(
+  async deleteDelegate(
     chainId: string,
     delegate: string,
     delegator: string,
@@ -65,7 +65,7 @@ export class DelegateRepository implements IDelegateRepository {
   ): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const result = await transactionService.deleteDelegates(
+    const result = await transactionService.deleteDelegate(
       delegate,
       delegator,
       signature,

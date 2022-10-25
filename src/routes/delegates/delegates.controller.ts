@@ -75,10 +75,9 @@ export class DelegatesController {
     @Param('chainId') chainId: string,
     @Body() createDelegateDto: CreateDelegateDto,
   ): Promise<unknown> {
-    return this.service.postDelegates(chainId, createDelegateDto);
+    return this.service.postDelegate(chainId, createDelegateDto);
   }
 
-  @ApiCreatedResponse()
   @HttpCode(204)
   @Delete('chains/:chainId/delegates/:delegate_address')
   async deleteDelegate(
@@ -86,7 +85,7 @@ export class DelegatesController {
     @Param('delegate_address') delegateAddress: string,
     @Body() deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
-    return this.service.deleteDelegates(
+    return this.service.deleteDelegate(
       chainId,
       delegateAddress,
       deleteDelegateDto,
