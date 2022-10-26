@@ -8,6 +8,7 @@ import {
 } from '../common/pagination/pagination.data';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
+import { DeleteDelegateDto } from './entities/delete-delegate.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -60,17 +61,30 @@ export class DelegatesService {
     };
   }
 
-  async postDelegates(
+  async postDelegate(
     chainId: string,
     createDelegateDto: CreateDelegateDto,
   ): Promise<unknown> {
-    return await this.repository.postDelegates(
+    return await this.repository.postDelegate(
       chainId,
       createDelegateDto.safe,
       createDelegateDto.delegate,
       createDelegateDto.delegator,
       createDelegateDto.signature,
       createDelegateDto.label,
+    );
+  }
+
+  async deleteDelegate(
+    chainId: string,
+    delegateAddress: string,
+    deleteDelegateDto: DeleteDelegateDto,
+  ): Promise<unknown> {
+    return await this.repository.deleteDelegate(
+      chainId,
+      delegateAddress,
+      deleteDelegateDto.delegator,
+      deleteDelegateDto.signature,
     );
   }
 }

@@ -168,7 +168,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postDelegates(
+  async postDelegate(
     safeAddress?: string,
     delegate?: string,
     delegator?: string,
@@ -183,6 +183,23 @@ export class TransactionApi implements ITransactionApi {
         delegator: delegator,
         signature: signature,
         label: label,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async deleteDelegate(
+    delegate: string,
+    delegator: string,
+    signature: string,
+  ): Promise<unknown> {
+    try {
+      const url = `${this.baseUrl}/api/v1/delegates/${delegate}`;
+      return await this.networkService.delete(url, {
+        delegate: delegate,
+        delegator: delegator,
+        signature: signature,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
