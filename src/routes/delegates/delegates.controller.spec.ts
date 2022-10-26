@@ -185,7 +185,7 @@ describe('Delegates controller', () => {
   describe('Delete delegates', () => {
     it('Success', async () => {
       const body = deleteDelegateDtoFactory();
-      const chainId = '99';
+      const chainId = faker.random.numeric();
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockResolvedValueOnce({
@@ -201,12 +201,7 @@ describe('Delegates controller', () => {
 
     it('Should return the tx-service error message', async () => {
       const delegate = faker.finance.ethereumAddress();
-      const body = {
-        delegate: delegate,
-        delegator: 'delegator',
-        signature: 'signature',
-      };
-      const chainId = '99';
+      const chainId = faker.random.numeric();
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockRejectedValueOnce({
@@ -215,8 +210,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
-        .send(body)
+        .delete(`/chains/${chainId}/delegates/${delegate}`)
         .expect(400)
         .expect({
           message: 'Malformed body',
@@ -226,7 +220,7 @@ describe('Delegates controller', () => {
 
     it('Should fail with An error occurred', async () => {
       const body = deleteDelegateDtoFactory();
-      const chainId = '99';
+      const chainId = faker.random.numeric();
       const chainResponse = chainFactory(chainId);
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockRejectedValueOnce({ status: 503 });
