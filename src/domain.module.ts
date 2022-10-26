@@ -36,6 +36,9 @@ import { DataDecodedRepository } from './domain/data-decoder/data-decoded.reposi
 import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validator';
 import { TransferValidator } from './domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from './domain/safe/multisig-transaction.validator';
+import { ISafeAppsRepository } from './domain/safe-apps/safe-apps.repository.interface';
+import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
+import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
 
 @Global()
 @Module({
@@ -49,6 +52,7 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     BackboneValidator,
     BalancesValidator,
@@ -62,6 +66,7 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     GenericValidator,
     MasterCopyValidator,
     MultisigTransactionValidator,
+    SafeAppsValidator,
     SafeValidator,
     TransferValidator,
     ValidationErrorFactory,
@@ -76,6 +81,7 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
     IDataDecodedRepository,
     IDelegateRepository,
     IExchangeRepository,
+    ISafeAppsRepository,
     ISafeRepository,
   ],
 })

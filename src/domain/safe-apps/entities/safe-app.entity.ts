@@ -1,5 +1,5 @@
-import { SafeAppAccessControl } from "./safe-app-access-control.entity";
-import { SafeAppProvider } from "./safe-app-provider.entity";
+import { SafeAppAccessControl } from './safe-app-access-control.entity';
+import { SafeAppProvider } from './safe-app-provider.entity';
 
 export interface SafeApp {
   id: number;
@@ -8,7 +8,7 @@ export interface SafeApp {
   iconUrl: string;
   description: string;
   chainIds: number[];
-  provider: SafeAppProvider;
+  provider?: SafeAppProvider;
   accessControl: SafeAppAccessControl;
   tags: string[];
 }
