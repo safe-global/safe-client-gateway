@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Page as DomainPage } from '../../../domain/entities/page.entity';
 
 /**
@@ -17,9 +17,9 @@ import { Page as DomainPage } from '../../../domain/entities/page.entity';
 export abstract class Page<T> implements DomainPage<T> {
   @ApiProperty()
   count: number;
-  @ApiProperty()
+  @ApiPropertyOptional()
   next?: string;
-  @ApiProperty()
+  @ApiPropertyOptional()
   previous?: string;
   abstract results: T[];
 }
