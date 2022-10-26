@@ -10,7 +10,11 @@ export class SafeAppsService {
     private readonly safeAppsRepository: SafeAppsRepository,
   ) {}
 
-  async getSafeApps(chainId: string): Promise<SafeApp[]> {
-    return this.safeAppsRepository.getSafeApps(chainId);
+  async getSafeApps(
+    chainId: string,
+    clientUrl?: string,
+    url?: string,
+  ): Promise<SafeApp[]> {
+    return this.safeAppsRepository.getSafeApps(chainId, clientUrl, url);
   }
 }

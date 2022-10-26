@@ -82,7 +82,7 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
-  it('should return the safe apps retrieved', async () => {
+  it('should return the safe apps retrieved by chainId', async () => {
     const chainId = faker.random.numeric();
     const data = [safeAppFactory(), safeAppFactory()];
     mockDataSource.get.mockResolvedValue(data);
@@ -93,8 +93,28 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
       `${chainId}_safe_apps`,
-      '',
+      `undefined_undefined`,
       `${baseUri}/api/v1/safe-apps/?chainId=${chainId}`,
+    );
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+  });
+
+  it('should return the safe apps retrieved by chainId and url', async () => {
+    const chainId = faker.random.numeric();
+    const url = faker.internet.url();
+    const data = [safeAppFactory(), safeAppFactory()];
+    mockDataSource.get.mockResolvedValue(data);
+
+    const actual = await service.getSafeApps(chainId, undefined, url);
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toBeCalledTimes(1);
+    expect(mockDataSource.get).toBeCalledWith(
+      `${chainId}_safe_apps`,
+      `undefined_${url}`,
+      `${baseUri}/api/v1/safe-apps/?chainId=${chainId}&url=${encodeURIComponent(
+        url,
+      )}`,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });

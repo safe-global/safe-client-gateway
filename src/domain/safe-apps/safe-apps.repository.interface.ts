@@ -6,7 +6,13 @@ export interface ISafeAppsRepository {
   /**
    * Gets the {@link SafeApp[]} associated with the {@link chainId}.
    *
-   * @param chainId
+   * @param chainId filters Safe Apps that are available on that chain.
+   * @param clientUrl filters Safe Apps that are available on that clientUrl.
+   * @param url filters Safe Apps available from that url. It needs to be an exact match.
    */
-  getSafeApps(chainId: string): Promise<SafeApp[]>;
+  getSafeApps(
+    chainId: string,
+    clientUrl?: string,
+    url?: string,
+  ): Promise<SafeApp[]>;
 }

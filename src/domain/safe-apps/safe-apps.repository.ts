@@ -12,8 +12,12 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     private readonly validator: SafeAppsValidator,
   ) {}
 
-  async getSafeApps(chainId: string): Promise<SafeApp[]> {
-    const safeApps = await this.configApi.getSafeApps(chainId);
+  async getSafeApps(
+    chainId: string,
+    clientUrl?: string,
+    url?: string,
+  ): Promise<SafeApp[]> {
+    const safeApps = await this.configApi.getSafeApps(chainId, clientUrl, url);
     return safeApps.map((safeApp) => this.validator.validate(safeApp));
   }
 }
