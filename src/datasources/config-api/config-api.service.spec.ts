@@ -4,6 +4,8 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { DataSourceError } from '../../domain/errors/data-source.error';
+import safeAppFactory from '../../domain/safe-apps/entities/__tests__/safe-app.factory';
+import { faker } from '@faker-js/faker';
 
 const dataSource = {
   get: jest.fn(),
@@ -16,12 +18,13 @@ const httpErrorFactory = {
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('ConfigApi', () => {
+  const baseUri = faker.internet.url();
   let fakeConfigurationService;
   let service: ConfigApi;
 
   beforeAll(async () => {
     fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('safeConfig.baseUri', 'https://example.url');
+    fakeConfigurationService.set('safeConfig.baseUri', baseUri);
   });
 
   beforeEach(async () => {
@@ -57,7 +60,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       'chains',
       'undefined_undefined',
-      `https://example.url/api/v1/chains`,
+      `${baseUri}/api/v1/chains`,
       { params: { limit: undefined, offset: undefined } },
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
@@ -74,7 +77,24 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       `${data.chainId}_chain`,
       '',
-      `https://example.url/api/v1/chains/${data.chainId}`,
+      `${baseUri}/api/v1/chains/${data.chainId}`,
+    );
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+  });
+
+  it('should return the safe apps retrieved', async () => {
+    const chainId = faker.random.numeric();
+    const data = [safeAppFactory(), safeAppFactory()];
+    mockDataSource.get.mockResolvedValue(data);
+
+    const actual = await service.getSafeApps(chainId);
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toBeCalledTimes(1);
+    expect(mockDataSource.get).toBeCalledWith(
+      `${chainId}_safe_apps`,
+      '',
+      `${baseUri}/api/v1/safe-apps/?chainId=${chainId}`,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
