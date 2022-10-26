@@ -3,14 +3,13 @@ import { ChainsService } from './chains.service';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { Chain } from '../../domain/chains/entities/chain.entity';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Backbone as ApiBackbone } from './entities/backbone.entity';
-import { Page } from '../../domain/entities/page.entity';
+import { Backbone as ApiBackbone, Backbone } from './entities/backbone.entity';
 import { ChainPage } from './entities/chain-page.entity';
 import { MasterCopy } from './entities/master-copy.entity';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
+import { Page } from '../common/entities/page.entity';
+import { Chain } from './entities/chain.entity';
 
 @ApiTags('chains')
 @Controller({
