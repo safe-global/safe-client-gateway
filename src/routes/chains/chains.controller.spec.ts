@@ -82,9 +82,44 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/chains')
         .expect(200)
-        .expect(<Page<Chain>>{
+        .expect({
           count: chainsResponse.count,
-          results: chainsResponse.results,
+          results: [
+            {
+              chainId: chainsResponse.results[0].chainId,
+              chainName: chainsResponse.results[0].chainName,
+              shortName: chainsResponse.results[0].shortName,
+              rpcUri: chainsResponse.results[0].rpcUri,
+              safeAppsRpcUri: chainsResponse.results[0].safeAppsRpcUri,
+              publicRpcUri: chainsResponse.results[0].publicRpcUri,
+              blockExplorerUriTemplate:
+                chainsResponse.results[0].blockExplorerUriTemplate,
+              nativeCurrency: chainsResponse.results[0].nativeCurrency,
+              transactionService: chainsResponse.results[0].transactionService,
+              theme: chainsResponse.results[0].theme,
+              gasPrice: chainsResponse.results[0].gasPrice,
+              ensRegistryAddress: chainsResponse.results[0].ensRegistryAddress,
+              disabledWallets: chainsResponse.results[0].disabledWallets,
+              features: chainsResponse.results[0].features,
+            },
+            {
+              chainId: chainsResponse.results[1].chainId,
+              chainName: chainsResponse.results[1].chainName,
+              shortName: chainsResponse.results[1].shortName,
+              rpcUri: chainsResponse.results[1].rpcUri,
+              safeAppsRpcUri: chainsResponse.results[1].safeAppsRpcUri,
+              publicRpcUri: chainsResponse.results[1].publicRpcUri,
+              blockExplorerUriTemplate:
+                chainsResponse.results[1].blockExplorerUriTemplate,
+              nativeCurrency: chainsResponse.results[1].nativeCurrency,
+              transactionService: chainsResponse.results[1].transactionService,
+              theme: chainsResponse.results[1].theme,
+              gasPrice: chainsResponse.results[1].gasPrice,
+              ensRegistryAddress: chainsResponse.results[1].ensRegistryAddress,
+              disabledWallets: chainsResponse.results[1].disabledWallets,
+              features: chainsResponse.results[1].features,
+            },
+          ],
         });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
