@@ -1,8 +1,25 @@
 [
     {
-        "id": 2,
+        "id": 60,
+        "url": "https://mmi-safe-app.netlify.app",
+        "name": "MetaMask Institutional",
+        "iconUrl": "https://mmi-safe-app.netlify.app/mmi.svg",
+        "description": "Setup your Safe with MMI and use it inside the Metamask UI",
+        "chainIds": [
+            "1",
+            "5",
+            "137"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 3,
         "url": "https://app.ens.domains",
-        "name": "ENS - Ethereum Name Service",
+        "name": "ENS App",
         "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
         "description": "Decentralised naming for wallets, websites, & more.",
         "chainIds": [
@@ -17,10 +34,10 @@
         "tags": []
     },
     {
-        "id": 29,
-        "url": "https://apps.gnosis-safe.io/tx-builder",
+        "id": 24,
+        "url": "https://safe-apps.dev.5afe.dev/tx-builder",
         "name": "Transaction Builder",
-        "iconUrl": "https://apps.gnosis-safe.io/tx-builder/tx-builder.png",
+        "iconUrl": "https://safe-apps.dev.5afe.dev/tx-builder/tx-builder.png",
         "description": "Compose custom contract interactions and batch them into a single transaction",
         "chainIds": [
             "1",
@@ -28,11 +45,11 @@
             "5",
             "10",
             "56",
+            "43114",
             "100",
             "137",
             "246",
             "42161",
-            "43114",
             "73799",
             "1313161554"
         ],
@@ -46,64 +63,11 @@
         ]
     },
     {
-        "id": 11,
-        "url": "https://apps.gnosis-safe.io/wallet-connect",
-        "name": "WalletConnect",
-        "iconUrl": "https://apps.gnosis-safe.io/wallet-connect/wallet-connect.svg",
-        "description": "Connect your Safe to any dApp that supports WalletConnect",
-        "chainIds": [
-            "1",
-            "4",
-            "5",
-            "56",
-            "10",
-            "100",
-            "137",
-            "246",
-            "42161",
-            "43114",
-            "73799",
-            "1313161554"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": [
-            "dashboard-widgets",
-            "wallet-connect"
-        ]
-    },
-    {
-        "id": 43,
-        "url": "https://apps.gnosis-safe.io/drain-safe",
-        "name": "Drain Account",
-        "iconUrl": "https://apps.gnosis-safe.io/drain-safe/logo.svg",
-        "description": "Transfer all your Safe assets in a single transaction",
-        "chainIds": [
-            "1",
-            "4",
-            "5",
-            "10",
-            "56",
-            "100",
-            "137",
-            "42161",
-            "43114",
-            "1313161554"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": []
-    },
-    {
-        "id": 74,
-        "url": "https://swap.cow.fi/",
-        "name": "Cow Swap",
-        "iconUrl": "https://swap.cow.fi/favicon.png",
-        "description": "CoW Swap finds the lowest prices from all decentralized exchanges and DEX aggregators & saves you more with p2p trading and protection from MEV",
+        "id": 58,
+        "url": "https://cowswap.exchange/",
+        "name": "CowSwap",
+        "iconUrl": "https://cowswap.exchange/favicon.png",
+        "description": "Save money on token swaps by trading directly with peers and avoiding front-running attacks",
         "chainIds": [
             "1",
             "4",
@@ -114,72 +78,12 @@
         "accessControl": {
             "type": "NO_RESTRICTIONS"
         },
-        "tags": []
+        "tags": [
+            "dashboard-mini-app"
+        ]
     },
     {
-        "id": 33,
-        "url": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd",
-        "name": "CSV Airdrop",
-        "iconUrl": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd/logo.svg",
-        "description": "Upload your CSV transfer file to send arbitrarily many tokens of various amounts to a list of recipients.",
-        "chainIds": [
-            "1",
-            "4",
-            "5",
-            "10",
-            "56",
-            "100",
-            "137",
-            "42161",
-            "43114"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": []
-    },
-    {
-        "id": 48,
-        "url": "https://app.superfluid.finance/",
-        "name": "Superfluid",
-        "iconUrl": "https://app.superfluid.finance/icons/icon-96x96.png",
-        "description": "Superfluid is a new Ethereum Protocol that extends Ethereum tokens to include novel functionalities. Superfluid enables functionalities like money streaming and reward distribution.",
-        "chainIds": [
-            "4",
-            "5",
-            "10",
-            "56",
-            "100",
-            "137",
-            "42161",
-            "43114"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": []
-    },
-    {
-        "id": 66,
-        "url": "https://otoco.io",
-        "name": "OtoCo",
-        "iconUrl": "https://otoco.io/img/apple-touch-icon.png",
-        "description": "Automated Company Assembly on Blockchain",
-        "chainIds": [
-            "1",
-            "5",
-            "137"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": []
-    },
-    {
-        "id": 88,
+        "id": 65,
         "url": "https://revoke.cash/",
         "name": "Revoke.cash",
         "iconUrl": "https://revoke.cash/assets/images/android-chrome-512x512.png",
@@ -203,23 +107,7 @@
         "tags": []
     },
     {
-        "id": 94,
-        "url": "https://vote.makerdao.com",
-        "name": "Maker Governance Portal",
-        "iconUrl": "https://vote.makerdao.com/maker.svg",
-        "description": "Vote with or delegate your MKR tokens to help protect the integrity of the Maker protocol",
-        "chainIds": [
-            "1",
-            "5"
-        ],
-        "provider": null,
-        "accessControl": {
-            "type": "NO_RESTRICTIONS"
-        },
-        "tags": []
-    },
-    {
-        "id": 77,
+        "id": 64,
         "url": "https://tokentool.bitbond.com/",
         "name": "Bitbond Token Tool",
         "iconUrl": "https://tokentool.bitbond.com/images/bitbond_icon.svg",
@@ -231,6 +119,113 @@
             "56",
             "137",
             "43114"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 36,
+        "url": "https://safe-apps.dev.5afe.dev/drain-safe",
+        "name": "Drain Account",
+        "iconUrl": "https://safe-apps.dev.5afe.dev/drain-safe/logo.svg",
+        "description": "Transfer all your assets in batch",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "43114",
+            "100",
+            "137",
+            "246",
+            "42161",
+            "73799",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 25,
+        "url": "https://safe-apps.dev.5afe.dev/wallet-connect",
+        "name": "WalletConnect",
+        "iconUrl": "https://safe-apps.dev.5afe.dev/wallet-connect/wallet-connect.svg",
+        "description": "Connect your Safe to any dApp that supports WalletConnect",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "246",
+            "73799",
+            "42161",
+            "43114",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": [
+            "dashboard-mini-app",
+            "dashboard-widgets",
+            "wallet-connect"
+        ]
+    },
+    {
+        "id": 53,
+        "url": "https://otoco.io",
+        "name": "OtoCo",
+        "iconUrl": "https://otoco.io/img/apple-touch-icon.png",
+        "description": "Automated Company Assembly on Blockchain",
+        "chainIds": [
+            "1",
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 48,
+        "url": "https://app.ens.domains",
+        "name": "Dorito test",
+        "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
+        "description": "Just a lovely and harmless test, don't mind me :)",
+        "chainIds": [
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 33,
+        "url": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd",
+        "name": "CSV Airdrop",
+        "iconUrl": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd/logo.svg",
+        "description": "Upload your CSV transfer file to send arbitrarily many tokens of various amounts to a list of recipients.",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "56",
+            "100",
+            "137"
         ],
         "provider": null,
         "accessControl": {

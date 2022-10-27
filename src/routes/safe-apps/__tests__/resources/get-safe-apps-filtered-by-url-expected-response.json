@@ -1,13 +1,28 @@
 [
     {
-        "id": 2,
+        "id": 3,
         "url": "https://app.ens.domains",
-        "name": "ENS - Ethereum Name Service",
+        "name": "ENS App",
         "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
         "description": "Decentralised naming for wallets, websites, & more.",
         "chainIds": [
             "1",
             "4",
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 48,
+        "url": "https://app.ens.domains",
+        "name": "Dorito test",
+        "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
+        "description": "Just a lovely and harmless test, don't mind me :)",
+        "chainIds": [
             "5"
         ],
         "provider": null,
