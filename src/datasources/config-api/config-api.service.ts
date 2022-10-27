@@ -6,7 +6,6 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
-import { stringify } from 'qs';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
@@ -57,11 +56,11 @@ export class ConfigApi implements IConfigApi {
     try {
       const cacheKey = `${chainId}_safe_apps`;
       const field = `${clientUrl}_${url}`;
-      const qs = stringify({ chainId, clientUrl, url });
       return await this.dataSource.get(
         cacheKey,
         field,
-        `${this.baseUri}/api/v1/safe-apps/?${qs}`,
+        `${this.baseUri}/api/v1/safe-apps/?chainId=${chainId}`,
+        { params: { clientUrl, url } },
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
