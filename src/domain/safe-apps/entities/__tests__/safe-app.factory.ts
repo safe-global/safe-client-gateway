@@ -22,7 +22,7 @@ export default function (
     name: name ?? faker.random.word(),
     iconUrl: iconUrl ?? faker.internet.url(),
     description: description ?? faker.random.word(),
-    chainIds: chainIds ?? [faker.datatype.number(), faker.datatype.number()],
+    chainIds: chainIds ?? [faker.random.numeric(), faker.random.numeric()],
     provider: provider ?? safeAppProviderFactory(),
     accessControl: accessControl ?? safeAppAccessControlFactory(),
     tags: tags ?? false,

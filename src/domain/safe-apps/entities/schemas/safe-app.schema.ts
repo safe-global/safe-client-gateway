@@ -1,8 +1,10 @@
-import { JSONSchemaType, Schema } from 'ajv';
+import { JSONSchemaType } from 'ajv';
+import { SafeApp } from '../../../../routes/safe-apps/entities/safe-app.entity';
 import { SafeAppAccessControl } from '../safe-app-access-control.entity';
 import { SafeAppProvider } from '../safe-app-provider.entity';
 
 export const safeAppProviderSchema: JSONSchemaType<SafeAppProvider> = {
+  nullable: true,
   type: 'object',
   properties: {
     url: { type: 'string' },
@@ -20,7 +22,7 @@ export const safeAppAccessControlSchema: JSONSchemaType<SafeAppAccessControl> =
     required: ['type'],
   };
 
-export const safeAppSchema: Schema = {
+export const safeAppSchema: JSONSchemaType<SafeApp> = {
   type: 'object',
   properties: {
     id: { type: 'number' },
@@ -29,7 +31,7 @@ export const safeAppSchema: Schema = {
     iconUrl: { type: 'string' },
     description: { type: 'string' },
     chainIds: { type: 'array', items: { type: 'string' } },
-    provider: { anyOf: [{ type: 'null' }, { $ref: 'safeAppProviderSchema' }] },
+    provider: { $ref: 'safeAppProviderSchema' },
     accessControl: { $ref: 'safeAppAccessControlSchema' },
     tags: { type: 'array', items: { type: 'string' } },
   },

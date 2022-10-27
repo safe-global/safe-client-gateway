@@ -7,7 +7,7 @@ export interface SafeApp {
   name: string;
   iconUrl: string;
   description: string;
-  chainIds: number[];
+  chainIds: string[];
   provider?: SafeAppProvider;
   accessControl: SafeAppAccessControl;
   tags: string[];

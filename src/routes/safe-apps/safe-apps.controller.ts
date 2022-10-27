@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { SafeApp } from './entities/safe-app.entity';
 import { SafeAppsService } from './safe-apps.service';
 
@@ -13,6 +13,8 @@ export class SafeAppsController {
 
   @ApiOkResponse({ type: SafeApp, isArray: true })
   @Get('chains/:chainId/safe-apps')
+  @ApiQuery({ name: 'clientUrl', required: false })
+  @ApiQuery({ name: 'url', required: false })
   async getSafeApps(
     @Param('chainId') chainId: string,
     @Query('clientUrl') clientUrl?: string,

@@ -15,7 +15,7 @@ export class SafeApp implements DomainSafeApp {
   @ApiProperty()
   description: string;
   @ApiProperty()
-  chainIds: number[];
+  chainIds: string[];
   @ApiProperty()
   provider?: SafeAppProvider;
   @ApiProperty()
