@@ -1,0 +1,241 @@
+[
+    {
+        "id": 2,
+        "url": "https://app.ens.domains",
+        "name": "ENS - Ethereum Name Service",
+        "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
+        "description": "Decentralised naming for wallets, websites, & more.",
+        "chainIds": [
+            "1",
+            "4",
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 29,
+        "url": "https://apps.gnosis-safe.io/tx-builder",
+        "name": "Transaction Builder",
+        "iconUrl": "https://apps.gnosis-safe.io/tx-builder/tx-builder.png",
+        "description": "Compose custom contract interactions and batch them into a single transaction",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "246",
+            "42161",
+            "43114",
+            "73799",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": [
+            "dashboard-widgets",
+            "transaction-builder"
+        ]
+    },
+    {
+        "id": 11,
+        "url": "https://apps.gnosis-safe.io/wallet-connect",
+        "name": "WalletConnect",
+        "iconUrl": "https://apps.gnosis-safe.io/wallet-connect/wallet-connect.svg",
+        "description": "Connect your Safe to any dApp that supports WalletConnect",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "56",
+            "10",
+            "100",
+            "137",
+            "246",
+            "42161",
+            "43114",
+            "73799",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": [
+            "dashboard-widgets",
+            "wallet-connect"
+        ]
+    },
+    {
+        "id": 43,
+        "url": "https://apps.gnosis-safe.io/drain-safe",
+        "name": "Drain Account",
+        "iconUrl": "https://apps.gnosis-safe.io/drain-safe/logo.svg",
+        "description": "Transfer all your Safe assets in a single transaction",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "42161",
+            "43114",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 74,
+        "url": "https://swap.cow.fi/",
+        "name": "Cow Swap",
+        "iconUrl": "https://swap.cow.fi/favicon.png",
+        "description": "CoW Swap finds the lowest prices from all decentralized exchanges and DEX aggregators & saves you more with p2p trading and protection from MEV",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "100"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 33,
+        "url": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd",
+        "name": "CSV Airdrop",
+        "iconUrl": "https://cloudflare-ipfs.com/ipfs/QmUFKPZSn73LiwznQ3PVWQXpcaWVdYrSM6c5DES2y24EYd/logo.svg",
+        "description": "Upload your CSV transfer file to send arbitrarily many tokens of various amounts to a list of recipients.",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "42161",
+            "43114"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 48,
+        "url": "https://app.superfluid.finance/",
+        "name": "Superfluid",
+        "iconUrl": "https://app.superfluid.finance/icons/icon-96x96.png",
+        "description": "Superfluid is a new Ethereum Protocol that extends Ethereum tokens to include novel functionalities. Superfluid enables functionalities like money streaming and reward distribution.",
+        "chainIds": [
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "42161",
+            "43114"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 66,
+        "url": "https://otoco.io",
+        "name": "OtoCo",
+        "iconUrl": "https://otoco.io/img/apple-touch-icon.png",
+        "description": "Automated Company Assembly on Blockchain",
+        "chainIds": [
+            "1",
+            "5",
+            "137"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 88,
+        "url": "https://revoke.cash/",
+        "name": "Revoke.cash",
+        "iconUrl": "https://revoke.cash/assets/images/android-chrome-512x512.png",
+        "description": "Manage and revoke your token allowances with Revoke.cash",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "10",
+            "56",
+            "100",
+            "137",
+            "42161",
+            "43114",
+            "1313161554"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 94,
+        "url": "https://vote.makerdao.com",
+        "name": "Maker Governance Portal",
+        "iconUrl": "https://vote.makerdao.com/maker.svg",
+        "description": "Vote with or delegate your MKR tokens to help protect the integrity of the Maker protocol",
+        "chainIds": [
+            "1",
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    },
+    {
+        "id": 77,
+        "url": "https://tokentool.bitbond.com/",
+        "name": "Bitbond Token Tool",
+        "iconUrl": "https://tokentool.bitbond.com/images/bitbond_icon.svg",
+        "description": "Effortlessly create, manage and distribute tokens across leading EVM chains.",
+        "chainIds": [
+            "1",
+            "4",
+            "5",
+            "56",
+            "137",
+            "43114"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    }
+]

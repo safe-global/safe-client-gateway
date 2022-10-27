@@ -1,0 +1,19 @@
+[
+    {
+        "id": 2,
+        "url": "https://app.ens.domains",
+        "name": "ENS - Ethereum Name Service",
+        "iconUrl": "https://app.ens.domains/android-chrome-144x144.png",
+        "description": "Decentralised naming for wallets, websites, & more.",
+        "chainIds": [
+            "1",
+            "4",
+            "5"
+        ],
+        "provider": null,
+        "accessControl": {
+            "type": "NO_RESTRICTIONS"
+        },
+        "tags": []
+    }
+]

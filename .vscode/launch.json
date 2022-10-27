@@ -28,7 +28,6 @@
         "--inspect-brk",
         "${workspaceRoot}/node_modules/.bin/jest",
         "--runInBand",
-        "--coverage",
         "false"
       ],
       "console": "integratedTerminal"
@@ -44,7 +43,23 @@
         "--inspect-brk",
         "${workspaceRoot}/node_modules/.bin/jest",
         "--runInBand",
-        "--coverage",
+        "false",
+        "${relativeFile}"
+      ],
+      "console": "integratedTerminal"
+  },
+  {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug current E2E test file",
+      "skipFiles": [
+          "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/.bin/jest",
+        "--runInBand",
+        "--config=test/jest-ci.json",
         "false",
         "${relativeFile}"
       ],
