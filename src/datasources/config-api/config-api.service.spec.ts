@@ -119,6 +119,25 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
+  it('should return the safe apps retrieved by chainId and clientUrl', async () => {
+    const chainId = faker.random.numeric();
+    const clientUrl = faker.internet.url();
+    const data = [safeAppFactory(), safeAppFactory()];
+    mockDataSource.get.mockResolvedValue(data);
+
+    const actual = await service.getSafeApps(chainId, clientUrl);
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toBeCalledTimes(1);
+    expect(mockDataSource.get).toBeCalledWith(
+      `${chainId}_safe_apps`,
+      `${clientUrl}_undefined`,
+      `${baseUri}/api/v1/safe-apps/?chainId=${chainId}`,
+      { params: { clientUrl, url: undefined } },
+    );
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+  });
+
   it('should forward error', async () => {
     const expected = new DataSourceError('some unexpected error');
     mockHttpErrorFactory.from.mockReturnValue(expected);
