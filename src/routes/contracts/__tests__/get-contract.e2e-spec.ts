@@ -5,7 +5,7 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
 import { Contract } from '../entities/contract.entity';
-import { redisClientFactory } from '../../../../test/common/cache/redis-client.factory';
+import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication;

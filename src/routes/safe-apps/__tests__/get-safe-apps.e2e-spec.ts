@@ -5,7 +5,7 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
 import { SafeApp } from '../entities/safe-app.entity';
-import { redisClientFactory } from '../../../../test/common/cache/redis-client.factory';
+import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;

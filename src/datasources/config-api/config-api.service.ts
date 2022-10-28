@@ -54,8 +54,8 @@ export class ConfigApi implements IConfigApi {
     url?: string,
   ): Promise<SafeApp[]> {
     try {
-      const cacheKey = `${chainId}_safe_apps`;
-      const field = `${clientUrl}_${url}`;
+      const cacheKey = `safe_apps`;
+      const field = `${chainId}_${clientUrl}_${url}`;
       return await this.dataSource.get(
         cacheKey,
         field,

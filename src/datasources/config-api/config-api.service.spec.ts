@@ -92,8 +92,8 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `${chainId}_safe_apps`,
-      `undefined_undefined`,
+      `safe_apps`,
+      `${chainId}_undefined_undefined`,
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url: undefined } },
     );
@@ -111,8 +111,8 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `${chainId}_safe_apps`,
-      `undefined_${url}`,
+      `safe_apps`,
+      `${chainId}_undefined_${url}`,
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url } },
     );
@@ -130,8 +130,8 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `${chainId}_safe_apps`,
-      `${clientUrl}_undefined`,
+      `safe_apps`,
+      `${chainId}_${clientUrl}_undefined`,
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl, url: undefined } },
     );
