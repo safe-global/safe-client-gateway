@@ -25,6 +25,6 @@ export default function (
     chainIds: chainIds ?? [faker.random.numeric(), faker.random.numeric()],
     provider: provider ?? safeAppProviderFactory(),
     accessControl: accessControl ?? safeAppAccessControlFactory(),
-    tags: tags ?? false,
+    tags: tags ?? [faker.random.word(), faker.random.word()],
   };
 }
