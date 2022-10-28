@@ -3,8 +3,6 @@ import { RedisClientType } from 'redis';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
-import { readFileSync } from 'fs';
-import { SafeApp } from '../entities/safe-app.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 
 describe('Get Safe Apps e2e test', () => {
@@ -27,55 +25,59 @@ describe('Get Safe Apps e2e test', () => {
   });
 
   it('GET /chains/<chainId>/safe-apps', async () => {
-    const safeAppsCacheKey = `${chainId}_safe_apps`;
-    const safeAppsCacheField = 'undefined_undefined';
-    const expectedResponse: SafeApp[] = JSON.parse(
-      readFileSync(
-        'src/routes/safe-apps/__tests__/resources/get-all-safe-apps-expected-response.json',
-        {
-          encoding: 'utf-8',
-        },
-      ),
-    );
+    const safeAppsCacheKey = 'safe_apps';
+    const safeAppsCacheField = `${chainId}_undefined_undefined`;
 
     await request(app.getHttpServer())
       .get(`/chains/${chainId}/safe-apps`)
       .expect(200)
       .then(({ body }) => {
-        expect(body).toEqual(expectedResponse);
+        expect(body).toEqual(expect.any(Array));
+        body.map((safeApp) =>
+          expect(safeApp).toEqual(
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: expect.any(String),
+              url: expect.any(String),
+              chainIds: expect.arrayContaining([chainId]),
+            }),
+          ),
+        );
       });
 
     const cacheContent = await redisClient.hGet(
       safeAppsCacheKey,
       safeAppsCacheField,
     );
-    expect(cacheContent).toBeDefined();
+    expect(cacheContent).not.toBeNull();
   });
 
-  it('GET /chains/<chainId>/safe-apps?url=https://app.ens.domains', async () => {
-    const safeAppsCacheKey = `${chainId}_safe_apps`;
-    const safeAppsCacheField = 'undefined_https://app.ens.domains';
-    const expectedResponse: SafeApp[] = JSON.parse(
-      readFileSync(
-        'src/routes/safe-apps/__tests__/resources/get-safe-apps-filtered-by-url-expected-response.json',
-        {
-          encoding: 'utf-8',
-        },
-      ),
-    );
+  it('GET /chains/<chainId>/safe-apps?url=${transactionBuilderUrl}', async () => {
+    const safeAppsCacheKey = 'safe_apps';
+    const transactionBuilderUrl = 'https://safe-apps.dev.5afe.dev/tx-builder';
+    const safeAppsCacheField = `${chainId}_undefined_${transactionBuilderUrl}`;
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safe-apps/?url=https://app.ens.domains`)
+      .get(`/chains/${chainId}/safe-apps/?url=${transactionBuilderUrl}`)
       .expect(200)
       .then(({ body }) => {
-        expect(body).toEqual(expectedResponse);
+        expect(body).toEqual(expect.any(Array));
+        expect(body.length).toBe(1);
+        expect(body[0]).toEqual(
+          expect.objectContaining({
+            id: expect.any(Number),
+            name: 'Transaction Builder',
+            url: transactionBuilderUrl,
+            chainIds: expect.arrayContaining([chainId]),
+          }),
+        );
       });
 
     const cacheContent = await redisClient.hGet(
       safeAppsCacheKey,
       safeAppsCacheField,
     );
-    expect(cacheContent).toBeDefined();
+    expect(cacheContent).not.toBeNull();
   });
 
   afterAll(async () => {
