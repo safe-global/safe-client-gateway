@@ -13,7 +13,7 @@ export class SafeAppsRepository implements ISafeAppsRepository {
   ) {}
 
   async getSafeApps(
-    chainId: string,
+    chainId?: string,
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]> {

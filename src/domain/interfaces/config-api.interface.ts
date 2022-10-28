@@ -8,7 +8,7 @@ export interface IConfigApi {
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
   getChain(chainId: string): Promise<Chain>;
   getSafeApps(
-    chainId: string,
+    chainId?: string,
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]>;

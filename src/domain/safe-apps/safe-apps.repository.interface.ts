@@ -11,7 +11,7 @@ export interface ISafeAppsRepository {
    * @param url filters Safe Apps available from that url. It needs to be an exact match.
    */
   getSafeApps(
-    chainId: string,
+    chainId?: string,
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]>;

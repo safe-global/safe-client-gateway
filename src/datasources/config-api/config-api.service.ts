@@ -49,7 +49,7 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getSafeApps(
-    chainId: string,
+    chainId?: string,
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]> {
@@ -59,8 +59,8 @@ export class ConfigApi implements IConfigApi {
       return await this.dataSource.get(
         cacheKey,
         field,
-        `${this.baseUri}/api/v1/safe-apps/?chainId=${chainId}`,
-        { params: { clientUrl, url } },
+        `${this.baseUri}/api/v1/safe-apps/`,
+        { params: { chainId, clientUrl, url } },
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
