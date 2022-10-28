@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
+import chainDomainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
 import {
   mockNetworkService,
@@ -25,6 +25,7 @@ import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/mas
 import masterCopyFactory from '../../domain/chains/entities/__tests__/master-copy.factory';
 import { MasterCopy } from './entities/master-copy.entity';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
+import { faker } from '@faker-js/faker';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -33,10 +34,10 @@ describe('Chains Controller (Unit)', () => {
     count: 2,
     next: undefined,
     previous: undefined,
-    results: [chainFactory(), chainFactory()],
+    results: [chainDomainFactory(), chainDomainFactory()],
   };
 
-  const chainResponse: Chain = chainFactory();
+  const chainResponse: Chain = chainDomainFactory();
   const backboneResponse: Backbone = backboneFactory();
 
   beforeAll(async () => {
@@ -88,6 +89,8 @@ describe('Chains Controller (Unit)', () => {
             {
               chainId: chainsResponse.results[0].chainId,
               chainName: chainsResponse.results[0].chainName,
+              description: chainsResponse.results[0].description,
+              l2: chainsResponse.results[0].l2,
               shortName: chainsResponse.results[0].shortName,
               rpcUri: chainsResponse.results[0].rpcUri,
               safeAppsRpcUri: chainsResponse.results[0].safeAppsRpcUri,
@@ -105,6 +108,8 @@ describe('Chains Controller (Unit)', () => {
             {
               chainId: chainsResponse.results[1].chainId,
               chainName: chainsResponse.results[1].chainName,
+              description: chainsResponse.results[1].description,
+              l2: chainsResponse.results[1].l2,
               shortName: chainsResponse.results[1].shortName,
               rpcUri: chainsResponse.results[1].rpcUri,
               safeAppsRpcUri: chainsResponse.results[1].safeAppsRpcUri,
@@ -165,6 +170,68 @@ describe('Chains Controller (Unit)', () => {
         'https://test.safe.config/api/v1/chains',
         { params: { limit: undefined, offset: undefined } },
       );
+    });
+  });
+
+  describe('GET /:chainId', () => {
+    it('Success', async () => {
+      const chainId = faker.random.numeric();
+      const chainDomain = chainDomainFactory();
+      const expectedResult = {
+        chainId: chainDomain.chainId,
+        chainName: chainDomain.chainName,
+        description: chainDomain.description,
+        l2: chainDomain.l2,
+        nativeCurrency: chainDomain.nativeCurrency,
+        transactionService: chainDomain.transactionService,
+        blockExplorerUriTemplate: chainDomain.blockExplorerUriTemplate,
+        disabledWallets: chainDomain.disabledWallets,
+        features: chainDomain.features,
+        gasPrice: chainDomain.gasPrice,
+        publicRpcUri: chainDomain.publicRpcUri,
+        rpcUri: chainDomain.rpcUri,
+        safeAppsRpcUri: chainDomain.safeAppsRpcUri,
+        shortName: chainDomain.shortName,
+        theme: chainDomain.theme,
+        ensRegistryAddress: chainDomain.ensRegistryAddress,
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainDomain });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}`)
+        .expect(200)
+        .expect(expectedResult);
+    });
+
+    it('Should return not Not found', async () => {
+      const chainId = faker.random.numeric();
+      mockNetworkService.get.mockRejectedValueOnce({
+        data: { message: 'Not Found', status: 404 },
+        status: 404,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}`)
+        .expect(404)
+        .expect({
+          message: 'Not Found',
+          code: 404,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const chainId = faker.random.numeric();
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 503,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}`)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
+        });
     });
   });
 
