@@ -8,6 +8,8 @@ import { GasPriceFixed } from './gas-price-fixed.entity';
 export interface Chain {
   chainId: string;
   chainName: string;
+  description: string;
+  l2: boolean;
   shortName: string;
   rpcUri: RpcUri;
   safeAppsRpcUri: RpcUri;

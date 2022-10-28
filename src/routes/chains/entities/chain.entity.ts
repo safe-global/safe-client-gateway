@@ -30,6 +30,10 @@ export class Chain {
   @ApiProperty()
   chainName: string;
   @ApiProperty()
+  description: string;
+  @ApiProperty()
+  l2: boolean;
+  @ApiProperty()
   nativeCurrency: ApiNativeCurrency;
   @ApiProperty()
   transactionService: string;
@@ -65,6 +69,8 @@ export class Chain {
   constructor(
     chainId: string,
     chainName: string,
+    description: string,
+    l2: boolean,
     nativeCurrency: NativeCurrency,
     transactionService: string,
     blockExplorerUriTemplate: BlockExplorerUriTemplate,
@@ -80,6 +86,8 @@ export class Chain {
   ) {
     this.chainId = chainId;
     this.chainName = chainName;
+    this.description = description;
+    this.l2 = l2;
     this.nativeCurrency = nativeCurrency;
     this.transactionService = transactionService;
     this.blockExplorerUriTemplate = blockExplorerUriTemplate;

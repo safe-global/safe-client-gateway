@@ -85,6 +85,8 @@ export const chainSchema: JSONSchemaType<Chain> = {
   properties: {
     chainId: { type: 'string' },
     chainName: { type: 'string' },
+    description: { type: 'string' },
+    l2: { type: 'boolean' },
     shortName: { type: 'string' },
     rpcUri: { $ref: 'rpcUriSchema' },
     safeAppsRpcUri: { $ref: 'rpcUriSchema' },
@@ -102,6 +104,8 @@ export const chainSchema: JSONSchemaType<Chain> = {
   required: [
     'chainId',
     'chainName',
+    'description',
+    'l2',
     'shortName',
     'rpcUri',
     'safeAppsRpcUri',

@@ -36,6 +36,8 @@ export class ChainsService {
         new Chain(
           chain.chainId,
           chain.chainName,
+          chain.description,
+          chain.l2,
           chain.nativeCurrency,
           chain.transactionService,
           chain.blockExplorerUriTemplate,
@@ -57,6 +59,28 @@ export class ChainsService {
       previous: previousURL?.toString(),
       results: chains,
     };
+  }
+
+  async getChain(chainId: string): Promise<Chain> {
+    const result = await this.chainsRepository.getChain(chainId);
+    return new Chain(
+      result.chainId,
+      result.chainName,
+      result.description,
+      result.l2,
+      result.nativeCurrency,
+      result.transactionService,
+      result.blockExplorerUriTemplate,
+      result.disabledWallets,
+      result.features,
+      result.gasPrice,
+      result.publicRpcUri,
+      result.rpcUri,
+      result.safeAppsRpcUri,
+      result.shortName,
+      result.theme,
+      result.ensRegistryAddress,
+    );
   }
 
   async getBackbone(chainId: string): Promise<Backbone> {

@@ -16,6 +16,8 @@ import rpcUriFactory from './rpc-uri.factory';
 export default function (
   chainId?: string,
   chainName?: string,
+  description?: string,
+  l2?: boolean,
   shortName?: string,
   rpcUri?: RpcUri,
   safeAppsRpcUri?: RpcUri,
@@ -33,6 +35,8 @@ export default function (
   return <Chain>{
     chainId: chainId ?? faker.datatype.number().toString(),
     chainName: chainId ?? faker.company.name(),
+    description: description ?? faker.random.words(),
+    l2: l2 ?? faker.datatype.boolean(),
     shortName: shortName ?? faker.company.companySuffix(),
     rpcUri: rpcUri ?? rpcUriFactory(),
     safeAppsRpcUri: safeAppsRpcUri ?? rpcUriFactory(),

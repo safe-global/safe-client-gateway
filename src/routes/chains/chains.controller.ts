@@ -33,6 +33,12 @@ export class ChainsController {
     return this.chainsService.getChains(routeUrl, paginationData);
   }
 
+  @ApiOkResponse({ type: Chain })
+  @Get('/:chainId')
+  async getChain(@Param('chainId') chainId: string): Promise<Chain> {
+    return this.chainsService.getChain(chainId);
+  }
+
   @ApiOkResponse({ type: ApiBackbone })
   @Get('/:chainId/about/backbone')
   async getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
