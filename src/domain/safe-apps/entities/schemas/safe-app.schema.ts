@@ -28,7 +28,7 @@ export const safeAppSchema: Schema = {
     name: { type: 'string' },
     iconUrl: { type: 'string' },
     description: { type: 'string' },
-    chainIds: { type: 'array', items: { type: 'string' } },
+    chainIds: { type: 'array', items: { type: 'number' } },
     provider: { anyOf: [{ type: 'null' }, { $ref: 'safeAppProviderSchema' }] },
     accessControl: { $ref: 'safeAppAccessControlSchema' },
     tags: { type: 'array', items: { type: 'string' } },
