@@ -29,6 +29,10 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        task: [test, test:e2e]
     services:
       redis:
         image: redis
@@ -47,14 +51,14 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - run: yarn run build
-      - run: yarn run test:ci
+      - run: yarn run ${{matrix.task}}
         env:
           EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
-      - name: Upload coverage
-        uses: coverallsapp/github-action@1.1.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Upload coverage
+      #   uses: coverallsapp/github-action@1.1.3
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
