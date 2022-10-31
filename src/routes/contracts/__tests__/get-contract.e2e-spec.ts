@@ -1,10 +1,11 @@
 import * as request from 'supertest';
+import { RedisClientType } from 'redis';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
 import { Contract } from '../entities/contract.entity';
-import { RedisClientType, createClient } from 'redis';
+import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication;
@@ -54,12 +55,3 @@ describe('Get contract e2e test', () => {
     await redisClient.quit();
   });
 });
-
-async function redisClientFactory(): Promise<RedisClientType> {
-  const { REDIS_HOST = 'localhost', REDIS_PORT = 6379 } = process.env;
-  const client: RedisClientType = createClient({
-    url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
-  });
-  client.connect();
-  return client;
-}

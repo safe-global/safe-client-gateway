@@ -5,6 +5,7 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { IConfigApi } from '../../domain/interfaces/config-api.interface';
 import { HttpErrorFactory } from '../errors/http-error-factory';
+import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
@@ -22,10 +23,10 @@ export class ConfigApi implements IConfigApi {
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     try {
-      const key = `chains`;
+      const cacheKey = `chains`;
       const field = `${limit}_${offset}`;
       const url = `${this.baseUri}/api/v1/chains`;
-      return await this.dataSource.get(key, field, url, {
+      return await this.dataSource.get(cacheKey, field, url, {
         params: {
           limit,
           offset,
@@ -38,10 +39,29 @@ export class ConfigApi implements IConfigApi {
 
   async getChain(chainId: string): Promise<Chain> {
     try {
-      const key = `${chainId}_chain`;
+      const cacheKey = `${chainId}_chain`;
       const field = '';
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
-      return await this.dataSource.get(key, field, url);
+      return await this.dataSource.get(cacheKey, field, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getSafeApps(
+    chainId?: string,
+    clientUrl?: string,
+    url?: string,
+  ): Promise<SafeApp[]> {
+    try {
+      const cacheKey = `safe_apps`;
+      const field = `${chainId}_${clientUrl}_${url}`;
+      return await this.dataSource.get(
+        cacheKey,
+        field,
+        `${this.baseUri}/api/v1/safe-apps/`,
+        { params: { chainId, clientUrl, url } },
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

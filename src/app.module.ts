@@ -17,6 +17,7 @@ import { CollectiblesModule } from './routes/collectibles/collectibles.module';
 import { ContractsModule } from './routes/contracts/contracts.module';
 import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
 import { DelegatesModule } from './routes/delegates/delegates.module';
+import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DelegatesModule } from './routes/delegates/delegates.module';
     ContractsModule,
     DataDecodedModule,
     DelegatesModule,
+    SafeAppsModule,
     // common
     CacheModule,
     ConfigurationModule,

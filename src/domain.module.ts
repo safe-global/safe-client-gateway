@@ -36,6 +36,9 @@ import { DataDecodedRepository } from './domain/data-decoder/data-decoded.reposi
 import { DataDecodedValidator } from './domain/data-decoder/data-decoded.validator';
 import { TransferValidator } from './domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from './domain/safe/multisig-transaction.validator';
+import { ISafeAppsRepository } from './domain/safe-apps/safe-apps.repository.interface';
+import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
+import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
 
 @Global()
@@ -50,6 +53,7 @@ import { TransactionTypeValidator } from './domain/safe/transaction-type.validat
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     BackboneValidator,
     BalancesValidator,
@@ -63,9 +67,10 @@ import { TransactionTypeValidator } from './domain/safe/transaction-type.validat
     GenericValidator,
     MasterCopyValidator,
     MultisigTransactionValidator,
+    SafeAppsValidator,
     SafeValidator,
-    TransferValidator,
     TransactionTypeValidator,
+    TransferValidator,
     ValidationErrorFactory,
     JsonSchemaService,
   ],
@@ -78,6 +83,7 @@ import { TransactionTypeValidator } from './domain/safe/transaction-type.validat
     IDataDecodedRepository,
     IDelegateRepository,
     IExchangeRepository,
+    ISafeAppsRepository,
     ISafeRepository,
   ],
 })
