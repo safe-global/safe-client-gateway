@@ -14,6 +14,7 @@ import { Delegate } from '../../domain/delegate/entities/delegate.entity';
 import { INetworkService } from '../network/network.service.interface';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { TransactionType } from '../../domain/safe/entities/transaction-type.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -248,6 +249,33 @@ export class TransactionApi implements ITransactionApi {
           ordering: ordering,
           executed: executed,
           trusted: trusted,
+          limit: limit,
+          offset: offset,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getAllTransactions(
+    safeAddress: string,
+    ordering?: string,
+    executed?: boolean,
+    queued?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<TransactionType>> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_all_transactions`;
+      const cacheKeyField = `${ordering}_${executed}_${queued}_${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          safe: safeAddress,
+          ordering: ordering,
+          executed: executed,
+          queued: queued,
           limit: limit,
           offset: offset,
         },

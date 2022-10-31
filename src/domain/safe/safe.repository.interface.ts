@@ -2,6 +2,7 @@ import { Safe } from './entities/safe.entity';
 import { Page } from '../entities/page.entity';
 import { Transfer } from './entities/transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { TransactionType } from './entities/transaction-type.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -21,4 +22,9 @@ export interface ISafeRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
+
+  getTransactionHistory(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<Page<TransactionType>>;
 }
