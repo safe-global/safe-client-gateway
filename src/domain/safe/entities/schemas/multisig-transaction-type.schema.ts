@@ -1,5 +1,6 @@
 import { Schema } from 'ajv';
 import { confirmationSchema } from './multisig-transaction.schema';
+import { dataDecodedSchema } from '../../../data-decoder/entities/schemas/data-decoded.schema';
 
 export const multisigTransactionTypeSchema: Schema = {
   type: 'object',
@@ -9,7 +10,7 @@ export const multisigTransactionTypeSchema: Schema = {
     to: { type: 'string' },
     value: { type: 'string', nullable: true },
     data: { type: 'string', nullable: true },
-    dataDecoded: { type: 'object', nullable: true },
+    dataDecoded: dataDecodedSchema,
     operation: { type: 'number', enum: [0, 1] },
     gasToken: { type: 'string', nullable: true },
     safeTxGas: { type: 'number', nullable: true },
