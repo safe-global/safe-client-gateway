@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        task: [test, test:e2e]
+        task: ['test', 'test:e2e']
     services:
       redis:
         image: redis
