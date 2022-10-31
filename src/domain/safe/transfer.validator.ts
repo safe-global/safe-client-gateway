@@ -3,8 +3,8 @@ import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { Transfer } from './entities/transfer.entity';
-import { transferSchema } from './entities/schemas/transfer.schema';
 import { GenericValidator } from '../schema/generic.validator';
+import { transferSchema } from './entities/schemas/transfer.schema';
 
 @Injectable()
 export class TransferValidator implements IValidator<Transfer> {

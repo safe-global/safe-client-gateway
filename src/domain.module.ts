@@ -39,6 +39,7 @@ import { MultisigTransactionValidator } from './domain/safe/multisig-transaction
 import { ISafeAppsRepository } from './domain/safe-apps/safe-apps.repository.interface';
 import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
 import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
+import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
 
 @Global()
 @Module({
@@ -68,6 +69,7 @@ import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
     MultisigTransactionValidator,
     SafeAppsValidator,
     SafeValidator,
+    TransactionTypeValidator,
     TransferValidator,
     ValidationErrorFactory,
     JsonSchemaService,

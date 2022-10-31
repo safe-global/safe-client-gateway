@@ -8,15 +8,18 @@ import { Transfer } from './entities/transfer.entity';
 import { TransferValidator } from './transfer.validator';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionValidator } from './multisig-transaction.validator';
+import { TransactionType } from './entities/transaction-type.entity';
+import { TransactionTypeValidator } from './transaction-type.validator';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly safeValidator: SafeValidator,
-    private readonly transferValidator: TransferValidator,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
+    private readonly safeValidator: SafeValidator,
+    private readonly transactionTypeValidator: TransactionTypeValidator,
+    private readonly transferValidator: TransferValidator,
   ) {}
 
   async getSafe(chainId: string, address: string): Promise<Safe> {
@@ -67,6 +70,22 @@ export class SafeRepository implements ISafeRepository {
 
     page.results.map((multisigTransaction) =>
       this.multisigTransactionValidator.validate(multisigTransaction),
+    );
+
+    return page;
+  }
+
+  async getTransactionHistory(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<Page<TransactionType>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page: Page<TransactionType> =
+      await transactionService.getAllTransactions(safeAddress);
+
+    page.results.map((transaction) =>
+      this.transactionTypeValidator.validate(transaction),
     );
 
     return page;

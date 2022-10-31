@@ -1,57 +1,17 @@
-import { JSONSchemaType } from 'ajv';
-import { NativeTokenTransfer, TokenTransfer } from '../transfer.entity';
+import { nativeTokenTransferSchema } from './native-token-transfer.schema';
+import { tokenTransferSchema } from './token-transfer.schema';
+import { Schema } from 'ajv';
 
-export const transferSchema: JSONSchemaType<
-  TokenTransfer | NativeTokenTransfer
-> = {
+export const transferSchema: Schema = {
   type: 'object',
-  required: [],
-  oneOf: [
-    {
-      type: 'object',
-      properties: {
-        type: {
-          type: 'string',
-          enum: ['ERC721_TRANSFER', 'ERC20_TRANSFER'],
-        },
-        executionDate: { type: 'string' },
-        blockNumber: { type: 'number' },
-        transactionHash: { type: 'string' },
-        to: { type: 'string' },
-        from: { type: 'string' },
-        tokenId: { type: 'string' },
-        tokenAddress: { type: 'string', nullable: true },
-      },
-      required: [
-        'type',
-        'executionDate',
-        'blockNumber',
-        'transactionHash',
-        'to',
-        'from',
-        'tokenId',
-      ],
-    },
-    {
-      type: 'object',
-      properties: {
-        type: { type: 'string', const: 'ETHER_TRANSFER' },
-        executionDate: { type: 'string' },
-        blockNumber: { type: 'number' },
-        transactionHash: { type: 'string' },
-        to: { type: 'string' },
-        from: { type: 'string' },
-        value: { type: 'string' },
-      },
-      required: [
-        'type',
-        'executionDate',
-        'blockNumber',
-        'transactionHash',
-        'to',
-        'from',
-        'value',
-      ],
-    },
+  discriminator: { propertyName: 'type' },
+  required: [
+    'type',
+    'executionDate',
+    'blockNumber',
+    'transactionHash',
+    'to',
+    'from',
   ],
+  oneOf: [nativeTokenTransferSchema, tokenTransferSchema],
 };
