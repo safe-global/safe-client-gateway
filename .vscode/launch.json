@@ -9,20 +9,20 @@
       "request": "launch",
       "name": "Launch Program",
       "skipFiles": [
-          "<node_internals>/**"
+        "<node_internals>/**"
       ],
       "program": "${workspaceFolder}/src/main.ts",
       "preLaunchTask": "tsc: build - tsconfig.json",
       "outFiles": [
-          "${workspaceFolder}/dist/**/*.js"
+        "${workspaceFolder}/dist/**/*.js"
       ]
-  },
-  {
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Debug tests",
       "skipFiles": [
-          "<node_internals>/**"
+        "<node_internals>/**"
       ],
       "runtimeArgs": [
         "--inspect-brk",
@@ -32,13 +32,13 @@
         "false"
       ],
       "console": "integratedTerminal"
-  },
-  {
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Debug current test file",
       "skipFiles": [
-          "<node_internals>/**"
+        "<node_internals>/**"
       ],
       "runtimeArgs": [
         "--inspect-brk",
@@ -49,6 +49,23 @@
         "${relativeFile}"
       ],
       "console": "integratedTerminal"
-  }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug current E2E test file",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/.bin/jest",
+        "--runInBand",
+        "--config=test/jest-ci.json",
+        "false",
+        "${relativeFile}"
+      ],
+      "console": "integratedTerminal"
+    }
   ]
 }
