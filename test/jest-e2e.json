@@ -4,6 +4,7 @@
   "roots": ["../src"],
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "testTimeout": 20000,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }
