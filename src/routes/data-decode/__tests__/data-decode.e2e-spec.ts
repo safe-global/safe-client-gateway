@@ -1,13 +1,16 @@
-import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
-import { CreateDataDecodedDto } from '../entities/create-data-decoded.dto';
+import { RedisClientType } from 'redis';
+import * as request from 'supertest';
+import { AppModule } from '../../../app.module';
 import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
+import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { CreateDataDecodedDto } from '../entities/create-data-decoded.dto';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
+  let redisClient: RedisClientType;
   const chainId = '5'; // Görli testnet
 
   beforeAll(async () => {
@@ -17,6 +20,11 @@ describe('Data decode e2e tests', () => {
 
     app = moduleRef.createNestApplication();
     await app.init();
+    redisClient = await redisClientFactory();
+  });
+
+  beforeEach(async () => {
+    await redisClient.flushAll();
   });
 
   it('POST /data-decoder', async () => {
@@ -48,5 +56,7 @@ describe('Data decode e2e tests', () => {
 
   afterAll(async () => {
     await app.close();
+    await redisClient.flushAll();
+    await redisClient.quit();
   });
 });
