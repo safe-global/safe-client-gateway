@@ -7,10 +7,8 @@ export class JsonSchemaService {
   private readonly ajv: Ajv;
 
   constructor() {
-    // coerceTypes param shouldn't be necessary when serialization is implemented.
     this.ajv = new Ajv({
       allowUnionTypes: true,
-      coerceTypes: true,
       useDefaults: true,
       discriminator: true,
     });
