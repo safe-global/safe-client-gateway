@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        task: ['test:cov', 'test:e2e']
+        task: ['test:cov', 'test:e2e:cov']
     services:
       redis:
         image: redis
