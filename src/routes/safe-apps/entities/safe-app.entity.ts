@@ -1,9 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SafeApp as DomainSafeApp } from '../../../domain/safe-apps/entities/safe-app.entity';
 import { SafeAppAccessControl } from './safe-app-access-control.entity';
 import { SafeAppProvider } from './safe-app-provider.entity';
 
-export class SafeApp implements DomainSafeApp {
+export class SafeApp {
   @ApiProperty()
   id: number;
   @ApiProperty()
@@ -16,10 +15,32 @@ export class SafeApp implements DomainSafeApp {
   description: string;
   @ApiProperty()
   chainIds: string[];
-  @ApiPropertyOptional()
-  provider?: SafeAppProvider;
   @ApiProperty()
   accessControl: SafeAppAccessControl;
   @ApiProperty()
   tags: string[];
+  @ApiPropertyOptional()
+  provider?: SafeAppProvider;
+
+  constructor(
+    id: number,
+    url: string,
+    name: string,
+    iconUrl: string,
+    description: string,
+    chainIds: string[],
+    accessControl: SafeAppAccessControl,
+    tags: string[],
+    provider?: SafeAppProvider,
+  ) {
+    this.id = id;
+    this.url = url;
+    this.name = name;
+    this.iconUrl = iconUrl;
+    this.description = description;
+    this.chainIds = chainIds;
+    this.accessControl = accessControl;
+    this.tags = tags;
+    this.provider = provider;
+  }
 }

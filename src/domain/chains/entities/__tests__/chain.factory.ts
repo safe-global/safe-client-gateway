@@ -34,7 +34,7 @@ export default function (
 ): Chain {
   return <Chain>{
     chainId: chainId ?? faker.datatype.number().toString(),
-    chainName: chainId ?? faker.company.name(),
+    chainName: chainName ?? faker.company.name(),
     description: description ?? faker.random.words(),
     l2: l2 ?? faker.datatype.boolean(),
     shortName: shortName ?? faker.company.companySuffix(),
@@ -49,7 +49,10 @@ export default function (
     theme: theme ?? themeFactory(),
     gasPrice: gasPrice ?? [gasPriceFixedFactory(), gasPriceOracleFactory()],
     ensRegistryAddress: ensRegistryAddress ?? faker.finance.ethereumAddress(),
-    disabledWallets: disabledWallets ?? faker.datatype.array(),
-    features: features ?? faker.datatype.array(),
+    disabledWallets: disabledWallets ?? [
+      faker.random.word(),
+      faker.random.word(),
+    ],
+    features: features ?? [faker.random.word(), faker.random.word()],
   };
 }

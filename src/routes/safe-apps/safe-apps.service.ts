@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
 import { SafeAppsRepository } from '../../domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '../../domain/safe-apps/safe-apps.repository.interface';
+import { SafeApp } from './entities/safe-app.entity';
 
 @Injectable()
 export class SafeAppsService {
@@ -15,6 +15,24 @@ export class SafeAppsService {
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]> {
-    return this.safeAppsRepository.getSafeApps(chainId, clientUrl, url);
+    const result = await this.safeAppsRepository.getSafeApps(
+      chainId,
+      clientUrl,
+      url,
+    );
+    return result.map(
+      (safeApp) =>
+        new SafeApp(
+          safeApp.id,
+          safeApp.url,
+          safeApp.name,
+          safeApp.iconUrl,
+          safeApp.description,
+          safeApp.chainIds.map((chainId) => chainId.toString()),
+          safeApp.accessControl,
+          safeApp.tags,
+          safeApp.provider,
+        ),
+    );
   }
 }
