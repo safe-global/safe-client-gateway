@@ -289,12 +289,8 @@ export class TransactionApi implements ITransactionApi {
   async getTokenInfo(address: string): Promise<Page<TokenInfo>> {
     try {
       const cacheKey = `${this.chainId}_${address}_token`;
-      const url = `${this.baseUrl}/api/v1/tokens/`;
-      return await this.dataSource.get(cacheKey, '', url, {
-        params: {
-          address: address,
-        },
-      });
+      const url = `${this.baseUrl}/api/v1/tokens/${address}`;
+      return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
