@@ -38,7 +38,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:ci": "jest --coverage --config ./test/jest-ci.json",
+    "test:e2e:cov": "jest --coverage --config ./test/jest-e2e.json",
+    "test:all": "jest --config ./test/jest-all.json",
+    "test:all:cov": "jest --coverage --config ./test/jest-all.json",
     "postinstall": "husky install"
   },
   "dependencies": {
