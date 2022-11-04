@@ -89,4 +89,6 @@ export interface ITransactionApi {
   ): Promise<Page<TransactionType>>;
 
   getTokenInfo(address: string): Promise<Page<TokenInfo>>;
+
+  getTokensInfo(limit?: number, offset?: number): Promise<Page<TokenInfo>>;
 }

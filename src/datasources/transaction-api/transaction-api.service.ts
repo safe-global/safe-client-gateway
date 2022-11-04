@@ -295,4 +295,23 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async getTokensInfo(
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<TokenInfo>> {
+    try {
+      const cacheKey = `${this.chainId}_tokens`;
+      const cacheKeyField = `${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/tokens/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          limit: limit,
+          offset: offset,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 }
