@@ -5,9 +5,9 @@ export class Balance {
   @ApiProperty()
   balance: string;
   @ApiProperty()
-  fiatBalance: number;
+  fiatBalance: string;
   @ApiProperty()
-  fiatConversion: number;
+  fiatConversion: string;
   @ApiProperty()
   tokenInfo: TokenInfo;
 }
