@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Ajv, { JSONSchemaType, Schema, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
+import { addIsDate } from './keywords/is-date.keyword';
 
 @Injectable()
 export class JsonSchemaService {
@@ -12,6 +13,8 @@ export class JsonSchemaService {
       useDefaults: true,
       discriminator: true,
     });
+
+    addIsDate(this.ajv);
     addFormats(this.ajv, { formats: ['uri'] });
   }
 
