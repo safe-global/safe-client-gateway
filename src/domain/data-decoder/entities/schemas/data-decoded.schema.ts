@@ -5,10 +5,10 @@ export const dataDecodedParameterSchema: Schema = {
   properties: {
     name: { type: 'string' },
     type: { type: 'string' },
-    value: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+    value: {},
     valueDecoded: { type: ['object', 'array', 'null'] },
   },
-  required: ['name', 'value'],
+  required: ['name', 'type', 'value'],
   additionalProperties: true,
 };
 

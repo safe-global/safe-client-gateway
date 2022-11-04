@@ -6,7 +6,7 @@ export class DataDecodedParameter {
   @ApiProperty()
   paramType: string;
   @ApiProperty()
-  value: string | number;
+  value: unknown;
   @ApiProperty()
   valueDecoded?: Record<string, any> | Record<string, any>[] | undefined;
 }
