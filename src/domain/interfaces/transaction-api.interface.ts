@@ -10,6 +10,7 @@ import { Delegate } from '../delegate/entities/delegate.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
 import { TransactionType } from '../safe/entities/transaction-type.entity';
+import { Token } from '../tokens/entities/token.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -86,4 +87,8 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<TransactionType>>;
+
+  getToken(address: string): Promise<Token>;
+
+  getTokens(limit?: number, offset?: number): Promise<Page<Token>>;
 }

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TokenType } from './token-type.entity';
 
-export class TokenInfo {
+export class Token {
   @ApiProperty()
   address: string;
   @ApiProperty()

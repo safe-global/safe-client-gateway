@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TokenInfo } from './token-info.entity';
+import { Token } from './token.entity';
 
 export class Balance {
   @ApiProperty()
@@ -9,5 +9,5 @@ export class Balance {
   @ApiProperty()
   fiatConversion: string;
   @ApiProperty()
-  tokenInfo: TokenInfo;
+  tokenInfo: Token;
 }

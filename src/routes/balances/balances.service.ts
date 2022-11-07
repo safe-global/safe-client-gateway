@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Balance as TransactionApiBalance } from '../../domain/balances/entities/balance.entity';
-import { TokenInfo } from './entities/token-info.entity';
+import { Token } from './entities/token.entity';
 import { TokenType } from './entities/token-type.entity';
 import { Balances } from './entities/balances.entity';
 import { NativeCurrency } from '../../domain/chains/entities/native.currency.entity';
@@ -78,7 +78,7 @@ export class BalancesService {
         : txBalance.token?.logoUri;
 
     return <Balance>{
-      tokenInfo: <TokenInfo>{
+      tokenInfo: <Token>{
         tokenType: tokenType,
         address: txBalance.tokenAddress,
         decimals: txBalance.token?.decimals,
