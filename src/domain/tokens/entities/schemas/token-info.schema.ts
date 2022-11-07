@@ -1,7 +1,7 @@
 import { JSONSchemaType } from 'ajv';
 import { Token, TokenType } from '../token.entity';
 
-export const tokenInfoSchema: JSONSchemaType<Token> = {
+export const tokenSchema: JSONSchemaType<Token> = {
   type: 'object',
   properties: {
     address: { type: 'string' },
