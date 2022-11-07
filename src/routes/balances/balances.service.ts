@@ -47,16 +47,16 @@ export class BalancesService {
 
     // Get total fiat from [balances]
     const totalFiat: number = balances.reduce((acc, b) => {
-      return acc + b.fiatBalance;
+      return acc + Number(b.fiatBalance);
     }, 0);
 
     // Sort balances in place
     balances.sort((b1, b2) => {
-      return b2.fiatBalance - b1.fiatBalance;
+      return Number(b2.fiatBalance) - Number(b1.fiatBalance);
     });
 
     return <Balances>{
-      fiatTotal: totalFiat,
+      fiatTotal: totalFiat.toString(),
       items: balances,
     };
   }
@@ -66,8 +66,8 @@ export class BalancesService {
     usdToFiatRate: number,
     nativeCurrency: NativeCurrency,
   ): Balance {
-    const fiatConversion = txBalance.fiatConversion * usdToFiatRate;
-    const fiatBalance = txBalance.fiatBalance * usdToFiatRate;
+    const fiatConversion = Number(txBalance.fiatConversion) * usdToFiatRate;
+    const fiatBalance = Number(txBalance.fiatBalance) * usdToFiatRate;
     const tokenType =
       txBalance.tokenAddress === undefined
         ? TokenType.NativeToken
@@ -87,8 +87,8 @@ export class BalancesService {
         logoUri: logoUri,
       },
       balance: txBalance.balance.toString(),
-      fiatBalance: fiatBalance,
-      fiatConversion: fiatConversion,
+      fiatBalance: fiatBalance.toString(),
+      fiatConversion: fiatConversion.toString(),
     };
   }
 

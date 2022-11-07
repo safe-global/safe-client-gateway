@@ -17,9 +17,9 @@ const balanceSchema: Schema = {
   properties: {
     tokenAddress: { type: 'string', nullable: true },
     token: { anyOf: [{ type: 'null' }, { $ref: 'balanceToken' }] },
-    balance: { type: 'number' },
-    fiatBalance: { type: 'number' },
-    fiatConversion: { type: 'number' },
+    balance: { type: 'string' },
+    fiatBalance: { type: 'string' },
+    fiatConversion: { type: 'string' },
   },
   required: ['balance', 'fiatBalance', 'fiatConversion'],
 };
