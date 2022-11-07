@@ -6,15 +6,15 @@ import { BalanceToken } from '../balance.token.entity';
 export function balanceFactory(
   tokenAddress?: string,
   token?: BalanceToken,
-  balance?: number,
-  fiatBalance?: number,
-  fiatConversion?: number,
+  balance?: string,
+  fiatBalance?: string,
+  fiatConversion?: string,
 ): Balance {
   return <Balance>{
     tokenAddress: tokenAddress ?? faker.finance.ethereumAddress(),
     token: token ?? balanceTokenFactory(),
-    balance: balance ?? faker.datatype.number(),
-    fiatBalance: fiatBalance ?? faker.datatype.number(),
-    fiatConversion: fiatConversion ?? faker.datatype.number(),
+    balance: balance ?? faker.random.numeric(),
+    fiatBalance: fiatBalance ?? faker.random.numeric(),
+    fiatConversion: fiatConversion ?? faker.random.numeric(),
   };
 }
