@@ -17,20 +17,20 @@ import Ajv from 'ajv';
 export function addIsDate(ajv: Ajv) {
   ajv.addKeyword({
     keyword: 'isDate',
-    compile: (schema) => (value, obj) => {
+    compile: (schema) => (data, dataContext) => {
       // isDate: false – no need to validate
       if (schema === false) return true;
       // Nullability support – if a date is null we skip validation
-      if (value == null) return true;
+      if (data == null) return true;
 
       // From here we need to validate the date
-      if (obj == null) return false;
+      if (dataContext == null) return false;
 
       // Non valid date format
-      if (isNaN(Date.parse(value))) return false;
+      if (isNaN(Date.parse(data))) return false;
 
       // We have a valid date. We can set the property in the parent object
-      obj.parentData[obj.parentDataProperty] = new Date(value);
+      dataContext.parentData[dataContext.parentDataProperty] = new Date(data);
       return true;
     },
   });
