@@ -70,6 +70,17 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  getIncomingTransfers(
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>>;
+
   getMultisigTransactions(
     safeAddress: string,
     ordering?: string,
