@@ -40,6 +40,16 @@ describe('AJV Keyword – isDate', () => {
       expect(actual).toBe(true);
     });
 
+    it('date is coerced on valid date', async () => {
+      const date = faker.date.past().toISOString();
+      const payload = { date };
+
+      const actual = validateFunction(payload);
+
+      expect(actual).toBe(true);
+      expect(payload.date).toEqual<Date>(new Date(date));
+    });
+
     it('valid if date is null', async () => {
       const actual = validateFunction({
         date: null,
