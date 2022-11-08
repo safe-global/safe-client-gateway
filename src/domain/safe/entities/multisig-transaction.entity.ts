@@ -2,7 +2,7 @@ import { Operation } from './operation.entity';
 
 export interface Confirmation {
   owner: string;
-  submissionDate: string; // TODO check Date type validation
+  submissionDate: Date;
   transactionHash?: string;
   signatureType: string;
   signature?: string;
@@ -21,9 +21,9 @@ export type MultisigTransaction = {
   gasPrice?: string;
   refundReceiver?: string;
   nonce: number;
-  executionDate?: string; // TODO check Date type validation
-  submissionDate?: string; // TODO check Date type validation
-  modified?: string; // TODO check Date type validation
+  executionDate?: Date;
+  submissionDate?: Date;
+  modified?: Date;
   blockNumber?: number;
   transactionHash?: string;
   safeTxHash: string;

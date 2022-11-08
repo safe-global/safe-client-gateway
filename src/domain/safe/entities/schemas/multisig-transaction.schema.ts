@@ -1,14 +1,10 @@
-import { JSONSchemaType } from 'ajv';
-import {
-  Confirmation,
-  MultisigTransaction,
-} from '../multisig-transaction.entity';
+import { Schema } from 'ajv';
 
-export const confirmationSchema: JSONSchemaType<Confirmation> = {
+export const confirmationSchema: Schema = {
   type: 'object',
   properties: {
     owner: { type: 'string' },
-    submissionDate: { type: 'string' },
+    submissionDate: { type: 'string', isDate: true },
     transactionHash: { type: 'string', nullable: true },
     signatureType: { type: 'string' },
     signature: { type: 'string', nullable: true },
@@ -16,7 +12,7 @@ export const confirmationSchema: JSONSchemaType<Confirmation> = {
   required: ['owner', 'submissionDate', 'signatureType'],
 };
 
-export const multisigTransactionSchema: JSONSchemaType<MultisigTransaction> = {
+export const multisigTransactionSchema: Schema = {
   type: 'object',
   properties: {
     safe: { type: 'string' },
@@ -31,9 +27,21 @@ export const multisigTransactionSchema: JSONSchemaType<MultisigTransaction> = {
     gasPrice: { type: 'string', nullable: true },
     refundReceiver: { type: 'string', nullable: true },
     nonce: { type: 'number' },
-    executionDate: { type: 'string', nullable: true },
-    submissionDate: { type: 'string', nullable: true },
-    modified: { type: 'string', nullable: true },
+    executionDate: {
+      type: 'string',
+      nullable: true,
+      isDate: true,
+    },
+    submissionDate: {
+      type: 'string',
+      nullable: true,
+      isDate: true,
+    },
+    modified: {
+      type: 'string',
+      nullable: true,
+      isDate: true,
+    },
     blockNumber: { type: 'number', nullable: true },
     transactionHash: { type: 'string', nullable: true },
     safeTxHash: { type: 'string' },
