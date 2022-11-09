@@ -8,6 +8,7 @@ import { Collectible } from '../../domain/collectibles/entities/collectible.enti
 import { Page } from '../../domain/entities/page.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
+import { SafeList } from '../../domain/safe/entities/safe-list.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
 import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../../domain/delegate/entities/delegate.entity';
@@ -349,6 +350,16 @@ export class TransactionApi implements ITransactionApi {
           offset: offset,
         },
       });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getSafesByOwner(ownerAddress: string): Promise<SafeList> {
+    try {
+      const cacheKey = `${this.chainId}_${ownerAddress}_owner_safes`;
+      const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
+      return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

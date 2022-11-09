@@ -3,6 +3,7 @@ import { Page } from '../entities/page.entity';
 import { Transfer } from './entities/transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { TransactionType } from './entities/transaction-type.entity';
+import { SafeList } from './entities/safe-list.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -44,4 +45,6 @@ export interface ISafeRepository {
     chainId: string,
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
+
+  getSafesByOwner(chainId: string, ownerAddress: string): Promise<SafeList>;
 }

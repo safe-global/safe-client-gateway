@@ -40,6 +40,7 @@ import { ISafeAppsRepository } from './domain/safe-apps/safe-apps.repository.int
 import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
 import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
+import { SafeListValidator } from './domain/safe/safe-list.validator';
 
 @Global()
 @Module({
@@ -68,6 +69,7 @@ import { TransactionTypeValidator } from './domain/safe/transaction-type.validat
     MasterCopyValidator,
     MultisigTransactionValidator,
     SafeAppsValidator,
+    SafeListValidator,
     SafeValidator,
     TransactionTypeValidator,
     TransferValidator,

@@ -11,6 +11,7 @@ import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
 import { TransactionType } from '../safe/entities/transaction-type.entity';
 import { Token } from '../tokens/entities/token.entity';
+import { SafeList } from '../safe/entities/safe-list.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -106,4 +107,6 @@ export interface ITransactionApi {
   getToken(address: string): Promise<Token>;
 
   getTokens(limit?: number, offset?: number): Promise<Page<Token>>;
+
+  getSafesByOwner(ownerAddress: string): Promise<SafeList>;
 }
