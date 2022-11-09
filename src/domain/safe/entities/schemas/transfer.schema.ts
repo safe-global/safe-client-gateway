@@ -1,6 +1,7 @@
 import { nativeTokenTransferSchema } from './native-token-transfer.schema';
-import { tokenTransferSchema } from './token-transfer.schema';
 import { Schema } from 'ajv';
+import { erc20TransferSchema } from './erc20-transfer.schema';
+import { erc721TransferSchema } from './erc721-transfer.schema';
 
 export const transferSchema: Schema = {
   type: 'object',
@@ -13,5 +14,5 @@ export const transferSchema: Schema = {
     'to',
     'from',
   ],
-  oneOf: [nativeTokenTransferSchema, tokenTransferSchema],
+  oneOf: [nativeTokenTransferSchema, erc20TransferSchema, erc721TransferSchema],
 };
