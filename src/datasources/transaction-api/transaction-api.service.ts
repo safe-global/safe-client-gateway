@@ -254,6 +254,8 @@ export class TransactionApi implements ITransactionApi {
           to,
           value,
           tokenAddress,
+          limit,
+          offset,
         },
       });
     } catch (error) {
