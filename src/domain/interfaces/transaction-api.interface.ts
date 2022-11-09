@@ -70,10 +70,6 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
-  getMultisigTransaction(
-    safeTransactionHash: string,
-  ): Promise<MultisigTransaction>;
-
   getIncomingTransfers(
     safeAddress: string,
     executionDateGte?: string,
@@ -84,6 +80,10 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+  
+  getMultisigTransaction(
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction>;
 
   getMultisigTransactions(
     safeAddress: string,
