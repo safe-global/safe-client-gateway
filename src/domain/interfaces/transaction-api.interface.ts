@@ -11,6 +11,7 @@ import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
 import { TransactionType } from '../safe/entities/transaction-type.entity';
 import { Token } from '../tokens/entities/token.entity';
+import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -80,6 +81,14 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+
+  getModuleTransactions(
+    safeAddress: string,
+    to?: string,
+    module?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<ModuleTransaction>>;
 
   getMultisigTransactions(
     safeAddress: string,
