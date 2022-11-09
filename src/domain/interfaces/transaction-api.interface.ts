@@ -80,7 +80,7 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
-  
+
   getMultisigTransaction(
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
