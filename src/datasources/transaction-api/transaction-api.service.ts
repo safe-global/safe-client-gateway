@@ -289,6 +289,18 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getMultisigTransaction(
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction> {
+    try {
+      const cacheKey = `${this.chainId}_${safeTransactionHash}_multisig_transaction`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
+      return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getAllTransactions(
     safeAddress: string,
     ordering?: string,
