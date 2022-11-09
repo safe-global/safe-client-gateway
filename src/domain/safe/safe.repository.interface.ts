@@ -16,6 +16,18 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  getIncomingTransfers(
+    chainId: string,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>>;
+
   getQueuedTransactions(
     chainId: string,
     safeAddress: string,
