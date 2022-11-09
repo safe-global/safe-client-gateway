@@ -27,4 +27,9 @@ export interface ISafeRepository {
     chainId: string,
     safeAddress: string,
   ): Promise<Page<TransactionType>>;
+
+  getMultiSigTransaction(
+    chainId: string,
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction>;
 }

@@ -70,6 +70,10 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  getMultisigTransaction(
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction>;
+
   getMultisigTransactions(
     safeAddress: string,
     ordering?: string,

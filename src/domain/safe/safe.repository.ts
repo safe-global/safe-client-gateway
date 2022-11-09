@@ -90,4 +90,17 @@ export class SafeRepository implements ISafeRepository {
 
     return page;
   }
+
+  async getMultiSigTransaction(
+    chainId: string,
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const multiSigTransaction = await transactionService.getMultisigTransaction(
+      safeTransactionHash,
+    );
+
+    return this.multisigTransactionValidator.validate(multiSigTransaction);
+  }
 }
