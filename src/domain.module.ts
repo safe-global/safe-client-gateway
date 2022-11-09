@@ -21,6 +21,7 @@ import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
+import { SafeListValidator } from './domain/safe/safe-list.validator';
 import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
@@ -40,7 +41,6 @@ import { ISafeAppsRepository } from './domain/safe-apps/safe-apps.repository.int
 import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
 import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
-import { SafeListValidator } from './domain/safe/safe-list.validator';
 
 @Global()
 @Module({
