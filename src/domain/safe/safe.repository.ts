@@ -10,6 +10,7 @@ import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionValidator } from './multisig-transaction.validator';
 import { TransactionType } from './entities/transaction-type.entity';
 import { TransactionTypeValidator } from './transaction-type.validator';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -74,6 +75,30 @@ export class SafeRepository implements ISafeRepository {
       offset,
     );
     page.results.map((transfer) => this.transferValidator.validate(transfer));
+
+    return page;
+  }
+
+  async getModuleTransactions(
+    chainId: string,
+    safeAddress: string,
+    to?: string,
+    module?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<ModuleTransaction>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page = await transactionService.getModuleTransactions(
+      safeAddress,
+      to,
+      module,
+      limit,
+      offset,
+    );
+    page.results.map((moduleTransaction) =>
+      this.transactionTypeValidator.validate(moduleTransaction),
+    );
 
     return page;
   }

@@ -3,6 +3,7 @@ import { Page } from '../entities/page.entity';
 import { Transfer } from './entities/transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { TransactionType } from './entities/transaction-type.entity';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -27,6 +28,15 @@ export interface ISafeRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+
+  getModuleTransactions(
+    chainId: string,
+    safeAddress: string,
+    to?: string,
+    module?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<ModuleTransaction>>;
 
   getQueuedTransactions(
     chainId: string,
