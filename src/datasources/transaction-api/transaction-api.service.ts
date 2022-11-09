@@ -232,6 +232,36 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getIncomingTransfers(
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_incoming_transfers`;
+      const cacheKeyField = `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          execution_date__gte: executionDateGte,
+          execution_date__lte: executionDateLte,
+          to,
+          value,
+          tokenAddress,
+          limit,
+          offset,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getMultisigTransactions(
     safeAddress: string,
     ordering?: string,

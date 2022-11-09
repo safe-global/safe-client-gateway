@@ -50,6 +50,34 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
+  async getIncomingTransfers(
+    chainId: string,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transfer>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page = await transactionService.getIncomingTransfers(
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      to,
+      value,
+      tokenAddress,
+      limit,
+      offset,
+    );
+    page.results.map((transfer) => this.transferValidator.validate(transfer));
+
+    return page;
+  }
+
   async getQueuedTransactions(
     chainId: string,
     safeAddress: string,
