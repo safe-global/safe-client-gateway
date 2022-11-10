@@ -10,8 +10,10 @@ import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionValidator } from './multisig-transaction.validator';
 import { TransactionType } from './entities/transaction-type.entity';
 import { TransactionTypeValidator } from './transaction-type.validator';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 import { SafeListValidator } from './safe-list.validator';
+import { ModuleTransactionValidator } from './module-transaction.validator';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -23,6 +25,7 @@ export class SafeRepository implements ISafeRepository {
     private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
+    private readonly moduleTransactionValidator: ModuleTransactionValidator,
   ) {}
 
   async getSafe(chainId: string, address: string): Promise<Safe> {
@@ -77,6 +80,30 @@ export class SafeRepository implements ISafeRepository {
       offset,
     );
     page.results.map((transfer) => this.transferValidator.validate(transfer));
+
+    return page;
+  }
+
+  async getModuleTransactions(
+    chainId: string,
+    safeAddress: string,
+    to?: string,
+    module?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<ModuleTransaction>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page = await transactionService.getModuleTransactions(
+      safeAddress,
+      to,
+      module,
+      limit,
+      offset,
+    );
+    page.results.map((moduleTransaction) =>
+      this.moduleTransactionValidator.validate(moduleTransaction),
+    );
 
     return page;
   }
