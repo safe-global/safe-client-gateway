@@ -13,6 +13,7 @@ import { TransactionTypeValidator } from './transaction-type.validator';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 import { SafeListValidator } from './safe-list.validator';
+import { ModuleTransactionValidator } from './module-transaction.validator';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -24,6 +25,7 @@ export class SafeRepository implements ISafeRepository {
     private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
+    private readonly moduleTransactionValidator: ModuleTransactionValidator,
   ) {}
 
   async getSafe(chainId: string, address: string): Promise<Safe> {
@@ -100,7 +102,7 @@ export class SafeRepository implements ISafeRepository {
       offset,
     );
     page.results.map((moduleTransaction) =>
-      this.transactionTypeValidator.validate(moduleTransaction),
+      this.moduleTransactionValidator.validate(moduleTransaction),
     );
 
     return page;
