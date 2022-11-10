@@ -7,8 +7,14 @@ export type Transfer = {
   from: string;
 };
 
-export interface TokenTransfer extends Transfer {
-  type: 'ERC721_TRANSFER' | 'ERC20_TRANSFER';
+export interface ERC20Transfer extends Transfer {
+  type: 'ERC20_TRANSFER';
+  value: string;
+  tokenAddress?: string;
+}
+
+export interface ERC721Transfer extends Transfer {
+  type: 'ERC721_TRANSFER';
   tokenId: string;
   tokenAddress?: string;
 }

@@ -11,6 +11,8 @@ import { MultisigTransactionValidator } from './multisig-transaction.validator';
 import { TransactionType } from './entities/transaction-type.entity';
 import { TransactionTypeValidator } from './transaction-type.validator';
 import { ModuleTransaction } from './entities/module-transaction.entity';
+import { SafeList } from './entities/safe-list.entity';
+import { SafeListValidator } from './safe-list.validator';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -18,6 +20,7 @@ export class SafeRepository implements ISafeRepository {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
+    private readonly safeListValidator: SafeListValidator,
     private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
@@ -142,5 +145,29 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return page;
+  }
+
+  async getMultiSigTransaction(
+    chainId: string,
+    safeTransactionHash: string,
+  ): Promise<MultisigTransaction> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const multiSigTransaction = await transactionService.getMultisigTransaction(
+      safeTransactionHash,
+    );
+
+    return this.multisigTransactionValidator.validate(multiSigTransaction);
+  }
+
+  async getSafesByOwner(
+    chainId: string,
+    ownerAddress: string,
+  ): Promise<SafeList> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const safeList = transactionService.getSafesByOwner(ownerAddress);
+
+    return this.safeListValidator.validate(safeList);
   }
 }
