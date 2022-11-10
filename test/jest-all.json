@@ -5,6 +5,7 @@
   "setupFiles": ["<rootDir>/test/e2e-setup.ts"],
   "testEnvironment": "node",
   "testRegex": [".*\\.spec\\.ts$", ".*\\e2e-spec\\.ts$"],
+  "testTimeout": 20000,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
