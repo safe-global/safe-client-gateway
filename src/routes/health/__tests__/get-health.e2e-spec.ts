@@ -23,4 +23,8 @@ describe('Get health e2e test', () => {
         expect(body).toEqual({ status: 'OK' });
       });
   });
+
+  afterAll(async () => {
+    await app.close();
+  });
 });
