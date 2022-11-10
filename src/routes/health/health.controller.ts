@@ -1,14 +1,13 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Health } from './entities/health.entity';
 
 @ApiTags('health')
 @Controller({ path: 'health' })
 export class HealthController {
-  @ApiOkResponse({ type: String })
+  @ApiOkResponse({ type: Health })
   @Get()
-  getHealth(@Res() res: Response): void {
-    res.setHeader('Content-Type', 'application/json');
-    res.end('""');
+  getHealth(): Health {
+    return { status: 'OK' };
   }
 }

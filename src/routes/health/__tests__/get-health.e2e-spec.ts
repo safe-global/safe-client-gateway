@@ -20,7 +20,7 @@ describe('Get health e2e test', () => {
       .get(`/health`)
       .expect(200)
       .then(({ body }) => {
-        expect(body).toEqual('');
+        expect(body).toEqual({ status: 'OK' });
       });
   });
 });
