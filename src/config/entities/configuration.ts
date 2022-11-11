@@ -1,4 +1,15 @@
+import { readFileSync } from 'fs';
+
+const packageJson = JSON.parse(
+  readFileSync('package.json', { encoding: 'utf-8' }),
+);
+
 export default () => ({
+  about: {
+    name: packageJson.name,
+    version: packageJson.version,
+    buildNumber: process.env.GITHUB_RUN_NUMBER || '',
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
