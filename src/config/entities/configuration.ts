@@ -1,13 +1,7 @@
-import { readFileSync } from 'fs';
-
-const packageJson = JSON.parse(
-  readFileSync('package.json', { encoding: 'utf-8' }),
-);
-
 export default () => ({
   about: {
-    name: packageJson.name,
-    version: packageJson.version,
+    name: 'safe-client-gateway',
+    version: process.env.CGW_VERSION || '',
     buildNumber: process.env.GITHUB_RUN_NUMBER || '',
   },
   exchange: {
