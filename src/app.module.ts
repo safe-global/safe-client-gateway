@@ -19,6 +19,7 @@ import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
 import { DelegatesModule } from './routes/delegates/delegates.module';
 import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
 import { HealthModule } from './routes/health/health.module';
+import { OwnersModule } from './routes/owners/owners.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { HealthModule } from './routes/health/health.module';
     DataDecodedModule,
     DelegatesModule,
     HealthModule,
+    OwnersModule,
     SafeAppsModule,
     // common
     CacheModule,
