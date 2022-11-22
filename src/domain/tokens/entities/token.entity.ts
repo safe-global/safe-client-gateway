@@ -10,5 +10,5 @@ export interface Token {
   logoUri: string;
   name: string;
   symbol: string;
-  tokenType: TokenType;
+  type: TokenType;
 }

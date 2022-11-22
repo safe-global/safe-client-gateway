@@ -293,21 +293,31 @@ export class TransactionApi implements ITransactionApi {
     ordering?: string,
     executed?: boolean,
     trusted?: boolean,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    nonce?: string,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>> {
     try {
       const cacheKey = `${this.chainId}_${safeAddress}_multisig_transactions`;
-      const cacheKeyField = `${safeAddress}_${ordering}_${executed}_${trusted}_${limit}_${offset}`;
+      const cacheKeyField = `${ordering}_${executed}_${trusted}_${executionDateGte}_${executionDateLte}_${to}_${value}_${nonce}_${limit}_${offset}`;
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       return await this.dataSource.get(cacheKey, cacheKeyField, url, {
         params: {
           safe: safeAddress,
-          ordering: ordering,
-          executed: executed,
-          trusted: trusted,
-          limit: limit,
-          offset: offset,
+          ordering,
+          executed,
+          trusted,
+          execution_date__gte: executionDateGte,
+          execution_date__lte: executionDateLte,
+          to,
+          value,
+          nonce,
+          limit,
+          offset,
         },
       });
     } catch (error) {

@@ -1,0 +1,32 @@
+{
+  "results": [
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x0c2A08D294026Cd363441240C2ed5D09C93A044F_0xe5d12a76416195e1bef2db7376ccabc5e2e904f20211c3b08f9036d742f06810",
+        "timestamp": 1664922467000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Custom",
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "name": "Gnosis Safe: MultiSendCallOnly",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
+          },
+          "dataSize": "1220",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 3,
+          "isCancellation": false
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 12,
+          "confirmationsRequired": 3,
+          "confirmationsSubmitted": 3
+        }
+      },
+      "conflictType": "None"
+    }
+  ]
+}
