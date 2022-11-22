@@ -20,6 +20,7 @@ import { DelegatesModule } from './routes/delegates/delegates.module';
 import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
 import { HealthModule } from './routes/health/health.module';
 import { AboutModule } from './routes/about/about.module';
+import { TransactionsModule } from './routes/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AboutModule } from './routes/about/about.module';
     DelegatesModule,
     HealthModule,
     SafeAppsModule,
+    TransactionsModule,
     // common
     CacheModule,
     ConfigurationModule,

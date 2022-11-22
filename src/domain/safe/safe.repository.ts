@@ -122,6 +122,11 @@ export class SafeRepository implements ISafeRepository {
         '-modified',
         false,
         true,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
         limit,
         offset,
       );
@@ -160,6 +165,41 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return this.multisigTransactionValidator.validate(multiSigTransaction);
+  }
+
+  async getMultiSigTransactions(
+    chainId: string,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    nonce?: string,
+    executed?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<MultisigTransaction>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page = await transactionService.getMultisigTransactions(
+      safeAddress,
+      '-modified',
+      executed,
+      true,
+      executionDateGte,
+      executionDateLte,
+      to,
+      value,
+      nonce,
+      limit,
+      offset,
+    );
+
+    page.results.map((multiSigTransaction) =>
+      this.multisigTransactionValidator.validate(multiSigTransaction),
+    );
+
+    return page;
   }
 
   async getSafesByOwner(

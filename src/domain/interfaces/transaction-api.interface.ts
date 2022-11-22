@@ -100,6 +100,11 @@ export interface ITransactionApi {
     ordering?: string,
     executed?: boolean,
     trusted?: boolean,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    nonce?: string,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;

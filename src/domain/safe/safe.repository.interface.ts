@@ -56,5 +56,18 @@ export interface ISafeRepository {
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
 
+  getMultiSigTransactions(
+    chainId: string,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    nonce?: string,
+    executed?: boolean,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<MultisigTransaction>>;
+
   getSafesByOwner(chainId: string, ownerAddress: string): Promise<SafeList>;
 }
