@@ -24,7 +24,7 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
+    "build": "node generate-manifest && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" --no-error-on-unmatched-pattern",
     "format-check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" --no-error-on-unmatched-pattern",
     "start": "nest start",
