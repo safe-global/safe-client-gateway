@@ -5,6 +5,7 @@ import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
+  ExecutionInfo,
   MultisigTransaction,
   TransactionSummary,
 } from './entities/multisig-transaction.entity';
@@ -57,12 +58,15 @@ export class TransactionsService {
     multiSignTransaction: DomainMultisigTransaction,
     safeInfo: Safe,
   ): TransactionSummary {
+    const txStatus = this.getTxStatus(multiSignTransaction, safeInfo);
+
     return {
       id: `multisig_${multiSignTransaction.safe}_${multiSignTransaction.safeTxHash}`,
       timestamp:
         multiSignTransaction?.executionDate?.getTime() ??
         multiSignTransaction?.submissionDate?.getTime(),
-      txStatus: this.getTxStatus(multiSignTransaction, safeInfo),
+      txStatus,
+      executionInfo: this.getExecutionInfo(multiSignTransaction, safeInfo, txStatus),
     };
   }
 
@@ -100,5 +104,32 @@ export class TransactionsService {
     safeInfo: Safe,
   ): number {
     return multiSignTransaction.confirmationsRequired ?? safeInfo.threshold; // TODO:
+  }
+
+  private getExecutionInfo(
+    multiSignTransaction: DomainMultisigTransaction,
+    safeInfo: Safe,
+    txStatus: string,
+  ): ExecutionInfo {
+    return {
+      type: 'MULTISIG',
+      nonce: multiSignTransaction.nonce,
+      confirmationsRequired: this.getConfirmationsRequired(
+        multiSignTransaction,
+        safeInfo,
+      ),
+      confirmationsSubmitted: this.getConfirmationsCount(multiSignTransaction),
+      missingSigners: this.getMissingSigners(multiSignTransaction, safeInfo, txStatus),
+    };
+  }
+
+  private getMissingSigners(
+    multiSignTransaction: DomainMultisigTransaction,
+    safeInfo: Safe,
+    txStatus: string,
+  ): string[] {
+    console.log(multiSignTransaction, safeInfo, txStatus);
+    
+    return [];
   }
 }
