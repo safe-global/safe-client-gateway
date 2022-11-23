@@ -66,7 +66,11 @@ export class TransactionsService {
         multiSignTransaction?.executionDate?.getTime() ??
         multiSignTransaction?.submissionDate?.getTime(),
       txStatus,
-      executionInfo: this.getExecutionInfo(multiSignTransaction, safeInfo, txStatus),
+      executionInfo: this.getExecutionInfo(
+        multiSignTransaction,
+        safeInfo,
+        txStatus,
+      ),
     };
   }
 
@@ -111,7 +115,7 @@ export class TransactionsService {
     safeInfo: Safe,
     txStatus: string,
   ): ExecutionInfo {
-    return {
+    const executionInfo = {
       type: 'MULTISIG',
       nonce: multiSignTransaction.nonce,
       confirmationsRequired: this.getConfirmationsRequired(
@@ -119,8 +123,20 @@ export class TransactionsService {
         safeInfo,
       ),
       confirmationsSubmitted: this.getConfirmationsCount(multiSignTransaction),
-      missingSigners: this.getMissingSigners(multiSignTransaction, safeInfo, txStatus),
     };
+
+    if (txStatus === 'AWAITING_CONFIRMATIONS') {
+      return {
+        ...executionInfo,
+        missingSigners: this.getMissingSigners(
+          multiSignTransaction,
+          safeInfo,
+          txStatus,
+        ),
+      };
+    }
+
+    return executionInfo;
   }
 
   private getMissingSigners(
@@ -129,7 +145,11 @@ export class TransactionsService {
     txStatus: string,
   ): string[] {
     console.log(multiSignTransaction, safeInfo, txStatus);
-    
-    return [];
+    const confirmedOwners =
+      multiSignTransaction.confirmations?.map(
+        (confirmation) => confirmation.owner,
+      ) ?? [];
+
+    return safeInfo.owners.filter((owner) => !confirmedOwners.includes(owner));
   }
 }
