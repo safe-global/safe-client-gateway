@@ -16,7 +16,6 @@ RUN yarn run build
 #
 FROM node:16-alpine as production
 USER node
-COPY --chown=node:node --from=base /app/manifest.json ./manifest.json
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 CMD [ "node", "dist/main.js" ]
