@@ -1,4 +1,9 @@
 export default () => ({
+  about: {
+    name: 'safe-client-gateway',
+    version: process.env.npm_package_version || '',
+    buildNumber: process.env.GITHUB_RUN_NUMBER || '',
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
