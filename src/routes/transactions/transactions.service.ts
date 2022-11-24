@@ -5,9 +5,11 @@ import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
+  CustomTxInfo,
   ExecutionInfo,
   MultisigTransaction,
   TransactionSummary,
+  TxInfo,
 } from './entities/multisig-transaction.entity';
 
 @Injectable()
@@ -59,6 +61,7 @@ export class TransactionsService {
     safeInfo: Safe,
   ): TransactionSummary {
     const txStatus = this.getTxStatus(multiSignTransaction, safeInfo);
+    const txInfo = this.getTxInfo(multiSignTransaction);
 
     return {
       id: `multisig_${multiSignTransaction.safe}_${multiSignTransaction.safeTxHash}`,
@@ -66,6 +69,7 @@ export class TransactionsService {
         multiSignTransaction?.executionDate?.getTime() ??
         multiSignTransaction?.submissionDate?.getTime(),
       txStatus,
+      txInfo,
       executionInfo: this.getExecutionInfo(
         multiSignTransaction,
         safeInfo,
@@ -100,14 +104,14 @@ export class TransactionsService {
   private getConfirmationsCount(
     multiSignTransaction: DomainMultisigTransaction,
   ): number {
-    return multiSignTransaction.confirmations?.length ?? 0; // TODO:
+    return multiSignTransaction.confirmations?.length ?? 0;
   }
 
   private getConfirmationsRequired(
     multiSignTransaction: DomainMultisigTransaction,
     safeInfo: Safe,
   ): number {
-    return multiSignTransaction.confirmationsRequired ?? safeInfo.threshold; // TODO:
+    return multiSignTransaction.confirmationsRequired ?? safeInfo.threshold;
   }
 
   private getExecutionInfo(
@@ -151,5 +155,28 @@ export class TransactionsService {
       ) ?? [];
 
     return safeInfo.owners.filter((owner) => !confirmedOwners.includes(owner));
+  }
+
+  private getTxInfo(multiSignTransaction: DomainMultisigTransaction): TxInfo {
+    const value = Number(multiSignTransaction?.value) || 0;
+    const dataSize = multiSignTransaction.data
+      ? (Buffer.byteLength(multiSignTransaction.data) - 2) / 2
+      : 0;
+
+    return <TxInfo>{
+      ...this.getCustomTxInfo(value, dataSize),
+    };
+  }
+
+  private getCustomTxInfo(value: number, dataSize: number): CustomTxInfo {
+    return {
+      type: 'Custom', // TODO:
+      to: {},
+      dataSize: dataSize.toString(),
+      value: value.toString(),
+      methodName: 'todo',
+      actionCount: 1, // TODO:
+      isCancellation: false, // TODO:
+    };
   }
 }
