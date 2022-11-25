@@ -29,7 +29,7 @@ export enum TransferDirection {
   Unknown,
 }
 
-export class Erc20TransferInfo {
+export interface Erc20TransferInfo {
   tokenAddress: string;
   token_name?: string;
   token_symbol?: string;
@@ -38,7 +38,7 @@ export class Erc20TransferInfo {
   value: string;
 }
 
-export class Erc721TransferInfo {
+export interface Erc721TransferInfo {
   tokenAddress: string;
   tokenId: string;
   token_name?: string;
@@ -46,78 +46,84 @@ export class Erc721TransferInfo {
   logo_uri?: string;
 }
 
-export class NativeCoinTransferInfo {
+export interface NativeCoinTransferInfo {
   value: string;
 }
 
-export class SetFallbackHandler {
+export interface SetFallbackHandler {
+  type: string;
   handler: AddressInfo;
 }
 
-export class AddOwner {
+export interface AddOwner {
+  type: string;
   owner: AddressInfo;
   threshold: number;
 }
 
-export class RemoveOwner {
+export interface RemoveOwner {
+  type: string;
   owner: AddressInfo;
   threshold: number;
 }
 
-export class SwapOwner {
+export interface SwapOwner {
+  type: string;
   oldOwner: AddressInfo;
   newOwner: AddressInfo;
 }
 
-export class ChangeThreshold {
+export interface ChangeThreshold {
+  type: string;
   threshold: number;
 }
 
-export class ChangeImplementation {
+export interface ChangeImplementation {
+  type: string;
   implementation: AddressInfo;
 }
 
-export class EnableModule {
+export interface EnableModule {
+  type: string;
   module: AddressInfo;
 }
 
-export class DisableModule {
+export interface DisableModule {
+  type: string;
   module: AddressInfo;
 }
 
-export class SetGuard {
+export interface SetGuard {
+  type: string;
   guard: AddressInfo;
 }
 
-export enum SettingsInfo {
-  SetFallbackHandler,
-  AddOwner,
-  RemoveOwner,
-  SwapOwner,
-  ChangeThreshold,
-  ChangeImplementation,
-  EnableModule,
-  DisableModule,
-  SetGuard,
-  DeleteGuard,
+export interface DeleteGuard {
+  type: string;
 }
 
-export enum TransferInfo {
-  Erc20TransferInfo,
-  Erc721TransferInfo,
-  NativeCoinTransferInfo,
-}
+export type SettingsInfo =
+  | SetFallbackHandler
+  | AddOwner
+  | RemoveOwner
+  | SwapOwner
+  | ChangeThreshold
+  | ChangeImplementation
+  | EnableModule
+  | DisableModule
+  | SetGuard
+  | DeleteGuard;
 
 export class SettingsChangeTransactionInfo extends TransactionInfo {
   dataDecoded: DataDecoded;
-  settingsInfo: SettingsInfo;
+  settingsInfo: SettingsInfo | undefined;
 }
 
-export class TransferTransactionInfo extends TransactionInfo {
+export interface TransferTransactionInfo extends TransactionInfo {
   sender: string;
   recipient: string;
   direction: TransferDirection;
-  transferInfo: TransferInfo;
+  transferInfo: Erc20TransferInfo | Erc721TransferInfo | NativeCoinTransferInfo;
 }
 
 export class TransactionSummary {
