@@ -9,7 +9,7 @@ import {
   ExecutionInfo,
   MultisigTransaction,
   TransactionSummary,
-  TxInfo,
+  TransactionInfo,
 } from './entities/multisig-transaction.entity';
 
 @Injectable()
@@ -157,13 +157,15 @@ export class TransactionsService {
     return safeInfo.owners.filter((owner) => !confirmedOwners.includes(owner));
   }
 
-  private getTxInfo(multiSignTransaction: DomainMultisigTransaction): TxInfo {
+  private getTxInfo(
+    multiSignTransaction: DomainMultisigTransaction,
+  ): TransactionInfo {
     const value = Number(multiSignTransaction?.value) || 0;
     const dataSize = multiSignTransaction.data
       ? (Buffer.byteLength(multiSignTransaction.data) - 2) / 2
       : 0;
 
-    return <TxInfo>{
+    return <TransactionInfo>{
       ...this.getCustomTxInfo(value, dataSize),
     };
   }
