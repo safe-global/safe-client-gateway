@@ -61,7 +61,7 @@
         "--inspect-brk",
         "${workspaceRoot}/node_modules/.bin/jest",
         "--runInBand",
-        "--config=test/jest-ci.json",
+        "--config=test/jest-e2e.json",
         "false",
         "${relativeFile}"
       ],

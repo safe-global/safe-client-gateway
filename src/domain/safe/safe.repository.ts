@@ -168,7 +168,7 @@ export class SafeRepository implements ISafeRepository {
   ): Promise<SafeList> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const safeList = transactionService.getSafesByOwner(ownerAddress);
+    const safeList = await transactionService.getSafesByOwner(ownerAddress);
 
     return this.safeListValidator.validate(safeList);
   }
