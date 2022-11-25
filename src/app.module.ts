@@ -20,10 +20,12 @@ import { DelegatesModule } from './routes/delegates/delegates.module';
 import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
 import { HealthModule } from './routes/health/health.module';
 import { OwnersModule } from './routes/owners/owners.module';
+import { AboutModule } from './routes/about/about.module';
 
 @Module({
   imports: [
     // features
+    AboutModule,
     BalancesModule,
     CacheHooksModule,
     ChainsModule,
