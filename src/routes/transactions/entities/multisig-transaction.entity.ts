@@ -19,7 +19,7 @@ export class CustomTxInfo extends TransactionInfo {
   dataSize: string;
   value: string;
   methodName: string;
-  actionCount: number;
+  actionCount?: number;
   isCancellation: boolean;
 }
 

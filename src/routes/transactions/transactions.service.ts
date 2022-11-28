@@ -47,6 +47,8 @@ export class TransactionsService {
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
+  private readonly NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
   async getMultiSigTransactions(
     chainId: string,
     safeAddress: string,
@@ -251,9 +253,19 @@ export class TransactionsService {
       dataSize: dataSize.toString(),
       value: value.toString(),
       methodName: multiSignTransaction?.dataDecoded?.method || null,
-      actionCount: 1, // TODO:
-      isCancellation: this.isCancellation(multiSignTransaction),
+      actionCount: this.getActionCount(multiSignTransaction),
+      isCancellation: this.isCancellation(multiSignTransaction, dataSize),
     };
+  }
+
+  private getActionCount(
+    multiSignTransaction: DomainMultisigTransaction,
+  ): number | undefined {
+    const { dataDecoded } = multiSignTransaction;
+    if (multiSignTransaction?.dataDecoded?.method === 'multiSend') {
+      const param = dataDecoded.parameters?.find((p) => p.name === 'transactions');
+      return param?.valueDecoded?.length;
+    }
   }
 
   private getToEtherTransfer(
@@ -348,7 +360,7 @@ export class TransactionsService {
         };
       case SET_GUARD:
         const guardValue = <string>Object.values(dataDecoded)[0];
-        if (guardValue !== '0x0000000000000000000000000000000000000000') {
+        if (guardValue !== this.NULL_ADDRESS) {
           return <SetGuard>{
             type: 'SET_GUARD',
             guard: await this.addressInfoHelper.getOrDefault(
@@ -365,7 +377,30 @@ export class TransactionsService {
 
   private isCancellation(
     multiSignTransaction: DomainMultisigTransaction,
+    dataSize: number,
   ): boolean {
-    return !!multiSignTransaction; // TODO:
+    const {
+      to,
+      safe,
+      value,
+      baseGas,
+      gasPrice,
+      gasToken,
+      operation,
+      refundReceiver,
+      safeTxGas,
+    } = multiSignTransaction;
+
+    return (
+      to === safe &&
+      dataSize === 0 &&
+      (!value || Number(value) === 0) &&
+      operation === 0 &&
+      (!baseGas || Number(baseGas) === 0) &&
+      (!gasPrice || Number(gasPrice) === 0) &&
+      (!gasToken || gasToken === this.NULL_ADDRESS) &&
+      (!refundReceiver || refundReceiver === this.NULL_ADDRESS) &&
+      (!safeTxGas || safeTxGas === 60)
+    );
   }
 }
