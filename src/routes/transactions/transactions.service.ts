@@ -263,7 +263,9 @@ export class TransactionsService {
   ): number | undefined {
     const { dataDecoded } = multiSignTransaction;
     if (multiSignTransaction?.dataDecoded?.method === 'multiSend') {
-      const param = dataDecoded.parameters?.find((p) => p.name === 'transactions');
+      const param = dataDecoded.parameters?.find(
+        (p) => p.name === 'transactions',
+      );
       return param?.valueDecoded?.length;
     }
   }
