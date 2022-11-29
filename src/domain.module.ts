@@ -42,6 +42,9 @@ import { SafeAppsRepository } from './domain/safe-apps/safe-apps.repository';
 import { SafeAppsValidator } from './domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from './domain/safe/transaction-type.validator';
 import { ModuleTransactionValidator } from './domain/safe/module-transaction.validator';
+import { ITokenRepository } from './domain/tokens/token.repository.interface';
+import { TokenRepository } from './domain/tokens/token.repository';
+import { TokenValidator } from './domain/tokens/token.validator';
 
 @Global()
 @Module({
@@ -57,6 +60,7 @@ import { ModuleTransactionValidator } from './domain/safe/module-transaction.val
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
+    { provide: ITokenRepository, useClass: TokenRepository },
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
@@ -73,6 +77,7 @@ import { ModuleTransactionValidator } from './domain/safe/module-transaction.val
     SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
+    TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
     ValidationErrorFactory,
@@ -89,6 +94,7 @@ import { ModuleTransactionValidator } from './domain/safe/module-transaction.val
     IExchangeRepository,
     ISafeAppsRepository,
     ISafeRepository,
+    ITokenRepository,
   ],
 })
 export class DomainModule {}
