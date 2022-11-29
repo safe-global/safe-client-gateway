@@ -3,6 +3,7 @@ import { MultisigTransaction } from '../../../domain/safe/entities/multisig-tran
 import { Safe } from '../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../common/entities/address-info.entity';
+import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
 import { CustomTransactionInfo } from '../entities/custom-transaction.entity';
 import {
   ExecutionInfo,
@@ -24,9 +25,9 @@ import {
   SwapOwner,
 } from '../entities/settings-change-transaction.entity';
 import {
-  TransferTransaction,
-  TransferDirection,
   NativeCoinTransferInfo,
+  TransferDirection,
+  TransferTransaction,
 } from '../entities/transfer-transaction.entity';
 
 @Injectable()
@@ -53,6 +54,20 @@ export class MultisigTransactionMapper {
     this.ENABLE_MODULE,
     this.DISABLE_MODULE,
     this.SET_GUARD,
+  ];
+
+  private readonly TRANSFER_METHOD = 'transfer';
+  private readonly TRANSFER_FROM_METHOD = 'transferFrom';
+  private readonly TRANSFER_TO_METHOD = 'transferTo';
+  private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
+  private readonly ERC20_TRANSFER_METHODS = [
+    this.TRANSFER_METHOD,
+    this.TRANSFER_FROM_METHOD,
+  ];
+  private readonly ERC721_TRANSFER_METHODS = [
+    this.TRANSFER_METHOD,
+    this.TRANSFER_FROM_METHOD,
+    this.SAFE_TRANSFER_FROM_METHOD,
   ];
 
   constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
@@ -239,6 +254,53 @@ export class MultisigTransactionMapper {
     return executionInfo;
   }
 
+  private isErc20Transfer(transaction: MultisigTransaction): boolean {
+    const { dataDecoded } = transaction;
+    return this.ERC20_TRANSFER_METHODS.some(
+      (method) => method === dataDecoded?.method,
+    );
+  }
+
+  private isErc721Transfer(transaction: MultisigTransaction): boolean {
+    const { dataDecoded } = transaction;
+    return this.ERC721_TRANSFER_METHODS.some(
+      (method) => method === dataDecoded?.method,
+    );
+  }
+
+  private getFromParam(dataDecoded: DataDecoded): string {
+    switch (dataDecoded.method) {
+      case this.TRANSFER_FROM_METHOD:
+      case this.TRANSFER_TO_METHOD:
+        return Object.values(dataDecoded)[0].toString();
+      case this.TRANSFER_METHOD:
+      default:
+        return '';
+    }
+  }
+
+  private getToParam(dataDecoded: DataDecoded): string {
+    switch (dataDecoded.method) {
+      case this.TRANSFER_METHOD:
+        return Object.values(dataDecoded)[0].toString();
+      case this.TRANSFER_FROM_METHOD:
+      case this.TRANSFER_TO_METHOD:
+        return Object.values(dataDecoded)[1].toString();
+      default:
+        return '';
+    }
+  }
+
+  private checkSenderOrReceiver(transaction: MultisigTransaction): boolean {
+    const { dataDecoded } = transaction;
+    if (!dataDecoded) return false;
+    return (
+      this.TRANSFER_METHOD == dataDecoded.method ||
+      this.getFromParam(dataDecoded) === transaction.safe ||
+      this.getToParam(dataDecoded) === transaction.safe
+    );
+  }
+
   private async mapTransactionInfo(
     chainId: string,
     multiSignTransaction: MultisigTransaction,
@@ -249,17 +311,15 @@ export class MultisigTransactionMapper {
       ? (Buffer.byteLength(multiSignTransaction.data) - 2) / 2
       : 0;
 
-    let transactionInfo: TransactionInfo;
-
     if ((value > 0 && dataSize > 0) || multiSignTransaction.operation !== 0) {
-      transactionInfo = await this.mapCustomTransaction(
+      return await this.mapCustomTransaction(
         multiSignTransaction,
         value,
         dataSize,
         chainId,
       );
     } else if (value > 0 && dataSize === 0) {
-      transactionInfo = this.getToEtherTransfer(multiSignTransaction, safeInfo);
+      return this.getToEtherTransfer(multiSignTransaction, safeInfo);
     } else if (
       value === 0 &&
       dataSize > 0 &&
@@ -268,21 +328,25 @@ export class MultisigTransactionMapper {
         multiSignTransaction.dataDecoded?.method,
       )
     ) {
-      transactionInfo = await this.getSettingsChangeTransaction(
+      return this.getSettingsChangeTransaction(
         chainId,
         multiSignTransaction,
         safeInfo,
       );
-    } else {
-      transactionInfo = await this.mapCustomTransaction(
-        multiSignTransaction,
-        value,
-        dataSize,
-        chainId,
-      ); // TODO: default case
+    } else if (
+      (this.isErc20Transfer(multiSignTransaction) ||
+        this.isErc721Transfer(multiSignTransaction)) &&
+      this.checkSenderOrReceiver(multiSignTransaction)
+    ) {
+      return this.mapErc20Transfer(); // TODO: map to erc20 or erc721 based on Token
     }
 
-    return transactionInfo;
+    return this.mapCustomTransaction(
+      multiSignTransaction,
+      value,
+      dataSize,
+      chainId,
+    ); // TODO: default case
   }
 
   private filterAddressInfo(
@@ -318,6 +382,14 @@ export class MultisigTransactionMapper {
       actionCount: this.getActionCount(multiSignTransaction),
       isCancellation: this.isCancellation(multiSignTransaction, dataSize),
     };
+  }
+
+  private mapErc20Transfer(): TransactionInfo {
+    return <TransactionInfo>{ type: 'TODO' };
+  }
+
+  private mapErc721Transfer(): TransactionInfo {
+    return <TransactionInfo>{ type: 'TODO' };
   }
 
   private getActionCount(
