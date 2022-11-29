@@ -8,9 +8,9 @@ export enum TransferDirection {
 
 export interface Erc20TransferInfo {
   tokenAddress: string;
-  token_name?: string;
-  token_symbol?: string;
-  logo_uri?: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  logoUri?: string;
   decimals?: number;
   value: string;
 }
@@ -18,9 +18,9 @@ export interface Erc20TransferInfo {
 export interface Erc721TransferInfo {
   tokenAddress: string;
   tokenId: string;
-  token_name?: string;
-  token_symbol?: string;
-  logo_uri?: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  logoUri?: string;
 }
 
 export interface NativeCoinTransferInfo {

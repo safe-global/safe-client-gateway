@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../domain/safe/entities/safe.entity';
+import { Token } from '../../../domain/tokens/entities/token.entity';
+import { TokenRepository } from '../../../domain/tokens/token.repository';
+import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
+import { TokenType } from '../../balances/entities/token-type.entity';
 import { AddressInfoHelper } from '../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../common/entities/address-info.entity';
 import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
@@ -25,6 +29,7 @@ import {
   SwapOwner,
 } from '../entities/settings-change-transaction.entity';
 import {
+  Erc20TransferInfo,
   NativeCoinTransferInfo,
   TransferDirection,
   TransferTransaction,
@@ -70,7 +75,10 @@ export class MultisigTransactionMapper {
     this.SAFE_TRANSFER_FROM_METHOD,
   ];
 
-  constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
+  constructor(
+    private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+  ) {}
 
   async mapToTransactionSummary(
     chainId: string,
@@ -268,26 +276,34 @@ export class MultisigTransactionMapper {
     );
   }
 
-  private getFromParam(dataDecoded: DataDecoded): string {
+  private getFromParam(dataDecoded: DataDecoded, fallback: string): string {
     switch (dataDecoded.method) {
       case this.TRANSFER_FROM_METHOD:
       case this.TRANSFER_TO_METHOD:
         return Object.values(dataDecoded)[0].toString();
       case this.TRANSFER_METHOD:
       default:
-        return '';
+        return fallback;
     }
   }
 
-  private getToParam(dataDecoded: DataDecoded): string {
+  private getToParam(dataDecoded: DataDecoded, fallback: string): string {
+    if (!dataDecoded.parameters) {
+      return fallback;
+    }
+
     switch (dataDecoded.method) {
       case this.TRANSFER_METHOD:
-        return Object.values(dataDecoded)[0].toString();
+        return typeof dataDecoded.parameters[0]?.value === 'string'
+          ? dataDecoded.parameters[0]?.value
+          : fallback;
       case this.TRANSFER_FROM_METHOD:
       case this.TRANSFER_TO_METHOD:
-        return Object.values(dataDecoded)[1].toString();
+        return typeof dataDecoded.parameters[1]?.value === 'string'
+          ? dataDecoded.parameters[1]?.value
+          : fallback;
       default:
-        return '';
+        return fallback;
     }
   }
 
@@ -296,57 +312,57 @@ export class MultisigTransactionMapper {
     if (!dataDecoded) return false;
     return (
       this.TRANSFER_METHOD == dataDecoded.method ||
-      this.getFromParam(dataDecoded) === transaction.safe ||
-      this.getToParam(dataDecoded) === transaction.safe
+      this.getFromParam(dataDecoded, '') === transaction.safe ||
+      this.getToParam(dataDecoded, '') === transaction.safe
     );
   }
 
   private async mapTransactionInfo(
     chainId: string,
-    multiSignTransaction: MultisigTransaction,
+    transaction: MultisigTransaction,
     safeInfo: Safe,
   ): Promise<TransactionInfo> {
-    const value = Number(multiSignTransaction?.value) || 0;
-    const dataSize = multiSignTransaction.data
-      ? (Buffer.byteLength(multiSignTransaction.data) - 2) / 2
+    const value = Number(transaction?.value) || 0;
+    const dataSize = transaction.data
+      ? (Buffer.byteLength(transaction.data) - 2) / 2
       : 0;
 
-    if ((value > 0 && dataSize > 0) || multiSignTransaction.operation !== 0) {
+    if ((value > 0 && dataSize > 0) || transaction.operation !== 0) {
       return await this.mapCustomTransaction(
-        multiSignTransaction,
+        transaction,
         value,
         dataSize,
         chainId,
       );
     } else if (value > 0 && dataSize === 0) {
-      return this.getToEtherTransfer(multiSignTransaction, safeInfo);
+      return this.getToEtherTransfer(transaction, safeInfo);
     } else if (
       value === 0 &&
       dataSize > 0 &&
-      multiSignTransaction.safe === multiSignTransaction.to &&
-      this.SETTINGS_CHANGE_METHODS.includes(
-        multiSignTransaction.dataDecoded?.method,
-      )
+      transaction.safe === transaction.to &&
+      this.SETTINGS_CHANGE_METHODS.includes(transaction.dataDecoded?.method)
     ) {
-      return this.getSettingsChangeTransaction(
-        chainId,
-        multiSignTransaction,
-        safeInfo,
-      );
+      return this.getSettingsChangeTransaction(chainId, transaction, safeInfo);
     } else if (
-      (this.isErc20Transfer(multiSignTransaction) ||
-        this.isErc721Transfer(multiSignTransaction)) &&
-      this.checkSenderOrReceiver(multiSignTransaction)
+      (this.isErc20Transfer(transaction) ||
+        this.isErc721Transfer(transaction)) &&
+      this.checkSenderOrReceiver(transaction)
     ) {
-      return this.mapErc20Transfer(); // TODO: map to erc20 or erc721 based on Token
+      const token = await this.tokenRepository.getToken(
+        chainId,
+        transaction.to,
+      );
+
+      if (token.type === TokenType.Erc20) {
+        return this.mapErc20Transfer(token, chainId, transaction);
+      }
+
+      if (token.type === TokenType.Erc721) {
+        return this.mapErc20Transfer(token, chainId, transaction);
+      }
     }
 
-    return this.mapCustomTransaction(
-      multiSignTransaction,
-      value,
-      dataSize,
-      chainId,
-    ); // TODO: default case
+    return this.mapCustomTransaction(transaction, value, dataSize, chainId); // TODO: default case
   }
 
   private filterAddressInfo(
@@ -384,8 +400,43 @@ export class MultisigTransactionMapper {
     };
   }
 
-  private mapErc20Transfer(): TransactionInfo {
-    return <TransactionInfo>{ type: 'TODO' };
+  private async mapErc20Transfer(
+    token: Token,
+    chainId: string,
+    transaction: MultisigTransaction,
+  ): Promise<TransferTransaction> {
+    const { dataDecoded } = transaction;
+    const sender = this.getFromParam(dataDecoded, '');
+    const recipient = this.getToParam(dataDecoded, this.NULL_ADDRESS);
+    const direction = this.mapTransferDirection(
+      transaction.safe,
+      sender,
+      recipient,
+    );
+
+    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      sender,
+    );
+    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      recipient,
+    );
+
+    return <TransferTransaction>{
+      type: 'Transfer',
+      sender: senderAddressInfo?.name || '',
+      recipient: recipientAddressInfo?.name || '',
+      direction,
+      transferInfo: <Erc20TransferInfo>{
+        tokenAddress: token.address,
+        tokenName: token.name,
+        tokenSymbol: token.symbol,
+        logoUri: token.logoUri,
+        decimals: token.decimals,
+        value: this.getValueParam(dataDecoded, '0'),
+      },
+    };
   }
 
   private mapErc721Transfer(): TransactionInfo {
@@ -462,5 +513,39 @@ export class MultisigTransactionMapper {
       (!refundReceiver || refundReceiver === this.NULL_ADDRESS) &&
       (!safeTxGas || safeTxGas === 60)
     );
+  }
+
+  private mapTransferDirection(
+    safe: string,
+    from: string,
+    to: string,
+  ): TransferDirection {
+    if (safe === from) {
+      return TransferDirection.Outgoing;
+    }
+    if (safe === to) {
+      return TransferDirection.Incoming;
+    }
+    return TransferDirection.Unknown;
+  }
+
+  private getValueParam(dataDecoded: DataDecoded, fallback: string): string {
+    if (!dataDecoded.parameters) {
+      return fallback;
+    }
+
+    switch (dataDecoded.method) {
+      case this.TRANSFER_METHOD:
+        return typeof dataDecoded.parameters[0]?.value === 'string'
+          ? dataDecoded.parameters[0]?.value
+          : fallback;
+      case this.TRANSFER_FROM_METHOD:
+      case this.SAFE_TRANSFER_FROM_METHOD:
+        return typeof dataDecoded.parameters[1]?.value === 'string'
+          ? dataDecoded.parameters[1]?.value
+          : fallback;
+      default:
+        return fallback;
+    }
   }
 }
