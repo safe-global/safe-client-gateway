@@ -1,0 +1,39 @@
+{
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x0c2A08D294026Cd363441240C2ed5D09C93A044F_0x0f9f1b728578e2bc28449f1c1457e7ee42c5824dc6bb321079181c2bf7ea8a6d",
+        "timestamp": 1655853152000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x0c2A08D294026Cd363441240C2ed5D09C93A044F"
+          },
+          "recipient": {
+            "value": "0x3a55e304D9cF13E45Ead6BA3DabCcadD3a419356"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC721",
+            "tokenAddress": "0x7Af3460d552f832fD7E2DE973c628ACeA59B0712",
+            "tokenId": "495",
+            "tokenName": "ApeX Predator NFT",
+            "tokenSymbol": "APEX-PRD",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712.png"
+          }
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 9,
+          "confirmationsRequired": 3,
+          "confirmationsSubmitted": 3
+        }
+      },
+      "conflictType": "None"
+    }
+  ]
+}

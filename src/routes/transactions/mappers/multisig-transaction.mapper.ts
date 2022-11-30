@@ -364,7 +364,7 @@ export class MultisigTransactionMapper {
       }
 
       if (token.type === TokenType.Erc721) {
-        return this.mapErc20Transfer(token, chainId, transaction);
+        return this.mapErc721Transfer();
       }
 
       throw new Error(`Unknown token type: ${token.type}`);
@@ -373,13 +373,7 @@ export class MultisigTransactionMapper {
     return this.mapCustomTransaction(transaction, value, dataSize, chainId); // TODO: default case
   }
 
-  private filterAddressInfo(
-    addressInfo: AddressInfo | null,
-  ): AddressInfo | null {
-    if (!addressInfo) {
-      return addressInfo;
-    }
-
+  private filterAddressInfo(addressInfo: AddressInfo): AddressInfo {
     return {
       ...{ value: addressInfo.value },
       ...(addressInfo.name !== '' && { name: addressInfo.name }),
@@ -448,54 +442,48 @@ export class MultisigTransactionMapper {
   }
 
   private mapErc721Transfer(): TransactionInfo {
-    return <TransactionInfo>{ type: 'TODO' };
+    return <TransactionInfo>{ type: 'TODO' }; // TODO:
   }
 
-  private getActionCount(
-    multiSignTransaction: MultisigTransaction,
-  ): number | undefined {
-    const { dataDecoded } = multiSignTransaction;
-    if (multiSignTransaction?.dataDecoded?.method === 'multiSend') {
-      const param = dataDecoded.parameters?.find(
-        (p) => p.name === 'transactions',
+  private getActionCount(transaction: MultisigTransaction): number | undefined {
+    const { dataDecoded } = transaction;
+    if (transaction?.dataDecoded?.method === 'multiSend') {
+      const parameter = dataDecoded.parameters?.find(
+        (parameter) => parameter.name === 'transactions',
       );
-      return param?.valueDecoded?.length;
+      return parameter?.valueDecoded?.length;
     }
   }
 
   private getToEtherTransfer(
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
   ): TransferTransaction {
     return {
       type: 'Transfer',
-      sender: safeInfo.address,
-      recipient: multiSignTransaction.to,
+      sender: safe.address,
+      recipient: transaction.to,
       direction: TransferDirection.Outgoing,
       transferInfo: <NativeCoinTransferInfo>{
-        value: multiSignTransaction.value,
+        value: transaction.value,
       },
     };
   }
 
   private async getSettingsChangeTransaction(
     chainId: string,
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
   ): Promise<SettingsChangeTransactionInfo> {
     return {
       type: 'SettingsChange',
-      dataDecoded: multiSignTransaction.dataDecoded,
-      settingsInfo: await this.mapSettingsInfo(
-        chainId,
-        multiSignTransaction,
-        safeInfo,
-      ),
+      dataDecoded: transaction.dataDecoded,
+      settingsInfo: await this.mapSettingsInfo(chainId, transaction, safe),
     };
   }
 
   private isCancellation(
-    multiSignTransaction: MultisigTransaction,
+    transaction: MultisigTransaction,
     dataSize: number,
   ): boolean {
     const {
@@ -508,7 +496,7 @@ export class MultisigTransactionMapper {
       operation,
       refundReceiver,
       safeTxGas,
-    } = multiSignTransaction;
+    } = transaction;
 
     return (
       to === safe &&

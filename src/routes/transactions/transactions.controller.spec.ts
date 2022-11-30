@@ -135,6 +135,58 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
 
+    it('Should get a ERC721 transfer mapped to the expected format', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainFactory(chainId);
+      const transactionApiSafeResponse = safeFactory(safeAddress);
+      const transactionApiContractResponse = contractFactory();
+      const transactionApiMultisigTransactionsResponse = JSON.parse(
+        readFileSync(
+          'src/routes/transactions/__tests__/resources/erc721-transfer-source-data.json',
+          'utf-8',
+        ),
+      );
+      const expected = JSON.parse(
+        readFileSync(
+          'src/routes/transactions/__tests__/resources/erc721-transfer-expected-response.json',
+          'utf-8',
+        ),
+      );
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getContractPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: transactionApiMultisigTransactionsResponse,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: transactionApiSafeResponse,
+          });
+        }
+        if (url.includes(getContractPattern)) {
+          return Promise.resolve({
+            data: transactionApiContractResponse,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body).toEqual(expected);
+        });
+    });
+
     it('Success', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
