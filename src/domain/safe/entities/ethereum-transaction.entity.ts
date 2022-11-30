@@ -1,14 +1,10 @@
 import { Transfer } from './transfer.entity';
 
-export type EthereumTransaction = {
-  executionDate: string; // TODO date
-  data?: string;
-  txHash: string;
+export interface EthereumTransaction {
   blockNumber: number;
-  transfers?: Transfer[];
+  data?: string;
+  executionDate: Date;
   from: string;
-};
-
-export type EthereumTransactionType = EthereumTransaction & {
-  txType: 'ETHEREUM_TRANSACTION';
-};
+  transfers?: Transfer[];
+  txHash: string;
+}

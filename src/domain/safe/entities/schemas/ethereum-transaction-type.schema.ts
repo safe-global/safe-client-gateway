@@ -5,7 +5,7 @@ export const ethereumTransactionTypeSchema: Schema = {
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'ETHEREUM_TRANSACTION' },
-    executionDate: { type: 'string' },
+    executionDate: { type: 'string', isDate: true },
     data: { type: 'string', nullable: true },
     txHash: { type: 'string' },
     blockNumber: { type: 'number' },
