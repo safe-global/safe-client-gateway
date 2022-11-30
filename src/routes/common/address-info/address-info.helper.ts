@@ -47,8 +47,10 @@ export class AddressInfoHelper {
    * @param chainId - the chain id where the contract exists
    * @param address - the address of the contract to which we want to retrieve its metadata
    */
-  getOrDefault(chainId: string, address: string): Promise<AddressInfo | null> {
-    return this.get(chainId, address).catch(() => new AddressInfo(address));
+  getOrDefault(chainId: string, address: string): Promise<AddressInfo> {
+    return this.get(chainId, address)
+      .then((addressInfo) => addressInfo ?? new AddressInfo(address))
+      .catch(() => new AddressInfo(address));
   }
 
   /**
