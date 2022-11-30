@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
+import { Operation } from '../../../domain/safe/entities/operation.entity';
 import { Safe } from '../../../domain/safe/entities/safe.entity';
 import { Token } from '../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../domain/tokens/token.repository';
@@ -82,37 +83,29 @@ export class MultisigTransactionMapper {
 
   async mapToTransactionSummary(
     chainId: string,
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
   ): Promise<TransactionSummary> {
-    const txStatus = this.mapTxStatus(multiSignTransaction, safeInfo);
-    const txInfo = await this.mapTransactionInfo(
-      chainId,
-      multiSignTransaction,
-      safeInfo,
-    );
+    const txStatus = this.mapTxStatus(transaction, safe);
+    const txInfo = await this.mapTransactionInfo(chainId, transaction, safe);
 
     return {
-      id: `multisig_${multiSignTransaction.safe}_${multiSignTransaction.safeTxHash}`,
+      id: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
       timestamp:
-        multiSignTransaction?.executionDate?.getTime() ??
-        multiSignTransaction?.submissionDate?.getTime(),
+        transaction?.executionDate?.getTime() ??
+        transaction?.submissionDate?.getTime(),
       txStatus,
       txInfo,
-      executionInfo: this.mapExecutionInfo(
-        multiSignTransaction,
-        safeInfo,
-        txStatus,
-      ),
+      executionInfo: this.mapExecutionInfo(transaction, safe, txStatus),
     };
   }
 
   private async mapSettingsInfo(
     chainId: string,
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
   ): Promise<SettingsInfo | undefined> {
-    const { dataDecoded } = multiSignTransaction;
+    const { dataDecoded } = transaction;
     switch (dataDecoded.method) {
       case this.SET_FALLBACK_HANDLER:
         return <SetFallbackHandler>{
@@ -142,7 +135,7 @@ export class MultisigTransactionMapper {
           type: 'CHANGE_MASTER_COPY',
           implementation: await this.addressInfoHelper.getOrDefault(
             chainId,
-            safeInfo.address,
+            safe.address,
           ),
         };
       case this.ENABLE_MODULE:
@@ -183,79 +176,62 @@ export class MultisigTransactionMapper {
     }
   }
 
-  private mapTxStatus(
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
-  ): string {
-    if (multiSignTransaction.isExecuted) {
-      if (multiSignTransaction.isSuccessful) {
-        return 'SUCCESS';
-      } else {
-        return 'FAILED';
-      }
+  private mapTxStatus(transaction: MultisigTransaction, safe: Safe): string {
+    if (transaction.isExecuted) {
+      return transaction.isSuccessful ? 'SUCCESS' : 'FAILED';
     }
-    if (safeInfo.nonce > multiSignTransaction.nonce) {
+    if (safe.nonce > transaction.nonce) {
       return 'CANCELLED';
     }
     if (
-      this.getConfirmationsCount(multiSignTransaction) <
-      this.getConfirmationsRequired(multiSignTransaction, safeInfo)
+      this.getConfirmationsCount(transaction) <
+      this.getConfirmationsRequired(transaction, safe)
     ) {
       return 'AWAITING_CONFIRMATIONS';
     }
     return 'AWAITING_EXECUTION';
   }
 
-  private getConfirmationsCount(
-    multiSignTransaction: MultisigTransaction,
-  ): number {
-    return multiSignTransaction.confirmations?.length ?? 0;
+  private getConfirmationsCount(transaction: MultisigTransaction): number {
+    return transaction.confirmations?.length || 0;
   }
 
   private getConfirmationsRequired(
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
   ): number {
-    return multiSignTransaction.confirmationsRequired ?? safeInfo.threshold;
+    return transaction.confirmationsRequired ?? safe.threshold;
   }
 
   private getMissingSigners(
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
     txStatus: string,
   ): string[] {
-    console.log(multiSignTransaction, safeInfo, txStatus);
+    console.log(transaction, safe, txStatus);
     const confirmedOwners =
-      multiSignTransaction.confirmations?.map(
-        (confirmation) => confirmation.owner,
-      ) ?? [];
+      transaction.confirmations?.map((confirmation) => confirmation.owner) ??
+      [];
 
-    return safeInfo.owners.filter((owner) => !confirmedOwners.includes(owner));
+    return safe.owners.filter((owner) => !confirmedOwners.includes(owner));
   }
 
   private mapExecutionInfo(
-    multiSignTransaction: MultisigTransaction,
-    safeInfo: Safe,
+    transaction: MultisigTransaction,
+    safe: Safe,
     txStatus: string,
   ): ExecutionInfo {
     const executionInfo = {
       type: 'MULTISIG',
-      nonce: multiSignTransaction.nonce,
-      confirmationsRequired: this.getConfirmationsRequired(
-        multiSignTransaction,
-        safeInfo,
-      ),
-      confirmationsSubmitted: this.getConfirmationsCount(multiSignTransaction),
+      nonce: transaction.nonce,
+      confirmationsRequired: this.getConfirmationsRequired(transaction, safe),
+      confirmationsSubmitted: this.getConfirmationsCount(transaction),
     };
 
     if (txStatus === 'AWAITING_CONFIRMATIONS') {
       return {
         ...executionInfo,
-        missingSigners: this.getMissingSigners(
-          multiSignTransaction,
-          safeInfo,
-          txStatus,
-        ),
+        missingSigners: this.getMissingSigners(transaction, safe, txStatus),
       };
     }
 
@@ -317,37 +293,67 @@ export class MultisigTransactionMapper {
     );
   }
 
+  private isCustomTransaction(
+    value: number,
+    dataSize: number,
+    operation: Operation,
+  ): boolean {
+    return (value > 0 && dataSize > 0) || operation !== 0;
+  }
+
+  private isEtherTransfer(value: number, dataSize: number): boolean {
+    return value > 0 && dataSize === 0;
+  }
+
+  private isSettingsChange(
+    transaction: MultisigTransaction,
+    value: number,
+    dataSize: number,
+  ): boolean {
+    return (
+      value === 0 &&
+      dataSize > 0 &&
+      transaction.safe === transaction.to &&
+      this.SETTINGS_CHANGE_METHODS.includes(transaction.dataDecoded?.method)
+    );
+  }
+
+  private isValidTokenTransfer(transaction: MultisigTransaction): boolean {
+    return (
+      (this.isErc20Transfer(transaction) ||
+        this.isErc721Transfer(transaction)) &&
+      this.checkSenderOrReceiver(transaction)
+    );
+  }
+
   private async mapTransactionInfo(
     chainId: string,
     transaction: MultisigTransaction,
-    safeInfo: Safe,
+    safe: Safe,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataSize = transaction.data
       ? (Buffer.byteLength(transaction.data) - 2) / 2
       : 0;
 
-    if ((value > 0 && dataSize > 0) || transaction.operation !== 0) {
+    if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.mapCustomTransaction(
         transaction,
         value,
         dataSize,
         chainId,
       );
-    } else if (value > 0 && dataSize === 0) {
-      return this.getToEtherTransfer(transaction, safeInfo);
-    } else if (
-      value === 0 &&
-      dataSize > 0 &&
-      transaction.safe === transaction.to &&
-      this.SETTINGS_CHANGE_METHODS.includes(transaction.dataDecoded?.method)
-    ) {
-      return this.getSettingsChangeTransaction(chainId, transaction, safeInfo);
-    } else if (
-      (this.isErc20Transfer(transaction) ||
-        this.isErc721Transfer(transaction)) &&
-      this.checkSenderOrReceiver(transaction)
-    ) {
+    }
+
+    if (this.isEtherTransfer(value, dataSize)) {
+      return this.getToEtherTransfer(transaction, safe);
+    }
+
+    if (this.isSettingsChange(transaction, value, dataSize)) {
+      return this.getSettingsChangeTransaction(chainId, transaction, safe);
+    }
+
+    if (this.isValidTokenTransfer(transaction)) {
       const token = await this.tokenRepository.getToken(
         chainId,
         transaction.to,
@@ -360,6 +366,8 @@ export class MultisigTransactionMapper {
       if (token.type === TokenType.Erc721) {
         return this.mapErc20Transfer(token, chainId, transaction);
       }
+
+      throw new Error(`Unknown token type: ${token.type}`);
     }
 
     return this.mapCustomTransaction(transaction, value, dataSize, chainId); // TODO: default case
