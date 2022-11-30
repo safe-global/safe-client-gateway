@@ -12,7 +12,7 @@ export class TransactionsService {
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
   ) {}
 
-  async getMultiSigTransactions(
+  async getMultisigTransactions(
     chainId: string,
     safeAddress: string,
     executionDateGte?: string,
@@ -25,7 +25,7 @@ export class TransactionsService {
     offset?: number,
   ): Promise<Page<MultisigTransaction>> {
     const multisigTransactions =
-      await this.safeRepository.getMultiSigTransactions(
+      await this.safeRepository.getMultisigTransactions(
         chainId,
         safeAddress,
         executionDateGte,

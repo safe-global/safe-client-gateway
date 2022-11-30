@@ -23,7 +23,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'executed', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'offset', required: false })
-  async getTransactions(
+  async getMultisigTransactions(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Query('executionDateGte') executionDateGte?: string,
@@ -35,7 +35,7 @@ export class TransactionsController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ): Promise<Page<MultisigTransaction>> {
-    return this.transactionsService.getMultiSigTransactions(
+    return this.transactionsService.getMultisigTransactions(
       chainId,
       safeAddress,
       executionDateGte,

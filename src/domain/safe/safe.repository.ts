@@ -167,7 +167,7 @@ export class SafeRepository implements ISafeRepository {
     return this.multisigTransactionValidator.validate(multiSigTransaction);
   }
 
-  async getMultiSigTransactions(
+  async getMultisigTransactions(
     chainId: string,
     safeAddress: string,
     executionDateGte?: string,
