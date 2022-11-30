@@ -1,21 +1,17 @@
 import { DataDecoded } from '../../data-decoder/entities/data-decoded.entity';
 import { Operation } from './operation.entity';
 
-export type ModuleTransaction = {
-  safe: string;
-  to: string;
-  value?: string;
+export interface ModuleTransaction {
+  blockNumber: number;
+  created: Date;
   data?: string;
   dataDecoded?: DataDecoded;
-  operation: Operation;
-  created: string;
-  executionDate: string; // TODO Date format
-  blockNumber: number;
+  executionDate: Date;
   isSuccessful: boolean;
-  transactionHash: string;
   module: string;
-};
-
-export type ModuleTransactionType = ModuleTransaction & {
-  txType: 'MODULE_TRANSACTION';
-};
+  operation: Operation;
+  safe: string;
+  to: string;
+  transactionHash: string;
+  value?: string;
+}

@@ -12,7 +12,7 @@ export const moduleTransactionTypeSchema: Schema = {
     dataDecoded: dataDecodedSchema,
     operation: { type: 'number', enum: [0, 1] },
     created: { type: 'string' },
-    executionDate: { type: 'string' },
+    executionDate: { type: 'string', isDate: true },
     blockNumber: { type: 'string' },
     isSuccessful: { type: 'boolean' },
     transactionHash: { type: 'string' },

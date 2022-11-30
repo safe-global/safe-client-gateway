@@ -15,7 +15,7 @@ import { Delegate } from '../../domain/delegate/entities/delegate.entity';
 import { INetworkService } from '../network/network.service.interface';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { TransactionType } from '../../domain/safe/entities/transaction-type.entity';
+import { Transaction } from '../../domain/safe/entities/transaction.entity';
 import { Token } from '../../domain/tokens/entities/token.entity';
 import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
 
@@ -334,7 +334,7 @@ export class TransactionApi implements ITransactionApi {
     queued?: boolean,
     limit?: number,
     offset?: number,
-  ): Promise<Page<TransactionType>> {
+  ): Promise<Page<Transaction>> {
     try {
       const cacheKey = `${this.chainId}_${safeAddress}_all_transactions`;
       const cacheKeyField = `${ordering}_${executed}_${queued}_${limit}_${offset}`;

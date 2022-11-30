@@ -8,7 +8,7 @@ import { Transfer } from './entities/transfer.entity';
 import { TransferValidator } from './transfer.validator';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionValidator } from './multisig-transaction.validator';
-import { TransactionType } from './entities/transaction-type.entity';
+import { Transaction } from './entities/transaction.entity';
 import { TransactionTypeValidator } from './transaction-type.validator';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
@@ -136,11 +136,12 @@ export class SafeRepository implements ISafeRepository {
   async getTransactionHistory(
     chainId: string,
     safeAddress: string,
-  ): Promise<Page<TransactionType>> {
+  ): Promise<Page<Transaction>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const page: Page<TransactionType> =
-      await transactionService.getAllTransactions(safeAddress);
+    const page: Page<Transaction> = await transactionService.getAllTransactions(
+      safeAddress,
+    );
 
     page.results.map((transaction) =>
       this.transactionTypeValidator.validate(transaction),

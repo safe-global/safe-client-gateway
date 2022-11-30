@@ -1,14 +1,13 @@
-import { JSONSchemaType } from 'ajv';
-import { ERC20Transfer } from '../transfer.entity';
+import { Schema } from 'ajv';
 
-export const erc20TransferSchema: JSONSchemaType<ERC20Transfer> = {
+export const erc20TransferSchema: Schema = {
   type: 'object',
   properties: {
     type: {
       type: 'string',
       const: 'ERC20_TRANSFER',
     },
-    executionDate: { type: 'string' },
+    executionDate: { type: 'string', isDate: true },
     blockNumber: { type: 'number' },
     transactionHash: { type: 'string' },
     to: { type: 'string' },

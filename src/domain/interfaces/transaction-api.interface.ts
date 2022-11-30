@@ -9,7 +9,7 @@ import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../delegate/entities/delegate.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
 import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
-import { TransactionType } from '../safe/entities/transaction-type.entity';
+import { Transaction } from '../safe/entities/transaction.entity';
 import { Token } from '../tokens/entities/token.entity';
 import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
 import { SafeList } from '../safe/entities/safe-list.entity';
@@ -111,7 +111,7 @@ export interface ITransactionApi {
     queued?: boolean,
     limit?: number,
     offset?: number,
-  ): Promise<Page<TransactionType>>;
+  ): Promise<Page<Transaction>>;
 
   getToken(address: string): Promise<Token>;
 
