@@ -28,8 +28,8 @@ export interface NativeCoinTransferInfo {
 }
 
 export interface TransferTransaction extends TransactionInfo {
-  sender: string;
-  recipient: string;
-  direction: TransferDirection;
+  sender: unknown;
+  recipient: unknown;
+  direction: string;
   transferInfo: Erc20TransferInfo | Erc721TransferInfo | NativeCoinTransferInfo;
 }

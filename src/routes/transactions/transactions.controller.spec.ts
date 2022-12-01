@@ -19,6 +19,7 @@ import { DomainModule } from '../../domain.module';
 import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import contractFactory from '../../domain/contracts/entities/__tests__/contract.factory';
 import safeFactory from '../../domain/safe/entities/__tests__/safe.factory';
+import { Token, TokenType } from '../../domain/tokens/entities/token.entity';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
 
@@ -135,7 +136,77 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
 
-    it('Should get a ERC721 transfer mapped to the expected format', async () => {
+    it('Should get a ERC20 transfer mapped to the expected format', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainFactory(chainId);
+      const transactionApiSafeResponse = JSON.parse(
+        readFileSync(
+          'src/routes/transactions/__tests__/resources/safe-source-data.json',
+          'utf-8',
+        ),
+      );
+      const transactionApiMultisigTransactionsResponse = JSON.parse(
+        readFileSync(
+          'src/routes/transactions/__tests__/resources/erc20-transfer-source-data.json',
+          'utf-8',
+        ),
+      );
+      const expected = JSON.parse(
+        readFileSync(
+          'src/routes/transactions/__tests__/resources/erc20-transfer-expected-response.json',
+          'utf-8',
+        ),
+      );
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+        const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: transactionApiMultisigTransactionsResponse,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: transactionApiSafeResponse,
+          });
+        }
+        if (url.includes(getContractUrlPattern)) {
+          return Promise.reject({
+            detail: 'Not found',
+          });
+        }
+        if (url.includes(getTokenUrlPattern)) {
+          return Promise.resolve({
+            data: <Token>{
+              address: transactionApiMultisigTransactionsResponse.results[0].to,
+              decimals: 6,
+              logoUri:
+                'https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48.png',
+              name: 'USD Coin',
+              symbol: 'USDC',
+              type: TokenType.Erc20,
+            },
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body).toEqual(expected);
+        });
+    });
+
+    it.skip('Should get a ERC721 transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainFactory(chainId);

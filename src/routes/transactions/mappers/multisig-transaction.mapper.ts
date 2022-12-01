@@ -366,8 +366,6 @@ export class MultisigTransactionMapper {
       if (token.type === TokenType.Erc721) {
         return this.mapErc721Transfer();
       }
-
-      throw new Error(`Unknown token type: ${token.type}`);
     }
 
     return this.mapCustomTransaction(transaction, value, dataSize, chainId); // TODO: default case
@@ -408,7 +406,7 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
   ): Promise<TransferTransaction> {
     const { dataDecoded } = transaction;
-    const sender = this.getFromParam(dataDecoded, '');
+    const sender = this.getFromParam(dataDecoded, transaction.safe);
     const recipient = this.getToParam(dataDecoded, this.NULL_ADDRESS);
     const direction = this.mapTransferDirection(
       transaction.safe,
@@ -416,21 +414,23 @@ export class MultisigTransactionMapper {
       recipient,
     );
 
-    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      sender,
-    );
-    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      recipient,
-    );
+    const senderAddressInfo =
+      sender === transaction.safe
+        ? { value: sender }
+        : await this.addressInfoHelper.getOrDefault(chainId, sender);
+
+    const recipientAddressInfo =
+      recipient === transaction.safe
+        ? { value: recipient }
+        : await this.addressInfoHelper.getOrDefault(chainId, recipient);
 
     return <TransferTransaction>{
       type: 'Transfer',
-      sender: senderAddressInfo?.name || '',
-      recipient: recipientAddressInfo?.name || '',
+      sender: senderAddressInfo,
+      recipient: recipientAddressInfo,
       direction,
       transferInfo: <Erc20TransferInfo>{
+        type: 'ERC20',
         tokenAddress: token.address,
         tokenName: token.name,
         tokenSymbol: token.symbol,
@@ -463,7 +463,7 @@ export class MultisigTransactionMapper {
       type: 'Transfer',
       sender: safe.address,
       recipient: transaction.to,
-      direction: TransferDirection.Outgoing,
+      direction: TransferDirection[TransferDirection.Outgoing].toUpperCase(),
       transferInfo: <NativeCoinTransferInfo>{
         value: transaction.value,
       },
@@ -511,18 +511,14 @@ export class MultisigTransactionMapper {
     );
   }
 
-  private mapTransferDirection(
-    safe: string,
-    from: string,
-    to: string,
-  ): TransferDirection {
+  private mapTransferDirection(safe: string, from: string, to: string): string {
     if (safe === from) {
-      return TransferDirection.Outgoing;
+      return TransferDirection[TransferDirection.Outgoing].toUpperCase();
     }
     if (safe === to) {
-      return TransferDirection.Incoming;
+      return TransferDirection[TransferDirection.Incoming].toUpperCase();
     }
-    return TransferDirection.Unknown;
+    return TransferDirection[TransferDirection.Unknown].toUpperCase();
   }
 
   private getValueParam(dataDecoded: DataDecoded, fallback: string): string {
@@ -531,15 +527,15 @@ export class MultisigTransactionMapper {
     }
 
     switch (dataDecoded.method) {
-      case this.TRANSFER_METHOD:
-        return typeof dataDecoded.parameters[0]?.value === 'string'
-          ? dataDecoded.parameters[0]?.value
-          : fallback;
+      case this.TRANSFER_METHOD: {
+        const value = dataDecoded.parameters[1]?.value;
+        return typeof value === 'string' ? value : fallback;
+      }
       case this.TRANSFER_FROM_METHOD:
-      case this.SAFE_TRANSFER_FROM_METHOD:
-        return typeof dataDecoded.parameters[1]?.value === 'string'
-          ? dataDecoded.parameters[1]?.value
-          : fallback;
+      case this.SAFE_TRANSFER_FROM_METHOD: {
+        const value = dataDecoded.parameters[2]?.value;
+        return typeof value === 'string' ? value : fallback;
+      }
       default:
         return fallback;
     }
