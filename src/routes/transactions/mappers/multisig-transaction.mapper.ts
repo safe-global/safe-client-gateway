@@ -432,8 +432,8 @@ export class MultisigTransactionMapper {
 
     return <TransferTransaction>{
       type: 'Transfer',
-      sender: senderAddressInfo,
-      recipient: recipientAddressInfo,
+      sender: this.filterAddressInfo(senderAddressInfo),
+      recipient: this.filterAddressInfo(recipientAddressInfo),
       direction,
       transferInfo: <Erc20TransferInfo>{
         type: 'ERC20',
@@ -473,8 +473,8 @@ export class MultisigTransactionMapper {
 
     return <TransferTransaction>{
       type: 'Transfer',
-      sender: senderAddressInfo,
-      recipient: recipientAddressInfo,
+      sender: this.filterAddressInfo(senderAddressInfo),
+      recipient: this.filterAddressInfo(recipientAddressInfo),
       direction,
       transferInfo: <Erc721TransferInfo>{
         type: 'ERC721',

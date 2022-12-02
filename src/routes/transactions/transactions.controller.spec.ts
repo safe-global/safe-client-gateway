@@ -17,8 +17,6 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
-import contractFactory from '../../domain/contracts/entities/__tests__/contract.factory';
-import safeFactory from '../../domain/safe/entities/__tests__/safe.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
 
@@ -175,9 +173,7 @@ describe('Transactions Controller (Unit)', () => {
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
-          expect(body).toEqual(
-            getJsonResource('erc20/transfer-expected-response.json'),
-          );
+          expect(body).toEqual(getJsonResource('erc20/expected-response.json'));
         });
     });
 
@@ -222,7 +218,7 @@ describe('Transactions Controller (Unit)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
-            getJsonResource('erc721/transfer-expected-response.json'),
+            getJsonResource('erc721/expected-response.json'),
           );
         });
     });
@@ -264,46 +260,6 @@ describe('Transactions Controller (Unit)', () => {
           expect(body).toEqual(
             getJsonResource('custom/expected-response.json'),
           );
-        });
-    });
-
-    it.skip('Success', async () => {
-      const chainId = faker.random.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
-      const transactionApiSafeResponse = safeFactory(safeAddress);
-      const transactionApiContractResponse = contractFactory();
-      mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
-        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-        const getContractPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
-        if (url === getChainUrl) {
-          return Promise.resolve({ data: chainResponse });
-        }
-        if (url === getMultisigTransactionsUrl) {
-          return Promise.resolve({
-            data: getJsonResource('multisig-transactions-response.json'),
-          });
-        }
-        if (url === getSafeUrl) {
-          return Promise.resolve({
-            data: transactionApiSafeResponse,
-          });
-        }
-        if (url.includes(getContractPattern)) {
-          return Promise.resolve({
-            data: transactionApiContractResponse,
-          });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-
-      await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
-        .expect(200)
-        .then(({ body }) => {
-          expect(body).toBeDefined();
         });
     });
   });
