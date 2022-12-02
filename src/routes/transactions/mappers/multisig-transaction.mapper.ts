@@ -31,6 +31,7 @@ import {
 } from '../entities/settings-change-transaction.entity';
 import {
   Erc20TransferInfo,
+  Erc721TransferInfo,
   NativeCoinTransferInfo,
   TransferDirection,
   TransferTransaction,
@@ -253,10 +254,16 @@ export class MultisigTransactionMapper {
   }
 
   private getFromParam(dataDecoded: DataDecoded, fallback: string): string {
+    if (!dataDecoded.parameters) {
+      return fallback;
+    }
+
     switch (dataDecoded.method) {
       case this.TRANSFER_FROM_METHOD:
-      case this.TRANSFER_TO_METHOD:
-        return Object.values(dataDecoded)[0].toString();
+      case this.SAFE_TRANSFER_FROM_METHOD:
+        return typeof dataDecoded.parameters[0]?.value === 'string'
+          ? dataDecoded.parameters[0]?.value
+          : fallback;
       case this.TRANSFER_METHOD:
       default:
         return fallback;
@@ -274,7 +281,7 @@ export class MultisigTransactionMapper {
           ? dataDecoded.parameters[0]?.value
           : fallback;
       case this.TRANSFER_FROM_METHOD:
-      case this.TRANSFER_TO_METHOD:
+      case this.SAFE_TRANSFER_FROM_METHOD:
         return typeof dataDecoded.parameters[1]?.value === 'string'
           ? dataDecoded.parameters[1]?.value
           : fallback;
@@ -364,7 +371,7 @@ export class MultisigTransactionMapper {
       }
 
       if (token.type === TokenType.Erc721) {
-        return this.mapErc721Transfer();
+        return this.mapErc721Transfer(token, chainId, transaction);
       }
     }
 
@@ -380,23 +387,23 @@ export class MultisigTransactionMapper {
   }
 
   private async mapCustomTransaction(
-    multiSignTransaction: MultisigTransaction,
+    transaction: MultisigTransaction,
     value: number,
     dataSize: number,
     chainId: string,
   ): Promise<CustomTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      multiSignTransaction.to,
+      transaction.to,
     );
     return {
       type: 'Custom',
       to: this.filterAddressInfo(toAddressInfo),
       dataSize: dataSize.toString(),
       value: value.toString(),
-      methodName: multiSignTransaction?.dataDecoded?.method || null,
-      actionCount: this.getActionCount(multiSignTransaction),
-      isCancellation: this.isCancellation(multiSignTransaction, dataSize),
+      methodName: transaction?.dataDecoded?.method || null,
+      actionCount: this.getActionCount(transaction),
+      isCancellation: this.isCancellation(transaction, dataSize),
     };
   }
 
@@ -441,8 +448,44 @@ export class MultisigTransactionMapper {
     };
   }
 
-  private mapErc721Transfer(): TransactionInfo {
-    return <TransactionInfo>{ type: 'TODO' }; // TODO:
+  private async mapErc721Transfer(
+    token: Token,
+    chainId: string,
+    transaction: MultisigTransaction,
+  ): Promise<TransferTransaction> {
+    const { dataDecoded } = transaction;
+    const sender = this.getFromParam(dataDecoded, transaction.safe);
+    const recipient = this.getToParam(dataDecoded, this.NULL_ADDRESS);
+    const direction = this.mapTransferDirection(
+      transaction.safe,
+      sender,
+      recipient,
+    );
+
+    const senderAddressInfo =
+      sender === transaction.safe
+        ? { value: sender }
+        : await this.addressInfoHelper.getOrDefault(chainId, sender);
+
+    const recipientAddressInfo =
+      recipient === transaction.safe
+        ? { value: recipient }
+        : await this.addressInfoHelper.getOrDefault(chainId, recipient);
+
+    return <TransferTransaction>{
+      type: 'Transfer',
+      sender: senderAddressInfo,
+      recipient: recipientAddressInfo,
+      direction,
+      transferInfo: <Erc721TransferInfo>{
+        type: 'ERC721',
+        tokenAddress: token.address,
+        tokenId: this.getValueParam(dataDecoded, '0'),
+        tokenName: token.name,
+        tokenSymbol: token.symbol,
+        logoUri: token.logoUri,
+      },
+    };
   }
 
   private getActionCount(transaction: MultisigTransaction): number | undefined {
