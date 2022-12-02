@@ -1,0 +1,26 @@
+{
+  "address": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+  "name": "MultiSendCallOnly",
+  "displayName": "Gnosis Safe: MultiSendCallOnly",
+  "logoUri": "https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+  "contractAbi": {
+    "abi": [
+      {
+        "name": "multiSend",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "transactions",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "payable"
+      }
+    ],
+    "description": "MultiSendCallOnly",
+    "relevance": 100
+  },
+  "trustedForDelegateCall": true
+}

@@ -65,7 +65,6 @@ export class MultisigTransactionMapper {
 
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
-  private readonly TRANSFER_TO_METHOD = 'transferTo';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -111,7 +110,7 @@ export class MultisigTransactionMapper {
       case this.SET_FALLBACK_HANDLER:
         return <SetFallbackHandler>{
           type: 'SET_FALLBACK_HANDLER',
-          handler: Object.values(dataDecoded)[0],
+          handler: dataDecoded.parameters[0]?.value,
         };
       case this.ADD_OWNER_WITH_THRESHOLD:
         return <AddOwner>{
@@ -122,14 +121,14 @@ export class MultisigTransactionMapper {
       case this.REMOVE_OWNER:
         return <RemoveOwner>{
           type: 'REMOVE_OWNER',
-          owner: Object.values(dataDecoded)[1],
-          threshold: Object.values(dataDecoded)[2],
+          owner: { value: dataDecoded.parameters[1]?.value },
+          threshold: Number(dataDecoded.parameters[2]?.value),
         };
       case this.SWAP_OWNER:
         return <SwapOwner>{
           type: 'SWAP_OWNER',
-          oldOwner: Object.values(dataDecoded)[1],
-          newOwner: Object.values(dataDecoded)[2],
+          oldOwner: { value: dataDecoded.parameters[1]?.value },
+          newOwner: { value: dataDecoded.parameters[2]?.value },
         };
       case this.CHANGE_MASTER_COPY:
         return <ChangeImplementation>{
@@ -144,7 +143,7 @@ export class MultisigTransactionMapper {
           type: 'ENABLE_MODULE',
           module: await this.addressInfoHelper.getOrDefault(
             chainId,
-            <string>Object.values(dataDecoded)[0],
+            dataDecoded.parameters[0]?.value,
           ),
         };
       case this.DISABLE_MODULE:
@@ -152,16 +151,16 @@ export class MultisigTransactionMapper {
           type: 'DISABLE_MODULE',
           module: await this.addressInfoHelper.getOrDefault(
             chainId,
-            <string>Object.values(dataDecoded)[1],
+            dataDecoded.parameters[1]?.value,
           ),
         };
       case this.CHANGE_THRESHOLD:
         return <ChangeThreshold>{
           type: 'CHANGE_THRESHOLD',
-          threshold: Object.values(dataDecoded)[0],
+          threshold: dataDecoded.parameters[0]?.value,
         };
       case this.SET_GUARD:
-        const guardValue = <string>Object.values(dataDecoded)[0];
+        const guardValue = dataDecoded.parameters[0]?.value;
         if (guardValue !== this.NULL_ADDRESS) {
           return <SetGuard>{
             type: 'SET_GUARD',
