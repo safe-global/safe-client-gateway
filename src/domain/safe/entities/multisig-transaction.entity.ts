@@ -2,43 +2,39 @@ import { Operation } from './operation.entity';
 
 export interface Confirmation {
   owner: string;
+  signature?: string;
+  signatureType: string;
   submissionDate: Date;
   transactionHash?: string;
-  signatureType: string;
-  signature?: string;
 }
 
 export type MultisigTransaction = {
-  safe: string;
-  to: string;
-  value?: string;
-  data?: string;
-  dataDecoded?: any; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
-  operation: Operation;
-  gasToken?: string;
-  safeTxGas?: number;
   baseGas?: number;
-  gasPrice?: string;
-  refundReceiver?: string;
-  nonce: number;
-  executionDate?: Date;
-  submissionDate?: Date;
-  modified?: Date;
   blockNumber?: number;
-  transactionHash?: string;
-  safeTxHash: string;
+  confirmations?: Confirmation[];
+  confirmationsRequired?: number;
+  data?: string; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
+  dataDecoded?: any;
+  ethGasPrice?: string;
+  executionDate?: Date;
   executor?: string;
+  fee?: string;
+  gasPrice?: string;
+  gasToken?: string;
+  gasUsed?: number;
   isExecuted: boolean;
   isSuccessful?: boolean;
-  ethGasPrice?: string;
-  gasUsed?: number;
-  fee?: string;
+  modified?: Date;
+  nonce: number;
+  operation: Operation;
   origin?: string;
-  confirmationsRequired?: number;
-  confirmations?: Confirmation[];
+  refundReceiver?: string;
+  safe: string;
+  safeTxGas?: number;
+  safeTxHash: string;
   signatures?: string;
-};
-
-export type MultisigTransactionType = MultisigTransaction & {
-  txType: 'MULTISIG_TRANSACTION';
+  submissionDate?: Date;
+  to: string;
+  transactionHash?: string;
+  value?: string;
 };

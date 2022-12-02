@@ -1,11 +1,10 @@
-import { JSONSchemaType } from 'ajv';
-import { NativeTokenTransfer } from '../transfer.entity';
+import { Schema } from 'ajv';
 
-export const nativeTokenTransferSchema: JSONSchemaType<NativeTokenTransfer> = {
+export const nativeTokenTransferSchema: Schema = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'ETHER_TRANSFER' },
-    executionDate: { type: 'string' },
+    executionDate: { type: 'string', isDate: true },
     blockNumber: { type: 'number' },
     transactionHash: { type: 'string' },
     to: { type: 'string' },

@@ -60,5 +60,13 @@ export const multisigTransactionSchema: Schema = {
     },
     signatures: { type: 'string', nullable: true },
   },
-  required: ['safe', 'to', 'operation', 'nonce', 'safeTxHash', 'isExecuted'],
+  required: [
+    'safe',
+    'to',
+    'operation',
+    'nonce',
+    'submissionDate',
+    'safeTxHash',
+    'isExecuted',
+  ],
 };

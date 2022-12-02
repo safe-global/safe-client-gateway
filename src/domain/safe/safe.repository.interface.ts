@@ -2,7 +2,7 @@ import { Safe } from './entities/safe.entity';
 import { Page } from '../entities/page.entity';
 import { Transfer } from './entities/transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { TransactionType } from './entities/transaction-type.entity';
+import { Transaction } from './entities/transaction.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 
@@ -49,7 +49,7 @@ export interface ISafeRepository {
   getTransactionHistory(
     chainId: string,
     safeAddress: string,
-  ): Promise<Page<TransactionType>>;
+  ): Promise<Page<Transaction>>;
 
   getMultiSigTransaction(
     chainId: string,

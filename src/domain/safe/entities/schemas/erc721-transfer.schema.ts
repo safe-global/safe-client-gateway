@@ -1,14 +1,13 @@
-import { JSONSchemaType } from 'ajv';
-import { ERC721Transfer } from '../transfer.entity';
+import { Schema } from 'ajv';
 
-export const erc721TransferSchema: JSONSchemaType<ERC721Transfer> = {
+export const erc721TransferSchema: Schema = {
   type: 'object',
   properties: {
     type: {
       type: 'string',
       const: 'ERC721_TRANSFER',
     },
-    executionDate: { type: 'string' },
+    executionDate: { type: 'string', isDate: true },
     blockNumber: { type: 'number' },
     transactionHash: { type: 'string' },
     to: { type: 'string' },
