@@ -270,7 +270,7 @@ export class MultisigTransactionMapper {
   }
 
   private getToParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
+    if (!dataDecoded?.parameters) {
       return fallback;
     }
 
@@ -352,7 +352,7 @@ export class MultisigTransactionMapper {
     }
 
     if (this.isEtherTransfer(value, dataSize)) {
-      return this.getToEtherTransfer(transaction, safe);
+      return this.getToEtherTransfer(chainId, transaction, safe);
     }
 
     if (this.isSettingsChange(transaction, value, dataSize)) {
@@ -497,16 +497,23 @@ export class MultisigTransactionMapper {
     }
   }
 
-  private getToEtherTransfer(
+  private async getToEtherTransfer(
+    chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-  ): TransferTransaction {
+  ): Promise<TransferTransaction> {
+    const recipient =
+      transaction.safe !== transaction.to
+        ? await this.addressInfoHelper.getOrDefault(chainId, transaction.to)
+        : { value: transaction.to };
+
     return {
       type: 'Transfer',
-      sender: safe.address,
-      recipient: transaction.to,
+      sender: { value: safe.address },
+      recipient: this.filterAddressInfo(recipient),
       direction: TransferDirection[TransferDirection.Outgoing].toUpperCase(),
       transferInfo: <NativeCoinTransferInfo>{
+        type: 'NATIVE_COIN',
         value: transaction.value,
       },
     };

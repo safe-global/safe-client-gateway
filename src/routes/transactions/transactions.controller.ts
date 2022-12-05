@@ -34,7 +34,7 @@ export class TransactionsController {
     @Query('executed') executed?: boolean,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
-  ): Promise<Page<MultisigTransaction>> {
+  ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions(
       chainId,
       safeAddress,

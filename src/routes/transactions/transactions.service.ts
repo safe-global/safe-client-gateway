@@ -23,7 +23,7 @@ export class TransactionsService {
     executed?: boolean,
     limit?: number,
     offset?: number,
-  ): Promise<Page<MultisigTransaction>> {
+  ): Promise<Partial<Page<MultisigTransaction>>> {
     const transactions = await this.safeRepository.getMultisigTransactions(
       chainId,
       safeAddress,
@@ -51,7 +51,6 @@ export class TransactionsService {
     );
 
     return {
-      count: transactions.count,
       next: transactions.next, // TODO: map URL
       previous: transactions.previous, // TODO: map URL
       results,
