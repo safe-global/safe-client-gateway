@@ -1,6 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
+import { PaginationData } from '../common/pagination/pagination.data';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { TransactionsService } from './transactions.service';
@@ -21,10 +24,10 @@ export class TransactionsController {
   @ApiQuery({ name: 'value', required: false })
   @ApiQuery({ name: 'nonce', required: false })
   @ApiQuery({ name: 'executed', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'offset', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
   async getMultisigTransactions(
     @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
@@ -32,11 +35,11 @@ export class TransactionsController {
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
     @Query('executed') executed?: boolean,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
+    @PaginationDataDecorator() paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions(
       chainId,
+      routeUrl,
       safeAddress,
       executionDateGte,
       executionDateLte,
@@ -44,8 +47,7 @@ export class TransactionsController {
       value,
       nonce,
       executed,
-      limit,
-      offset,
+      paginationData,
     );
   }
 }

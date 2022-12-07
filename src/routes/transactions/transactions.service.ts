@@ -2,6 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
 import { Page } from '../common/entities/page.entity';
+import {
+  cursorUrlFromLimitAndOffset,
+  PaginationData,
+} from '../common/pagination/pagination.data';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionMapper } from './mappers/multisig-transaction.mapper';
 
@@ -14,6 +18,7 @@ export class TransactionsService {
 
   async getMultisigTransactions(
     chainId: string,
+    routeUrl: Readonly<URL>,
     safeAddress: string,
     executionDateGte?: string,
     executionDateLte?: string,
@@ -21,8 +26,7 @@ export class TransactionsService {
     value?: string,
     nonce?: string,
     executed?: boolean,
-    limit?: number,
-    offset?: number,
+    paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     const transactions = await this.safeRepository.getMultisigTransactions(
       chainId,
@@ -33,26 +37,31 @@ export class TransactionsService {
       value,
       nonce,
       executed,
-      limit,
-      offset,
+      paginationData?.limit,
+      paginationData?.offset,
     );
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await Promise.all(
-      transactions.results.map(async (multiSignTransaction) => ({
+      transactions.results.map(async (multiSigTransaction) => ({
         type: 'TRANSACTION',
         transaction: await this.mapper.mapToTransactionSummary(
           chainId,
-          multiSignTransaction,
+          multiSigTransaction,
           safeInfo,
         ),
         conflictType: 'None',
       })),
     );
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transactions.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      transactions.previous,
+    );
 
     return {
-      next: transactions.next, // TODO: map URL
-      previous: transactions.previous, // TODO: map URL
+      next: nextURL?.toString(),
+      previous: previousURL?.toString(),
       results,
     };
   }
