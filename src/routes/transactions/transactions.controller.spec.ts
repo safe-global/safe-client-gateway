@@ -123,7 +123,7 @@ describe('Transactions Controller (Unit)', () => {
         data: { results: ['invalidData'] },
       });
 
-      await request(app.getHttpServer())
+      request(app.getHttpServer())
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(500)
         .expect({
@@ -169,7 +169,7 @@ describe('Transactions Controller (Unit)', () => {
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
-      await request(app.getHttpServer())
+      request(app.getHttpServer())
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
@@ -213,7 +213,7 @@ describe('Transactions Controller (Unit)', () => {
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
-      await request(app.getHttpServer())
+      request(app.getHttpServer())
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
@@ -253,7 +253,7 @@ describe('Transactions Controller (Unit)', () => {
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
-      await request(app.getHttpServer())
+      request(app.getHttpServer())
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
