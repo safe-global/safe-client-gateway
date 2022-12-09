@@ -29,6 +29,7 @@ import {
   SettingsInfo,
   SwapOwner,
 } from '../entities/settings-change-transaction.entity';
+import { TransactionStatus } from '../entities/transaction-status.entity';
 import {
   Erc20TransferInfo,
   Erc721TransferInfo,
@@ -41,26 +42,26 @@ import {
 export class MultisigTransactionMapper {
   private readonly NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-  private readonly SET_FALLBACK_HANDLER = 'setFallbackHandler';
-  private readonly ADD_OWNER_WITH_THRESHOLD = 'addOwnerWithThreshold';
-  private readonly REMOVE_OWNER = 'removeOwner';
-  private readonly SWAP_OWNER = 'swapOwner';
-  private readonly CHANGE_THRESHOLD = 'changeThreshold';
-  private readonly CHANGE_MASTER_COPY = 'changeMasterCopy';
-  private readonly ENABLE_MODULE = 'enableModule';
-  private readonly DISABLE_MODULE = 'disableModule';
-  private readonly SET_GUARD = 'setGuard';
+  private static readonly SET_FALLBACK_HANDLER = 'setFallbackHandler';
+  private static readonly ADD_OWNER_WITH_THRESHOLD = 'addOwnerWithThreshold';
+  private static readonly REMOVE_OWNER = 'removeOwner';
+  private static readonly SWAP_OWNER = 'swapOwner';
+  private static readonly CHANGE_THRESHOLD = 'changeThreshold';
+  private static readonly CHANGE_MASTER_COPY = 'changeMasterCopy';
+  private static readonly ENABLE_MODULE = 'enableModule';
+  private static readonly DISABLE_MODULE = 'disableModule';
+  private static readonly SET_GUARD = 'setGuard';
 
   private readonly SETTINGS_CHANGE_METHODS = [
-    this.SET_FALLBACK_HANDLER,
-    this.ADD_OWNER_WITH_THRESHOLD,
-    this.REMOVE_OWNER,
-    this.SWAP_OWNER,
-    this.CHANGE_THRESHOLD,
-    this.CHANGE_MASTER_COPY,
-    this.ENABLE_MODULE,
-    this.DISABLE_MODULE,
-    this.SET_GUARD,
+    MultisigTransactionMapper.SET_FALLBACK_HANDLER,
+    MultisigTransactionMapper.ADD_OWNER_WITH_THRESHOLD,
+    MultisigTransactionMapper.REMOVE_OWNER,
+    MultisigTransactionMapper.SWAP_OWNER,
+    MultisigTransactionMapper.CHANGE_THRESHOLD,
+    MultisigTransactionMapper.CHANGE_MASTER_COPY,
+    MultisigTransactionMapper.ENABLE_MODULE,
+    MultisigTransactionMapper.DISABLE_MODULE,
+    MultisigTransactionMapper.SET_GUARD,
   ];
 
   private readonly TRANSFER_METHOD = 'transfer';
@@ -86,7 +87,7 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): Promise<TransactionSummary> {
-    const txStatus = this.mapTxStatus(transaction, safe);
+    const txStatus = this.mapTransactionStatus(transaction, safe);
     const txInfo = await this.mapTransactionInfo(chainId, transaction, safe);
 
     return {
@@ -108,30 +109,30 @@ export class MultisigTransactionMapper {
   ): Promise<SettingsInfo | undefined> {
     const { dataDecoded } = transaction;
     switch (dataDecoded.method) {
-      case this.SET_FALLBACK_HANDLER:
+      case MultisigTransactionMapper.SET_FALLBACK_HANDLER:
         return <SetFallbackHandler>{
           type: 'SET_FALLBACK_HANDLER',
           handler: dataDecoded.parameters[0]?.value,
         };
-      case this.ADD_OWNER_WITH_THRESHOLD:
+      case MultisigTransactionMapper.ADD_OWNER_WITH_THRESHOLD:
         return <AddOwner>{
           type: 'ADD_OWNER',
           owner: { value: dataDecoded.parameters[0]?.value },
           threshold: Number(dataDecoded.parameters[1]?.value),
         };
-      case this.REMOVE_OWNER:
+      case MultisigTransactionMapper.REMOVE_OWNER:
         return <RemoveOwner>{
           type: 'REMOVE_OWNER',
           owner: { value: dataDecoded.parameters[1]?.value },
           threshold: Number(dataDecoded.parameters[2]?.value),
         };
-      case this.SWAP_OWNER:
+      case MultisigTransactionMapper.SWAP_OWNER:
         return <SwapOwner>{
           type: 'SWAP_OWNER',
           oldOwner: { value: dataDecoded.parameters[1]?.value },
           newOwner: { value: dataDecoded.parameters[2]?.value },
         };
-      case this.CHANGE_MASTER_COPY:
+      case MultisigTransactionMapper.CHANGE_MASTER_COPY:
         return <ChangeImplementation>{
           type: 'CHANGE_MASTER_COPY',
           implementation: await this.addressInfoHelper.getOrDefault(
@@ -139,7 +140,7 @@ export class MultisigTransactionMapper {
             safe.address,
           ),
         };
-      case this.ENABLE_MODULE:
+      case MultisigTransactionMapper.ENABLE_MODULE:
         return <EnableModule>{
           type: 'ENABLE_MODULE',
           module: await this.addressInfoHelper.getOrDefault(
@@ -147,7 +148,7 @@ export class MultisigTransactionMapper {
             dataDecoded.parameters[0]?.value,
           ),
         };
-      case this.DISABLE_MODULE:
+      case MultisigTransactionMapper.DISABLE_MODULE:
         return <DisableModule>{
           type: 'DISABLE_MODULE',
           module: await this.addressInfoHelper.getOrDefault(
@@ -155,12 +156,12 @@ export class MultisigTransactionMapper {
             dataDecoded.parameters[1]?.value,
           ),
         };
-      case this.CHANGE_THRESHOLD:
+      case MultisigTransactionMapper.CHANGE_THRESHOLD:
         return <ChangeThreshold>{
           type: 'CHANGE_THRESHOLD',
           threshold: dataDecoded.parameters[0]?.value,
         };
-      case this.SET_GUARD:
+      case MultisigTransactionMapper.SET_GUARD:
         const guardValue = dataDecoded.parameters[0]?.value;
         if (guardValue !== this.NULL_ADDRESS) {
           return <SetGuard>{
@@ -177,20 +178,25 @@ export class MultisigTransactionMapper {
     }
   }
 
-  private mapTxStatus(transaction: MultisigTransaction, safe: Safe): string {
+  private mapTransactionStatus(
+    transaction: MultisigTransaction,
+    safe: Safe,
+  ): TransactionStatus {
     if (transaction.isExecuted) {
-      return transaction.isSuccessful ? 'SUCCESS' : 'FAILED';
+      return transaction.isSuccessful
+        ? TransactionStatus.Success
+        : TransactionStatus.Failed;
     }
     if (safe.nonce > transaction.nonce) {
-      return 'CANCELLED';
+      return TransactionStatus.Cancelled;
     }
     if (
       this.getConfirmationsCount(transaction) <
       this.getConfirmationsRequired(transaction, safe)
     ) {
-      return 'AWAITING_CONFIRMATIONS';
+      return TransactionStatus.AwaitingConfirmations;
     }
-    return 'AWAITING_EXECUTION';
+    return TransactionStatus.AwaitingExecution;
   }
 
   private getConfirmationsCount(transaction: MultisigTransaction): number {

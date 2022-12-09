@@ -15,6 +15,6 @@ export default function (
     logoUri: logoUri ?? faker.internet.url(),
     name: name ?? faker.random.word(),
     symbol: symbol ?? faker.finance.currencySymbol(),
-    type: type ?? TokenType.Erc20,
+    type: type ?? faker.helpers.arrayElement(Object.values(TokenType)),
   };
 }
