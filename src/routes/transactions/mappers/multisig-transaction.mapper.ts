@@ -97,6 +97,7 @@ export class MultisigTransactionMapper {
       txStatus,
       txInfo,
       executionInfo: this.mapExecutionInfo(transaction, safe, txStatus),
+      // TODO: include safeAppInfo retrieval logic where needed
     };
   }
 

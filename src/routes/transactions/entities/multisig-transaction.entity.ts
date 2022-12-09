@@ -19,6 +19,15 @@ export class TransactionInfo {
   type: string;
 }
 
+export class SafeAppInfo {
+  @ApiProperty()
+  name: string;
+  @ApiProperty()
+  url: string;
+  @ApiProperty()
+  logo_uri: string;
+}
+
 export class TransactionSummary {
   @ApiProperty()
   id: string;
@@ -28,8 +37,10 @@ export class TransactionSummary {
   txStatus: string;
   @ApiProperty()
   txInfo: TransactionInfo;
-  @ApiProperty()
-  executionInfo: ExecutionInfo;
+  @ApiPropertyOptional()
+  executionInfo?: ExecutionInfo;
+  @ApiPropertyOptional()
+  safeAppInfo?: SafeAppInfo;
 }
 
 export class MultisigTransaction {
