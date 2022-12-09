@@ -46,7 +46,7 @@ describe('Get multisig transactions e2e test', () => {
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
     expect(cacheContent).not.toBeNull();
-  });
+  }, 60000);
 
   it('GET /safes/<address>/multisig-transactions (ERC-20 + Settings change)', async () => {
     const safeAddress = '0xCe95F1F4ACADEe697993B0E3a0FE48B444679046';
@@ -69,7 +69,7 @@ describe('Get multisig transactions e2e test', () => {
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
     expect(cacheContent).not.toBeNull();
-  });
+  }, 60000);
 
   it('GET /safes/<address>/multisig-transactions (ERC-721)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
@@ -92,7 +92,7 @@ describe('Get multisig transactions e2e test', () => {
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
     expect(cacheContent).not.toBeNull();
-  });
+  }, 60000);
 
   afterAll(async () => {
     await app.close();
