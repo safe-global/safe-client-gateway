@@ -207,13 +207,15 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
     safe: Safe,
     txStatus: string,
-  ): string[] {
+  ): AddressInfo[] {
     console.log(transaction, safe, txStatus);
     const confirmedOwners =
       transaction.confirmations?.map((confirmation) => confirmation.owner) ??
       [];
 
-    return safe.owners.filter((owner) => !confirmedOwners.includes(owner));
+    return safe.owners
+      .filter((owner) => !confirmedOwners.includes(owner))
+      .map((missingSigner) => ({ value: missingSigner }));
   }
 
   private mapExecutionInfo(

@@ -171,12 +171,12 @@ export class SafeRepository implements ISafeRepository {
   async getMultisigTransactions(
     chainId: string,
     safeAddress: string,
+    executed?: boolean,
     executionDateGte?: string,
     executionDateLte?: string,
     to?: string,
     value?: string,
     nonce?: string,
-    executed?: boolean,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>> {

@@ -5,8 +5,6 @@ import { RedisClientType } from 'redis';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
-import { Page } from '../../common/entities/page.entity';
-import { MultisigTransaction } from '../entities/multisig-transaction.entity';
 
 describe('Get multisig transactions e2e test', () => {
   let app: INestApplication;
@@ -29,7 +27,7 @@ describe('Get multisig transactions e2e test', () => {
 
   it('GET /safes/<address>/multisig-transactions (native token)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
-    const executionDateGte = '2022-10-20T00:00:00.000Z';
+    const executionDateGte = '2022-11-03T00:00:00.000Z';
     const executionDateLte = '2022-11-08T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
@@ -43,9 +41,7 @@ describe('Get multisig transactions e2e test', () => {
       )
       .expect(200)
       .then(({ body }) => {
-        expect(sortTransactionsByTimestamp(body)).toEqual(
-          sortTransactionsByTimestamp(expectedResponse),
-        );
+        expect(body).toEqual(expectedResponse);
       });
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
@@ -68,9 +64,7 @@ describe('Get multisig transactions e2e test', () => {
       )
       .expect(200)
       .then(({ body }) => {
-        expect(sortTransactionsByTimestamp(body)).toEqual(
-          sortTransactionsByTimestamp(expectedResponse),
-        );
+        expect(body).toEqual(expectedResponse);
       });
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
@@ -79,7 +73,7 @@ describe('Get multisig transactions e2e test', () => {
 
   it('GET /safes/<address>/multisig-transactions (ERC-721)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
-    const executionDateGte = '2022-11-20T00:00:00.000Z';
+    const executionDateGte = '2022-11-29T14:00:00.000Z';
     const executionDateLte = '2022-12-06T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
@@ -93,9 +87,7 @@ describe('Get multisig transactions e2e test', () => {
       )
       .expect(200)
       .then(({ body }) => {
-        expect(sortTransactionsByTimestamp(body)).toEqual(
-          sortTransactionsByTimestamp(expectedResponse),
-        );
+        expect(body).toEqual(expectedResponse);
       });
 
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
@@ -112,12 +104,4 @@ describe('Get multisig transactions e2e test', () => {
 const getJsonResource = (relativePath: string) => {
   const basePath = 'src/routes/transactions/__tests__/resources';
   return JSON.parse(readFileSync(`${basePath}/${relativePath}`, 'utf8'));
-};
-
-const sortTransactionsByTimestamp = (
-  page: Partial<Page<MultisigTransaction>>,
-) => {
-  return page?.results?.sort(
-    (a, b) => (a.transaction?.timestamp || 0) - (b.transaction?.timestamp || 0),
-  );
 };

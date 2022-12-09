@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AddressInfo } from '../../common/entities/address-info.entity';
 
 export class ExecutionInfo {
   @ApiProperty()
@@ -10,7 +11,7 @@ export class ExecutionInfo {
   @ApiProperty()
   confirmationsSubmitted: number;
   @ApiPropertyOptional()
-  missingSigners?: string[];
+  missingSigners?: AddressInfo[];
 }
 
 export class TransactionInfo {

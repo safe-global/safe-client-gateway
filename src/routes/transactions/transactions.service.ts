@@ -31,12 +31,12 @@ export class TransactionsService {
     const transactions = await this.safeRepository.getMultisigTransactions(
       chainId,
       safeAddress,
+      executed,
       executionDateGte,
       executionDateLte,
       to,
       value,
       nonce,
-      executed,
       paginationData?.limit,
       paginationData?.offset,
     );

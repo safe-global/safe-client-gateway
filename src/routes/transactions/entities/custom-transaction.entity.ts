@@ -9,8 +9,8 @@ export class CustomTransactionInfo extends TransactionInfo {
   dataSize: string;
   @ApiProperty()
   value: string;
-  @ApiProperty()
-  methodName: string;
+  @ApiPropertyOptional()
+  methodName?: string;
   @ApiPropertyOptional()
   actionCount?: number;
   @ApiProperty()

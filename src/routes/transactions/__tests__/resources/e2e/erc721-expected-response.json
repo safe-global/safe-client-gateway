@@ -77,54 +77,6 @@
         }
       },
       "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xa52c7cb70918788cdafb74196825b91f5234b192beeedf0f97068d149bb15e73",
-        "timestamp": 1669730064000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
-          "dataSize": "12228",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 46,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 54,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
-        }
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x88ee7240bb4d552fa2bf09ef7508cc482b7363fcc0782ff6cc1ff1b0bc14081a",
-        "timestamp": 1669623612000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
-          "dataSize": "484",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 3,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 53,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
-        }
-      },
-      "conflictType": "None"
     }
   ]
 }
