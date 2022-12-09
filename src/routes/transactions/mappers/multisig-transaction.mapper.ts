@@ -213,9 +213,7 @@ export class MultisigTransactionMapper {
   private getMissingSigners(
     transaction: MultisigTransaction,
     safe: Safe,
-    txStatus: string,
   ): AddressInfo[] {
-    console.log(transaction, safe, txStatus);
     const confirmedOwners =
       transaction.confirmations?.map((confirmation) => confirmation.owner) ??
       [];
@@ -240,7 +238,7 @@ export class MultisigTransactionMapper {
     if (txStatus === 'AWAITING_CONFIRMATIONS') {
       return {
         ...executionInfo,
-        missingSigners: this.getMissingSigners(transaction, safe, txStatus),
+        missingSigners: this.getMissingSigners(transaction, safe),
       };
     }
 
@@ -298,7 +296,7 @@ export class MultisigTransactionMapper {
     }
   }
 
-  private checkSenderOrReceiver(transaction: MultisigTransaction): boolean {
+  private isSafeSenderOrReceiver(transaction: MultisigTransaction): boolean {
     const { dataDecoded } = transaction;
     if (!dataDecoded) return false;
     return (
@@ -337,7 +335,7 @@ export class MultisigTransactionMapper {
     return (
       (this.isErc20Transfer(transaction) ||
         this.isErc721Transfer(transaction)) &&
-      this.checkSenderOrReceiver(transaction)
+      this.isSafeSenderOrReceiver(transaction)
     );
   }
 
