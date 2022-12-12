@@ -6,6 +6,7 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
+import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionMapper } from './mappers/multisig-transaction.mapper';
 
@@ -57,6 +58,50 @@ export class TransactionsService {
     const previousURL = cursorUrlFromLimitAndOffset(
       routeUrl,
       transactions.previous,
+    );
+
+    return {
+      next: nextURL?.toString(),
+      previous: previousURL?.toString(),
+      results,
+    };
+  }
+
+  async getIncomingTransfers(
+    chainId: string,
+    routeUrl: Readonly<URL>,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    paginationData?: PaginationData,
+  ): Promise<Partial<Page<IncomingTransfer>>> {
+    const transfers = await this.safeRepository.getIncomingTransfers(
+      chainId,
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      to,
+      value,
+      tokenAddress,
+      paginationData?.limit,
+      paginationData?.offset,
+    );
+
+    const results = await Promise.all(
+      transfers.results.map(async () => ({
+        type: 'TRANSACTION',
+        transaction: 'TODO',
+        conflictType: 'None',
+      })),
+    );
+
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transfers.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      transfers.previous,
     );
 
     return {
