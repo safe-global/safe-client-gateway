@@ -207,7 +207,7 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): number {
-    return transaction.confirmationsRequired ?? safe.threshold;
+    return transaction.confirmationsRequired ?? safe.threshold; // TODO: review if this fallback still required
   }
 
   private getMissingSigners(
@@ -381,14 +381,14 @@ export class MultisigTransactionMapper {
       }
     }
 
-    return this.mapCustomTransaction(transaction, value, dataSize, chainId); // TODO: default case
+    return this.mapCustomTransaction(transaction, value, dataSize, chainId);
   }
 
   private filterAddressInfo(addressInfo: AddressInfo): AddressInfo {
     return {
-      ...{ value: addressInfo.value },
-      ...(addressInfo.name !== '' && { name: addressInfo.name }),
-      ...(addressInfo.logoUri && { logoUri: addressInfo.logoUri }),
+      value: addressInfo.value,
+      name: addressInfo.name !== '' ? addressInfo.name : undefined,
+      logoUri: addressInfo.logoUri,
     };
   }
 

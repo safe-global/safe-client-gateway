@@ -35,7 +35,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "logoUri": null,
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+          },
           "dataSize": "388",
           "value": "0",
           "methodName": "multiSend",
@@ -59,7 +62,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": null
+          },
           "dataSize": "324",
           "value": "0",
           "methodName": "multiSend",
@@ -151,7 +157,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": null
+          },
           "dataSize": "932",
           "value": "0",
           "methodName": "multiSend",
@@ -175,7 +184,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": null
+          },
           "dataSize": "12228",
           "value": "0",
           "methodName": "multiSend",
@@ -265,7 +277,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": null
+          },
           "dataSize": "932",
           "value": "0",
           "methodName": "multiSend",
@@ -289,7 +304,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee" },
+          "to": {
+            "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee",
+            "logoUri": null
+          },
           "dataSize": "100",
           "value": "0",
           "methodName": "claimVestedTokens",
