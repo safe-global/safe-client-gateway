@@ -10,6 +10,7 @@
           "type": "Transfer",
           "sender": { "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C" },
           "recipient": {
+            "logoUri": null,
             "value": "0xc6b82bA149CFA113f8f48d5E3b1F78e933e16DfD"
           },
           "direction": "OUTGOING",
@@ -39,7 +40,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" },
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": null
+          },
           "dataSize": "12228",
           "value": "0",
           "methodName": "multiSend",
@@ -63,7 +67,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Custom",
-          "to": { "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C" },
+          "to": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C",
+            "logoUri": null
+          },
           "dataSize": "0",
           "value": "0",
           "methodName": null,
