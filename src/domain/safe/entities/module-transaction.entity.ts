@@ -4,8 +4,8 @@ import { Operation } from './operation.entity';
 export interface ModuleTransaction {
   blockNumber: number;
   created: Date;
-  data?: string;
-  dataDecoded?: DataDecoded;
+  data: string | null;
+  dataDecoded: DataDecoded | null;
   executionDate: Date;
   isSuccessful: boolean;
   module: string;
@@ -13,5 +13,5 @@ export interface ModuleTransaction {
   safe: string;
   to: string;
   transactionHash: string;
-  value?: string;
+  value: string | null;
 }

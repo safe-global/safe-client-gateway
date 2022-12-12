@@ -11,7 +11,7 @@ export class Contract implements DomainContract {
   @ApiProperty()
   logoUri: string;
   @ApiProperty()
-  contractAbi?: object;
+  contractAbi: object | null;
   @ApiProperty()
   trustedForDelegateCall: boolean;
 }

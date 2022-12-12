@@ -13,13 +13,13 @@ export class Collectible implements DomainCollectible {
   @ApiProperty()
   id: string;
   @ApiPropertyOptional()
-  uri?: string;
+  uri: string | null;
   @ApiPropertyOptional()
-  name?: string;
+  name: string | null;
   @ApiPropertyOptional()
-  description?: string;
+  description: string | null;
   @ApiPropertyOptional()
-  imageUri?: string;
+  imageUri: string | null;
   @ApiPropertyOptional()
-  metadata?: Record<string, any>;
+  metadata: Record<string, any> | null;
 }

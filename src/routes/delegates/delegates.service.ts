@@ -55,8 +55,8 @@ export class DelegatesService {
 
     return <Page<Delegate>>{
       count: delegates.count,
-      next: nextURL?.toString(),
-      previous: previousURL?.toString(),
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
       results: delegates.results,
     };
   }

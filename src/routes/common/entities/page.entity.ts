@@ -18,8 +18,8 @@ export abstract class Page<T> implements DomainPage<T> {
   @ApiProperty()
   count: number;
   @ApiPropertyOptional()
-  next?: string;
+  next: string | null;
   @ApiPropertyOptional()
-  previous?: string;
+  previous: string | null;
   abstract results: T[];
 }

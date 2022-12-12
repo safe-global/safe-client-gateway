@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Delegate {
   @ApiPropertyOptional()
-  safe?: string;
+  safe: string | null;
   @ApiProperty()
   delegate: string;
   @ApiProperty()

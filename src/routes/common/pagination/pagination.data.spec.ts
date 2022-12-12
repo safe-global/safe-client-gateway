@@ -143,10 +143,10 @@ describe('PaginationData', () => {
       expect(actual).toStrictEqual(expected);
     });
 
-    it('returns undefined when from is undefined', async () => {
+    it('returns undefined when from is null', async () => {
       const baseUrl = 'https://base.url/';
 
-      const actual = cursorUrlFromLimitAndOffset(baseUrl, undefined);
+      const actual = cursorUrlFromLimitAndOffset(baseUrl, null);
 
       expect(actual).toStrictEqual(null);
     });

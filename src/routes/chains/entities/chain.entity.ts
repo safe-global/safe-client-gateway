@@ -42,7 +42,7 @@ export class Chain {
   @ApiProperty()
   disabledWallets: string[];
   @ApiPropertyOptional()
-  ensRegistryAddress?: string;
+  ensRegistryAddress: string | null;
   @ApiProperty()
   features: string[];
   @ApiProperty({
@@ -82,7 +82,7 @@ export class Chain {
     safeAppsRpcUri: RpcUri,
     shortName: string,
     theme: Theme,
-    ensRegistryAddress?: string,
+    ensRegistryAddress: string | null,
   ) {
     this.chainId = chainId;
     this.chainName = chainName;

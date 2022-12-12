@@ -3,6 +3,6 @@ export interface Contract {
   name: string;
   displayName: string;
   logoUri: string;
-  contractAbi?: object;
+  contractAbi: object | null;
   trustedForDelegateCall: boolean;
 }
