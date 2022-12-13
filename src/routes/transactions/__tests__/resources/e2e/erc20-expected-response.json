@@ -31,7 +31,8 @@
           "type": "MULTISIG",
           "nonce": 3,
           "confirmationsRequired": 2,
-          "confirmationsSubmitted": 2
+          "confirmationsSubmitted": 2,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -65,7 +66,8 @@
           "type": "MULTISIG",
           "nonce": 2,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"

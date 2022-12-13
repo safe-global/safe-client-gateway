@@ -10,8 +10,9 @@ import { AddressInfoHelper } from '../../common/address-info/address-info.helper
 import { AddressInfo } from '../../common/entities/address-info.entity';
 import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
 import { CustomTransactionInfo } from '../entities/custom-transaction.entity';
+import { ExecutionInfo } from '../entities/execution-info.entity';
+import { MultisigExecutionInfo } from '../entities/multisig-execution-info.entity';
 import {
-  ExecutionInfo,
   TransactionInfo,
   TransactionSummary,
 } from '../entities/multisig-transaction.entity';
@@ -228,21 +229,17 @@ export class MultisigTransactionMapper {
     safe: Safe,
     txStatus: string,
   ): ExecutionInfo {
-    const executionInfo = {
-      type: 'MULTISIG',
-      nonce: transaction.nonce,
-      confirmationsRequired: this.getConfirmationsRequired(transaction, safe),
-      confirmationsSubmitted: this.getConfirmationsCount(transaction),
-    };
+    const missingSigners =
+      txStatus === 'AWAITING_CONFIRMATIONS'
+        ? this.getMissingSigners(transaction, safe)
+        : null;
 
-    if (txStatus === 'AWAITING_CONFIRMATIONS') {
-      return {
-        ...executionInfo,
-        missingSigners: this.getMissingSigners(transaction, safe),
-      };
-    }
-
-    return executionInfo;
+    return new MultisigExecutionInfo(
+      transaction.nonce,
+      this.getConfirmationsRequired(transaction, safe),
+      this.getConfirmationsCount(transaction),
+      missingSigners,
+    );
   }
 
   private isErc20Transfer(transaction: MultisigTransaction): boolean {

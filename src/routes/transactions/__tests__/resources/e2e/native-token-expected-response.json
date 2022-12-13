@@ -23,7 +23,8 @@
           "type": "MULTISIG",
           "nonce": 37,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 2
+          "confirmationsSubmitted": 2,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -50,7 +51,8 @@
           "type": "MULTISIG",
           "nonce": 36,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -77,7 +79,8 @@
           "type": "MULTISIG",
           "nonce": 35,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -111,7 +114,8 @@
           "type": "MULTISIG",
           "nonce": 34,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -145,7 +149,8 @@
           "type": "MULTISIG",
           "nonce": 33,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -172,7 +177,8 @@
           "type": "MULTISIG",
           "nonce": 32,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -199,7 +205,8 @@
           "type": "MULTISIG",
           "nonce": 31,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -235,7 +242,8 @@
           "type": "MULTISIG",
           "nonce": 30,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -269,7 +277,8 @@
           "type": "MULTISIG",
           "nonce": 29,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -296,7 +305,8 @@
           "type": "MULTISIG",
           "nonce": 28,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -322,7 +332,8 @@
           "type": "MULTISIG",
           "nonce": 27,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"

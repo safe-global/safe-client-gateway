@@ -28,7 +28,8 @@
           "type": "MULTISIG",
           "nonce": 9,
           "confirmationsRequired": 3,
-          "confirmationsSubmitted": 3
+          "confirmationsSubmitted": 3,
+          "missingSigners": null
         }
       },
       "conflictType": "None"

@@ -1,18 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressInfo } from '../../common/entities/address-info.entity';
-
-export class ExecutionInfo {
-  @ApiProperty()
-  type: string;
-  @ApiProperty()
-  nonce: number;
-  @ApiProperty()
-  confirmationsRequired: number;
-  @ApiProperty()
-  confirmationsSubmitted: number;
-  @ApiPropertyOptional()
-  missingSigners?: AddressInfo[];
-}
+import { ExecutionInfo } from './execution-info.entity';
 
 export class TransactionInfo {
   @ApiProperty()

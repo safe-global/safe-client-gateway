@@ -30,7 +30,8 @@
           "type": "MULTISIG",
           "nonce": 57,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -57,7 +58,8 @@
           "type": "MULTISIG",
           "nonce": 56,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
@@ -83,7 +85,8 @@
           "type": "MULTISIG",
           "nonce": 55,
           "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
         }
       },
       "conflictType": "None"
