@@ -41,7 +41,7 @@ export class Chain {
   blockExplorerUriTemplate: ApiBlockExplorerUriTemplate;
   @ApiProperty()
   disabledWallets: string[];
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   ensRegistryAddress: string | null;
   @ApiProperty()
   features: string[];

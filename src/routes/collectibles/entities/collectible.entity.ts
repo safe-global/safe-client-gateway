@@ -12,14 +12,14 @@ export class Collectible implements DomainCollectible {
   logoUri: string;
   @ApiProperty()
   id: string;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   uri: string | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   name: string | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   description: string | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   imageUri: string | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Object, nullable: true })
   metadata: Record<string, any> | null;
 }

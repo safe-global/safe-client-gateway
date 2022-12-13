@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Contract as DomainContract } from '../../../domain/contracts/entities/contract.entity';
 
 export class Contract implements DomainContract {
@@ -10,7 +10,7 @@ export class Contract implements DomainContract {
   displayName: string;
   @ApiProperty()
   logoUri: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: Object, nullable: true })
   contractAbi: object | null;
   @ApiProperty()
   trustedForDelegateCall: boolean;

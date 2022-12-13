@@ -19,7 +19,7 @@ export class SafeApp {
   accessControl: SafeAppAccessControl;
   @ApiProperty()
   tags: string[];
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: SafeAppProvider, nullable: true })
   provider: SafeAppProvider | null;
 
   constructor(
