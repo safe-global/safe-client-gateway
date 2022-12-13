@@ -426,16 +426,14 @@ export class MultisigTransactionMapper {
       sender,
       recipient,
     );
-
-    const senderAddressInfo =
-      sender === transaction.safe
-        ? { value: sender }
-        : await this.addressInfoHelper.getOrDefault(chainId, sender);
-
-    const recipientAddressInfo =
-      recipient === transaction.safe
-        ? { value: recipient }
-        : await this.addressInfoHelper.getOrDefault(chainId, recipient);
+    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      sender,
+    );
+    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      recipient,
+    );
 
     return <TransferTransaction>{
       type: 'Transfer',
@@ -467,16 +465,14 @@ export class MultisigTransactionMapper {
       sender,
       recipient,
     );
-
-    const senderAddressInfo =
-      sender === transaction.safe
-        ? { value: sender }
-        : await this.addressInfoHelper.getOrDefault(chainId, sender);
-
-    const recipientAddressInfo =
-      recipient === transaction.safe
-        ? { value: recipient }
-        : await this.addressInfoHelper.getOrDefault(chainId, recipient);
+    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      sender,
+    );
+    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      recipient,
+    );
 
     return <TransferTransaction>{
       type: 'Transfer',
@@ -509,10 +505,10 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): Promise<TransferTransaction> {
-    const recipient =
-      transaction.safe !== transaction.to
-        ? await this.addressInfoHelper.getOrDefault(chainId, transaction.to)
-        : { value: transaction.to };
+    const recipient = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      transaction.to,
+    );
 
     return {
       type: 'Transfer',

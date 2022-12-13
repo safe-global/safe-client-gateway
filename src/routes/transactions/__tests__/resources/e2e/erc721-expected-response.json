@@ -8,7 +8,10 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Transfer",
-          "sender": { "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C" },
+          "sender": {
+            "logoUri": null,
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
           "recipient": {
             "logoUri": null,
             "value": "0xc6b82bA149CFA113f8f48d5E3b1F78e933e16DfD"
