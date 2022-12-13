@@ -12,32 +12,28 @@ import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
 import { CustomTransactionInfo } from '../entities/custom-transaction.entity';
 import { ExecutionInfo } from '../entities/execution-info.entity';
 import { MultisigExecutionInfo } from '../entities/multisig-execution-info.entity';
-import {
-  TransactionInfo,
-  TransactionSummary,
-} from '../entities/multisig-transaction.entity';
-import {
-  AddOwner,
-  ChangeImplementation,
-  ChangeThreshold,
-  DeleteGuard,
-  DisableModule,
-  EnableModule,
-  RemoveOwner,
-  SetFallbackHandler,
-  SetGuard,
-  SettingsChangeTransactionInfo,
-  SettingsInfo,
-  SwapOwner,
-} from '../entities/settings-change-transaction.entity';
+import { SettingsChangeTransaction } from '../entities/settings-change-transaction.entity';
+import { AddOwner } from '../entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '../entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '../entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '../entities/settings-changes/delete-guard';
+import { DisableModule } from '../entities/settings-changes/disable-module.entity';
+import { EnableModule } from '../entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '../entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '../entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '../entities/settings-changes/set-guard.entity';
+import { SettingsChange } from '../entities/settings-changes/settings-change.entity';
+import { SwapOwner } from '../entities/settings-changes/swap-owner.entity';
 import { TransactionStatus } from '../entities/transaction-status.entity';
+import { TransactionInfo } from '../entities/transaction-info.entity';
 import {
-  Erc20TransferInfo,
-  Erc721TransferInfo,
-  NativeCoinTransferInfo,
   TransferDirection,
-  TransferTransaction,
-} from '../entities/transfer-transaction.entity';
+  TransferTransactionInfo,
+} from '../entities/transfer-transaction-info.entity';
+import { Erc20Transfer } from '../entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '../entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '../entities/transfers/native-coin-transfer.entity';
+import { Transaction } from '../entities/transaction.entity';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -87,7 +83,7 @@ export class MultisigTransactionMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-  ): Promise<TransactionSummary> {
+  ): Promise<Transaction> {
     const txStatus = this.mapTransactionStatus(transaction, safe);
     const txInfo = await this.mapTransactionInfo(chainId, transaction, safe);
 
@@ -105,76 +101,64 @@ export class MultisigTransactionMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-  ): Promise<SettingsInfo | undefined> {
+  ): Promise<SettingsChange> {
     const { dataDecoded } = transaction;
     switch (dataDecoded.method) {
       case MultisigTransactionMapper.SET_FALLBACK_HANDLER:
-        return <SetFallbackHandler>{
-          type: 'SET_FALLBACK_HANDLER',
-          handler: dataDecoded.parameters[0]?.value,
-        };
+        return new SetFallbackHandler(dataDecoded.parameters[0]?.value);
       case MultisigTransactionMapper.ADD_OWNER_WITH_THRESHOLD:
-        return <AddOwner>{
-          type: 'ADD_OWNER',
-          owner: { value: dataDecoded.parameters[0]?.value },
-          threshold: Number(dataDecoded.parameters[1]?.value),
-        };
+        return new AddOwner(
+          { value: dataDecoded.parameters[0]?.value },
+          Number(dataDecoded.parameters[1]?.value),
+        );
       case MultisigTransactionMapper.REMOVE_OWNER:
-        return <RemoveOwner>{
-          type: 'REMOVE_OWNER',
-          owner: { value: dataDecoded.parameters[1]?.value },
-          threshold: Number(dataDecoded.parameters[2]?.value),
-        };
+        return new RemoveOwner(
+          { value: dataDecoded.parameters[1]?.value },
+          Number(dataDecoded.parameters[2]?.value),
+        );
+
       case MultisigTransactionMapper.SWAP_OWNER:
-        return <SwapOwner>{
-          type: 'SWAP_OWNER',
-          oldOwner: { value: dataDecoded.parameters[1]?.value },
-          newOwner: { value: dataDecoded.parameters[2]?.value },
-        };
-      case MultisigTransactionMapper.CHANGE_MASTER_COPY:
-        return <ChangeImplementation>{
-          type: 'CHANGE_MASTER_COPY',
-          implementation: await this.addressInfoHelper.getOrDefault(
-            chainId,
-            safe.address,
-          ),
-        };
-      case MultisigTransactionMapper.ENABLE_MODULE:
-        return <EnableModule>{
-          type: 'ENABLE_MODULE',
-          module: await this.addressInfoHelper.getOrDefault(
-            chainId,
-            dataDecoded.parameters[0]?.value,
-          ),
-        };
-      case MultisigTransactionMapper.DISABLE_MODULE:
-        return <DisableModule>{
-          type: 'DISABLE_MODULE',
-          module: await this.addressInfoHelper.getOrDefault(
-            chainId,
-            dataDecoded.parameters[1]?.value,
-          ),
-        };
+        return new SwapOwner(
+          { value: dataDecoded.parameters[1]?.value },
+          { value: dataDecoded.parameters[2]?.value },
+        );
+      case MultisigTransactionMapper.CHANGE_MASTER_COPY: {
+        const masterCopy = await this.addressInfoHelper.getOrDefault(
+          chainId,
+          safe.address,
+        );
+        return new ChangeMasterCopy(masterCopy);
+      }
+      case MultisigTransactionMapper.ENABLE_MODULE: {
+        const module = await this.addressInfoHelper.getOrDefault(
+          chainId,
+          dataDecoded.parameters[0]?.value,
+        );
+        return new EnableModule(module);
+      }
+      case MultisigTransactionMapper.DISABLE_MODULE: {
+        const module = await this.addressInfoHelper.getOrDefault(
+          chainId,
+          dataDecoded.parameters[1]?.value,
+        );
+        return new DisableModule(module);
+      }
       case MultisigTransactionMapper.CHANGE_THRESHOLD:
-        return <ChangeThreshold>{
-          type: 'CHANGE_THRESHOLD',
-          threshold: dataDecoded.parameters[0]?.value,
-        };
-      case MultisigTransactionMapper.SET_GUARD:
+        return new ChangeThreshold(dataDecoded.parameters[0]?.value);
+      case MultisigTransactionMapper.SET_GUARD: {
         const guardValue = dataDecoded.parameters[0]?.value;
         if (guardValue !== this.NULL_ADDRESS) {
-          return <SetGuard>{
-            type: 'SET_GUARD',
-            guard: await this.addressInfoHelper.getOrDefault(
-              chainId,
-              guardValue,
-            ),
-          };
+          const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
+            chainId,
+            guardValue,
+          );
+          return new SetGuard(guardAddressInfo);
+        } else {
+          return new DeleteGuard();
         }
-        return <DeleteGuard>{
-          type: 'DELETE_GUARD',
-        };
+      }
     }
+    throw new Error('Unknown setting');
   }
 
   private mapTransactionStatus(
@@ -309,7 +293,7 @@ export class MultisigTransactionMapper {
     return (value > 0 && dataSize > 0) || operation !== 0;
   }
 
-  private isEtherTransfer(value: number, dataSize: number): boolean {
+  private isNativeCoinTransfer(value: number, dataSize: number): boolean {
     return value > 0 && dataSize === 0;
   }
 
@@ -353,12 +337,20 @@ export class MultisigTransactionMapper {
       );
     }
 
-    if (this.isEtherTransfer(value, dataSize)) {
-      return this.getToEtherTransfer(chainId, transaction, safe);
+    if (this.isNativeCoinTransfer(value, dataSize)) {
+      return this.mapNativeCoinTransfer(chainId, transaction, safe);
     }
 
     if (this.isSettingsChange(transaction, value, dataSize)) {
-      return this.getSettingsChangeTransaction(chainId, transaction, safe);
+      const settingsInfo = await this.mapSettingsInfo(
+        chainId,
+        transaction,
+        safe,
+      );
+      return new SettingsChangeTransaction(
+        transaction.dataDecoded,
+        settingsInfo,
+      );
     }
 
     if (this.isValidTokenTransfer(transaction)) {
@@ -408,11 +400,29 @@ export class MultisigTransactionMapper {
     };
   }
 
+  private async mapNativeCoinTransfer(
+    chainId: string,
+    transaction: MultisigTransaction,
+    safe: Safe,
+  ): Promise<TransferTransactionInfo> {
+    const recipient = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      transaction.to,
+    );
+
+    return new TransferTransactionInfo(
+      { value: safe.address },
+      this.filterAddressInfo(recipient),
+      TransferDirection[TransferDirection.Outgoing].toUpperCase(),
+      new NativeCoinTransfer(transaction.value),
+    );
+  }
+
   private async mapErc20Transfer(
     token: Token,
     chainId: string,
     transaction: MultisigTransaction,
-  ): Promise<TransferTransaction> {
+  ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.getFromParam(dataDecoded, transaction.safe);
     const recipient = this.getToParam(dataDecoded, this.NULL_ADDRESS);
@@ -430,28 +440,26 @@ export class MultisigTransactionMapper {
       recipient,
     );
 
-    return <TransferTransaction>{
-      type: 'Transfer',
-      sender: this.filterAddressInfo(senderAddressInfo),
-      recipient: this.filterAddressInfo(recipientAddressInfo),
+    return new TransferTransactionInfo(
+      this.filterAddressInfo(senderAddressInfo),
+      this.filterAddressInfo(recipientAddressInfo),
       direction,
-      transferInfo: <Erc20TransferInfo>{
-        type: 'ERC20',
-        tokenAddress: token.address,
-        tokenName: token.name,
-        tokenSymbol: token.symbol,
-        logoUri: token.logoUri,
-        decimals: token.decimals,
-        value: this.getValueParam(dataDecoded, '0'),
-      },
-    };
+      new Erc20Transfer(
+        token.address,
+        this.getValueParam(dataDecoded, '0'),
+        token.name,
+        token.symbol,
+        token.logoUri,
+        token.decimals,
+      ),
+    );
   }
 
   private async mapErc721Transfer(
     token: Token,
     chainId: string,
     transaction: MultisigTransaction,
-  ): Promise<TransferTransaction> {
+  ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.getFromParam(dataDecoded, transaction.safe);
     const recipient = this.getToParam(dataDecoded, this.NULL_ADDRESS);
@@ -469,20 +477,18 @@ export class MultisigTransactionMapper {
       recipient,
     );
 
-    return <TransferTransaction>{
-      type: 'Transfer',
-      sender: this.filterAddressInfo(senderAddressInfo),
-      recipient: this.filterAddressInfo(recipientAddressInfo),
+    return new TransferTransactionInfo(
+      this.filterAddressInfo(senderAddressInfo),
+      this.filterAddressInfo(recipientAddressInfo),
       direction,
-      transferInfo: <Erc721TransferInfo>{
-        type: 'ERC721',
-        tokenAddress: token.address,
-        tokenId: this.getValueParam(dataDecoded, '0'),
-        tokenName: token.name,
-        tokenSymbol: token.symbol,
-        logoUri: token.logoUri,
-      },
-    };
+      new Erc721Transfer(
+        token.address,
+        this.getValueParam(dataDecoded, '0'),
+        token.name,
+        token.symbol,
+        token.logoUri,
+      ),
+    );
   }
 
   private getActionCount(transaction: MultisigTransaction): number | undefined {
@@ -493,40 +499,6 @@ export class MultisigTransactionMapper {
       );
       return parameter?.valueDecoded?.length;
     }
-  }
-
-  private async getToEtherTransfer(
-    chainId: string,
-    transaction: MultisigTransaction,
-    safe: Safe,
-  ): Promise<TransferTransaction> {
-    const recipient = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.to,
-    );
-
-    return {
-      type: 'Transfer',
-      sender: { value: safe.address },
-      recipient: this.filterAddressInfo(recipient),
-      direction: TransferDirection[TransferDirection.Outgoing].toUpperCase(),
-      transferInfo: <NativeCoinTransferInfo>{
-        type: 'NATIVE_COIN',
-        value: transaction.value,
-      },
-    };
-  }
-
-  private async getSettingsChangeTransaction(
-    chainId: string,
-    transaction: MultisigTransaction,
-    safe: Safe,
-  ): Promise<SettingsChangeTransactionInfo> {
-    return {
-      type: 'SettingsChange',
-      dataDecoded: transaction.dataDecoded,
-      settingsInfo: await this.mapSettingsInfo(chainId, transaction, safe),
-    };
   }
 
   private isCancellation(
