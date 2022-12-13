@@ -9,12 +9,14 @@ import {
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionMapper } from './mappers/multisig-transaction.mapper';
+import { IncomingTransferMapper } from './mappers/transaction.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
-    private readonly mapper: MultisigTransactionMapper,
+    private readonly multisigTransactionMapper: MultisigTransactionMapper,
+    private readonly incomingTransferMapper: IncomingTransferMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -46,11 +48,12 @@ export class TransactionsService {
     const results = await Promise.all(
       transactions.results.map(async (multiSigTransaction) => ({
         type: 'TRANSACTION',
-        transaction: await this.mapper.mapToTransactionSummary(
-          chainId,
-          multiSigTransaction,
-          safeInfo,
-        ),
+        transaction:
+          await this.multisigTransactionMapper.mapToTransactionSummary(
+            chainId,
+            multiSigTransaction,
+            safeInfo,
+          ),
         conflictType: 'None',
       })),
     );
@@ -90,10 +93,15 @@ export class TransactionsService {
       paginationData?.offset,
     );
 
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await Promise.all(
-      transfers.results.map(async () => ({
+      transfers.results.map(async (transfer) => ({
         type: 'TRANSACTION',
-        transaction: 'TODO',
+        transaction: await this.incomingTransferMapper.mapToTransactionSummary(
+          chainId,
+          transfer,
+          safeInfo,
+        ),
         conflictType: 'None',
       })),
     );

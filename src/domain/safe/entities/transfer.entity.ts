@@ -1,4 +1,5 @@
 export interface Transfer {
+  type: string;
   blockNumber: number;
   executionDate: Date;
   from: string;

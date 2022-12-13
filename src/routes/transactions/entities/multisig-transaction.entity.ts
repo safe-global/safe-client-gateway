@@ -38,9 +38,9 @@ export class TransactionSummary {
   @ApiProperty()
   txInfo: TransactionInfo;
   @ApiPropertyOptional()
-  executionInfo?: ExecutionInfo;
+  executionInfo?: ExecutionInfo | null;
   @ApiPropertyOptional()
-  safeAppInfo?: SafeAppInfo;
+  safeAppInfo?: SafeAppInfo | null;
 }
 
 export class MultisigTransaction {
