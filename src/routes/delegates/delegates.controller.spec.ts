@@ -71,6 +71,8 @@ describe('Delegates controller', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const pageDelegates = <Page<Delegate>>{
         count: 2,
+        next: null,
+        previous: null,
         results: [delegateFactory(safe), delegateFactory(safe)],
       };
       mockNetworkService.get.mockResolvedValueOnce({ data: pageDelegates });
@@ -88,6 +90,8 @@ describe('Delegates controller', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const pageDelegates = <Page<Delegate>>{
         count: 0,
+        next: null,
+        previous: null,
         results: [],
       };
       mockNetworkService.get.mockResolvedValueOnce({ data: pageDelegates });

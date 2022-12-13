@@ -13,7 +13,7 @@ export const erc20TransferSchema: Schema = {
     to: { type: 'string' },
     from: { type: 'string' },
     value: { type: 'string' },
-    tokenAddress: { type: 'string', nullable: true },
+    tokenAddress: { type: 'string', nullable: true, default: null },
   },
   required: [
     'type',

@@ -32,8 +32,8 @@ describe('Chains Controller (Unit)', () => {
 
   const chainsResponse: Page<Chain> = {
     count: 2,
-    next: undefined,
-    previous: undefined,
+    next: null,
+    previous: null,
     results: [chainDomainFactory(), chainDomainFactory()],
   };
 

@@ -56,7 +56,7 @@ describe('DataDecoded Service', () => {
 });
 
 function getExpectedSerializedParameters(
-  parameters: DataDecodedParameter[] | undefined,
+  parameters: DataDecodedParameter[] | null,
 ): ApiDataDecodedParameter[] {
   return parameters
     ? parameters.map(({ type: paramType, ...rest }) => ({ ...rest, paramType }))
