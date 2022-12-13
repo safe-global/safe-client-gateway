@@ -9,7 +9,12 @@ export const safeSchema: JSONSchemaType<Safe> = {
     threshold: { type: 'number' },
     owners: { type: 'array', items: { type: 'string' } },
     masterCopy: { type: 'string' },
-    modules: { type: 'array', nullable: true, items: { type: 'string' } },
+    modules: {
+      type: 'array',
+      nullable: true,
+      default: null,
+      items: { type: 'string' },
+    },
     fallbackHandler: { type: 'string' },
     guard: { type: 'string' },
     version: { type: 'string' },

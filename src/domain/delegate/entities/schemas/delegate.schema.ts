@@ -4,7 +4,7 @@ import { Delegate } from '../delegate.entity';
 export const delegateSchema: JSONSchemaType<Delegate> = {
   type: 'object',
   properties: {
-    safe: { type: 'string', nullable: true },
+    safe: { type: 'string', nullable: true, default: null },
     delegate: { type: 'string' },
     delegator: { type: 'string' },
     label: { type: 'string' },

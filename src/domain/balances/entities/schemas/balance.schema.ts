@@ -15,7 +15,7 @@ const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
 const balanceSchema: Schema = {
   type: 'object',
   properties: {
-    tokenAddress: { type: 'string', nullable: true },
+    tokenAddress: { type: 'string', nullable: true, default: null },
     token: { anyOf: [{ type: 'null' }, { $ref: 'balanceToken' }] },
     balance: { type: 'string' },
     fiatBalance: { type: 'string' },
