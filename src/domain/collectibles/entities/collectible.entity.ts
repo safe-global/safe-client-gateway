@@ -4,9 +4,9 @@ export interface Collectible {
   tokenSymbol: string;
   logoUri: string;
   id: string;
-  uri?: string;
-  name?: string;
-  description?: string;
-  imageUri?: string;
-  metadata?: Record<string, any>;
+  uri: string | null;
+  name: string | null;
+  description: string | null;
+  imageUri: string | null;
+  metadata: Record<string, any> | null;
 }

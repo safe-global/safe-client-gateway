@@ -53,6 +53,8 @@ describe('Chain Repository', () => {
   it('should return and validate a Chain[] from ConfigAPI', async () => {
     const chains: Page<Chain> = {
       count: faker.datatype.number(),
+      next: null,
+      previous: null,
       results: [chainFactory(), chainFactory()],
     };
     mockConfigApi.getChains.mockResolvedValue(chains);

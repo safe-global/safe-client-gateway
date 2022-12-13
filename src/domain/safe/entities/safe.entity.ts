@@ -3,7 +3,7 @@ export interface Safe {
   fallbackHandler: string;
   guard: string;
   masterCopy: string;
-  modules?: string[];
+  modules: string[] | null;
   nonce: number;
   owners: string[];
   threshold: number;

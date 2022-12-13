@@ -6,8 +6,8 @@ export const moduleTransactionSchema: Schema = {
   properties: {
     safe: { type: 'string' },
     to: { type: 'string' },
-    value: { type: 'string', nullable: true },
-    data: { type: 'string', nullable: true },
+    value: { type: 'string', nullable: true, default: null },
+    data: { type: 'string', nullable: true, default: null },
     dataDecoded: dataDecodedSchema,
     operation: { type: 'number', enum: [0, 1] },
     created: { type: 'string', isDate: true },
