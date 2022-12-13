@@ -93,9 +93,7 @@ export class MultisigTransactionMapper {
 
     return {
       id: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-      timestamp:
-        transaction?.executionDate?.getTime() ??
-        transaction?.submissionDate?.getTime(),
+      timestamp: transaction.executionDate.getTime(),
       txStatus,
       txInfo,
       executionInfo: this.mapExecutionInfo(transaction, safe, txStatus),
