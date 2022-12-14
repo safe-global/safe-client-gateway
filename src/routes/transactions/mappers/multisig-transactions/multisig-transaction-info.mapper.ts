@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '../../../../domain/safe/entities/operation.entity';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
@@ -21,6 +21,7 @@ import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity'
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { SettingsChangeMapper } from './settings-change.mapper';
 
+@Injectable()
 export class MultisigTransactionInfoMapper {
   private static readonly NULL_ADDRESS =
     '0x0000000000000000000000000000000000000000';
