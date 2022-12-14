@@ -391,15 +391,15 @@ export class MultisigTransactionMapper {
       chainId,
       transaction.to,
     );
-    return {
-      type: 'Custom',
-      to: this.filterAddressInfo(toAddressInfo),
-      dataSize: dataSize.toString(),
-      value: value.toString(),
-      methodName: transaction?.dataDecoded?.method ?? null,
-      actionCount: this.getActionCount(transaction),
-      isCancellation: this.isCancellation(transaction, dataSize),
-    };
+
+    return new CustomTransactionInfo(
+      this.filterAddressInfo(toAddressInfo),
+      dataSize.toString(),
+      value.toString(),
+      transaction?.dataDecoded?.method ?? null,
+      this.getActionCount(transaction),
+      this.isCancellation(transaction, dataSize),
+    );
   }
 
   private async mapNativeCoinTransfer(
