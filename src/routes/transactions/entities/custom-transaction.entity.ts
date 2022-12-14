@@ -9,10 +9,10 @@ export class CustomTransactionInfo extends TransactionInfo {
   dataSize: string;
   @ApiProperty()
   value: string;
-  @ApiPropertyOptional()
-  methodName?: string;
-  @ApiPropertyOptional()
-  actionCount?: number;
   @ApiProperty()
   isCancellation: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  methodName: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  actionCount: number | null;
 }

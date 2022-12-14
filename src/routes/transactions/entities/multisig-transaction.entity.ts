@@ -8,4 +8,10 @@ export class MultisigTransaction {
   transaction: Transaction;
   @ApiProperty()
   conflictType: string;
+
+  constructor(transaction: Transaction) {
+    this.type = 'TRANSACTION';
+    this.transaction = transaction;
+    this.conflictType = 'None';
+  }
 }

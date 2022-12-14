@@ -28,35 +28,40 @@ export class TransactionsService {
     executed?: boolean,
     paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
-    const transactions = await this.safeRepository.getMultisigTransactions(
-      chainId,
-      safeAddress,
-      executed,
-      executionDateGte,
-      executionDateLte,
-      to,
-      value,
-      nonce,
-      paginationData?.limit,
-      paginationData?.offset,
-    );
+    const domainTransactions =
+      await this.safeRepository.getMultisigTransactions(
+        chainId,
+        safeAddress,
+        executed,
+        executionDateGte,
+        executionDateLte,
+        to,
+        value,
+        nonce,
+        paginationData?.limit,
+        paginationData?.offset,
+      );
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await Promise.all(
-      transactions.results.map(async (multiSigTransaction) => ({
-        type: 'TRANSACTION',
-        transaction: await this.mapper.mapToTransactionSummary(
-          chainId,
-          multiSigTransaction,
-          safeInfo,
-        ),
-        conflictType: 'None',
-      })),
+      domainTransactions.results.map(
+        async (domainTransaction) =>
+          new MultisigTransaction(
+            await this.mapper.mapTransaction(
+              chainId,
+              domainTransaction,
+              safeInfo,
+            ),
+          ),
+      ),
     );
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transactions.next);
+    const nextURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.next,
+    );
     const previousURL = cursorUrlFromLimitAndOffset(
       routeUrl,
-      transactions.previous,
+      domainTransactions.previous,
     );
 
     return {

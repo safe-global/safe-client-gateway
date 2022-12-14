@@ -79,7 +79,7 @@ export class MultisigTransactionMapper {
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
   ) {}
 
-  async mapToTransactionSummary(
+  async mapTransaction(
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
@@ -93,7 +93,7 @@ export class MultisigTransactionMapper {
       txStatus,
       txInfo,
       executionInfo: this.mapExecutionInfo(transaction, safe, txStatus),
-      // TODO: include safeAppInfo retrieval logic where needed
+      safeAppInfo: null, // TODO: include safeAppInfo retrieval logic where needed
     };
   }
 
@@ -394,7 +394,7 @@ export class MultisigTransactionMapper {
       to: this.filterAddressInfo(toAddressInfo),
       dataSize: dataSize.toString(),
       value: value.toString(),
-      methodName: transaction?.dataDecoded?.method || null,
+      methodName: transaction?.dataDecoded?.method ?? null,
       actionCount: this.getActionCount(transaction),
       isCancellation: this.isCancellation(transaction, dataSize),
     };
@@ -491,7 +491,7 @@ export class MultisigTransactionMapper {
     );
   }
 
-  private getActionCount(transaction: MultisigTransaction): number | undefined {
+  private getActionCount(transaction: MultisigTransaction): number | null {
     const { dataDecoded } = transaction;
     if (transaction?.dataDecoded?.method === 'multiSend') {
       const parameter = dataDecoded.parameters?.find(
@@ -499,6 +499,8 @@ export class MultisigTransactionMapper {
       );
       return parameter?.valueDecoded?.length;
     }
+
+    return null;
   }
 
   private isCancellation(

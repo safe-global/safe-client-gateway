@@ -102,6 +102,7 @@ describe('Get multisig transactions e2e test', () => {
 });
 
 const getJsonResource = (relativePath: string) => {
-  const basePath = 'src/routes/transactions/__tests__/resources';
+  const basePath =
+    'src/routes/transactions/__tests__/resources/multisig-transactions';
   return JSON.parse(readFileSync(`${basePath}/${relativePath}`, 'utf8'));
 };

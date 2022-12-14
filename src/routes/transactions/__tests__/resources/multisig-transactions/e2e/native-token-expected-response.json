@@ -25,7 +25,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 2,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -53,7 +54,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -81,7 +83,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -116,7 +119,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -151,7 +155,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -179,7 +184,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -207,7 +213,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -244,7 +251,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -279,7 +287,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -307,7 +316,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -323,6 +333,7 @@
             "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee",
             "logoUri": null
           },
+          "actionCount": null,
           "dataSize": "100",
           "value": "0",
           "methodName": "claimVestedTokens",
@@ -334,7 +345,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     }

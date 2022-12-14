@@ -32,7 +32,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -60,7 +61,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -77,6 +79,7 @@
             "logoUri": null
           },
           "dataSize": "0",
+          "actionCount": null,
           "value": "0",
           "methodName": null,
           "isCancellation": true
@@ -87,7 +90,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     }

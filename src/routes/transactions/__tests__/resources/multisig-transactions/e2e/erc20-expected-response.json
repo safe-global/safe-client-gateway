@@ -33,7 +33,8 @@
           "confirmationsRequired": 2,
           "confirmationsSubmitted": 2,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     },
@@ -68,7 +69,8 @@
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     }

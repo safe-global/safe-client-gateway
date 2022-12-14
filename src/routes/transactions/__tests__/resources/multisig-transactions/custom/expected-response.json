@@ -25,7 +25,8 @@
           "confirmationsRequired": 3,
           "confirmationsSubmitted": 3,
           "missingSigners": null
-        }
+        },
+        "safeAppInfo": null
       },
       "conflictType": "None"
     }

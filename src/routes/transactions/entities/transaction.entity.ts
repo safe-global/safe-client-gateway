@@ -6,14 +6,14 @@ import { TransactionInfo } from './transaction-info.entity';
 export class Transaction {
   @ApiProperty()
   id: string;
-  @ApiPropertyOptional()
-  timestamp?: number;
+  @ApiProperty()
+  timestamp: number;
   @ApiProperty()
   txStatus: string;
   @ApiProperty()
   txInfo: TransactionInfo;
-  @ApiPropertyOptional() // TODO: null OpenApi
-  executionInfo?: ExecutionInfo; // TODO: null OpenApi
-  @ApiPropertyOptional()
-  safeAppInfo?: SafeAppInfo;
+  @ApiPropertyOptional({ type: ExecutionInfo, nullable: true })
+  executionInfo: ExecutionInfo | null;
+  @ApiPropertyOptional({ type: SafeAppInfo, nullable: true })
+  safeAppInfo: SafeAppInfo | null;
 }

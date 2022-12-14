@@ -148,12 +148,16 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc20/transfer-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/transfer-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc20/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
@@ -163,7 +167,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url.includes(getTokenUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('erc20/token-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/token-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -173,7 +179,11 @@ describe('Transactions Controller (Unit)', () => {
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
-          expect(body).toEqual(getJsonResource('erc20/expected-response.json'));
+          expect(body).toEqual(
+            getJsonResource(
+              'multisig-transactions/erc20/expected-response.json',
+            ),
+          );
         });
     });
 
@@ -192,12 +202,16 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc721/transfer-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/transfer-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc721/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
@@ -207,7 +221,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url.includes(getTokenUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('erc721/token-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/token-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -218,7 +234,9 @@ describe('Transactions Controller (Unit)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
-            getJsonResource('erc721/expected-response.json'),
+            getJsonResource(
+              'multisig-transactions/erc721/expected-response.json',
+            ),
           );
         });
     });
@@ -237,17 +255,23 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('custom/custom-transaction-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/custom-transaction-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('custom/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('custom/contract-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/contract-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -258,7 +282,9 @@ describe('Transactions Controller (Unit)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
-            getJsonResource('custom/expected-response.json'),
+            getJsonResource(
+              'multisig-transactions/custom/expected-response.json',
+            ),
           );
         });
     });
