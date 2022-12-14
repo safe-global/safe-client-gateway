@@ -7,7 +7,7 @@ import {
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { MultisigTransactionMapper } from './mappers/multisig-transaction.mapper';
+import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 
 @Injectable()
 export class TransactionsService {
