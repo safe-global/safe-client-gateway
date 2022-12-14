@@ -24,8 +24,9 @@ import { SetFallbackHandler } from '../entities/settings-changes/set-fallback-ha
 import { SetGuard } from '../entities/settings-changes/set-guard.entity';
 import { SettingsChange } from '../entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '../entities/settings-changes/swap-owner.entity';
-import { TransactionStatus } from '../entities/transaction-status.entity';
 import { TransactionInfo } from '../entities/transaction-info.entity';
+import { TransactionStatus } from '../entities/transaction-status.entity';
+import { Transaction } from '../entities/transaction.entity';
 import {
   TransferDirection,
   TransferTransactionInfo,
@@ -33,7 +34,6 @@ import {
 import { Erc20Transfer } from '../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../entities/transfers/native-coin-transfer.entity';
-import { Transaction } from '../entities/transaction.entity';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -324,9 +324,11 @@ export class MultisigTransactionMapper {
     safe: Safe,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
-    const dataSize = transaction.data
-      ? (Buffer.byteLength(transaction.data) - 2) / 2
+    const dataByteLength = transaction.data
+      ? Buffer.byteLength(transaction.data)
       : 0;
+
+    const dataSize = dataByteLength >= 2 ? (dataByteLength - 2) / 2 : 0;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.mapCustomTransaction(
