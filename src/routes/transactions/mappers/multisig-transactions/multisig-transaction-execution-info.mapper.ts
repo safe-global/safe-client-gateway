@@ -35,6 +35,6 @@ export class MultisigTransactionExecutionInfoMapper {
 
     return safe.owners
       .filter((owner) => !confirmedOwners.includes(owner))
-      .map((missingSigner) => ({ value: missingSigner }));
+      .map((missingSigner) => new AddressInfo(missingSigner));
   }
 }

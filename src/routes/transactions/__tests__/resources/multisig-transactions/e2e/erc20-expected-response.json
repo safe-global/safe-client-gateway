@@ -10,10 +10,12 @@
           "type": "Transfer",
           "sender": {
             "logoUri": null,
+            "name": null,
             "value": "0xCe95F1F4ACADEe697993B0E3a0FE48B444679046"
           },
           "recipient": {
             "logoUri": null,
+            "name": null,
             "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
           },
           "direction": "OUTGOING",
@@ -59,7 +61,11 @@
           },
           "settingsInfo": {
             "type": "ADD_OWNER",
-            "owner": { "value": "0x35E730d5Ce84F9C0D7F48F15337e80341B1d621c" },
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x35E730d5Ce84F9C0D7F48F15337e80341B1d621c"
+            },
             "threshold": 2
           }
         },

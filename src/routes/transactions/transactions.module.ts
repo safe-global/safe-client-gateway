@@ -4,7 +4,8 @@ import { MultisigTransactionExecutionInfoMapper } from './mappers/multisig-trans
 import { MultisigTransactionInfoMapper } from './mappers/multisig-transactions/multisig-transaction-info.mapper';
 import { MultisigTransactionStatusMapper } from './mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
-import { SettingsChangeMapper } from './mappers/multisig-transactions/settings-change.mapper';
+import { CustomTransactionMapper } from './mappers/multisig-transactions/transaction-info/custom-transaction.mapper';
+import { SettingsChangeMapper } from './mappers/multisig-transactions/transaction-info/settings-change.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 
@@ -12,6 +13,7 @@ import { TransactionsService } from './transactions.service';
   controllers: [TransactionsController],
   imports: [AddressInfoModule],
   providers: [
+    CustomTransactionMapper,
     MultisigTransactionExecutionInfoMapper,
     MultisigTransactionInfoMapper,
     MultisigTransactionMapper,

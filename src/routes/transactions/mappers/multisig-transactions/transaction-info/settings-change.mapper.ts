@@ -1,17 +1,18 @@
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { AddOwner } from '../../entities/settings-changes/add-owner.entity';
-import { ChangeMasterCopy } from '../../entities/settings-changes/change-master-copy.entity';
-import { ChangeThreshold } from '../../entities/settings-changes/change-threshold.entity';
-import { DeleteGuard } from '../../entities/settings-changes/delete-guard';
-import { DisableModule } from '../../entities/settings-changes/disable-module.entity';
-import { EnableModule } from '../../entities/settings-changes/enable-module.entity';
-import { RemoveOwner } from '../../entities/settings-changes/remove-owner.entity';
-import { SetFallbackHandler } from '../../entities/settings-changes/set-fallback-handler.entity';
-import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
-import { SettingsChange } from '../../entities/settings-changes/settings-change.entity';
-import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
+import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
+import { Safe } from '../../../../../domain/safe/entities/safe.entity';
+import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { AddressInfo } from '../../../../common/entities/address-info.entity';
+import { AddOwner } from '../../../entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '../../../entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '../../../entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '../../../entities/settings-changes/delete-guard';
+import { DisableModule } from '../../../entities/settings-changes/disable-module.entity';
+import { EnableModule } from '../../../entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '../../../entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '../../../entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '../../../entities/settings-changes/set-guard.entity';
+import { SettingsChange } from '../../../entities/settings-changes/settings-change.entity';
+import { SwapOwner } from '../../../entities/settings-changes/swap-owner.entity';
 
 export class SettingsChangeMapper {
   private static readonly NULL_ADDRESS =
@@ -52,19 +53,19 @@ export class SettingsChangeMapper {
         return new SetFallbackHandler(this.getValue(dataDecoded, 0));
       case SettingsChangeMapper.ADD_OWNER_WITH_THRESHOLD:
         return new AddOwner(
-          { value: this.getValue(dataDecoded, 0) },
+          new AddressInfo(this.getValue(dataDecoded, 0)),
           Number(this.getValue(dataDecoded, 1)),
         );
       case SettingsChangeMapper.REMOVE_OWNER:
         return new RemoveOwner(
-          { value: this.getValue(dataDecoded, 1) },
+          new AddressInfo(this.getValue(dataDecoded, 1)),
           Number(this.getValue(dataDecoded, 2)),
         );
 
       case SettingsChangeMapper.SWAP_OWNER:
         return new SwapOwner(
-          { value: this.getValue(dataDecoded, 1) },
-          { value: this.getValue(dataDecoded, 2) },
+          new AddressInfo(this.getValue(dataDecoded, 1)),
+          new AddressInfo(this.getValue(dataDecoded, 2)),
         );
       case SettingsChangeMapper.CHANGE_MASTER_COPY: {
         const masterCopy = await this.addressInfoHelper.getOrDefault(

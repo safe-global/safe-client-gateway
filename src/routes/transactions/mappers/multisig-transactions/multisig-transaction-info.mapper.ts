@@ -9,7 +9,6 @@ import { TokenType } from '../../../balances/entities/token-type.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
-import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 import { SettingsChangeTransaction } from '../../entities/settings-change-transaction.entity';
 import { TransactionInfo } from '../../entities/transaction-info.entity';
 import {
@@ -19,7 +18,8 @@ import {
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
-import { SettingsChangeMapper } from './settings-change.mapper';
+import { CustomTransactionMapper } from './transaction-info/custom-transaction.mapper';
+import { SettingsChangeMapper } from './transaction-info/settings-change.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -44,6 +44,7 @@ export class MultisigTransactionInfoMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
+    private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
   ) {}
 
@@ -60,7 +61,7 @@ export class MultisigTransactionInfoMapper {
     const dataSize = dataByteLength >= 2 ? (dataByteLength - 2) / 2 : 0;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
-      return await this.mapCustomTransaction(
+      return await this.customTransactionMapper.mapCustomTransaction(
         transaction,
         value,
         dataSize,
@@ -99,27 +100,11 @@ export class MultisigTransactionInfoMapper {
       }
     }
 
-    return this.mapCustomTransaction(transaction, value, dataSize, chainId);
-  }
-
-  private async mapCustomTransaction(
-    transaction: MultisigTransaction,
-    value: number,
-    dataSize: number,
-    chainId: string,
-  ): Promise<CustomTransactionInfo> {
-    const toAddressInfo = await this.addressInfoHelper.getOrDefault(
+    return this.customTransactionMapper.mapCustomTransaction(
+      transaction,
+      value,
+      dataSize,
       chainId,
-      transaction.to,
-    );
-
-    return new CustomTransactionInfo(
-      this.filterAddressInfo(toAddressInfo),
-      dataSize.toString(),
-      value.toString(),
-      transaction?.dataDecoded?.method ?? null,
-      this.getActionCount(transaction),
-      this.isCancellation(transaction, dataSize),
     );
   }
 
@@ -134,8 +119,8 @@ export class MultisigTransactionInfoMapper {
     );
 
     return new TransferTransactionInfo(
-      { value: safe.address },
-      this.filterAddressInfo(recipient),
+      new AddressInfo(safe.address),
+      recipient,
       TransferDirection[TransferDirection.Outgoing].toUpperCase(),
       new NativeCoinTransfer(transaction.value),
     );
@@ -167,8 +152,8 @@ export class MultisigTransactionInfoMapper {
     );
 
     return new TransferTransactionInfo(
-      this.filterAddressInfo(senderAddressInfo),
-      this.filterAddressInfo(recipientAddressInfo),
+      senderAddressInfo,
+      recipientAddressInfo,
       direction,
       new Erc20Transfer(
         token.address,
@@ -207,8 +192,8 @@ export class MultisigTransactionInfoMapper {
     );
 
     return new TransferTransactionInfo(
-      this.filterAddressInfo(senderAddressInfo),
-      this.filterAddressInfo(recipientAddressInfo),
+      senderAddressInfo,
+      recipientAddressInfo,
       direction,
       new Erc721Transfer(
         token.address,
@@ -316,26 +301,6 @@ export class MultisigTransactionInfoMapper {
     }
   }
 
-  private filterAddressInfo(addressInfo: AddressInfo): AddressInfo {
-    return {
-      value: addressInfo.value,
-      name: addressInfo.name !== '' ? addressInfo.name : undefined,
-      logoUri: addressInfo.logoUri,
-    };
-  }
-
-  private getActionCount(transaction: MultisigTransaction): number | null {
-    const { dataDecoded } = transaction;
-    if (transaction?.dataDecoded?.method === 'multiSend') {
-      const parameter = dataDecoded.parameters?.find(
-        (parameter) => parameter.name === 'transactions',
-      );
-      return parameter?.valueDecoded?.length;
-    }
-
-    return null;
-  }
-
   private getTransferDirection(safe: string, from: string, to: string): string {
     if (safe === from) {
       return TransferDirection[TransferDirection.Outgoing].toUpperCase();
@@ -364,35 +329,5 @@ export class MultisigTransactionInfoMapper {
       default:
         return fallback;
     }
-  }
-
-  private isCancellation(
-    transaction: MultisigTransaction,
-    dataSize: number,
-  ): boolean {
-    const {
-      to,
-      safe,
-      value,
-      baseGas,
-      gasPrice,
-      gasToken,
-      operation,
-      refundReceiver,
-      safeTxGas,
-    } = transaction;
-
-    return (
-      to === safe &&
-      dataSize === 0 &&
-      (!value || Number(value) === 0) &&
-      operation === 0 &&
-      (!baseGas || Number(baseGas) === 0) &&
-      (!gasPrice || Number(gasPrice) === 0) &&
-      (!gasToken || gasToken === MultisigTransactionInfoMapper.NULL_ADDRESS) &&
-      (!refundReceiver ||
-        refundReceiver === MultisigTransactionInfoMapper.NULL_ADDRESS) &&
-      (!safeTxGas || safeTxGas === 60)
-    );
   }
 }

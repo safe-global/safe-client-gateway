@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import multisigTransactionConfirmationFactory from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
 import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
 import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
+import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
@@ -126,7 +127,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     );
     expect(executionInfo).toHaveProperty(
       'missingSigners',
-      safeOwners.map((address) => ({ value: address })),
+      safeOwners.map((address) => new AddressInfo(address)),
     );
   });
 
@@ -162,7 +163,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       confirmations.length,
     );
     expect(executionInfo).toHaveProperty('missingSigners', [
-      { value: safeOwners[1] },
+      new AddressInfo(safeOwners[1]),
     ]);
   });
 });

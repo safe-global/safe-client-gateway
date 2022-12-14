@@ -9,9 +9,13 @@
         "txInfo": {
           "type": "Transfer",
           "sender": {
+            "logoUri": null,
+            "name": null,
             "value": "0x0c2A08D294026Cd363441240C2ed5D09C93A044F"
           },
           "recipient": {
+            "logoUri": null,
+            "name": null,
             "value": "0x3a55e304D9cF13E45Ead6BA3DabCcadD3a419356"
           },
           "direction": "OUTGOING",

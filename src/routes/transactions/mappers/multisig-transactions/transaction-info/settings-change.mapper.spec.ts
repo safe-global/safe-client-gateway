@@ -1,18 +1,18 @@
 import { faker } from '@faker-js/faker';
-import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
-import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { AddOwner } from '../../entities/settings-changes/add-owner.entity';
-import { ChangeMasterCopy } from '../../entities/settings-changes/change-master-copy.entity';
-import { ChangeThreshold } from '../../entities/settings-changes/change-threshold.entity';
-import { DeleteGuard } from '../../entities/settings-changes/delete-guard';
-import { DisableModule } from '../../entities/settings-changes/disable-module.entity';
-import { EnableModule } from '../../entities/settings-changes/enable-module.entity';
-import { RemoveOwner } from '../../entities/settings-changes/remove-owner.entity';
-import { SetFallbackHandler } from '../../entities/settings-changes/set-fallback-handler.entity';
-import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
-import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
+import { MultisigTransactionBuilder } from '../../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
+import safeFactory from '../../../../../domain/safe/entities/__tests__/safe.factory';
+import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { AddressInfo } from '../../../../common/entities/address-info.entity';
+import { AddOwner } from '../../../entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '../../../entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '../../../entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '../../../entities/settings-changes/delete-guard';
+import { DisableModule } from '../../../entities/settings-changes/disable-module.entity';
+import { EnableModule } from '../../../entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '../../../entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '../../../entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '../../../entities/settings-changes/set-guard.entity';
+import { SwapOwner } from '../../../entities/settings-changes/swap-owner.entity';
 import { SettingsChangeMapper } from './settings-change.mapper';
 
 const addressInfoHelper = jest.mocked({
@@ -76,7 +76,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     );
 
     expect(settingChange).toBeInstanceOf(AddOwner);
-    expect(settingChange).toHaveProperty('owner', { value: ownerValue });
+    expect(settingChange).toHaveProperty('owner', new AddressInfo(ownerValue));
     expect(settingChange).toHaveProperty('threshold', Number(thresholdValue));
   });
 
@@ -102,21 +102,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     );
 
     expect(settingChange).toBeInstanceOf(RemoveOwner);
-    expect(settingChange).toHaveProperty('owner', { value: ownerValue });
+    expect(settingChange).toHaveProperty('owner', new AddressInfo(ownerValue));
     expect(settingChange).toHaveProperty('threshold', Number(thresholdValue));
   });
 
   it('should build a SwapOwner setting', async () => {
     const safe = safeFactory();
-    const ownerValue = faker.random.numeric();
-    const thresholdValue = faker.random.numeric();
+    const oldOwner = faker.random.numeric();
+    const newOwner = faker.random.numeric();
     const transaction = new MultisigTransactionBuilder()
       .withDataDecoded({
         method: 'swapOwner',
         parameters: [
           { value: faker.random.numeric() },
-          { value: ownerValue },
-          { value: thresholdValue },
+          { value: oldOwner },
+          { value: newOwner },
         ],
       })
       .build();
@@ -128,10 +128,8 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     );
 
     expect(settingChange).toBeInstanceOf(SwapOwner);
-    expect(settingChange).toHaveProperty('oldOwner', { value: ownerValue });
-    expect(settingChange).toHaveProperty('newOwner', {
-      value: thresholdValue,
-    });
+    expect(settingChange).toHaveProperty('oldOwner', new AddressInfo(oldOwner));
+    expect(settingChange).toHaveProperty('newOwner', new AddressInfo(newOwner));
   });
 
   it('should build a ChangeMasterCopy setting', async () => {

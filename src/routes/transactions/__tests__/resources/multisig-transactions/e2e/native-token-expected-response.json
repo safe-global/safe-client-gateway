@@ -8,9 +8,14 @@
         "txStatus": "SUCCESS",
         "txInfo": {
           "type": "Transfer",
-          "sender": { "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C" },
+          "sender": {
+            "logoUri": null,
+            "name": null,
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
           "recipient": {
             "logoUri": null,
+            "name": null,
             "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
           },
           "direction": "OUTGOING",
@@ -40,6 +45,7 @@
           "type": "Custom",
           "to": {
             "logoUri": null,
+            "name": null,
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
           },
           "dataSize": "388",
@@ -69,7 +75,8 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null
+            "logoUri": null,
+            "name": null
           },
           "dataSize": "324",
           "value": "0",
@@ -109,7 +116,11 @@
           },
           "settingsInfo": {
             "type": "ADD_OWNER",
-            "owner": { "value": "0x2986Be7eaE053d47670806277a5a70Ed859bCf90" },
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x2986Be7eaE053d47670806277a5a70Ed859bCf90"
+            },
             "threshold": 1
           }
         },
@@ -145,7 +156,11 @@
           },
           "settingsInfo": {
             "type": "ADD_OWNER",
-            "owner": { "value": "0x72d315603Ba7eE9C100f4207a80248F58381A20d" },
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x72d315603Ba7eE9C100f4207a80248F58381A20d"
+            },
             "threshold": 1
           }
         },
@@ -170,7 +185,8 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null
+            "logoUri": null,
+            "name": null
           },
           "dataSize": "932",
           "value": "0",
@@ -199,7 +215,8 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null
+            "logoUri": null,
+            "name": null
           },
           "dataSize": "12228",
           "value": "0",
@@ -228,10 +245,12 @@
           "type": "Transfer",
           "sender": {
             "logoUri": null,
+            "name": null,
             "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
           },
           "recipient": {
             "logoUri": null,
+            "name": null,
             "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
           },
           "direction": "OUTGOING",
@@ -277,7 +296,11 @@
           },
           "settingsInfo": {
             "type": "ADD_OWNER",
-            "owner": { "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835" },
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835"
+            },
             "threshold": 1
           }
         },
@@ -302,7 +325,8 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null
+            "logoUri": null,
+            "name": null
           },
           "dataSize": "932",
           "value": "0",
@@ -331,7 +355,8 @@
           "type": "Custom",
           "to": {
             "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee",
-            "logoUri": null
+            "logoUri": null,
+            "name": null
           },
           "actionCount": null,
           "dataSize": "100",
