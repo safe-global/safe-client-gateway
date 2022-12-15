@@ -2,23 +2,16 @@ import { Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '../../../../domain/safe/entities/operation.entity';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenType } from '../../../balances/entities/token-type.entity';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '../../entities/settings-change-transaction.entity';
 import { TransactionInfo } from '../../entities/transaction-info.entity';
-import {
-  TransferDirection,
-  TransferTransactionInfo,
-} from '../../entities/transfer-transaction-info.entity';
-import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { CustomTransactionMapper } from './transaction-info/custom-transaction.mapper';
+import { DataDecodedParamHelper } from './transaction-info/data-decoded-param.helper';
+import { Erc20TransferMapper } from './transaction-info/erc20-transfer.mapper';
+import { Erc721TransferMapper } from './transaction-info/erc721-transfer.mapper';
+import { NativeCoinTransferMapper } from './transaction-info/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './transaction-info/settings-change.mapper';
 
 @Injectable()
@@ -43,9 +36,12 @@ export class MultisigTransactionInfoMapper {
 
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
-    private readonly addressInfoHelper: AddressInfoHelper,
+    private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
+    private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
+    private readonly erc20TransferMapper: Erc20TransferMapper,
+    private readonly erc721TransferMapper: Erc721TransferMapper,
   ) {}
 
   async mapTransactionInfo(
@@ -70,7 +66,11 @@ export class MultisigTransactionInfoMapper {
     }
 
     if (this.isNativeCoinTransfer(value, dataSize)) {
-      return this.mapNativeCoinTransfer(chainId, transaction, safe);
+      return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
+        chainId,
+        transaction,
+        safe,
+      );
     }
 
     if (this.isSettingsChange(transaction, value, dataSize)) {
@@ -92,11 +92,19 @@ export class MultisigTransactionInfoMapper {
       );
 
       if (token.type === TokenType.Erc20) {
-        return this.mapErc20Transfer(token, chainId, transaction);
+        return this.erc20TransferMapper.mapErc20Transfer(
+          token,
+          chainId,
+          transaction,
+        );
       }
 
       if (token.type === TokenType.Erc721) {
-        return this.mapErc721Transfer(token, chainId, transaction);
+        return this.erc721TransferMapper.mapErc721Transfer(
+          token,
+          chainId,
+          transaction,
+        );
       }
     }
 
@@ -105,103 +113,6 @@ export class MultisigTransactionInfoMapper {
       value,
       dataSize,
       chainId,
-    );
-  }
-
-  private async mapNativeCoinTransfer(
-    chainId: string,
-    transaction: MultisigTransaction,
-    safe: Safe,
-  ): Promise<TransferTransactionInfo> {
-    const recipient = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.to,
-    );
-
-    return new TransferTransactionInfo(
-      new AddressInfo(safe.address),
-      recipient,
-      TransferDirection[TransferDirection.Outgoing].toUpperCase(),
-      new NativeCoinTransfer(transaction.value),
-    );
-  }
-
-  private async mapErc20Transfer(
-    token: Token,
-    chainId: string,
-    transaction: MultisigTransaction,
-  ): Promise<TransferTransactionInfo> {
-    const { dataDecoded } = transaction;
-    const sender = this.getFromParam(dataDecoded, transaction.safe);
-    const recipient = this.getToParam(
-      dataDecoded,
-      MultisigTransactionInfoMapper.NULL_ADDRESS,
-    );
-    const direction = this.getTransferDirection(
-      transaction.safe,
-      sender,
-      recipient,
-    );
-    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      sender,
-    );
-    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      recipient,
-    );
-
-    return new TransferTransactionInfo(
-      senderAddressInfo,
-      recipientAddressInfo,
-      direction,
-      new Erc20Transfer(
-        token.address,
-        this.getValueParam(dataDecoded, '0'),
-        token.name,
-        token.symbol,
-        token.logoUri,
-        token.decimals,
-      ),
-    );
-  }
-
-  private async mapErc721Transfer(
-    token: Token,
-    chainId: string,
-    transaction: MultisigTransaction,
-  ): Promise<TransferTransactionInfo> {
-    const { dataDecoded } = transaction;
-    const sender = this.getFromParam(dataDecoded, transaction.safe);
-    const recipient = this.getToParam(
-      dataDecoded,
-      MultisigTransactionInfoMapper.NULL_ADDRESS,
-    );
-    const direction = this.getTransferDirection(
-      transaction.safe,
-      sender,
-      recipient,
-    );
-    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      sender,
-    );
-    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      recipient,
-    );
-
-    return new TransferTransactionInfo(
-      senderAddressInfo,
-      recipientAddressInfo,
-      direction,
-      new Erc721Transfer(
-        token.address,
-        this.getValueParam(dataDecoded, '0'),
-        token.name,
-        token.symbol,
-        token.logoUri,
-      ),
     );
   }
 
@@ -259,75 +170,10 @@ export class MultisigTransactionInfoMapper {
     if (!dataDecoded) return false;
     return (
       this.TRANSFER_METHOD == dataDecoded.method ||
-      this.getFromParam(dataDecoded, '') === transaction.safe ||
-      this.getToParam(dataDecoded, '') === transaction.safe
+      this.dataDecodedParamHelper.getFromParam(dataDecoded, '') ===
+        transaction.safe ||
+      this.dataDecodedParamHelper.getToParam(dataDecoded, '') ===
+        transaction.safe
     );
-  }
-
-  private getFromParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
-      return fallback;
-    }
-
-    switch (dataDecoded.method) {
-      case this.TRANSFER_FROM_METHOD:
-      case this.SAFE_TRANSFER_FROM_METHOD:
-        return typeof dataDecoded.parameters[0]?.value === 'string'
-          ? dataDecoded.parameters[0]?.value
-          : fallback;
-      case this.TRANSFER_METHOD:
-      default:
-        return fallback;
-    }
-  }
-
-  private getToParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded?.parameters) {
-      return fallback;
-    }
-
-    switch (dataDecoded.method) {
-      case this.TRANSFER_METHOD:
-        return typeof dataDecoded.parameters[0]?.value === 'string'
-          ? dataDecoded.parameters[0]?.value
-          : fallback;
-      case this.TRANSFER_FROM_METHOD:
-      case this.SAFE_TRANSFER_FROM_METHOD:
-        return typeof dataDecoded.parameters[1]?.value === 'string'
-          ? dataDecoded.parameters[1]?.value
-          : fallback;
-      default:
-        return fallback;
-    }
-  }
-
-  private getTransferDirection(safe: string, from: string, to: string): string {
-    if (safe === from) {
-      return TransferDirection[TransferDirection.Outgoing].toUpperCase();
-    }
-    if (safe === to) {
-      return TransferDirection[TransferDirection.Incoming].toUpperCase();
-    }
-    return TransferDirection[TransferDirection.Unknown].toUpperCase();
-  }
-
-  private getValueParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
-      return fallback;
-    }
-
-    switch (dataDecoded.method) {
-      case this.TRANSFER_METHOD: {
-        const value = dataDecoded.parameters[1]?.value;
-        return typeof value === 'string' ? value : fallback;
-      }
-      case this.TRANSFER_FROM_METHOD:
-      case this.SAFE_TRANSFER_FROM_METHOD: {
-        const value = dataDecoded.parameters[2]?.value;
-        return typeof value === 'string' ? value : fallback;
-      }
-      default:
-        return fallback;
-    }
   }
 }

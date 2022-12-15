@@ -33,11 +33,11 @@ export class CustomTransactionMapper {
 
   private getActionCount(transaction: MultisigTransaction): number | null {
     const { dataDecoded } = transaction;
-    if (transaction?.dataDecoded?.method === 'multiSend') {
+    if (dataDecoded?.method === 'multiSend') {
       const parameter = dataDecoded.parameters?.find(
         (parameter) => parameter.name === 'transactions',
       );
-      return parameter?.valueDecoded?.length;
+      return parameter?.valueDecoded?.length ?? null;
     }
 
     return null;
