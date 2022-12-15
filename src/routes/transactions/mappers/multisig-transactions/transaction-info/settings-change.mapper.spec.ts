@@ -13,6 +13,7 @@ import { RemoveOwner } from '../../../entities/settings-changes/remove-owner.ent
 import { SetFallbackHandler } from '../../../entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '../../../entities/settings-changes/set-guard.entity';
 import { SwapOwner } from '../../../entities/settings-changes/swap-owner.entity';
+import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 
 const addressInfoHelper = jest.mocked({
@@ -20,7 +21,10 @@ const addressInfoHelper = jest.mocked({
 } as unknown as AddressInfoHelper);
 
 describe('Multisig Settings Change Transaction mapper (Unit)', () => {
-  const mapper = new SettingsChangeMapper(addressInfoHelper);
+  const mapper = new SettingsChangeMapper(
+    addressInfoHelper,
+    new DataDecodedParamHelper(),
+  );
 
   it('should build a SetFallbackHandler setting', async () => {
     const safe = safeFactory();

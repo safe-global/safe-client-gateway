@@ -3,7 +3,7 @@ import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-t
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
-import { MultisigTransactionInfoMapper } from './multisig-transaction-info.mapper';
+import { MultisigTransactionInfoMapper } from './transaction-info/multisig-transaction-info.mapper';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
 
 @Injectable()

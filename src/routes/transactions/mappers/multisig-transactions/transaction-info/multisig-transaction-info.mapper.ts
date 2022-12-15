@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '../../../../domain/safe/entities/operation.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
-import { TokenType } from '../../../balances/entities/token-type.entity';
-import { SettingsChangeTransaction } from '../../entities/settings-change-transaction.entity';
-import { TransactionInfo } from '../../entities/transaction-info.entity';
-import { CustomTransactionMapper } from './transaction-info/custom-transaction.mapper';
-import { DataDecodedParamHelper } from './transaction-info/data-decoded-param.helper';
-import { Erc20TransferMapper } from './transaction-info/erc20-transfer.mapper';
-import { Erc721TransferMapper } from './transaction-info/erc721-transfer.mapper';
-import { NativeCoinTransferMapper } from './transaction-info/native-coin-transfer.mapper';
-import { SettingsChangeMapper } from './transaction-info/settings-change.mapper';
+import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
+import { Operation } from '../../../../../domain/safe/entities/operation.entity';
+import { Safe } from '../../../../../domain/safe/entities/safe.entity';
+import { TokenRepository } from '../../../../../domain/tokens/token.repository';
+import { ITokenRepository } from '../../../../../domain/tokens/token.repository.interface';
+import { TokenType } from '../../../../balances/entities/token-type.entity';
+import { SettingsChangeTransaction } from '../../../entities/settings-change-transaction.entity';
+import { TransactionInfo } from '../../../entities/transaction-info.entity';
+import { CustomTransactionMapper } from './custom-transaction.mapper';
+import { DataDecodedParamHelper } from './data-decoded-param.helper';
+import { Erc20TransferMapper } from './erc20-transfer.mapper';
+import { Erc721TransferMapper } from './erc721-transfer.mapper';
+import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
+import { SettingsChangeMapper } from './settings-change.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {

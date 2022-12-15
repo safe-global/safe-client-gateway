@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
@@ -13,7 +14,9 @@ import { SetFallbackHandler } from '../../../entities/settings-changes/set-fallb
 import { SetGuard } from '../../../entities/settings-changes/set-guard.entity';
 import { SettingsChange } from '../../../entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '../../../entities/settings-changes/swap-owner.entity';
+import { DataDecodedParamHelper } from './data-decoded-param.helper';
 
+@Injectable()
 export class SettingsChangeMapper {
   private static readonly NULL_ADDRESS =
     '0x0000000000000000000000000000000000000000';
@@ -40,7 +43,10 @@ export class SettingsChangeMapper {
     SettingsChangeMapper.SET_GUARD,
   ];
 
-  constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
+  constructor(
+    private readonly addressInfoHelper: AddressInfoHelper,
+    private readonly dataDecodedParamHelper: DataDecodedParamHelper,
+  ) {}
 
   async mapSettingsChange(
     chainId: string,
@@ -50,22 +56,36 @@ export class SettingsChangeMapper {
     const { dataDecoded } = transaction;
     switch (transaction.dataDecoded.method) {
       case SettingsChangeMapper.SET_FALLBACK_HANDLER:
-        return new SetFallbackHandler(this.getValue(dataDecoded, 0));
+        return new SetFallbackHandler(
+          this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
+        );
       case SettingsChangeMapper.ADD_OWNER_WITH_THRESHOLD:
         return new AddOwner(
-          new AddressInfo(this.getValue(dataDecoded, 0)),
-          Number(this.getValue(dataDecoded, 1)),
+          new AddressInfo(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
+          ),
+          Number(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 1),
+          ),
         );
       case SettingsChangeMapper.REMOVE_OWNER:
         return new RemoveOwner(
-          new AddressInfo(this.getValue(dataDecoded, 1)),
-          Number(this.getValue(dataDecoded, 2)),
+          new AddressInfo(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 1),
+          ),
+          Number(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 2),
+          ),
         );
 
       case SettingsChangeMapper.SWAP_OWNER:
         return new SwapOwner(
-          new AddressInfo(this.getValue(dataDecoded, 1)),
-          new AddressInfo(this.getValue(dataDecoded, 2)),
+          new AddressInfo(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 1),
+          ),
+          new AddressInfo(
+            this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 2),
+          ),
         );
       case SettingsChangeMapper.CHANGE_MASTER_COPY: {
         const masterCopy = await this.addressInfoHelper.getOrDefault(
@@ -77,21 +97,26 @@ export class SettingsChangeMapper {
       case SettingsChangeMapper.ENABLE_MODULE: {
         const module = await this.addressInfoHelper.getOrDefault(
           chainId,
-          this.getValue(dataDecoded, 0),
+          this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
         );
         return new EnableModule(module);
       }
       case SettingsChangeMapper.DISABLE_MODULE: {
         const module = await this.addressInfoHelper.getOrDefault(
           chainId,
-          this.getValue(dataDecoded, 1),
+          this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 1),
         );
         return new DisableModule(module);
       }
       case SettingsChangeMapper.CHANGE_THRESHOLD:
-        return new ChangeThreshold(this.getValue(dataDecoded, 0));
+        return new ChangeThreshold(
+          this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
+        );
       case SettingsChangeMapper.SET_GUARD: {
-        const guardValue = this.getValue(dataDecoded, 0);
+        const guardValue = this.dataDecodedParamHelper.getValueAtPosition(
+          dataDecoded,
+          0,
+        );
         if (guardValue !== SettingsChangeMapper.NULL_ADDRESS) {
           const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
             chainId,
@@ -104,10 +129,5 @@ export class SettingsChangeMapper {
       }
     }
     throw new Error('Unknown setting');
-  }
-
-  private getValue(dataDecoded: any | null, position: number) {
-    if (!dataDecoded.parameters?.length) return null;
-    return dataDecoded.parameters[position]?.value ?? null;
   }
 }
