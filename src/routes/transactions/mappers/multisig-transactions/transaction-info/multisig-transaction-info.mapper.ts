@@ -16,9 +16,6 @@ import { SettingsChangeMapper } from './settings-change.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
-  private static readonly NULL_ADDRESS =
-    '0x0000000000000000000000000000000000000000';
-
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
