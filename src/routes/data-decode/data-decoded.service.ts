@@ -31,11 +31,9 @@ export class DataDecodedService {
       data,
       to,
     );
-    return {
-      ...dataDecoded,
-      parameters: dataDecoded.parameters?.map(
-        ({ type: paramType, ...rest }) => ({ ...rest, paramType }),
-      ),
-    };
+    const parameters = dataDecoded.parameters?.map(
+      ({ type: paramType, ...rest }) => ({ ...rest, paramType }),
+    );
+    return new DataDecoded(dataDecoded.method, parameters ?? null);
   }
 }

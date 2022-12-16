@@ -1,0 +1,84 @@
+{
+  "results": [
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0xCe95F1F4ACADEe697993B0E3a0FE48B444679046_0x230e27f71bd4a8c3aa5d85ddead256ce5345ae3e07e96987092baf4cf09c813a",
+        "timestamp": 1670405268000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "logoUri": null,
+            "name": null,
+            "value": "0xCe95F1F4ACADEe697993B0E3a0FE48B444679046"
+          },
+          "recipient": {
+            "logoUri": null,
+            "name": null,
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+            "tokenName": "Wrapped Ether",
+            "tokenSymbol": "WETH",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "decimals": 18,
+            "value": "1000000000000000"
+          }
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 3,
+          "confirmationsRequired": 2,
+          "confirmationsSubmitted": 2,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0xCe95F1F4ACADEe697993B0E3a0FE48B444679046_0x71e98468f09e2b9c1036f4087b2f1ae903cbf805775a7c7411e7332c7d1fa4e4",
+        "timestamp": 1670405076000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "SettingsChange",
+          "dataDecoded": {
+            "method": "addOwnerWithThreshold",
+            "parameters": [
+              {
+                "name": "owner",
+                "type": "address",
+                "value": "0x35E730d5Ce84F9C0D7F48F15337e80341B1d621c"
+              },
+              { "name": "_threshold", "type": "uint256", "value": "2" }
+            ]
+          },
+          "settingsInfo": {
+            "type": "ADD_OWNER",
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x35E730d5Ce84F9C0D7F48F15337e80341B1d621c"
+            },
+            "threshold": 2
+          }
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 2,
+          "confirmationsRequired": 1,
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    }
+  ]
+}

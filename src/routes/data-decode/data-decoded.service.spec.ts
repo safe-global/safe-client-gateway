@@ -4,6 +4,7 @@ import { DataDecodedParameter } from '../../domain/data-decoder/entities/data-de
 import dataDecodedFactory from '../../domain/data-decoder/entities/__tests__/data-decoded.factory';
 import { DataDecodedService } from './data-decoded.service';
 import { DataDecodedParameter as ApiDataDecodedParameter } from './entities/data-decoded-parameter';
+import { DataDecoded } from './entities/data-decoded.entity';
 import createDataDecodedDtoFactory from './__tests__/create-data-decoded.dto.factory';
 
 const mockDataDecodedRepository = jest.mocked({
@@ -23,10 +24,12 @@ describe('DataDecoded Service', () => {
 
     const actual = await service.getDataDecoded(chainId, createDataDecodedDto);
 
-    expect(actual).toStrictEqual({
-      ...dataDecoded,
-      parameters: getExpectedSerializedParameters(dataDecoded.parameters),
-    });
+    expect(actual).toStrictEqual(
+      new DataDecoded(
+        dataDecoded.method,
+        getExpectedSerializedParameters(dataDecoded.parameters),
+      ),
+    );
     expect(mockDataDecodedRepository.getDataDecoded).toBeCalledTimes(1);
   });
 

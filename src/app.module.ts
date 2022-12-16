@@ -21,6 +21,7 @@ import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
 import { HealthModule } from './routes/health/health.module';
 import { OwnersModule } from './routes/owners/owners.module';
 import { AboutModule } from './routes/about/about.module';
+import { TransactionsModule } from './routes/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AboutModule } from './routes/about/about.module';
     HealthModule,
     OwnersModule,
     SafeAppsModule,
+    TransactionsModule,
     // common
     CacheModule,
     ConfigurationModule,
