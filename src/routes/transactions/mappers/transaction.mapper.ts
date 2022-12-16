@@ -10,9 +10,8 @@ import {
 import { TokenRepository } from '../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
 import { AddressInfoHelper } from '../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../common/entities/address-info.entity';
-import { TransactionSummary } from '../entities/multisig-transaction.entity';
 import { TransactionStatus } from '../entities/transaction-status.entity';
+import { Transaction } from '../entities/transaction.entity';
 import {
   Erc20TransferInfo,
   Erc721TransferInfo,
@@ -36,8 +35,8 @@ export class IncomingTransferMapper {
     chainId: string,
     transfer: Transfer,
     safe: Safe,
-  ): Promise<TransactionSummary> {
-    return <TransactionSummary>{
+  ): Promise<Transaction> {
+    return <Transaction>{
       id: `ethereum_${safe.address}_${
         transfer.transactionHash
       }_${this.hashTransfer(transfer)}`,
@@ -100,8 +99,8 @@ export class IncomingTransferMapper {
 
     return <TransferTransaction>{
       type: 'Transfer',
-      sender: this.filterAddressInfo(senderAddressInfo),
-      recipient: this.filterAddressInfo(recipientAddressInfo),
+      sender: senderAddressInfo,
+      recipient: recipientAddressInfo,
       direction: this.mapTransferDirection(
         safe.address,
         transfer.from,
@@ -136,8 +135,8 @@ export class IncomingTransferMapper {
 
     return <TransferTransaction>{
       type: 'Transfer',
-      sender: this.filterAddressInfo(senderAddressInfo),
-      recipient: this.filterAddressInfo(recipientAddressInfo),
+      sender: senderAddressInfo,
+      recipient: recipientAddressInfo,
       direction: this.mapTransferDirection(
         safe.address,
         transfer.from,
@@ -170,8 +169,8 @@ export class IncomingTransferMapper {
 
     const result = <TransferTransaction>{
       type: 'Transfer',
-      sender: this.filterAddressInfo(senderAddressInfo),
-      recipient: this.filterAddressInfo(recipientAddressInfo),
+      sender: senderAddressInfo,
+      recipient: recipientAddressInfo,
       direction: this.mapTransferDirection(
         safe.address,
         transfer.from,
@@ -195,15 +194,6 @@ export class IncomingTransferMapper {
       return TransferDirection[TransferDirection.Incoming].toUpperCase();
     }
     return TransferDirection[TransferDirection.Unknown].toUpperCase();
-  }
-
-  //TODO: factorize
-  private filterAddressInfo(addressInfo: AddressInfo): AddressInfo {
-    return {
-      value: addressInfo.value,
-      name: addressInfo.name !== '' ? addressInfo.name : undefined,
-      logoUri: addressInfo.logoUri,
-    };
   }
 
   private hashTransfer(transfer: Transfer): string {

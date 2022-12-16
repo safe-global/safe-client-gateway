@@ -12,7 +12,7 @@ export class MultisigTransactionBuilder
 {
   private baseGas: number = faker.datatype.number();
   private blockNumber: number = faker.datatype.number();
-  private confirmations: Confirmation[] = [
+  private confirmations: Confirmation[] | null = [
     multisigTransactionConfirmationFactory(),
   ];
   private confirmationsRequired: number = faker.datatype.number();
@@ -51,7 +51,7 @@ export class MultisigTransactionBuilder
     return this;
   }
 
-  withConfirmations(confirmations: Confirmation[]) {
+  withConfirmations(confirmations: Confirmation[] | null) {
     this.confirmations = confirmations;
     return this;
   }

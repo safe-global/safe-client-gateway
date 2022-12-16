@@ -2,9 +2,9 @@ import { Transfer } from './transfer.entity';
 
 export interface EthereumTransaction {
   blockNumber: number;
-  data?: string;
+  data: string | null;
   executionDate: Date;
   from: string;
-  transfers?: Transfer[];
+  transfers: Transfer[] | null;
   txHash: string;
 }

@@ -1,5 +1,5 @@
 import { DelegatesService } from './delegates.service';
-import { Delegate } from '../delegates/entities/delegate.entity';
+import { Delegate } from './entities/delegate.entity';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
 import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.factory';
 import { faker } from '@faker-js/faker';
@@ -28,6 +28,8 @@ describe('DelegatesService', () => {
     const routeUrl: Readonly<URL> = new URL(url);
     const delegates = <Page<Delegate>>{
       count: 2,
+      next: null,
+      previous: null,
       results: [delegateFactory(safe), delegateFactory(safe)],
     };
     delegateRepositoryMock.getDelegates.mockResolvedValueOnce(delegates);

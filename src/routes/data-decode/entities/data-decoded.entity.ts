@@ -4,6 +4,11 @@ import { DataDecodedParameter } from './data-decoded-parameter';
 export class DataDecoded {
   @ApiProperty()
   method: string;
-  @ApiPropertyOptional({ type: [DataDecodedParameter] })
-  parameters?: DataDecodedParameter[];
+  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  parameters: DataDecodedParameter[] | null;
+
+  constructor(method: string, parameters: DataDecodedParameter[] | null) {
+    this.method = method;
+    this.parameters = parameters;
+  }
 }

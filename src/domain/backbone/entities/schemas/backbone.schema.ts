@@ -1,7 +1,7 @@
 import { JSONSchemaType } from 'ajv';
-import { Backbone } from '../../../backbone/entities/backbone.entity';
+import { Backbone } from '../backbone.entity';
 
-const backboneSchema: JSONSchemaType<Backbone> = {
+export const backboneSchema: JSONSchemaType<Backbone> = {
   type: 'object',
   properties: {
     name: { type: 'string' },
@@ -19,5 +19,3 @@ const backboneSchema: JSONSchemaType<Backbone> = {
   required: ['name', 'version', 'api_version', 'secure', 'host'],
   additionalProperties: false,
 };
-
-export { backboneSchema };

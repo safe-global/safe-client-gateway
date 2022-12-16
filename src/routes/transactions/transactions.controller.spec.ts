@@ -16,7 +16,7 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
+import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
 
@@ -83,7 +83,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -117,7 +117,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: data validation fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({
         data: { results: ['invalidData'] },
@@ -136,7 +136,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a ERC20 transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chain = chainFactory(chainId);
+      const chain = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -148,12 +148,16 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc20/transfer-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/transfer-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc20/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
@@ -163,7 +167,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url.includes(getTokenUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('erc20/token-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc20/token-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -173,14 +179,18 @@ describe('Transactions Controller (Unit)', () => {
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
-          expect(body).toEqual(getJsonResource('erc20/expected-response.json'));
+          expect(body).toEqual(
+            getJsonResource(
+              'multisig-transactions/erc20/expected-response.json',
+            ),
+          );
         });
     });
 
     it('Should get a ERC721 transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -192,12 +202,16 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc721/transfer-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/transfer-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('erc721/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
@@ -207,7 +221,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url.includes(getTokenUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('erc721/token-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/erc721/token-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -218,7 +234,9 @@ describe('Transactions Controller (Unit)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
-            getJsonResource('erc721/expected-response.json'),
+            getJsonResource(
+              'multisig-transactions/erc721/expected-response.json',
+            ),
           );
         });
     });
@@ -226,7 +244,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a Custom transaction mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -237,17 +255,23 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource('custom/custom-transaction-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/custom-transaction-source-data.json',
+            ),
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource('custom/safe-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/safe-source-data.json',
+            ),
           });
         }
         if (url.includes(getContractUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource('custom/contract-source-data.json'),
+            data: getJsonResource(
+              'multisig-transactions/custom/contract-source-data.json',
+            ),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -258,7 +282,9 @@ describe('Transactions Controller (Unit)', () => {
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
-            getJsonResource('custom/expected-response.json'),
+            getJsonResource(
+              'multisig-transactions/custom/expected-response.json',
+            ),
           );
         });
     });

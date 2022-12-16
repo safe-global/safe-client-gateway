@@ -7,5 +7,5 @@ export interface DataDecodedParameter {
 
 export interface DataDecoded {
   method: string;
-  parameters?: DataDecodedParameter[];
+  parameters: DataDecodedParameter[] | null;
 }

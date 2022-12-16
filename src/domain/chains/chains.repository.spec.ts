@@ -2,13 +2,13 @@ import { faker } from '@faker-js/faker';
 import { IConfigApi } from '../interfaces/config-api.interface';
 import { ChainsRepository } from './chains.repository';
 import { ChainsValidator } from './chains.validator';
-import chainFactory from './entities/__tests__/chain.factory';
 import { Chain } from './entities/chain.entity';
 import { Page } from '../entities/page.entity';
 import { MasterCopyValidator } from './master-copy.validator';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import masterCopyFactory from './entities/__tests__/master-copy.factory';
 import { TransactionApi } from '../../datasources/transaction-api/transaction-api.service';
+import { ChainBuilder } from './entities/__tests__/chain.factory';
 
 const mockConfigApi = jest.mocked({
   getChain: jest.fn(),
@@ -40,7 +40,7 @@ describe('Chain Repository', () => {
   );
 
   it('should return and validate a Chain from ConfigAPI', async () => {
-    const chain = chainFactory();
+    const chain = new ChainBuilder().build();
     mockConfigApi.getChain.mockResolvedValue(chain);
     mockChainValidator.validate = jest.fn().mockResolvedValue(chain);
 
@@ -53,7 +53,9 @@ describe('Chain Repository', () => {
   it('should return and validate a Chain[] from ConfigAPI', async () => {
     const chains: Page<Chain> = {
       count: faker.datatype.number(),
-      results: [chainFactory(), chainFactory()],
+      next: null,
+      previous: null,
+      results: [new ChainBuilder().build(), new ChainBuilder().build()],
     };
     mockConfigApi.getChains.mockResolvedValue(chains);
     mockChainValidator.validate = jest

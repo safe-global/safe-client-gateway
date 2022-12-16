@@ -8,7 +8,7 @@ import {
 } from '../common/pagination/pagination.data';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { MultisigTransactionMapper } from './mappers/multisig-transaction.mapper';
+import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { IncomingTransferMapper } from './mappers/transaction.mapper';
 
 @Injectable()
@@ -17,6 +17,7 @@ export class TransactionsService {
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly mapper: MultisigTransactionMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -31,36 +32,40 @@ export class TransactionsService {
     executed?: boolean,
     paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
-    const transactions = await this.safeRepository.getMultisigTransactions(
-      chainId,
-      safeAddress,
-      executed,
-      executionDateGte,
-      executionDateLte,
-      to,
-      value,
-      nonce,
-      paginationData?.limit,
-      paginationData?.offset,
-    );
+    const domainTransactions =
+      await this.safeRepository.getMultisigTransactions(
+        chainId,
+        safeAddress,
+        executed,
+        executionDateGte,
+        executionDateLte,
+        to,
+        value,
+        nonce,
+        paginationData?.limit,
+        paginationData?.offset,
+      );
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await Promise.all(
-      transactions.results.map(async (multiSigTransaction) => ({
-        type: 'TRANSACTION',
-        transaction:
-          await this.multisigTransactionMapper.mapToTransactionSummary(
-            chainId,
-            multiSigTransaction,
-            safeInfo,
+      domainTransactions.results.map(
+        async (domainTransaction) =>
+          new MultisigTransaction(
+            await this.mapper.mapTransaction(
+              chainId,
+              domainTransaction,
+              safeInfo,
+            ),
           ),
-        conflictType: 'None',
-      })),
+      ),
     );
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transactions.next);
+    const nextURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.next,
+    );
     const previousURL = cursorUrlFromLimitAndOffset(
       routeUrl,
-      transactions.previous,
+      domainTransactions.previous,
     );
 
     return {

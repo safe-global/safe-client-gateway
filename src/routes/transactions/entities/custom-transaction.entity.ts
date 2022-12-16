@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '../../common/entities/address-info.entity';
-import { TransactionInfo } from './multisig-transaction.entity';
+import { TransactionInfo } from './transaction-info.entity';
 
 export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty()
@@ -9,10 +9,27 @@ export class CustomTransactionInfo extends TransactionInfo {
   dataSize: string;
   @ApiProperty()
   value: string;
-  @ApiPropertyOptional()
-  methodName?: string;
-  @ApiPropertyOptional()
-  actionCount?: number;
   @ApiProperty()
   isCancellation: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  methodName: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  actionCount: number | null;
+
+  constructor(
+    to: AddressInfo | null,
+    dataSize: string,
+    value: string,
+    methodName: string,
+    actionCount: number | null,
+    isCancellation: boolean,
+  ) {
+    super('Custom');
+    this.to = to;
+    this.dataSize = dataSize;
+    this.value = value;
+    this.methodName = methodName;
+    this.actionCount = actionCount;
+    this.isCancellation = isCancellation;
+  }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { backboneSchema } from '../balances/entities/schemas/backbone.schema';
+import { backboneSchema } from './entities/schemas/backbone.schema';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';

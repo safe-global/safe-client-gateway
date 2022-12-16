@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '../../common/entities/address-info.entity';
-import { TransactionInfo } from './multisig-transaction.entity';
+import { TransactionInfo } from './transaction-info.entity';
 
 export enum TransferDirection {
   Incoming,

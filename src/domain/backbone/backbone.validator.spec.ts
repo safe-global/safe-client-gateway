@@ -1,4 +1,4 @@
-import { backboneSchema } from '../balances/entities/schemas/backbone.schema';
+import { backboneSchema } from './entities/schemas/backbone.schema';
 import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';

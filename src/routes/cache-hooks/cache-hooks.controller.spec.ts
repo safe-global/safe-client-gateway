@@ -16,7 +16,7 @@ import {
 import { CacheHooksModule } from './cache-hooks.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
+import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
@@ -66,7 +66,9 @@ describe('Post Hook Events (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case 'https://test.safe.config/api/v1/chains/1':
-            return Promise.resolve({ data: chainFactory(chainId) });
+            return Promise.resolve({
+              data: new ChainBuilder().withChainId(chainId).build(),
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -91,7 +93,9 @@ describe('Post Hook Events (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case 'https://test.safe.config/api/v1/chains/1':
-            return Promise.resolve({ data: chainFactory(chainId) });
+            return Promise.resolve({
+              data: new ChainBuilder().withChainId(chainId).build(),
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -115,7 +119,9 @@ describe('Post Hook Events (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case 'https://test.safe.config/api/v1/chains/1':
-            return Promise.resolve({ data: chainFactory(chainId) });
+            return Promise.resolve({
+              data: new ChainBuilder().withChainId(chainId).build(),
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -135,7 +141,9 @@ describe('Post Hook Events (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case 'https://test.safe.config/api/v1/chains/1':
-            return Promise.resolve({ data: chainFactory('1') });
+            return Promise.resolve({
+              data: new ChainBuilder().withChainId('1').build(),
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -165,7 +173,9 @@ describe('Post Hook Events (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case 'https://test.safe.config/api/v1/chains/1':
-            return Promise.resolve({ data: chainFactory(chainId) });
+            return Promise.resolve({
+              data: new ChainBuilder().withChainId(chainId).build(),
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }

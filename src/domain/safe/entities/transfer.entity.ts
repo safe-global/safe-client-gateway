@@ -8,12 +8,12 @@ export interface Transfer {
 }
 
 export interface ERC20Transfer extends Transfer {
-  tokenAddress?: string;
+  tokenAddress: string | null;
   value: string;
 }
 
 export interface ERC721Transfer extends Transfer {
-  tokenAddress?: string;
+  tokenAddress: string | null;
   tokenId: string;
 }
 

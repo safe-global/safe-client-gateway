@@ -15,9 +15,9 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { OwnersModule } from './owners.module';
+import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -60,7 +60,7 @@ describe('Owners Controller (Unit)', () => {
     it(`Success`, async () => {
       const chainId = faker.random.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       const transactionApiSafeListResponse = {
         safes: [
           faker.finance.ethereumAddress(),
@@ -104,7 +104,7 @@ describe('Owners Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const chainId = faker.random.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -132,7 +132,7 @@ describe('Owners Controller (Unit)', () => {
     it('Failure: data validation fails', async () => {
       const chainId = faker.random.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainFactory(chainId);
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
       const transactionApiSafeListResponse = {
         safes: [
           faker.finance.ethereumAddress(),

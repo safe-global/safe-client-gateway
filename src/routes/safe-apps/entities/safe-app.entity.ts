@@ -19,8 +19,8 @@ export class SafeApp {
   accessControl: SafeAppAccessControl;
   @ApiProperty()
   tags: string[];
-  @ApiPropertyOptional()
-  provider?: SafeAppProvider;
+  @ApiPropertyOptional({ type: SafeAppProvider, nullable: true })
+  provider: SafeAppProvider | null;
 
   constructor(
     id: number,
@@ -31,7 +31,7 @@ export class SafeApp {
     chainIds: string[],
     accessControl: SafeAppAccessControl,
     tags: string[],
-    provider?: SafeAppProvider,
+    provider: SafeAppProvider | null,
   ) {
     this.id = id;
     this.url = url;
