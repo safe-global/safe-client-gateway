@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import chainDomainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { ChainsModule } from './chains.module';
 import {
   mockNetworkService,
@@ -26,6 +25,7 @@ import masterCopyFactory from '../../domain/chains/entities/__tests__/master-cop
 import { MasterCopy } from './entities/master-copy.entity';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 import { faker } from '@faker-js/faker';
+import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -34,10 +34,10 @@ describe('Chains Controller (Unit)', () => {
     count: 2,
     next: null,
     previous: null,
-    results: [chainDomainFactory(), chainDomainFactory()],
+    results: [new ChainBuilder().build(), new ChainBuilder().build()],
   };
 
-  const chainResponse: Chain = chainDomainFactory();
+  const chainResponse: Chain = new ChainBuilder().build();
   const backboneResponse: Backbone = backboneFactory();
 
   beforeAll(async () => {
@@ -176,7 +176,7 @@ describe('Chains Controller (Unit)', () => {
   describe('GET /:chainId', () => {
     it('Success', async () => {
       const chainId = faker.random.numeric();
-      const chainDomain = chainDomainFactory();
+      const chainDomain = new ChainBuilder().withChainId(chainId).build();
       const expectedResult = {
         chainId: chainDomain.chainId,
         chainName: chainDomain.chainName,
