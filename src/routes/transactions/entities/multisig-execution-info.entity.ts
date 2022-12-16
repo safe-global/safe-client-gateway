@@ -9,7 +9,7 @@ export class MultisigExecutionInfo extends ExecutionInfo {
   confirmationsRequired: number;
   @ApiProperty()
   confirmationsSubmitted: number;
-  @ApiPropertyOptional({ type: Array<AddressInfo>, nullable: true })
+  @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
   missingSigners: AddressInfo[] | null;
 
   constructor(

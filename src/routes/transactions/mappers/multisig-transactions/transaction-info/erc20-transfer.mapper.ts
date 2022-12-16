@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Token } from '../../../../../domain/tokens/entities/token.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../../common/constants';
 import { TransferTransactionInfo } from '../../../entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '../../../entities/transfers/erc20-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
@@ -15,9 +16,6 @@ export class Erc20TransferMapper {
     private readonly transferDirectionHelper: TransferDirectionHelper,
   ) {}
 
-  private static readonly NULL_ADDRESS =
-    '0x0000000000000000000000000000000000000000';
-
   async mapErc20Transfer(
     token: Token,
     chainId: string,
@@ -30,7 +28,7 @@ export class Erc20TransferMapper {
     );
     const recipient = this.dataDecodedParamHelper.getToParam(
       dataDecoded,
-      Erc20TransferMapper.NULL_ADDRESS,
+      NULL_ADDRESS,
     );
     const direction = this.transferDirectionHelper.getTransferDirection(
       transaction.safe,

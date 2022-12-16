@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../../common/constants';
 import { CustomTransactionInfo } from '../../../entities/custom-transaction.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
-  private static readonly NULL_ADDRESS =
-    '0x0000000000000000000000000000000000000000';
-
+  private static readonly MULTI_SEND = 'multiSend';
+  private static readonly TRANSACTIONS = 'transactions';
   constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
 
   async mapCustomTransaction(
@@ -33,9 +33,9 @@ export class CustomTransactionMapper {
 
   private getActionCount(transaction: MultisigTransaction): number | null {
     const { dataDecoded } = transaction;
-    if (dataDecoded?.method === 'multiSend') {
+    if (dataDecoded?.method === CustomTransactionMapper.MULTI_SEND) {
       const parameter = dataDecoded.parameters?.find(
-        (parameter) => parameter.name === 'transactions',
+        (parameter) => parameter.name === CustomTransactionMapper.TRANSACTIONS,
       );
       return parameter?.valueDecoded?.length ?? null;
     }
@@ -66,10 +66,9 @@ export class CustomTransactionMapper {
       operation === 0 &&
       (!baseGas || Number(baseGas) === 0) &&
       (!gasPrice || Number(gasPrice) === 0) &&
-      (!gasToken || gasToken === CustomTransactionMapper.NULL_ADDRESS) &&
-      (!refundReceiver ||
-        refundReceiver === CustomTransactionMapper.NULL_ADDRESS) &&
-      (!safeTxGas || safeTxGas === 60)
+      (!gasToken || gasToken === NULL_ADDRESS) &&
+      (!refundReceiver || refundReceiver === NULL_ADDRESS) &&
+      (!safeTxGas || safeTxGas === 0)
     );
   }
 }

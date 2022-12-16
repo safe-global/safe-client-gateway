@@ -118,7 +118,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       .withGasPrice('0')
       .withGasToken('0x0000000000000000000000000000000000000000')
       .withRefundReceiver('0x0000000000000000000000000000000000000000')
-      .withSafeTxGas(60)
+      .withSafeTxGas(0)
       .withDataDecoded({ method })
       .build();
 

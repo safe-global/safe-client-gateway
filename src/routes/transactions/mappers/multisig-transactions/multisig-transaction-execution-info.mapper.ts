@@ -2,18 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { ExecutionInfo } from '../../entities/execution-info.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
+import { TransactionStatus } from '../../entities/transaction-status.entity';
 
 @Injectable()
 export class MultisigTransactionExecutionInfoMapper {
   mapExecutionInfo(
     transaction: MultisigTransaction,
     safe: Safe,
-    txStatus: string,
-  ): ExecutionInfo {
+    txStatus: TransactionStatus,
+  ): MultisigExecutionInfo {
     const missingSigners =
-      txStatus === 'AWAITING_CONFIRMATIONS'
+      txStatus === TransactionStatus.AwaitingConfirmations
         ? this.getMissingSigners(transaction, safe)
         : null;
 

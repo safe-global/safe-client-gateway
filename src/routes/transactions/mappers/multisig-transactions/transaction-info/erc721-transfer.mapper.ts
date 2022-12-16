@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Token } from '../../../../../domain/tokens/entities/token.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../../common/constants';
 import { TransferTransactionInfo } from '../../../entities/transfer-transaction-info.entity';
 import { Erc721Transfer } from '../../../entities/transfers/erc721-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
@@ -9,9 +10,6 @@ import { TransferDirectionHelper } from './transfer-direction.helper';
 
 @Injectable()
 export class Erc721TransferMapper {
-  private static readonly NULL_ADDRESS =
-    '0x0000000000000000000000000000000000000000';
-
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
@@ -30,7 +28,7 @@ export class Erc721TransferMapper {
     );
     const recipient = this.dataDecodedParamHelper.getToParam(
       dataDecoded,
-      Erc721TransferMapper.NULL_ADDRESS,
+      NULL_ADDRESS,
     );
     const direction = this.transferDirectionHelper.getTransferDirection(
       transaction.safe,

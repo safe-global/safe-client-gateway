@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../../common/constants';
 import { AddressInfo } from '../../../../common/entities/address-info.entity';
 import { AddOwner } from '../../../entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '../../../entities/settings-changes/change-master-copy.entity';
@@ -18,9 +19,6 @@ import { DataDecodedParamHelper } from './data-decoded-param.helper';
 
 @Injectable()
 export class SettingsChangeMapper {
-  private static readonly NULL_ADDRESS =
-    '0x0000000000000000000000000000000000000000';
-
   private static readonly SET_FALLBACK_HANDLER = 'setFallbackHandler';
   private static readonly ADD_OWNER_WITH_THRESHOLD = 'addOwnerWithThreshold';
   private static readonly REMOVE_OWNER = 'removeOwner';
@@ -117,7 +115,7 @@ export class SettingsChangeMapper {
           dataDecoded,
           0,
         );
-        if (guardValue !== SettingsChangeMapper.NULL_ADDRESS) {
+        if (guardValue !== NULL_ADDRESS) {
           const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
             chainId,
             guardValue,
