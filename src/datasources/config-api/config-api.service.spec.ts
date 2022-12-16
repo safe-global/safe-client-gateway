@@ -1,11 +1,11 @@
 import { ConfigApi } from './config-api.service';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import chainFactory from '../../domain/chains/entities/__tests__/chain.factory';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { DataSourceError } from '../../domain/errors/data-source.error';
 import safeAppFactory from '../../domain/safe-apps/entities/__tests__/safe-app.factory';
 import { faker } from '@faker-js/faker';
+import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
 
 const dataSource = {
   get: jest.fn(),
@@ -50,7 +50,7 @@ describe('ConfigApi', () => {
   });
 
   it('should return the chains retrieved', async () => {
-    const data = [chainFactory(), chainFactory()];
+    const data = [new ChainBuilder().build(), new ChainBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getChains();
@@ -67,7 +67,7 @@ describe('ConfigApi', () => {
   });
 
   it('should return the chain retrieved', async () => {
-    const data = chainFactory();
+    const data = new ChainBuilder().build();
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getChain(data.chainId);
