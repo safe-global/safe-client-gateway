@@ -9,15 +9,14 @@ import {
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
-import { IncomingTransferMapper } from './mappers/transaction.mapper';
+import { TransferMapper } from './mappers/transfers/transfer.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
-    private readonly incomingTransferMapper: IncomingTransferMapper,
-    private readonly mapper: MultisigTransactionMapper,
+    private readonly transferMapper: TransferMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -51,7 +50,7 @@ export class TransactionsService {
       domainTransactions.results.map(
         async (domainTransaction) =>
           new MultisigTransaction(
-            await this.mapper.mapTransaction(
+            await this.multisigTransactionMapper.mapTransaction(
               chainId,
               domainTransaction,
               safeInfo,
@@ -100,15 +99,12 @@ export class TransactionsService {
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await Promise.all(
-      transfers.results.map(async (transfer) => ({
-        type: 'TRANSACTION',
-        transaction: await this.incomingTransferMapper.mapToTransactionSummary(
-          chainId,
-          transfer,
-          safeInfo,
-        ),
-        conflictType: 'None',
-      })),
+      transfers.results.map(
+        async (transfer) =>
+          new IncomingTransfer(
+            await this.transferMapper.mapTransfer(chainId, transfer, safeInfo),
+          ),
+      ),
     );
 
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transfers.next);

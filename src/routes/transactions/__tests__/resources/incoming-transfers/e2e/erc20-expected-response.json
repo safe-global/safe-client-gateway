@@ -1,0 +1,546 @@
+{
+  "next": "https://safe-client.staging.5afe.dev/v1/chains/5/safes/0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C/incoming-transfers?cursor=limit%3D20%26offset%3D20&execution_date__gte=2022-10-20T00:00:00.000Z&execution_date__lte=2022-11-08T00:00:00.000Z",
+  "previous": null,
+  "results": [
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x28f19af8a1582c8c6ebc7d1b3d07d8f465bafdd7086ebbd3404c553575b1abb0_0x698d048ed42ab5f5",
+        "timestamp": 1667816076000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "NATIVE_COIN",
+            "value": "10000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x454bd2bb4496ac9c716b59118477ce79508ed1de2b9dced8023d8a6ce3eff470_0xa6a52ae8fc7c57b7",
+        "timestamp": 1667811828000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+            "tokenName": "Dai",
+            "tokenSymbol": "DAI",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png",
+            "decimals": 18,
+            "value": "1000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x454bd2bb4496ac9c716b59118477ce79508ed1de2b9dced8023d8a6ce3eff470_0x52779168bac341e6",
+        "timestamp": 1667811828000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600",
+            "tokenName": "CoW Protocol Token",
+            "tokenSymbol": "COW",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
+            "decimals": 18,
+            "value": "10045153676958686779"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0x62d99544760affbc",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "NATIVE_COIN",
+            "value": "49900000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0x5c2e47a2a6badc50",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+            "tokenName": "Wrapped Ether",
+            "tokenSymbol": "WETH",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "decimals": 18,
+            "value": "46810144995912020"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0xdab527787411c989",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600",
+            "tokenName": "CoW Protocol Token",
+            "tokenSymbol": "COW",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
+            "decimals": 18,
+            "value": "10045153676958686779"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0xb21df154b4c12adf",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x61fD3b6d656F39395e32f46E2050953376c3f5Ff",
+            "tokenName": "Safe Token",
+            "tokenSymbol": "SAFE",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x61fD3b6d656F39395e32f46E2050953376c3f5Ff.png",
+            "decimals": 18,
+            "value": "10000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0x5ec6c9316b624351",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1",
+            "tokenName": "Elden Ring Token",
+            "tokenSymbol": "ERT",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1.png",
+            "decimals": 18,
+            "value": "10000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xfff90efa74b0e83020080ed90d76a74ad24047a86392a5a21515be60248b5ea4_0x38b363848fe2dacb",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+            "tokenName": "Dai",
+            "tokenSymbol": "DAI",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png",
+            "decimals": 18,
+            "value": "1000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x7cb801fd5a2f3cbcc06b71f638b3ac1363066b1a90e1da5b22d40002ef499db2_0x3a73a336cd56893a",
+        "timestamp": 1667554500000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+            "tokenName": "Wrapped Ether",
+            "tokenSymbol": "WETH",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "decimals": 18,
+            "value": "46810144995912020"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0xdda1cc8541f8760c",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600",
+            "tokenName": "CoW Protocol Token",
+            "tokenSymbol": "COW",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
+            "decimals": 18,
+            "value": "10045153676958686779"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0xaaa77fa1db25ccee",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "NATIVE_COIN",
+            "value": "49900000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0xe1a9e44a3b94eff1",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+            "tokenName": "Wrapped Ether",
+            "tokenSymbol": "WETH",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "decimals": 18,
+            "value": "46810144995912020"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0x65dd304bdf9bf790",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+            "tokenName": "Dai",
+            "tokenSymbol": "DAI",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png",
+            "decimals": 18,
+            "value": "1000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0x8a033026edb93e35",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1",
+            "tokenName": "Elden Ring Token",
+            "tokenSymbol": "ERT",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1.png",
+            "decimals": 18,
+            "value": "10000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xd3d07618047917ba277e9e44702fb0b3b602059ed8b057f47dc3eddabc15307a_0x82f9302fab6f0418",
+        "timestamp": 1667552088000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x61fD3b6d656F39395e32f46E2050953376c3f5Ff",
+            "tokenName": "Safe Token",
+            "tokenSymbol": "SAFE",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x61fD3b6d656F39395e32f46E2050953376c3f5Ff.png",
+            "decimals": 18,
+            "value": "10000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x37530961511945b873ccc8b11c43d46f8d0ccd66a8a4ed0bb370d2a70ebd57de_0x993377e4fe9aab4f",
+        "timestamp": 1667482980000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "INCOMING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x61fD3b6d656F39395e32f46E2050953376c3f5Ff",
+            "tokenName": "Safe Token",
+            "tokenSymbol": "SAFE",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x61fD3b6d656F39395e32f46E2050953376c3f5Ff.png",
+            "decimals": 18,
+            "value": "5000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700_0x6d64c277a15b9187",
+        "timestamp": 1667395620000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1",
+            "tokenName": "Elden Ring Token",
+            "tokenSymbol": "ERT",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1.png",
+            "decimals": 18,
+            "value": "10000000000000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700_0x449827bfbc6bc243",
+        "timestamp": 1667395620000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "NATIVE_COIN",
+            "value": "49900000000000000"
+          }
+        }
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700_0x51043345c694cbb1",
+        "timestamp": 1667395620000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+          },
+          "direction": "OUTGOING",
+          "transferInfo": {
+            "type": "ERC20",
+            "tokenAddress": "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600",
+            "tokenName": "CoW Protocol Token",
+            "tokenSymbol": "COW",
+            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
+            "decimals": 18,
+            "value": "10045153676958686779"
+          }
+        }
+      },
+      "conflictType": "None"
+    }
+  ]
+}

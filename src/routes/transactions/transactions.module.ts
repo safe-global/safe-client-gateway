@@ -11,7 +11,8 @@ import { MultisigTransactionInfoMapper } from './mappers/multisig-transactions/t
 import { NativeCoinTransferMapper } from './mappers/multisig-transactions/transaction-info/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './mappers/multisig-transactions/transaction-info/settings-change.mapper';
 import { TransferDirectionHelper } from './mappers/multisig-transactions/transaction-info/transfer-direction.helper';
-import { IncomingTransferMapper } from './mappers/transaction.mapper';
+import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
+import { TransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 
@@ -19,7 +20,6 @@ import { TransactionsService } from './transactions.service';
   controllers: [TransactionsController],
   imports: [AddressInfoModule],
   providers: [
-    IncomingTransferMapper,
     CustomTransactionMapper,
     DataDecodedParamHelper,
     Erc20TransferMapper,
@@ -32,6 +32,8 @@ import { TransactionsService } from './transactions.service';
     SettingsChangeMapper,
     TransactionsService,
     TransferDirectionHelper,
+    TransferInfoMapper,
+    TransferMapper,
   ],
 })
 export class TransactionsModule {}
