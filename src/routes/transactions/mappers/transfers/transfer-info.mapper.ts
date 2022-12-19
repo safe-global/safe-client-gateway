@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import {
   ERC20Transfer,
+  ERC721Transfer,
   NativeTokenTransfer,
   Transfer,
 } from '../../../../domain/safe/entities/transfer.entity';
@@ -42,8 +43,7 @@ export class TransferInfoMapper {
 
     switch (type) {
       case TransferInfoMapper.ERC20_TRANSFER: {
-        const erc20Transfer = transfer as ERC20Transfer;
-        const tokenAddress = erc20Transfer?.tokenAddress;
+        const { tokenAddress, value } = transfer as ERC20Transfer;
         if (!tokenAddress) {
           throw Error('Invalid token address for ERC20 transfer');
         }
@@ -59,7 +59,7 @@ export class TransferInfoMapper {
           direction,
           new Erc20Transfer(
             token.address,
-            erc20Transfer.value,
+            value,
             token.name,
             token.symbol,
             token.logoUri,
@@ -68,7 +68,15 @@ export class TransferInfoMapper {
         );
       }
       case TransferInfoMapper.ERC721_TRANSFER: {
-        const token = await this.tokenRepository.getToken(chainId, transfer.to);
+        const { tokenAddress, tokenId } = transfer as ERC721Transfer;
+        if (!tokenAddress) {
+          throw Error('Invalid token address for ERC721 transfer');
+        }
+
+        const token = await this.tokenRepository.getToken(
+          chainId,
+          tokenAddress,
+        );
 
         return new TransferTransactionInfo(
           sender,
@@ -76,7 +84,7 @@ export class TransferInfoMapper {
           direction,
           new Erc721Transfer(
             token.address,
-            'TODO',
+            tokenId,
             token.name,
             token.symbol,
             token.logoUri,
