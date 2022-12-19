@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ModuleTransaction } from '../../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Token } from '../../../../../domain/tokens/entities/token.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
@@ -19,7 +20,7 @@ export class Erc721TransferMapper {
   async mapErc721Transfer(
     token: Token,
     chainId: string,
-    transaction: MultisigTransaction,
+    transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(

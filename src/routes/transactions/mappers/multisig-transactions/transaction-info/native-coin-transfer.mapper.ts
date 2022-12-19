@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ModuleTransaction } from '../../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
@@ -15,7 +16,7 @@ export class NativeCoinTransferMapper {
 
   async mapNativeCoinTransfer(
     chainId: string,
-    transaction: MultisigTransaction,
+    transaction: MultisigTransaction | ModuleTransaction,
     safe: Safe,
   ): Promise<TransferTransactionInfo> {
     const recipient = await this.addressInfoHelper.getOrDefault(

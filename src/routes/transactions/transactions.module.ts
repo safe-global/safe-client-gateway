@@ -13,6 +13,8 @@ import { SettingsChangeMapper } from './mappers/multisig-transactions/transactio
 import { TransferDirectionHelper } from './mappers/multisig-transactions/transaction-info/transfer-direction.helper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
+import { ModuleTransactionMapper } from './mappers/multisig-transactions/module-transaction.mapper';
+import { ModuleTransactionStatusMapper } from './mappers/multisig-transactions/module-transaction-status.mapper';
 
 @Module({
   controllers: [TransactionsController],
@@ -22,6 +24,8 @@ import { TransactionsService } from './transactions.service';
     DataDecodedParamHelper,
     Erc20TransferMapper,
     Erc721TransferMapper,
+    ModuleTransactionMapper,
+    ModuleTransactionStatusMapper,
     MultisigTransactionExecutionInfoMapper,
     MultisigTransactionInfoMapper,
     MultisigTransactionMapper,

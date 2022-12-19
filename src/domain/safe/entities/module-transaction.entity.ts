@@ -13,5 +13,5 @@ export interface ModuleTransaction {
   safe: string;
   to: string;
   transactionHash: string;
-  value: string | null;
+  value: string;
 }

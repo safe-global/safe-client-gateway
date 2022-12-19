@@ -6,6 +6,7 @@ import {
 } from '@nestjs/swagger';
 import { CustomTransactionInfo } from './custom-transaction.entity';
 import { ExecutionInfo } from './execution-info.entity';
+import { ModuleExecutionInfo } from './module-execution-info.entity';
 import { MultisigExecutionInfo } from './multisig-execution-info.entity';
 import { SafeAppInfo } from './safe-app-info.entity';
 import { SettingsChangeTransaction } from './settings-change-transaction.entity';
@@ -34,7 +35,10 @@ export class Transaction {
   })
   txInfo: TransactionInfo;
   @ApiPropertyOptional({
-    oneOf: [{ $ref: getSchemaPath(MultisigExecutionInfo) }],
+    oneOf: [
+      { $ref: getSchemaPath(MultisigExecutionInfo) },
+      { $ref: getSchemaPath(ModuleExecutionInfo) },
+    ],
     nullable: true,
   })
   executionInfo: ExecutionInfo | null;

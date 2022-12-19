@@ -1,3 +1,4 @@
+import { ModuleTransaction } from './module-transaction.entity';
 import { Operation } from './operation.entity';
 
 export interface Confirmation {
@@ -38,3 +39,9 @@ export type MultisigTransaction = {
   transactionHash: string | null;
   value: string;
 };
+
+export function isMultisigTransaction(
+  transaction: MultisigTransaction | ModuleTransaction,
+) {
+  return (transaction as MultisigTransaction).isExecuted !== undefined;
+}
