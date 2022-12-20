@@ -13,7 +13,7 @@ import { TransferTransactionInfo } from '../../entities/transfer-transaction-inf
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
-import { TransferDirectionHelper } from '../multisig-transactions/transaction-info/transfer-direction.helper'; // TODO: move to commons
+import { TransferDirectionHelper } from '../common/transfer-direction.helper';
 
 @Injectable()
 export class TransferInfoMapper {

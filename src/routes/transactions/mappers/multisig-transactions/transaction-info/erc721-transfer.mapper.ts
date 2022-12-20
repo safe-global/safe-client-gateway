@@ -5,8 +5,8 @@ import { AddressInfoHelper } from '../../../../common/address-info/address-info.
 import { NULL_ADDRESS } from '../../../../common/constants';
 import { TransferTransactionInfo } from '../../../entities/transfer-transaction-info.entity';
 import { Erc721Transfer } from '../../../entities/transfers/erc721-transfer.entity';
+import { TransferDirectionHelper } from '../../common/transfer-direction.helper';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
-import { TransferDirectionHelper } from './transfer-direction.helper';
 
 @Injectable()
 export class Erc721TransferMapper {

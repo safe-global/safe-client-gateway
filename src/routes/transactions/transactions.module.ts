@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AddressInfoModule } from '../common/address-info/address-info.module';
+import { TransferDirectionHelper } from './mappers/common/transfer-direction.helper';
 import { MultisigTransactionExecutionInfoMapper } from './mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionStatusMapper } from './mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
@@ -10,7 +11,6 @@ import { Erc721TransferMapper } from './mappers/multisig-transactions/transactio
 import { MultisigTransactionInfoMapper } from './mappers/multisig-transactions/transaction-info/multisig-transaction-info.mapper';
 import { NativeCoinTransferMapper } from './mappers/multisig-transactions/transaction-info/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './mappers/multisig-transactions/transaction-info/settings-change.mapper';
-import { TransferDirectionHelper } from './mappers/multisig-transactions/transaction-info/transfer-direction.helper';
 import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';

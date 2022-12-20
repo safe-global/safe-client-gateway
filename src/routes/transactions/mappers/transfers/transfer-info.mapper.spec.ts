@@ -14,7 +14,7 @@ import {
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
-import { TransferDirectionHelper } from '../multisig-transactions/transaction-info/transfer-direction.helper';
+import { TransferDirectionHelper } from '../common/transfer-direction.helper';
 import { TransferInfoMapper } from './transfer-info.mapper';
 
 const addressInfoHelper = jest.mocked({
