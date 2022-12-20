@@ -26,7 +26,7 @@ export class NativeCoinTransferMapper {
     return new TransferTransactionInfo(
       new AddressInfo(safe.address),
       recipient,
-      TransferDirection[TransferDirection.Outgoing].toUpperCase(),
+      TransferDirection.Out,
       new NativeCoinTransfer(transaction.value),
     );
   }

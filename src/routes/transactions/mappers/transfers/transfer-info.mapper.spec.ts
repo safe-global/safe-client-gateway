@@ -46,8 +46,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction =
-      TransferDirection[TransferDirection.Outgoing].toLocaleUpperCase();
+    const direction = TransferDirection.Out;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
@@ -82,7 +81,7 @@ describe('Transfer Info mapper (Unit)', () => {
 
     await expect(
       mapper.mapTransferInfo(chainId, transfer, safe),
-    ).rejects.toThrow('Invalid token address for ERC20 transfer');
+    ).rejects.toThrow('Invalid token address for transfer');
   });
 
   it('should build an ERC721 TransferTransactionInfo', async () => {
@@ -91,8 +90,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction =
-      TransferDirection[TransferDirection.Outgoing].toLocaleUpperCase();
+    const direction = TransferDirection.Out;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
@@ -126,7 +124,7 @@ describe('Transfer Info mapper (Unit)', () => {
 
     await expect(
       mapper.mapTransferInfo(chainId, transfer, safe),
-    ).rejects.toThrow('Invalid token address for ERC721 transfer');
+    ).rejects.toThrow('Invalid token address for transfer');
   });
 
   it('should build an Native Token TransferTransactionInfo', async () => {
@@ -135,8 +133,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction =
-      TransferDirection[TransferDirection.Outgoing].toLocaleUpperCase();
+    const direction = TransferDirection.Out;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);

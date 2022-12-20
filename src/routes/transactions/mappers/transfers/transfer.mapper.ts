@@ -14,17 +14,11 @@ export class TransferMapper {
     transfer: Transfer,
     safe: Safe,
   ): Promise<Transaction> {
-    const txInfo = await this.transferInfoMapper.mapTransferInfo(
-      chainId,
-      transfer,
-      safe,
-    );
-
     return new Transaction(
       `ethereum_${safe.address}_${transfer.transactionHash}`,
       transfer.executionDate.getTime(),
       TransactionStatus.Success,
-      txInfo,
+      await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
       null,
       null,
     );

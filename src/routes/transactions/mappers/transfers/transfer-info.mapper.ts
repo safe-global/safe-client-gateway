@@ -6,6 +6,7 @@ import {
   NativeTokenTransfer,
   Transfer,
 } from '../../../../domain/safe/entities/transfer.entity';
+import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
@@ -44,15 +45,7 @@ export class TransferInfoMapper {
     switch (type) {
       case TransferInfoMapper.ERC20_TRANSFER: {
         const { tokenAddress, value } = transfer as ERC20Transfer;
-        if (!tokenAddress) {
-          throw Error('Invalid token address for ERC20 transfer');
-        }
-
-        const token = await this.tokenRepository.getToken(
-          chainId,
-          tokenAddress,
-        );
-
+        const token = await this.getToken(chainId, tokenAddress);
         return new TransferTransactionInfo(
           sender,
           recipient,
@@ -67,17 +60,10 @@ export class TransferInfoMapper {
           ),
         );
       }
+
       case TransferInfoMapper.ERC721_TRANSFER: {
         const { tokenAddress, tokenId } = transfer as ERC721Transfer;
-        if (!tokenAddress) {
-          throw Error('Invalid token address for ERC721 transfer');
-        }
-
-        const token = await this.tokenRepository.getToken(
-          chainId,
-          tokenAddress,
-        );
-
+        const token = await this.getToken(chainId, tokenAddress);
         return new TransferTransactionInfo(
           sender,
           recipient,
@@ -91,6 +77,7 @@ export class TransferInfoMapper {
           ),
         );
       }
+
       case TransferInfoMapper.ETHER_TRANSFER: {
         const nativeCoinTransfer = transfer as NativeTokenTransfer;
         return new TransferTransactionInfo(
@@ -100,8 +87,19 @@ export class TransferInfoMapper {
           new NativeCoinTransfer(nativeCoinTransfer.value),
         );
       }
+
       default:
         throw Error('Unknown transfer type');
     }
+  }
+
+  private getToken(
+    chainId: string,
+    tokenAddress: string | null,
+  ): Promise<Token> {
+    if (!tokenAddress) {
+      throw Error('Invalid token address for transfer');
+    }
+    return this.tokenRepository.getToken(chainId, tokenAddress);
   }
 }

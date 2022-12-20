@@ -13,7 +13,7 @@ describe('Transfer direction helper (Unit)', () => {
         safeAddress,
         faker.finance.ethereumAddress(),
       ),
-    ).toBe(TransferDirection[TransferDirection.Outgoing].toUpperCase());
+    ).toBe(TransferDirection.Out);
   });
 
   it('should return Incoming direction when a Safe is in the to direction', () => {
@@ -24,7 +24,7 @@ describe('Transfer direction helper (Unit)', () => {
         faker.finance.ethereumAddress(),
         safeAddress,
       ),
-    ).toBe(TransferDirection[TransferDirection.Incoming].toUpperCase());
+    ).toBe(TransferDirection.In);
   });
 
   it('should return Unknown as default', () => {
@@ -35,6 +35,6 @@ describe('Transfer direction helper (Unit)', () => {
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
       ),
-    ).toBe(TransferDirection[TransferDirection.Unknown].toUpperCase());
+    ).toBe(TransferDirection.Unknown);
   });
 });

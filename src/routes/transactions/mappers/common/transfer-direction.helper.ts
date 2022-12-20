@@ -5,11 +5,11 @@ import { TransferDirection } from '../../entities/transfer-transaction-info.enti
 export class TransferDirectionHelper {
   getTransferDirection(safeAddress: string, from: string, to: string): string {
     if (safeAddress === from) {
-      return TransferDirection[TransferDirection.Outgoing].toUpperCase();
+      return TransferDirection.Out;
     }
     if (safeAddress === to) {
-      return TransferDirection[TransferDirection.Incoming].toUpperCase();
+      return TransferDirection.In;
     }
-    return TransferDirection[TransferDirection.Unknown].toUpperCase();
+    return TransferDirection.Unknown;
   }
 }
