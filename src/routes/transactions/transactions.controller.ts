@@ -5,6 +5,7 @@ import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ModuleTransactionPage } from './entities/module-transaction-page.entity';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { TransactionsService } from './transactions.service';
@@ -64,7 +65,7 @@ export class TransactionsController {
     @Query('to') to?: string,
     @Query('module') module?: string,
     @PaginationDataDecorator() paginationData?: PaginationData,
-  ): Promise<Partial<Page<MultisigTransaction>>> {
+  ): Promise<Page<ModuleTransaction>> {
     return this.transactionsService.getModuleTransactions(
       chainId,
       routeUrl,

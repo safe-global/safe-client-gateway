@@ -81,7 +81,7 @@ export class TransactionsService {
     to?: string,
     module?: string,
     paginationData?: PaginationData,
-  ): Promise<Partial<Page<MultisigTransaction>>> {
+  ): Promise<Page<ModuleTransaction>> {
     const domainTransactions = await this.safeRepository.getModuleTransactions(
       chainId,
       safeAddress,
@@ -113,10 +113,12 @@ export class TransactionsService {
       domainTransactions.previous,
     );
 
-    return {
+    const result = <Page<ModuleTransaction>>{
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
       results,
     };
+    
+    return result;
   }
 }

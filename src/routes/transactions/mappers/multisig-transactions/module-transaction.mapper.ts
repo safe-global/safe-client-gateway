@@ -1,13 +1,16 @@
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { Injectable } from '@nestjs/common';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionInfoMapper } from './transaction-info/multisig-transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { ModuleExecutionInfo } from '../../entities/module-execution-info.entity';
 
 @Injectable()
 export class ModuleTransactionMapper {
   constructor(
+    private readonly addressInfoHelper: AddressInfoHelper,
     private readonly statusMapper: ModuleTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
   ) {}
@@ -24,7 +27,12 @@ export class ModuleTransactionMapper {
       safe,
     );
     //TODO executionInfo = contractInfo(transaction.module)
-    const executionInfo = undefined;
+    const executionInfo = new ModuleExecutionInfo(
+      await this.addressInfoHelper.getOrDefault(
+        chainId,
+        transaction.module
+      )
+    );
 
     return new Transaction(
       `module_${transaction.safe}_${transaction.transactionHash}`,
