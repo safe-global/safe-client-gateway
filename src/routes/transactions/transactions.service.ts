@@ -8,7 +8,7 @@ import {
 } from '../common/pagination/pagination.data';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { ModuleTransactionMapper } from './mappers/multisig-transactions/module-transaction.mapper';
+import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 
 @Injectable()
@@ -118,7 +118,7 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
-    
+
     return result;
   }
 }

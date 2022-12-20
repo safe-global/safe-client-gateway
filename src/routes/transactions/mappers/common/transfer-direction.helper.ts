@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TransferDirection } from '../../../entities/transfer-transaction-info.entity';
+import { TransferDirection } from '../../entities/transfer-transaction-info.entity';
 
 @Injectable()
 export class TransferDirectionHelper {

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '../../../../../domain/safe/entities/module-transaction.entity';
+import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import {
   MultisigTransaction,
   isMultisigTransaction,
-} from '../../../../../domain/safe/entities/multisig-transaction.entity';
-import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '../../../../common/constants';
-import { CustomTransactionInfo } from '../../../entities/custom-transaction.entity';
+} from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../common/constants';
+import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
