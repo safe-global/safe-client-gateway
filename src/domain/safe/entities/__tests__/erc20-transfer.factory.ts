@@ -11,6 +11,7 @@ export default function (
   value?: string,
 ): ERC20Transfer {
   return <ERC20Transfer>{
+    type: 'ERC20_TRANSFER',
     blockNumber: blockNumber ?? faker.datatype.number({ min: 0 }),
     executionDate: executionDate ?? faker.date.recent(),
     from: from ?? faker.finance.ethereumAddress(),

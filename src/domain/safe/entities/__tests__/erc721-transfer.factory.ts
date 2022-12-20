@@ -11,6 +11,7 @@ export default function (
   tokenId?: string,
 ): ERC721Transfer {
   return <ERC721Transfer>{
+    type: 'ERC721_TRANSFER',
     blockNumber: blockNumber ?? faker.datatype.number({ min: 0 }),
     executionDate: executionDate ?? faker.date.recent(),
     from: from ?? faker.finance.ethereumAddress(),

@@ -10,6 +10,7 @@ export default function (
   value?: string,
 ): NativeTokenTransfer {
   return <NativeTokenTransfer>{
+    type: 'ETHER_TRANSFER',
     blockNumber: blockNumber ?? faker.datatype.number({ min: 0 }),
     executionDate: executionDate ?? faker.date.recent(),
     from: from ?? faker.finance.ethereumAddress(),
