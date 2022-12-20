@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b",
+        "executionInfo": null,
+        "safeAppInfo": null,
+        "timestamp": 1659617062000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Transfer",
+          "sender": {
+            "value": "0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5",
+            "logoUri": null,
+            "name": null
+          },
+          "recipient": {
+            "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C",
+            "logoUri": null,
+            "name": null
+          },
+          "direction": "INCOMING",
+          "transferInfo": {
+            "type": "NATIVE_COIN",
+            "value": "513839314563540"
+          }
+        }
+      },
+      "conflictType": "None"
+    }
+  ]
+}

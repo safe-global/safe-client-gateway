@@ -1,0 +1,19 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "type": "ETHER_TRANSFER",
+      "executionDate": "2022-08-04T12:44:22Z",
+      "blockNumber": 7345420,
+      "transactionHash": "0x5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b",
+      "to": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C",
+      "value": "513839314563540",
+      "tokenId": null,
+      "tokenAddress": null,
+      "tokenInfo": null,
+      "from": "0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5"
+    }
+  ]
+}
