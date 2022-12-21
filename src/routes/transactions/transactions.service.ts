@@ -92,6 +92,7 @@ export class TransactionsService {
     );
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+
     const results = await Promise.all(
       domainTransactions.results.map(
         async (domainTransaction) =>

@@ -25,21 +25,6 @@ describe('Get module transactions e2e test', () => {
     await redisClient.flushAll();
   });
 
-  it('GET /safes/<address>/module-transactions (NOT FOUND)', async () => {
-    const safeAddress = '0x3793e0dCBb7C14b7F80472d205a4A9B45f3eA541';
-
-    await request(app.getHttpServer())
-      .get(
-        `/chains/${chainId}/safes/${safeAddress}/module-transactions`,
-      )
-      .expect(500)
-      .then(({ body }) => {
-        console.log(body)
-        expect(body).toEqual({"results":[]});
-      });
-
-  }, 60000);
-
   it('GET /safes/<address>/module-transactions (native token)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const cacheKey = `${chainId}_${safeAddress}_module_transactions`;
@@ -49,9 +34,7 @@ describe('Get module transactions e2e test', () => {
     );
 
     await request(app.getHttpServer())
-      .get(
-        `/chains/${chainId}/safes/${safeAddress}/module-transactions`,
-      )
+      .get(`/chains/${chainId}/safes/${safeAddress}/module-transactions`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
@@ -60,9 +43,6 @@ describe('Get module transactions e2e test', () => {
     const cacheContent = await redisClient.hGet(cacheKey, cacheKeyField);
     expect(cacheContent).not.toBeNull();
   }, 60000);
-
-
-  
 
   afterAll(async () => {
     await app.close();
