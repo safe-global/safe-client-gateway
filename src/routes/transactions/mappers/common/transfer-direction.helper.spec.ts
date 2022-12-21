@@ -13,7 +13,7 @@ describe('Transfer direction helper (Unit)', () => {
         safeAddress,
         faker.finance.ethereumAddress(),
       ),
-    ).toBe(TransferDirection.Out);
+    ).toBe(TransferDirection.Outgoing);
   });
 
   it('should return Incoming direction when a Safe is in the to direction', () => {
@@ -24,7 +24,7 @@ describe('Transfer direction helper (Unit)', () => {
         faker.finance.ethereumAddress(),
         safeAddress,
       ),
-    ).toBe(TransferDirection.In);
+    ).toBe(TransferDirection.Incoming);
   });
 
   it('should return Unknown as default', () => {

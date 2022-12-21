@@ -9,14 +9,14 @@ import {
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
-import { TransferMapper } from './mappers/transfers/transfer.mapper';
+import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
-    private readonly transferMapper: TransferMapper,
+    private readonly incomingTransferMapper: IncomingTransferMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -102,7 +102,11 @@ export class TransactionsService {
       transfers.results.map(
         async (transfer) =>
           new IncomingTransfer(
-            await this.transferMapper.mapTransfer(chainId, transfer, safeInfo),
+            await this.incomingTransferMapper.mapTransfer(
+              chainId,
+              transfer,
+              safeInfo,
+            ),
           ),
       ),
     );

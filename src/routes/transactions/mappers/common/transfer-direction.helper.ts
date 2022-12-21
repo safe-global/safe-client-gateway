@@ -3,12 +3,16 @@ import { TransferDirection } from '../../entities/transfer-transaction-info.enti
 
 @Injectable()
 export class TransferDirectionHelper {
-  getTransferDirection(safeAddress: string, from: string, to: string): string {
+  getTransferDirection(
+    safeAddress: string,
+    from: string,
+    to: string,
+  ): TransferDirection {
     if (safeAddress === from) {
-      return TransferDirection.Out;
+      return TransferDirection.Outgoing;
     }
     if (safeAddress === to) {
-      return TransferDirection.In;
+      return TransferDirection.Incoming;
     }
     return TransferDirection.Unknown;
   }

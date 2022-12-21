@@ -6,7 +6,7 @@ import { Transaction } from '../../entities/transaction.entity';
 import { TransferInfoMapper } from './transfer-info.mapper';
 
 @Injectable()
-export class TransferMapper {
+export class IncomingTransferMapper {
   constructor(private readonly transferInfoMapper: TransferInfoMapper) {}
 
   async mapTransfer(

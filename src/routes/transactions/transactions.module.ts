@@ -12,7 +12,7 @@ import { MultisigTransactionInfoMapper } from './mappers/multisig-transactions/t
 import { NativeCoinTransferMapper } from './mappers/multisig-transactions/transaction-info/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './mappers/multisig-transactions/transaction-info/settings-change.mapper';
 import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
-import { TransferMapper } from './mappers/transfers/transfer.mapper';
+import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 
@@ -24,6 +24,7 @@ import { TransactionsService } from './transactions.service';
     DataDecodedParamHelper,
     Erc20TransferMapper,
     Erc721TransferMapper,
+    IncomingTransferMapper,
     MultisigTransactionExecutionInfoMapper,
     MultisigTransactionInfoMapper,
     MultisigTransactionMapper,
@@ -33,7 +34,6 @@ import { TransactionsService } from './transactions.service';
     TransactionsService,
     TransferDirectionHelper,
     TransferInfoMapper,
-    TransferMapper,
   ],
 })
 export class TransactionsModule {}

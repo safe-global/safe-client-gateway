@@ -46,7 +46,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Out;
+    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
@@ -90,7 +90,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Out;
+    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
@@ -133,7 +133,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Out;
+    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
