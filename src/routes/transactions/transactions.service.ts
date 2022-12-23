@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
 import { Page } from '../common/entities/page.entity';
@@ -6,11 +7,14 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
+import { ConflictType } from './entities/conflict-type.entity';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { QueuedItem } from './entities/queued-item.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
+import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 
 @Injectable()
@@ -20,6 +24,7 @@ export class TransactionsService {
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
+    private readonly queuedItemsMapper: QueuedItemsMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -58,6 +63,7 @@ export class TransactionsService {
               domainTransaction,
               safeInfo,
             ),
+            ConflictType.None,
           ),
       ),
     );
@@ -174,5 +180,109 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async getQueuedTransactions(
+    chainId: string,
+    routeUrl: Readonly<URL>,
+    safeAddress: string,
+    paginationData?: PaginationData,
+  ): Promise<Page<QueuedItem>> {
+    const pagination = this.getAdjustedPagination(paginationData);
+    const transactions = await this.safeRepository.getQueuedTransactions(
+      chainId,
+      safeAddress,
+      pagination?.limit,
+      pagination?.offset,
+      // TODO: should we fetch transactions with nonce < safeInfo.nonce here?
+    );
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const previousPageLastNonce = this.getPreviousPageLastNonce(
+      transactions,
+      paginationData,
+    );
+    const nextPageFirstNonce = this.getNextPageFirstNonce(transactions);
+    this.adjustTransactions(transactions);
+
+    const mappedTransactions = await Promise.all(
+      transactions.results.map(async (transaction) =>
+        this.multisigTransactionMapper.mapTransaction(
+          chainId,
+          transaction,
+          safeInfo,
+        ),
+      ),
+    );
+
+    const results = await this.queuedItemsMapper.getQueuedItems(
+      chainId,
+      mappedTransactions,
+      safeInfo,
+      previousPageLastNonce,
+      nextPageFirstNonce,
+    );
+
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transactions.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      transactions.previous,
+    );
+
+    return {
+      count: results.length,
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      results,
+    };
+  }
+
+  private getAdjustedPagination(
+    paginationData?: PaginationData,
+  ): PaginationData | undefined {
+    if (!paginationData || !paginationData.limit || !paginationData.offset) {
+      return paginationData;
+    }
+    if (paginationData.offset === 0) {
+      return new PaginationData(
+        paginationData.limit + 1,
+        paginationData.offset,
+      );
+    } else {
+      return new PaginationData(
+        paginationData.limit + 2,
+        paginationData.offset - 1,
+      );
+    }
+  }
+
+  private getNextPageFirstNonce(
+    transactions: Page<DomainMultisigTransaction>,
+  ): number | null {
+    if (!this.isMultiPage(transactions)) {
+      return null;
+    }
+    return transactions.results[transactions.results.length - 1].nonce ?? null;
+  }
+
+  private getPreviousPageLastNonce(
+    transactions: Page<DomainMultisigTransaction>,
+    paginationData?: PaginationData,
+  ): number | null {
+    if (!paginationData || !paginationData.offset) {
+      return null;
+    }
+    return transactions.results[0].nonce ?? null;
+  }
+
+  private adjustTransactions(
+    transactions: Page<DomainMultisigTransaction>,
+  ): void {
+    if (this.isMultiPage(transactions)) {
+      transactions.results.pop();
+    }
+  }
+
+  private isMultiPage(transactions: Page<DomainMultisigTransaction>): boolean {
+    return transactions.next !== null;
   }
 }

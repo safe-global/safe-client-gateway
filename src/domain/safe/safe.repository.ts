@@ -122,7 +122,7 @@ export class SafeRepository implements ISafeRepository {
     const page: Page<MultisigTransaction> =
       await transactionService.getMultisigTransactions(
         safeAddress,
-        '-modified',
+        'nonce',
         false,
         true,
         undefined,

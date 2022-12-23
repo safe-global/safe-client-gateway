@@ -697,6 +697,107 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
   });
+
+  describe('GET queued transactions by Safe', () => {
+    it('should get a transactions queue with labels and conflict headers', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/single-page/transactions-source-data.json',
+            ),
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/single-page/safe-source-data.json',
+            ),
+          });
+        }
+        if (url.includes(getContractUrlPattern)) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/single-page/contract-source-data.json',
+            ),
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body).toEqual(
+            getJsonResource('queued-items/single-page/expected-response.json'),
+          );
+        });
+    });
+
+    it.skip('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/multi-page/transactions-source-data.json',
+            ),
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/multi-page/safe-source-data.json',
+            ),
+          });
+        }
+        if (url.includes(getContractUrlPattern)) {
+          return Promise.resolve({
+            data: getJsonResource(
+              'queued-items/multi-page/contract-source-data.json',
+            ),
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
+        .expect(200)
+        .then(({ body }) => {
+          const expectedResponse = getJsonResource(
+            'queued-items/multi-page/expected-response.json',
+          );
+          expect(body).toEqual(
+            expect.objectContaining({
+              ...expectedResponse,
+              next: expect.stringContaining('?cursor='),
+              previous: expect.stringContaining('?cursor='),
+            }),
+          );
+        });
+    });
+  });
 });
 
 const getJsonResource = (relativePath: string) => {

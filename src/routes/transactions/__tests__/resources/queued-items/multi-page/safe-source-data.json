@@ -1,0 +1,14 @@
+{
+  "address": "0x710085cB90e4Ce09F80E354Cf579a32C9790A140",
+  "nonce": 1,
+  "threshold": 2,
+  "owners": [
+    "0x76EA7f829669d7394f42b035e095B7880B45B421",
+    "0xf10E2042ec19747401E5EA174EfB63A0058265E6"
+  ],
+  "masterCopy": "0x3E5c63644E683549055b9Be8653de26E0B4CD36E",
+  "modules": [],
+  "fallbackHandler": "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
+  "guard": "0x0000000000000000000000000000000000000000",
+  "version": "1.3.0+L2"
+}

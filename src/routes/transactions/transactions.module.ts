@@ -13,6 +13,7 @@ import { ModuleTransactionMapper } from './mappers/module-transactions/module-tr
 import { MultisigTransactionExecutionInfoMapper } from './mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionStatusMapper } from './mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
+import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
@@ -35,6 +36,7 @@ import { TransactionsService } from './transactions.service';
     MultisigTransactionStatusMapper,
     NativeCoinTransferMapper,
     SafeAppInfoMapper,
+    QueuedItemsMapper,
     SettingsChangeMapper,
     TransactionsService,
     TransferInfoMapper,
