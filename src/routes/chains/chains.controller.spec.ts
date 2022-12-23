@@ -85,6 +85,8 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect({
           count: chainsResponse.count,
+          next: null,
+          previous: null,
           results: [
             {
               chainId: chainsResponse.results[0].chainId,
