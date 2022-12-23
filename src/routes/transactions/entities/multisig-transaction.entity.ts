@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ConflictType } from './conflict-type.entity';
 import { Transaction } from './transaction.entity';
 
 export class MultisigTransaction {
@@ -12,6 +13,6 @@ export class MultisigTransaction {
   constructor(transaction: Transaction) {
     this.type = 'TRANSACTION';
     this.transaction = transaction;
-    this.conflictType = 'None';
+    this.conflictType = ConflictType.None;
   }
 }
