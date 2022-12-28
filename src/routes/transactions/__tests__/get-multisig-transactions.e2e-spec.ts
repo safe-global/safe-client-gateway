@@ -27,7 +27,7 @@ describe('Get multisig transactions e2e test', () => {
 
   it('GET /safes/<address>/multisig-transactions (native token)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
-    const executionDateGte = '2022-11-03T00:00:00.000Z';
+    const executionDateGte = '2022-11-04T00:00:00.000Z';
     const executionDateLte = '2022-11-08T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
