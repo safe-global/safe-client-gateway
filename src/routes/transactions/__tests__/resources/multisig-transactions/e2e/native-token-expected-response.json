@@ -204,7 +204,7 @@
         "txInfo": {
           "type": "Custom",
           "to": {
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null,
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
           },
@@ -235,7 +235,7 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null
           },
           "dataSize": "324",
@@ -266,7 +266,7 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null
           },
           "dataSize": "932",
@@ -296,7 +296,7 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null
           },
           "dataSize": "12228",
@@ -326,7 +326,7 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null
           },
           "dataSize": "932",

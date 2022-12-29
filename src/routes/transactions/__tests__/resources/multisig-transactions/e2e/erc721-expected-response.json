@@ -80,7 +80,7 @@
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
             "name": null,
-            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
           },
           "dataSize": "12228",
           "value": "0",
