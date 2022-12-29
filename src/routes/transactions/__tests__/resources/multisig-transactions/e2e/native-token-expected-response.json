@@ -38,66 +38,6 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x8036226bebde114250d127c036f7ad182bafbcc5b3243d916ccbe179da0fe3c2",
-        "timestamp": 1667811828000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": {
-            "logoUri": null,
-            "name": null,
-            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
-          },
-          "dataSize": "388",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 2,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 36,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1,
-          "missingSigners": null
-        },
-        "safeAppInfo": null
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xa0383bc443e52a851ebdec084f141afc23325e3a2b7ef55b7a5f24f246ab68da",
-        "timestamp": 1667808444000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": {
-            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null,
-            "name": null
-          },
-          "dataSize": "324",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 3,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 35,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1,
-          "missingSigners": null
-        },
-        "safeAppInfo": null
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
         "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x7d50728140ec92a8f015d1f258476c54dc7e60f884e06d6b46de0afa4fe6ec88",
         "timestamp": 1667808048000,
         "txStatus": "SUCCESS",
@@ -178,55 +118,35 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x4731a89acd21292cc1ecfa1cb1404e76d63727e3da34d61526e19658710816c9",
-        "timestamp": 1667557260000,
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xaebf588969e24e1f25d8932568115a90fcef17dcb2a4ebfc1356ab0dc43fd079",
+        "timestamp": 1667553492000,
         "txStatus": "SUCCESS",
         "txInfo": {
-          "type": "Custom",
-          "to": {
-            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null,
-            "name": null
+          "type": "SettingsChange",
+          "dataDecoded": {
+            "method": "addOwnerWithThreshold",
+            "parameters": [
+              {
+                "name": "owner",
+                "type": "address",
+                "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835"
+              },
+              { "name": "_threshold", "type": "uint256", "value": "1" }
+            ]
           },
-          "dataSize": "932",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 6,
-          "isCancellation": false
+          "settingsInfo": {
+            "type": "ADD_OWNER",
+            "owner": {
+              "logoUri": null,
+              "name": null,
+              "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835"
+            },
+            "threshold": 1
+          }
         },
         "executionInfo": {
           "type": "MULTISIG",
-          "nonce": 32,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1,
-          "missingSigners": null
-        },
-        "safeAppInfo": null
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xf32b1197b96324778e81eb3e018d599222119cc64a5aa75ded87e5946da0ab30",
-        "timestamp": 1667557092000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": {
-            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null,
-            "name": null
-          },
-          "dataSize": "12228",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 46,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 31,
+          "nonce": 29,
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
@@ -278,35 +198,116 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xaebf588969e24e1f25d8932568115a90fcef17dcb2a4ebfc1356ab0dc43fd079",
-        "timestamp": 1667553492000,
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x8036226bebde114250d127c036f7ad182bafbcc5b3243d916ccbe179da0fe3c2",
+        "timestamp": 1667811828000,
         "txStatus": "SUCCESS",
         "txInfo": {
-          "type": "SettingsChange",
-          "dataDecoded": {
-            "method": "addOwnerWithThreshold",
-            "parameters": [
-              {
-                "name": "owner",
-                "type": "address",
-                "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835"
-              },
-              { "name": "_threshold", "type": "uint256", "value": "1" }
-            ]
+          "type": "Custom",
+          "to": {
+            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "name": null,
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
           },
-          "settingsInfo": {
-            "type": "ADD_OWNER",
-            "owner": {
-              "logoUri": null,
-              "name": null,
-              "value": "0xa44992411E5cC1EBeeD451B016104e938C30a835"
-            },
-            "threshold": 1
-          }
+          "dataSize": "388",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 2,
+          "isCancellation": false
         },
         "executionInfo": {
           "type": "MULTISIG",
-          "nonce": 29,
+          "nonce": 36,
+          "confirmationsRequired": 1,
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xa0383bc443e52a851ebdec084f141afc23325e3a2b7ef55b7a5f24f246ab68da",
+        "timestamp": 1667808444000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Custom",
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "name": null
+          },
+          "dataSize": "324",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 3,
+          "isCancellation": false
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 35,
+          "confirmationsRequired": 1,
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    },
+
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x4731a89acd21292cc1ecfa1cb1404e76d63727e3da34d61526e19658710816c9",
+        "timestamp": 1667557260000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Custom",
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "name": null
+          },
+          "dataSize": "932",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 6,
+          "isCancellation": false
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 32,
+          "confirmationsRequired": 1,
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xf32b1197b96324778e81eb3e018d599222119cc64a5aa75ded87e5946da0ab30",
+        "timestamp": 1667557092000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Custom",
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
+            "name": null
+          },
+          "dataSize": "12228",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 46,
+          "isCancellation": false
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 31,
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
@@ -325,7 +326,7 @@
           "type": "Custom",
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "logoUri": null,
+            "logoUri": "https://staging-goerli-safe-transaction-web.safe.svc.cluster.local/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png",
             "name": null
           },
           "dataSize": "932",
@@ -337,36 +338,6 @@
         "executionInfo": {
           "type": "MULTISIG",
           "nonce": 28,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1,
-          "missingSigners": null
-        },
-        "safeAppInfo": null
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x43d1bb6e8ca97866bc872c3f1edc58c9c9ffadabe64ff02a55467779670a6ac9",
-        "timestamp": 1667482980000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": {
-            "value": "0x07dA2049Fa8127eF6280631BCbc56881d764C8Ee",
-            "logoUri": null,
-            "name": null
-          },
-          "actionCount": null,
-          "dataSize": "100",
-          "value": "0",
-          "methodName": "claimVestedTokens",
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 27,
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null
