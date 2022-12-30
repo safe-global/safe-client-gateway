@@ -2,6 +2,7 @@ import { DataDecoded } from '../../../data-decoder/entities/data-decoded.entity'
 import { Operation } from '../operation.entity';
 import { faker } from '@faker-js/faker';
 import dataDecodedFactory from '../../../data-decoder/entities/__tests__/data-decoded.factory';
+import { ModuleTransaction } from '../module-transaction.entity';
 
 export default function (
   blockNumber?: number,
@@ -16,7 +17,7 @@ export default function (
   to?: string,
   transactionHash?: string,
   value?: string | null,
-) {
+): ModuleTransaction {
   return {
     blockNumber: blockNumber ?? faker.datatype.number(),
     created: created ?? faker.date.recent().toISOString(),

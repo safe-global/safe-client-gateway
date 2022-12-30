@@ -30,10 +30,10 @@ export class ModuleTransactionMapper {
     const executionInfo = new ModuleExecutionInfo(
       await this.addressInfoHelper.getOrDefault(chainId, transaction.module),
     );
-
+    const timestamp = new Date(transaction.executionDate);
     return new Transaction(
       `module_${transaction.safe}_${transaction.transactionHash}`,
-      transaction.executionDate.getTime(),
+      timestamp.getTime(),
       txStatus,
       txInfo,
       executionInfo,
