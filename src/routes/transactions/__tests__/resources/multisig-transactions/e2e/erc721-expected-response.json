@@ -1,4 +1,6 @@
 {
+  "next": null,
+  "previous": null,
   "results": [
     {
       "type": "TRANSACTION",
@@ -42,36 +44,6 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x28e6fd6f9bef776aa5ff40131c998fc0960f65a37a6d79aea60a49207ce1a8a8",
-        "timestamp": 1669731420000,
-        "txStatus": "SUCCESS",
-        "txInfo": {
-          "type": "Custom",
-          "to": {
-            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-            "name": null,
-            "logoUri": null
-          },
-          "dataSize": "12228",
-          "value": "0",
-          "methodName": "multiSend",
-          "actionCount": 46,
-          "isCancellation": false
-        },
-        "executionInfo": {
-          "type": "MULTISIG",
-          "nonce": 56,
-          "confirmationsRequired": 1,
-          "confirmationsSubmitted": 1,
-          "missingSigners": null
-        },
-        "safeAppInfo": null
-      },
-      "conflictType": "None"
-    },
-    {
-      "type": "TRANSACTION",
-      "transaction": {
         "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xdd8f27f9a6672dedf6a81e5be8b5ea7d2e2b2ca4640302727bf28bf01d02efef",
         "timestamp": 1669731180000,
         "txStatus": "SUCCESS",
@@ -91,6 +63,36 @@
         "executionInfo": {
           "type": "MULTISIG",
           "nonce": 55,
+          "confirmationsRequired": 1,
+          "confirmationsSubmitted": 1,
+          "missingSigners": null
+        },
+        "safeAppInfo": null
+      },
+      "conflictType": "None"
+    },
+    {
+      "type": "TRANSACTION",
+      "transaction": {
+        "id": "multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x28e6fd6f9bef776aa5ff40131c998fc0960f65a37a6d79aea60a49207ce1a8a8",
+        "timestamp": 1669731420000,
+        "txStatus": "SUCCESS",
+        "txInfo": {
+          "type": "Custom",
+          "to": {
+            "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            "name": null,
+            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
+          },
+          "dataSize": "12228",
+          "value": "0",
+          "methodName": "multiSend",
+          "actionCount": 46,
+          "isCancellation": false
+        },
+        "executionInfo": {
+          "type": "MULTISIG",
+          "nonce": 56,
           "confirmationsRequired": 1,
           "confirmationsSubmitted": 1,
           "missingSigners": null

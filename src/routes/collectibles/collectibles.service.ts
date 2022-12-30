@@ -39,8 +39,8 @@ export class CollectiblesService {
 
     return <Page<Collectible>>{
       count: collectibles.count,
-      next: nextURL?.toString(),
-      previous: previousURL?.toString(),
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
       results: collectibles.results,
     };
   }
