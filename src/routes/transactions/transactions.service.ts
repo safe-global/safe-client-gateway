@@ -7,7 +7,9 @@ import {
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 
@@ -17,6 +19,7 @@ export class TransactionsService {
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly moduleTransactionMapper: ModuleTransactionMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -72,6 +75,55 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async getModuleTransactions(
+    chainId: string,
+    routeUrl: Readonly<URL>,
+    safeAddress: string,
+    to?: string,
+    module?: string,
+    paginationData?: PaginationData,
+  ): Promise<Page<ModuleTransaction>> {
+    const domainTransactions = await this.safeRepository.getModuleTransactions(
+      chainId,
+      safeAddress,
+      to,
+      module,
+      paginationData?.limit,
+      paginationData?.offset,
+    );
+
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+
+    const results = await Promise.all(
+      domainTransactions.results.map(
+        async (domainTransaction) =>
+          new ModuleTransaction(
+            await this.moduleTransactionMapper.mapTransaction(
+              chainId,
+              domainTransaction,
+              safeInfo,
+            ),
+          ),
+      ),
+    );
+    const nextURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.next,
+    );
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.previous,
+    );
+
+    const result = <Page<ModuleTransaction>>{
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      results,
+    };
+
+    return result;
   }
 
   async getIncomingTransfers(

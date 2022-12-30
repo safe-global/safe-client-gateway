@@ -6,6 +6,8 @@ import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { IncomingTransferPage } from './entities/incoming-transfer-page.entity';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
+import { ModuleTransactionPage } from './entities/module-transaction-page.entity';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { TransactionsService } from './transactions.service';
@@ -49,6 +51,28 @@ export class TransactionsController {
       value,
       nonce,
       executed,
+      paginationData,
+    );
+  }
+  @ApiOkResponse({ type: ModuleTransactionPage })
+  @Get('chains/:chainId/safes/:safeAddress/module-transactions')
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'module', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  async getModuleTransactions(
+    @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress') safeAddress: string,
+    @Query('to') to?: string,
+    @Query('module') module?: string,
+    @PaginationDataDecorator() paginationData?: PaginationData,
+  ): Promise<Page<ModuleTransaction>> {
+    return this.transactionsService.getModuleTransactions(
+      chainId,
+      routeUrl,
+      safeAddress,
+      to,
+      module,
       paginationData,
     );
   }

@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { MultisigTransactionBuilder } from '../../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
-import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../../../common/entities/address-info.entity';
-import { CustomTransactionInfo } from '../../../entities/custom-transaction.entity';
+import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import { AddressInfo } from '../../../common/entities/address-info.entity';
+import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 import { CustomTransactionMapper } from './custom-transaction.mapper';
 
 const addressInfoHelper = jest.mocked({

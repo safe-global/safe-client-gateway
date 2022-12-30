@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { DataDecoded } from '../../../../data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 
 describe('DataDecoded param helper (Unit)', () => {
