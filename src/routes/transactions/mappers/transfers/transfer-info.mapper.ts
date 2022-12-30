@@ -4,7 +4,7 @@ import {
   ERC20Transfer,
   ERC721Transfer,
   NativeTokenTransfer,
-  Transfer,
+  Transfer as DomainTransfer,
 } from '../../../../domain/safe/entities/transfer.entity';
 import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
@@ -14,6 +14,7 @@ import { TransferTransactionInfo } from '../../entities/transfer-transaction-inf
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
+import { Transfer } from '../../entities/transfers/transfer.entity';
 import { TransferDirectionHelper } from '../common/transfer-direction.helper';
 
 @Injectable()
@@ -30,10 +31,10 @@ export class TransferInfoMapper {
 
   async mapTransferInfo(
     chainId: string,
-    transfer: Transfer,
+    domainTransfer: DomainTransfer,
     safe: Safe,
   ): Promise<TransferTransactionInfo> {
-    const { from, to, type } = transfer;
+    const { from, to, type } = domainTransfer;
     const sender = await this.addressInfoHelper.getOrDefault(chainId, from);
     const recipient = await this.addressInfoHelper.getOrDefault(chainId, to);
     const direction = this.transferDirectionHelper.getTransferDirection(
@@ -42,55 +43,60 @@ export class TransferInfoMapper {
       to,
     );
 
+    return new TransferTransactionInfo(
+      sender,
+      recipient,
+      direction,
+      await this.getTransferByType(chainId, domainTransfer, type),
+    );
+  }
+
+  private async getTransferByType(
+    chainId: string,
+    domainTransfer: DomainTransfer,
+    type: string,
+  ): Promise<Transfer> {
+    let transfer: Transfer;
+
     switch (type) {
       case TransferInfoMapper.ERC20_TRANSFER: {
-        const { tokenAddress, value } = transfer as ERC20Transfer;
+        const { tokenAddress, value } = domainTransfer as ERC20Transfer;
         const token = await this.getToken(chainId, tokenAddress);
-        return new TransferTransactionInfo(
-          sender,
-          recipient,
-          direction,
-          new Erc20Transfer(
-            token.address,
-            value,
-            token.name,
-            token.symbol,
-            token.logoUri,
-            token.decimals,
-          ),
+        transfer = new Erc20Transfer(
+          token.address,
+          value,
+          token.name,
+          token.symbol,
+          token.logoUri,
+          token.decimals,
         );
+        break;
       }
 
       case TransferInfoMapper.ERC721_TRANSFER: {
-        const { tokenAddress, tokenId } = transfer as ERC721Transfer;
+        const { tokenAddress, tokenId } = domainTransfer as ERC721Transfer;
         const token = await this.getToken(chainId, tokenAddress);
-        return new TransferTransactionInfo(
-          sender,
-          recipient,
-          direction,
-          new Erc721Transfer(
-            token.address,
-            tokenId,
-            token.name,
-            token.symbol,
-            token.logoUri,
-          ),
+        transfer = new Erc721Transfer(
+          token.address,
+          tokenId,
+          token.name,
+          token.symbol,
+          token.logoUri,
         );
+        break;
       }
 
       case TransferInfoMapper.ETHER_TRANSFER: {
-        const nativeCoinTransfer = transfer as NativeTokenTransfer;
-        return new TransferTransactionInfo(
-          sender,
-          recipient,
-          direction,
-          new NativeCoinTransfer(nativeCoinTransfer.value),
-        );
+        const nativeCoinTransfer = domainTransfer as NativeTokenTransfer;
+        transfer = new NativeCoinTransfer(nativeCoinTransfer.value);
+        break;
       }
 
       default:
         throw Error('Unknown transfer type');
     }
+
+    return transfer;
   }
 
   private getToken(
