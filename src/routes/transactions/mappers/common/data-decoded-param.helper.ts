@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '../../../../data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 
 @Injectable()
 export class DataDecodedParamHelper {

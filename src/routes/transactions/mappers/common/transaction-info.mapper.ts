@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '../../../../../domain/safe/entities/operation.entity';
-import { Safe } from '../../../../../domain/safe/entities/safe.entity';
-import { TokenRepository } from '../../../../../domain/tokens/token.repository';
-import { ITokenRepository } from '../../../../../domain/tokens/token.repository.interface';
-import { TokenType } from '../../../../balances/entities/token-type.entity';
-import { SettingsChangeTransaction } from '../../../entities/settings-change-transaction.entity';
-import { TransactionInfo } from '../../../entities/transaction-info.entity';
+import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { Operation } from '../../../../domain/safe/entities/operation.entity';
+import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { TokenRepository } from '../../../../domain/tokens/token.repository';
+import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
+import { TokenType } from '../../../balances/entities/token-type.entity';
+import { SettingsChangeTransaction } from '../../entities/settings-change-transaction.entity';
+import { TransactionInfo } from '../../entities/transaction-info.entity';
 import { CustomTransactionMapper } from './custom-transaction.mapper';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { Erc20TransferMapper } from './erc20-transfer.mapper';
@@ -43,7 +44,7 @@ export class MultisigTransactionInfoMapper {
 
   async mapTransactionInfo(
     chainId: string,
-    transaction: MultisigTransaction,
+    transaction: MultisigTransaction | ModuleTransaction,
     safe: Safe,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
@@ -126,7 +127,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   private isSettingsChange(
-    transaction: MultisigTransaction,
+    transaction: MultisigTransaction | ModuleTransaction,
     value: number,
     dataSize: number,
   ): boolean {
@@ -140,7 +141,9 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isValidTokenTransfer(transaction: MultisigTransaction): boolean {
+  private isValidTokenTransfer(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): boolean {
     return (
       (this.isErc20Transfer(transaction) ||
         this.isErc721Transfer(transaction)) &&
@@ -148,21 +151,27 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isErc20Transfer(transaction: MultisigTransaction): boolean {
+  private isErc20Transfer(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): boolean {
     const { dataDecoded } = transaction;
     return this.ERC20_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
-  private isErc721Transfer(transaction: MultisigTransaction): boolean {
+  private isErc721Transfer(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): boolean {
     const { dataDecoded } = transaction;
     return this.ERC721_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
-  private isSafeSenderOrReceiver(transaction: MultisigTransaction): boolean {
+  private isSafeSenderOrReceiver(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): boolean {
     const { dataDecoded } = transaction;
     if (!dataDecoded) return false;
     return (

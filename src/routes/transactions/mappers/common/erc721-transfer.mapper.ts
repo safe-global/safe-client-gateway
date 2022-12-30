@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '../../../../../domain/safe/entities/multisig-transaction.entity';
-import { Token } from '../../../../../domain/tokens/entities/token.entity';
-import { AddressInfoHelper } from '../../../../common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '../../../../common/constants';
-import { TransferTransactionInfo } from '../../../entities/transfer-transaction-info.entity';
-import { Erc721Transfer } from '../../../entities/transfers/erc721-transfer.entity';
+import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { Token } from '../../../../domain/tokens/entities/token.entity';
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../common/constants';
+import { TransferTransactionInfo } from '../../entities/transfer-transaction-info.entity';
+import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { TransferDirectionHelper } from './transfer-direction.helper';
 
@@ -19,7 +20,7 @@ export class Erc721TransferMapper {
   async mapErc721Transfer(
     token: Token,
     chainId: string,
-    transaction: MultisigTransaction,
+    transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(
