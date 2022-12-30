@@ -26,7 +26,6 @@ export class ModuleTransactionMapper {
       transaction,
       safe,
     );
-    //TODO executionInfo = contractInfo(transaction.module)
     const executionInfo = new ModuleExecutionInfo(
       await this.addressInfoHelper.getOrDefault(chainId, transaction.module),
     );
