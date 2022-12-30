@@ -30,10 +30,11 @@ export class MultisigTransactionMapper {
       safe,
       txStatus,
     );
+    const timestamp = transaction.executionDate ?? transaction.submissionDate;
 
     return new Transaction(
       `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-      transaction.executionDate.getTime(),
+      timestamp?.getTime() ?? null,
       txStatus,
       txInfo,
       executionInfo,
