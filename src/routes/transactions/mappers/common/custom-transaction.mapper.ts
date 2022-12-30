@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import {
-  MultisigTransaction,
-  isMultisigTransaction,
-} from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
@@ -53,7 +50,7 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
   ): boolean {
-    if (isMultisigTransaction(transaction)) {
+    if ('isExecuted' in transaction) {
       const {
         to,
         safe,
