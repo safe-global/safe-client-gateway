@@ -18,30 +18,14 @@ export class QueuedItemsMapper {
   constructor(private readonly mapper: MultisigTransactionMapper) {}
 
   async getQueuedItems(
-    chainId: string,
     transactions: Transaction[],
     safe: Safe,
     previousPageLastNonce: number | null,
     nextPageFirstNonce: number | null,
   ): Promise<QueuedItem[]> {
     const transactionGroups = this.groupByNonce(transactions);
-    return this.buildItems(
-      safe,
-      transactionGroups,
-      previousPageLastNonce,
-      nextPageFirstNonce,
-    );
-  }
-
-  private buildItems(
-    safe: Safe,
-    transactionGroups: TransactionGroup[],
-    previousPageLastNonce: number | null,
-    nextPageFirstNonce: number | null,
-  ): QueuedItem[] {
     let items: QueuedItem[] = [];
-    let lastProcessedNonce: number;
-    lastProcessedNonce = previousPageLastNonce ?? -1;
+    let lastProcessedNonce = previousPageLastNonce ?? -1;
 
     transactionGroups.forEach((transactionGroup) => {
       const { nonce } = transactionGroup;
@@ -53,9 +37,9 @@ export class QueuedItemsMapper {
       lastProcessedNonce = nonce;
 
       const isEdgeGroup = nonce === nextPageFirstNonce;
+      const isSingleItemGroup = transactionGroup.transactions.length === 1;
       const conflictFromPreviousPage = nonce === previousPageLastNonce;
-      const hasConflicts =
-        transactionGroup.transactions.length > 1 || isEdgeGroup;
+      const hasConflicts = !isSingleItemGroup || isEdgeGroup;
       if (hasConflicts && !conflictFromPreviousPage) {
         items.push(new ConflictHeaderQueuedItem(nonce));
       }
@@ -97,17 +81,17 @@ export class QueuedItemsMapper {
     conflictFromPreviousPage: boolean,
     transaction: Transaction,
   ): MultisigTransaction {
-    let firstItemConflictType: ConflictType;
+    let conflictType: ConflictType;
 
     if (hasConflicts) {
-      firstItemConflictType = ConflictType.HasNext;
+      conflictType = ConflictType.HasNext;
     } else if (conflictFromPreviousPage) {
-      firstItemConflictType = ConflictType.End;
+      conflictType = ConflictType.End;
     } else {
-      firstItemConflictType = ConflictType.None;
+      conflictType = ConflictType.None;
     }
 
-    return new MultisigTransaction(transaction, firstItemConflictType);
+    return new MultisigTransaction(transaction, conflictType);
   }
 
   private getAsNonFirstTransactions(

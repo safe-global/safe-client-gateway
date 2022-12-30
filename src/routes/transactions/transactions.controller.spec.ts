@@ -745,7 +745,7 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
 
-    it.skip('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
+    it('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = new ChainBuilder().withChainId(chainId).build();
@@ -782,7 +782,9 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
+        .get(
+          `/chains/${chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
+        )
         .expect(200)
         .then(({ body }) => {
           const expectedResponse = getJsonResource(

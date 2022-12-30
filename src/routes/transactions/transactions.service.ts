@@ -189,44 +189,35 @@ export class TransactionsService {
     paginationData?: PaginationData,
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPagination(paginationData);
-    const transactions = await this.safeRepository.getQueuedTransactions(
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const domainTransactions = await this.safeRepository.getQueuedTransactions(
       chainId,
       safeAddress,
       pagination?.limit,
       pagination?.offset,
-      // TODO: should we fetch transactions with nonce < safeInfo.nonce here?
     );
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const previousPageLastNonce = this.getPreviousPageLastNonce(
-      transactions,
-      paginationData,
-    );
-    const nextPageFirstNonce = this.getNextPageFirstNonce(transactions);
-    this.adjustTransactions(transactions);
 
-    const mappedTransactions = await Promise.all(
-      transactions.results.map(async (transaction) =>
-        this.multisigTransactionMapper.mapTransaction(
-          chainId,
-          transaction,
-          safeInfo,
-        ),
+    const transactions = await Promise.all(
+      this.adjustTransactions(domainTransactions).results.map(
+        async (transaction) =>
+          this.multisigTransactionMapper.mapTransaction(
+            chainId,
+            transaction,
+            safeInfo,
+          ),
       ),
     );
 
     const results = await this.queuedItemsMapper.getQueuedItems(
-      chainId,
-      mappedTransactions,
+      transactions,
       safeInfo,
-      previousPageLastNonce,
-      nextPageFirstNonce,
+      this.getPreviousPageLastNonce(domainTransactions, paginationData),
+      this.getNextPageFirstNonce(domainTransactions),
     );
 
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transactions.next);
-    const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
-      transactions.previous,
-    );
+    const { next, previous } = domainTransactions;
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, next);
+    const previousURL = cursorUrlFromLimitAndOffset(routeUrl, previous);
 
     return {
       count: results.length,
@@ -258,31 +249,41 @@ export class TransactionsService {
   private getNextPageFirstNonce(
     transactions: Page<DomainMultisigTransaction>,
   ): number | null {
-    if (!this.isMultiPage(transactions)) {
-      return null;
-    }
-    return transactions.results[transactions.results.length - 1].nonce ?? null;
+    return this.isMultiPage(transactions)
+      ? this.getLastTransactionNonce(transactions)
+      : null;
   }
 
   private getPreviousPageLastNonce(
     transactions: Page<DomainMultisigTransaction>,
     paginationData?: PaginationData,
   ): number | null {
-    if (!paginationData || !paginationData.offset) {
-      return null;
-    }
-    return transactions.results[0].nonce ?? null;
+    return paginationData && paginationData.offset
+      ? this.getFirstTransactionNonce(transactions)
+      : null;
   }
 
   private adjustTransactions(
     transactions: Page<DomainMultisigTransaction>,
-  ): void {
-    if (this.isMultiPage(transactions)) {
-      transactions.results.pop();
-    }
+  ): Page<DomainMultisigTransaction> {
+    return this.isMultiPage(transactions)
+      ? { ...transactions, results: transactions.results.slice(0, -1) }
+      : transactions;
   }
 
   private isMultiPage(transactions: Page<DomainMultisigTransaction>): boolean {
     return transactions.next !== null;
+  }
+
+  private getFirstTransactionNonce(
+    transactions: Page<DomainMultisigTransaction>,
+  ): number {
+    return transactions.results[0].nonce;
+  }
+
+  private getLastTransactionNonce(
+    transactions: Page<DomainMultisigTransaction>,
+  ): number {
+    return transactions.results[transactions.results.length - 1].nonce;
   }
 }
