@@ -17,6 +17,7 @@ import { TransferTransactionInfo } from './transfer-transaction-info.entity';
   CustomTransactionInfo,
   SettingsChangeTransaction,
   TransferTransactionInfo,
+  ModuleExecutionInfo,
   MultisigExecutionInfo,
 )
 export class Transaction {
