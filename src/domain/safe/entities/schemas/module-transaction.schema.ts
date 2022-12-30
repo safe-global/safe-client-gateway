@@ -1,4 +1,5 @@
 import { Schema } from 'ajv';
+import { dataDecodedSchema } from '../../../data-decoder/entities/schemas/data-decoded.schema';
 
 export const moduleTransactionSchema: Schema = {
   type: 'object',
@@ -7,7 +8,7 @@ export const moduleTransactionSchema: Schema = {
     to: { type: 'string' },
     value: { type: 'string', nullable: true, default: null },
     data: { type: 'string', nullable: true, default: null },
-    dataDecoded: { type: 'object', nullable: true, default: null },
+    dataDecoded: { oneOf: [dataDecodedSchema, { type: 'null' }] },
     operation: { type: 'number', enum: [0, 1] },
     created: { type: 'string', isDate: true },
     executionDate: { type: 'string', isDate: true },
