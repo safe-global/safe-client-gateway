@@ -55,8 +55,8 @@ export class ChainsService {
 
     return <Page<Chain>>{
       count: result.count,
-      next: nextURL?.toString(),
-      previous: previousURL?.toString(),
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
       results: chains,
     };
   }

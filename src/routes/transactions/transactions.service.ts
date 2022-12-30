@@ -65,8 +65,8 @@ export class TransactionsService {
     );
 
     return {
-      next: nextURL?.toString(),
-      previous: previousURL?.toString(),
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
       results,
     };
   }
