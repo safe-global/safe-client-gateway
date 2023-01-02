@@ -15,7 +15,7 @@ import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { Transfer } from '../../entities/transfers/transfer.entity';
-import { TransferDirectionHelper } from '../common/transfer-direction.helper';
+import { getTransferDirection } from '../common/transfer-direction.helper';
 
 @Injectable()
 export class TransferInfoMapper {
@@ -26,7 +26,6 @@ export class TransferInfoMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
-    private readonly transferDirectionHelper: TransferDirectionHelper,
   ) {}
 
   async mapTransferInfo(
@@ -37,11 +36,7 @@ export class TransferInfoMapper {
     const { from, to, type } = domainTransfer;
     const sender = await this.addressInfoHelper.getOrDefault(chainId, from);
     const recipient = await this.addressInfoHelper.getOrDefault(chainId, to);
-    const direction = this.transferDirectionHelper.getTransferDirection(
-      safe.address,
-      from,
-      to,
-    );
+    const direction = getTransferDirection(safe.address, from, to);
 
     return new TransferTransactionInfo(
       sender,

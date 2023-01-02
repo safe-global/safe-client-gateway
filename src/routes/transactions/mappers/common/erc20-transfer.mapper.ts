@@ -7,14 +7,13 @@ import { NULL_ADDRESS } from '../../../common/constants';
 import { TransferTransactionInfo } from '../../entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
-import { TransferDirectionHelper } from './transfer-direction.helper';
+import { getTransferDirection } from './transfer-direction.helper';
 
 @Injectable()
 export class Erc20TransferMapper {
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
-    private readonly transferDirectionHelper: TransferDirectionHelper,
   ) {}
 
   async mapErc20Transfer(
@@ -31,11 +30,7 @@ export class Erc20TransferMapper {
       dataDecoded,
       NULL_ADDRESS,
     );
-    const direction = this.transferDirectionHelper.getTransferDirection(
-      transaction.safe,
-      sender,
-      recipient,
-    );
+    const direction = getTransferDirection(transaction.safe, sender, recipient);
     const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       sender,

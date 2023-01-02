@@ -7,7 +7,6 @@ import { Erc721TransferMapper } from './mappers/common/erc721-transfer.mapper';
 import { NativeCoinTransferMapper } from './mappers/common/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './mappers/common/settings-change.mapper';
 import { MultisigTransactionInfoMapper } from './mappers/common/transaction-info.mapper';
-import { TransferDirectionHelper } from './mappers/common/transfer-direction.helper';
 import { ModuleTransactionStatusMapper } from './mappers/module-transactions/module-transaction-status.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionExecutionInfoMapper } from './mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
@@ -36,7 +35,6 @@ import { TransactionsService } from './transactions.service';
     NativeCoinTransferMapper,
     SettingsChangeMapper,
     TransactionsService,
-    TransferDirectionHelper,
     TransferInfoMapper,
   ],
 })

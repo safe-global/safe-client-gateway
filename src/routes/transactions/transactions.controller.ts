@@ -54,6 +54,7 @@ export class TransactionsController {
       paginationData,
     );
   }
+
   @ApiOkResponse({ type: ModuleTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
   @ApiQuery({ name: 'to', required: false })

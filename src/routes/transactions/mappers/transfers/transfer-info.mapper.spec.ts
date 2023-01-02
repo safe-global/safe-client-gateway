@@ -14,7 +14,6 @@ import {
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
-import { TransferDirectionHelper } from '../common/transfer-direction.helper';
 import { TransferInfoMapper } from './transfer-info.mapper';
 
 const addressInfoHelper = jest.mocked({
@@ -25,16 +24,8 @@ const tokenRepository = jest.mocked({
   getToken: jest.fn(),
 } as unknown as TokenRepository);
 
-const transferDirectionHelper = jest.mocked({
-  getTransferDirection: jest.fn(),
-} as unknown as TransferDirectionHelper);
-
 describe('Transfer Info mapper (Unit)', () => {
-  const mapper = new TransferInfoMapper(
-    tokenRepository,
-    addressInfoHelper,
-    transferDirectionHelper,
-  );
+  const mapper = new TransferInfoMapper(tokenRepository, addressInfoHelper);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -46,9 +37,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
 
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
@@ -59,7 +48,7 @@ describe('Transfer Info mapper (Unit)', () => {
       expect.objectContaining({
         sender: addressInfo,
         recipient: addressInfo,
-        direction,
+        direction: TransferDirection.Unknown,
         transferInfo: expect.objectContaining({
           type: 'ERC20',
           tokenAddress: token.address,
@@ -90,9 +79,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
 
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
@@ -103,7 +90,7 @@ describe('Transfer Info mapper (Unit)', () => {
       expect.objectContaining({
         sender: addressInfo,
         recipient: addressInfo,
-        direction,
+        direction: TransferDirection.Unknown,
         transferInfo: expect.objectContaining({
           type: 'ERC721',
           tokenAddress: token.address,
@@ -133,9 +120,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeFactory();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenFactory();
-    const direction = TransferDirection.Outgoing;
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    transferDirectionHelper.getTransferDirection.mockReturnValue(direction);
     tokenRepository.getToken.mockResolvedValue(token);
 
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
@@ -146,7 +131,7 @@ describe('Transfer Info mapper (Unit)', () => {
       expect.objectContaining({
         sender: addressInfo,
         recipient: addressInfo,
-        direction,
+        direction: TransferDirection.Unknown,
         transferInfo: expect.objectContaining({
           type: 'NATIVE_COIN',
           value: transfer.value,
