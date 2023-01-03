@@ -138,14 +138,21 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
-  async getTransactionHistory(
+  async getHistoryTransactions(
     chainId: string,
     safeAddress: string,
+    limit?: number,
+    offset?: number,
   ): Promise<Page<Transaction>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
     const page: Page<Transaction> = await transactionService.getAllTransactions(
       safeAddress,
+      undefined,
+      true,
+      false,
+      limit,
+      offset,
     );
 
     page.results.map((transaction) =>
