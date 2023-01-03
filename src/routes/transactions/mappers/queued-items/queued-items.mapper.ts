@@ -76,6 +76,9 @@ export class QueuedItemsMapper {
     return [firstItem, ...remainingItems];
   }
 
+  /**
+   * Maps each transaction passed to the method considering it as the first item of its group.
+   */
   private getAsFirstTransaction(
     hasConflicts: boolean,
     conflictFromPreviousPage: boolean,
@@ -94,6 +97,9 @@ export class QueuedItemsMapper {
     return new MultisigTransaction(transaction, conflictType);
   }
 
+  /**
+   * Maps each transaction passed to the method considering it as a non-ending item of its group.
+   */
   private getAsNonFirstTransactions(
     isEdgeGroup: boolean,
     transactions: Transaction[],
@@ -106,6 +112,11 @@ export class QueuedItemsMapper {
     });
   }
 
+  /**
+   * Divides an array of transactions in groups with the same nonce.
+   * @param transactions transactions with potentially different nonces.
+   * @returns Array<TransactionGroup> in which each group of transactions has a different nonce.
+   */
   private groupByNonce(transactions: Transaction[]): TransactionGroup[] {
     const groups = transactions.reduce((result, transaction) => {
       const executionInfo = transaction?.executionInfo as MultisigExecutionInfo;

@@ -198,7 +198,7 @@ export class TransactionsService {
     );
 
     const transactions = await Promise.all(
-      this.adjustTransactions(domainTransactions).results.map(
+      this.adjustTransactionsPage(domainTransactions).results.map(
         async (transaction) =>
           this.multisigTransactionMapper.mapTransaction(
             chainId,
@@ -227,6 +227,14 @@ export class TransactionsService {
     };
   }
 
+  /**
+   * Adjusts the pagination data to return extra items in both "edges" of the current page:
+   * - If no pagination data info, then return the original pagination data.
+   * - If it is the first page (offset 0), then return offset: 0, limit: limit + 1.
+   * - If it is not the first page, then return offset: offset - 1, limit: limit + 2.
+   * @param paginationData pagination data to adjust.
+   * @returns pagination data adjusted.
+   */
   private getAdjustedPagination(
     paginationData?: PaginationData,
   ): PaginationData | undefined {
@@ -247,43 +255,50 @@ export class TransactionsService {
   }
 
   private getNextPageFirstNonce(
-    transactions: Page<DomainMultisigTransaction>,
+    page: Page<DomainMultisigTransaction>,
   ): number | null {
-    return this.isMultiPage(transactions)
-      ? this.getLastTransactionNonce(transactions)
-      : null;
+    return this.hasNextPage(page) ? this.getLastTransactionNonce(page) : null;
   }
 
   private getPreviousPageLastNonce(
-    transactions: Page<DomainMultisigTransaction>,
+    page: Page<DomainMultisigTransaction>,
     paginationData?: PaginationData,
   ): number | null {
     return paginationData && paginationData.offset
-      ? this.getFirstTransactionNonce(transactions)
+      ? this.getFirstTransactionNonce(page)
       : null;
   }
 
-  private adjustTransactions(
-    transactions: Page<DomainMultisigTransaction>,
+  /**
+   * If the page has next page, returns a copy of the original transactions page without its first element.
+   * Otherwise the original page of transactions is returned.
+   *
+   * @param page page of Transactions.
+   * @returns transactions array without its first element if there is next page.
+   */
+  private adjustTransactionsPage(
+    page: Page<DomainMultisigTransaction>,
   ): Page<DomainMultisigTransaction> {
-    return this.isMultiPage(transactions)
-      ? { ...transactions, results: transactions.results.slice(0, -1) }
-      : transactions;
+    return this.hasNextPage(page)
+      ? { ...page, results: page.results.slice(0, -1) }
+      : page;
   }
 
-  private isMultiPage(transactions: Page<DomainMultisigTransaction>): boolean {
-    return transactions.next !== null;
+  /**
+   * Checks the if page contains a next cursor.
+   */
+  private hasNextPage(page: Page<DomainMultisigTransaction>): boolean {
+    return page.next !== null;
   }
-
   private getFirstTransactionNonce(
-    transactions: Page<DomainMultisigTransaction>,
+    page: Page<DomainMultisigTransaction>,
   ): number {
-    return transactions.results[0].nonce;
+    return page.results[0].nonce;
   }
 
   private getLastTransactionNonce(
-    transactions: Page<DomainMultisigTransaction>,
+    page: Page<DomainMultisigTransaction>,
   ): number {
-    return transactions.results[transactions.results.length - 1].nonce;
+    return page.results[page.results.length - 1].nonce;
   }
 }
