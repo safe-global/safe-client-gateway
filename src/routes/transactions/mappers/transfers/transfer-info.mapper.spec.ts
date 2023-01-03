@@ -62,17 +62,6 @@ describe('Transfer Info mapper (Unit)', () => {
     );
   });
 
-  it('should fail to build an ERC20 TransferTransactionInfo if no token address', async () => {
-    const chainId = faker.random.numeric();
-    const transfer = erc20TransferFactory();
-    transfer.tokenAddress = null;
-    const safe = safeFactory();
-
-    await expect(
-      mapper.mapTransferInfo(chainId, transfer, safe),
-    ).rejects.toThrow('Invalid token address for transfer');
-  });
-
   it('should build an ERC721 TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
     const transfer = erc721TransferFactory();
@@ -103,17 +92,6 @@ describe('Transfer Info mapper (Unit)', () => {
     );
   });
 
-  it('should fail to build an ERC721 TransferTransactionInfo if no token address', async () => {
-    const chainId = faker.random.numeric();
-    const transfer = erc721TransferFactory();
-    transfer.tokenAddress = null;
-    const safe = safeFactory();
-
-    await expect(
-      mapper.mapTransferInfo(chainId, transfer, safe),
-    ).rejects.toThrow('Invalid token address for transfer');
-  });
-
   it('should build an Native Token TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
     const transfer = nativeTokenTransferFactory();
@@ -142,7 +120,11 @@ describe('Transfer Info mapper (Unit)', () => {
 
   it('should fail if the transfer type is unknown', async () => {
     const chainId = faker.random.numeric();
-    const transfer = erc20TransferFactory();
+    const transfer = {
+      ...erc20TransferFactory(),
+      tokenAddress: undefined,
+      value: undefined,
+    };
     transfer.type = faker.random.word();
     const safe = safeFactory();
 
