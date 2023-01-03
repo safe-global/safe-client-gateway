@@ -3,10 +3,10 @@ import { Operation } from './operation.entity';
 
 export interface ModuleTransaction {
   blockNumber: number;
-  created: string;
+  created: Date;
   data: string | null;
   dataDecoded: DataDecoded | null;
-  executionDate: string;
+  executionDate: Date;
   isSuccessful: boolean;
   module: string;
   operation: Operation;
