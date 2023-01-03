@@ -4,9 +4,9 @@ import { TransactionInfo } from './transaction-info.entity';
 import { Transfer } from './transfers/transfer.entity';
 
 export enum TransferDirection {
-  Incoming,
-  Outgoing,
-  Unknown,
+  Incoming = 'INCOMING',
+  Outgoing = 'OUTGOING',
+  Unknown = 'UNKNOWN',
 }
 
 export class TransferTransactionInfo extends TransactionInfo {

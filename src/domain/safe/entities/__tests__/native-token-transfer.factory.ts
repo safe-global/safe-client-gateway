@@ -1,4 +1,3 @@
-import { NativeTokenTransfer } from '../transfer.entity';
 import { faker } from '@faker-js/faker';
 
 export default function (
@@ -8,8 +7,9 @@ export default function (
   to?: string,
   transactionHash?: string,
   value?: string,
-): NativeTokenTransfer {
-  return <NativeTokenTransfer>{
+) {
+  return {
+    type: 'ETHER_TRANSFER',
     blockNumber: blockNumber ?? faker.datatype.number({ min: 0 }),
     executionDate: executionDate ?? faker.date.recent(),
     from: from ?? faker.finance.ethereumAddress(),

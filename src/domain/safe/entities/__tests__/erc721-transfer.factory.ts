@@ -1,4 +1,3 @@
-import { ERC721Transfer } from '../transfer.entity';
 import { faker } from '@faker-js/faker';
 
 export default function (
@@ -9,8 +8,9 @@ export default function (
   transactionHash?: string,
   tokenAddress?: string | null,
   tokenId?: string,
-): ERC721Transfer {
-  return <ERC721Transfer>{
+) {
+  return {
+    type: 'ERC721_TRANSFER',
     blockNumber: blockNumber ?? faker.datatype.number({ min: 0 }),
     executionDate: executionDate ?? faker.date.recent(),
     from: from ?? faker.finance.ethereumAddress(),

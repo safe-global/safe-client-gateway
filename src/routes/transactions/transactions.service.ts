@@ -6,16 +6,19 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
+import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
+import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
+    private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
   ) {}
 
@@ -121,5 +124,55 @@ export class TransactionsService {
     };
 
     return result;
+  }
+
+  async getIncomingTransfers(
+    chainId: string,
+    routeUrl: Readonly<URL>,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+    to?: string,
+    value?: string,
+    tokenAddress?: string,
+    paginationData?: PaginationData,
+  ): Promise<Partial<Page<IncomingTransfer>>> {
+    const transfers = await this.safeRepository.getIncomingTransfers(
+      chainId,
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      to,
+      value,
+      tokenAddress,
+      paginationData?.limit,
+      paginationData?.offset,
+    );
+
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const results = await Promise.all(
+      transfers.results.map(
+        async (transfer) =>
+          new IncomingTransfer(
+            await this.incomingTransferMapper.mapTransfer(
+              chainId,
+              transfer,
+              safeInfo,
+            ),
+          ),
+      ),
+    );
+
+    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transfers.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      transfers.previous,
+    );
+
+    return {
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      results,
+    };
   }
 }

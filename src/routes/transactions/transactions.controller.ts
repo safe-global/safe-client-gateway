@@ -4,6 +4,8 @@ import { PaginationDataDecorator } from '../common/decorators/pagination.data.de
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { IncomingTransferPage } from './entities/incoming-transfer-page.entity';
+import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransactionPage } from './entities/module-transaction-page.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
@@ -72,6 +74,38 @@ export class TransactionsController {
       safeAddress,
       to,
       module,
+      paginationData,
+    );
+  }
+
+  @ApiOkResponse({ type: IncomingTransferPage })
+  @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
+  @ApiQuery({ name: 'execution_date__gte', required: false })
+  @ApiQuery({ name: 'execution_date__lte', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'value', required: false })
+  @ApiQuery({ name: 'token_address', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  async getIncomingTransfers(
+    @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress') safeAddress: string,
+    @Query('execution_date__gte') executionDateGte?: string,
+    @Query('execution_date__lte') executionDateLte?: string,
+    @Query('to') to?: string,
+    @Query('value') value?: string,
+    @Query('token_address') tokenAddress?: string,
+    @PaginationDataDecorator() paginationData?: PaginationData,
+  ): Promise<Partial<Page<IncomingTransfer>>> {
+    return this.transactionsService.getIncomingTransfers(
+      chainId,
+      routeUrl,
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      to,
+      value,
+      tokenAddress,
       paginationData,
     );
   }

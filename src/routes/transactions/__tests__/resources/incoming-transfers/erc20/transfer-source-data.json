@@ -1,0 +1,26 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "type": "ERC20_TRANSFER",
+      "executionDate": "2022-11-07T09:03:48Z",
+      "blockNumber": 7908333,
+      "transactionHash": "0x454bd2bb4496ac9c716b59118477ce79508ed1de2b9dced8023d8a6ce3eff470",
+      "to": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C",
+      "value": "1000000000000000000000",
+      "tokenId": null,
+      "tokenAddress": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+      "tokenInfo": {
+        "type": "ERC20",
+        "address": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+        "name": "Dai",
+        "symbol": "DAI",
+        "decimals": 18,
+        "logoUri": "https://safe-transaction-assets.safe.global/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png"
+      },
+      "from": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+    }
+  ]
+}
