@@ -108,7 +108,7 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
-  async getQueuedTransactions(
+  async getTransactionQueue(
     chainId: string,
     safeAddress: string,
     limit?: number,
@@ -138,7 +138,7 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
-  async getHistoryTransactions(
+  async getTransactionHistory(
     chainId: string,
     safeAddress: string,
     limit?: number,
