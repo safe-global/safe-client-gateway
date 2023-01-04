@@ -164,4 +164,8 @@ export class ChainBuilder implements Builder<Chain> {
       features: this.features,
     };
   }
+
+  toJson(): unknown {
+    return this.build();
+  }
 }

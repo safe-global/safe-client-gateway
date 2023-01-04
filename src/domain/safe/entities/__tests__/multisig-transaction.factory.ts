@@ -208,4 +208,14 @@ export class MultisigTransactionBuilder
       value: this.value,
     };
   }
+
+  toJson(): unknown {
+    const entity = this.build();
+    return {
+      ...entity,
+      executionDate: entity.executionDate.toISOString(),
+      modified: entity.modified?.toISOString(),
+      submissionDate: entity.submissionDate?.toISOString(),
+    };
+  }
 }
