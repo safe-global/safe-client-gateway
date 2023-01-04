@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { ConflictType } from '../../entities/conflict-type.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
-import { MultisigTransaction } from '../../entities/multisig-transaction.entity';
 import { QueuedItem } from '../../entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '../../entities/queued-items/conflict-header-queued-item.entity';
 import {
@@ -10,6 +9,7 @@ import {
   LabelQueuedItem,
 } from '../../entities/queued-items/label-queued-item.entity';
 import { TransactionGroup } from '../../entities/queued-items/transaction-group.entity';
+import { TransactionQueuedItem } from '../../entities/queued-items/transaction-queued-item.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionMapper } from '../multisig-transactions/multisig-transaction.mapper';
 
@@ -63,7 +63,7 @@ export class QueuedItemsMapper {
     conflictFromPreviousPage: boolean,
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
-  ): MultisigTransaction[] {
+  ): TransactionQueuedItem[] {
     const firstItem = this.getAsFirstTransaction(
       hasConflicts,
       conflictFromPreviousPage,
@@ -83,7 +83,7 @@ export class QueuedItemsMapper {
     hasConflicts: boolean,
     conflictFromPreviousPage: boolean,
     transaction: Transaction,
-  ): MultisigTransaction {
+  ): TransactionQueuedItem {
     let conflictType: ConflictType;
 
     if (hasConflicts) {
@@ -94,7 +94,7 @@ export class QueuedItemsMapper {
       conflictType = ConflictType.None;
     }
 
-    return new MultisigTransaction(transaction, conflictType);
+    return new TransactionQueuedItem(transaction, conflictType);
   }
 
   /**
@@ -103,12 +103,12 @@ export class QueuedItemsMapper {
   private getAsNonFirstTransactions(
     isEdgeGroup: boolean,
     transactions: Transaction[],
-  ): MultisigTransaction[] {
+  ): TransactionQueuedItem[] {
     return transactions.map((transaction, index) => {
       const isLastInGroup = index === transactions.length - 1;
       const conflictType =
         !isLastInGroup || isEdgeGroup ? ConflictType.HasNext : ConflictType.End;
-      return new MultisigTransaction(transaction, conflictType);
+      return new TransactionQueuedItem(transaction, conflictType);
     });
   }
 
