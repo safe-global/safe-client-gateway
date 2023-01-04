@@ -142,13 +142,13 @@ export class TransactionsController {
   @ApiQuery({ name: 'cursor', required: false })
   @ApiQuery({ name: 'timezone_offset', required: false })
   @ApiQuery({ name: 'trusted', required: false })
-  async getQueuedTransactions(
+  async getTransactionQueue(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData?: PaginationData,
   ): Promise<Partial<Page<QueuedItem>>> {
-    return this.transactionsService.getQueuedTransactions(
+    return this.transactionsService.getTransactionQueue(
       chainId,
       routeUrl,
       safeAddress,

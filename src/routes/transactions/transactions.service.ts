@@ -182,7 +182,7 @@ export class TransactionsService {
     };
   }
 
-  async getQueuedTransactions(
+  async getTransactionQueue(
     chainId: string,
     routeUrl: Readonly<URL>,
     safeAddress: string,
@@ -190,7 +190,7 @@ export class TransactionsService {
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPagination(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const domainTransactions = await this.safeRepository.getQueuedTransactions(
+    const domainTransactions = await this.safeRepository.getTransactionQueue(
       chainId,
       safeAddress,
       pagination?.limit,
