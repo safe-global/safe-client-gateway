@@ -39,14 +39,14 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<ModuleTransaction>>;
 
-  getQueuedTransactions(
+  getTransactionQueue(
     chainId: string,
     safeAddress: string,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
 
-  getHistoryTransactions(
+  getTransactionHistory(
     chainId: string,
     safeAddress: string,
     limit?: number,
