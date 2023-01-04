@@ -32,7 +32,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: ['test:cov', 'test:e2e:cov']
+        task: [
+          'test:cov',
+          # 'test:e2e:cov' # Enable this again when we align on the stability of the staging environment
+        ]
     services:
       redis:
         image: redis
