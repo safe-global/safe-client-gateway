@@ -18,15 +18,15 @@ export class CollectiblesService {
     chainId: string,
     safeAddress: string,
     routeUrl: Readonly<URL>,
-    paginationData?: PaginationData,
+    paginationData: PaginationData,
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Page<Collectible>> {
     const collectibles = await this.repository.getCollectibles(
       chainId,
       safeAddress,
-      paginationData?.limit,
-      paginationData?.offset,
+      paginationData.limit,
+      paginationData.offset,
       trusted,
       excludeSpam,
     );

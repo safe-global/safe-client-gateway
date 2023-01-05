@@ -21,11 +21,11 @@ export class ChainsService {
 
   async getChains(
     routeUrl: Readonly<URL>,
-    paginationData?: PaginationData,
+    paginationData: PaginationData,
   ): Promise<Page<Chain>> {
     const result = await this.chainsRepository.getChains(
-      paginationData?.limit,
-      paginationData?.offset,
+      paginationData.limit,
+      paginationData.offset,
     );
 
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, result.next);

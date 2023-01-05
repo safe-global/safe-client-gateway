@@ -28,7 +28,7 @@ export class ChainsController {
   @Get()
   async getChains(
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData?: PaginationData,
+    @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<Chain>> {
     return this.chainsService.getChains(routeUrl, paginationData);
   }

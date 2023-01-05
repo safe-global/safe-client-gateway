@@ -32,6 +32,7 @@ export class TransactionsController {
   async getMultisigTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
+    @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress') safeAddress: string,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
@@ -39,11 +40,11 @@ export class TransactionsController {
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
     @Query('executed') executed?: boolean,
-    @PaginationDataDecorator() paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions(
       chainId,
       routeUrl,
+      paginationData,
       safeAddress,
       executionDateGte,
       executionDateLte,
@@ -51,7 +52,6 @@ export class TransactionsController {
       value,
       nonce,
       executed,
-      paginationData,
     );
   }
 
@@ -63,10 +63,10 @@ export class TransactionsController {
   async getModuleTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
+    @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress') safeAddress: string,
     @Query('to') to?: string,
     @Query('module') module?: string,
-    @PaginationDataDecorator() paginationData?: PaginationData,
   ): Promise<Page<ModuleTransaction>> {
     return this.transactionsService.getModuleTransactions(
       chainId,
@@ -90,12 +90,12 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
+    @PaginationDataDecorator() paginationData: PaginationData,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to') to?: string,
     @Query('value') value?: string,
     @Query('token_address') tokenAddress?: string,
-    @PaginationDataDecorator() paginationData?: PaginationData,
   ): Promise<Partial<Page<IncomingTransfer>>> {
     return this.transactionsService.getIncomingTransfers(
       chainId,

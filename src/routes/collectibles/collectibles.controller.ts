@@ -37,7 +37,7 @@ export class CollectiblesController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData?: PaginationData,
+    @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted') trusted?: boolean,
     @Query('exclude_spam') excludeSpam?: boolean,
   ): Promise<Page<Collectible>> {

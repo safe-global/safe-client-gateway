@@ -21,7 +21,7 @@ export class DelegatesService {
     chainId: string,
     routeUrl: Readonly<URL>,
     delegateParams: DelegateParamsDto,
-    paginationData?: PaginationData,
+    paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
     if (
       !(
@@ -43,8 +43,8 @@ export class DelegatesService {
       delegateParams.delegate,
       delegateParams.delegator,
       delegateParams.label,
-      paginationData?.limit,
-      paginationData?.offset,
+      paginationData.limit,
+      paginationData.offset,
     );
 
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, delegates.next);
