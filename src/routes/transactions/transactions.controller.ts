@@ -146,7 +146,7 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
-    @PaginationDataDecorator() paginationData?: PaginationData,
+    @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue(
       chainId,

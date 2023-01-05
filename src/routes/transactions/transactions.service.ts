@@ -186,15 +186,15 @@ export class TransactionsService {
     chainId: string,
     routeUrl: Readonly<URL>,
     safeAddress: string,
-    paginationData?: PaginationData,
+    paginationData: PaginationData,
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPagination(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const domainTransactions = await this.safeRepository.getTransactionQueue(
       chainId,
       safeAddress,
-      pagination?.limit,
-      pagination?.offset,
+      pagination.limit,
+      pagination.offset,
     );
 
     const transactions = await Promise.all(
@@ -236,9 +236,9 @@ export class TransactionsService {
    * @returns pagination data adjusted.
    */
   private getAdjustedPagination(
-    paginationData?: PaginationData,
-  ): PaginationData | undefined {
-    if (!paginationData || !paginationData.limit || !paginationData.offset) {
+    paginationData: PaginationData,
+  ): PaginationData {
+    if (!paginationData.limit || !paginationData.offset) {
       return paginationData;
     }
     if (paginationData.offset === 0) {
