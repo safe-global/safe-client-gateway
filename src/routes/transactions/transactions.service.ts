@@ -190,12 +190,13 @@ export class TransactionsService {
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPagination(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const domainTransactions = await this.safeRepository.getTransactionQueue(
-      chainId,
-      safeAddress,
-      pagination.limit,
-      pagination.offset,
-    );
+    const domainTransactions =
+      await this.safeRepository.getTransactionQueueByNonce(
+        chainId,
+        safeAddress,
+        pagination.limit,
+        pagination.offset,
+      );
 
     const transactions = await Promise.all(
       this.adjustTransactionsPage(domainTransactions).results.map(

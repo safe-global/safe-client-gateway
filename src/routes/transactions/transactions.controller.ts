@@ -56,6 +56,7 @@ export class TransactionsController {
       executed,
     );
   }
+
   @ApiOkResponse({ type: ModuleTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
   @ApiQuery({ name: 'to', required: false })
