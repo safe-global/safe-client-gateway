@@ -4,8 +4,9 @@ import {
 } from '../multisig-transaction.entity';
 import { Operation } from '../operation.entity';
 import { faker } from '@faker-js/faker';
-import multisigTransactionConfirmationFactory from './multisig-transaction-confirmation.factory';
 import { Builder } from '../../../common/__tests__/builder';
+import { ConfirmationBuilder } from './multisig-transaction-confirmation.factory';
+import dataDecodedFactory from '../../../data-decoder/entities/__tests__/data-decoded.factory';
 
 export class MultisigTransactionBuilder
   implements Builder<MultisigTransaction>
@@ -13,11 +14,11 @@ export class MultisigTransactionBuilder
   private baseGas: number = faker.datatype.number();
   private blockNumber: number = faker.datatype.number();
   private confirmations: Confirmation[] | null = [
-    multisigTransactionConfirmationFactory(),
+    new ConfirmationBuilder().build(),
   ];
   private confirmationsRequired: number = faker.datatype.number();
   private data: string = faker.datatype.hexadecimal();
-  private dataDecoded: any = faker.datatype.json();
+  private dataDecoded: any = dataDecodedFactory();
   private ethGasPrice: string = faker.datatype.hexadecimal();
   private executionDate: Date = faker.date.recent();
   private executor: string = faker.finance.ethereumAddress();
@@ -211,9 +212,17 @@ export class MultisigTransactionBuilder
 
   toJson(): unknown {
     const entity = this.build();
+    // TODO: this is exactly the same as the one in ConfirmationBuilder
+    const confirmations = entity.confirmations?.map((confirmation) => {
+      return {
+        ...confirmation,
+        submissionDate: confirmation.submissionDate.toISOString(),
+      };
+    });
     return {
       ...entity,
       executionDate: entity.executionDate.toISOString(),
+      confirmations: confirmations,
       modified: entity.modified?.toISOString(),
       submissionDate: entity.submissionDate?.toISOString(),
     };

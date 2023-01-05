@@ -1,8 +1,8 @@
-import multisigTransactionConfirmationFactory from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
 import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
 import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+import { ConfirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
 
 describe('Multisig Transaction status mapper (Unit)', () => {
   const mapper = new MultisigTransactionStatusMapper();
@@ -48,8 +48,8 @@ describe('Multisig Transaction status mapper (Unit)', () => {
       .withIsExecuted(false)
       .withNonce(4)
       .withConfirmations([
-        multisigTransactionConfirmationFactory(),
-        multisigTransactionConfirmationFactory(),
+        new ConfirmationBuilder().build(),
+        new ConfirmationBuilder().build(),
       ])
       .withConfirmationsRequired(3)
       .build();
@@ -65,8 +65,8 @@ describe('Multisig Transaction status mapper (Unit)', () => {
       .withIsExecuted(false)
       .withNonce(4)
       .withConfirmations([
-        multisigTransactionConfirmationFactory(),
-        multisigTransactionConfirmationFactory(),
+        new ConfirmationBuilder().build(),
+        new ConfirmationBuilder().build(),
       ])
       .withConfirmationsRequired(1)
       .build();

@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
-import multisigTransactionConfirmationFactory from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
 import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
 import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
+import { ConfirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
 
 describe('Multisig Transaction execution info mapper (Unit)', () => {
   const mapper = new MultisigTransactionExecutionInfoMapper();
@@ -15,8 +15,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.Success;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      new ConfirmationBuilder().build(),
+      new ConfirmationBuilder().build(),
     ];
     const safe = safeFactory();
     const transaction = new MultisigTransactionBuilder()
@@ -68,8 +68,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      new ConfirmationBuilder().build(),
+      new ConfirmationBuilder().build(),
     ];
     const safeOwners = [];
     const safe = safeFactory(undefined, undefined, undefined, safeOwners);
@@ -99,8 +99,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      new ConfirmationBuilder().build(),
+      new ConfirmationBuilder().build(),
     ];
     const safeOwners = [
       faker.finance.ethereumAddress(),
@@ -136,8 +136,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      new ConfirmationBuilder().build(),
+      new ConfirmationBuilder().build(),
     ];
     const safeOwners = [
       confirmations[0].owner,
