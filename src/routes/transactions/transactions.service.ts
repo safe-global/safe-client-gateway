@@ -25,6 +25,7 @@ export class TransactionsService {
   async getMultisigTransactions(
     chainId: string,
     routeUrl: Readonly<URL>,
+    paginationData: PaginationData,
     safeAddress: string,
     executionDateGte?: string,
     executionDateLte?: string,
@@ -32,7 +33,6 @@ export class TransactionsService {
     value?: string,
     nonce?: string,
     executed?: boolean,
-    paginationData?: PaginationData,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions(
@@ -44,8 +44,8 @@ export class TransactionsService {
         to,
         value,
         nonce,
-        paginationData?.limit,
-        paginationData?.offset,
+        paginationData.limit,
+        paginationData.offset,
       );
 
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);

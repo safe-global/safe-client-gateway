@@ -59,7 +59,7 @@ export class DelegatesController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query() delegateParamsDto: DelegateParamsDto,
-    @PaginationDataDecorator() paginationData?: PaginationData,
+    @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
     return this.service.getDelegates(
       chainId,

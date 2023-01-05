@@ -5,6 +5,7 @@ import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.f
 import { faker } from '@faker-js/faker';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { PaginationData } from '../common/pagination/pagination.data';
 
 const delegateRepository = {
   getDelegates: jest.fn(),
@@ -26,6 +27,7 @@ describe('DelegatesService', () => {
     const safe = faker.finance.ethereumAddress();
     const url = faker.internet.url();
     const routeUrl: Readonly<URL> = new URL(url);
+    const paginationData = PaginationData.fromCursor(routeUrl);
     const delegates = <Page<Delegate>>{
       count: 2,
       next: null,
@@ -35,7 +37,12 @@ describe('DelegatesService', () => {
     delegateRepositoryMock.getDelegates.mockResolvedValueOnce(delegates);
 
     const params = new DelegateParamsDto(safe);
-    const actual = await service.getDelegates(chainId, routeUrl, params);
+    const actual = await service.getDelegates(
+      chainId,
+      routeUrl,
+      params,
+      paginationData,
+    );
 
     expect(actual).toEqual(delegates);
     expect(delegateRepositoryMock.getDelegates).toBeCalledTimes(1);
