@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { groupBy } from 'lodash';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { ConflictType } from '../../entities/conflict-type.entity';
-import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
 import { QueuedItem } from '../../entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '../../entities/queued-items/conflict-header-queued-item.entity';
 import {
@@ -114,24 +114,16 @@ export class QueuedItemsMapper {
 
   /**
    * Divides an array of transactions in groups with the same nonce.
+   * Each TransactionGroup will contain at least one transaction.
    * @param transactions transactions with potentially different nonces.
    * @returns Array<TransactionGroup> in which each group of transactions has a different nonce.
    */
   private groupByNonce(transactions: Transaction[]): TransactionGroup[] {
-    const groups = transactions.reduce((result, transaction) => {
-      const executionInfo = transaction?.executionInfo as MultisigExecutionInfo;
-      return {
-        ...result,
-        [executionInfo['nonce']]: [
-          ...(result[executionInfo['nonce']] || []),
-          transaction,
-        ],
-      };
-    }, {});
-
-    return Object.entries(groups).map((group) => ({
-      nonce: Number(group[0]),
-      transactions: group[1] as Transaction[],
-    }));
+    return Object.entries(groupBy(transactions, 'executionInfo.nonce')).map(
+      (group) => ({
+        nonce: Number(group[0]),
+        transactions: group[1] as Transaction[],
+      }),
+    );
   }
 }

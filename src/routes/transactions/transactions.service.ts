@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
@@ -271,7 +272,7 @@ export class TransactionsService {
   }
 
   /**
-   * If the page has next page, returns a copy of the original transactions page without its first element.
+   * If the page has next page, returns a copy of the original transactions page without its last element.
    * Otherwise the original page of transactions is returned.
    *
    * @param page page of Transactions.
@@ -291,15 +292,16 @@ export class TransactionsService {
   private hasNextPage(page: Page<DomainMultisigTransaction>): boolean {
     return page.next !== null;
   }
+
   private getFirstTransactionNonce(
     page: Page<DomainMultisigTransaction>,
-  ): number {
-    return page.results[0].nonce;
+  ): number | null {
+    return head(page.results)?.nonce ?? null;
   }
 
   private getLastTransactionNonce(
     page: Page<DomainMultisigTransaction>,
-  ): number {
-    return page.results[page.results.length - 1].nonce;
+  ): number | null {
+    return last(page.results)?.nonce ?? null;
   }
 }
