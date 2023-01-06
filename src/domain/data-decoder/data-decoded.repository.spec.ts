@@ -3,7 +3,7 @@ import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { DataDecodedRepository } from './data-decoded.repository';
 import { DataDecodedValidator } from './data-decoded.validator';
-import dataDecodedFactory from './entities/__tests__/data-decoded.factory';
+import { dataDecodedBuilder } from './entities/__tests__/data-decoded.builder';
 
 const mockTransactionApi = jest.mocked({
   getDataDecoded: jest.fn(),
@@ -24,7 +24,7 @@ describe('DataDecoded Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
-    const dataDecoded = dataDecodedFactory();
+    const dataDecoded = dataDecodedBuilder().build();
     mockTransactionApi.getDataDecoded.mockResolvedValue(dataDecoded);
     mockDataDecodedValidator.validate = jest
       .fn()

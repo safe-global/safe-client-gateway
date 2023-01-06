@@ -2,7 +2,7 @@ import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { ContractsValidator } from './contracts.validator';
 import { contractSchema } from './entities/schemas/contract.schema';
-import contractFactory from './entities/__tests__/contract.factory';
+import { contractBuilder } from './entities/__tests__/contract.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -25,7 +25,7 @@ describe('Contracts validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const contract = contractFactory();
+    const contract = contractBuilder().build();
     mockGenericValidator.validate.mockReturnValue(contract);
 
     const result = validator.validate(contract);

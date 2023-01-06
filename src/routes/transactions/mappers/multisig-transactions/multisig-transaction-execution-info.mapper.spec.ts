@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
-import multisigTransactionConfirmationFactory from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
-import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
-import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
+import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
 
 describe('Multisig Transaction execution info mapper (Unit)', () => {
   const mapper = new MultisigTransactionExecutionInfoMapper();
@@ -15,14 +15,14 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.Success;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      confirmationBuilder().build(),
+      confirmationBuilder().build(),
     ];
-    const safe = safeFactory();
-    const transaction = new MultisigTransactionBuilder()
-      .withNonce(nonce)
-      .withConfirmations(confirmations)
-      .withConfirmationsRequired(confirmationsRequired)
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('nonce', nonce)
+      .with('confirmations', confirmations)
+      .with('confirmationsRequired', confirmationsRequired)
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(transaction, safe, txStatus);
@@ -44,11 +44,11 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const nonce = faker.datatype.number({ min: 0 });
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.Success;
-    const safe = safeFactory();
-    const transaction = new MultisigTransactionBuilder()
-      .withNonce(nonce)
-      .withConfirmations(null)
-      .withConfirmationsRequired(confirmationsRequired)
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('nonce', nonce)
+      .with('confirmations', null)
+      .with('confirmationsRequired', confirmationsRequired)
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(transaction, safe, txStatus);
@@ -68,15 +68,15 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      confirmationBuilder().build(),
+      confirmationBuilder().build(),
     ];
     const safeOwners = [];
-    const safe = safeFactory(undefined, undefined, undefined, safeOwners);
-    const transaction = new MultisigTransactionBuilder()
-      .withNonce(nonce)
-      .withConfirmations(confirmations)
-      .withConfirmationsRequired(confirmationsRequired)
+    const safe = safeBuilder().with('owners', safeOwners).build();
+    const transaction = multisigTransactionBuilder()
+      .with('nonce', nonce)
+      .with('confirmations', confirmations)
+      .with('confirmationsRequired', confirmationsRequired)
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(transaction, safe, txStatus);
@@ -99,18 +99,18 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      confirmationBuilder().build(),
+      confirmationBuilder().build(),
     ];
     const safeOwners = [
       faker.finance.ethereumAddress(),
       faker.finance.ethereumAddress(),
     ];
-    const safe = safeFactory(undefined, undefined, undefined, safeOwners);
-    const transaction = new MultisigTransactionBuilder()
-      .withNonce(nonce)
-      .withConfirmations(confirmations)
-      .withConfirmationsRequired(confirmationsRequired)
+    const safe = safeBuilder().with('owners', safeOwners).build();
+    const transaction = multisigTransactionBuilder()
+      .with('nonce', nonce)
+      .with('confirmations', confirmations)
+      .with('confirmationsRequired', confirmationsRequired)
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(transaction, safe, txStatus);
@@ -136,18 +136,18 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const confirmationsRequired = faker.datatype.number({ min: 0 });
     const txStatus = TransactionStatus.AwaitingConfirmations;
     const confirmations = [
-      multisigTransactionConfirmationFactory(),
-      multisigTransactionConfirmationFactory(),
+      confirmationBuilder().build(),
+      confirmationBuilder().build(),
     ];
     const safeOwners = [
       confirmations[0].owner,
       faker.finance.ethereumAddress(),
     ];
-    const safe = safeFactory(undefined, undefined, undefined, safeOwners);
-    const transaction = new MultisigTransactionBuilder()
-      .withNonce(nonce)
-      .withConfirmations(confirmations)
-      .withConfirmationsRequired(confirmationsRequired)
+    const safe = safeBuilder().with('owners', safeOwners).build();
+    const transaction = multisigTransactionBuilder()
+      .with('nonce', nonce)
+      .with('confirmations', confirmations)
+      .with('confirmationsRequired', confirmationsRequired)
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(transaction, safe, txStatus);

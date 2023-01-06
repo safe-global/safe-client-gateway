@@ -1,9 +1,9 @@
 import { ChainsService } from './chains.service';
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
-import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
-import masterCopyFactory from '../../domain/chains/entities/__tests__/master-copy.factory';
 import { MasterCopy } from './entities/master-copy.entity';
+import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
+import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 
 const chainsRepository = {
   getChains: jest.fn(),
@@ -30,7 +30,7 @@ describe('ChainsService', () => {
 
   it('should retrieve the backbone metadata', async () => {
     const chainId = '1';
-    const backbone = backboneFactory();
+    const backbone = backboneBuilder().build();
     backboneRepositoryMock.getBackbone.mockResolvedValueOnce(backbone);
 
     const actual = await service.getBackbone(chainId);
@@ -41,7 +41,10 @@ describe('ChainsService', () => {
 
   it('should retrieve the mastercopies', async () => {
     const chainId = '1';
-    const masterCopies = [masterCopyFactory(), masterCopyFactory()];
+    const masterCopies = [
+      masterCopyBuilder().build(),
+      masterCopyBuilder().build(),
+    ];
     chainsRepositoryMock.getMasterCopies.mockResolvedValueOnce(masterCopies);
     const expected = masterCopies.map(
       (masterCopy) =>

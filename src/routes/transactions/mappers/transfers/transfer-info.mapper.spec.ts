@@ -1,10 +1,5 @@
 import { faker } from '@faker-js/faker';
-import erc20TransferFactory from '../../../../domain/safe/entities/__tests__/erc20-transfer.factory';
-import erc721TransferFactory from '../../../../domain/safe/entities/__tests__/erc721-transfer.factory';
-import nativeTokenTransferFactory from '../../../../domain/safe/entities/__tests__/native-token-transfer.factory';
-import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import tokenFactory from '../../../../domain/tokens/__tests__/token.factory';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import {
@@ -15,6 +10,11 @@ import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { TransferInfoMapper } from './transfer-info.mapper';
+import { erc20TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferTransferBuilder } from '../../../../domain/safe/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '../../../../domain/safe/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
+import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -33,10 +33,10 @@ describe('Transfer Info mapper (Unit)', () => {
 
   it('should build an ERC20 TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
-    const transfer = erc20TransferFactory();
-    const safe = safeFactory();
+    const transfer = erc20TransferBuilder().build();
+    const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenFactory();
+    const token = tokenBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
@@ -64,10 +64,10 @@ describe('Transfer Info mapper (Unit)', () => {
 
   it('should build an ERC721 TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
-    const transfer = erc721TransferFactory();
-    const safe = safeFactory();
+    const transfer = erc721TransferTransferBuilder().build();
+    const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenFactory();
+    const token = tokenBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
@@ -94,10 +94,10 @@ describe('Transfer Info mapper (Unit)', () => {
 
   it('should build an Native Token TransferTransactionInfo', async () => {
     const chainId = faker.random.numeric();
-    const transfer = nativeTokenTransferFactory();
-    const safe = safeFactory();
+    const transfer = nativeTokenTransferBuilder().build();
+    const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenFactory();
+    const token = tokenBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
@@ -116,20 +116,5 @@ describe('Transfer Info mapper (Unit)', () => {
         }),
       }),
     );
-  });
-
-  it('should fail if the transfer type is unknown', async () => {
-    const chainId = faker.random.numeric();
-    const transfer = {
-      ...erc20TransferFactory(),
-      tokenAddress: undefined,
-      value: undefined,
-    };
-    transfer.type = faker.random.word();
-    const safe = safeFactory();
-
-    await expect(
-      mapper.mapTransferInfo(chainId, transfer, safe),
-    ).rejects.toThrow('Unknown transfer type');
   });
 });

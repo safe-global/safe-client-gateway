@@ -2,7 +2,7 @@ import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { CollectiblesValidator } from './collectibles.validator';
 import { collectibleSchema } from './entities/schemas/collectible.schema';
-import collectibleFactory from './entities/__tests__/collectible.factory';
+import { collectibleBuilder } from './entities/__tests__/collectible.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -26,7 +26,7 @@ describe('Collectibles validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const collectible = collectibleFactory();
+    const collectible = collectibleBuilder().build();
     mockGenericValidator.validate.mockReturnValue(collectible);
 
     const result = validator.validate(collectible);

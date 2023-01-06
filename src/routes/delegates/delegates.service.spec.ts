@@ -1,11 +1,11 @@
 import { DelegatesService } from './delegates.service';
 import { Delegate } from './entities/delegate.entity';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
-import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.factory';
 import { faker } from '@faker-js/faker';
 import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 
 const delegateRepository = {
   getDelegates: jest.fn(),
@@ -32,7 +32,10 @@ describe('DelegatesService', () => {
       count: 2,
       next: null,
       previous: null,
-      results: [delegateFactory(safe), delegateFactory(safe)],
+      results: [
+        delegateBuilder().with('safe', safe).build(),
+        delegateBuilder().with('safe', safe).build(),
+      ],
     };
     delegateRepositoryMock.getDelegates.mockResolvedValueOnce(delegates);
 

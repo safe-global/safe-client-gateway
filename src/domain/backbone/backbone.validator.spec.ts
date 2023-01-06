@@ -1,8 +1,8 @@
 import { backboneSchema } from './entities/schemas/backbone.schema';
-import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { BackboneValidator } from './backbone.validator';
+import { backboneBuilder } from './entities/__tests__/backbone.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -24,7 +24,7 @@ describe('Backbone validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const backbone = backboneFactory();
+    const backbone = backboneBuilder().build();
     mockGenericValidator.validate.mockReturnValue(backbone);
 
     const result = validator.validate(backbone);

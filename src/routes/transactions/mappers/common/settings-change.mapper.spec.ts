@@ -1,6 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
-import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { AddOwner } from '../../entities/settings-changes/add-owner.entity';
@@ -15,6 +13,8 @@ import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
 import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { SettingsChangeMapper } from './settings-change.mapper';
+import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -27,10 +27,10 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   );
 
   it('should build a SetFallbackHandler setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const handlerValue = faker.random.numeric();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'setFallbackHandler',
         parameters: [{ value: handlerValue }],
       })
@@ -47,9 +47,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SetFallbackHandler setting with a null handler', async () => {
-    const safe = safeFactory();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({ method: 'setFallbackHandler' })
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
+        method: 'setFallbackHandler',
+      })
       .build();
 
     const settingChange = await mapper.mapSettingsChange(
@@ -63,11 +65,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a AddOwner setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const ownerValue = faker.random.numeric();
     const thresholdValue = faker.random.numeric();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'addOwnerWithThreshold',
         parameters: [{ value: ownerValue }, { value: thresholdValue }],
       })
@@ -85,11 +87,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a RemoveOwner setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const ownerValue = faker.random.numeric();
     const thresholdValue = faker.random.numeric();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'removeOwner',
         parameters: [
           { value: faker.random.numeric() },
@@ -111,11 +113,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SwapOwner setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const oldOwner = faker.random.numeric();
     const newOwner = faker.random.numeric();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'swapOwner',
         parameters: [
           { value: faker.random.numeric() },
@@ -137,11 +139,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a ChangeMasterCopy setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const masterCopyAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValueOnce(masterCopyAddress);
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'changeMasterCopy',
         parameters: [],
       })
@@ -158,11 +160,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a EnableModule setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const moduleAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValueOnce(moduleAddress);
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'enableModule',
         parameters: [{ value: faker.random.numeric() }],
       })
@@ -179,11 +181,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a DisableModule setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const moduleAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValueOnce(moduleAddress);
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'disableModule',
         parameters: [{ value: faker.random.numeric() }],
       })
@@ -200,10 +202,10 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a ChangeThreshold setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const thresholdValue = faker.random.numeric();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'changeThreshold',
         parameters: [{ value: thresholdValue }],
       })
@@ -220,12 +222,12 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SetGuard setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const guardValue = faker.finance.ethereumAddress();
     const guardAddress = new AddressInfo(guardValue);
     addressInfoHelper.getOrDefault.mockResolvedValueOnce(guardAddress);
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'setGuard',
         parameters: [{ value: guardValue }],
       })
@@ -242,10 +244,10 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a DeleteGuard setting', async () => {
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
     const guardValue = '0x0000000000000000000000000000000000000000';
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'setGuard',
         parameters: [{ value: guardValue }],
       })
@@ -261,9 +263,9 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should throw an error on a unknown setting', async () => {
-    const safe = safeFactory();
-    const transaction = new MultisigTransactionBuilder()
-      .withDataDecoded({
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('dataDecoded', {
         method: 'unknownMethod',
         parameters: [],
       })

@@ -3,9 +3,9 @@ import { FakeConfigurationService } from '../../config/__tests__/fake.configurat
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { DataSourceError } from '../../domain/errors/data-source.error';
-import safeAppFactory from '../../domain/safe-apps/entities/__tests__/safe-app.factory';
 import { faker } from '@faker-js/faker';
-import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -50,7 +50,7 @@ describe('ConfigApi', () => {
   });
 
   it('should return the chains retrieved', async () => {
-    const data = [new ChainBuilder().build(), new ChainBuilder().build()];
+    const data = [chainBuilder().build(), chainBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getChains();
@@ -67,7 +67,7 @@ describe('ConfigApi', () => {
   });
 
   it('should return the chain retrieved', async () => {
-    const data = new ChainBuilder().build();
+    const data = chainBuilder().build();
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getChain(data.chainId);
@@ -84,7 +84,7 @@ describe('ConfigApi', () => {
 
   it('should return the safe apps retrieved by chainId', async () => {
     const chainId = faker.random.numeric();
-    const data = [safeAppFactory(), safeAppFactory()];
+    const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getSafeApps(chainId);
@@ -103,7 +103,7 @@ describe('ConfigApi', () => {
   it('should return the safe apps retrieved by chainId and url', async () => {
     const chainId = faker.random.numeric();
     const url = faker.internet.url();
-    const data = [safeAppFactory(), safeAppFactory()];
+    const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getSafeApps(chainId, undefined, url);
@@ -122,7 +122,7 @@ describe('ConfigApi', () => {
   it('should return the safe apps retrieved by chainId and clientUrl', async () => {
     const chainId = faker.random.numeric();
     const clientUrl = faker.internet.url();
-    const data = [safeAppFactory(), safeAppFactory()];
+    const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getSafeApps(chainId, clientUrl);

@@ -1,9 +1,9 @@
 import { ExchangeApi } from './exchange-api.service';
-import exchangeRatesFactory from '../../domain/exchange/entities/__tests__/exchange-rates.factory';
-import exchangeFiatCodesFactory from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.factory';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { faker } from '@faker-js/faker';
+import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
+import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
 
 describe('ExchangeApi', () => {
   let service: ExchangeApi;
@@ -31,9 +31,12 @@ describe('ExchangeApi', () => {
   });
 
   it('Should return the fiatCodes', async () => {
-    const expectedFiatCodes = exchangeFiatCodesFactory(true, {
-      USD: 'Dollar',
-    });
+    const expectedFiatCodes = exchangeFiatCodesBuilder()
+      .with('success', true)
+      .with('symbols', {
+        USD: 'Dollar',
+      })
+      .build();
     mockNetworkService.get.mockResolvedValue({ data: expectedFiatCodes });
 
     const fiatCodes = await service.getFiatCodes();
@@ -42,9 +45,11 @@ describe('ExchangeApi', () => {
   });
 
   it('Should return the exchange rates', async () => {
-    const expectedRates = exchangeRatesFactory(true, {
-      USD: faker.datatype.number(),
-    });
+    const expectedRates = exchangeRatesBuilder()
+      .with('success', true)
+      .with('rates', {
+        USD: faker.datatype.number(),
+      });
     mockNetworkService.get.mockResolvedValue({ data: expectedRates });
 
     const rates = await service.getRates();
