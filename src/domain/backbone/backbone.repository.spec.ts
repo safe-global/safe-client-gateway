@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
-import backboneFactory from '../balances/entities/__tests__/backbone.factory';
 import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { BackboneRepository } from './backbone.repository';
 import { BackboneValidator } from './backbone.validator';
+import { backboneBuilder } from './entities/__tests__/backbone.builder';
 
 const mockTransactionApi = jest.mocked({
   getBackbone: jest.fn(),
@@ -24,7 +24,7 @@ describe('Backbone Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
-    const backbone = backboneFactory();
+    const backbone = backboneBuilder().build();
     mockTransactionApi.getBackbone.mockResolvedValue(backbone);
     mockBackboneValidator.validate = jest.fn().mockResolvedValue(backbone);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(

@@ -12,11 +12,7 @@ import { INestApplication } from '@nestjs/common';
 import { CollectiblesModule } from './collectibles.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import pageFactory, {
-  limitAndOffsetUrlFactory,
-} from '../../domain/entities/__tests__/page.factory';
 import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
-import collectibleFactory from '../../domain/collectibles/entities/__tests__/collectible.factory';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -26,7 +22,12 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../config/__tests__/test.configuration.module';
-import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { collectibleBuilder } from '../../domain/collectibles/entities/__tests__/collectible.builder';
+import {
+  limitAndOffsetUrlFactory,
+  pageBuilder,
+} from '../../domain/entities/__tests__/page.builder';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
@@ -69,14 +70,18 @@ describe('Collectibles Controller (Unit)', () => {
     it('is successful', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const pageLimit = 1;
-      const collectiblesResponse = pageFactory<Collectible>(
-        undefined,
-        limitAndOffsetUrlFactory(pageLimit, 0),
-        limitAndOffsetUrlFactory(pageLimit, 0),
-        [collectibleFactory(), collectibleFactory(), collectibleFactory()],
-      );
+      const collectiblesResponse = pageBuilder<Collectible>()
+        .with('next', limitAndOffsetUrlFactory(pageLimit, 0))
+        .with('previous', limitAndOffsetUrlFactory(pageLimit, 0))
+        .with('results', [
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+        ])
+        .build();
+
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case `https://test.safe.config/api/v1/chains/${chainId}`:
@@ -106,15 +111,20 @@ describe('Collectibles Controller (Unit)', () => {
     it('pagination data is forwarded to tx service', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = 10;
       const offset = 20;
-      const collectiblesResponse = pageFactory<Collectible>(
-        undefined,
-        undefined,
-        undefined,
-        [collectibleFactory(), collectibleFactory(), collectibleFactory()],
-      );
+
+      const collectiblesResponse = pageBuilder<Collectible>()
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+        ])
+        .build();
+
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case `https://test.safe.config/api/v1/chains/${chainId}`:
@@ -145,15 +155,20 @@ describe('Collectibles Controller (Unit)', () => {
     it('excludeSpam and trusted params are forwarded to tx service', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const excludeSpam = true;
       const trusted = true;
-      const collectiblesResponse = pageFactory<Collectible>(
-        undefined,
-        undefined,
-        undefined,
-        [collectibleFactory(), collectibleFactory(), collectibleFactory()],
-      );
+
+      const collectiblesResponse = pageBuilder<Collectible>()
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+          collectibleBuilder().build(),
+        ])
+        .build();
+
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case `https://test.safe.config/api/v1/chains/${chainId}`:
@@ -184,7 +199,7 @@ describe('Collectibles Controller (Unit)', () => {
     it('tx service collectibles returns 400', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkResponseError(400, {
         message: 'some collectibles error',
       });
@@ -211,7 +226,7 @@ describe('Collectibles Controller (Unit)', () => {
     it('tx service collectibles does not return a response', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkRequestError({});
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {

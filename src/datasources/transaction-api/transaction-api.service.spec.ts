@@ -1,13 +1,13 @@
 import { TransactionApi } from './transaction-api.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
-import { balanceFactory } from '../../domain/balances/entities/__tests__/balance.factory';
 import { ICacheService } from '../cache/cache.service.interface';
 import { faker } from '@faker-js/faker';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { DataSourceError } from '../../domain/errors/data-source.error';
-import safeFactory from '../../domain/safe/entities/__tests__/safe.factory';
 import { AxiosNetworkService } from '../network/axios.network.service';
+import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
+import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -48,7 +48,7 @@ describe('TransactionApi', () => {
 
   describe('Balances', () => {
     it('should return the balances retrieved', async () => {
-      const data = [balanceFactory(), balanceFactory()];
+      const data = [balanceBuilder().build(), balanceBuilder().build()];
       mockDataSource.get.mockResolvedValue(data);
 
       const actual = await service.getBalances('test', true, true);
@@ -73,7 +73,7 @@ describe('TransactionApi', () => {
 
   describe('Backbone', () => {
     it('should return the backbone retrieved', async () => {
-      const data = backboneFactory();
+      const data = backboneBuilder().build();
       mockDataSource.get.mockResolvedValueOnce(data);
 
       const actual = await service.getBackbone();
@@ -111,7 +111,7 @@ describe('TransactionApi', () => {
 
   describe('Safe', () => {
     it('should return retrieved safe', async () => {
-      const safe = safeFactory();
+      const safe = safeBuilder().build();
       mockDataSource.get.mockResolvedValueOnce(safe);
 
       const actual = await service.getSafe(safe.address);
@@ -126,7 +126,7 @@ describe('TransactionApi', () => {
     });
 
     it('should map error on error', async () => {
-      const safe = safeFactory();
+      const safe = safeBuilder().build();
       const error = new Error('some error');
       const expected = new DataSourceError('some data source error');
       mockDataSource.get.mockRejectedValueOnce(error);

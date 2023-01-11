@@ -3,7 +3,7 @@ import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { ContractsRepository } from './contracts.repository';
 import { ContractsValidator } from './contracts.validator';
-import contractFactory from './entities/__tests__/contract.factory';
+import { contractBuilder } from './entities/__tests__/contract.builder';
 
 const mockTransactionApi = jest.mocked({
   getContract: jest.fn(),
@@ -24,7 +24,7 @@ describe('Contracts Repository', () => {
   );
 
   it('should return the data coming from the TransactionAPI', async () => {
-    const contract = contractFactory();
+    const contract = contractBuilder().build();
     mockTransactionApi.getContract.mockResolvedValue(contract);
     mockContractsValidator.validate = jest.fn().mockResolvedValue(contract);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(

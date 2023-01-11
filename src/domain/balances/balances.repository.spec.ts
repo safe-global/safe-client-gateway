@@ -3,10 +3,13 @@ import { ITransactionApi } from '../interfaces/transaction-api.interface';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { BalancesRepository } from './balances.repository';
 import { Balance } from './entities/balance.entity';
-import { balanceFactory } from './entities/__tests__/balance.factory';
 import { BalancesValidator } from './balances.validator';
+import { balanceBuilder } from './entities/__tests__/balance.builder';
 
-const BALANCES: Balance[] = [balanceFactory(), balanceFactory()];
+const BALANCES: Balance[] = [
+  balanceBuilder().build(),
+  balanceBuilder().build(),
+];
 
 const mockTransactionApi = jest.mocked({
   getBalances: jest.fn(),

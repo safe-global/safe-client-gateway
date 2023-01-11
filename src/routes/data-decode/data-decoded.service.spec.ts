@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository';
 import { DataDecodedParameter } from '../../domain/data-decoder/entities/data-decoded.entity';
-import dataDecodedFactory from '../../domain/data-decoder/entities/__tests__/data-decoded.factory';
 import { DataDecodedService } from './data-decoded.service';
 import { DataDecodedParameter as ApiDataDecodedParameter } from './entities/data-decoded-parameter';
 import { DataDecoded } from './entities/data-decoded.entity';
 import createDataDecodedDtoFactory from './__tests__/create-data-decoded.dto.factory';
+import { dataDecodedBuilder } from '../../domain/data-decoder/entities/__tests__/data-decoded.builder';
 
 const mockDataDecodedRepository = jest.mocked({
   getDataDecoded: jest.fn(),
@@ -18,7 +18,7 @@ describe('DataDecoded Service', () => {
 
   it('should call repository for data decoding and serialize', async () => {
     const chainId = faker.datatype.string();
-    const dataDecoded = dataDecodedFactory();
+    const dataDecoded = dataDecodedBuilder().build();
     const createDataDecodedDto = createDataDecodedDtoFactory();
     mockDataDecodedRepository.getDataDecoded.mockResolvedValueOnce(dataDecoded);
 

@@ -1,7 +1,7 @@
 import { GenericValidator } from '../schema/generic.validator';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { DataDecodedValidator } from './data-decoded.validator';
-import dataDecodedFactory from './entities/__tests__/data-decoded.factory';
+import { dataDecodedBuilder } from './entities/__tests__/data-decoded.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -19,7 +19,7 @@ describe('DataDecoded validator', () => {
   );
 
   it('should return the data when validation succeed', () => {
-    const dataDecoded = dataDecodedFactory();
+    const dataDecoded = dataDecodedBuilder().build();
     mockGenericValidator.validate.mockReturnValue(dataDecoded);
 
     const result = validator.validate(dataDecoded);

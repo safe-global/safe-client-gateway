@@ -1,8 +1,8 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { masterCopySchema } from './entities/schemas/master-copy.schema';
-import masterCopyFactory from './entities/__tests__/master-copy.factory';
 import { MasterCopyValidator } from './master-copy.validator';
+import { masterCopyBuilder } from './entities/__tests__/master-copy.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -20,7 +20,7 @@ describe('MasterCopy validator', () => {
   );
 
   it('should return the data when validation succeed', () => {
-    const masterCopy = masterCopyFactory();
+    const masterCopy = masterCopyBuilder().build();
     mockGenericValidator.validate.mockReturnValue(masterCopy);
 
     const result = validator.validate(masterCopy);

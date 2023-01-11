@@ -2,7 +2,7 @@ import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { SafeAppsValidator } from './safe-apps.validator';
 import { safeAppSchema } from './entities/schemas/safe-app.schema';
-import safeAppFactory from './entities/__tests__/safe-app.factory';
+import { safeAppBuilder } from './entities/__tests__/safe-app.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -24,7 +24,7 @@ describe('Safe Apps validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const data = safeAppFactory();
+    const data = safeAppBuilder().build();
     mockGenericValidator.validate.mockReturnValue(data);
 
     const result = validator.validate(data);

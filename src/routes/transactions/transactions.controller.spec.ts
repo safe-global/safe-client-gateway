@@ -16,11 +16,14 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
-import moduleTransactionFactory from '../../domain/safe/entities/__tests__/module-transaction.factory';
-import safeFactory from '../../domain/safe/entities/__tests__/safe.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import {
+  moduleTransactionBuilder,
+  toJson,
+} from '../../domain/safe/entities/__tests__/module-transaction.builder';
+import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -85,7 +88,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -119,7 +122,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: data validation fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({
         data: { results: ['invalidData'] },
@@ -138,7 +141,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a ERC20 transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chain = new ChainBuilder().withChainId(chainId).build();
+      const chain = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -192,7 +195,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a ERC721 transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -246,7 +249,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a Custom transaction mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -318,7 +321,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -342,7 +345,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Get module transaction should return 404', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({ data: { results: [] } });
       mockNetworkService.get.mockRejectedValueOnce({
@@ -367,15 +370,18 @@ describe('Transactions Controller (Unit)', () => {
     it('Get module transaction successfully', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const moduleTransaction = {
         count: 2,
         next: null,
         previous: null,
-        results: [moduleTransactionFactory(), moduleTransactionFactory()],
+        results: [
+          toJson(moduleTransactionBuilder().build()),
+          toJson(moduleTransactionBuilder().build()),
+        ],
       };
 
-      const safe = safeFactory();
+      const safe = safeBuilder().build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({ data: moduleTransaction });
       mockNetworkService.get.mockResolvedValueOnce({ data: safe });
@@ -412,7 +418,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = faker.datatype.number({ min: 0, max: 100 });
       const offset = faker.datatype.number({ min: 0, max: 100 });
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -446,7 +452,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Failure: data validation fails', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({
         data: { results: ['invalidData'] },
@@ -465,7 +471,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a ERC20 incoming transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chain = new ChainBuilder().withChainId(chainId).build();
+      const chain = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
@@ -517,7 +523,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a ERC721 incoming transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chain = new ChainBuilder().withChainId(chainId).build();
+      const chain = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
@@ -569,7 +575,7 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a native coin incoming transfer mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chain = new ChainBuilder().withChainId(chainId).build();
+      const chain = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;

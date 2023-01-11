@@ -1,8 +1,8 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { exchangeFiatCodesSchema } from './entities/schemas/exchange-fiat-codes.schema';
-import exchangeFiatCodesFactory from './entities/__tests__/exchange-fiat-codes.factory';
 import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
+import { exchangeFiatCodesBuilder } from './entities/__tests__/exchange-fiat-codes.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -26,7 +26,7 @@ describe('Fiat Codes Exchange Result validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const fiatCodes = exchangeFiatCodesFactory();
+    const fiatCodes = exchangeFiatCodesBuilder().build();
     mockGenericValidator.validate.mockReturnValue(fiatCodes);
 
     const result = validator.validate(fiatCodes);

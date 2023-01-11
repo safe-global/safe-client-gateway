@@ -6,9 +6,9 @@ import { Chain } from './entities/chain.entity';
 import { Page } from '../entities/page.entity';
 import { MasterCopyValidator } from './master-copy.validator';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import masterCopyFactory from './entities/__tests__/master-copy.factory';
 import { TransactionApi } from '../../datasources/transaction-api/transaction-api.service';
-import { ChainBuilder } from './entities/__tests__/chain.factory';
+import { chainBuilder } from './entities/__tests__/chain.builder';
+import { masterCopyBuilder } from './entities/__tests__/master-copy.builder';
 
 const mockConfigApi = jest.mocked({
   getChain: jest.fn(),
@@ -40,7 +40,7 @@ describe('Chain Repository', () => {
   );
 
   it('should return and validate a Chain from ConfigAPI', async () => {
-    const chain = new ChainBuilder().build();
+    const chain = chainBuilder().build();
     mockConfigApi.getChain.mockResolvedValue(chain);
     mockChainValidator.validate = jest.fn().mockResolvedValue(chain);
 
@@ -55,7 +55,7 @@ describe('Chain Repository', () => {
       count: faker.datatype.number(),
       next: null,
       previous: null,
-      results: [new ChainBuilder().build(), new ChainBuilder().build()],
+      results: [chainBuilder().build(), chainBuilder().build()],
     };
     mockConfigApi.getChains.mockResolvedValue(chains);
     mockChainValidator.validate = jest
@@ -69,7 +69,7 @@ describe('Chain Repository', () => {
   });
 
   it('should return and validate a MasterCopy from TransactionAPI', async () => {
-    const masterCopy = masterCopyFactory();
+    const masterCopy = masterCopyBuilder().build();
     mockTransactionApi.getMasterCopies.mockResolvedValueOnce([masterCopy]);
     mockTransactionApiManager.getTransactionApi.mockResolvedValue(
       mockTransactionApi,

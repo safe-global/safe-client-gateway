@@ -2,7 +2,7 @@ import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { ChainsValidator } from './chains.validator';
 import { chainSchema } from './entities/schemas/chain.schema';
-import { ChainBuilder } from './entities/__tests__/chain.factory';
+import { chainBuilder } from './entities/__tests__/chain.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -24,7 +24,7 @@ describe('Chains validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const chain = new ChainBuilder().build();
+    const chain = chainBuilder().build();
     mockGenericValidator.validate.mockReturnValue(chain);
 
     const result = validator.validate(chain);

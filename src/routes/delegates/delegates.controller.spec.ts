@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import delegateFactory from '../../domain/delegate/entities/__tests__/delegate.factory';
 import { DelegatesModule } from './delegates.module';
 import {
   mockNetworkService,
@@ -22,7 +21,8 @@ import { DataSourceErrorFilter } from '../common/filters/data-source-error.filte
 import { faker } from '@faker-js/faker';
 import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
 import deleteDelegateDtoFactory from './entities/__tests__/delete-delegate.dto.factory';
-import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -67,13 +67,16 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const safe = faker.finance.ethereumAddress();
       const chainId = '1';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const pageDelegates = <Page<Delegate>>{
         count: 2,
         next: null,
         previous: null,
-        results: [delegateFactory(safe), delegateFactory(safe)],
+        results: [
+          delegateBuilder().with('safe', safe).build(),
+          delegateBuilder().with('safe', safe).build(),
+        ],
       };
       mockNetworkService.get.mockResolvedValueOnce({ data: pageDelegates });
 
@@ -86,7 +89,7 @@ describe('Delegates controller', () => {
     it('Should return empty result', async () => {
       const safe = faker.finance.ethereumAddress();
       const chainId = '1';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const pageDelegates = <Page<Delegate>>{
         count: 0,
@@ -104,7 +107,7 @@ describe('Delegates controller', () => {
 
     it('Should fail with bad request', async () => {
       const chainId = '1';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
 
       await request(app.getHttpServer())
@@ -121,7 +124,7 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const body = createDelegateDtoFactory();
       const chainId = '99';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
 
@@ -135,7 +138,7 @@ describe('Delegates controller', () => {
       const body = createDelegateDtoFactory();
       body.safe = undefined;
       const chainId = '99';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
 
@@ -151,7 +154,7 @@ describe('Delegates controller', () => {
         safe: 1,
       };
       const chainId = '99';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.post.mockRejectedValueOnce({
         data: { message: 'Malformed body', status: 400 },
@@ -171,7 +174,7 @@ describe('Delegates controller', () => {
     it('Should fail with An error occurred', async () => {
       const body = createDelegateDtoFactory();
       const chainId = '99';
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.post.mockRejectedValueOnce({ status: 503 });
 
@@ -190,7 +193,7 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const body = deleteDelegateDtoFactory();
       const chainId = faker.random.numeric();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockResolvedValueOnce({
         data: {},
@@ -206,7 +209,7 @@ describe('Delegates controller', () => {
     it('Should return the tx-service error message', async () => {
       const delegate = faker.finance.ethereumAddress();
       const chainId = faker.random.numeric();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockRejectedValueOnce({
         data: { message: 'Malformed body', status: 400 },
@@ -225,7 +228,7 @@ describe('Delegates controller', () => {
     it('Should fail with An error occurred', async () => {
       const body = deleteDelegateDtoFactory();
       const chainId = faker.random.numeric();
-      const chainResponse = new ChainBuilder().withChainId(chainId).build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.delete.mockRejectedValueOnce({ status: 503 });
 

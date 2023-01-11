@@ -1,8 +1,8 @@
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { exchangeRatesSchema } from './entities/schemas/exchange-rates.schema';
-import exchangeRatesFactory from './entities/__tests__/exchange-rates.factory';
 import { ExchangeRatesValidator } from './exchange-rates.validator';
+import { exchangeRatesBuilder } from './entities/__tests__/exchange-rates.builder';
 
 const mockGenericValidator = jest.mocked({
   validate: jest.fn(),
@@ -26,7 +26,7 @@ describe('Rates Exchange Result validator', () => {
   });
 
   it('should return the data when validation succeed', () => {
-    const rates = exchangeRatesFactory();
+    const rates = exchangeRatesBuilder().build();
     mockGenericValidator.validate.mockReturnValue(rates);
 
     const result = validator.validate(rates);

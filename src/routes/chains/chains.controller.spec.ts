@@ -18,14 +18,14 @@ import { DomainModule } from '../../domain.module';
 import { Page } from '../../domain/entities/page.entity';
 import { Chain } from '../../domain/chains/entities/chain.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import backboneFactory from '../../domain/balances/entities/__tests__/backbone.factory';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import masterCopyFactory from '../../domain/chains/entities/__tests__/master-copy.factory';
 import { MasterCopy } from './entities/master-copy.entity';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 import { faker } from '@faker-js/faker';
-import { ChainBuilder } from '../../domain/chains/entities/__tests__/chain.factory';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
+import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -34,11 +34,11 @@ describe('Chains Controller (Unit)', () => {
     count: 2,
     next: null,
     previous: null,
-    results: [new ChainBuilder().build(), new ChainBuilder().build()],
+    results: [chainBuilder().build(), chainBuilder().build()],
   };
 
-  const chainResponse: Chain = new ChainBuilder().build();
-  const backboneResponse: Backbone = backboneFactory();
+  const chainResponse: Chain = chainBuilder().build();
+  const backboneResponse: Backbone = backboneBuilder().build();
 
   beforeAll(async () => {
     fakeConfigurationService.set(
@@ -178,7 +178,7 @@ describe('Chains Controller (Unit)', () => {
   describe('GET /:chainId', () => {
     it('Success', async () => {
       const chainId = faker.random.numeric();
-      const chainDomain = new ChainBuilder().withChainId(chainId).build();
+      const chainDomain = chainBuilder().with('chainId', chainId).build();
       const expectedResult = {
         chainId: chainDomain.chainId,
         chainName: chainDomain.chainName,
@@ -306,20 +306,20 @@ describe('Chains Controller (Unit)', () => {
     it('Success', async () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const domainMasterCopiesResponse: DomainMasterCopy[] = [
-        masterCopyFactory('test_address_1', 'test_version_1'),
-        masterCopyFactory('test_address_2', 'test_version_2'),
+        masterCopyBuilder().build(),
+        masterCopyBuilder().build(),
       ];
       mockNetworkService.get.mockResolvedValueOnce({
         data: domainMasterCopiesResponse,
       });
       const masterCopiesResponse = [
         <MasterCopy>{
-          address: 'test_address_1',
-          version: 'test_version_1',
+          address: domainMasterCopiesResponse[0].address,
+          version: domainMasterCopiesResponse[0].version,
         },
         <MasterCopy>{
-          address: 'test_address_2',
-          version: 'test_version_2',
+          address: domainMasterCopiesResponse[1].address,
+          version: domainMasterCopiesResponse[1].version,
         },
       ];
 
@@ -386,7 +386,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       const domainMasterCopiesResponse = [
         { address: 1223, safe: 'error' },
-        masterCopyFactory('test_address_2', 'test_version_2'),
+        masterCopyBuilder().build(),
       ];
       mockNetworkService.get.mockResolvedValueOnce({
         data: domainMasterCopiesResponse,

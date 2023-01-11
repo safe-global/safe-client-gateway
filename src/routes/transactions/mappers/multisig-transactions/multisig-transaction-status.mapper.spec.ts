@@ -1,18 +1,18 @@
-import multisigTransactionConfirmationFactory from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.factory';
-import { MultisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.factory';
-import safeFactory from '../../../../domain/safe/entities/__tests__/safe.factory';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
 
 describe('Multisig Transaction status mapper (Unit)', () => {
   const mapper = new MultisigTransactionStatusMapper();
 
   it('should return a SUCCESS status', () => {
-    const transaction = new MultisigTransactionBuilder()
-      .withIsExecuted(true)
-      .withIsSuccessful(true)
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', true)
+      .with('isSuccessful', true)
       .build();
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.Success,
@@ -20,11 +20,11 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return a FAILED status', () => {
-    const transaction = new MultisigTransactionBuilder()
-      .withIsExecuted(true)
-      .withIsSuccessful(false)
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', true)
+      .with('isSuccessful', false)
       .build();
-    const safe = safeFactory();
+    const safe = safeBuilder().build();
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.Failed,
@@ -32,11 +32,11 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return a CANCELLED status', () => {
-    const transaction = new MultisigTransactionBuilder()
-      .withIsExecuted(false)
-      .withNonce(2)
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 2)
       .build();
-    const safe = { ...safeFactory(), nonce: 3 };
+    const safe = { ...safeBuilder().build(), nonce: 3 };
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.Cancelled,
@@ -44,16 +44,16 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return an AWAITING_CONFIRMATIONS status', () => {
-    const transaction = new MultisigTransactionBuilder()
-      .withIsExecuted(false)
-      .withNonce(4)
-      .withConfirmations([
-        multisigTransactionConfirmationFactory(),
-        multisigTransactionConfirmationFactory(),
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 4)
+      .with('confirmations', [
+        confirmationBuilder().build(),
+        confirmationBuilder().build(),
       ])
-      .withConfirmationsRequired(3)
+      .with('confirmationsRequired', 3)
       .build();
-    const safe = { ...safeFactory(), nonce: 3 };
+    const safe = { ...safeBuilder().build(), nonce: 3 };
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.AwaitingConfirmations,
@@ -61,16 +61,16 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return an AWAITING_EXECUTION status', () => {
-    const transaction = new MultisigTransactionBuilder()
-      .withIsExecuted(false)
-      .withNonce(4)
-      .withConfirmations([
-        multisigTransactionConfirmationFactory(),
-        multisigTransactionConfirmationFactory(),
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 4)
+      .with('confirmations', [
+        confirmationBuilder().build(),
+        confirmationBuilder().build(),
       ])
-      .withConfirmationsRequired(1)
+      .with('confirmationsRequired', 1)
       .build();
-    const safe = { ...safeFactory(), nonce: 3 };
+    const safe = { ...safeBuilder().build(), nonce: 3 };
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.AwaitingExecution,

@@ -1,9 +1,9 @@
 import { IExchangeApi } from '../interfaces/exchange-api.interface';
 import { ExchangeRepository } from './exchange.repository';
-import exchangeFiatCodesFactory from './entities/__tests__/exchange-fiat-codes.factory';
 import { ExchangeRatesValidator } from './exchange-rates.validator';
 import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
-import exchangeRatesFactory from './entities/__tests__/exchange-rates.factory';
+import { exchangeFiatCodesBuilder } from './entities/__tests__/exchange-fiat-codes.builder';
+import { exchangeRatesBuilder } from './entities/__tests__/exchange-rates.builder';
 
 const mockExchangeApi = jest.mocked({
   getFiatCodes: jest.fn(),
@@ -31,10 +31,13 @@ describe('Exchange Repository', () => {
   });
 
   it('should return the Fiat Codes', async () => {
-    const exchangeFiatCodes = exchangeFiatCodesFactory(true, {
-      USD: 'dollar',
-      AED: 'dirham',
-    });
+    const exchangeFiatCodes = exchangeFiatCodesBuilder()
+      .with('success', true)
+      .with('symbols', {
+        USD: 'dollar',
+        AED: 'dirham',
+      })
+      .build();
     mockExchangeApi.getFiatCodes.mockResolvedValue(exchangeFiatCodes);
     mockExchangeFiatCodesValidator.validate.mockReturnValueOnce(
       exchangeFiatCodes,
@@ -47,10 +50,13 @@ describe('Exchange Repository', () => {
   });
 
   it('Should return convert rate', async () => {
-    const ratesExchangeResult = exchangeRatesFactory(true, {
-      BIG: 10,
-      LIT: 1,
-    });
+    const ratesExchangeResult = exchangeRatesBuilder()
+      .with('success', true)
+      .with('rates', {
+        BIG: 10,
+        LIT: 1,
+      })
+      .build();
     mockExchangeApi.getRates.mockResolvedValue(ratesExchangeResult);
     mockExchangeRatesValidator.validate.mockReturnValueOnce(
       ratesExchangeResult,
@@ -72,10 +78,14 @@ describe('Exchange Repository', () => {
   });
 
   it('ConvertRates should throw exchange rate no available for "from"', async () => {
-    const ratesExchangeResult = exchangeRatesFactory(true, {
-      BIG: 10,
-      LIT: 1,
-    });
+    const ratesExchangeResult = exchangeRatesBuilder()
+      .with('success', true)
+      .with('rates', {
+        BIG: 10,
+        LIT: 1,
+      })
+      .build();
+
     mockExchangeApi.getRates.mockResolvedValue(ratesExchangeResult);
     mockExchangeRatesValidator.validate.mockReturnValueOnce(
       ratesExchangeResult,
@@ -87,10 +97,13 @@ describe('Exchange Repository', () => {
   });
 
   it('ConvertRates should throw exchange rate no available for "to"', async () => {
-    const ratesExchangeResult = exchangeRatesFactory(true, {
-      BIG: 10,
-      LIT: 1,
-    });
+    const ratesExchangeResult = exchangeRatesBuilder()
+      .with('success', true)
+      .with('rates', {
+        BIG: 10,
+        LIT: 1,
+      })
+      .build();
     mockExchangeApi.getRates.mockResolvedValue(ratesExchangeResult);
     mockExchangeRatesValidator.validate.mockReturnValueOnce(
       ratesExchangeResult,
