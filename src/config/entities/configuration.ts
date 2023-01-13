@@ -11,7 +11,7 @@ export default () => ({
   },
   safeConfig: {
     baseUri:
-      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.gnosis.io',
+      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
