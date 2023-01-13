@@ -4,6 +4,7 @@ export default () => ({
     version: process.env.npm_package_version || '',
     buildNumber: process.env.GITHUB_RUN_NUMBER || '',
   },
+  applicationPort: process.env.APPLICATION_PORT || '3000',
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
