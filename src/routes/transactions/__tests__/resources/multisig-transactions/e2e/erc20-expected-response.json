@@ -26,7 +26,7 @@
             "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
             "tokenName": "Wrapped Ether",
             "tokenSymbol": "WETH",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
             "decimals": 18,
             "value": "1000000000000000"
           }

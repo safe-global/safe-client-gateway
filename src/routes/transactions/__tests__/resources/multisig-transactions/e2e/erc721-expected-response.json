@@ -27,7 +27,7 @@
             "tokenId": "49",
             "tokenName": "OtoCo Series",
             "tokenSymbol": "OTOCO",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x5B9aE6234Cf1E447680c245200E066091E631Bf3.png"
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0x5B9aE6234Cf1E447680c245200E066091E631Bf3.png"
           }
         },
         "executionInfo": {
@@ -82,7 +82,7 @@
           "to": {
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
             "name": null,
-            "logoUri": "https://safe-transaction-goerli.staging.5afe.dev/media/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x40A2aCCbd92BCA938b02010E17A5b8929b49130D.png"
           },
           "dataSize": "12228",
           "value": "0",
