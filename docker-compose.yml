@@ -2,5 +2,27 @@ services:
   redis:
     image: redis/redis-stack:7.0.2-RC1
     ports:
-      - "${REDIS_PORT-6379}:${REDIS_PORT-6379}"
+      - ${REDIS_PORT-6379}:${REDIS_PORT-6379}
       - 8001:8001
+
+  web:
+    build: .
+    tty: true
+    environment:
+      REDIS_HOST: redis
+      EXCHANGE_API_KEY: ${EXCHANGE_API_KEY-example_api_key}
+      APPLICATION_PORT: ${APPLICATION_PORT-3000}
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx:1.23-alpine
+    ports:
+      - ${NGINX_HOST_PORT:-8080}:80
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
+      APPLICATION_PORT: ${APPLICATION_PORT-3000}
+    depends_on:
+      - web
