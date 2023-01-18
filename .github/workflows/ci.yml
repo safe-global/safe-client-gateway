@@ -90,9 +90,11 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@v3
+        env:
+          DOCKER_IMAGE_TAG: safeglobal/safe-client-gateway-nest:staging
         with:
           push: true
-          tags: safeglobal/safe-client-gateway-nest:latest
+          tags: $DOCKER_IMAGE_TAG
           # Use inline cache storage https://docs.docker.com/build/cache/backends/inline/
-          cache-from: type=registry,ref=safeglobal/safe-client-gateway-nest:latest
+          cache-from: type=registry,ref=$DOCKER_IMAGE_TAG
           cache-to: type=inline
