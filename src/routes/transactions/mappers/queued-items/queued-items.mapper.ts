@@ -24,7 +24,7 @@ export class QueuedItemsMapper {
     nextPageFirstNonce: number | null,
   ): Promise<QueuedItem[]> {
     const transactionGroups = this.groupByNonce(transactions);
-    let items: QueuedItem[] = [];
+    const items: QueuedItem[] = [];
     let lastProcessedNonce = previousPageLastNonce ?? -1;
 
     transactionGroups.forEach((transactionGroup) => {
@@ -44,15 +44,14 @@ export class QueuedItemsMapper {
         items.push(new ConflictHeaderQueuedItem(nonce));
       }
 
-      items = [
-        ...items,
+      items.push(
         ...this.getMappedTransactionGroup(
           hasConflicts,
           conflictFromPreviousPage,
           isEdgeGroup,
           transactionGroup,
         ),
-      ];
+      );
     });
 
     return items;

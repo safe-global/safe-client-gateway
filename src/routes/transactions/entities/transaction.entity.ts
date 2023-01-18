@@ -24,7 +24,7 @@ export class Transaction {
   @ApiProperty()
   id: string;
   @ApiProperty()
-  timestamp: number;
+  timestamp: number | null;
   @ApiProperty()
   txStatus: string;
   @ApiProperty({
@@ -48,7 +48,7 @@ export class Transaction {
 
   constructor(
     id: string,
-    timestamp: number,
+    timestamp: number | null,
     txStatus: string,
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
