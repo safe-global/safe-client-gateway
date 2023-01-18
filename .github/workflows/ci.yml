@@ -94,7 +94,7 @@ jobs:
           DOCKER_IMAGE_TAG: safeglobal/safe-client-gateway-nest:staging
         with:
           push: true
-          tags: $DOCKER_IMAGE_TAG
+          tags: ${{ env.DOCKER_IMAGE_TAG }}
           # Use inline cache storage https://docs.docker.com/build/cache/backends/inline/
-          cache-from: type=registry,ref=$DOCKER_IMAGE_TAG
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_TAG }}
           cache-to: type=inline
