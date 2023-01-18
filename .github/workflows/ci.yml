@@ -68,7 +68,7 @@ jobs:
           flag-name: run-${{ matrix.task }}
           parallel: true
 
-  finish:
+  tests-finish:
     needs: tests
     runs-on: ubuntu-latest
     steps:
@@ -77,3 +77,22 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
+
+  docker-publish:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: [ prettier, es-lint, tests-finish ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: safeglobal/safe-client-gateway-nest:latest
+          # Use inline cache storage https://docs.docker.com/build/cache/backends/inline/
+          cache-from: type=registry,ref=safeglobal/safe-client-gateway-nest:latest
+          cache-to: type=inline
