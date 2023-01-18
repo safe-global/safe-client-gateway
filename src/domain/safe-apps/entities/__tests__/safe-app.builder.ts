@@ -14,5 +14,6 @@ export function safeAppBuilder(): IBuilder<SafeApp> {
     .with('chainIds', [faker.datatype.number(), faker.datatype.number()])
     .with('provider', safeAppProviderBuilder().build())
     .with('accessControl', safeAppAccessControlBuilder().build())
-    .with('tags', [faker.random.word(), faker.random.word()]);
+    .with('tags', [faker.random.word(), faker.random.word()])
+    .with('features', [faker.random.word(), faker.random.word()]);
 }
