@@ -5,6 +5,7 @@ import { DataDecodedParamHelper } from './mappers/common/data-decoded-param.help
 import { Erc20TransferMapper } from './mappers/common/erc20-transfer.mapper';
 import { Erc721TransferMapper } from './mappers/common/erc721-transfer.mapper';
 import { NativeCoinTransferMapper } from './mappers/common/native-coin-transfer.mapper';
+import { SafeAppInfoMapper } from './mappers/common/safe-app-info.mapper';
 import { SettingsChangeMapper } from './mappers/common/settings-change.mapper';
 import { MultisigTransactionInfoMapper } from './mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './mappers/module-transactions/module-transaction-status.mapper';
@@ -33,6 +34,7 @@ import { TransactionsService } from './transactions.service';
     MultisigTransactionMapper,
     MultisigTransactionStatusMapper,
     NativeCoinTransferMapper,
+    SafeAppInfoMapper,
     SettingsChangeMapper,
     TransactionsService,
     TransferInfoMapper,
