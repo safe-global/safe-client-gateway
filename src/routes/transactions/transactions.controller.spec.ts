@@ -16,14 +16,15 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
-import { TransactionsModule } from './transactions.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import {
   moduleTransactionBuilder,
   toJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
+import { TransactionsModule } from './transactions.module';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -250,13 +251,27 @@ describe('Transactions Controller (Unit)', () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const safeAppsResponse = [
+        safeAppBuilder()
+          .with('url', 'https://apps.gnosis-safe.io/safe-claiming-app')
+          .with(
+            'iconUrl',
+            'https://safe-apps.dev.5afe.dev/safe-claiming-app/logo.svg',
+          )
+          .with('name', '$SAFE Claiming App')
+          .build(),
+      ];
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
         const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
         const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
         if (url === getChainUrl) {
           return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getSafeAppsUrl) {
+          return Promise.resolve({ data: safeAppsResponse });
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({

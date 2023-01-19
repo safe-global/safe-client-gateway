@@ -28,7 +28,11 @@
           "confirmationsSubmitted": 3,
           "missingSigners": null
         },
-        "safeAppInfo": null
+        "safeAppInfo": {
+          "logo_uri": "https://safe-apps.dev.5afe.dev/safe-claiming-app/logo.svg",
+          "name": "$SAFE Claiming App",
+          "url": "https://apps.gnosis-safe.io/safe-claiming-app"
+        }
       },
       "conflictType": "None"
     }
