@@ -57,7 +57,7 @@
             "tokenAddress": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
             "tokenName": "Wrapped Ether",
             "tokenSymbol": "WETH",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6.png",
             "decimals": 18,
             "value": "46810144995912020"
           }
@@ -91,7 +91,7 @@
             "tokenAddress": "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600",
             "tokenName": "CoW Protocol Token",
             "tokenSymbol": "COW",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600.png",
             "decimals": 18,
             "value": "10045153676958686779"
           }
@@ -125,7 +125,7 @@
             "tokenAddress": "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
             "tokenName": "Dai",
             "tokenSymbol": "DAI",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png",
             "decimals": 18,
             "value": "1000000000000000000000"
           }
@@ -159,7 +159,7 @@
             "tokenAddress": "0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1",
             "tokenName": "Elden Ring Token",
             "tokenSymbol": "ERT",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0x64685e9733d57Ccc3870ceD50ed9B1f576Fd61B1.png",
             "decimals": 18,
             "value": "10000000000000000000000"
           }
@@ -193,7 +193,7 @@
             "tokenAddress": "0x61fD3b6d656F39395e32f46E2050953376c3f5Ff",
             "tokenName": "Safe Token",
             "tokenSymbol": "SAFE",
-            "logoUri": "https://tokens-logo.localhost/tokens/logos/0x61fD3b6d656F39395e32f46E2050953376c3f5Ff.png",
+            "logoUri": "https://safe-transaction-assets.staging.5afe.dev/tokens/logos/0x61fD3b6d656F39395e32f46E2050953376c3f5Ff.png",
             "decimals": 18,
             "value": "5000000000000000000"
           }
