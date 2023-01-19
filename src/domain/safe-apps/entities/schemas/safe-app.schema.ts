@@ -32,6 +32,7 @@ export const safeAppSchema: Schema = {
     provider: { anyOf: [{ type: 'null' }, { $ref: 'safeAppProviderSchema' }] },
     accessControl: { $ref: 'safeAppAccessControlSchema' },
     tags: { type: 'array', items: { type: 'string' } },
+    features: { type: 'array', items: { type: 'string' } },
   },
   required: [
     'id',
@@ -42,6 +43,7 @@ export const safeAppSchema: Schema = {
     'chainIds',
     'accessControl',
     'tags',
+    'features',
   ],
   additionalProperties: false,
 };

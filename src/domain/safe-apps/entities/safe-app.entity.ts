@@ -11,4 +11,5 @@ export interface SafeApp {
   provider: SafeAppProvider | null;
   accessControl: SafeAppAccessControl;
   tags: string[];
+  features: string[];
 }
