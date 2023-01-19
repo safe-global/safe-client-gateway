@@ -34,6 +34,7 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { NULL_ADDRESS } from '../common/constants';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
 
@@ -705,14 +706,13 @@ describe('Transactions Controller (Unit)', () => {
       const chainId = faker.random.numeric();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const safeAddress = '0x710085cB90e4Ce09F80E354Cf579a32C9790A140';
+      const confirmedAddress = '0xf10E2042ec19747401E5EA174EfB63A0058265E6';
+      const nonConfirmedAddress = '0x76EA7f829669d7394f42b035e095B7880B45B421';
       const safeResponse = safeBuilder()
         .with('address', safeAddress)
         .with('nonce', 1)
         .with('threshold', 2)
-        .with('owners', [
-          '0x76EA7f829669d7394f42b035e095B7880B45B421',
-          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-        ])
+        .with('owners', [nonConfirmedAddress, confirmedAddress])
         .build();
       const contractAddress = '0x40A2aCCbd92BCA938b02010E17A5b8929b49130D';
       const contractResponse = contractBuilder()
@@ -723,6 +723,10 @@ describe('Transactions Controller (Unit)', () => {
           `https://safe-transaction-assets.staging.5afe.dev/contracts/logos/${contractAddress}.png`,
         )
         .build();
+      const confirmations = [
+        confirmationBuilder().with('owner', confirmedAddress).build(),
+      ];
+
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -747,18 +751,8 @@ describe('Transactions Controller (Unit)', () => {
                       '0xba5932e36e163c4bedce954b7a3feeac842f5466807754b357fa1e5b23f7a0dc',
                     )
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
-                    .with(
-                      'data',
-                      '0x694e80c30000000000000000000000000000000000000000000000000000000000000001',
-                    )
+                    .with('confirmations', confirmations)
+                    .with('data', faker.datatype.hexadecimal())
                     .with('nonce', 1)
                     .with(
                       'submissionDate',
@@ -777,14 +771,8 @@ describe('Transactions Controller (Unit)', () => {
                     })
                     .with('value', '0')
                     .with('gasPrice', '0')
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('baseGas', 0)
                     .with('safeTxGas', 0)
                     .with('operation', 0)
@@ -800,14 +788,7 @@ describe('Transactions Controller (Unit)', () => {
                       '0x5c88e796125f695d26e9b611db2344052c1e006fc44798cb633bdbf064301e4e',
                     )
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
+                    .with('confirmations', confirmations)
                     .with('data', null)
                     .with('nonce', 1)
                     .with('executionDate', null)
@@ -818,14 +799,8 @@ describe('Transactions Controller (Unit)', () => {
                     .with('dataDecoded', JSON.parse(faker.datatype.json()))
                     .with('value', '0')
                     .with('gasPrice', '0')
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('baseGas', 0)
                     .with('safeTxGas', 0)
                     .with('operation', 0)
@@ -839,17 +814,11 @@ describe('Transactions Controller (Unit)', () => {
                     .with('value', '0')
                     .with('data', null)
                     .with('operation', 0)
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
                     .with('baseGas', 0)
                     .with('gasPrice', '0')
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('nonce', 2)
                     .with('executionDate', null)
                     .with(
@@ -863,14 +832,7 @@ describe('Transactions Controller (Unit)', () => {
                     .with('isExecuted', false)
                     .with('dataDecoded', JSON.parse(faker.datatype.json()))
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
+                    .with('confirmations', confirmations)
                     .build(),
                 ),
                 multiSignToJson(
@@ -878,22 +840,13 @@ describe('Transactions Controller (Unit)', () => {
                     .with('safe', safeAddress)
                     .with('to', safeAddress)
                     .with('value', '0')
-                    .with(
-                      'data',
-                      '0x694e80c30000000000000000000000000000000000000000000000000000000000000001',
-                    )
+                    .with('data', faker.datatype.hexadecimal())
                     .with('operation', 0)
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
                     .with('baseGas', 0)
                     .with('gasPrice', '0')
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('nonce', 2)
                     .with('executionDate', null)
                     .with(
@@ -916,14 +869,7 @@ describe('Transactions Controller (Unit)', () => {
                       ],
                     })
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
+                    .with('confirmations', confirmations)
                     .build(),
                 ),
                 multiSignToJson(
@@ -931,22 +877,13 @@ describe('Transactions Controller (Unit)', () => {
                     .with('safe', safeAddress)
                     .with('to', safeAddress)
                     .with('value', '0')
-                    .with(
-                      'data',
-                      '0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001eb00710085cb90e4ce09f80e354cf579a32c9790a14000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024610b5925000000000000000000000000cfbfac74c26f8647cbdb8c5caf80bb5b32e4313400cfbfac74c26f8647cbdb8c5caf80bb5b32e4313400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024e71bdf41000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a14000cfbfac74c26f8647cbdb8c5caf80bb5b32e43134000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a4beaeb388000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a1400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016345785d8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                    )
+                    .with('data', faker.datatype.hexadecimal())
                     .with('operation', 0)
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
                     .with('baseGas', 0)
                     .with('gasPrice', '0')
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('nonce', 3)
                     .with('executionDate', null)
                     .with(
@@ -964,114 +901,27 @@ describe('Transactions Controller (Unit)', () => {
                         {
                           name: 'transactions',
                           type: 'bytes',
-                          value:
-                            '0x00710085cb90e4ce09f80e354cf579a32c9790a14000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024610b5925000000000000000000000000cfbfac74c26f8647cbdb8c5caf80bb5b32e4313400cfbfac74c26f8647cbdb8c5caf80bb5b32e4313400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024e71bdf41000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a14000cfbfac74c26f8647cbdb8c5caf80bb5b32e43134000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a4beaeb388000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a1400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016345785d8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                          valueDecoded: [
-                            {
-                              operation: 0,
-                              to: '0x710085cB90e4Ce09F80E354Cf579a32C9790A140',
-                              value: '0',
-                              data: '0x610b5925000000000000000000000000cfbfac74c26f8647cbdb8c5caf80bb5b32e43134',
-                              dataDecoded: {
-                                method: 'enableModule',
-                                parameters: [
-                                  {
-                                    name: 'module',
-                                    type: 'address',
-                                    value:
-                                      '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
-                                  },
-                                ],
-                              },
-                            },
-                            {
-                              operation: 0,
-                              to: '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
-                              value: '0',
-                              data: '0xe71bdf41000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a140',
-                              dataDecoded: {
-                                method: 'addDelegate',
-                                parameters: [
-                                  {
-                                    name: 'delegate',
-                                    type: 'address',
-                                    value:
-                                      '0x710085cB90e4Ce09F80E354Cf579a32C9790A140',
-                                  },
-                                ],
-                              },
-                            },
-                            {
-                              operation: 0,
-                              to: '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
-                              value: '0',
-                              data: '0xbeaeb388000000000000000000000000710085cb90e4ce09f80e354cf579a32c9790a1400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016345785d8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                              dataDecoded: {
-                                method: 'setAllowance',
-                                parameters: [
-                                  {
-                                    name: 'delegate',
-                                    type: 'address',
-                                    value:
-                                      '0x710085cB90e4Ce09F80E354Cf579a32C9790A140',
-                                  },
-                                  {
-                                    name: 'token',
-                                    type: 'address',
-                                    value:
-                                      '0x0000000000000000000000000000000000000000',
-                                  },
-                                  {
-                                    name: 'allowanceAmount',
-                                    type: 'uint96',
-                                    value: '100000000000000000',
-                                  },
-                                  {
-                                    name: 'resetTimeMin',
-                                    type: 'uint16',
-                                    value: '0',
-                                  },
-                                  {
-                                    name: 'resetBaseMin',
-                                    type: 'uint32',
-                                    value: '0',
-                                  },
-                                ],
-                              },
-                            },
-                          ],
+                          value: faker.datatype.hexadecimal(),
+                          valueDecoded: [{}, {}, {}],
                         },
                       ],
                     })
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
+                    .with('confirmations', confirmations)
                     .build(),
                 ),
                 multiSignToJson(
                   multisigTransactionBuilder()
                     .with('safe', safeAddress)
-                    .with('to', '0xf10E2042ec19747401E5EA174EfB63A0058265E6')
+                    .with('to', confirmedAddress)
                     .with('value', '10000000000000000')
                     .with('data', null)
                     .with('operation', 0)
-                    .with(
-                      'gasToken',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
                     .with('baseGas', 0)
                     .with('gasPrice', '0')
-                    .with(
-                      'refundReceiver',
-                      '0x0000000000000000000000000000000000000000',
-                    )
+                    .with('refundReceiver', NULL_ADDRESS)
                     .with('nonce', 4)
                     .with('executionDate', null)
                     .with(
@@ -1085,14 +935,7 @@ describe('Transactions Controller (Unit)', () => {
                     .with('isExecuted', false)
                     .with('dataDecoded', null)
                     .with('confirmationsRequired', 2)
-                    .with('confirmations', [
-                      confirmationBuilder()
-                        .with(
-                          'owner',
-                          '0xf10E2042ec19747401E5EA174EfB63A0058265E6',
-                        )
-                        .build(),
-                    ])
+                    .with('confirmations', confirmations)
                     .build(),
                 ),
               ],

@@ -185,7 +185,7 @@
             "name": "Gnosis Safe: MultiSendCallOnly",
             "value": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
           },
-          "dataSize": "580",
+          "dataSize": "0.5",
           "value": "0",
           "methodName": "multiSend",
           "actionCount": 3,
