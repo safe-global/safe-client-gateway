@@ -119,10 +119,11 @@ export class QueuedItemsMapper {
    */
   private groupByNonce(transactions: Transaction[]): TransactionGroup[] {
     return Object.entries(groupBy(transactions, 'executionInfo.nonce')).map(
-      (group) => ({
-        nonce: Number(group[0]),
-        transactions: group[1] as Transaction[],
-      }),
+      ([nonce, transactions]) =>
+        <TransactionGroup>{
+          nonce: Number(nonce),
+          transactions: transactions,
+        },
     );
   }
 }
