@@ -52,7 +52,8 @@ export class MultisigTransactionInfoMapper {
       ? Buffer.byteLength(transaction.data)
       : 0;
 
-    const dataSize = dataByteLength >= 2 ? (dataByteLength - 2) / 2 : 0;
+    const dataSize =
+      dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
