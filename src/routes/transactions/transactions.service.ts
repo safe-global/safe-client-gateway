@@ -191,35 +191,23 @@ export class TransactionsService {
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPagination(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const domainTransactions =
-      await this.safeRepository.getTransactionQueueByNonce(
-        chainId,
-        safeAddress,
-        pagination.limit,
-        pagination.offset,
-      );
-
-    const transactions = await Promise.all(
-      this.adjustTransactionsPage(domainTransactions).results.map(
-        async (transaction) =>
-          this.multisigTransactionMapper.mapTransaction(
-            chainId,
-            transaction,
-            safeInfo,
-          ),
-      ),
+    const transactions = await this.safeRepository.getTransactionQueueByNonce(
+      chainId,
+      safeAddress,
+      pagination.limit,
+      pagination.offset,
     );
 
-    const results = await this.queuedItemsMapper.getQueuedItems(
-      transactions,
-      safeInfo,
-      this.getPreviousPageLastNonce(domainTransactions, paginationData),
-      this.getNextPageFirstNonce(domainTransactions),
-    );
-
-    const { next, previous } = domainTransactions;
+    const { next, previous } = transactions;
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, next);
     const previousURL = cursorUrlFromLimitAndOffset(routeUrl, previous);
+    const results = await this.queuedItemsMapper.getQueuedItems(
+      this.adjustTransactionsPage(transactions),
+      safeInfo,
+      chainId,
+      this.getPreviousPageLastNonce(transactions, paginationData),
+      this.getNextPageFirstNonce(transactions),
+    );
 
     return {
       count: results.length,
