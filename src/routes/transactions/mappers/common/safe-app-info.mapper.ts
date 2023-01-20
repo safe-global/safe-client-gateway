@@ -16,29 +16,21 @@ export class SafeAppInfoMapper {
     transaction: MultisigTransaction,
   ): Promise<SafeAppInfo | null> {
     const originUrl = this.getOriginUrl(transaction);
-    if (!originUrl) {
-      return null;
-    }
+    if (!originUrl) return null;
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps(
       chainId,
       undefined,
       originUrl,
     );
-
-    if (!safeApp) {
-      throw new NotFoundException('No Safe Apps match the url');
-    }
+    if (!safeApp) throw new NotFoundException('No Safe Apps match the url');
 
     return new SafeAppInfo(safeApp.name, safeApp.url, safeApp.iconUrl);
   }
 
   private getOriginUrl(transaction: MultisigTransaction): string | null {
-    if (!transaction.origin) {
-      return null;
-    }
-
-    const parsedOrigin = JSON.parse(transaction.origin);
-    return parsedOrigin?.url ?? null;
+    return transaction.origin
+      ? JSON.parse(transaction.origin).url ?? null
+      : null;
   }
 }
