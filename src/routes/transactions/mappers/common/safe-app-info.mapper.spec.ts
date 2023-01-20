@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
 import { safeAppBuilder } from '../../../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
 import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
@@ -69,7 +68,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('should throw an error if no SafeApp is found and origin is not null', async () => {
+  it('should return null if no SafeApp is found and origin is not null', async () => {
     const chainId = faker.random.numeric();
     const safeApps = [];
     const transaction = multisigTransactionBuilder()
@@ -80,12 +79,8 @@ describe('SafeAppInfo mapper (Unit)', () => {
       .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
 
-    try {
-      await mapper.mapSafeAppInfo(chainId, transaction);
-    } catch (err) {
-      expect(err).toBeInstanceOf(NotFoundException);
-      expect(err.status).toBe(404);
-      expect(err.message).toBe('No Safe Apps match the url');
-    }
+    const actual = await mapper.mapSafeAppInfo(chainId, transaction);
+
+    expect(actual).toBeNull();
   });
 });

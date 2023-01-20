@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
@@ -6,6 +6,8 @@ import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 
 @Injectable()
 export class SafeAppInfoMapper {
+  private readonly logger = new Logger(SafeAppInfoMapper.name);
+
   constructor(
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: SafeAppsRepository,
@@ -23,7 +25,12 @@ export class SafeAppInfoMapper {
       undefined,
       originUrl,
     );
-    if (!safeApp) throw new NotFoundException('No Safe Apps match the url');
+    if (!safeApp) {
+      this.logger.error(
+        `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
+      );
+      return null;
+    }
 
     return new SafeAppInfo(safeApp.name, safeApp.url, safeApp.iconUrl);
   }
