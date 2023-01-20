@@ -7,6 +7,8 @@ import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 @Injectable()
 export class SafeAppInfoMapper {
   private readonly logger = new Logger(SafeAppInfoMapper.name);
+  private static readonly IPFS_URL = 'ipfs.io';
+  private static readonly CF_IPFS_URL = 'cloudflare-ipfs.com';
 
   constructor(
     @Inject(ISafeAppsRepository)
@@ -32,7 +34,14 @@ export class SafeAppInfoMapper {
       return null;
     }
 
-    return new SafeAppInfo(safeApp.name, safeApp.url, safeApp.iconUrl);
+    return new SafeAppInfo(
+      safeApp.name,
+      safeApp.url.replace(
+        SafeAppInfoMapper.IPFS_URL,
+        SafeAppInfoMapper.CF_IPFS_URL,
+      ),
+      safeApp.iconUrl,
+    );
   }
 
   private getOriginUrl(transaction: MultisigTransaction): string | null {

@@ -45,6 +45,22 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(actual).toBeNull();
   });
 
+  it('should return null if no SafeApp is found and origin is not null', async () => {
+    const chainId = faker.random.numeric();
+    const safeApps = [];
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'origin',
+        `{\"url\": \"${faker.internet.url()}\", \"name\": \"$SAFE Claiming App\"}`,
+      )
+      .build();
+    safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
+
+    const actual = await mapper.mapSafeAppInfo(chainId, transaction);
+
+    expect(actual).toBeNull();
+  });
+
   it('should get SafeAppInfo for a transaction with origin', async () => {
     const chainId = faker.random.numeric();
     const safeApp = safeAppBuilder().build();
@@ -68,19 +84,27 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('should return null if no SafeApp is found and origin is not null', async () => {
+  it('should replace IPFS origin urls', async () => {
     const chainId = faker.random.numeric();
-    const safeApps = [];
+    const originUrl = 'https://ipfs.io/test';
+    const safeApp = safeAppBuilder().with('url', originUrl).build();
+    const safeApps = [safeApp];
+    const expectedUrl = 'https://cloudflare-ipfs.com/test';
     const transaction = multisigTransactionBuilder()
       .with(
         'origin',
-        `{\"url\": \"${faker.internet.url()}\", \"name\": \"$SAFE Claiming App\"}`,
+        `{\"url\": \"${originUrl}\", \"name\": \"$SAFE Claiming App\"}`,
       )
       .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
+    const expected = new SafeAppInfo(
+      safeApp.name,
+      expectedUrl,
+      safeApp.iconUrl,
+    );
 
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
-    expect(actual).toBeNull();
+    expect(actual).toEqual(expected);
   });
 });
