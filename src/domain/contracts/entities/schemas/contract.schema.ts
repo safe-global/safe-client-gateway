@@ -11,5 +11,4 @@ export const contractSchema: Schema = {
     trustedForDelegateCall: { type: 'boolean' },
   },
   required: ['address', 'name', 'displayName', 'trustedForDelegateCall'],
-  additionalProperties: false,
 };

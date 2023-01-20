@@ -9,7 +9,6 @@ export const dataDecodedParameterSchema: Schema = {
     valueDecoded: { type: ['object', 'array', 'null'] },
   },
   required: ['name', 'type', 'value'],
-  additionalProperties: true,
 };
 
 export const dataDecodedSchema: Schema = {

@@ -45,5 +45,4 @@ export const safeAppSchema: Schema = {
     'tags',
     'features',
   ],
-  additionalProperties: false,
 };

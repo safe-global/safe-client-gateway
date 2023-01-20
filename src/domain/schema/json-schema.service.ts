@@ -12,6 +12,7 @@ export class JsonSchemaService {
       allowUnionTypes: true,
       useDefaults: true,
       discriminator: true,
+      removeAdditional: 'all',
     });
 
     addIsDate(this.ajv);
