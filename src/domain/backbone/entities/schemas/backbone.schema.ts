@@ -17,5 +17,4 @@ export const backboneSchema: JSONSchemaType<Backbone> = {
     },
   },
   required: ['name', 'version', 'api_version', 'secure', 'host'],
-  additionalProperties: false,
 };
