@@ -10,6 +10,7 @@ import { MasterCopy } from './entities/master-copy.entity';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 import { Page } from '../common/entities/page.entity';
 import { Chain } from './entities/chain.entity';
+import { AboutChain } from './entities/about-chain.entity';
 
 @ApiTags('chains')
 @Controller({
@@ -37,6 +38,12 @@ export class ChainsController {
   @Get('/:chainId')
   async getChain(@Param('chainId') chainId: string): Promise<Chain> {
     return this.chainsService.getChain(chainId);
+  }
+
+  @ApiOkResponse({ type: AboutChain })
+  @Get('/:chainId/about')
+  async getAboutChain(@Param('chainId') chainId: string): Promise<AboutChain> {
+    return this.chainsService.getAboutChain(chainId);
   }
 
   @ApiOkResponse({ type: ApiBackbone })

@@ -1,11 +1,7 @@
+import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { ChainsModule } from './chains.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -14,18 +10,22 @@ import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
-import { DomainModule } from '../../domain.module';
-import { Page } from '../../domain/entities/page.entity';
-import { Chain } from '../../domain/chains/entities/chain.entity';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
-import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import { MasterCopy } from './entities/master-copy.entity';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
-import { faker } from '@faker-js/faker';
+import {
+  mockNetworkService,
+  TestNetworkModule,
+} from '../../datasources/network/__tests__/test.network.module';
+import { DomainModule } from '../../domain.module';
+import { Backbone } from '../../domain/backbone/entities/backbone.entity';
+import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
+import { Chain } from '../../domain/chains/entities/chain.entity';
+import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
-import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
+import { Page } from '../../domain/entities/page.entity';
+import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
+import { ChainsModule } from './chains.module';
+import { MasterCopy } from './entities/master-copy.entity';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -399,6 +399,62 @@ describe('Chains Controller (Unit)', () => {
           message: 'Validation failed',
           code: 42,
           arguments: [],
+        });
+    });
+  });
+
+  describe('GET /:chainId/about', () => {
+    it('Success', async () => {
+      const chainId = faker.random.numeric();
+      const chainDomain = chainBuilder().with('chainId', chainId).build();
+      const name = faker.random.words();
+      const version = faker.system.semver();
+      const buildNumber = faker.random.numeric();
+      fakeConfigurationService.set('about.name', name);
+      fakeConfigurationService.set('about.version', version);
+      fakeConfigurationService.set('about.buildNumber', buildNumber);
+      const expectedResult = {
+        transactionServiceBaseUri: chainDomain.transactionService,
+        name,
+        version,
+        buildNumber,
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainDomain });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/about`)
+        .expect(200)
+        .expect(expectedResult);
+    });
+
+    it('Should return not Not found', async () => {
+      const chainId = faker.random.numeric();
+      mockNetworkService.get.mockRejectedValueOnce({
+        data: { message: 'Not Found', status: 404 },
+        status: 404,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/about`)
+        .expect(404)
+        .expect({
+          message: 'Not Found',
+          code: 404,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const chainId = faker.random.numeric();
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 503,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/about`)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
         });
     });
   });
