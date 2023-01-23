@@ -10,13 +10,12 @@ describe('SafeAppInfo mapper (Unit)', () => {
     getSafeApps: jest.fn(),
   } as unknown as SafeAppsRepository);
 
-  const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
-
   beforeEach(async () => {
     jest.clearAllMocks();
   });
 
   it('should get a null SafeAppInfo for a transaction with no origin', async () => {
+    const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
     const chainId = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
       .with('origin', null)
@@ -30,6 +29,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should get a null SafeAppInfo for a transaction with no url into origin', async () => {
+    const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
     const chainId = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
@@ -46,6 +46,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should return null if no SafeApp is found and origin is not null', async () => {
+    const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
     const chainId = faker.random.numeric();
     const safeApps = [];
     const transaction = multisigTransactionBuilder()
@@ -62,6 +63,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should get SafeAppInfo for a transaction with origin', async () => {
+    const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
     const chainId = faker.random.numeric();
     const safeApp = safeAppBuilder().build();
     const anotherSafeApp = safeAppBuilder().build();
@@ -85,6 +87,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should replace IPFS origin urls', async () => {
+    const mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
     const chainId = faker.random.numeric();
     const originUrl = 'https://ipfs.io/test';
     const safeApp = safeAppBuilder().with('url', originUrl).build();
