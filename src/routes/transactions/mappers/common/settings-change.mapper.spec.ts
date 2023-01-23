@@ -14,7 +14,10 @@ import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
+import {
+  dataDecodedBuilder,
+  dataDecodedParameterBuilder,
+} from '../../../../domain/data-decoder/entities/__tests__/data-decoded.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -27,252 +30,313 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   );
 
   it('should build a SetFallbackHandler setting', async () => {
-    const safe = safeBuilder().build();
-    const handlerValue = faker.random.numeric();
+    const handlerValue = faker.finance.ethereumAddress();
+    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+      new AddressInfo(handlerValue),
+    );
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'setFallbackHandler',
-        parameters: [{ value: handlerValue }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setFallbackHandler')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', handlerValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(SetFallbackHandler);
-    expect(settingChange).toHaveProperty('handler', handlerValue);
+    const expected = new SetFallbackHandler(new AddressInfo(handlerValue));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a SetFallbackHandler setting with a null handler', async () => {
-    const safe = safeBuilder().build();
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'setFallbackHandler',
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setFallbackHandler')
+          .with('parameters', [])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(SetFallbackHandler);
-    expect(settingChange).toHaveProperty('handler', null);
+    expect(actual).toBeNull();
   });
 
   it('should build a AddOwner setting', async () => {
-    const safe = safeBuilder().build();
     const ownerValue = faker.random.numeric();
     const thresholdValue = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'addOwnerWithThreshold',
-        parameters: [{ value: ownerValue }, { value: thresholdValue }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'addOwnerWithThreshold')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', ownerValue).build(),
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(AddOwner);
-    expect(settingChange).toHaveProperty('owner', new AddressInfo(ownerValue));
-    expect(settingChange).toHaveProperty('threshold', Number(thresholdValue));
+    const expected = new AddOwner(
+      new AddressInfo(ownerValue),
+      Number(thresholdValue),
+    );
+    expect(actual).toEqual(expected);
   });
 
   it('should build a RemoveOwner setting', async () => {
-    const safe = safeBuilder().build();
-    const ownerValue = faker.random.numeric();
+    const ownerValue = faker.finance.ethereumAddress();
     const thresholdValue = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'removeOwner',
-        parameters: [
-          { value: faker.random.numeric() },
-          { value: ownerValue },
-          { value: thresholdValue },
-        ],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'removeOwner')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.random.numeric())
+              .build(),
+            dataDecodedParameterBuilder().with('value', ownerValue).build(),
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(RemoveOwner);
-    expect(settingChange).toHaveProperty('owner', new AddressInfo(ownerValue));
-    expect(settingChange).toHaveProperty('threshold', Number(thresholdValue));
+    const expected = new RemoveOwner(
+      new AddressInfo(ownerValue),
+      Number(thresholdValue),
+    );
+    expect(actual).toEqual(expected);
   });
 
   it('should build a SwapOwner setting', async () => {
-    const safe = safeBuilder().build();
     const oldOwner = faker.random.numeric();
     const newOwner = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'swapOwner',
-        parameters: [
-          { value: faker.random.numeric() },
-          { value: oldOwner },
-          { value: newOwner },
-        ],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'swapOwner')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.random.numeric())
+              .build(),
+            dataDecodedParameterBuilder().with('value', oldOwner).build(),
+            dataDecodedParameterBuilder().with('value', newOwner).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(SwapOwner);
-    expect(settingChange).toHaveProperty('oldOwner', new AddressInfo(oldOwner));
-    expect(settingChange).toHaveProperty('newOwner', new AddressInfo(newOwner));
+    const expected = new SwapOwner(
+      new AddressInfo(oldOwner),
+      new AddressInfo(newOwner),
+    );
+    expect(actual).toEqual(expected);
   });
 
   it('should build a ChangeMasterCopy setting', async () => {
-    const safe = safeBuilder().build();
-    const masterCopyAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(masterCopyAddress);
+    const newMasterCopy = faker.finance.ethereumAddress();
+    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+      new AddressInfo(newMasterCopy),
+    );
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'changeMasterCopy',
-        parameters: [],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'changeMasterCopy')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', newMasterCopy).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(ChangeMasterCopy);
-    expect(settingChange).toHaveProperty('implementation', masterCopyAddress);
+    const expected = new ChangeMasterCopy(new AddressInfo(newMasterCopy));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a EnableModule setting', async () => {
-    const safe = safeBuilder().build();
-    const moduleAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(moduleAddress);
+    const moduleAddress = faker.finance.ethereumAddress();
+    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+      new AddressInfo(moduleAddress),
+    );
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'enableModule',
-        parameters: [{ value: faker.random.numeric() }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'enableModule')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.random.numeric())
+              .build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(EnableModule);
-    expect(settingChange).toHaveProperty('module', moduleAddress);
+    const expected = new EnableModule(new AddressInfo(moduleAddress));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a DisableModule setting', async () => {
-    const safe = safeBuilder().build();
-    const moduleAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(moduleAddress);
+    const moduleAddress = faker.finance.ethereumAddress();
+    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+      new AddressInfo(moduleAddress),
+    );
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'disableModule',
-        parameters: [{ value: faker.random.numeric() }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'disableModule')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.random.numeric())
+              .build(),
+            dataDecodedParameterBuilder().with('value', moduleAddress).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(DisableModule);
-    expect(settingChange).toHaveProperty('module', moduleAddress);
+    const expected = new DisableModule(new AddressInfo(moduleAddress));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a ChangeThreshold setting', async () => {
-    const safe = safeBuilder().build();
     const thresholdValue = faker.random.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'changeThreshold',
-        parameters: [{ value: thresholdValue }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'changeThreshold')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(ChangeThreshold);
-    expect(settingChange).toHaveProperty('threshold', thresholdValue);
+    const expected = new ChangeThreshold(Number(thresholdValue));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a SetGuard setting', async () => {
-    const safe = safeBuilder().build();
-    const guardValue = faker.finance.ethereumAddress();
-    const guardAddress = new AddressInfo(guardValue);
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(guardAddress);
+    const guardAddress = faker.finance.ethereumAddress();
+    const guardAddressInfo = new AddressInfo(guardAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValueOnce(guardAddressInfo);
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'setGuard',
-        parameters: [{ value: guardValue }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setGuard')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', guardAddress).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(SetGuard);
-    expect(settingChange).toHaveProperty('guard', guardAddress);
+    const expected = new SetGuard(new AddressInfo(guardAddress));
+    expect(actual).toEqual(expected);
   });
 
   it('should build a DeleteGuard setting', async () => {
-    const safe = safeBuilder().build();
     const guardValue = '0x0000000000000000000000000000000000000000';
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'setGuard',
-        parameters: [{ value: guardValue }],
-      })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setGuard')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', guardValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
-    const settingChange = await mapper.mapSettingsChange(
+    const actual = await mapper.mapSettingsChange(
       faker.random.numeric(),
       transaction,
-      safe,
     );
 
-    expect(settingChange).toBeInstanceOf(DeleteGuard);
+    expect(actual).toEqual(new DeleteGuard());
   });
 
-  it('should throw an error on a unknown setting', async () => {
-    const safe = safeBuilder().build();
+  it('should return null on a unknown setting', async () => {
     const transaction = multisigTransactionBuilder()
       .with('dataDecoded', {
         method: 'unknownMethod',
         parameters: [],
       })
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'unknownMethod')
+          .with('parameters', [])
+          .build(),
+      )
       .build();
 
-    await expect(
-      mapper.mapSettingsChange(faker.random.numeric(), transaction, safe),
-    ).rejects.toThrow();
+    const actual = await mapper.mapSettingsChange(
+      faker.random.numeric(),
+      transaction,
+    );
+
+    expect(actual).toBeNull();
   });
 });

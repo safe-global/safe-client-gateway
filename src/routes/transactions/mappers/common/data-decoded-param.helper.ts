@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '../../../../domain/data-decoder/entities/data-decoded.entity';
 
 @Injectable()
 export class DataDecodedParamHelper {
@@ -7,10 +7,8 @@ export class DataDecodedParamHelper {
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
 
-  getFromParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
-      return fallback;
-    }
+  getFromParam(dataDecoded: DataDecoded | null, fallback: string): string {
+    if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
       case this.TRANSFER_FROM_METHOD:
@@ -24,10 +22,8 @@ export class DataDecodedParamHelper {
     }
   }
 
-  getToParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
-      return fallback;
-    }
+  getToParam(dataDecoded: DataDecoded | null, fallback: string): string {
+    if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
       case this.TRANSFER_METHOD: {
@@ -44,10 +40,8 @@ export class DataDecodedParamHelper {
     }
   }
 
-  getValueParam(dataDecoded: DataDecoded, fallback: string): string {
-    if (!dataDecoded.parameters) {
-      return fallback;
-    }
+  getValueParam(dataDecoded: DataDecoded | null, fallback: string): string {
+    if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
       case this.TRANSFER_METHOD: {
@@ -64,8 +58,11 @@ export class DataDecodedParamHelper {
     }
   }
 
-  getValueAtPosition(dataDecoded: any | null, position: number) {
-    if (!dataDecoded.parameters?.length) return null;
+  getValueAtPosition(
+    dataDecoded: DataDecoded | null,
+    position: number,
+  ): unknown {
+    if (!dataDecoded || !dataDecoded.parameters?.length) return null;
     return dataDecoded.parameters[position]?.value ?? null;
   }
 }

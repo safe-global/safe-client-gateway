@@ -1,4 +1,5 @@
 import { Operation } from './operation.entity';
+import { DataDecoded } from '../../data-decoder/entities/data-decoded.entity';
 
 export interface Confirmation {
   owner: string;
@@ -14,7 +15,7 @@ export type MultisigTransaction = {
   confirmations: Confirmation[] | null;
   confirmationsRequired: number;
   data: string | null; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
-  dataDecoded: any | null;
+  dataDecoded: DataDecoded | null;
   ethGasPrice: string | null;
   executionDate: Date;
   executor: string | null;

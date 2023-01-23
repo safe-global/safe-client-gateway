@@ -14,6 +14,8 @@ import { Erc20TransferMapper } from './erc20-transfer.mapper';
 import { Erc721TransferMapper } from './erc721-transfer.mapper';
 import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
+import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
+import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -76,10 +78,27 @@ export class MultisigTransactionInfoMapper {
       const settingsInfo = await this.settingsChangeMapper.mapSettingsChange(
         chainId,
         transaction,
-        safe,
       );
+
+      if (!transaction.dataDecoded) {
+        throw new Error(
+          `Data decoded is null. txHash=${transaction.transactionHash}`,
+        );
+      }
+
+      const dataDecodedParameters: DataDecodedParameter[] | null =
+        transaction.dataDecoded.parameters?.map(
+          (parameter) =>
+            new DataDecodedParameter(
+              parameter.name,
+              parameter.type,
+              parameter.value,
+              parameter.valueDecoded,
+            ),
+        ) ?? null;
+
       return new SettingsChangeTransaction(
-        transaction.dataDecoded,
+        new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
       );
     }
@@ -132,13 +151,17 @@ export class MultisigTransactionInfoMapper {
     value: number,
     dataSize: number,
   ): boolean {
+    const isSettingsChange: boolean = transaction.dataDecoded
+      ? SettingsChangeMapper.SETTINGS_CHANGE_METHODS.includes(
+          transaction.dataDecoded.method,
+        )
+      : false;
+
     return (
       value === 0 &&
       dataSize > 0 &&
       transaction.safe === transaction.to &&
-      SettingsChangeMapper.SETTINGS_CHANGE_METHODS.includes(
-        transaction.dataDecoded?.method,
-      )
+      isSettingsChange
     );
   }
 

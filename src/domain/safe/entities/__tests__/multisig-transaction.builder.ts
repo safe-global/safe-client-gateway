@@ -6,6 +6,7 @@ import {
   confirmationBuilder,
   toJson as confirmationToJson,
 } from './multisig-transaction-confirmation.builder';
+import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/data-decoded.builder';
 
 export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
   return Builder.new<MultisigTransaction>()
@@ -14,7 +15,7 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('confirmations', [confirmationBuilder().build()])
     .with('confirmationsRequired', faker.datatype.number())
     .with('data', faker.datatype.hexadecimal())
-    .with('dataDecoded', faker.datatype.json())
+    .with('dataDecoded', dataDecodedBuilder().build())
     .with('ethGasPrice', faker.datatype.hexadecimal())
     .with('executor', faker.finance.ethereumAddress())
     .with('executionDate', faker.date.recent())
