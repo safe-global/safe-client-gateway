@@ -752,7 +752,7 @@ describe('Transactions Controller (Unit)', () => {
                     )
                     .with('confirmationsRequired', 2)
                     .with('confirmations', confirmations)
-                    .with('data', faker.datatype.hexadecimal())
+                    .with('data', faker.datatype.hexadecimal(32))
                     .with('nonce', 1)
                     .with(
                       'submissionDate',
@@ -840,7 +840,7 @@ describe('Transactions Controller (Unit)', () => {
                     .with('safe', safeAddress)
                     .with('to', safeAddress)
                     .with('value', '0')
-                    .with('data', faker.datatype.hexadecimal())
+                    .with('data', faker.datatype.hexadecimal(32))
                     .with('operation', 0)
                     .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
@@ -875,10 +875,10 @@ describe('Transactions Controller (Unit)', () => {
                 multiSignToJson(
                   multisigTransactionBuilder()
                     .with('safe', safeAddress)
-                    .with('to', safeAddress)
+                    .with('to', faker.finance.ethereumAddress())
                     .with('value', '0')
-                    .with('data', faker.datatype.hexadecimal())
-                    .with('operation', 0)
+                    .with('data', faker.datatype.hexadecimal(32))
+                    .with('operation', 1)
                     .with('gasToken', NULL_ADDRESS)
                     .with('safeTxGas', 0)
                     .with('baseGas', 0)
@@ -901,7 +901,7 @@ describe('Transactions Controller (Unit)', () => {
                         {
                           name: 'transactions',
                           type: 'bytes',
-                          value: faker.datatype.hexadecimal(),
+                          value: faker.datatype.hexadecimal(32),
                           valueDecoded: [{}, {}, {}],
                         },
                       ],
