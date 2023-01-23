@@ -17,11 +17,21 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { contractBuilder } from '../../domain/contracts/entities/__tests__/contract.builder';
+import {
+  dataDecodedBuilder,
+  dataDecodedParameterBuilder,
+} from '../../domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import {
   moduleTransactionBuilder,
   toJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
+import { confirmationBuilder } from '../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import {
+  multisigTransactionBuilder,
+  toJson as multisigTransactionToJson,
+} from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
@@ -250,15 +260,28 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a Custom transaction mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
+      const toAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const safeAppUrl = faker.internet.url();
+      const safeAppLogoUri = faker.internet.url();
+      const safeAppName = faker.random.words();
+      const methodName = 'multiSend';
+      const contractDisplayName = faker.random.words();
+      const contractLogoUri = faker.internet.url();
+      const executionDate = faker.date.recent();
+      const safeTxHash = faker.datatype.hexadecimal(32);
+      const value = '0';
+      const nonce = faker.datatype.number({ min: 1 });
+      const confirmations = [
+        confirmationBuilder().build(),
+        confirmationBuilder().build(),
+        confirmationBuilder().build(),
+      ];
       const safeAppsResponse = [
         safeAppBuilder()
-          .with('url', 'https://apps.gnosis-safe.io/safe-claiming-app')
-          .with(
-            'iconUrl',
-            'https://safe-apps.dev.5afe.dev/safe-claiming-app/logo.svg',
-          )
-          .with('name', '$SAFE Claiming App')
+          .with('url', safeAppUrl)
+          .with('iconUrl', safeAppLogoUri)
+          .with('name', safeAppName)
           .build(),
       ];
       mockNetworkService.get.mockImplementation((url) => {
@@ -275,23 +298,53 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
-            data: getJsonResource(
-              'multisig-transactions/custom/custom-transaction-source-data.json',
-            ),
+            data: {
+              count: 1,
+              results: [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('safe', safeAddress)
+                    .with('to', toAddress)
+                    .with('value', value)
+                    .with('data', faker.datatype.hexadecimal(32))
+                    .with('nonce', nonce)
+                    .with('isExecuted', true)
+                    .with('isSuccessful', true)
+                    .with(
+                      'dataDecoded',
+                      dataDecodedBuilder()
+                        .with('method', methodName)
+                        .with('parameters', [
+                          dataDecodedParameterBuilder()
+                            .with('name', 'transactions')
+                            .with('valueDecoded', [{}, {}, {}])
+                            .build(),
+                        ])
+                        .build(),
+                    )
+                    .with('origin', `{\"url\": \"${safeAppUrl}\"}`)
+                    .with('confirmationsRequired', 3)
+                    .with('confirmations', confirmations)
+                    .with('executionDate', executionDate)
+                    .with('safeTxHash', safeTxHash)
+                    .build(),
+                ),
+              ],
+            },
           });
         }
         if (url === getSafeUrl) {
           return Promise.resolve({
-            data: getJsonResource(
-              'multisig-transactions/custom/safe-source-data.json',
-            ),
+            data: safeBuilder().build(),
           });
         }
         if (url.includes(getContractUrlPattern)) {
           return Promise.resolve({
-            data: getJsonResource(
-              'multisig-transactions/custom/contract-source-data.json',
-            ),
+            data: contractBuilder()
+              .with('address', toAddress)
+              .with('displayName', contractDisplayName)
+              .with('logoUri', contractLogoUri)
+              .build(),
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -301,11 +354,46 @@ describe('Transactions Controller (Unit)', () => {
         .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
-          expect(body).toEqual(
-            getJsonResource(
-              'multisig-transactions/custom/expected-response.json',
-            ),
-          );
+          expect(body).toEqual({
+            next: null,
+            previous: null,
+            results: [
+              {
+                type: 'TRANSACTION',
+                transaction: {
+                  id: `multisig_${safeAddress}_${safeTxHash}`,
+                  timestamp: executionDate.getTime(),
+                  txStatus: 'SUCCESS',
+                  txInfo: {
+                    type: 'Custom',
+                    to: {
+                      value: toAddress,
+                      name: contractDisplayName,
+                      logoUri: contractLogoUri,
+                    },
+                    dataSize: '16',
+                    value,
+                    methodName,
+                    actionCount: confirmations.length,
+                    isCancellation: false,
+                  },
+                  executionInfo: {
+                    type: 'MULTISIG',
+                    nonce,
+                    confirmationsRequired: 3,
+                    confirmationsSubmitted: confirmations.length,
+                    missingSigners: null,
+                  },
+                  safeAppInfo: {
+                    logo_uri: safeAppLogoUri,
+                    name: safeAppName,
+                    url: safeAppUrl,
+                  },
+                },
+                conflictType: 'None',
+              },
+            ],
+          });
         });
     });
   });

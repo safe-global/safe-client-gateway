@@ -28,7 +28,7 @@ export class SafeAppInfoMapper {
       originUrl,
     );
     if (!safeApp) {
-      this.logger.error(
+      this.logger.warn(
         `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
       );
       return null;
