@@ -811,20 +811,20 @@ describe('Transactions Controller (Unit)', () => {
                 type: 'CONFLICT_HEADER',
                 nonce: 1,
               },
-              expect.objectContaining({
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[0].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[1].safeTxHash}`,
                 }),
                 conflictType: 'End',
-              }),
+              },
               {
                 type: 'LABEL',
                 label: 'Queued',
@@ -833,34 +833,34 @@ describe('Transactions Controller (Unit)', () => {
                 type: 'CONFLICT_HEADER',
                 nonce: 2,
               },
-              expect.objectContaining({
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[2].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[3].safeTxHash}`,
                 }),
                 conflictType: 'End',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[4].safeTxHash}`,
                 }),
                 conflictType: 'None',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[5].safeTxHash}`,
                 }),
                 conflictType: 'None',
-              }),
+              },
             ],
           });
         });
@@ -987,34 +987,34 @@ describe('Transactions Controller (Unit)', () => {
             next: expect.stringContaining('?cursor='),
             previous: expect.stringContaining('?cursor='),
             results: [
-              expect.objectContaining({
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[0].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[1].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[2].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[3].safeTxHash}`,
                 }),
                 conflictType: 'End',
-              }),
+              },
               {
                 type: 'LABEL',
                 label: 'Queued',
@@ -1023,31 +1023,31 @@ describe('Transactions Controller (Unit)', () => {
                 type: 'CONFLICT_HEADER',
                 nonce: 2,
               },
-              expect.objectContaining({
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[4].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
-              expect.objectContaining({
+              },
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[5].safeTxHash}`,
                 }),
                 conflictType: 'End',
-              }),
+              },
               {
                 type: 'CONFLICT_HEADER',
                 nonce: 3,
               },
-              expect.objectContaining({
+              {
                 type: 'TRANSACTION',
                 transaction: expect.objectContaining({
                   id: `multisig_${safeAddress}_${transactions[6].safeTxHash}`,
                 }),
                 conflictType: 'HasNext',
-              }),
+              },
             ],
           });
         });
