@@ -133,7 +133,7 @@ export class TransactionsController {
   }
 
   @ApiOkResponse({ type: TransactionHistoryPage })
-  @Get('chains/:chainId/safes/:safeAddress/transactions-history')
+  @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   @ApiQuery({ name: 'timezone_offset', required: false })
   @ApiQuery({ name: 'cursor', required: false })
   async getTransactionsHistory(

@@ -26,7 +26,7 @@ import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-a
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import {
   moduleTransactionBuilder,
-  toJson,
+  toJson as moduleTransactionTojson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
@@ -36,6 +36,14 @@ import {
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
+import {
+  ethereumTransactionBuilder,
+  toJson as ethereumTransactionToJson,
+} from '../../domain/safe/entities/__tests__/ethereum-transaction.builder';
+import {
+  nativeTokenTransferBuilder,
+  toJson as nativeTokenTransferToJson,
+} from '../../domain/safe/entities/__tests__/native-token-transfer.builder';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -457,8 +465,8 @@ describe('Transactions Controller (Unit)', () => {
         next: null,
         previous: null,
         results: [
-          toJson(moduleTransactionBuilder().build()),
-          toJson(moduleTransactionBuilder().build()),
+          moduleTransactionTojson(moduleTransactionBuilder().build()),
+          moduleTransactionTojson(moduleTransactionBuilder().build()),
         ],
       };
 
@@ -1073,6 +1081,267 @@ describe('Transactions Controller (Unit)', () => {
             ],
           });
         });
+    });
+  });
+  describe('GET transactions history', () => {
+    it('Failure: Config API fails', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 500,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history`)
+        .expect(500)
+        .expect({
+          message: 'An error occurred',
+          code: 500,
+        });
+
+      expect(mockNetworkService.get).toBeCalledTimes(1);
+      expect(mockNetworkService.get).toBeCalledWith(
+        `${safeConfigApiUrl}/api/v1/chains/${chainId}`,
+        undefined,
+      );
+    });
+
+    it('Failure: Transaction API fails', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.get.mockRejectedValueOnce({
+        status: 500,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+        .expect(500)
+        .expect({
+          message: 'An error occurred',
+          code: 500,
+        });
+
+      expect(mockNetworkService.get).toBeCalledTimes(2);
+      expect(mockNetworkService.get).toBeCalledWith(
+        `${safeConfigApiUrl}/api/v1/chains/${chainId}`,
+        undefined,
+      );
+      expect(mockNetworkService.get).toBeCalledWith(
+        `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`,
+        {
+          params: {
+            executed: true,
+            offset: undefined,
+            limit: undefined,
+            ordering: undefined,
+            queued: false,
+            safe: safeAddress,
+          },
+        },
+      );
+    });
+
+    it('Should return correctly each date label', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const moduleTransaction: any = moduleTransactionTojson(
+        moduleTransactionBuilder()
+          .with('dataDecoded', null)
+          .with('executionDate', new Date('2022-12-06T17:09:36Z'))
+          .build(),
+      );
+      const multisigTransaction: any = multisigTransactionToJson(
+        multisigTransactionBuilder()
+          .with('dataDecoded', null)
+          .with('origin', null)
+          .with('executionDate', new Date('2022-12-25T17:09:36Z'))
+          .build(),
+      );
+      const transfer: any = nativeTokenTransferToJson(
+        nativeTokenTransferBuilder()
+          .with('executionDate', new Date('2022-12-31T17:09:36Z'))
+          .build(),
+      );
+
+      const incomingTransaction: any = ethereumTransactionToJson(
+        ethereumTransactionBuilder().with('transfers', [transfer]).build(),
+      );
+      moduleTransaction.txType = 'MODULE_TRANSACTION';
+      multisigTransaction.txType = 'MULTISIG_TRANSACTION';
+      incomingTransaction.txType = 'ETHEREUM_TRANSACTION';
+      const safe = safeBuilder().build();
+      const transactionHistoryBuilder = {
+        count: 20,
+        next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+        previous: null,
+        results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: transactionHistoryBuilder,
+      });
+      mockNetworkService.get.mockResolvedValueOnce({ data: safe });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toHaveLength(
+            6, //3 date labels and 3 transactions
+          );
+          expect(body.results[0].timestamp).toEqual(
+            new Date('2022-12-06T00:00:00Z').getTime(),
+          );
+          expect(body.results[2].timestamp).toEqual(
+            new Date('2022-12-25T00:00:00Z').getTime(),
+          );
+          expect(body.results[4].timestamp).toEqual(
+            new Date('2022-12-31T00:00:00Z').getTime(),
+          );
+        });
+    });
+
+    it('Should return correctly each transaction', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const moduleTransaction: any = getJsonResource(
+        'module-transactions/module-transaction-domain.json',
+      );
+      const multisigTransaction: any = getJsonResource(
+        'multisig-transactions/erc20/transfer-source-data.json',
+      ).results[0];
+      const transfer: any = getJsonResource(
+        'incoming-transfers/native-coin/transfer-source-data.json',
+      ).results[0];
+      const incomingTransaction: any = ethereumTransactionToJson(
+        ethereumTransactionBuilder().with('transfers', [transfer]).build(),
+      );
+      moduleTransaction.txType = 'MODULE_TRANSACTION';
+      multisigTransaction.txType = 'MULTISIG_TRANSACTION';
+      incomingTransaction.txType = 'ETHEREUM_TRANSACTION';
+      const tokenResponse = getJsonResource(
+        'multisig-transactions/erc20/token-source-data.json',
+      );
+      const safe = getJsonResource(
+        'incoming-transfers/native-coin/safe-source-data.json',
+      );
+      const transactionHistoryBuilder = {
+        count: 20,
+        next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+        previous: null,
+        results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      };
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const gettokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getAllTransactions) {
+          return Promise.resolve({
+            data: transactionHistoryBuilder,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: safe,
+          });
+        }
+        if (url.includes(gettokenUrlPattern)) {
+          return Promise.resolve({
+            data: tokenResponse,
+          });
+        }
+
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toHaveLength(
+            6, //3 date labels and 3 transactions
+          );
+          expect(body.results[1]).toEqual(
+            getJsonResource('module-transactions/expected-response.json')
+              .results[0],
+          );
+          expect(body.results[3]).toEqual(
+            getJsonResource(
+              'multisig-transactions/erc20/expected-response.json',
+            ).results[0],
+          );
+          expect(body.results[5]).toEqual(
+            getJsonResource(
+              'incoming-transfers/native-coin/expected-response.json',
+            ).results[0],
+          );
+        });
+    });
+
+    xit('Should keep the client pagination', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const limit = 5;
+      const offset = 5;
+      const moduleTransaction: any = moduleTransactionTojson(
+        moduleTransactionBuilder().with('dataDecoded', null).build(),
+      );
+      const multisigTransaction: any = multisigTransactionToJson(
+        multisigTransactionBuilder().with('dataDecoded', null).build(),
+      );
+      moduleTransaction.txType = 'MODULE_TRANSACTION';
+      multisigTransaction.txType = 'MULTISIG_TRANSACTION';
+      const safe = safeBuilder().build();
+      const client_next_cursor = `cursor=limit%3D${limit}%26offset%3D10`;
+      const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3Dundefined`;
+      const transactionHistoryBuilder = {
+        count: 20,
+        next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&offset=10&queued=true&trusted=true`,
+        previous: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&queued=true&trusted=true`,
+        results: [moduleTransaction, multisigTransaction],
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: transactionHistoryBuilder,
+      });
+      mockNetworkService.get.mockResolvedValueOnce({ data: safe });
+
+      await request(app.getHttpServer())
+        .get(
+          `/chains/${chainId}/safes/${safeAddress}/transactions/history/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        )
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.next).toContain(client_next_cursor);
+          expect(body.previous).toContain(client_previous_cursor);
+        });
+
+      expect(mockNetworkService.get).toBeCalledWith(
+        `${safeConfigApiUrl}/api/v1/chains/${chainId}`,
+        undefined,
+      );
+      expect(mockNetworkService.get).toBeCalledWith(
+        `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`,
+        {
+          params: {
+            executed: true,
+            offset: offset - 1,
+            limit: limit + 1,
+            ordering: undefined,
+            queued: false,
+            safe: safeAddress,
+          },
+        },
+      );
     });
   });
 });

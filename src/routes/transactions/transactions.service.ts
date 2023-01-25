@@ -281,7 +281,7 @@ export class TransactionsService {
       );
 
     let prev_page_timestamp = 0;
-    if (paginationData?.offset != 0) {
+    if (paginationData?.offset !== undefined) {
       // Get previous page label
       prev_page_timestamp = this.getDayInMillis(
         results[0].transaction.timestamp,
@@ -315,7 +315,7 @@ export class TransactionsService {
     return {
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      transactionList,
+      results: transactionList,
     };
   }
 
