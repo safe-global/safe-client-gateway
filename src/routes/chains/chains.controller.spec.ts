@@ -405,8 +405,7 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /:chainId/about', () => {
     it('Success', async () => {
-      const chainId = faker.random.numeric();
-      const chainDomain = chainBuilder().with('chainId', chainId).build();
+      const chainDomain = chainBuilder().build();
       const name = faker.random.words();
       const version = faker.system.semver();
       const buildNumber = faker.random.numeric();
@@ -422,7 +421,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainDomain });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/about`)
+        .get(`/chains/${chainDomain.chainId}/about`)
         .expect(200)
         .expect(expectedResult);
     });
