@@ -49,12 +49,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   it('should return null if no SafeApp is found and origin is not null', async () => {
     const chainId = faker.random.numeric();
     const safeApps = [];
-    const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        `{\"url\": \"${faker.internet.url()}\", \"name\": \"$SAFE Claiming App\"}`,
-      )
-      .build();
+    const transaction = multisigTransactionBuilder().build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
 
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
@@ -67,12 +62,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const safeApp = safeAppBuilder().build();
     const anotherSafeApp = safeAppBuilder().build();
     const safeApps = [safeApp, anotherSafeApp];
-    const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        `{\"url\": \"${safeApp.url}\", \"name\": \"$SAFE Claiming App\"}`,
-      )
-      .build();
+    const transaction = multisigTransactionBuilder().build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
     const expected = new SafeAppInfo(
       safeApp.name,
@@ -91,12 +81,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const safeApp = safeAppBuilder().with('url', originUrl).build();
     const safeApps = [safeApp];
     const expectedUrl = 'https://cloudflare-ipfs.com/test';
-    const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        `{\"url\": \"${originUrl}\", \"name\": \"$SAFE Claiming App\"}`,
-      )
-      .build();
+    const transaction = multisigTransactionBuilder().build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
     const expected = new SafeAppInfo(
       safeApp.name,

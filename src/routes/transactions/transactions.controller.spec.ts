@@ -259,20 +259,17 @@ describe('Transactions Controller (Unit)', () => {
     it('Should get a Custom transaction mapped to the expected format', async () => {
       const chainId = faker.random.numeric();
       const chainResponse = chainBuilder().build();
-      const safeAppUrl = faker.internet.url();
-      const contractDisplayName = faker.random.words();
-      const contractLogoUri = faker.internet.url();
       const safeAppsResponse = [
         safeAppBuilder()
-          .with('url', safeAppUrl)
+          .with('url', faker.internet.url())
           .with('iconUrl', faker.internet.url())
           .with('name', faker.random.words())
           .build(),
       ];
       const contractResponse = contractBuilder()
         .with('address', faker.finance.ethereumAddress())
-        .with('displayName', contractDisplayName)
-        .with('logoUri', contractLogoUri)
+        .with('displayName', faker.random.words())
+        .with('logoUri', faker.internet.url())
         .build();
       const domainTransaction = multisigTransactionBuilder()
         .with('value', '0')
@@ -291,7 +288,6 @@ describe('Transactions Controller (Unit)', () => {
             ])
             .build(),
         )
-        .with('origin', `{\"url\": \"${safeAppUrl}\"}`)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
@@ -346,8 +342,8 @@ describe('Transactions Controller (Unit)', () => {
                     type: 'Custom',
                     to: {
                       value: contractResponse.address,
-                      name: contractDisplayName,
-                      logoUri: contractLogoUri,
+                      name: contractResponse.displayName,
+                      logoUri: contractResponse.logoUri,
                     },
                     dataSize: '16',
                     value: domainTransaction.value,
@@ -367,7 +363,7 @@ describe('Transactions Controller (Unit)', () => {
                   safeAppInfo: {
                     logo_uri: safeAppsResponse[0].iconUrl,
                     name: safeAppsResponse[0].name,
-                    url: safeAppUrl,
+                    url: safeAppsResponse[0].url,
                   },
                 },
                 conflictType: 'None',
