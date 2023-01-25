@@ -7,4 +7,10 @@ export class SafeAppInfo {
   url: string;
   @ApiProperty()
   logo_uri: string;
+
+  constructor(name: string, url: string, logoUri: string) {
+    this.name = name;
+    this.url = url;
+    this.logo_uri = logoUri;
+  }
 }

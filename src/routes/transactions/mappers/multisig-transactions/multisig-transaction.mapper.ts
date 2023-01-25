@@ -5,6 +5,7 @@ import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -12,6 +13,7 @@ export class MultisigTransactionMapper {
     private readonly statusMapper: MultisigTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
+    private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
   async mapTransaction(
@@ -30,6 +32,10 @@ export class MultisigTransactionMapper {
       safe,
       txStatus,
     );
+    const safeAppInfo = await this.safeAppInfoMapper.mapSafeAppInfo(
+      chainId,
+      transaction,
+    );
     const timestamp = transaction.executionDate ?? transaction.submissionDate;
 
     return new Transaction(
@@ -38,7 +44,7 @@ export class MultisigTransactionMapper {
       txStatus,
       txInfo,
       executionInfo,
-      null, // TODO: include safeAppInfo retrieval logic where needed
+      safeAppInfo,
     );
   }
 }
