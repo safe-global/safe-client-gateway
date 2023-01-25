@@ -14,6 +14,8 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 import { SafeListValidator } from './safe-list.validator';
 import { ModuleTransactionValidator } from './module-transaction.validator';
+import { CreationTransaction } from './entities/creation-transaction.entity';
+import { CreationTransactionValidator } from './creation-transaction.validator';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -26,6 +28,7 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
     private readonly moduleTransactionValidator: ModuleTransactionValidator,
+    private readonly creationTransactionValidator: CreationTransactionValidator,
   ) {}
 
   async getSafe(chainId: string, address: string): Promise<Safe> {
@@ -136,6 +139,18 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return page;
+  }
+
+  async getCreationTransaction(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<CreationTransaction> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const createTransaction = await transactionService.getCreationTransaction(
+      safeAddress,
+    );
+    return this.creationTransactionValidator.validate(createTransaction);
   }
 
   async getTransactionHistory(
