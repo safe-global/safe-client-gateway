@@ -62,6 +62,14 @@ function getExpectedSerializedParameters(
   parameters: DataDecodedParameter[] | null,
 ): ApiDataDecodedParameter[] {
   return parameters
-    ? parameters.map(({ type: paramType, ...rest }) => ({ ...rest, paramType }))
+    ? parameters.map(
+        (parameter) =>
+          new ApiDataDecodedParameter(
+            parameter.name,
+            parameter.type,
+            parameter.value,
+            parameter.valueDecoded,
+          ),
+      )
     : [];
 }
