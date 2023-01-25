@@ -1,9 +1,10 @@
-import { ChainsService } from './chains.service';
-import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
+import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
-import { MasterCopy } from './entities/master-copy.entity';
-import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
+import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
+import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
+import { ChainsService } from './chains.service';
+import { MasterCopy } from './entities/master-copy.entity';
 
 const chainsRepository = {
   getChains: jest.fn(),
@@ -20,6 +21,7 @@ const backboneRepositoryMock = jest.mocked(backboneRepository);
 
 describe('ChainsService', () => {
   const service: ChainsService = new ChainsService(
+    new FakeConfigurationService(),
     chainsRepositoryMock,
     backboneRepositoryMock,
   );

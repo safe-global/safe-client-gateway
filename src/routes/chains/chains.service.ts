@@ -1,18 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '../../config/configuration.service.interface';
+import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
+import { Backbone } from '../../domain/backbone/entities/backbone.entity';
+import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
+import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
+import { Page } from '../../domain/entities/page.entity';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
-import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { Page } from '../../domain/entities/page.entity';
-import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
+import { AboutChain } from './entities/about-chain.entity';
 import { Chain } from './entities/chain.entity';
 
 @Injectable()
 export class ChainsService {
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     @Inject(IBackboneRepository)
@@ -80,6 +84,17 @@ export class ChainsService {
       result.shortName,
       result.theme,
       result.ensRegistryAddress,
+    );
+  }
+
+  async getAboutChain(chainId: string): Promise<AboutChain> {
+    const chain = await this.chainsRepository.getChain(chainId);
+
+    return new AboutChain(
+      chain.transactionService,
+      this.configurationService.getOrThrow<string>('about.name'),
+      this.configurationService.getOrThrow<string>('about.version'),
+      this.configurationService.getOrThrow<string>('about.buildNumber'),
     );
   }
 
