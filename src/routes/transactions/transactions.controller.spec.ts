@@ -18,12 +18,12 @@ import {
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../domain/contracts/entities/__tests__/contract.builder';
-import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '../../domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
+import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import {
   moduleTransactionBuilder,
   toJson,
@@ -709,6 +709,13 @@ describe('Transactions Controller (Unit)', () => {
         .with('address', safeAddress)
         .with('nonce', 1)
         .build();
+      const safeAppsResponse = [
+        safeAppBuilder()
+          .with('url', faker.internet.url())
+          .with('iconUrl', faker.internet.url())
+          .with('name', faker.random.words())
+          .build(),
+      ];
       const contractResponse = contractBuilder().build();
       const transactions: MultisigTransaction[] = [
         multiSignToJson(
@@ -769,6 +776,7 @@ describe('Transactions Controller (Unit)', () => {
 
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
         const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
         const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -787,6 +795,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getSafeUrl) {
           return Promise.resolve({ data: safeResponse });
+        }
+        if (url === getSafeAppsUrl) {
+          return Promise.resolve({ data: safeAppsResponse });
         }
         if (url.includes(getContractUrlPattern)) {
           return Promise.resolve({ data: contractResponse });
@@ -875,6 +886,13 @@ describe('Transactions Controller (Unit)', () => {
         .with('address', safeAddress)
         .with('nonce', 1)
         .build();
+      const safeAppsResponse = [
+        safeAppBuilder()
+          .with('url', faker.internet.url())
+          .with('iconUrl', faker.internet.url())
+          .with('name', faker.random.words())
+          .build(),
+      ];
       const transactions: MultisigTransaction[] = [
         multiSignToJson(
           multisigTransactionBuilder()
@@ -951,6 +969,7 @@ describe('Transactions Controller (Unit)', () => {
       ];
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
         const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
         const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -969,6 +988,9 @@ describe('Transactions Controller (Unit)', () => {
         }
         if (url === getSafeUrl) {
           return Promise.resolve({ data: safeResponse });
+        }
+        if (url === getSafeAppsUrl) {
+          return Promise.resolve({ data: safeAppsResponse });
         }
         if (url.includes(getContractUrlPattern)) {
           return Promise.resolve({ data: contractResponse });
