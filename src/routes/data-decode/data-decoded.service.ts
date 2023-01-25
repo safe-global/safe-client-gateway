@@ -6,6 +6,7 @@ import {
   isCreateDataDecodeDto,
 } from './entities/create-data-decoded.dto';
 import { DataDecoded } from './entities/data-decoded.entity';
+import { DataDecodedParameter } from './entities/data-decoded-parameter';
 
 @Injectable()
 export class DataDecodedService {
@@ -31,9 +32,16 @@ export class DataDecodedService {
       data,
       to,
     );
-    const parameters = dataDecoded.parameters?.map(
-      ({ type: paramType, ...rest }) => ({ ...rest, paramType }),
-    );
-    return new DataDecoded(dataDecoded.method, parameters ?? null);
+    const parameters: DataDecodedParameter[] | null =
+      dataDecoded.parameters?.map(
+        (dataDecodedParameter) =>
+          new DataDecodedParameter(
+            dataDecodedParameter.name,
+            dataDecodedParameter.type,
+            dataDecodedParameter.value,
+            dataDecodedParameter.valueDecoded,
+          ),
+      ) ?? null;
+    return new DataDecoded(dataDecoded.method, parameters);
   }
 }

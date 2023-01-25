@@ -21,7 +21,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if non-string parameters in DataDecoded', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 0,
       };
       const dataDecoded = new DataDecoded('transferFrom', [firstParam]);
@@ -32,7 +32,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "from" param for a transfer method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded('transfer', [firstParam]);
@@ -43,7 +43,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "from" param for a transferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded('transferFrom', [firstParam]);
@@ -54,7 +54,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "from" param for a safeTransferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded('safeTransferFrom', [firstParam]);
@@ -65,7 +65,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if method is not "transferFrom"', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded(faker.random.word(), [firstParam]);
@@ -90,7 +90,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if non-string parameters in DataDecoded', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 0,
       };
       const dataDecoded = new DataDecoded('transferFrom', [firstParam]);
@@ -101,12 +101,12 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "to" param for a transfer method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const dataDecoded = new DataDecoded('transfer', [
@@ -120,7 +120,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded fallback for a non-string param', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: faker.datatype.number(),
       };
       const dataDecoded = new DataDecoded('transfer', [firstParam]);
@@ -131,12 +131,12 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "to" param for a transferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const dataDecoded = new DataDecoded('transferFrom', [
@@ -150,12 +150,12 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "to" param for a safeTransferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const dataDecoded = new DataDecoded('transferFrom', [
@@ -169,7 +169,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if method is not "transferFrom"', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded(faker.random.word(), [firstParam]);
@@ -194,7 +194,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if non-string parameters in DataDecoded', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: faker.datatype.number(),
       };
       const dataDecoded = new DataDecoded('transferFrom', [firstParam]);
@@ -205,12 +205,12 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "value" param for a transfer method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const dataDecoded = new DataDecoded('transfer', [
@@ -224,12 +224,12 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded fallback for a non-string param', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: faker.datatype.number(),
       };
       const dataDecoded = new DataDecoded('transfer', [
@@ -243,17 +243,17 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "value" param for a transferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const thirdParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'thirdValue',
       };
       const dataDecoded = new DataDecoded('transferFrom', [
@@ -268,17 +268,17 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should get the DataDecoded "value" param for a safeTransferFrom method', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'firstValue',
       };
       const secondParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'secondValue',
       };
       const thirdParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'thirdValue',
       };
       const dataDecoded = new DataDecoded('transferFrom', [
@@ -293,7 +293,7 @@ describe('DataDecoded param helper (Unit)', () => {
     it('should return the fallback value if method is not "transferFrom"', () => {
       const firstParam = {
         name: faker.random.word(),
-        paramType: faker.random.word(),
+        type: faker.random.word(),
         value: 'value',
       };
       const dataDecoded = new DataDecoded(faker.random.word(), [firstParam]);
