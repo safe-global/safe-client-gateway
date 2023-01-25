@@ -4,7 +4,7 @@ export interface CreationTransaction {
   created: Date;
   creator: string;
   transactionHash: string;
-  factoryAddress: string | null;
+  factoryAddress: string;
   masterCopy: string | null;
   setupData: string | null;
   dataDecoded: DataDecoded | null;

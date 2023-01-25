@@ -7,7 +7,7 @@ export const creationTransactionSchema: Schema = {
     created: { type: 'string', isDate: true },
     creator: { type: 'string' },
     transactionHash: { type: 'string' },
-    factoryAddress: { type: 'string', nullable: true },
+    factoryAddress: { type: 'string' },
     masterCopy: { type: 'string', nullable: true },
     setupData: { type: 'string', nullable: true },
     dataDecoded: { oneOf: [dataDecodedSchema, { type: 'null' }] },
