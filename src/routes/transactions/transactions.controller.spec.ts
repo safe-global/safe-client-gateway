@@ -27,7 +27,6 @@ import {
   moduleTransactionBuilder,
   toJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -276,11 +275,8 @@ describe('Transactions Controller (Unit)', () => {
         .with('logoUri', contractLogoUri)
         .build();
       const domainTransaction = multisigTransactionBuilder()
-        .with('safe', faker.finance.ethereumAddress())
-        .with('to', contractResponse.address)
         .with('value', '0')
         .with('data', faker.datatype.hexadecimal(32))
-        .with('nonce', faker.datatype.number({ min: 1 }))
         .with('isExecuted', true)
         .with('isSuccessful', true)
         .with(
@@ -296,14 +292,6 @@ describe('Transactions Controller (Unit)', () => {
             .build(),
         )
         .with('origin', `{\"url\": \"${safeAppUrl}\"}`)
-        .with('confirmationsRequired', 3)
-        .with('confirmations', [
-          confirmationBuilder().build(),
-          confirmationBuilder().build(),
-          confirmationBuilder().build(),
-        ])
-        .with('executionDate', faker.date.recent())
-        .with('safeTxHash', faker.datatype.hexadecimal(32))
         .build();
       mockNetworkService.get.mockImplementation((url) => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
@@ -357,20 +345,21 @@ describe('Transactions Controller (Unit)', () => {
                   txInfo: {
                     type: 'Custom',
                     to: {
-                      value: domainTransaction.to,
+                      value: contractResponse.address,
                       name: contractDisplayName,
                       logoUri: contractLogoUri,
                     },
                     dataSize: '16',
                     value: domainTransaction.value,
                     methodName: domainTransaction.dataDecoded.method,
-                    actionCount: domainTransaction.confirmations?.length,
+                    actionCount: 3,
                     isCancellation: false,
                   },
                   executionInfo: {
                     type: 'MULTISIG',
                     nonce: domainTransaction.nonce,
-                    confirmationsRequired: 3,
+                    confirmationsRequired:
+                      domainTransaction.confirmationsRequired,
                     confirmationsSubmitted:
                       domainTransaction.confirmations?.length,
                     missingSigners: null,
