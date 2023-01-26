@@ -317,12 +317,8 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     expect(actual).toEqual(new DeleteGuard());
   });
 
-  it('should return null on a unknown setting', async () => {
+  it('should throw an error on a unknown setting', async () => {
     const transaction = multisigTransactionBuilder()
-      .with('dataDecoded', {
-        method: 'unknownMethod',
-        parameters: [],
-      })
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -332,11 +328,8 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       )
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
-      transaction,
-    );
-
-    expect(actual).toBeNull();
+    await expect(
+      mapper.mapSettingsChange(faker.random.numeric(), transaction),
+    ).rejects.toThrow();
   });
 });

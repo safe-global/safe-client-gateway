@@ -224,6 +224,6 @@ export class SettingsChangeMapper {
         return this.handleSetGuard(chainId, dataDecoded);
     }
 
-    return null;
+    throw new Error(`Unknown setting method: ${dataDecoded?.method}`);
   }
 }

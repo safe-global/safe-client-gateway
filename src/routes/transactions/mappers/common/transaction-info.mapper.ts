@@ -151,7 +151,7 @@ export class MultisigTransactionInfoMapper {
     value: number,
     dataSize: number,
   ): boolean {
-    const isSettingsChange: boolean = transaction.dataDecoded
+    const isSettingsChangeMethod: boolean = transaction.dataDecoded
       ? SettingsChangeMapper.SETTINGS_CHANGE_METHODS.includes(
           transaction.dataDecoded.method,
         )
@@ -161,7 +161,7 @@ export class MultisigTransactionInfoMapper {
       value === 0 &&
       dataSize > 0 &&
       transaction.safe === transaction.to &&
-      isSettingsChange
+      isSettingsChangeMethod
     );
   }
 
