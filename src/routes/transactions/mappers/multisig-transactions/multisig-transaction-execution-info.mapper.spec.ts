@@ -19,17 +19,14 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       TransactionStatus.Success,
     );
 
-    expect(executionInfo).toBeInstanceOf(MultisigExecutionInfo);
-    expect(executionInfo).toHaveProperty('nonce', transaction.nonce);
-    expect(executionInfo).toHaveProperty(
-      'confirmationsRequired',
-      transaction.confirmationsRequired,
+    expect(executionInfo).toEqual(
+      new MultisigExecutionInfo(
+        transaction.nonce,
+        transaction.confirmationsRequired,
+        Number(transaction.confirmations?.length),
+        null,
+      ),
     );
-    expect(executionInfo).toHaveProperty(
-      'confirmationsSubmitted',
-      transaction.confirmations?.length,
-    );
-    expect(executionInfo).toHaveProperty('missingSigners', null);
   });
 
   it('should return a MultiSigExecutionInfo with no missing signers and zero confirmations', () => {
@@ -43,14 +40,14 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       TransactionStatus.Success,
     );
 
-    expect(executionInfo).toBeInstanceOf(MultisigExecutionInfo);
-    expect(executionInfo).toHaveProperty('nonce', transaction.nonce);
-    expect(executionInfo).toHaveProperty(
-      'confirmationsRequired',
-      transaction.confirmationsRequired,
+    expect(executionInfo).toEqual(
+      new MultisigExecutionInfo(
+        transaction.nonce,
+        transaction.confirmationsRequired,
+        0,
+        null,
+      ),
     );
-    expect(executionInfo).toHaveProperty('confirmationsSubmitted', 0);
-    expect(executionInfo).toHaveProperty('missingSigners', null);
   });
 
   it('should return a MultiSigExecutionInfo with empty missing signers', () => {
@@ -62,17 +59,14 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       TransactionStatus.AwaitingConfirmations,
     );
 
-    expect(executionInfo).toBeInstanceOf(MultisigExecutionInfo);
-    expect(executionInfo).toHaveProperty('nonce', transaction.nonce);
-    expect(executionInfo).toHaveProperty(
-      'confirmationsRequired',
-      transaction.confirmationsRequired,
+    expect(executionInfo).toEqual(
+      new MultisigExecutionInfo(
+        transaction.nonce,
+        transaction.confirmationsRequired,
+        Number(transaction.confirmations?.length),
+        [],
+      ),
     );
-    expect(executionInfo).toHaveProperty(
-      'confirmationsSubmitted',
-      transaction.confirmations?.length,
-    );
-    expect(executionInfo).toHaveProperty('missingSigners', []);
   });
 
   it('should return a MultiSigExecutionInfo with all safe owners as missing signers', () => {
@@ -89,19 +83,13 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       TransactionStatus.AwaitingConfirmations,
     );
 
-    expect(executionInfo).toBeInstanceOf(MultisigExecutionInfo);
-    expect(executionInfo).toHaveProperty('nonce', transaction.nonce);
-    expect(executionInfo).toHaveProperty(
-      'confirmationsRequired',
-      transaction.confirmationsRequired,
-    );
-    expect(executionInfo).toHaveProperty(
-      'confirmationsSubmitted',
-      transaction.confirmations?.length,
-    );
-    expect(executionInfo).toHaveProperty(
-      'missingSigners',
-      safe.owners.map((address) => new AddressInfo(address)),
+    expect(executionInfo).toEqual(
+      new MultisigExecutionInfo(
+        transaction.nonce,
+        transaction.confirmationsRequired,
+        Number(transaction.confirmations?.length),
+        safe.owners.map((address) => new AddressInfo(address)),
+      ),
     );
   });
 
@@ -123,18 +111,13 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       TransactionStatus.AwaitingConfirmations,
     );
 
-    expect(executionInfo).toBeInstanceOf(MultisigExecutionInfo);
-    expect(executionInfo).toHaveProperty('nonce', transaction.nonce);
-    expect(executionInfo).toHaveProperty(
-      'confirmationsRequired',
-      transaction.confirmationsRequired,
+    expect(executionInfo).toEqual(
+      new MultisigExecutionInfo(
+        transaction.nonce,
+        transaction.confirmationsRequired,
+        Number(transaction.confirmations?.length),
+        [new AddressInfo(safe.owners[1])],
+      ),
     );
-    expect(executionInfo).toHaveProperty(
-      'confirmationsSubmitted',
-      confirmations.length,
-    );
-    expect(executionInfo).toHaveProperty('missingSigners', [
-      new AddressInfo(safe.owners[1]),
-    ]);
   });
 });
