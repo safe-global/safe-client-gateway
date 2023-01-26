@@ -351,7 +351,7 @@ describe('Transactions Controller (Unit)', () => {
                     },
                     dataSize: '16',
                     value: domainTransaction.value,
-                    methodName: domainTransaction.dataDecoded.method,
+                    methodName: domainTransaction.dataDecoded?.method ?? null,
                     actionCount: 3,
                     isCancellation: false,
                   },

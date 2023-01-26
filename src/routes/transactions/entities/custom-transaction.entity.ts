@@ -4,7 +4,7 @@ import { TransactionInfo } from './transaction-info.entity';
 
 export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty()
-  to: AddressInfo | null;
+  to: AddressInfo;
   @ApiProperty()
   dataSize: string;
   @ApiProperty()
@@ -17,10 +17,10 @@ export class CustomTransactionInfo extends TransactionInfo {
   actionCount: number | null;
 
   constructor(
-    to: AddressInfo | null,
+    to: AddressInfo,
     dataSize: string,
     value: string,
-    methodName: string,
+    methodName: string | null,
     actionCount: number | null,
     isCancellation: boolean,
   ) {

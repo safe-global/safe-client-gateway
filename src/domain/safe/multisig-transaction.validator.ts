@@ -5,6 +5,7 @@ import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
 import { multisigTransactionSchema } from './entities/schemas/multisig-transaction.schema';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { dataDecodedSchema } from '../data-decoder/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class MultisigTransactionValidator
@@ -16,6 +17,7 @@ export class MultisigTransactionValidator
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
+    this.jsonSchemaService.addSchema(dataDecodedSchema, 'dataDecodedSchema');
     this.isValidMultisigTransaction = this.jsonSchemaService.compile(
       multisigTransactionSchema,
     ) as ValidateFunction<MultisigTransaction>;

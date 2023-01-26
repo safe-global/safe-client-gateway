@@ -19,7 +19,10 @@ export const multisigTransactionSchema: Schema = {
     to: { type: 'string' },
     value: { type: 'string', nullable: true, default: null },
     data: { type: 'string', nullable: true, default: null },
-    dataDecoded: { type: 'object', nullable: true, default: null },
+    dataDecoded: {
+      anyOf: [{ type: 'null' }, { $ref: 'dataDecodedSchema' }],
+      default: null,
+    },
     operation: { type: 'number', enum: [0, 1] },
     gasToken: { type: 'string', nullable: true, default: null },
     safeTxGas: { type: 'number', nullable: true, default: null },
