@@ -62,7 +62,7 @@ export class AddressInfoHelper {
   getCollection(
     chainId: string,
     addresses: string[],
-  ): Promise<Array<AddressInfo | null>> {
+  ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
       addresses.map((address) => this.getOrDefault(chainId, address)),
     ).then((results) =>
