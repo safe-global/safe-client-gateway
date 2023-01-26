@@ -45,6 +45,7 @@ import { ModuleTransactionValidator } from './domain/safe/module-transaction.val
 import { ITokenRepository } from './domain/tokens/token.repository.interface';
 import { TokenRepository } from './domain/tokens/token.repository';
 import { TokenValidator } from './domain/tokens/token.validator';
+import { CreationTransactionValidator } from './domain/safe/creation-transaction.validator';
 
 @Global()
 @Module({
@@ -67,6 +68,7 @@ import { TokenValidator } from './domain/tokens/token.validator';
     CollectiblesValidator,
     ContractsValidator,
     DataDecodedValidator,
+    CreationTransactionValidator,
     DelegateValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,

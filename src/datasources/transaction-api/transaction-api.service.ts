@@ -18,6 +18,7 @@ import { MultisigTransaction } from '../../domain/safe/entities/multisig-transac
 import { Transaction } from '../../domain/safe/entities/transaction.entity';
 import { Token } from '../../domain/tokens/entities/token.entity';
 import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -331,6 +332,18 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheKey = `${this.chainId}_${safeTransactionHash}_multisig_transaction`;
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
+      return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getCreationTransaction(
+    safeAddress: string,
+  ): Promise<CreationTransaction> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_creation_transaction`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
       return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);

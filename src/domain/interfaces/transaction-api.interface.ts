@@ -13,6 +13,7 @@ import { Transaction } from '../safe/entities/transaction.entity';
 import { Token } from '../tokens/entities/token.entity';
 import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
 import { SafeList } from '../safe/entities/safe-list.entity';
+import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -108,6 +109,8 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
+
+  getCreationTransaction(safeAddress: string): Promise<CreationTransaction>;
 
   getAllTransactions(
     safeAddress: string,
