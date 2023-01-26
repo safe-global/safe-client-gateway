@@ -1,7 +1,8 @@
+import { faker } from '@faker-js/faker';
+import { random, range } from 'lodash';
+import { Builder, IBuilder } from '../../../../__tests__/builder';
 import { MultisigTransaction } from '../multisig-transaction.entity';
 import { Operation } from '../operation.entity';
-import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
@@ -12,7 +13,10 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
   return Builder.new<MultisigTransaction>()
     .with('baseGas', faker.datatype.number())
     .with('blockNumber', faker.datatype.number())
-    .with('confirmations', [confirmationBuilder().build()])
+    .with(
+      'confirmations',
+      range(random(5)).map(() => confirmationBuilder().build()),
+    )
     .with('confirmationsRequired', faker.datatype.number())
     .with('data', faker.datatype.hexadecimal())
     .with('dataDecoded', dataDecodedBuilder().build())
@@ -28,7 +32,10 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('modified', faker.date.recent())
     .with('nonce', faker.datatype.number())
     .with('operation', faker.helpers.arrayElement([0, 1]) as Operation)
-    .with('origin', faker.internet.url())
+    .with(
+      'origin',
+      `{"url": "${faker.internet.url()}", "name": "${faker.random.words()}"}`,
+    )
     .with('refundReceiver', faker.finance.ethereumAddress())
     .with('safe', faker.finance.ethereumAddress())
     .with('safeTxGas', faker.datatype.number())
