@@ -19,5 +19,5 @@ export const creationTransactionSchema: Schema = {
       ],
     },
   },
-  required: ['created', 'creator', 'transactionhash'],
+  required: ['created', 'creator', 'transactionHash'],
 };

@@ -44,6 +44,10 @@ import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
 } from '../../domain/safe/entities/__tests__/native-token-transfer.builder';
+import {
+  creationTransactionBuilder,
+  toJson as creationTransactionToJson,
+} from '../../domain/safe/entities/__tests__/creation-transaction.builder';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -1258,7 +1262,6 @@ describe('Transactions Controller (Unit)', () => {
             data: tokenResponse,
           });
         }
-
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
@@ -1282,6 +1285,81 @@ describe('Transactions Controller (Unit)', () => {
             getJsonResource(
               'incoming-transfers/native-coin/expected-response.json',
             ).results[0],
+          );
+        });
+    });
+
+    it('Should include safe creation transaction', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const moduleTransaction: any = moduleTransactionTojson(
+        moduleTransactionBuilder().with('dataDecoded', null).build(),
+      );
+      moduleTransaction.txType = 'MODULE_TRANSACTION';
+      const safe = safeBuilder().build();
+      const allTransactionsResponse = {
+        count: 2,
+        next: null,
+        previous: null,
+        results: [moduleTransaction],
+      };
+      const creationTransactionResponse: any = creationTransactionToJson(
+        creationTransactionBuilder()
+          .with('created', new Date(moduleTransaction.executionDate))
+          .build(),
+      );
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getContractUrl = `${chainResponse.transactionService}/api/v1/contracts/`;
+        const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/creation/`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chainResponse });
+        }
+        if (url === getAllTransactions) {
+          return Promise.resolve({
+            data: allTransactionsResponse,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: safe,
+          });
+        }
+        if (url === getSafeCreationUrl) {
+          return Promise.resolve({
+            data: creationTransactionResponse,
+          });
+        }
+        if (url.includes(getContractUrl)) {
+          return Promise.reject({
+            detail: 'Not found',
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toHaveLength(3);
+          expect(body.results[2].transaction.timestamp).toEqual(
+            creationTransactionResponse.created.getTime(),
+          );
+          expect(body.results[2].transaction.txInfo.creator.value).toEqual(
+            creationTransactionResponse.creator,
+          );
+          expect(body.results[2].transaction.txInfo.factory.value).toEqual(
+            creationTransactionResponse.factoryAddress,
+          );
+          expect(
+            body.results[2].transaction.txInfo.implementation.value,
+          ).toEqual(creationTransactionResponse.masterCopy);
+          expect(body.results[2].transaction.txInfo.transactionHash).toEqual(
+            creationTransactionResponse.transactionHash,
           );
         });
     });

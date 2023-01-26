@@ -19,12 +19,14 @@ import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
+import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
 
 @Module({
   controllers: [TransactionsController],
   imports: [AddressInfoModule],
   providers: [
     CustomTransactionMapper,
+    CreationTransactionMapper,
     DataDecodedParamHelper,
     Erc20TransferMapper,
     Erc721TransferMapper,

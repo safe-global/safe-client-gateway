@@ -23,6 +23,7 @@ import { MultisigTransactionMapper } from './mappers/multisig-transactions/multi
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { groupBy } from 'lodash';
+import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
 
 @Injectable()
 export class TransactionsService {
@@ -33,6 +34,7 @@ export class TransactionsService {
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionMapper: TransactionMapper,
+    private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -289,6 +291,28 @@ export class TransactionsService {
       );
       results = results.slice(1);
     }
+    const nextURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.next,
+    );
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.previous,
+    );
+    if (nextURL == null) {
+      const creationTransaction =
+        await this.safeRepository.getCreationTransaction(chainId, safeAddress);
+      results.push(
+        new TransactionHistory(
+          await this.creationTransactionMapper.mapTransaction(
+            chainId,
+            creationTransaction,
+            safeInfo,
+          ),
+        ),
+      );
+    }
+
     const transactionHistoryGroups = this.groupByDay(results);
     const transactionList: any[] = [];
     transactionHistoryGroups.forEach((transactionGroup) => {
@@ -302,15 +326,6 @@ export class TransactionsService {
         transactionList.push(transaction);
       });
     });
-
-    const nextURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
-      domainTransactions.next,
-    );
-    const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
-      domainTransactions.previous,
-    );
 
     return {
       next: nextURL?.toString() ?? null,
