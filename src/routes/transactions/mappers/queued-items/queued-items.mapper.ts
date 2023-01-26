@@ -10,9 +10,13 @@ import {
   LabelItem,
   LabelQueuedItem,
 } from '../../entities/queued-items/label-queued-item.entity';
-import { TransactionGroup } from '../../entities/queued-items/transaction-group.entity';
 import { TransactionQueuedItem } from '../../entities/queued-items/transaction-queued-item.entity';
 import { MultisigTransactionMapper } from '../multisig-transactions/multisig-transaction.mapper';
+
+class TransactionGroup {
+  nonce: number;
+  transactions: MultisigTransaction[];
+}
 
 @Injectable()
 export class QueuedItemsMapper {

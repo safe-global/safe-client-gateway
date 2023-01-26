@@ -30,7 +30,7 @@ import {
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
-  toJson as multiSignToJson,
+  toJson as multisigToJson,
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
@@ -718,7 +718,7 @@ describe('Transactions Controller (Unit)', () => {
       ];
       const contractResponse = contractBuilder().build();
       const transactions: MultisigTransaction[] = [
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -727,7 +727,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -736,7 +736,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 2)
@@ -745,7 +745,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 2)
@@ -754,7 +754,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 3)
@@ -763,7 +763,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 4)
@@ -894,7 +894,7 @@ describe('Transactions Controller (Unit)', () => {
           .build(),
       ];
       const transactions: MultisigTransaction[] = [
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -903,7 +903,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -912,7 +912,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -921,7 +921,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('isExecuted', false)
@@ -930,7 +930,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 2)
@@ -939,7 +939,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 2)
@@ -948,7 +948,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 3)
@@ -957,7 +957,7 @@ describe('Transactions Controller (Unit)', () => {
             .with('dataDecoded', null)
             .build(),
         ) as MultisigTransaction,
-        multiSignToJson(
+        multisigToJson(
           multisigTransactionBuilder()
             .with('safe', safeAddress)
             .with('nonce', 3)
