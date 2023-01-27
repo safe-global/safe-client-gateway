@@ -1207,6 +1207,45 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
 
+    it('Should change date label with time offset', async () => {
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const timezoneOffset = 3600 * 2; //Offset of 2 hours
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const moduleTransaction: any = moduleTransactionTojson(
+        moduleTransactionBuilder()
+          .with('dataDecoded', null)
+          .with('executionDate', new Date('2022-12-31T22:09:36Z'))
+          .build(),
+      );
+      moduleTransaction.txType = 'MODULE_TRANSACTION';
+
+      const safe = safeBuilder().build();
+      const transactionHistoryBuilder = {
+        count: 20,
+        next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+        previous: null,
+        results: [moduleTransaction],
+      };
+      mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: transactionHistoryBuilder,
+      });
+      mockNetworkService.get.mockResolvedValueOnce({ data: safe });
+
+      await request(app.getHttpServer())
+        .get(
+          `/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
+        )
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toHaveLength(2);
+          expect(body.results[0].timestamp).toEqual(
+            new Date('2023-01-01T00:00:00Z').getTime(),
+          );
+        });
+    });
+
     it('Should return correctly each transaction', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
