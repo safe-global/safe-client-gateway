@@ -3,7 +3,7 @@ const QUERY_PARAM_LIMIT = 'limit';
 const QUERY_PARAM_OFFSET = 'offset';
 
 export class PaginationData {
-  private constructor(readonly limit?: number, readonly offset?: number) {}
+  constructor(readonly limit?: number, readonly offset?: number) {}
 
   /**
    * Extracts {@link PaginationData} from {@link url}. The url
@@ -46,6 +46,46 @@ export class PaginationData {
       isNaN(offset) ? undefined : offset,
     );
   }
+}
+
+/**
+ * Returns a URL with a cursor containing the next page to be retrieved.
+ * If no cursor is passed in {@link base} or it is invalid, a null reference will be returned.
+ * If there are no items remaining, a null reference will be returned.
+ *
+ * @param base - The base url which should serve as reference
+ * @param itemsCount - Total items count, useful to detect if a next page exists.
+ */
+export function buildNextPageURL(
+  base: Readonly<URL | string>,
+  itemsCount: number,
+): Readonly<URL> | null {
+  const baseUrl = new URL(base);
+  const { limit, offset } = PaginationData.fromCursor(baseUrl);
+  const hasNext = limit && offset && limit + offset < itemsCount;
+  return hasNext
+    ? setCursor(baseUrl, new PaginationData(limit, limit + offset))
+    : null;
+}
+
+/**
+ * Returns a URL with a cursor containing the previous page to be retrieved.
+ * If no cursor is passed in {@link base} or it is invalid, a null reference will be returned.
+ * If no previous items are found, a null reference will be returned.
+ *
+ * @param base - The base url which should serve as reference
+ */
+export function buildPreviousPageURL(
+  base: Readonly<URL | string>,
+): Readonly<URL> | null {
+  const baseUrl = new URL(base);
+  const { limit, offset } = PaginationData.fromCursor(baseUrl);
+  return limit && offset
+    ? setCursor(
+        baseUrl,
+        new PaginationData(limit, limit <= offset ? offset - limit : 0),
+      )
+    : null;
 }
 
 /**
