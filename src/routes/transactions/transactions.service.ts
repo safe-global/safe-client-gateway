@@ -289,6 +289,7 @@ export class TransactionsService {
         safeInfo,
       );
     let prev_page_timestamp = 0;
+    let nextURL, previousURL;
     if (paginationData?.offset !== undefined) {
       // Get previous page label
       prev_page_timestamp = this.getDayInMillis(
@@ -297,14 +298,17 @@ export class TransactionsService {
       );
       results = results.slice(1);
     }
-    const nextURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
-      domainTransactions.next,
-    );
-    const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
-      domainTransactions.previous,
-    );
+    if (paginationData?.limit !== undefined) {
+      nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
+      previousURL = buildPreviousPageURL(routeUrl);
+    } else {
+      nextURL = cursorUrlFromLimitAndOffset(routeUrl, domainTransactions.next);
+      previousURL = cursorUrlFromLimitAndOffset(
+        routeUrl,
+        domainTransactions.previous,
+      );
+    }
+
     if (nextURL == null) {
       const creationTransaction =
         await this.safeRepository.getCreationTransaction(chainId, safeAddress);

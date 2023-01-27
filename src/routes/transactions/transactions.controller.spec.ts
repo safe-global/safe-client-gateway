@@ -1402,7 +1402,7 @@ describe('Transactions Controller (Unit)', () => {
         });
     });
 
-    xit('Should keep the client pagination', async () => {
+    it('Should keep the client pagination', async () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
@@ -1411,19 +1411,15 @@ describe('Transactions Controller (Unit)', () => {
       const moduleTransaction: any = moduleTransactionTojson(
         moduleTransactionBuilder().with('dataDecoded', null).build(),
       );
-      const multisigTransaction: any = multisigTransactionToJson(
-        multisigTransactionBuilder().with('dataDecoded', null).build(),
-      );
       moduleTransaction.txType = 'MODULE_TRANSACTION';
-      multisigTransaction.txType = 'MULTISIG_TRANSACTION';
       const safe = safeBuilder().build();
       const client_next_cursor = `cursor=limit%3D${limit}%26offset%3D10`;
-      const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3Dundefined`;
+      const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3D0`;
       const transactionHistoryBuilder = {
         count: 20,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&offset=10&queued=true&trusted=true`,
         previous: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&queued=true&trusted=true`,
-        results: [moduleTransaction, multisigTransaction],
+        results: [moduleTransaction],
       };
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockResolvedValueOnce({
