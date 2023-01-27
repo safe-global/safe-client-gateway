@@ -24,6 +24,7 @@ import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { groupBy } from 'lodash';
 import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
+import { DateLabel } from './entities/date-label.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -322,10 +323,7 @@ export class TransactionsService {
     const transactionList: any[] = [];
     transactionHistoryGroups.forEach((transactionGroup) => {
       if (transactionGroup.timestamp != prev_page_timestamp) {
-        transactionList.push({
-          type: 'DATE_LABEL',
-          timestamp: transactionGroup.timestamp,
-        });
+        transactionList.push(new DateLabel(transactionGroup.timestamp));
       }
       transactionGroup.transactions.forEach((transaction) => {
         transactionList.push(transaction);
