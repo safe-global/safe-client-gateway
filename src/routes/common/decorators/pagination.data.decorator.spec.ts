@@ -39,8 +39,8 @@ describe('PaginationDataDecorator', () => {
       .query('some_param=test')
       .expect(200);
 
-    expect(paginationData.limit).toBe(undefined);
-    expect(paginationData.offset).toBe(undefined);
+    expect(paginationData.limit).toBe(PaginationData.DEFAULT_LIMIT);
+    expect(paginationData.offset).toBe(PaginationData.DEFAULT_OFFSET);
   });
 
   it('with cursor', async () => {

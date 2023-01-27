@@ -23,7 +23,7 @@ describe('PaginationData', () => {
       const actual = PaginationData.fromCursor(url);
 
       expect(actual.limit).toBe(1);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
 
     it('url with cursor, offset but no limit', async () => {
@@ -31,7 +31,7 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromCursor(url);
 
-      expect(actual.limit).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
       expect(actual.offset).toBe(1);
     });
 
@@ -40,8 +40,8 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromCursor(url);
 
-      expect(actual.limit).toBe(undefined);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
 
     it('limit is not a number', async () => {
@@ -51,7 +51,7 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromCursor(url);
 
-      expect(actual.limit).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
       expect(actual.offset).toBe(2);
     });
 
@@ -63,7 +63,7 @@ describe('PaginationData', () => {
       const actual = PaginationData.fromCursor(url);
 
       expect(actual.limit).toBe(1);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
   });
 
@@ -83,7 +83,7 @@ describe('PaginationData', () => {
       const actual = PaginationData.fromLimitAndOffset(url);
 
       expect(actual.limit).toBe(10);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
 
     it('url with offset but no limit', async () => {
@@ -91,7 +91,7 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromLimitAndOffset(url);
 
-      expect(actual.limit).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
       expect(actual.offset).toBe(20);
     });
 
@@ -100,8 +100,8 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromLimitAndOffset(url);
 
-      expect(actual.limit).toBe(undefined);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
 
     it('limit is not a number', async () => {
@@ -109,7 +109,7 @@ describe('PaginationData', () => {
 
       const actual = PaginationData.fromLimitAndOffset(url);
 
-      expect(actual.limit).toBe(undefined);
+      expect(actual.limit).toBe(PaginationData.DEFAULT_LIMIT);
       expect(actual.offset).toBe(20);
     });
 
@@ -119,7 +119,7 @@ describe('PaginationData', () => {
       const actual = PaginationData.fromLimitAndOffset(url);
 
       expect(actual.limit).toBe(10);
-      expect(actual.offset).toBe(undefined);
+      expect(actual.offset).toBe(PaginationData.DEFAULT_OFFSET);
     });
   });
 
@@ -149,7 +149,7 @@ describe('PaginationData', () => {
       expect(actual).toStrictEqual(expected);
     });
 
-    it('returns undefined when from is null', async () => {
+    it('returns null when from is null', async () => {
       const baseUrl = 'https://base.url/';
 
       const actual = cursorUrlFromLimitAndOffset(baseUrl, null);
@@ -159,30 +159,50 @@ describe('PaginationData', () => {
   });
 
   describe('buildNextPageURL', () => {
-    it('next url is null if no cursor is passed', async () => {
-      const currentUrl = new URL(faker.internet.url());
-
-      const actual = buildNextPageURL(currentUrl, faker.datatype.number());
-
-      expect(actual).toStrictEqual(null);
-    });
-
-    it('next url is null if an invalid cursor is passed', async () => {
-      const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=${faker.random.word()}`,
+    it('next url is the default if no cursor is passed', async () => {
+      const currentUrl = faker.internet.url();
+      const expected = new URL(
+        `${currentUrl}/?cursor=limit%3D${
+          PaginationData.DEFAULT_LIMIT
+        }%26offset%3D${
+          PaginationData.DEFAULT_LIMIT + PaginationData.DEFAULT_OFFSET
+        }`,
       );
 
-      const actual = buildNextPageURL(currentUrl, faker.datatype.number());
+      const actual = buildNextPageURL(
+        currentUrl,
+        faker.datatype.number({ min: PaginationData.DEFAULT_LIMIT + 1 }),
+      );
 
-      expect(actual).toStrictEqual(null);
+      expect(actual).toStrictEqual(expected);
     });
 
-    it('next url is null if an invalid cursor is passed (2)', async () => {
+    it('next url is the default if an invalid cursor is passed', async () => {
+      const base = faker.internet.url();
+      const currentUrl = new URL(`${base}/?cursor=${faker.random.word()}`);
+      const expected = new URL(
+        `${base}/?cursor=limit%3D${PaginationData.DEFAULT_LIMIT}%26offset%3D${
+          PaginationData.DEFAULT_LIMIT + PaginationData.DEFAULT_OFFSET
+        }`,
+      );
+
+      const actual = buildNextPageURL(
+        currentUrl,
+        faker.datatype.number({ min: PaginationData.DEFAULT_LIMIT + 1 }),
+      );
+
+      expect(actual).toStrictEqual(expected);
+    });
+
+    it('next url is null if an invalid cursor is passed but there is no next page', async () => {
       const currentUrl = new URL(
         `${faker.internet.url()}/?cursor=limit%3D${faker.random.word()}%26offset%3D${faker.random.word()}`,
       );
 
-      const actual = buildNextPageURL(currentUrl, faker.datatype.number());
+      const actual = buildNextPageURL(
+        currentUrl,
+        faker.datatype.number({ max: 20 }),
+      );
 
       expect(actual).toStrictEqual(null);
     });
@@ -233,7 +253,7 @@ describe('PaginationData', () => {
   });
 
   describe('buildPreviousPageURL', () => {
-    it('next url is null if no cursor is passed', async () => {
+    it('previous url is null if no cursor is passed', async () => {
       const currentUrl = new URL(`${faker.internet.url()}`);
 
       const actual = buildPreviousPageURL(currentUrl);
@@ -241,7 +261,7 @@ describe('PaginationData', () => {
       expect(actual).toStrictEqual(null);
     });
 
-    it('next url is null if an invalid cursor is passed', async () => {
+    it('previous url is null if an invalid cursor is passed', async () => {
       const currentUrl = new URL(
         `${faker.internet.url()}/?cursor=${faker.random.word()}`,
       );
@@ -251,7 +271,7 @@ describe('PaginationData', () => {
       expect(actual).toStrictEqual(null);
     });
 
-    it('next url is null if an invalid cursor is passed (2)', async () => {
+    it('previous url is null if an invalid cursor is passed (2)', async () => {
       const currentUrl = new URL(
         `${faker.internet.url()}/?cursor=limit%3D${faker.random.word()}%26offsetlimit%3D${faker.random.word()}`,
       );

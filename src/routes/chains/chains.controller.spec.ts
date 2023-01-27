@@ -24,6 +24,7 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
 import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
+import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
 
@@ -132,7 +133,12 @@ describe('Chains Controller (Unit)', () => {
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
         'https://test.safe.config/api/v1/chains',
-        { params: { limit: undefined, offset: undefined } },
+        {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
       );
     });
 
@@ -149,7 +155,12 @@ describe('Chains Controller (Unit)', () => {
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
         'https://test.safe.config/api/v1/chains',
-        { params: { limit: undefined, offset: undefined } },
+        {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
       );
     });
 
@@ -170,7 +181,12 @@ describe('Chains Controller (Unit)', () => {
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
         'https://test.safe.config/api/v1/chains',
-        { params: { limit: undefined, offset: undefined } },
+        {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
       );
     });
   });

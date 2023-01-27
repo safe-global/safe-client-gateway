@@ -3,7 +3,13 @@ const QUERY_PARAM_LIMIT = 'limit';
 const QUERY_PARAM_OFFSET = 'offset';
 
 export class PaginationData {
-  constructor(readonly limit?: number, readonly offset?: number) {}
+  public static readonly DEFAULT_LIMIT = 20;
+  public static readonly DEFAULT_OFFSET = 0;
+
+  constructor(readonly limit: number, readonly offset: number) {
+    this.limit = isNaN(limit) ? PaginationData.DEFAULT_LIMIT : limit;
+    this.offset = isNaN(offset) ? PaginationData.DEFAULT_OFFSET : offset;
+  }
 
   /**
    * Extracts {@link PaginationData} from {@link url}. The url
@@ -21,11 +27,7 @@ export class PaginationData {
     const cursorSearchParams = new URLSearchParams(cursorValue);
     const limit = Number(cursorSearchParams.get(QUERY_PARAM_LIMIT) ?? NaN);
     const offset = Number(cursorSearchParams.get(QUERY_PARAM_OFFSET) ?? NaN);
-
-    return new PaginationData(
-      isNaN(limit) ? undefined : limit,
-      isNaN(offset) ? undefined : offset,
-    );
+    return new PaginationData(limit, offset);
   }
 
   /**
@@ -41,10 +43,7 @@ export class PaginationData {
   static fromLimitAndOffset(url: Readonly<URL>): PaginationData {
     const limit = Number(url.searchParams.get(QUERY_PARAM_LIMIT) ?? NaN);
     const offset = Number(url.searchParams.get(QUERY_PARAM_OFFSET) ?? NaN);
-    return new PaginationData(
-      isNaN(limit) ? undefined : limit,
-      isNaN(offset) ? undefined : offset,
-    );
+    return new PaginationData(limit, offset);
   }
 }
 
@@ -62,7 +61,7 @@ export function buildNextPageURL(
 ): Readonly<URL> | null {
   const baseUrl = new URL(base);
   const { limit, offset } = PaginationData.fromCursor(baseUrl);
-  const hasNext = limit && offset && limit + offset < itemsCount;
+  const hasNext = limit + offset < itemsCount;
   return hasNext
     ? setCursor(baseUrl, new PaginationData(limit, limit + offset))
     : null;
@@ -80,12 +79,13 @@ export function buildPreviousPageURL(
 ): Readonly<URL> | null {
   const baseUrl = new URL(base);
   const { limit, offset } = PaginationData.fromCursor(baseUrl);
-  return limit && offset
-    ? setCursor(
+  const isFirst = offset === 0;
+  return isFirst
+    ? null
+    : setCursor(
         baseUrl,
         new PaginationData(limit, limit <= offset ? offset - limit : 0),
-      )
-    : null;
+      );
 }
 
 /**
