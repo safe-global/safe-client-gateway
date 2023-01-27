@@ -979,7 +979,7 @@ describe('Transactions Controller (Unit)', () => {
         if (url === getMultisigTransactionsUrl) {
           return Promise.resolve({
             data: {
-              count: 8,
+              count: 20,
               next: `${faker.internet.url()}/?limit=10&offset=50`,
               previous: `${faker.internet.url()}/?limit=10&offset=30`,
               results: transactions,

@@ -5,6 +5,8 @@ import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
+  buildNextPageURL,
+  buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
@@ -198,9 +200,8 @@ export class TransactionsService {
       pagination.offset,
     );
 
-    const { next, previous } = transactions;
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, next);
-    const previousURL = cursorUrlFromLimitAndOffset(routeUrl, previous);
+    const nextURL = buildNextPageURL(routeUrl, transactions.count);
+    const previousURL = buildPreviousPageURL(routeUrl);
     const results = await this.queuedItemsMapper.getQueuedItems(
       this.adjustTransactionsPage(transactions),
       safeInfo,
