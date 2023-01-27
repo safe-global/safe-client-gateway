@@ -224,18 +224,22 @@ export class TransactionsService {
       results,
     };
   }
-  private getDayInMillis(timestamp: number, time_zone_offset): number {
+
+  private getDayInMillis(timestamp: number, timezoneOffset?: string): number {
     const date = new Date(timestamp);
-    date.setUTCSeconds(time_zone_offset);
+    if (timezoneOffset !== undefined) {
+      date.setUTCSeconds(parseInt(timezoneOffset) || 0);
+    }
     return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   private groupByDay(
     transactions: TransactionHistory[],
+    timezoneOffset?: string,
   ): TransactionHistoryGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) =>
-        this.getDayInMillis(transaction.transaction.timestamp, 0),
+        this.getDayInMillis(transaction.transaction.timestamp, timezoneOffset),
       ),
     ).map(
       ([timestamp, transactions]) =>
@@ -246,7 +250,10 @@ export class TransactionsService {
     );
   }
 
-  private adjust_page(limit?: number, offset?: number): PaginationData {
+  private adjustTransactionHistoryPage(
+    limit?: number,
+    offset?: number,
+  ): PaginationData {
     if (offset !== undefined && offset > 0) {
       if (limit === undefined) {
         limit = 20; //default limit
@@ -263,7 +270,7 @@ export class TransactionsService {
     timezoneOffset?: string,
     paginationData?: PaginationData,
   ) {
-    const paginationData_adjusted = this.adjust_page(
+    const paginationData_adjusted = this.adjustTransactionHistoryPage(
       paginationData?.limit,
       paginationData?.offset,
     );
@@ -273,7 +280,6 @@ export class TransactionsService {
       paginationData_adjusted?.limit,
       paginationData_adjusted?.offset,
     );
-
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     let results: TransactionHistory[] =
       await this.transactionMapper.mapTransaction(
@@ -281,7 +287,6 @@ export class TransactionsService {
         domainTransactions.results,
         safeInfo,
       );
-
     let prev_page_timestamp = 0;
     if (paginationData?.offset !== undefined) {
       // Get previous page label
@@ -313,7 +318,7 @@ export class TransactionsService {
       );
     }
 
-    const transactionHistoryGroups = this.groupByDay(results);
+    const transactionHistoryGroups = this.groupByDay(results, timezoneOffset);
     const transactionList: any[] = [];
     transactionHistoryGroups.forEach((transactionGroup) => {
       if (transactionGroup.timestamp != prev_page_timestamp) {
