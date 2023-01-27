@@ -40,18 +40,21 @@ export class TransactionMapper {
           ),
         );
       } else {
-        return await Promise.all(
-          (transaction as EthereumTransaction).transfers.map(
-            async (transfer) =>
-              new TransactionHistory(
-                await this.incomingTransferMapper.mapTransfer(
-                  chainId,
-                  transfer,
-                  safe,
-                ),
+        const transfers = (transaction as EthereumTransaction).transfers;
+        return transfers
+          ? await Promise.all(
+              transfers.map(
+                async (transfer) =>
+                  new TransactionHistory(
+                    await this.incomingTransferMapper.mapTransfer(
+                      chainId,
+                      transfer,
+                      safe,
+                    ),
+                  ),
               ),
-          ),
-        );
+            )
+          : null;
       }
     });
 

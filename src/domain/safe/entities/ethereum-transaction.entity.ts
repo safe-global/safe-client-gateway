@@ -5,6 +5,6 @@ export interface EthereumTransaction {
   data: string | null;
   executionDate: Date;
   from: string;
-  transfers: Transfer[];
+  transfers: Transfer[] | null;
   txHash: string;
 }
