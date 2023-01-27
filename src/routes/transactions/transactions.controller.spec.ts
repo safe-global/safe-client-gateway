@@ -1169,7 +1169,6 @@ describe('Transactions Controller (Unit)', () => {
           .with('executionDate', new Date('2022-12-31T17:09:36Z'))
           .build(),
       );
-
       const incomingTransaction: any = ethereumTransactionToJson(
         ethereumTransactionBuilder().with('transfers', [transfer]).build(),
       );
