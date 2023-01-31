@@ -8,7 +8,7 @@ import { ModuleTransaction } from '../../../../domain/safe/entities/module-trans
 import { EthereumTransaction } from '../../../../domain/safe/entities/ethereum-transaction.entity';
 import { flatten } from 'lodash';
 import { IncomingTransferMapper } from '../transfers/transfer.mapper';
-import { TransactionHistory } from '../../entities/transaction-history.entity';
+import { TransactionItem } from '../../entities/transaction-item.entity';
 
 @Injectable()
 export class TransactionMapper {
@@ -21,10 +21,10 @@ export class TransactionMapper {
     chainId: string,
     transactionsDomain: TransactionDomain[],
     safe: Safe,
-  ): Promise<TransactionHistory[]> {
+  ): Promise<TransactionItem[]> {
     const results = await transactionsDomain.map(async (transaction) => {
       if ('isExecuted' in transaction) {
-        return new TransactionHistory(
+        return new TransactionItem(
           await this.multisigTransactionMapper.mapTransaction(
             chainId,
             transaction as MultisigTransaction,
@@ -32,7 +32,7 @@ export class TransactionMapper {
           ),
         );
       } else if ('module' in (transaction as ModuleTransaction)) {
-        return new TransactionHistory(
+        return new TransactionItem(
           await this.moduleTransactionMapper.mapTransaction(
             chainId,
             transaction as ModuleTransaction,
@@ -45,7 +45,7 @@ export class TransactionMapper {
           ? await Promise.all(
               transfers.map(
                 async (transfer) =>
-                  new TransactionHistory(
+                  new TransactionItem(
                     await this.incomingTransferMapper.mapTransfer(
                       chainId,
                       transfer,

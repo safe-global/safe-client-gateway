@@ -12,7 +12,7 @@ import { MultisigTransactionPage } from './entities/multisig-transaction-page.en
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItemPage } from './entities/queued-item-page.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionHistoryPage } from './entities/transaction-history-page.entity';
+import { TransactionItemPage } from './entities/transaction-history-page.entity';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -132,7 +132,7 @@ export class TransactionsController {
     );
   }
 
-  @ApiOkResponse({ type: TransactionHistoryPage })
+  @ApiOkResponse({ type: TransactionItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   @ApiQuery({ name: 'timezone_offset', required: false })
   @ApiQuery({ name: 'cursor', required: false })

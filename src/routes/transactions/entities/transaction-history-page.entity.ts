@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Page } from '../../common/entities/page.entity';
-import { TransactionHistory } from './transaction-history.entity';
+import { TransactionItem } from './transaction-item.entity';
 
-export class TransactionHistoryPage extends Page<TransactionHistory> {
-  @ApiProperty({ type: TransactionHistory })
-  results: TransactionHistory[];
+export class TransactionItemPage extends Page<TransactionItem> {
+  @ApiProperty({ type: TransactionItem })
+  results: TransactionItem[];
 }

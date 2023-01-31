@@ -15,8 +15,8 @@ import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionHistoryGroup } from './entities/transaction-history-group.entity';
-import { TransactionHistory } from './entities/transaction-history.entity';
+import { TransactionItemGroup } from './entities/transaction-history-group.entity';
+import { TransactionItem } from './entities/transaction-item.entity';
 import { TransactionMapper } from './mappers/common/transaction.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
@@ -235,16 +235,16 @@ export class TransactionsService {
   }
 
   private groupByDay(
-    transactions: TransactionHistory[],
+    transactions: TransactionItem[],
     timezoneOffset?: string,
-  ): TransactionHistoryGroup[] {
+  ): TransactionItemGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) =>
         this.getDayInMillis(transaction.transaction.timestamp, timezoneOffset),
       ),
     ).map(
       ([timestamp, transactions]) =>
-        <TransactionHistoryGroup>{
+        <TransactionItemGroup>{
           timestamp: Number(timestamp),
           transactions: transactions,
         },
@@ -256,12 +256,16 @@ export class TransactionsService {
     offset?: number,
   ): PaginationData {
     if (offset !== undefined && offset > 0) {
-      if (limit === undefined) {
-        limit = 20; //default limit
-      }
-      return new PaginationData(limit + 1, offset - 1);
+      return new PaginationData(
+        limit ? limit + 1 : PaginationData.DEFAULT_LIMIT + 1,
+        offset - 1,
+      );
+    } else {
+      return new PaginationData(
+        limit ? limit : PaginationData.DEFAULT_LIMIT,
+        PaginationData.DEFAULT_OFFSET,
+      );
     }
-    return new PaginationData(limit, offset);
   }
 
   async getTransactionHistory(
@@ -282,15 +286,14 @@ export class TransactionsService {
       paginationData_adjusted?.offset,
     );
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    let results: TransactionHistory[] =
+    let results: TransactionItem[] =
       await this.transactionMapper.mapTransaction(
         chainId,
         domainTransactions.results,
         safeInfo,
       );
     let prev_page_timestamp = 0;
-    let nextURL, previousURL;
-    if (paginationData?.offset !== undefined) {
+    if (paginationData?.offset !== undefined && paginationData?.offset > 0) {
       // Get previous page label
       prev_page_timestamp = this.getDayInMillis(
         results[0].transaction.timestamp,
@@ -298,22 +301,13 @@ export class TransactionsService {
       );
       results = results.slice(1);
     }
-    if (paginationData?.limit !== undefined) {
-      nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
-      previousURL = buildPreviousPageURL(routeUrl);
-    } else {
-      nextURL = cursorUrlFromLimitAndOffset(routeUrl, domainTransactions.next);
-      previousURL = cursorUrlFromLimitAndOffset(
-        routeUrl,
-        domainTransactions.previous,
-      );
-    }
-
+    const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
+    const previousURL = buildPreviousPageURL(routeUrl);
     if (nextURL == null) {
       const creationTransaction =
         await this.safeRepository.getCreationTransaction(chainId, safeAddress);
       results.push(
-        new TransactionHistory(
+        new TransactionItem(
           await this.creationTransactionMapper.mapTransaction(
             chainId,
             creationTransaction,

@@ -48,6 +48,7 @@ import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
 } from '../../domain/safe/entities/__tests__/creation-transaction.builder';
+import { PaginationData } from '../common/pagination/pagination.data';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -1137,8 +1138,8 @@ describe('Transactions Controller (Unit)', () => {
         {
           params: {
             executed: true,
-            offset: undefined,
-            limit: undefined,
+            offset: PaginationData.DEFAULT_OFFSET,
+            limit: PaginationData.DEFAULT_LIMIT,
             ordering: undefined,
             queued: false,
             safe: safeAddress,
@@ -1177,7 +1178,7 @@ describe('Transactions Controller (Unit)', () => {
       incomingTransaction.txType = 'ETHEREUM_TRANSACTION';
       const safe = safeBuilder().build();
       const transactionHistoryBuilder = {
-        count: 20,
+        count: 40,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
         previous: null,
         results: [moduleTransaction, multisigTransaction, incomingTransaction],
@@ -1222,7 +1223,7 @@ describe('Transactions Controller (Unit)', () => {
 
       const safe = safeBuilder().build();
       const transactionHistoryBuilder = {
-        count: 20,
+        count: 40,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
         previous: null,
         results: [moduleTransaction],
@@ -1272,7 +1273,7 @@ describe('Transactions Controller (Unit)', () => {
         'incoming-transfers/native-coin/safe-source-data.json',
       );
       const transactionHistoryBuilder = {
-        count: 20,
+        count: 40,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
         previous: null,
         results: [moduleTransaction, multisigTransaction, incomingTransaction],
@@ -1416,7 +1417,7 @@ describe('Transactions Controller (Unit)', () => {
       const client_next_cursor = `cursor=limit%3D${limit}%26offset%3D10`;
       const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3D0`;
       const transactionHistoryBuilder = {
-        count: 20,
+        count: 40,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&offset=10&queued=true&trusted=true`,
         previous: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&queued=true&trusted=true`,
         results: [moduleTransaction],
