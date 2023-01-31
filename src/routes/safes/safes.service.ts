@@ -5,7 +5,6 @@ import { IChainsRepository } from '../../domain/chains/chains.repository.interfa
 import * as semver from 'semver';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
-import { IContractsRepository } from '../../domain/contracts/contracts.repository.interface';
 import { AddressInfoHelper } from '../common/address-info/address-info.helper';
 import {
   isEthereumTransaction,
@@ -21,8 +20,6 @@ export class SafesService {
     private readonly safeRepository: ISafeRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-    @Inject(IContractsRepository)
-    private readonly contractsRepository: IContractsRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
@@ -48,16 +45,10 @@ export class SafesService {
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
-      moduleAddressesInfo = await this.addressInfoHelper
-        .getCollection(chainId, safe.modules)
-        .then((modules) => {
-          // If modules are empty, return null instead (api spec)
-          if (modules.length == 0) {
-            return null;
-          } else {
-            return modules;
-          }
-        });
+      const moduleInfoCollection: Array<AddressInfo> =
+        await this.addressInfoHelper.getCollection(chainId, safe.modules);
+      moduleAddressesInfo =
+        moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
     }
 
     const fallbackHandlerInfo: AddressInfo | null =

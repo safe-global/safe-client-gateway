@@ -42,18 +42,15 @@ import {
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
 
+  const safeConfigUri = faker.internet.url();
+
   beforeAll(async () => {
+    fakeConfigurationService.set('safeConfig.baseUri', safeConfigUri);
+    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
     fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
+      'exchange.apiKey',
+      faker.random.alphaNumeric(),
     );
-
-    fakeConfigurationService.set(
-      'exchange.baseUri',
-      'https://test.exchange.service',
-    );
-
-    fakeConfigurationService.set('exchange.apiKey', 'https://test.api.key');
   });
 
   beforeEach(async () => {
@@ -79,18 +76,21 @@ describe('Safes Controller (Unit)', () => {
   });
 
   it('safe info is correctly serialised', async () => {
+    const masterCopyVersion = faker.system.semver();
     const chain = chainBuilder()
-      .with('recommendedMasterCopyVersion', '5.0.0')
+      .with('recommendedMasterCopyVersion', masterCopyVersion)
       .build();
     const owner = faker.finance.ethereumAddress();
-    const masterCopies = [masterCopyBuilder().with('version', '5.0.0').build()];
+    const masterCopies = [
+      masterCopyBuilder().with('version', masterCopyVersion).build(),
+    ];
     const masterCopyInfo = contractBuilder()
       .with('address', masterCopies[0].address)
       .build();
     const safeInfo = safeBuilder()
       .with('owners', [owner])
       .with('masterCopy', masterCopies[0].address)
-      .with('version', '5.0.0')
+      .with('version', masterCopyVersion)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -126,20 +126,29 @@ describe('Safes Controller (Unit)', () => {
         ),
       ])
       .build();
-
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -188,25 +197,40 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().with('version', 'vI.N.V.A.L.I.D').build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .with('version', 'vI.N.V.A.L.I.D')
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -224,25 +248,39 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -261,25 +299,39 @@ describe('Safes Controller (Unit)', () => {
       masterCopyBuilder().with('address', supportedMasterCopy).build(),
     ];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -304,24 +356,36 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', supportedMasterCopy)
       .with('version', '4.0.0')
       .build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -337,9 +401,13 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder()
@@ -361,19 +429,29 @@ describe('Safes Controller (Unit)', () => {
         ),
       ])
       .build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -389,9 +467,13 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder()
@@ -416,19 +498,29 @@ describe('Safes Controller (Unit)', () => {
         ),
       ])
       .build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -444,9 +536,13 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder()
@@ -470,19 +566,29 @@ describe('Safes Controller (Unit)', () => {
         ),
       ])
       .build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -498,9 +604,13 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder()
@@ -524,19 +634,29 @@ describe('Safes Controller (Unit)', () => {
         ),
       ])
       .build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -556,32 +676,48 @@ describe('Safes Controller (Unit)', () => {
     const module2 = faker.finance.ethereumAddress();
     const module3 = faker.finance.ethereumAddress();
     const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
       .with('modules', [module1, module2, module3])
       .build();
     const moduleInfo1 = contractBuilder().with('address', module1).build();
     const moduleInfo2 = contractBuilder().with('address', module2).build();
     const moduleInfo3 = contractBuilder().with('address', module3).build();
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: moduleInfo1 });
-    mockNetworkService.get.mockResolvedValueOnce({ data: moduleInfo2 });
-    mockNetworkService.get.mockResolvedValueOnce({ data: moduleInfo3 });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${module1}`:
+          return Promise.resolve({ data: moduleInfo1 });
+        case `${chain.transactionService}/api/v1/contracts/${module2}`:
+          return Promise.resolve({ data: moduleInfo2 });
+        case `${chain.transactionService}/api/v1/contracts/${module3}`:
+          return Promise.resolve({ data: moduleInfo3 });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
@@ -613,26 +749,40 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder().with('modules', []).build();
-
-    const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('modules', [])
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const allTransactions = pageBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chain });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safeInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopies });
-    mockNetworkService.get.mockResolvedValueOnce({ data: masterCopyInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: fallbackHandlerInfo });
-    mockNetworkService.get.mockResolvedValueOnce({ data: guardInfo });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: collectibleTransfers,
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: queuedTransactions,
-    });
-    mockNetworkService.get.mockResolvedValueOnce({ data: allTransactions });
 
     await request(app.getHttpServer())
       .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
