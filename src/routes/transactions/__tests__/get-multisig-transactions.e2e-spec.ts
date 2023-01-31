@@ -5,6 +5,7 @@ import { RedisClientType } from 'redis';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { PaginationData } from '../../common/pagination/pagination.data';
 
 describe('Get multisig transactions e2e test', () => {
   let app: INestApplication;
@@ -30,7 +31,7 @@ describe('Get multisig transactions e2e test', () => {
     const executionDateGte = '2022-11-04T00:00:00.000Z';
     const executionDateLte = '2022-11-08T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
-    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/native-token-expected-response.json',
     );
@@ -53,7 +54,7 @@ describe('Get multisig transactions e2e test', () => {
     const executionDateGte = '2022-12-01T00:00:00.000Z';
     const executionDateLte = '2022-12-07T11:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
-    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/erc20-expected-response.json',
     );
@@ -76,7 +77,7 @@ describe('Get multisig transactions e2e test', () => {
     const executionDateGte = '2022-11-29T14:00:00.000Z';
     const executionDateLte = '2022-12-06T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
-    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/erc721-expected-response.json',
     );

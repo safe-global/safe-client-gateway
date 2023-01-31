@@ -28,6 +28,7 @@ import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '../../domain/entities/__tests__/page.builder';
+import { PaginationData } from '../common/pagination/pagination.data';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
@@ -188,8 +189,8 @@ describe('Collectibles Controller (Unit)', () => {
 
       expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
-          limit: undefined,
-          offset: undefined,
+          limit: PaginationData.DEFAULT_LIMIT,
+          offset: PaginationData.DEFAULT_OFFSET,
           exclude_spam: excludeSpam.toString(),
           trusted: trusted.toString(),
         },

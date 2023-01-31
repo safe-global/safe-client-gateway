@@ -5,6 +5,7 @@ import { RedisClientType } from 'redis';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { PaginationData } from '../../common/pagination/pagination.data';
 
 describe('Get module transactions e2e test', () => {
   let app: INestApplication;
@@ -28,7 +29,7 @@ describe('Get module transactions e2e test', () => {
   it('GET /safes/<address>/module-transactions (native token)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const cacheKey = `${chainId}_${safeAddress}_module_transactions`;
-    const cacheKeyField = `undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/module-transactions/native-token-expected-response.json',
     );

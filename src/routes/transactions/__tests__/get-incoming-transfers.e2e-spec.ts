@@ -5,6 +5,7 @@ import { RedisClientType } from 'redis';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { PaginationData } from '../../common/pagination/pagination.data';
 
 describe('Get incoming transfers e2e test', () => {
   let app: INestApplication;
@@ -30,7 +31,7 @@ describe('Get incoming transfers e2e test', () => {
     const executionDateGte = '2022-10-20T00:00:00.000Z';
     const executionDateLte = '2022-11-03T00:00:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_incoming_transfers`;
-    const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expected = getJsonResource('e2e/erc20-expected-response.json');
 
     await request(app.getHttpServer())
@@ -51,7 +52,7 @@ describe('Get incoming transfers e2e test', () => {
     const executionDateGte = '2022-08-01T00:00:00.000Z';
     const executionDateLte = '2022-08-04T12:50:00.000Z';
     const cacheKey = `${chainId}_${safeAddress}_incoming_transfers`;
-    const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_undefined_undefined`;
+    const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expected = getJsonResource('e2e/erc721-expected-response.json');
 
     await request(app.getHttpServer())
