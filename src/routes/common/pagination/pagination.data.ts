@@ -3,6 +3,15 @@ const QUERY_PARAM_LIMIT = 'limit';
 const QUERY_PARAM_OFFSET = 'offset';
 
 export class PaginationData {
+  /**
+   * Default pagination (limit and offset) values.
+   * These values are intended to apply if no pagination data is present in the client request.
+   * They limit the amount of items retrieved from provider services, and abstracts the clients
+   * from pagination data management.
+   * 
+   * Relying on pagination values returned by provider services is not feasible, since the
+   * provider pagination data could have been customized depending on the use case.
+   */
   public static readonly DEFAULT_LIMIT = 20;
   public static readonly DEFAULT_OFFSET = 0;
 
