@@ -1,6 +1,7 @@
 import { Schema } from 'ajv';
 
 export const confirmationSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/confirmation.json',
   type: 'object',
   properties: {
     owner: { type: 'string' },
@@ -13,6 +14,7 @@ export const confirmationSchema: Schema = {
 };
 
 export const multisigTransactionSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/multisig-transaction.json',
   type: 'object',
   properties: {
     safe: { type: 'string' },
@@ -20,7 +22,12 @@ export const multisigTransactionSchema: Schema = {
     value: { type: 'string', nullable: true, default: null },
     data: { type: 'string', nullable: true, default: null },
     dataDecoded: {
-      anyOf: [{ type: 'null' }, { $ref: 'dataDecodedSchema' }],
+      anyOf: [
+        { type: 'null' },
+        {
+          $ref: '../data-decoded/data-decoded.json',
+        },
+      ],
       default: null,
     },
     operation: { type: 'number', enum: [0, 1] },
@@ -62,7 +69,9 @@ export const multisigTransactionSchema: Schema = {
     confirmations: {
       type: 'array',
       nullable: true,
-      items: confirmationSchema,
+      items: {
+        $ref: 'confirmation.json',
+      },
       default: null,
     },
     signatures: { type: 'string', nullable: true, default: null },

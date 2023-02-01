@@ -1,6 +1,7 @@
 import { Schema } from 'ajv';
 
 export const dataDecodedParameterSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
   type: 'object',
   properties: {
     name: { type: 'string' },
@@ -12,13 +13,14 @@ export const dataDecodedParameterSchema: Schema = {
 };
 
 export const dataDecodedSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
   type: 'object',
   properties: {
     method: { type: 'string' },
     parameters: {
       anyOf: [
         { type: 'null' },
-        { type: 'array', items: { $ref: 'dataDecodedParameter' } },
+        { type: 'array', items: { $ref: 'data-decoded-parameter.json' } },
       ],
     },
   },

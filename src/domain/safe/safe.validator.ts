@@ -14,9 +14,10 @@ export class SafeValidator implements IValidator<Safe> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidSafe = this.jsonSchemaService.compile(
+    this.isValidSafe = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe/safe.json',
       safeSchema,
-    ) as ValidateFunction<Safe>;
+    );
   }
 
   validate(data: unknown): Safe {

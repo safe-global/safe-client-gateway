@@ -2,6 +2,7 @@ import { JSONSchemaType } from 'ajv';
 import { Safe } from '../safe.entity';
 
 export const safeSchema: JSONSchemaType<Safe> = {
+  $id: 'https://safe-client.safe.global/schemas/safe/safe.json',
   type: 'object',
   properties: {
     address: { type: 'string' },

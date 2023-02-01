@@ -14,9 +14,10 @@ export class TokenValidator implements IValidator<Token> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaValidator: JsonSchemaService,
   ) {
-    this.isValidToken = this.jsonSchemaValidator.compile(
+    this.isValidToken = this.jsonSchemaValidator.getSchema(
+      'https://safe-client.safe.global/schemas/tokens/token.json',
       tokenSchema,
-    ) as ValidateFunction<Token>;
+    );
   }
 
   validate(data: unknown): Token {

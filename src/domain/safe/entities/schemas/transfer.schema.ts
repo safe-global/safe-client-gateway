@@ -1,9 +1,7 @@
-import { nativeTokenTransferSchema } from './native-token-transfer.schema';
 import { Schema } from 'ajv';
-import { erc20TransferSchema } from './erc20-transfer.schema';
-import { erc721TransferSchema } from './erc721-transfer.schema';
 
 export const transferSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/transfer.json',
   type: 'object',
   discriminator: { propertyName: 'type' },
   required: [
@@ -14,5 +12,15 @@ export const transferSchema: Schema = {
     'to',
     'from',
   ],
-  oneOf: [nativeTokenTransferSchema, erc20TransferSchema, erc721TransferSchema],
+  oneOf: [
+    {
+      $ref: 'native-token-transfer.json',
+    },
+    {
+      $ref: 'erc20-transfer.json',
+    },
+    {
+      $ref: 'erc721-transfer.json',
+    },
+  ],
 };

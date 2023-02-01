@@ -21,13 +21,16 @@ export class EventValidationPipe
   private readonly isPendingTransactionEvent: ValidateFunction<PendingTransaction>;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
-    this.isExecutedTransactionEvent = jsonSchemaService.compile(
+    this.isExecutedTransactionEvent = jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/executed-transaction.json',
       executedTransactionEventSchema,
     );
-    this.isNewConfirmationEvent = jsonSchemaService.compile(
+    this.isNewConfirmationEvent = jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/new-confirmation.json',
       newConfirmationEventSchema,
     );
-    this.isPendingTransactionEvent = jsonSchemaService.compile(
+    this.isPendingTransactionEvent = jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/pending-transaction.json',
       pendingTransactionEventSchema,
     );
   }

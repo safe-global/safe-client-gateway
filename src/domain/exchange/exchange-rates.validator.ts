@@ -14,9 +14,10 @@ export class ExchangeRatesValidator implements IValidator<ExchangeRates> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidExchangeRates = this.jsonSchemaService.compile(
+    this.isValidExchangeRates = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/exchange/exchange-rates.json',
       exchangeRatesSchema,
-    ) as ValidateFunction<ExchangeRates>;
+    );
   }
 
   validate(data: unknown): ExchangeRates {

@@ -3,6 +3,7 @@ import { EventType } from '../event-payload.entity';
 import { NewConfirmation } from '../new-confirmation.entity';
 
 export const newConfirmationEventSchema: JSONSchemaType<NewConfirmation> = {
+  $id: 'https://safe-client.safe.global/schemas/cache-hooks/new-confirmation.json',
   type: 'object',
   properties: {
     address: { type: 'string' },

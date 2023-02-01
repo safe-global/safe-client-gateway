@@ -1,7 +1,8 @@
 import { JSONSchemaType } from 'ajv';
 import { ExchangeRates } from '../exchange-rates.entity';
 
-const exchangeRatesSchema: JSONSchemaType<ExchangeRates> = {
+export const exchangeRatesSchema: JSONSchemaType<ExchangeRates> = {
+  $id: 'https://safe-client.safe.global/schemas/exchange/exchange-rates.json',
   type: 'object',
   properties: {
     success: { type: 'boolean' },
@@ -14,5 +15,3 @@ const exchangeRatesSchema: JSONSchemaType<ExchangeRates> = {
   },
   required: ['success', 'base', 'rates'],
 };
-
-export { exchangeRatesSchema };

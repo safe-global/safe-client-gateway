@@ -3,9 +3,15 @@ import { ValidateFunction } from 'ajv';
 import { IValidator } from '../interfaces/validator.interface';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { GenericValidator } from '../schema/generic.validator';
-import { multisigTransactionSchema } from './entities/schemas/multisig-transaction.schema';
+import {
+  confirmationSchema,
+  multisigTransactionSchema,
+} from './entities/schemas/multisig-transaction.schema';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { dataDecodedSchema } from '../data-decoder/entities/schemas/data-decoded.schema';
+import {
+  dataDecodedParameterSchema,
+  dataDecodedSchema,
+} from '../data-decoder/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class MultisigTransactionValidator
@@ -17,10 +23,25 @@ export class MultisigTransactionValidator
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.jsonSchemaService.addSchema(dataDecodedSchema, 'dataDecodedSchema');
-    this.isValidMultisigTransaction = this.jsonSchemaService.compile(
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      dataDecodedParameterSchema,
+    );
+
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
+      dataDecodedSchema,
+    );
+
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe/confirmation.json',
+      confirmationSchema,
+    );
+
+    this.isValidMultisigTransaction = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe/multisig-transaction.json',
       multisigTransactionSchema,
-    ) as ValidateFunction<MultisigTransaction>;
+    );
   }
 
   validate(data: unknown): MultisigTransaction {

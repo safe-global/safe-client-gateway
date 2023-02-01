@@ -4,6 +4,7 @@ import { EventType } from '../event-payload.entity';
 
 export const executedTransactionEventSchema: JSONSchemaType<ExecutedTransaction> =
   {
+    $id: 'https://safe-client.safe.global/schemas/cache-hooks/executed-transaction.json',
     type: 'object',
     properties: {
       address: { type: 'string' },

@@ -14,9 +14,10 @@ export class ContractsValidator implements IValidator<Contract> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidContract = this.jsonSchemaService.compile(
+    this.isValidContract = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/contracts/contract.json',
       contractSchema,
-    ) as ValidateFunction<Contract>;
+    );
   }
 
   validate(data: unknown): Contract {

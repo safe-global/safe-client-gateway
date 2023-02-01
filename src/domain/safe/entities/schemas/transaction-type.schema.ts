@@ -1,15 +1,19 @@
 import { Schema } from 'ajv';
-import { moduleTransactionTypeSchema } from './module-transaction-type.schema';
-import { multisigTransactionTypeSchema } from './multisig-transaction-type.schema';
-import { ethereumTransactionTypeSchema } from './ethereum-transaction-type.schema';
 
 export const transactionTypeSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/transaction-type.json',
   type: 'object',
   discriminator: { propertyName: 'txType' },
   required: ['txType'],
   oneOf: [
-    ethereumTransactionTypeSchema,
-    moduleTransactionTypeSchema,
-    multisigTransactionTypeSchema,
+    {
+      $ref: 'ethereum-transaction-type.json',
+    },
+    {
+      $ref: 'module-transaction-type.json',
+    },
+    {
+      $ref: 'multisig-transaction-type.json',
+    },
   ],
 };

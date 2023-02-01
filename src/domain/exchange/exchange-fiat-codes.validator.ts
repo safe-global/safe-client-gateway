@@ -16,9 +16,10 @@ export class ExchangeFiatCodesValidator
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidExchangeFiatCodes = this.jsonSchemaService.compile(
+    this.isValidExchangeFiatCodes = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/exchange/exchange-fiat-codes.json',
       exchangeFiatCodesSchema,
-    ) as ValidateFunction<ExchangeFiatCodes>;
+    );
   }
 
   validate(data: unknown): ExchangeFiatCodes {
