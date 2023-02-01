@@ -100,6 +100,7 @@ export const chainSchema: JSONSchemaType<Chain> = {
     ensRegistryAddress: { type: 'string', nullable: true, default: null },
     disabledWallets: { type: 'array', items: { type: 'string' } },
     features: { type: 'array', items: { type: 'string' } },
+    recommendedMasterCopyVersion: { type: 'string' },
   },
   required: [
     'chainId',
@@ -118,5 +119,6 @@ export const chainSchema: JSONSchemaType<Chain> = {
     'gasPrice',
     'disabledWallets',
     'features',
+    'recommendedMasterCopyVersion',
   ],
 };

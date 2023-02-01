@@ -153,9 +153,40 @@ export class SafeRepository implements ISafeRepository {
     return this.creationTransactionValidator.validate(createTransaction);
   }
 
+  async getTransactionHistoryByExecutionDate(
+    chainId: string,
+    safeAddress: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transaction>> {
+    return this.getAllExecutedTransactions(
+      chainId,
+      safeAddress,
+      'executionDate',
+      limit,
+      offset,
+    );
+  }
+
   async getTransactionHistory(
     chainId: string,
     safeAddress: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Transaction>> {
+    return this.getAllExecutedTransactions(
+      chainId,
+      safeAddress,
+      undefined,
+      limit,
+      offset,
+    );
+  }
+
+  private async getAllExecutedTransactions(
+    chainId: string,
+    safeAddress: string,
+    ordering?: string,
     limit?: number,
     offset?: number,
   ): Promise<Page<Transaction>> {
@@ -163,7 +194,7 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(chainId);
     const page: Page<Transaction> = await transactionService.getAllTransactions(
       safeAddress,
-      undefined,
+      ordering,
       true,
       false,
       limit,

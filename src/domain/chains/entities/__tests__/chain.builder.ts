@@ -10,7 +10,7 @@ import { rpcUriBuilder } from './rpc-uri.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return Builder.new<Chain>()
-    .with('chainId', faker.datatype.number.toString())
+    .with('chainId', faker.random.numeric())
     .with('chainName', faker.company.name())
     .with('description', faker.random.words())
     .with('l2', faker.datatype.boolean())
@@ -29,5 +29,6 @@ export function chainBuilder(): IBuilder<Chain> {
     ])
     .with('ensRegistryAddress', faker.finance.ethereumAddress())
     .with('disabledWallets', [faker.random.word(), faker.random.word()])
-    .with('features', [faker.random.word(), faker.random.word()]);
+    .with('features', [faker.random.word(), faker.random.word()])
+    .with('recommendedMasterCopyVersion', faker.system.semver());
 }
