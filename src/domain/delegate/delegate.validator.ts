@@ -14,9 +14,10 @@ export class DelegateValidator implements IValidator<Delegate> {
     private readonly validationErrorFactory: ValidationErrorFactory,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidDelegate = this.jsonSchemaService.compile(
+    this.isValidDelegate = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/delegates/delegate.json',
       delegateSchema,
-    ) as ValidateFunction<Delegate>;
+    );
   }
 
   validate(data: unknown): Delegate {

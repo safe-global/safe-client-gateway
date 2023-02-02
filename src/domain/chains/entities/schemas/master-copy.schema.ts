@@ -2,6 +2,7 @@ import { JSONSchemaType } from 'ajv';
 import { MasterCopy } from '../master-copies.entity';
 
 export const masterCopySchema: JSONSchemaType<MasterCopy> = {
+  $id: 'https://safe-client.safe.global/schemas/chains/master-copy.json',
   type: 'object',
   properties: {
     address: { type: 'string' },

@@ -1,6 +1,7 @@
 import { Schema } from 'ajv';
 
 export const erc20TransferSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/erc20-transfer.json',
   type: 'object',
   properties: {
     type: {

@@ -17,13 +17,14 @@ export class DataDecodedValidator implements IValidator<DataDecoded> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.jsonSchemaService.addSchema(
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
       dataDecodedParameterSchema,
-      'dataDecodedParameter',
     );
-    this.isValidDataDecoded = this.jsonSchemaService.compile(
+    this.isValidDataDecoded = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
       dataDecodedSchema,
-    ) as ValidateFunction<DataDecoded>;
+    );
   }
 
   validate(data: unknown): DataDecoded {

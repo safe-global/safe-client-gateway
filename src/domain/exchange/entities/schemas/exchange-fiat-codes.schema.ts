@@ -1,7 +1,8 @@
 import { JSONSchemaType } from 'ajv';
 import { ExchangeFiatCodes } from '../exchange-fiat-codes.entity';
 
-const exchangeFiatCodesSchema: JSONSchemaType<ExchangeFiatCodes> = {
+export const exchangeFiatCodesSchema: JSONSchemaType<ExchangeFiatCodes> = {
+  $id: 'https://safe-client.safe.global/schemas/exchange/exchange-fiat-codes.json',
   type: 'object',
   properties: {
     success: { type: 'boolean' },
@@ -13,5 +14,3 @@ const exchangeFiatCodesSchema: JSONSchemaType<ExchangeFiatCodes> = {
   },
   required: ['success', 'symbols'],
 };
-
-export { exchangeFiatCodesSchema };

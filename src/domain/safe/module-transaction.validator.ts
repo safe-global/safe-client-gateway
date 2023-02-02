@@ -5,6 +5,10 @@ import { GenericValidator } from '../schema/generic.validator';
 import { JsonSchemaService } from '../schema/json-schema.service';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { moduleTransactionSchema } from './entities/schemas/module-transaction.schema';
+import {
+  dataDecodedParameterSchema,
+  dataDecodedSchema,
+} from '../data-decoder/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class ModuleTransactionValidator
@@ -16,9 +20,20 @@ export class ModuleTransactionValidator
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidModuleTransaction = this.jsonSchemaService.compile(
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      dataDecodedParameterSchema,
+    );
+
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
+      dataDecodedSchema,
+    );
+
+    this.isValidModuleTransaction = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe/module-transaction.json',
       moduleTransactionSchema,
-    ) as ValidateFunction<ModuleTransaction>;
+    );
   }
 
   validate(data: unknown): ModuleTransaction {

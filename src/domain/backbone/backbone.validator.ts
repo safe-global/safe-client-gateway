@@ -14,9 +14,10 @@ export class BackboneValidator implements IValidator<Backbone> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidBackbone = this.jsonSchemaService.compile(
+    this.isValidBackbone = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/backbone/backbone.json',
       backboneSchema,
-    ) as ValidateFunction<Backbone>;
+    );
   }
 
   validate(data: unknown): Backbone {

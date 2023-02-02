@@ -4,6 +4,7 @@ import { PendingTransaction } from '../pending-transaction.entity';
 
 export const pendingTransactionEventSchema: JSONSchemaType<PendingTransaction> =
   {
+    $id: 'https://safe-client.safe.global/schemas/cache-hooks/pending-transaction.json',
     type: 'object',
     properties: {
       address: { type: 'string' },

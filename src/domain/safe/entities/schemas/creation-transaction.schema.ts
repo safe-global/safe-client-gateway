@@ -1,7 +1,7 @@
 import { Schema } from 'ajv';
-import { dataDecodedSchema } from '../../../data-decoder/entities/schemas/data-decoded.schema';
 
 export const creationTransactionSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/creation-transaction.json',
   type: 'object',
   properties: {
     created: { type: 'string', isDate: true },
@@ -10,7 +10,14 @@ export const creationTransactionSchema: Schema = {
     factoryAddress: { type: 'string' },
     masterCopy: { type: 'string', nullable: true },
     setupData: { type: 'string', nullable: true },
-    dataDecoded: { oneOf: [dataDecodedSchema, { type: 'null' }] },
+    dataDecoded: {
+      oneOf: [
+        {
+          $ref: '../data-decoded/data-decoded.json',
+        },
+        { type: 'null' },
+      ],
+    },
   },
   required: ['created', 'creator', 'transactionhash'],
 };

@@ -18,15 +18,20 @@ export class SafeAppsValidator implements IValidator<SafeApp> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.jsonSchemaService.addSchema(
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe-apps/safe-app-provider.json',
       safeAppProviderSchema,
-      'safeAppProviderSchema',
     );
-    this.jsonSchemaService.addSchema(
+
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json',
       safeAppAccessControlSchema,
-      'safeAppAccessControlSchema',
     );
-    this.isValidSafeApp = this.jsonSchemaService.compile(safeAppSchema);
+
+    this.isValidSafeApp = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe-apps/safe-app.json',
+      safeAppSchema,
+    );
   }
 
   validate(data: unknown): SafeApp {

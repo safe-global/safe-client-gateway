@@ -2,6 +2,7 @@ import { JSONSchemaType } from 'ajv';
 import { Token, TokenType } from '../token.entity';
 
 export const tokenSchema: JSONSchemaType<Token> = {
+  $id: 'https://safe-client.safe.global/schemas/tokens/token.json',
   type: 'object',
   properties: {
     address: { type: 'string' },

@@ -14,9 +14,10 @@ export class MasterCopyValidator implements IValidator<MasterCopy> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidMasterCopy = this.jsonSchemaService.compile(
+    this.isValidMasterCopy = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/chains/master-copy.json',
       masterCopySchema,
-    ) as ValidateFunction<MasterCopy>;
+    );
   }
 
   validate(data: unknown): MasterCopy {

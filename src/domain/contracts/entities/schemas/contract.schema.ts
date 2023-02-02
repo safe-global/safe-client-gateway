@@ -1,6 +1,7 @@
 import { Schema } from 'ajv';
 
 export const contractSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/contracts/contract.json',
   type: 'object',
   properties: {
     address: { type: 'string' },

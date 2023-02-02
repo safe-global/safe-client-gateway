@@ -1,7 +1,7 @@
 import { Schema } from 'ajv';
-import { transferSchema } from './transfer.schema';
 
 export const ethereumTransactionTypeSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/ethereum-transaction-type.json',
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'ETHEREUM_TRANSACTION' },
@@ -11,7 +11,9 @@ export const ethereumTransactionTypeSchema: Schema = {
     blockNumber: { type: 'number' },
     transfers: {
       type: 'array',
-      items: transferSchema,
+      items: {
+        $ref: 'transfer.json',
+      },
       nullable: true,
       default: null,
     },

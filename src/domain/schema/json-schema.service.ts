@@ -19,11 +19,19 @@ export class JsonSchemaService {
     addFormats(this.ajv, { formats: ['uri'] });
   }
 
-  addSchema<T>(schema: Schema | JSONSchemaType<T>, name: string): void {
-    this.ajv.addSchema(schema, name);
-  }
-
-  compile<T>(schema: Schema | JSONSchemaType<T>): ValidateFunction<T> {
-    return this.ajv.compile(schema);
+  /**
+   * Gets the schema associated with {@link keyRef}.
+   *
+   * If the schema does not exist, the {@link schema} is compiled and added
+   * to the AJV instance cache
+   *
+   * @param keyRef - the key associated to the schema
+   * @param schema - the schema object to be added if it does not exist already
+   */
+  getSchema<T>(
+    keyRef: string,
+    schema: Schema | JSONSchemaType<T>,
+  ): ValidateFunction<T> {
+    return this.ajv.getSchema(keyRef) || this.ajv.compile(schema);
   }
 }

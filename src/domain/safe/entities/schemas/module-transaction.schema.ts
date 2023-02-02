@@ -1,14 +1,21 @@
 import { Schema } from 'ajv';
-import { dataDecodedSchema } from '../../../data-decoder/entities/schemas/data-decoded.schema';
 
 export const moduleTransactionSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/module-transaction.json',
   type: 'object',
   properties: {
     safe: { type: 'string' },
     to: { type: 'string' },
     value: { type: 'string', nullable: true, default: null },
     data: { type: 'string', nullable: true, default: null },
-    dataDecoded: { oneOf: [dataDecodedSchema, { type: 'null' }] },
+    dataDecoded: {
+      oneOf: [
+        {
+          $ref: '../data-decoded/data-decoded.json',
+        },
+        { type: 'null' },
+      ],
+    },
     operation: { type: 'number', enum: [0, 1] },
     created: { type: 'string', isDate: true },
     executionDate: { type: 'string', isDate: true },

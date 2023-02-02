@@ -14,9 +14,10 @@ export class CollectiblesValidator implements IValidator<Collectible> {
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
-    this.isValidCollectible = this.jsonSchemaService.compile(
+    this.isValidCollectible = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/collectibles/collectible.json',
       collectibleSchema,
-    ) as ValidateFunction<Collectible>;
+    );
   }
 
   validate(data: unknown): Collectible {

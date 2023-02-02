@@ -1,8 +1,7 @@
 import { Schema } from 'ajv';
-import { confirmationSchema } from './multisig-transaction.schema';
-import { dataDecodedSchema } from '../../../data-decoder/entities/schemas/data-decoded.schema';
 
 export const multisigTransactionTypeSchema: Schema = {
+  $id: 'https://safe-client.safe.global/schemas/safe/multisig-transaction-type.json',
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'MULTISIG_TRANSACTION' },
@@ -10,7 +9,14 @@ export const multisigTransactionTypeSchema: Schema = {
     to: { type: 'string' },
     value: { type: 'string', nullable: true, default: null },
     data: { type: 'string', nullable: true, default: null },
-    dataDecoded: { oneOf: [dataDecodedSchema, { type: 'null' }] },
+    dataDecoded: {
+      oneOf: [
+        {
+          $ref: '../data-decoded/data-decoded.json',
+        },
+        { type: 'null' },
+      ],
+    },
     operation: { type: 'number', enum: [0, 1] },
     gasToken: { type: 'string', nullable: true, default: null },
     safeTxGas: { type: 'number', nullable: true, default: null },
@@ -45,7 +51,9 @@ export const multisigTransactionTypeSchema: Schema = {
     confirmations: {
       type: 'array',
       nullable: true,
-      items: confirmationSchema,
+      items: {
+        $ref: 'confirmation.json',
+      },
       default: null,
     },
     signatures: { type: 'string', nullable: true, default: null },

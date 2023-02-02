@@ -2,6 +2,7 @@ import { JSONSchemaType } from 'ajv';
 import { Backbone } from '../backbone.entity';
 
 export const backboneSchema: JSONSchemaType<Backbone> = {
+  $id: 'https://safe-client.safe.global/schemas/backbone/backbone.json',
   type: 'object',
   properties: {
     name: { type: 'string' },
