@@ -10,6 +10,8 @@ import { ModuleTransactionPage } from './entities/module-transaction-page.entity
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { QueuedItemPage } from './entities/queued-item-page.entity';
+import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -106,6 +108,25 @@ export class TransactionsController {
       to,
       value,
       tokenAddress,
+      paginationData,
+    );
+  }
+
+  @ApiOkResponse({ type: QueuedItemPage })
+  @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'timezone_offset', required: false })
+  @ApiQuery({ name: 'trusted', required: false })
+  async getTransactionQueue(
+    @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress') safeAddress: string,
+    @PaginationDataDecorator() paginationData: PaginationData,
+  ): Promise<Partial<Page<QueuedItem>>> {
+    return this.transactionsService.getTransactionQueue(
+      chainId,
+      routeUrl,
+      safeAddress,
       paginationData,
     );
   }

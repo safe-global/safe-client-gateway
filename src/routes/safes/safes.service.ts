@@ -111,11 +111,12 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const lastQueuedTransaction = await this.safeRepository.getTransactionQueue(
-      chainId,
-      safeAddress,
-      1,
-    );
+    const lastQueuedTransaction =
+      await this.safeRepository.getTransactionQueueByModified(
+        chainId,
+        safeAddress,
+        1,
+      );
 
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }

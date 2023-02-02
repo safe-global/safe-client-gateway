@@ -54,7 +54,7 @@ export function toJson(multisigTransaction: MultisigTransaction): unknown {
       confirmationToJson(confirmation),
     ),
     txType: 'MULTISIG_TRANSACTION',
-    executionDate: multisigTransaction.executionDate.toISOString(),
+    executionDate: multisigTransaction.executionDate?.toISOString(),
     modified: multisigTransaction.modified?.toISOString(),
     submissionDate: multisigTransaction.submissionDate?.toISOString(),
   };

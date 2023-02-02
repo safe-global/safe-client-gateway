@@ -17,7 +17,7 @@ export type MultisigTransaction = {
   data: string | null; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
   dataDecoded: DataDecoded | null;
   ethGasPrice: string | null;
-  executionDate: Date;
+  executionDate: Date | null;
   executor: string | null;
   fee: string | null;
   gasPrice: string | null;

@@ -1,17 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ConflictType } from './conflict-type.entity';
-import { Transaction } from './transaction.entity';
+import { ConflictType } from '../conflict-type.entity';
+import { QueuedItem } from '../queued-item.entity';
+import { Transaction } from '../transaction.entity';
 
-export class MultisigTransaction {
-  @ApiProperty()
-  type: string;
+export class TransactionQueuedItem extends QueuedItem {
   @ApiProperty()
   transaction: Transaction;
   @ApiProperty()
   conflictType: string;
 
   constructor(transaction: Transaction, conflictType: ConflictType) {
-    this.type = 'TRANSACTION';
+    super('TRANSACTION');
     this.transaction = transaction;
     this.conflictType = conflictType;
   }
