@@ -4,8 +4,8 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { LoggerMiddleware } from '../../middleware/logger.middleware';
+import { Inject, Injectable } from '@nestjs/common';
+import * as winston from 'winston';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -18,8 +18,6 @@ import { LoggerMiddleware } from '../../middleware/logger.middleware';
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly logger = new Logger(LoggerMiddleware.name);
-
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -47,10 +45,10 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     const cached = await this.cacheService.get(key, field);
     if (cached != null) {
-      this.logger.debug(`[Cache] Cache hit: ${key}`);
+      winston.debug(`[Cache] Cache hit: ${key}`);
       return JSON.parse(cached);
     }
-    this.logger.debug(`[Cache] Cache miss: ${key}`);
+    winston.debug(`[Cache] Cache miss: ${key}`);
     const { data } = await this.networkService.get(url, params);
     const rawJson = JSON.stringify(data);
     await this.cacheService.set(key, field, rawJson, expireTimeSeconds);

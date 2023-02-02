@@ -1,12 +1,12 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
+import * as winston from 'winston';
 
 @Injectable()
 export class SafeAppInfoMapper {
-  private readonly logger = new Logger(SafeAppInfoMapper.name);
   private static readonly IPFS_URL = 'ipfs.io';
   private static readonly CF_IPFS_URL = 'cloudflare-ipfs.com';
 
@@ -28,7 +28,7 @@ export class SafeAppInfoMapper {
       originUrl,
     );
     if (!safeApp) {
-      this.logger.warn(
+      winston.warn(
         `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
       );
       return null;

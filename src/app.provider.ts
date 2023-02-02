@@ -3,6 +3,21 @@ import { DataSourceErrorFilter } from './routes/common/filters/data-source-error
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { TestingModule } from '@nestjs/testing/testing-module';
+import * as winston from 'winston';
+import { format } from 'winston';
+
+function configureLogger() {
+  winston.add(
+    new winston.transports.Console({
+      level: 'debug',
+      format: format.combine(
+        format.colorize({ all: true }),
+        format.splat(),
+        format.simple(),
+      ),
+    }),
+  );
+}
 
 function configureVersioning(app: INestApplication) {
   app.enableVersioning({
@@ -29,6 +44,7 @@ function configureSwagger(app: INestApplication) {
 }
 
 const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
+  configureLogger,
   configureVersioning,
   configureShutdownHooks,
   configureFilters,
