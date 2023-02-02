@@ -46,6 +46,8 @@ import { ITokenRepository } from './domain/tokens/token.repository.interface';
 import { TokenRepository } from './domain/tokens/token.repository';
 import { TokenValidator } from './domain/tokens/token.validator';
 import { CreationTransactionValidator } from './domain/safe/creation-transaction.validator';
+import { INotificationsRepository } from './domain/notifications/notifications.repository.interface';
+import { NotificationsRepository } from './domain/notifications/notifications.repository';
 
 @Global()
 @Module({
@@ -59,6 +61,7 @@ import { CreationTransactionValidator } from './domain/safe/creation-transaction
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
@@ -94,6 +97,7 @@ import { CreationTransactionValidator } from './domain/safe/creation-transaction
     IDataDecodedRepository,
     IDelegateRepository,
     IExchangeRepository,
+    INotificationsRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,

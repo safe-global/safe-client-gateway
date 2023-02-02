@@ -1,24 +1,25 @@
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
-import { Balance } from '../../domain/balances/entities/balance.entity';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { ICacheService } from '../cache/cache.service.interface';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
-import { Page } from '../../domain/entities/page.entity';
+import { Balance } from '../../domain/balances/entities/balance.entity';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import { Safe } from '../../domain/safe/entities/safe.entity';
-import { SafeList } from '../../domain/safe/entities/safe-list.entity';
+import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
 import { Contract } from '../../domain/contracts/entities/contract.entity';
 import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../../domain/delegate/entities/delegate.entity';
-import { INetworkService } from '../network/network.service.interface';
-import { Transfer } from '../../domain/safe/entities/transfer.entity';
-import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { Transaction } from '../../domain/safe/entities/transaction.entity';
-import { Token } from '../../domain/tokens/entities/token.entity';
-import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { Page } from '../../domain/entities/page.entity';
+import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
+import { Device } from '../../domain/notifications/entities/device.entity';
 import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
+import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { SafeList } from '../../domain/safe/entities/safe-list.entity';
+import { Safe } from '../../domain/safe/entities/safe.entity';
+import { Transaction } from '../../domain/safe/entities/transaction.entity';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
+import { Token } from '../../domain/tokens/entities/token.entity';
+import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { ICacheService } from '../cache/cache.service.interface';
+import { HttpErrorFactory } from '../errors/http-error-factory';
+import { INetworkService } from '../network/network.service.interface';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -408,6 +409,29 @@ export class TransactionApi implements ITransactionApi {
       const cacheKey = `${this.chainId}_${ownerAddress}_owner_safes`;
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
       return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async postDeviceRegistration(
+    device: Device,
+    safes: string[],
+    signatures: string[],
+  ) {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/`;
+      return await this.networkService.post(url, {
+        uuid: device.uuid,
+        cloudMessagingToken: device.cloudMessagingToken,
+        buildNumber: device.buildNumber,
+        bundle: device.bundle,
+        deviceType: device.deviceType,
+        version: device.version,
+        timestamp: device.timestamp,
+        safes,
+        signatures,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

@@ -1,19 +1,20 @@
 import { Backbone } from '../backbone/entities/backbone.entity';
 import { Balance } from '../balances/entities/balance.entity';
-import { Page } from '../entities/page.entity';
-import { Collectible } from '../collectibles/entities/collectible.entity';
 import { MasterCopy } from '../chains/entities/master-copies.entity';
-import { Safe } from '../safe/entities/safe.entity';
+import { Collectible } from '../collectibles/entities/collectible.entity';
 import { Contract } from '../contracts/entities/contract.entity';
 import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../delegate/entities/delegate.entity';
-import { Transfer } from '../safe/entities/transfer.entity';
-import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
-import { Transaction } from '../safe/entities/transaction.entity';
-import { Token } from '../tokens/entities/token.entity';
-import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
-import { SafeList } from '../safe/entities/safe-list.entity';
+import { Page } from '../entities/page.entity';
+import { Device } from '../notifications/entities/device.entity';
 import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
+import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
+import { SafeList } from '../safe/entities/safe-list.entity';
+import { Safe } from '../safe/entities/safe.entity';
+import { Transaction } from '../safe/entities/transaction.entity';
+import { Transfer } from '../safe/entities/transfer.entity';
+import { Token } from '../tokens/entities/token.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -126,4 +127,6 @@ export interface ITransactionApi {
   getTokens(limit?: number, offset?: number): Promise<Page<Token>>;
 
   getSafesByOwner(ownerAddress: string): Promise<SafeList>;
+
+  postDeviceRegistration(device: Device, safes: string[], signatures: string[]);
 }
