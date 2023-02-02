@@ -12,6 +12,7 @@ import { MultisigTransactionPage } from './entities/multisig-transaction-page.en
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItemPage } from './entities/queued-item-page.entity';
 import { QueuedItem } from './entities/queued-item.entity';
+import { TransactionHistoryPage } from './entities/transaction-history-page.entity';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -127,6 +128,26 @@ export class TransactionsController {
       chainId,
       routeUrl,
       safeAddress,
+      paginationData,
+    );
+  }
+
+  @ApiOkResponse({ type: TransactionHistoryPage })
+  @Get('chains/:chainId/safes/:safeAddress/transactions-history')
+  @ApiQuery({ name: 'timezone_offset', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  async getTransactionsHistory(
+    @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress') safeAddress: string,
+    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('timezone_offset') timezoneOffset?: string,
+  ) {
+    return this.transactionsService.getTransactionHistory(
+      chainId,
+      routeUrl,
+      safeAddress,
+      timezoneOffset,
       paginationData,
     );
   }

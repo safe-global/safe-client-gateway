@@ -15,10 +15,14 @@ import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItem } from './entities/queued-item.entity';
+import { TransactionHistoryGroup } from './entities/transaction-history-group.entity';
+import { TransactionHistory } from './entities/transaction-history.entity';
+import { TransactionMapper } from './mappers/common/transaction.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
+import { groupBy } from 'lodash';
 
 @Injectable()
 export class TransactionsService {
@@ -28,6 +32,7 @@ export class TransactionsService {
     private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
+    private readonly transactionMapper: TransactionMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -215,6 +220,102 @@ export class TransactionsService {
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
       results,
+    };
+  }
+  private getDayInMillis(timestamp: number, time_zone_offset): number {
+    const date = new Date(timestamp);
+    date.setUTCSeconds(time_zone_offset);
+    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  private groupByDay(
+    transactions: TransactionHistory[],
+  ): TransactionHistoryGroup[] {
+    return Object.entries(
+      groupBy(transactions, (transaction) =>
+        this.getDayInMillis(transaction.transaction.timestamp, 0),
+      ),
+    ).map(
+      ([timestamp, transactions]) =>
+        <TransactionHistoryGroup>{
+          timestamp: Number(timestamp),
+          transactions: transactions,
+        },
+    );
+  }
+
+  private adjust_page(limit?: number, offset?: number): PaginationData {
+    if (offset !== undefined && offset > 0) {
+      if (limit === undefined) {
+        limit = 20; //default limit
+      }
+      return new PaginationData(limit + 1, offset - 1);
+    }
+    return new PaginationData(limit, offset);
+  }
+
+  async getTransactionHistory(
+    chainId: string,
+    routeUrl: Readonly<URL>,
+    safeAddress: string,
+    timezoneOffset?: string,
+    paginationData?: PaginationData,
+  ) {
+    const paginationData_adjusted = this.adjust_page(
+      paginationData?.limit,
+      paginationData?.offset,
+    );
+    const domainTransactions = await this.safeRepository.getTransactionHistory(
+      chainId,
+      safeAddress,
+      paginationData_adjusted?.limit,
+      paginationData_adjusted?.offset,
+    );
+
+    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    let results: TransactionHistory[] =
+      await this.transactionMapper.mapTransaction(
+        chainId,
+        domainTransactions.results,
+        safeInfo,
+      );
+
+    let prev_page_timestamp = 0;
+    if (paginationData?.offset != 0) {
+      // Get previous page label
+      prev_page_timestamp = this.getDayInMillis(
+        results[0].transaction.timestamp,
+        timezoneOffset,
+      );
+      results = results.slice(1);
+    }
+    const transactionHistoryGroups = this.groupByDay(results);
+    const transactionList: any[] = [];
+    transactionHistoryGroups.forEach((transactionGroup) => {
+      if (transactionGroup.timestamp != prev_page_timestamp) {
+        transactionList.push({
+          type: 'DATE_LABEL',
+          timestamp: transactionGroup.timestamp,
+        });
+      }
+      transactionGroup.transactions.forEach((transaction) => {
+        transactionList.push(transaction);
+      });
+    });
+
+    const nextURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.next,
+    );
+    const previousURL = cursorUrlFromLimitAndOffset(
+      routeUrl,
+      domainTransactions.previous,
+    );
+
+    return {
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      transactionList,
     };
   }
 

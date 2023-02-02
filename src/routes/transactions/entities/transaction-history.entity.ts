@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ConflictType } from './conflict-type.entity';
 import { Transaction } from './transaction.entity';
 
-export class ModuleTransaction {
+export class TransactionHistory {
   @ApiProperty()
   type: string;
   @ApiProperty()
