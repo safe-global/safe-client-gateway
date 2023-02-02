@@ -12,7 +12,7 @@ import { MultisigTransactionPage } from './entities/multisig-transaction-page.en
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItemPage } from './entities/queued-item-page.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionItemPage } from './entities/transaction-history-page.entity';
+import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -142,7 +142,7 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset') timezoneOffset?: string,
-  ) {
+  ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory(
       chainId,
       routeUrl,

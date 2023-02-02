@@ -30,7 +30,7 @@ export class TransactionMapper {
     safe: Safe,
     timezoneOffset?: string,
     offset?: number,
-  ) {
+  ): Promise<[TransactionItem | DateLabel]> {
     const transactionList: any[] = [];
 
     let prev_page_timestamp = 0;
@@ -100,7 +100,9 @@ export class TransactionMapper {
       );
     });
 
-    return (await Promise.all(transactionList)).flat(2);
+    return <[TransactionItem | DateLabel]>(
+      (await Promise.all(transactionList)).flat(2)
+    );
   }
 
   private groupByDay(

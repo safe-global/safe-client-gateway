@@ -22,6 +22,7 @@ import { MultisigTransactionMapper } from './mappers/multisig-transactions/multi
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
+import { TransactionItemPage } from './entities/transaction-item-page.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -246,7 +247,7 @@ export class TransactionsService {
     safeAddress: string,
     timezoneOffset?: string,
     paginationData?: PaginationData,
-  ) {
+  ): Promise<Partial<TransactionItemPage>> {
     const paginationData_adjusted = this.adjustTransactionHistoryPage(
       paginationData?.limit,
       paginationData?.offset,
@@ -281,12 +282,12 @@ export class TransactionsService {
         ),
       );
     }
-
-    return {
+    const page = {
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      results: results,
+      results,
     };
+    return page;
   }
 
   /**
