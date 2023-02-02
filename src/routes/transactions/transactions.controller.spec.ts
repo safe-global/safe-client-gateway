@@ -1171,7 +1171,10 @@ describe('Transactions Controller (Unit)', () => {
           .build(),
       );
       const incomingTransaction = ethereumTransactionToJson(
-        ethereumTransactionBuilder().with('transfers', [transfer]).build(),
+        ethereumTransactionBuilder()
+          .with('executionDate', new Date('2022-12-31T17:09:36Z'))
+          .with('transfers', [transfer])
+          .build(),
       );
       const safe = safeBuilder().build();
       const transactionHistoryBuilder = {

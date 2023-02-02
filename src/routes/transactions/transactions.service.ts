@@ -15,16 +15,13 @@ import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionItemGroup } from './entities/transaction-history-group.entity';
 import { TransactionItem } from './entities/transaction-item.entity';
 import { TransactionMapper } from './mappers/common/transaction.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
-import { groupBy } from 'lodash';
 import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
-import { DateLabel } from './entities/date-label.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -226,31 +223,6 @@ export class TransactionsService {
     };
   }
 
-  private getDayInMillis(timestamp: number, timezoneOffset?: string): number {
-    const date = new Date(timestamp);
-    if (timezoneOffset !== undefined) {
-      date.setUTCSeconds(parseInt(timezoneOffset) || 0);
-    }
-    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-  }
-
-  private groupByDay(
-    transactions: TransactionItem[],
-    timezoneOffset?: string,
-  ): TransactionItemGroup[] {
-    return Object.entries(
-      groupBy(transactions, (transaction) =>
-        this.getDayInMillis(transaction.transaction.timestamp, timezoneOffset),
-      ),
-    ).map(
-      ([timestamp, transactions]) =>
-        <TransactionItemGroup>{
-          timestamp: Number(timestamp),
-          transactions: transactions,
-        },
-    );
-  }
-
   private adjustTransactionHistoryPage(
     limit?: number,
     offset?: number,
@@ -286,21 +258,14 @@ export class TransactionsService {
       paginationData_adjusted?.offset,
     );
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    let results: TransactionItem[] =
-      await this.transactionMapper.mapTransaction(
-        chainId,
-        domainTransactions.results,
-        safeInfo,
-      );
-    let prev_page_timestamp = 0;
-    if (paginationData?.offset !== undefined && paginationData?.offset > 0) {
-      // Get previous page label
-      prev_page_timestamp = this.getDayInMillis(
-        results[0].transaction.timestamp,
-        timezoneOffset,
-      );
-      results = results.slice(1);
-    }
+    const results = await this.transactionMapper.mapTransaction(
+      chainId,
+      domainTransactions.results,
+      safeInfo,
+      timezoneOffset,
+      paginationData?.offset,
+    );
+
     const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
     const previousURL = buildPreviousPageURL(routeUrl);
     if (nextURL == null) {
@@ -317,21 +282,10 @@ export class TransactionsService {
       );
     }
 
-    const transactionHistoryGroups = this.groupByDay(results, timezoneOffset);
-    const transactionList: any[] = [];
-    transactionHistoryGroups.forEach((transactionGroup) => {
-      if (transactionGroup.timestamp != prev_page_timestamp) {
-        transactionList.push(new DateLabel(transactionGroup.timestamp));
-      }
-      transactionGroup.transactions.forEach((transaction) => {
-        transactionList.push(transaction);
-      });
-    });
-
     return {
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      results: transactionList,
+      results: results,
     };
   }
 
