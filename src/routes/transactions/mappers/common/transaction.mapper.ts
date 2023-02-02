@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Transaction as TransactionDomain } from '../../../../domain/safe/entities/transaction.entity';
+import {
+  isEthereumTransaction,
+  isModuleTransaction,
+  isMultisigTransaction,
+  Transaction as TransactionDomain,
+} from '../../../../domain/safe/entities/transaction.entity';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { ModuleTransactionMapper } from '../module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from '../multisig-transactions/multisig-transaction.mapper';
@@ -23,7 +28,7 @@ export class TransactionMapper {
     safe: Safe,
   ): Promise<TransactionItem[]> {
     const results = await transactionsDomain.map(async (transaction) => {
-      if ('isExecuted' in transaction) {
+      if (isMultisigTransaction(transaction)) {
         return new TransactionItem(
           await this.multisigTransactionMapper.mapTransaction(
             chainId,
@@ -31,7 +36,7 @@ export class TransactionMapper {
             safe,
           ),
         );
-      } else if ('module' in (transaction as ModuleTransaction)) {
+      } else if (isModuleTransaction(transaction)) {
         return new TransactionItem(
           await this.moduleTransactionMapper.mapTransaction(
             chainId,
@@ -39,7 +44,7 @@ export class TransactionMapper {
             safe,
           ),
         );
-      } else {
+      } else if (isEthereumTransaction(transaction)) {
         const transfers = (transaction as EthereumTransaction).transfers;
         return transfers
           ? await Promise.all(
@@ -55,6 +60,9 @@ export class TransactionMapper {
               ),
             )
           : null;
+      } else {
+        // This should never happen as AJV would not allow an unknown transaction to get to this stage
+        throw Error('Unrecognized transaction type');
       }
     });
 

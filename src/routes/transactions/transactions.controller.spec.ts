@@ -1152,13 +1152,13 @@ describe('Transactions Controller (Unit)', () => {
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const moduleTransaction: any = moduleTransactionTojson(
+      const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder()
           .with('dataDecoded', null)
           .with('executionDate', new Date('2022-12-06T17:09:36Z'))
           .build(),
       );
-      const multisigTransaction: any = multisigTransactionToJson(
+      const multisigTransaction = multisigTransactionToJson(
         multisigTransactionBuilder()
           .with('dataDecoded', null)
           .with('origin', null)
@@ -1170,12 +1170,9 @@ describe('Transactions Controller (Unit)', () => {
           .with('executionDate', new Date('2022-12-31T17:09:36Z'))
           .build(),
       );
-      const incomingTransaction: any = ethereumTransactionToJson(
+      const incomingTransaction = ethereumTransactionToJson(
         ethereumTransactionBuilder().with('transfers', [transfer]).build(),
       );
-      moduleTransaction.txType = 'MODULE_TRANSACTION';
-      multisigTransaction.txType = 'MULTISIG_TRANSACTION';
-      incomingTransaction.txType = 'ETHEREUM_TRANSACTION';
       const safe = safeBuilder().build();
       const transactionHistoryBuilder = {
         count: 40,
@@ -1213,14 +1210,12 @@ describe('Transactions Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const timezoneOffset = 3600 * 2; //Offset of 2 hours
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const moduleTransaction: any = moduleTransactionTojson(
+      const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder()
           .with('dataDecoded', null)
           .with('executionDate', new Date('2022-12-31T22:09:36Z'))
           .build(),
       );
-      moduleTransaction.txType = 'MODULE_TRANSACTION';
-
       const safe = safeBuilder().build();
       const transactionHistoryBuilder = {
         count: 40,
@@ -1335,7 +1330,6 @@ describe('Transactions Controller (Unit)', () => {
       const moduleTransaction: any = moduleTransactionTojson(
         moduleTransactionBuilder().with('dataDecoded', null).build(),
       );
-      moduleTransaction.txType = 'MODULE_TRANSACTION';
       const safe = safeBuilder().build();
       const allTransactionsResponse = {
         count: 2,
@@ -1409,10 +1403,9 @@ describe('Transactions Controller (Unit)', () => {
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = 5;
       const offset = 5;
-      const moduleTransaction: any = moduleTransactionTojson(
+      const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder().with('dataDecoded', null).build(),
       );
-      moduleTransaction.txType = 'MODULE_TRANSACTION';
       const safe = safeBuilder().build();
       const client_next_cursor = `cursor=limit%3D${limit}%26offset%3D10`;
       const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3D0`;
