@@ -1155,24 +1155,23 @@ describe('Transactions Controller (Unit)', () => {
       const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder()
           .with('dataDecoded', null)
-          .with('executionDate', new Date('2022-12-06T17:09:36Z'))
+          .with('executionDate', faker.date.between('2022-12-06T00:00:00Z','2022-12-06T23:59:59Z'))
           .build(),
       );
       const multisigTransaction = multisigTransactionToJson(
         multisigTransactionBuilder()
           .with('dataDecoded', null)
           .with('origin', null)
-          .with('executionDate', new Date('2022-12-25T17:09:36Z'))
+          .with('executionDate', faker.date.between('2022-12-25T00:00:00Z','2022-12-25T23:59:59Z'))
           .build(),
       );
       const transfer: any = nativeTokenTransferToJson(
         nativeTokenTransferBuilder()
-          .with('executionDate', new Date('2022-12-31T17:09:36Z'))
           .build(),
       );
       const incomingTransaction = ethereumTransactionToJson(
         ethereumTransactionBuilder()
-          .with('executionDate', new Date('2022-12-31T17:09:36Z'))
+          .with('executionDate', faker.date.between('2022-12-31T00:00:00Z','2022-12-31T23:59:59Z'))
           .with('transfers', [transfer])
           .build(),
       );
