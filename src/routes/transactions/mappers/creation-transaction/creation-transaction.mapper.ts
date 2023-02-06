@@ -19,27 +19,25 @@ export class CreationTransactionMapper {
       chainId,
       transaction.creator,
     );
-    const transactionHash = transaction.transactionHash;
     const implementation = transaction.masterCopy
       ? await this.addressInfoHelper.getOrDefault(
           chainId,
           transaction.masterCopy,
         )
       : null;
-    const factory = transaction.factoryAddress
-      ? await this.addressInfoHelper.getOrDefault(
-          chainId,
-          transaction.factoryAddress,
-        )
-      : null;
+    const factory = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      transaction.factoryAddress,
+    );
     const txInfo = new CreationTransactionInfo(
       creator,
-      transactionHash,
+      transaction.transactionHash,
       implementation,
       factory,
     );
+    const type = 'creation';
     return new Transaction(
-      `creation_${safe.address}`,
+      `${type}_${safe.address}`,
       transaction.created.getTime(),
       TransactionStatus.Success,
       txInfo,

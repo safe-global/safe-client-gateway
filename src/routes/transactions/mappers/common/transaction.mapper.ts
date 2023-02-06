@@ -36,9 +36,9 @@ export class TransactionMapper {
       transactionsDomain,
       offset,
       timezoneOffset,
-    );
+    )?.getTime();
     // Remove first item that was requested to get previous day timestamp
-    if (prevPageTimestamp != 0) {
+    if (prevPageTimestamp !== undefined) {
       transactionsDomain = transactionsDomain.slice(1);
     }
     const transactionsDomainGroups = this.groupByDay(
@@ -66,19 +66,18 @@ export class TransactionMapper {
     transactions: TransactionDomain[],
     offset: number,
     timezoneOffset?: string,
-  ) {
+  ): Date | undefined {
     if (offset > 0) {
       // Get previous page label
       const timestamp =
-        transactions[0].executionDate?.getTime() ??
-        (transactions[0] as MultisigTransaction).submissionDate?.getTime();
-      if (timestamp !== undefined) {
-        return this.getDayInMillis(timestamp, timezoneOffset);
+        transactions[0].executionDate ??
+        (transactions[0] as MultisigTransaction).submissionDate;
+      if (timestamp !== null) {
+        return this.getDayDate(timestamp, timezoneOffset);
       } else {
         throw Error('ExecutionDate cannot be null');
       }
     }
-    return 0;
   }
 
   private groupByDay(
@@ -94,10 +93,7 @@ export class TransactionMapper {
         } else {
           transaction_timestamp = transaction.executionDate;
         }
-        return this.getDayInMillis(
-          transaction_timestamp?.getTime(),
-          timezoneOffset,
-        );
+        return this.getDayDate(transaction_timestamp, timezoneOffset).getTime();
       }),
     ).map(
       ([timestamp, transactions]) =>
@@ -108,12 +104,17 @@ export class TransactionMapper {
     );
   }
 
-  private getDayInMillis(timestamp: number, timezoneOffset?: string): number {
-    const date = new Date(timestamp);
+  private getDayDate(timestamp: Date, timezoneOffset?: string): Date {
     if (timezoneOffset !== undefined) {
-      date.setUTCSeconds(parseInt(timezoneOffset) || 0);
+      timestamp.setUTCSeconds(parseInt(timezoneOffset) || 0);
     }
-    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    return new Date(
+      Date.UTC(
+        timestamp.getFullYear(),
+        timestamp.getMonth(),
+        timestamp.getDate(),
+      ),
+    );
   }
 
   private mapEthereumTransfer(

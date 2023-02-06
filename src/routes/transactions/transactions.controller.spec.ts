@@ -1197,13 +1197,13 @@ describe('Transactions Controller (Unit)', () => {
             6, //3 date labels and 3 transactions
           );
           expect(body.results[0].timestamp).toEqual(
-            new Date('2022-12-06T00:00:00Z').getTime(),
+            1670284800000, // Date('2022-12-06T00:00:00Z').getTime()
           );
           expect(body.results[2].timestamp).toEqual(
-            new Date('2022-12-25T00:00:00Z').getTime(),
+            1671926400000, // Date('2022-12-25T00:00:00Z').getTime()
           );
           expect(body.results[4].timestamp).toEqual(
-            new Date('2022-12-31T00:00:00Z').getTime(),
+            1672444800000, // Date('2022-12-31T00:00:00Z').getTime(),
           );
         });
     });
