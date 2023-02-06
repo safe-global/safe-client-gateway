@@ -16,6 +16,7 @@ import { IncomingTransferMapper } from '../transfers/transfer.mapper';
 import { TransactionItem } from '../../entities/transaction-item.entity';
 import { TransactionDomainGroup } from '../../entities/transaction-history-group.entity';
 import { DateLabel } from '../../entities/date-label.entity';
+import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
 
 @Injectable()
 export class TransactionMapper {
@@ -71,20 +72,11 @@ export class TransactionMapper {
               );
             } else if (isEthereumTransaction(transaction)) {
               const transfers = (transaction as EthereumTransaction).transfers;
-              return transfers
-                ? await Promise.all(
-                    transfers.map(
-                      async (transfer) =>
-                        new TransactionItem(
-                          await this.incomingTransferMapper.mapTransfer(
-                            chainId,
-                            transfer,
-                            safe,
-                          ),
-                        ),
-                    ),
-                  )
-                : null;
+              if (transfers) {
+                return Promise.all(
+                  this.mapEthereumTransfer(transfers, chainId, safe),
+                );
+              }
             } else {
               // This should never happen as AJV would not allow an unknown transaction to get to this stage
               throw Error('Unrecognized transaction type');
@@ -151,5 +143,22 @@ export class TransactionMapper {
       date.setUTCSeconds(parseInt(timezoneOffset) || 0);
     }
     return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  private mapEthereumTransfer(
+    transfers: Transfer[],
+    chainId: string,
+    safe: Safe,
+  ) {
+    return transfers.map(
+      async (transfer) =>
+        new TransactionItem(
+          await this.incomingTransferMapper.mapTransfer(
+            chainId,
+            transfer,
+            safe,
+          ),
+        ),
+    );
   }
 }
