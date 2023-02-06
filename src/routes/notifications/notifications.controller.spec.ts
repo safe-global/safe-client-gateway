@@ -58,8 +58,8 @@ describe('Notifications Controller (Unit)', () => {
 
   describe('POST /register/notifications', () => {
     it('Success', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
+      const chains: Chain[] = range(4).map((chainId) =>
+        chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
         safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
@@ -68,13 +68,27 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      mockNetworkService.post.mockImplementation(() => Promise.resolve());
+      mockNetworkService.post.mockImplementation((url) => {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${chain.chainName}/api/v1/notifications/devices/`,
+          )
+        ) {
+          return Promise.resolve();
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
 
       await request(app.getHttpServer())
         .post('/register/notifications')
@@ -93,8 +107,12 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -124,8 +142,12 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -155,8 +177,12 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -190,8 +216,12 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -219,8 +249,12 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
-        if (url.includes(getChainUrlPattern)) {
+        if (
+          chains.some(
+            (chain) =>
+              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+          )
+        ) {
           return Promise.resolve({ data: sample(chains) });
         }
         return Promise.reject(`No matching rule for url: ${url}`);

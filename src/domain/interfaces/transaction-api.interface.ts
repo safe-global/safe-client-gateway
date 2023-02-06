@@ -1,20 +1,20 @@
 import { Backbone } from '../backbone/entities/backbone.entity';
 import { Balance } from '../balances/entities/balance.entity';
-import { MasterCopy } from '../chains/entities/master-copies.entity';
+import { Page } from '../entities/page.entity';
 import { Collectible } from '../collectibles/entities/collectible.entity';
+import { MasterCopy } from '../chains/entities/master-copies.entity';
+import { Safe } from '../safe/entities/safe.entity';
 import { Contract } from '../contracts/entities/contract.entity';
 import { DataDecoded } from '../data-decoder/entities/data-decoded.entity';
 import { Delegate } from '../delegate/entities/delegate.entity';
-import { Page } from '../entities/page.entity';
-import { Device } from '../notifications/entities/device.entity';
-import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
-import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
-import { SafeList } from '../safe/entities/safe-list.entity';
-import { Safe } from '../safe/entities/safe.entity';
-import { Transaction } from '../safe/entities/transaction.entity';
 import { Transfer } from '../safe/entities/transfer.entity';
+import { MultisigTransaction } from '../safe/entities/multisig-transaction.entity';
+import { Transaction } from '../safe/entities/transaction.entity';
 import { Token } from '../tokens/entities/token.entity';
+import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
+import { SafeList } from '../safe/entities/safe-list.entity';
+import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
+import { Device } from '../notifications/entities/device.entity';
 
 export interface ITransactionApi {
   getBalances(
