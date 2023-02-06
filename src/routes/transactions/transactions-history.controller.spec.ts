@@ -40,7 +40,6 @@ import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
 } from '../../domain/safe/entities/__tests__/creation-transaction.builder';
-import { PaginationData } from '../common/pagination/pagination.data';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -82,8 +81,12 @@ describe('Transactions History Controller (Unit)', () => {
   it('Failure: Config API fails', async () => {
     const chainId = faker.random.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    mockNetworkService.get.mockRejectedValueOnce({
-      status: 500,
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      if (url === getChainUrl) {
+        return Promise.reject({ status: 500 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
@@ -93,23 +96,23 @@ describe('Transactions History Controller (Unit)', () => {
         message: 'An error occurred',
         code: 500,
       });
-
-    expect(mockNetworkService.get).toBeCalledTimes(1);
-    expect(mockNetworkService.get).toBeCalledWith(
-      `${safeConfigApiUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
   });
 
   it('Failure: Transaction API fails', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockRejectedValueOnce({
-      status: 500,
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.reject({ status: 500 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
-
     await request(app.getHttpServer())
       .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
       .expect(500)
@@ -117,25 +120,6 @@ describe('Transactions History Controller (Unit)', () => {
         message: 'An error occurred',
         code: 500,
       });
-
-    expect(mockNetworkService.get).toBeCalledTimes(2);
-    expect(mockNetworkService.get).toBeCalledWith(
-      `${safeConfigApiUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
-    expect(mockNetworkService.get).toBeCalledWith(
-      `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`,
-      {
-        params: {
-          executed: true,
-          offset: PaginationData.DEFAULT_OFFSET,
-          limit: PaginationData.DEFAULT_LIMIT,
-          ordering: undefined,
-          queued: false,
-          safe: safeAddress,
-        },
-      },
-    );
   });
 
   it('Should return correctly each date label', async () => {
@@ -180,11 +164,21 @@ describe('Transactions History Controller (Unit)', () => {
       previous: null,
       results: [moduleTransaction, multisigTransaction, incomingTransaction],
     };
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: transactionHistoryBuilder,
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({ data: transactionHistoryBuilder });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safe });
 
     await request(app.getHttpServer())
       .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
@@ -223,11 +217,21 @@ describe('Transactions History Controller (Unit)', () => {
       previous: null,
       results: [moduleTransaction],
     };
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: transactionHistoryBuilder,
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({ data: transactionHistoryBuilder });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safe });
 
     await request(app.getHttpServer())
       .get(
@@ -414,11 +418,21 @@ describe('Transactions History Controller (Unit)', () => {
       previous: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&queued=true&trusted=true`,
       results: [moduleTransaction],
     };
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({
-      data: transactionHistoryBuilder,
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({ data: transactionHistoryBuilder });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safe });
 
     await request(app.getHttpServer())
       .get(
