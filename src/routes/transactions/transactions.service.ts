@@ -225,33 +225,26 @@ export class TransactionsService {
   }
 
   private adjustTransactionHistoryPage(
-    limit?: number,
-    offset?: number,
+    paginationData: PaginationData,
   ): PaginationData {
-    if (offset !== undefined && offset > 0) {
+    if (paginationData.offset > 0) {
       return new PaginationData(
-        limit ? limit + 1 : PaginationData.DEFAULT_LIMIT + 1,
-        offset - 1,
-      );
-    } else {
-      return new PaginationData(
-        limit ? limit : PaginationData.DEFAULT_LIMIT,
-        PaginationData.DEFAULT_OFFSET,
+        paginationData.limit + 1,
+        paginationData.offset - 1,
       );
     }
+    return paginationData;
   }
 
   async getTransactionHistory(
     chainId: string,
     routeUrl: Readonly<URL>,
     safeAddress: string,
+    paginationData: PaginationData,
     timezoneOffset?: string,
-    paginationData?: PaginationData,
   ): Promise<Partial<TransactionItemPage>> {
-    const paginationData_adjusted = this.adjustTransactionHistoryPage(
-      paginationData?.limit,
-      paginationData?.offset,
-    );
+    const paginationData_adjusted =
+      this.adjustTransactionHistoryPage(paginationData);
     const domainTransactions = await this.safeRepository.getTransactionHistory(
       chainId,
       safeAddress,
@@ -263,8 +256,8 @@ export class TransactionsService {
       chainId,
       domainTransactions.results,
       safeInfo,
+      paginationData.offset,
       timezoneOffset,
-      paginationData?.offset,
     );
 
     const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);

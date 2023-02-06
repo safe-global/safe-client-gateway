@@ -28,32 +28,26 @@ export class TransactionMapper {
     chainId: string,
     transactionsDomain: TransactionDomain[],
     safe: Safe,
+    offset: number,
     timezoneOffset?: string,
-    offset?: number,
   ): Promise<[TransactionItem | DateLabel]> {
     const transactionList: any[] = [];
-
-    let prev_page_timestamp = 0;
-    if (offset !== undefined && offset > 0) {
-      // Get previous page label
-      const timestamp =
-        transactionsDomain[0].executionDate?.getTime() ??
-        (
-          transactionsDomain[0] as MultisigTransaction
-        ).submissionDate?.getTime();
-      if (timestamp !== undefined) {
-        prev_page_timestamp = this.getDayInMillis(timestamp, timezoneOffset);
-      } else {
-        throw Error('ExecutionDate cannot be null');
-      }
+    const prevPageTimestamp = this.getPreviousDayTimestamp(
+      transactionsDomain,
+      offset,
+      timezoneOffset,
+    );
+    // Remove first item that was requested to get previous day timestamp
+    if (prevPageTimestamp != 0) {
       transactionsDomain = transactionsDomain.slice(1);
     }
     const transactionsDomainGroups = this.groupByDay(
       transactionsDomain,
       timezoneOffset,
     );
+
     transactionsDomainGroups.forEach((transactionGroup) => {
-      if (transactionGroup.timestamp != prev_page_timestamp) {
+      if (transactionGroup.timestamp != prevPageTimestamp) {
         transactionList.push(new DateLabel(transactionGroup.timestamp));
       }
       transactionList.push(
@@ -103,6 +97,25 @@ export class TransactionMapper {
     return <[TransactionItem | DateLabel]>(
       (await Promise.all(transactionList)).flat(2)
     );
+  }
+
+  private getPreviousDayTimestamp(
+    transactions: TransactionDomain[],
+    offset: number,
+    timezoneOffset?: string,
+  ) {
+    if (offset > 0) {
+      // Get previous page label
+      const timestamp =
+        transactions[0].executionDate?.getTime() ??
+        (transactions[0] as MultisigTransaction).submissionDate?.getTime();
+      if (timestamp !== undefined) {
+        return this.getDayInMillis(timestamp, timezoneOffset);
+      } else {
+        throw Error('ExecutionDate cannot be null');
+      }
+    }
+    return 0;
   }
 
   private groupByDay(

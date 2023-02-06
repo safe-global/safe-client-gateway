@@ -147,8 +147,8 @@ export class TransactionsController {
       chainId,
       routeUrl,
       safeAddress,
-      timezoneOffset,
       paginationData,
+      timezoneOffset,
     );
   }
 }
