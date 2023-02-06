@@ -32,7 +32,6 @@ export class TransactionMapper {
     offset: number,
     timezoneOffset?: string,
   ): Promise<[TransactionItem | DateLabel]> {
-    const transactionList: any[] = [];
     const prevPageTimestamp = this.getPreviousDayTimestamp(
       transactionsDomain,
       offset,
@@ -47,48 +46,20 @@ export class TransactionMapper {
       timezoneOffset,
     );
 
-    transactionsDomainGroups.forEach((transactionGroup) => {
-      if (transactionGroup.timestamp != prevPageTimestamp) {
-        transactionList.push(new DateLabel(transactionGroup.timestamp));
-      }
-      transactionList.push(
-        Promise.all(
-          transactionGroup.transactions.map(async (transaction) => {
-            if (isMultisigTransaction(transaction)) {
-              return new TransactionItem(
-                await this.multisigTransactionMapper.mapTransaction(
-                  chainId,
-                  transaction as MultisigTransaction,
-                  safe,
-                ),
-              );
-            } else if (isModuleTransaction(transaction)) {
-              return new TransactionItem(
-                await this.moduleTransactionMapper.mapTransaction(
-                  chainId,
-                  transaction as ModuleTransaction,
-                  safe,
-                ),
-              );
-            } else if (isEthereumTransaction(transaction)) {
-              const transfers = (transaction as EthereumTransaction).transfers;
-              if (transfers) {
-                return Promise.all(
-                  this.mapEthereumTransfer(transfers, chainId, safe),
-                );
-              }
-            } else {
-              // This should never happen as AJV would not allow an unknown transaction to get to this stage
-              throw Error('Unrecognized transaction type');
-            }
-          }),
-        ),
-      );
-    });
-
-    return <[TransactionItem | DateLabel]>(
-      (await Promise.all(transactionList)).flat(2)
+    const transactionList = await Promise.all(
+      transactionsDomainGroups.map(async (transactionGroup) => {
+        const transactions: (TransactionItem | DateLabel)[] = [];
+        if (transactionGroup.timestamp != prevPageTimestamp) {
+          transactions.push(new DateLabel(transactionGroup.timestamp));
+        }
+        transactions.push(
+          ...(await this.mapGroupTransactions(transactionGroup, chainId, safe)),
+        );
+        return await Promise.all(transactions.flat());
+      }),
     );
+
+    return <[TransactionItem | DateLabel]>transactionList.flat();
   }
 
   private getPreviousDayTimestamp(
@@ -160,5 +131,44 @@ export class TransactionMapper {
           ),
         ),
     );
+  }
+
+  private mapGroupTransactions(
+    transactionGroup,
+    chainId,
+    safe,
+  ): Promise<TransactionItem[]> {
+    const transactions: TransactionItem[] = transactionGroup.transactions.map(
+      async (transaction) => {
+        if (isMultisigTransaction(transaction)) {
+          return new TransactionItem(
+            await this.multisigTransactionMapper.mapTransaction(
+              chainId,
+              transaction as MultisigTransaction,
+              safe,
+            ),
+          );
+        } else if (isModuleTransaction(transaction)) {
+          return new TransactionItem(
+            await this.moduleTransactionMapper.mapTransaction(
+              chainId,
+              transaction as ModuleTransaction,
+              safe,
+            ),
+          );
+        } else if (isEthereumTransaction(transaction)) {
+          const transfers = (transaction as EthereumTransaction).transfers;
+          if (transfers != null) {
+            return await Promise.all(
+              this.mapEthereumTransfer(transfers, chainId, safe),
+            );
+          }
+        } else {
+          // This should never happen as AJV would not allow an unknown transaction to get to this stage
+          throw Error('Unrecognized transaction type');
+        }
+      },
+    );
+    return Promise.all(transactions);
   }
 }
