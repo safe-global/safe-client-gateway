@@ -18,6 +18,5 @@ export function toJson(creationTransaction: CreationTransaction): unknown {
   return {
     ...creationTransaction,
     created: creationTransaction.created.toISOString(),
-    executionDate: creationTransaction.created.toISOString(),
   };
 }

@@ -1112,9 +1112,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Failure: Transaction API fails', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -1149,9 +1149,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Should return correctly each date label', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder()
           .with('dataDecoded', null)
@@ -1209,10 +1209,10 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Should change date label with time offset', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const timezoneOffset = 3600 * 2; //Offset of 2 hours
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       const moduleTransaction = moduleTransactionTojson(
         moduleTransactionBuilder()
           .with('dataDecoded', null)
@@ -1246,9 +1246,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Should return correctly each transaction', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       const moduleTransaction: any = getJsonResource(
         'module-transactions/module-transaction-domain.json',
       );
@@ -1327,9 +1327,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Should include safe creation transaction', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       const moduleTransaction: any = moduleTransactionTojson(
         moduleTransactionBuilder().with('dataDecoded', null).build(),
       );
@@ -1401,9 +1401,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('Should keep the client pagination', async () => {
-      const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const chainResponse = chainBuilder().build();
+      const chainId = chainResponse.chainId;
       const limit = 5;
       const offset = 5;
       const moduleTransaction = moduleTransactionTojson(
