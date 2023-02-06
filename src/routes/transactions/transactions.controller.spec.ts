@@ -1280,7 +1280,7 @@ describe('Transactions Controller (Unit)', () => {
         const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
         const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
         const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-        const gettokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+        const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
         if (url === getChainUrl) {
           return Promise.resolve({ data: chainResponse });
         }
@@ -1294,7 +1294,7 @@ describe('Transactions Controller (Unit)', () => {
             data: safe,
           });
         }
-        if (url.includes(gettokenUrlPattern)) {
+        if (url.includes(getTokenUrlPattern)) {
           return Promise.resolve({
             data: tokenResponse,
           });
@@ -1410,8 +1410,8 @@ describe('Transactions Controller (Unit)', () => {
         moduleTransactionBuilder().with('dataDecoded', null).build(),
       );
       const safe = safeBuilder().build();
-      const client_next_cursor = `cursor=limit%3D${limit}%26offset%3D10`;
-      const client_previous_cursor = `cursor=limit%3D${limit}%26offset%3D0`;
+      const clientNextCursor = `cursor=limit%3D${limit}%26offset%3D10`;
+      const clientPreviousCursor = `cursor=limit%3D${limit}%26offset%3D0`;
       const transactionHistoryBuilder = {
         count: 40,
         next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&offset=10&queued=true&trusted=true`,
@@ -1430,8 +1430,8 @@ describe('Transactions Controller (Unit)', () => {
         )
         .expect(200)
         .then(({ body }) => {
-          expect(body.next).toContain(client_next_cursor);
-          expect(body.previous).toContain(client_previous_cursor);
+          expect(body.next).toContain(clientNextCursor);
+          expect(body.previous).toContain(clientPreviousCursor);
         });
 
       expect(mockNetworkService.get).toBeCalledWith(

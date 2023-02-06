@@ -197,7 +197,7 @@ export class TransactionsService {
     safeAddress: string,
     paginationData: PaginationData,
   ): Promise<Page<QueuedItem>> {
-    const pagination = this.getAdjustedPagination(paginationData);
+    const pagination = this.getAdjustedPaginationForQueue(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const transactions = await this.safeRepository.getTransactionQueueByNonce(
       chainId,
@@ -224,7 +224,7 @@ export class TransactionsService {
     };
   }
 
-  private adjustTransactionHistoryPage(
+  private getAdjustedPaginationForHistory(
     paginationData: PaginationData,
   ): PaginationData {
     if (paginationData.offset > 0) {
@@ -243,13 +243,13 @@ export class TransactionsService {
     paginationData: PaginationData,
     timezoneOffset?: string,
   ): Promise<Partial<TransactionItemPage>> {
-    const paginationData_adjusted =
-      this.adjustTransactionHistoryPage(paginationData);
+    const paginationDataAdjusted =
+      this.getAdjustedPaginationForHistory(paginationData);
     const domainTransactions = await this.safeRepository.getTransactionHistory(
       chainId,
       safeAddress,
-      paginationData_adjusted?.limit,
-      paginationData_adjusted?.offset,
+      paginationDataAdjusted?.limit,
+      paginationDataAdjusted?.offset,
     );
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await this.transactionMapper.mapTransaction(
@@ -291,7 +291,7 @@ export class TransactionsService {
    * @param paginationData pagination data to adjust.
    * @returns pagination data adjusted.
    */
-  private getAdjustedPagination(
+  private getAdjustedPaginationForQueue(
     paginationData: PaginationData,
   ): PaginationData {
     if (!paginationData.limit || !paginationData.offset) {

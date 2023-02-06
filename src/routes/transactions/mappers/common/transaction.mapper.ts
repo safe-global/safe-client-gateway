@@ -86,14 +86,14 @@ export class TransactionMapper {
   ): TransactionDomainGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) => {
-        let transaction_timestamp;
+        let transactionTimestamp;
         if (isMultisigTransaction(transaction)) {
-          transaction_timestamp =
+          transactionTimestamp =
             transaction.executionDate ?? transaction.submissionDate;
         } else {
-          transaction_timestamp = transaction.executionDate;
+          transactionTimestamp = transaction.executionDate;
         }
-        return this.getDayDate(transaction_timestamp, timezoneOffset).getTime();
+        return this.getDayDate(transactionTimestamp, timezoneOffset).getTime();
       }),
     ).map(
       ([timestamp, transactions]) =>
