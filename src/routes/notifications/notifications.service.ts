@@ -6,22 +6,22 @@ import {
 } from '@nestjs/common';
 import { inRange } from 'lodash';
 import { Device } from '../../domain/notifications/entities/device.entity';
-import { SafeRegistration } from '../../domain/notifications/entities/safe-registration.entity';
-import { NotificationsRepository } from '../../domain/notifications/notifications.repository';
+import { SafeRegistration as DomainSafeRegistration } from '../../domain/notifications/entities/safe-registration.entity';
 import { INotificationsRepository } from '../../domain/notifications/notifications.repository.interface';
 import { RegisterDeviceDto } from './entities/register-device.dto.entity';
+import { SafeRegistration } from './entities/safe-registration.entity';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @Inject(INotificationsRepository)
-    private readonly notificationsRepository: NotificationsRepository,
+    private readonly notificationsRepository: INotificationsRepository,
   ) {}
 
   /**
-   * Sends a registration request for each {@link SafeRegistration} contained in the received
+   * Sends a registration request for each {@link DomainSafeRegistration} contained in the received
    * {@link RegisterDeviceDto}, instructing the provider to register the {@link Device} as a
-   * notification target on each chain referenced in one of the {@link SafeRegistration}.
+   * notification target on each chain referenced in one of the {@link DomainSafeRegistration}.
    *
    * Since the provider requests are made independently, and they could error, the following
    * logic is followed to indicate the operation result to the client:
@@ -51,11 +51,11 @@ export class NotificationsService {
       deviceData.timestamp,
     );
 
-    const results = await Promise.allSettled(
+    const registrationResults = await Promise.allSettled(
       safeRegistration.map((safeRegistrationItem) =>
         this.notificationsRepository.registerDevice(
           device,
-          new SafeRegistration(
+          new DomainSafeRegistration(
             safeRegistrationItem.chain_id,
             safeRegistrationItem.safes,
             safeRegistrationItem.signatures,
@@ -64,25 +64,48 @@ export class NotificationsService {
       ),
     );
 
-    if (this.hasServerErrors(results)) {
-      throw new InternalServerErrorException();
+    if (registrationResults.some((result) => this.isServerError(result))) {
+      throw new InternalServerErrorException(
+        this.getErrorMessage(registrationResults, safeRegistration),
+      );
     }
-    if (this.hasClientErrors(results)) {
-      throw new BadRequestException();
+    if (registrationResults.some((result) => this.isClientError(result))) {
+      throw new BadRequestException(
+        this.getErrorMessage(registrationResults, safeRegistration),
+      );
     }
   }
 
-  private hasServerErrors(results: PromiseSettledResult<void>[]): boolean {
-    return results.some(
-      (result) =>
-        result.status === 'rejected' && inRange(result.reason?.code, 500, 600),
+  private isServerError(
+    result: PromiseSettledResult<DomainSafeRegistration>,
+  ): boolean {
+    return (
+      result.status === 'rejected' && inRange(result.reason?.code, 500, 600)
     );
   }
 
-  private hasClientErrors(results: PromiseSettledResult<void>[]): boolean {
-    return results.some(
-      (result) =>
-        result.status === 'rejected' && inRange(result.reason?.code, 400, 500),
+  private isClientError(
+    result: PromiseSettledResult<DomainSafeRegistration>,
+  ): boolean {
+    return (
+      result.status === 'rejected' && inRange(result.reason?.code, 400, 500)
     );
+  }
+
+  private getErrorMessage(
+    registrationResults: PromiseSettledResult<DomainSafeRegistration>[],
+    safeRegistration: SafeRegistration[],
+  ): string {
+    const successChainIds = (
+      registrationResults.filter(
+        ({ status }) => status === 'fulfilled',
+      ) as PromiseFulfilledResult<DomainSafeRegistration>[]
+    ).map((registrationResult) => registrationResult.value.chainId);
+
+    const erroredChainIds = safeRegistration
+      .map((safeRegistrationItem) => safeRegistrationItem.chain_id)
+      .filter((chainId) => !successChainIds.includes(chainId));
+
+    return `Push notification registration failed for chain IDs: ${erroredChainIds}`;
   }
 }

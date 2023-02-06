@@ -58,7 +58,7 @@ describe('Notifications Controller (Unit)', () => {
 
   describe('POST /register/notifications', () => {
     it('Success', async () => {
-      const chains: Chain[] = range(4).map((chainId) =>
+      const chains: Chain[] = range(0, 10).map((chainId) =>
         chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
@@ -82,7 +82,8 @@ describe('Notifications Controller (Unit)', () => {
         if (
           chains.some(
             (chain) =>
-              url === `${chain.chainName}/api/v1/notifications/devices/`,
+              url ===
+              `${chain.transactionService}/api/v1/notifications/devices/`,
           )
         ) {
           return Promise.resolve();
@@ -93,12 +94,13 @@ describe('Notifications Controller (Unit)', () => {
       await request(app.getHttpServer())
         .post('/register/notifications')
         .send(registerDeviceDto)
-        .expect(200);
+        .expect(200)
+        .then(({ body }) => expect(body).toEqual({}));
     });
 
     it('Client errors returned from provider', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
+      const chains: Chain[] = range(11, 20).map((chainId) =>
+        chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
         safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
@@ -107,33 +109,47 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (
-          chains.some(
-            (chain) =>
-              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-          )
-        ) {
-          return Promise.resolve({ data: sample(chains) });
+        const targetChain = chains.find(
+          (chain) => url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        if (targetChain) {
+          return Promise.resolve({ data: targetChain });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      // return a client error for just one provider
-      const error = new NetworkResponseError(
-        faker.datatype.number({ min: 400, max: 499 }),
-      );
-      mockNetworkService.post
-        .mockImplementationOnce(() => Promise.reject(error))
-        .mockImplementation(() => Promise.resolve());
+      // return a client error for two chains
+      const errorChainIds = [chains[1].chainId, chains[2].chainId];
+      mockNetworkService.post.mockImplementation((url) => {
+        const targetChain = chains.find(
+          (chain) =>
+            url === `${chain.transactionService}/api/v1/notifications/devices/`,
+        );
+        if (!targetChain) {
+          return Promise.reject(`No matching rule for url: ${url}`);
+        }
+        return errorChainIds.includes(targetChain?.chainId)
+          ? Promise.reject(
+              new NetworkResponseError(
+                faker.datatype.number({ min: 400, max: 499 }),
+              ),
+            )
+          : Promise.resolve();
+      });
 
       await request(app.getHttpServer())
         .post('/register/notifications')
         .send(registerDeviceDto)
-        .expect(400);
+        .expect(400)
+        .then(({ body }) =>
+          expect(body).toMatchObject({
+            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          }),
+        );
     });
 
     it('Server errors returned from provider', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
+      const chains: Chain[] = range(21, 30).map((chainId) =>
+        chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
         safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
@@ -142,33 +158,47 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (
-          chains.some(
-            (chain) =>
-              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-          )
-        ) {
-          return Promise.resolve({ data: sample(chains) });
+        const targetChain = chains.find(
+          (chain) => url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        if (targetChain) {
+          return Promise.resolve({ data: targetChain });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      // return a server error for just one provider
-      const error = new NetworkResponseError(
-        faker.datatype.number({ min: 500, max: 599 }),
-      );
-      mockNetworkService.post
-        .mockImplementationOnce(() => Promise.reject(error))
-        .mockImplementation(() => Promise.resolve());
+      // return a server error for two chains
+      const errorChainIds = [chains[3].chainId, chains[5].chainId];
+      mockNetworkService.post.mockImplementation((url) => {
+        const targetChain = chains.find(
+          (chain) =>
+            url === `${chain.transactionService}/api/v1/notifications/devices/`,
+        );
+        if (!targetChain) {
+          return Promise.reject(`No matching rule for url: ${url}`);
+        }
+        return errorChainIds.includes(targetChain?.chainId)
+          ? Promise.reject(
+              new NetworkResponseError(
+                faker.datatype.number({ min: 500, max: 599 }),
+              ),
+            )
+          : Promise.resolve();
+      });
 
       await request(app.getHttpServer())
         .post('/register/notifications')
         .send(registerDeviceDto)
-        .expect(500);
+        .expect(500)
+        .then(({ body }) =>
+          expect(body).toMatchObject({
+            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          }),
+        );
     });
 
     it('Both client and server errors returned from provider', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
+      const chains: Chain[] = range(31, 40).map((chainId) =>
+        chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
         safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
@@ -177,37 +207,57 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (
-          chains.some(
-            (chain) =>
-              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-          )
-        ) {
-          return Promise.resolve({ data: sample(chains) });
+        const targetChain = chains.find(
+          (chain) => url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        if (targetChain) {
+          return Promise.resolve({ data: targetChain });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      // return a client error for one provider, and a server error for another
-      const clientError = new NetworkResponseError(
-        faker.datatype.number({ min: 400, max: 499 }),
-      );
-      const serverError = new NetworkResponseError(
-        faker.datatype.number({ min: 500, max: 599 }),
-      );
-      mockNetworkService.post
-        .mockImplementationOnce(() => Promise.reject(clientError))
-        .mockImplementationOnce(() => Promise.reject(serverError))
-        .mockImplementation(() => Promise.resolve());
+      // return a server and client error for two chains each
+      const serverErrorChainIds = [chains[3].chainId, chains[4].chainId];
+      const clientErrorChainIds = [chains[6].chainId, chains[7].chainId];
+      mockNetworkService.post.mockImplementation((url) => {
+        const targetChain = chains.find(
+          (chain) =>
+            url === `${chain.transactionService}/api/v1/notifications/devices/`,
+        );
+        if (!targetChain) {
+          return Promise.reject(`No matching rule for url: ${url}`);
+        }
+        const serverError = new NetworkResponseError(
+          faker.datatype.number({ min: 500, max: 599 }),
+        );
+        const clientError = new NetworkResponseError(
+          faker.datatype.number({ min: 400, max: 499 }),
+        );
+        if (serverErrorChainIds.includes(targetChain?.chainId)) {
+          return Promise.reject(serverError);
+        }
+        if (clientErrorChainIds.includes(targetChain?.chainId)) {
+          return Promise.reject(clientError);
+        }
+        return Promise.resolve();
+      });
 
       await request(app.getHttpServer())
         .post('/register/notifications')
         .send(registerDeviceDto)
-        .expect(500);
+        .expect(500)
+        .then(({ body }) =>
+          expect(body).toMatchObject({
+            message: `Push notification registration failed for chain IDs: ${[
+              ...serverErrorChainIds,
+              ...clientErrorChainIds,
+            ]}`,
+          }),
+        );
     });
 
     it('No status code errors returned from provider', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
+      const chains: Chain[] = range(41, 50).map((chainId) =>
+        chainBuilder().with('chainId', chainId.toString()).build(),
       );
       const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
         safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
@@ -216,62 +266,39 @@ describe('Notifications Controller (Unit)', () => {
         .with('safeRegistration', safeRegistrations)
         .build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (
-          chains.some(
-            (chain) =>
-              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-          )
-        ) {
-          return Promise.resolve({ data: sample(chains) });
+        const targetChain = chains.find(
+          (chain) => url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        if (targetChain) {
+          return Promise.resolve({ data: targetChain });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      // return generic errors for two providers
-      mockNetworkService.post
-        .mockImplementationOnce(() => Promise.reject(new Error()))
-        .mockImplementationOnce(() => Promise.reject(new Error()))
-        .mockImplementation(() => Promise.resolve());
+      // return a server error for two chains
+      const errorChainIds = [chains[3].chainId, chains[4].chainId];
+      mockNetworkService.post.mockImplementation((url) => {
+        const targetChain = chains.find(
+          (chain) =>
+            url === `${chain.transactionService}/api/v1/notifications/devices/`,
+        );
+        if (!targetChain) {
+          return Promise.reject(`No matching rule for url: ${url}`);
+        }
+        if (errorChainIds.includes(targetChain?.chainId)) {
+          return Promise.reject(new Error());
+        }
+        return Promise.resolve();
+      });
 
       await request(app.getHttpServer())
         .post('/register/notifications')
         .send(registerDeviceDto)
-        .expect(500);
-    });
-
-    it('Other errors returned from provider', async () => {
-      const chains: Chain[] = range(4).map((idx) =>
-        chainBuilder().with('chainId', idx.toString()).build(),
-      );
-      const safeRegistrations: SafeRegistration[] = chains.map((chain) =>
-        safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
-      );
-      const registerDeviceDto = registerDeviceDtoBuilder()
-        .with('safeRegistration', safeRegistrations)
-        .build();
-      mockNetworkService.get.mockImplementation((url) => {
-        if (
-          chains.some(
-            (chain) =>
-              url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-          )
-        ) {
-          return Promise.resolve({ data: sample(chains) });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-      // return redirection and generic errors for two providers
-      const redirection = new NetworkResponseError(
-        faker.datatype.number({ min: 300, max: 399 }),
-      );
-      mockNetworkService.post
-        .mockImplementationOnce(() => Promise.reject(redirection))
-        .mockImplementationOnce(() => Promise.reject(new Error()))
-        .mockImplementation(() => Promise.resolve());
-
-      await request(app.getHttpServer())
-        .post('/register/notifications')
-        .send(registerDeviceDto)
-        .expect(500);
+        .expect(500)
+        .then(({ body }) =>
+          expect(body).toMatchObject({
+            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          }),
+        );
     });
   });
 });

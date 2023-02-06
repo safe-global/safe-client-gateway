@@ -13,14 +13,15 @@ export class NotificationsRepository implements INotificationsRepository {
   async registerDevice(
     device: Device,
     safeRegistration: SafeRegistration,
-  ): Promise<void> {
+  ): Promise<SafeRegistration> {
     const api = await this.transactionApiManager.getTransactionApi(
       safeRegistration.chainId,
     );
-    return api.postDeviceRegistration(
+    await api.postDeviceRegistration(
       device,
       safeRegistration.safes,
       safeRegistration.signatures,
     );
+    return safeRegistration;
   }
 }
