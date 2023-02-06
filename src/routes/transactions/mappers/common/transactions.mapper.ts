@@ -17,7 +17,7 @@ import { TransactionItem } from '../../entities/transaction-item.entity';
 import { DateLabel } from '../../entities/date-label.entity';
 import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
 
-export class TransactionDomainGroup {
+class TransactionDomainGroup {
   timestamp: number;
   transactions:
     | MultisigTransaction[]
@@ -26,13 +26,13 @@ export class TransactionDomainGroup {
 }
 
 @Injectable()
-export class TransactionMapper {
+export class TransactionsMapper {
   constructor(
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
   ) {}
-  async mapTransaction(
+  async mapTransactions(
     chainId: string,
     transactionsDomain: TransactionDomain[],
     safe: Safe,

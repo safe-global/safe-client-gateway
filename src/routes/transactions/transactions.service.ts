@@ -16,7 +16,7 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItem } from './entities/transaction-item.entity';
-import { TransactionMapper } from './mappers/common/transaction.mapper';
+import { TransactionsMapper } from './mappers/common/transactions.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
@@ -32,7 +32,7 @@ export class TransactionsService {
     private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
-    private readonly transactionMapper: TransactionMapper,
+    private readonly transactionMapper: TransactionsMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {}
 
@@ -252,7 +252,7 @@ export class TransactionsService {
       paginationDataAdjusted?.offset,
     );
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const results = await this.transactionMapper.mapTransaction(
+    const results = await this.transactionMapper.mapTransactions(
       chainId,
       domainTransactions.results,
       safeInfo,
