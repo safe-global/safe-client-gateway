@@ -14,9 +14,16 @@ import { EthereumTransaction } from '../../../../domain/safe/entities/ethereum-t
 import { groupBy } from 'lodash';
 import { IncomingTransferMapper } from '../transfers/transfer.mapper';
 import { TransactionItem } from '../../entities/transaction-item.entity';
-import { TransactionDomainGroup } from '../../entities/transaction-history-group.entity';
 import { DateLabel } from '../../entities/date-label.entity';
 import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
+
+export class TransactionDomainGroup {
+  timestamp: number;
+  transactions:
+    | MultisigTransaction[]
+    | ModuleTransaction[]
+    | EthereumTransaction[];
+}
 
 @Injectable()
 export class TransactionMapper {
