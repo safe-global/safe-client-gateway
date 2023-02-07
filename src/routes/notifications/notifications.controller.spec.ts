@@ -95,7 +95,7 @@ describe('Notifications Controller (Unit)', () => {
         .post('/register/notifications')
         .send(registerDeviceDto)
         .expect(200)
-        .then(({ body }) => expect(body).toEqual({}));
+        .expect({});
     });
 
     it('Client errors returned from provider', async () => {
@@ -140,11 +140,11 @@ describe('Notifications Controller (Unit)', () => {
         .post('/register/notifications')
         .send(registerDeviceDto)
         .expect(400)
-        .then(({ body }) =>
-          expect(body).toMatchObject({
-            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
-          }),
-        );
+        .expect({
+          statusCode: 400,
+          message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          error: 'Bad Request',
+        });
     });
 
     it('Server errors returned from provider', async () => {
@@ -189,11 +189,11 @@ describe('Notifications Controller (Unit)', () => {
         .post('/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
-        .then(({ body }) =>
-          expect(body).toMatchObject({
-            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
-          }),
-        );
+        .expect({
+          statusCode: 500,
+          message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          error: 'Internal Server Error',
+        });
     });
 
     it('Both client and server errors returned from provider', async () => {
@@ -245,14 +245,14 @@ describe('Notifications Controller (Unit)', () => {
         .post('/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
-        .then(({ body }) =>
-          expect(body).toMatchObject({
-            message: `Push notification registration failed for chain IDs: ${[
-              ...serverErrorChainIds,
-              ...clientErrorChainIds,
-            ]}`,
-          }),
-        );
+        .expect({
+          statusCode: 500,
+          message: `Push notification registration failed for chain IDs: ${[
+            ...serverErrorChainIds,
+            ...clientErrorChainIds,
+          ]}`,
+          error: 'Internal Server Error',
+        });
     });
 
     it('No status code errors returned from provider', async () => {
@@ -294,11 +294,11 @@ describe('Notifications Controller (Unit)', () => {
         .post('/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
-        .then(({ body }) =>
-          expect(body).toMatchObject({
-            message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
-          }),
-        );
+        .expect({
+          statusCode: 500,
+          message: `Push notification registration failed for chain IDs: ${errorChainIds}`,
+          error: 'Internal Server Error',
+        });
     });
   });
 });
