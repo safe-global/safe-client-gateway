@@ -62,7 +62,7 @@ export class TransactionsMapper {
         transactions.push(
           ...(await this.mapGroupTransactions(transactionGroup, chainId, safe)),
         );
-        return await Promise.all(transactions.flat());
+        return transactions.flat();
       }),
     );
 

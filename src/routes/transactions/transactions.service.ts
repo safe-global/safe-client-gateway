@@ -248,8 +248,8 @@ export class TransactionsService {
     const domainTransactions = await this.safeRepository.getTransactionHistory(
       chainId,
       safeAddress,
-      paginationDataAdjusted?.limit,
-      paginationDataAdjusted?.offset,
+      paginationDataAdjusted.limit,
+      paginationDataAdjusted.offset,
     );
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await this.transactionMapper.mapTransactions(
