@@ -19,10 +19,11 @@ import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
 
 class TransactionDomainGroup {
   timestamp: number;
-  transactions:
-    | MultisigTransaction[]
-    | ModuleTransaction[]
-    | EthereumTransaction[];
+  transactions: (
+    | MultisigTransaction
+    | ModuleTransaction
+    | EthereumTransaction
+  )[];
 }
 
 @Injectable()
@@ -37,9 +38,9 @@ export class TransactionsMapper {
     transactionsDomain: TransactionDomain[],
     safe: Safe,
     offset: number,
-    timezoneOffset?: string,
-  ): Promise<[TransactionItem | DateLabel]> {
-    const prevPageTimestamp = this.getPreviousDayTimestamp(
+    timezoneOffset: number,
+  ): Promise<Array<TransactionItem | DateLabel>> {
+    const prevPageTimestamp = this.getPreviousPageDate(
       transactionsDomain,
       offset,
       timezoneOffset,
@@ -66,41 +67,49 @@ export class TransactionsMapper {
       }),
     );
 
-    return <[TransactionItem | DateLabel]>transactionList.flat();
+    return transactionList.flat();
   }
 
-  private getPreviousDayTimestamp(
+  private getTransactionTimestamp(transaction: TransactionDomain): Date {
+    let timestamp: Date | null;
+    if (isMultisigTransaction(transaction)) {
+      const executionDate = transaction.executionDate;
+      timestamp = executionDate ?? transaction.submissionDate;
+    } else if (isEthereumTransaction(transaction)) {
+      timestamp = transaction.executionDate;
+    } else if (isModuleTransaction(transaction)) {
+      timestamp = transaction.executionDate;
+    } else {
+      throw Error('Unknown transaction type');
+    }
+    if (timestamp == null) {
+      throw Error('ExecutionDate cannot be null');
+    }
+    return timestamp;
+  }
+
+  private getPreviousPageDate(
     transactions: TransactionDomain[],
     offset: number,
-    timezoneOffset?: string,
+    timezoneOffset: number,
   ): Date | undefined {
-    if (offset > 0) {
-      // Get previous page label
-      const timestamp =
-        transactions[0].executionDate ??
-        (transactions[0] as MultisigTransaction).submissionDate;
-      if (timestamp !== null) {
-        return this.getDayDate(timestamp, timezoneOffset);
-      } else {
-        throw Error('ExecutionDate cannot be null');
-      }
-    }
+    if (offset <= 0) return undefined;
+    const previousPageTransaction = transactions[0];
+    const timestamp = this.getTransactionTimestamp(previousPageTransaction);
+    return this.getDayFromDate(timestamp, timezoneOffset);
   }
 
   private groupByDay(
     transactions: TransactionDomain[],
-    timezoneOffset?: string,
+    timezoneOffset: number,
   ): TransactionDomainGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) => {
-        let transactionTimestamp;
-        if (isMultisigTransaction(transaction)) {
-          transactionTimestamp =
-            transaction.executionDate ?? transaction.submissionDate;
-        } else {
-          transactionTimestamp = transaction.executionDate;
-        }
-        return this.getDayDate(transactionTimestamp, timezoneOffset).getTime();
+        const transactionTimestamp = this.getTransactionTimestamp(transaction);
+        return this.getDayFromDate(
+          transactionTimestamp,
+          timezoneOffset,
+        ).getTime();
       }),
     ).map(
       ([timestamp, transactions]) =>
@@ -111,9 +120,9 @@ export class TransactionsMapper {
     );
   }
 
-  private getDayDate(timestamp: Date, timezoneOffset?: string): Date {
-    if (timezoneOffset !== undefined) {
-      timestamp.setUTCSeconds(parseInt(timezoneOffset) || 0);
+  private getDayFromDate(timestamp: Date, timezoneOffset: number): Date {
+    if (timezoneOffset != 0) {
+      timestamp.setUTCSeconds(timezoneOffset);
     }
     return new Date(
       Date.UTC(
@@ -124,11 +133,7 @@ export class TransactionsMapper {
     );
   }
 
-  private mapEthereumTransfer(
-    transfers: Transfer[],
-    chainId: string,
-    safe: Safe,
-  ) {
+  private mapTransfer(transfers: Transfer[], chainId: string, safe: Safe) {
     return transfers.map(
       async (transfer) =>
         new TransactionItem(
@@ -141,13 +146,13 @@ export class TransactionsMapper {
     );
   }
 
-  private mapGroupTransactions(
+  private async mapGroupTransactions(
     transactionGroup,
     chainId,
     safe,
   ): Promise<TransactionItem[]> {
-    const transactions: TransactionItem[] = transactionGroup.transactions.map(
-      async (transaction) => {
+    const transactions: TransactionItem[] = await Promise.all(
+      transactionGroup.transactions.map(async (transaction) => {
         if (isMultisigTransaction(transaction)) {
           return new TransactionItem(
             await this.multisigTransactionMapper.mapTransaction(
@@ -168,15 +173,15 @@ export class TransactionsMapper {
           const transfers = (transaction as EthereumTransaction).transfers;
           if (transfers != null) {
             return await Promise.all(
-              this.mapEthereumTransfer(transfers, chainId, safe),
+              this.mapTransfer(transfers, chainId, safe),
             );
           }
         } else {
           // This should never happen as AJV would not allow an unknown transaction to get to this stage
           throw Error('Unrecognized transaction type');
         }
-      },
+      }),
     );
-    return Promise.all(transactions);
+    return transactions;
   }
 }

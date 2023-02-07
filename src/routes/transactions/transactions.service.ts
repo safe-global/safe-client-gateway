@@ -242,7 +242,7 @@ export class TransactionsService {
     safeAddress: string,
     paginationData: PaginationData,
     timezoneOffset?: string,
-  ): Promise<Partial<TransactionItemPage>> {
+  ): Promise<TransactionItemPage> {
     const paginationDataAdjusted =
       this.getAdjustedPaginationForHistory(paginationData);
     const domainTransactions = await this.safeRepository.getTransactionHistory(
@@ -257,7 +257,7 @@ export class TransactionsService {
       domainTransactions.results,
       safeInfo,
       paginationData.offset,
-      timezoneOffset,
+      parseInt(timezoneOffset ?? '0'),
     );
 
     const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
@@ -275,12 +275,12 @@ export class TransactionsService {
         ),
       );
     }
-    const page = {
+    return {
+      count: domainTransactions.count,
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
       results,
     };
-    return page;
   }
 
   /**
