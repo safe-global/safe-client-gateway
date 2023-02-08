@@ -122,6 +122,52 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
+  it('Should return only creation transaction', async () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const timezoneOffset = 3600 * 2; //Offset of 2 hours
+    const chainResponse = chainBuilder().build();
+    const chainId = chainResponse.chainId;
+    const safe = safeBuilder().build();
+    const transactionHistoryBuilder = {
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    };
+    const creationTransactionResponse: any = creationTransactionToJson(
+      creationTransactionBuilder().build(),
+    );
+    mockNetworkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/creation/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({ data: transactionHistoryBuilder });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      if (url === getSafeCreationUrl) {
+        return Promise.resolve({ data: creationTransactionResponse });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(2);
+        expect(body.results[1].transaction.id).toContain('creation_');
+      });
+  });
+
   it('Should return correctly each date label', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();

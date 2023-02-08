@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
@@ -16,6 +17,8 @@ import { IncomingTransferMapper } from '../transfers/transfer.mapper';
 import { TransactionItem } from '../../entities/transaction-item.entity';
 import { DateLabel } from '../../entities/date-label.entity';
 import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
+import { CreationTransaction } from '../../../../domain/safe/entities/creation-transaction.entity';
+import { CreationTransactionMapper } from '../creation-transaction/creation-transaction.mapper';
 
 class TransactionDomainGroup {
   timestamp: number;
@@ -23,6 +26,7 @@ class TransactionDomainGroup {
     | MultisigTransaction
     | ModuleTransaction
     | EthereumTransaction
+    | CreationTransaction
   )[];
 }
 
@@ -32,6 +36,7 @@ export class TransactionsMapper {
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {}
   async mapTransactions(
     chainId: string,
@@ -40,6 +45,9 @@ export class TransactionsMapper {
     offset: number,
     timezoneOffset: number,
   ): Promise<Array<TransactionItem | DateLabel>> {
+    if (transactionsDomain.length == 0) {
+      return [];
+    }
     const prevPageTimestamp = this.getPreviousPageDate(
       transactionsDomain,
       offset,
@@ -79,6 +87,8 @@ export class TransactionsMapper {
       timestamp = transaction.executionDate;
     } else if (isModuleTransaction(transaction)) {
       timestamp = transaction.executionDate;
+    } else if (isCreationTransaction(transaction)) {
+      timestamp = transaction.created;
     } else {
       throw Error('Unknown transaction type');
     }
@@ -93,7 +103,8 @@ export class TransactionsMapper {
     offset: number,
     timezoneOffset: number,
   ): Date | undefined {
-    if (offset <= 0) return undefined;
+    // More than 1 element is required to get the previous page date
+    if (offset <= 0 || transactions.length <= 1) return undefined;
     const previousPageTransaction = transactions[0];
     const timestamp = this.getTransactionTimestamp(previousPageTransaction);
     return this.getDayFromDate(timestamp, timezoneOffset);
@@ -176,6 +187,14 @@ export class TransactionsMapper {
               this.mapTransfer(transfers, chainId, safe),
             );
           }
+        } else if (isCreationTransaction(transaction)) {
+          return new TransactionItem(
+            await this.creationTransactionMapper.mapTransaction(
+              chainId,
+              transaction as CreationTransaction,
+              safe,
+            ),
+          );
         } else {
           // This should never happen as AJV would not allow an unknown transaction to get to this stage
           throw Error('Unrecognized transaction type');

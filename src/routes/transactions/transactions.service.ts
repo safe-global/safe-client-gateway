@@ -15,7 +15,6 @@ import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionItem } from './entities/transaction-item.entity';
 import { TransactionsMapper } from './mappers/common/transactions.mapper';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
@@ -251,6 +250,13 @@ export class TransactionsService {
       paginationDataAdjusted.limit,
       paginationDataAdjusted.offset,
     );
+    const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
+    const previousURL = buildPreviousPageURL(routeUrl);
+    if (nextURL == null) {
+      const creationTransaction =
+        await this.safeRepository.getCreationTransaction(chainId, safeAddress);
+      domainTransactions.results.push(creationTransaction);
+    }
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
     const results = await this.transactionMapper.mapTransactions(
       chainId,
@@ -260,21 +266,6 @@ export class TransactionsService {
       parseInt(timezoneOffset ?? '0'),
     );
 
-    const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
-    const previousURL = buildPreviousPageURL(routeUrl);
-    if (nextURL == null) {
-      const creationTransaction =
-        await this.safeRepository.getCreationTransaction(chainId, safeAddress);
-      results.push(
-        new TransactionItem(
-          await this.creationTransactionMapper.mapTransaction(
-            chainId,
-            creationTransaction,
-            safeInfo,
-          ),
-        ),
-      );
-    }
     return {
       count: domainTransactions.count,
       next: nextURL?.toString() ?? null,
