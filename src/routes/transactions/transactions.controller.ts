@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
@@ -141,7 +148,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Query('timezone_offset') timezoneOffset?: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffset: number,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory(
       chainId,

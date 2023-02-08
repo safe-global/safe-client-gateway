@@ -238,7 +238,7 @@ export class TransactionsService {
     routeUrl: Readonly<URL>,
     safeAddress: string,
     paginationData: PaginationData,
-    timezoneOffset?: string,
+    timezoneOffset: number,
   ): Promise<TransactionItemPage> {
     const paginationDataAdjusted =
       this.getAdjustedPaginationForHistory(paginationData);
@@ -261,7 +261,7 @@ export class TransactionsService {
       domainTransactions.results,
       safeInfo,
       paginationData.offset,
-      parseInt(timezoneOffset ?? '0'),
+      timezoneOffset,
     );
 
     return {
