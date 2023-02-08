@@ -48,15 +48,20 @@ export class TransactionsMapper {
     if (transactionsDomain.length == 0) {
       return [];
     }
-    const prevPageTimestamp = this.getPreviousPageDate(
-      transactionsDomain,
+    const previousTransaction = this.getPreviousItem(
       offset,
-      timezoneOffset,
-    )?.getTime();
-    // Remove first item that was requested to get previous day timestamp
-    if (prevPageTimestamp !== undefined) {
+      transactionsDomain,
+    );
+    let prevPageTimestamp = 0;
+    if (previousTransaction !== null) {
+      prevPageTimestamp = this.getDayFromTransactionDate(
+        previousTransaction,
+        timezoneOffset,
+      ).getTime();
+      // Remove first transaction that was requested to get previous day timestamp
       transactionsDomain = transactionsDomain.slice(1);
     }
+
     const transactionsDomainGroups = this.groupByDay(
       transactionsDomain,
       timezoneOffset,
@@ -98,16 +103,21 @@ export class TransactionsMapper {
     return timestamp;
   }
 
-  private getPreviousPageDate(
-    transactions: TransactionDomain[],
+  private getPreviousItem(
     offset: number,
-    timezoneOffset: number,
-  ): Date | undefined {
+    transactions: TransactionDomain[],
+  ): TransactionDomain | null {
     // More than 1 element is required to get the previous page date
-    if (offset <= 0 || transactions.length <= 1) return undefined;
-    const previousPageTransaction = transactions[0];
-    const timestamp = this.getTransactionTimestamp(previousPageTransaction);
-    return this.getDayFromDate(timestamp, timezoneOffset);
+    if (offset <= 0 || transactions.length <= 1) return null;
+    return transactions[0];
+  }
+
+  private getDayFromTransactionDate(
+    transaction: TransactionDomain,
+    timezoneOffset: number,
+  ): Date {
+    const timestamp = this.getTransactionTimestamp(transaction);
+    return this.getDayStartForDate(timestamp, timezoneOffset);
   }
 
   private groupByDay(
@@ -116,9 +126,8 @@ export class TransactionsMapper {
   ): TransactionDomainGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) => {
-        const transactionTimestamp = this.getTransactionTimestamp(transaction);
-        return this.getDayFromDate(
-          transactionTimestamp,
+        return this.getDayFromTransactionDate(
+          transaction,
           timezoneOffset,
         ).getTime();
       }),
@@ -130,8 +139,13 @@ export class TransactionsMapper {
         },
     );
   }
-
-  private getDayFromDate(timestamp: Date, timezoneOffset: number): Date {
+  /**
+   * Returns a day {@link Date } at 00:00:00 from the input timestamp.
+   *
+   * @param timestamp - date to convert
+   * @param timezoneOffset - Offset of time zone in seconds
+   */
+  private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
     if (timezoneOffset != 0) {
       timestamp.setUTCSeconds(timezoneOffset);
     }

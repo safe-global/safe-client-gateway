@@ -20,7 +20,6 @@ import { ModuleTransactionMapper } from './mappers/module-transactions/module-tr
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
-import { CreationTransactionMapper } from './mappers/creation-transaction/creation-transaction.mapper';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
 
 @Injectable()
@@ -32,7 +31,6 @@ export class TransactionsService {
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionMapper: TransactionsMapper,
-    private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {}
 
   async getMultisigTransactions(
