@@ -19,6 +19,7 @@ import { Transaction } from '../../domain/safe/entities/transaction.entity';
 import { Token } from '../../domain/tokens/entities/token.entity';
 import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
 import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
+import { Device } from '../../domain/notifications/entities/device.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -408,6 +409,29 @@ export class TransactionApi implements ITransactionApi {
       const cacheKey = `${this.chainId}_${ownerAddress}_owner_safes`;
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
       return await this.dataSource.get(cacheKey, '', url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async postDeviceRegistration(
+    device: Device,
+    safes: string[],
+    signatures: string[],
+  ) {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/`;
+      return await this.networkService.post(url, {
+        uuid: device.uuid,
+        cloudMessagingToken: device.cloudMessagingToken,
+        buildNumber: device.buildNumber,
+        bundle: device.bundle,
+        deviceType: device.deviceType,
+        version: device.version,
+        timestamp: device.timestamp,
+        safes,
+        signatures,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

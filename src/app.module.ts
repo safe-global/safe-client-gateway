@@ -23,6 +23,7 @@ import { OwnersModule } from './routes/owners/owners.module';
 import { AboutModule } from './routes/about/about.module';
 import { TransactionsModule } from './routes/transactions/transactions.module';
 import { SafesModule } from './routes/safes/safes.module';
+import { NotificationsModule } from './routes/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SafesModule } from './routes/safes/safes.module';
     DataDecodedModule,
     DelegatesModule,
     HealthModule,
+    NotificationsModule,
     OwnersModule,
     SafeAppsModule,
     SafesModule,

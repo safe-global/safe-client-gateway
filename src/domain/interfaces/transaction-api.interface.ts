@@ -14,6 +14,7 @@ import { Token } from '../tokens/entities/token.entity';
 import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
 import { SafeList } from '../safe/entities/safe-list.entity';
 import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
+import { Device } from '../notifications/entities/device.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -126,4 +127,6 @@ export interface ITransactionApi {
   getTokens(limit?: number, offset?: number): Promise<Page<Token>>;
 
   getSafesByOwner(ownerAddress: string): Promise<SafeList>;
+
+  postDeviceRegistration(device: Device, safes: string[], signatures: string[]);
 }
