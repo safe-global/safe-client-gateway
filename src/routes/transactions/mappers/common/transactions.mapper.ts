@@ -157,12 +157,12 @@ export class TransactionsMapper {
     );
   }
 
-  private async mapGroupTransactions(
+  private mapGroupTransactions(
     transactionGroup,
     chainId,
     safe,
   ): Promise<TransactionItem[]> {
-    const transactions: TransactionItem[] = await Promise.all(
+    return Promise.all(
       transactionGroup.transactions.map(async (transaction) => {
         if (isMultisigTransaction(transaction)) {
           return new TransactionItem(
@@ -201,6 +201,5 @@ export class TransactionsMapper {
         }
       }),
     );
-    return transactions;
   }
 }
