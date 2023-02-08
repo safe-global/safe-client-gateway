@@ -436,4 +436,13 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async deleteDeviceRegistration(uuid: string, safeAddress: string) {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
+      return await this.networkService.delete(url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 }

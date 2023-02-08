@@ -237,4 +237,67 @@ describe('Notifications Controller (Unit)', () => {
         });
     });
   });
+
+  describe('DELETE /chains/:chainId/notifications/devices/:uuid/safes/:safeAddress', () => {
+    it('Success', async () => {
+      const chainId = faker.random.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
+        if (url.includes(getChainUrlPattern)) {
+          return Promise.resolve({ data: chain });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+      mockNetworkService.delete.mockImplementation(() => Promise.resolve());
+
+      const url = `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`;
+      await request(app.getHttpServer()).delete(url).expect(200);
+
+      expect(mockNetworkService.delete).toBeCalledTimes(1);
+    });
+
+    it('Failure: Config API fails', async () => {
+      const chainId = faker.random.numeric(32);
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
+        if (url.includes(getChainUrlPattern)) {
+          return Promise.reject(new Error());
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+      mockNetworkService.delete.mockImplementation(() => Promise.resolve());
+
+      const url = `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`;
+      await request(app.getHttpServer()).delete(url).expect(503);
+
+      expect(mockNetworkService.delete).toBeCalledTimes(0);
+    });
+
+    it('Failure: Transaction API fails', async () => {
+      const chainId = faker.random.numeric();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrlPattern = `${safeConfigUrl}/api/v1/chains/`;
+        if (url.includes(getChainUrlPattern)) {
+          return Promise.resolve({ data: chain });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+      mockNetworkService.delete.mockImplementation(() =>
+        Promise.reject(new Error()),
+      );
+
+      const url = `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`;
+      await request(app.getHttpServer()).delete(url).expect(503);
+
+      expect(mockNetworkService.delete).toBeCalledTimes(1);
+    });
+  });
 });

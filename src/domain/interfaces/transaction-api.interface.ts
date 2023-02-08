@@ -129,4 +129,6 @@ export interface ITransactionApi {
   getSafesByOwner(ownerAddress: string): Promise<SafeList>;
 
   postDeviceRegistration(device: Device, safes: string[], signatures: string[]);
+
+  deleteDeviceRegistration(uuid: string, safeAddress: string);
 }

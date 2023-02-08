@@ -76,6 +76,27 @@ export class NotificationsService {
     }
   }
 
+  /**
+   * Sends a delete request for a chain, notification uuid and safe address.
+   * The uuid is expected to be managed by the client. Its value should be equal
+   * to the provided when the client called {@link registerDevice}.
+   *
+   * @param chainId
+   * @param uuid the same uuid provided when the device was registered.
+   * @param safeAddress
+   */
+  async deleteDevice(
+    chainId: string,
+    uuid: string,
+    safeAddress: string,
+  ): Promise<void> {
+    return this.notificationsRepository.deleteDevice(
+      chainId,
+      uuid,
+      safeAddress,
+    );
+  }
+
   private isServerError(
     result: PromiseSettledResult<DomainSafeRegistration>,
   ): boolean {

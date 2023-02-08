@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RegisterDeviceDto } from './entities/register-device.dto.entity';
 import { NotificationsService } from './notifications.service';
@@ -15,5 +22,15 @@ export class NotificationsController {
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
     return this.notificationsService.registerDevice(registerDeviceDto);
+  }
+
+  @ApiOkResponse()
+  @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
+  async deleteDevice(
+    @Param('chainId') chainId: string,
+    @Param('uuid') uuid: string,
+    @Param('safeAddress') safeAddress: string,
+  ): Promise<void> {
+    return this.notificationsService.deleteDevice(chainId, uuid, safeAddress);
   }
 }
