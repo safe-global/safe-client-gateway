@@ -8,6 +8,7 @@ import { CreationTransactionInfo } from '../../entities/creation-transaction-inf
 
 @Injectable()
 export class CreationTransactionMapper {
+  static type = 'creation';
   constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
 
   async mapTransaction(
@@ -35,9 +36,8 @@ export class CreationTransactionMapper {
       implementation,
       factory,
     );
-    const type = 'creation';
     return new Transaction(
-      `${type}_${safe.address}`,
+      `${CreationTransactionMapper.type}_${safe.address}`,
       transaction.created.getTime(),
       TransactionStatus.Success,
       txInfo,
