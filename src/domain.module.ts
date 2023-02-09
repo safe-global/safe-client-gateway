@@ -48,6 +48,9 @@ import { TokenValidator } from './domain/tokens/token.validator';
 import { CreationTransactionValidator } from './domain/safe/creation-transaction.validator';
 import { INotificationsRepository } from './domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from './domain/notifications/notifications.repository';
+import { IEstimationsRepository } from './domain/estimations/estimations.repository.interface';
+import { EstimationsRepository } from './domain/estimations/estimations.repository';
+import { EstimationsValidator } from './domain/estimations/estimations.validator';
 
 @Global()
 @Module({
@@ -60,6 +63,7 @@ import { NotificationsRepository } from './domain/notifications/notifications.re
     { provide: IContractsRepository, useClass: ContractsRepository },
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
+    { provide: IEstimationsRepository, useClass: EstimationsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
@@ -70,9 +74,10 @@ import { NotificationsRepository } from './domain/notifications/notifications.re
     ChainsValidator,
     CollectiblesValidator,
     ContractsValidator,
-    DataDecodedValidator,
     CreationTransactionValidator,
+    DataDecodedValidator,
     DelegateValidator,
+    EstimationsValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
     GenericValidator,
@@ -96,6 +101,7 @@ import { NotificationsRepository } from './domain/notifications/notifications.re
     IContractsRepository,
     IDataDecodedRepository,
     IDelegateRepository,
+    IEstimationsRepository,
     IExchangeRepository,
     INotificationsRepository,
     ISafeAppsRepository,
