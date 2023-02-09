@@ -5,20 +5,20 @@ import {
   isModuleTransaction,
   isMultisigTransaction,
   Transaction as TransactionDomain,
-} from '../../../../domain/safe/entities/transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
-import { ModuleTransactionMapper } from '../module-transactions/module-transaction.mapper';
-import { MultisigTransactionMapper } from '../multisig-transactions/multisig-transaction.mapper';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { EthereumTransaction } from '../../../../domain/safe/entities/ethereum-transaction.entity';
+} from '../../../domain/safe/entities/transaction.entity';
+import { Safe } from '../../../domain/safe/entities/safe.entity';
+import { ModuleTransactionMapper } from './module-transactions/module-transaction.mapper';
+import { MultisigTransactionMapper } from './multisig-transactions/multisig-transaction.mapper';
+import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '../../../domain/safe/entities/module-transaction.entity';
+import { EthereumTransaction } from '../../../domain/safe/entities/ethereum-transaction.entity';
 import { groupBy } from 'lodash';
-import { IncomingTransferMapper } from '../transfers/transfer.mapper';
-import { TransactionItem } from '../../entities/transaction-item.entity';
-import { DateLabel } from '../../entities/date-label.entity';
-import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
-import { CreationTransaction } from '../../../../domain/safe/entities/creation-transaction.entity';
-import { CreationTransactionMapper } from '../creation-transaction/creation-transaction.mapper';
+import { IncomingTransferMapper } from './transfers/transfer.mapper';
+import { TransactionItem } from '../entities/transaction-item.entity';
+import { DateLabel } from '../entities/date-label.entity';
+import { Transfer } from '../../../domain/safe/entities/transfer.entity';
+import { CreationTransaction } from '../../../domain/safe/entities/creation-transaction.entity';
+import { CreationTransactionMapper } from './creation-transaction/creation-transaction.mapper';
 
 class TransactionDomainGroup {
   timestamp: number;
@@ -31,14 +31,14 @@ class TransactionDomainGroup {
 }
 
 @Injectable()
-export class TransactionsMapper {
+export class TransactionsHistoryMapper {
   constructor(
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {}
-  async mapTransactions(
+  async mapTransactionsHistory(
     chainId: string,
     transactionsDomain: TransactionDomain[],
     safe: Safe,
