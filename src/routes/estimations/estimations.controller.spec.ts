@@ -92,7 +92,7 @@ describe('Estimations Controller (Unit)', () => {
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       mockNetworkService.post.mockImplementation((url) => {
-        const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations`;
+        const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
         return url === estimationsUrl
           ? Promise.resolve({ data: estimation })
           : Promise.reject(`No matching rule for url: ${url}`);
@@ -110,15 +110,11 @@ describe('Estimations Controller (Unit)', () => {
             0,
           ),
         )
-        .expect(201)
-        .expect(({ body }) => {
-          expect(body).toMatchObject({
-            currentNonce: safe.nonce,
-            recommendedNonce: Math.max(safe.nonce, lastTransaction.nonce + 1),
-            estimation: expect.objectContaining({
-              safeTxGas: estimation.safeTxGas,
-            }),
-          });
+        .expect(200)
+        .expect({
+          currentNonce: safe.nonce,
+          recommendedNonce: Math.max(safe.nonce, lastTransaction.nonce + 1),
+          safeTxGas: estimation.safeTxGas,
         });
     });
   });
@@ -155,7 +151,7 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     mockNetworkService.post.mockImplementation((url) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations`;
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })
         : Promise.reject(`No matching rule for url: ${url}`);
@@ -173,15 +169,11 @@ describe('Estimations Controller (Unit)', () => {
           0,
         ),
       )
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body).toMatchObject({
-          currentNonce: safe.nonce,
-          recommendedNonce: lastTransaction.nonce + 1,
-          estimation: expect.objectContaining({
-            safeTxGas: estimation.safeTxGas,
-          }),
-        });
+      .expect(200)
+      .expect({
+        currentNonce: safe.nonce,
+        recommendedNonce: lastTransaction.nonce + 1,
+        safeTxGas: estimation.safeTxGas,
       });
   });
 
@@ -212,7 +204,7 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     mockNetworkService.post.mockImplementation((url) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations`;
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })
         : Promise.reject(`No matching rule for url: ${url}`);
@@ -230,15 +222,11 @@ describe('Estimations Controller (Unit)', () => {
           0,
         ),
       )
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body).toMatchObject({
-          currentNonce: safe.nonce,
-          recommendedNonce: safe.nonce,
-          estimation: expect.objectContaining({
-            safeTxGas: estimation.safeTxGas,
-          }),
-        });
+      .expect(200)
+      .expect({
+        currentNonce: safe.nonce,
+        recommendedNonce: safe.nonce,
+        safeTxGas: estimation.safeTxGas,
       });
   });
 
@@ -272,7 +260,7 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     mockNetworkService.post.mockImplementation((url) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations`;
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })
         : Promise.reject(`No matching rule for url: ${url}`);
@@ -290,15 +278,11 @@ describe('Estimations Controller (Unit)', () => {
           0,
         ),
       )
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body).toMatchObject({
-          currentNonce: safe.nonce,
-          recommendedNonce: safe.nonce,
-          estimation: expect.objectContaining({
-            safeTxGas: estimation.safeTxGas,
-          }),
-        });
+      .expect(200)
+      .expect({
+        currentNonce: safe.nonce,
+        recommendedNonce: safe.nonce,
+        safeTxGas: estimation.safeTxGas,
       });
   });
 });

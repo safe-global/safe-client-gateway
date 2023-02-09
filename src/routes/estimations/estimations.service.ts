@@ -43,7 +43,11 @@ export class EstimationsService {
       address,
       currentNonce,
     );
-    return new EstimationResponse(estimation, currentNonce, recommendedNonce);
+    return new EstimationResponse(
+      currentNonce,
+      recommendedNonce,
+      estimation.safeTxGas,
+    );
   }
 
   private async getSafeNonce(

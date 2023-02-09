@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { EstimationRequest } from './entities/estimation-request.entity';
 import { EstimationResponse } from './entities/estimation-response.entity';
@@ -13,6 +13,7 @@ export class EstimationsController {
   constructor(private readonly estimationsService: EstimationsService) {}
 
   @ApiOkResponse({ type: EstimationResponse })
+  @HttpCode(200)
   @Post('chains/:chainId/safes/:address/multisig-transactions/estimations')
   async getContract(
     @Param('chainId') chainId: string,

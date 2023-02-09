@@ -1,22 +1,20 @@
-import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
-import { Estimation } from './estimation.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
-@ApiExtraModels(Estimation)
 export class EstimationResponse {
-  @ApiProperty({ type: Estimation })
-  estimation: Estimation;
   @ApiProperty()
   currentNonce: number;
   @ApiProperty()
   recommendedNonce: number;
+  @ApiProperty()
+  safeTxGas: string;
 
   constructor(
-    estimation: Estimation,
     currentNonce: number,
     recommendedNonce: number,
+    safeTxGas: string,
   ) {
-    this.estimation = estimation;
     this.currentNonce = currentNonce;
     this.recommendedNonce = recommendedNonce;
+    this.safeTxGas = safeTxGas;
   }
 }

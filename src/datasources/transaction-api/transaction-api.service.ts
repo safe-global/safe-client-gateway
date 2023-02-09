@@ -455,7 +455,7 @@ export class TransactionApi implements ITransactionApi {
     estimationRequest: EstimationRequest,
   ): Promise<Estimation> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${address}/multisig-transactions/estimations`;
+      const url = `${this.baseUrl}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       const { data: estimation } = await this.networkService.post(url, {
         to: estimationRequest.to,
         value: estimationRequest.value,
