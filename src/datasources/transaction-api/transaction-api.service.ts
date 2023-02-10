@@ -418,10 +418,10 @@ export class TransactionApi implements ITransactionApi {
     device: Device,
     safes: string[],
     signatures: string[],
-  ) {
+  ): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/`;
-      return await this.networkService.post(url, {
+      await this.networkService.post(url, {
         uuid: device.uuid,
         cloudMessagingToken: device.cloudMessagingToken,
         buildNumber: device.buildNumber,
@@ -432,6 +432,18 @@ export class TransactionApi implements ITransactionApi {
         safes,
         signatures,
       });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async deleteDeviceRegistration(
+    uuid: string,
+    safeAddress: string,
+  ): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
+      await this.networkService.delete(url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

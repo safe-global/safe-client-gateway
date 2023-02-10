@@ -7,7 +7,10 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../config/__tests__/test.configuration.module';
-import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
+import {
+  fakeCacheService,
+  TestCacheModule,
+} from '../../datasources/cache/__tests__/test.cache.module';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 import {
   mockNetworkService,
@@ -36,6 +39,7 @@ describe('Notifications Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    fakeCacheService.clear();
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         // feature
@@ -235,6 +239,74 @@ describe('Notifications Controller (Unit)', () => {
           message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[1].chain_id}`,
           error: 'Internal Server Error',
         });
+    });
+  });
+
+  describe('DELETE /chains/:chainId/notifications/devices/:uuid/safes/:safeAddress', () => {
+    it('Success', async () => {
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
+      const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : rejectForUrl(url),
+      );
+      mockNetworkService.delete.mockImplementation((url) =>
+        url === expectedProviderURL ? Promise.resolve() : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+        )
+        .expect(200)
+        .expect({});
+      expect(mockNetworkService.delete).toBeCalledTimes(1);
+      expect(mockNetworkService.delete).toBeCalledWith(expectedProviderURL);
+    });
+
+    it('Failure: Config API fails', async () => {
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainId = faker.random.numeric();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chainId}`
+          ? Promise.reject(new Error())
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+        )
+        .expect(503);
+      expect(mockNetworkService.delete).toBeCalledTimes(0);
+    });
+
+    it('Failure: Transaction API fails', async () => {
+      const uuid = faker.datatype.uuid();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : rejectForUrl(url),
+      );
+      mockNetworkService.delete.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`
+          ? Promise.reject(new Error())
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+        )
+        .expect(503);
+      expect(mockNetworkService.delete).toBeCalledTimes(1);
     });
   });
 });
