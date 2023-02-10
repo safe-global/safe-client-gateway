@@ -77,7 +77,7 @@ export class NotificationsService {
   }
 
   /**
-   * Sends a delete request.
+   * Un-registers a device notification target.
    * The uuid is expected to be managed by the client. Its value should be equal
    * to the one provided when the client called {@link registerDevice}.
    *
