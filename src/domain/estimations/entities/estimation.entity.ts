@@ -1,3 +1,3 @@
-export class Estimation {
+export interface Estimation {
   safeTxGas: string;
 }

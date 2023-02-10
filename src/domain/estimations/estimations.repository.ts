@@ -13,7 +13,7 @@ export class EstimationsRepository implements IEstimationsRepository {
     private readonly validator: EstimationsValidator,
   ) {}
 
-  async createEstimation(
+  async getEstimation(
     chainId: string,
     address: string,
     estimationRequest: EstimationRequest,

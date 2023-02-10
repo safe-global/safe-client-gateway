@@ -16,6 +16,7 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
 import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
 import { estimationBuilder } from '../../domain/estimations/entities/__tests__/estimation.builder';
 import {
@@ -65,16 +66,14 @@ describe('Estimations Controller (Unit)', () => {
 
   describe('Create estimations', () => {
     it('Success', async () => {
-      const chainId = faker.random.numeric();
-      const address = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const estimation = estimationBuilder().build();
       const lastTransaction = multisigTransactionBuilder().build();
       mockNetworkService.get.mockImplementation((url) => {
-        const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
-        const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
+        const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
         if (url === chainsUrl) {
           return Promise.resolve({ data: chain });
         }
@@ -83,16 +82,16 @@ describe('Estimations Controller (Unit)', () => {
         }
         if (url === multisigTransactionsUrl) {
           return Promise.resolve({
-            data: {
-              count: 1,
-              results: [multisigTransactionToJson(lastTransaction)],
-            },
+            data: pageBuilder()
+              .with('count', 1)
+              .with('results', [multisigTransactionToJson(lastTransaction)])
+              .build(),
           });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       mockNetworkService.post.mockImplementation((url) => {
-        const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
+        const estimationsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/estimations/`;
         return url === estimationsUrl
           ? Promise.resolve({ data: estimation })
           : Promise.reject(`No matching rule for url: ${url}`);
@@ -100,7 +99,7 @@ describe('Estimations Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/chains/${chainId}/safes/${address}/multisig-transactions/estimations`,
+          `/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/estimations`,
         )
         .send(
           new EstimationRequest(
@@ -120,7 +119,6 @@ describe('Estimations Controller (Unit)', () => {
   });
 
   it('should return last transaction nonce plus 1 as recommended nonce', async () => {
-    const chainId = faker.random.numeric();
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
     const safe = safeBuilder()
@@ -131,7 +129,7 @@ describe('Estimations Controller (Unit)', () => {
       .with('nonce', faker.datatype.number({ min: 51 }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {
@@ -142,10 +140,10 @@ describe('Estimations Controller (Unit)', () => {
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: {
-            count: 1,
-            results: [multisigTransactionToJson(lastTransaction)],
-          },
+          data: pageBuilder()
+            .with('count', 1)
+            .with('results', [multisigTransactionToJson(lastTransaction)])
+            .build(),
         });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -159,7 +157,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(
@@ -178,13 +176,12 @@ describe('Estimations Controller (Unit)', () => {
   });
 
   it('should return the current safe nonce if there is no last transaction', async () => {
-    const chainId = faker.random.numeric();
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
     const safe = safeBuilder().with('nonce', faker.datatype.number()).build();
     const estimation = estimationBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {
@@ -195,10 +192,7 @@ describe('Estimations Controller (Unit)', () => {
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: {
-            count: 0,
-            results: [],
-          },
+          data: pageBuilder().with('count', 0).with('results', []).build(),
         });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -212,7 +206,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(
@@ -231,7 +225,6 @@ describe('Estimations Controller (Unit)', () => {
   });
 
   it('should return safe nonce as recommended nonce if it is greater than last transaction nonce', async () => {
-    const chainId = faker.random.numeric();
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
     const safe = safeBuilder().with('nonce', faker.datatype.number()).build();
@@ -240,7 +233,7 @@ describe('Estimations Controller (Unit)', () => {
       .with('nonce', faker.datatype.number({ max: safe.nonce }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {
@@ -251,10 +244,10 @@ describe('Estimations Controller (Unit)', () => {
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: {
-            count: 0,
-            results: [multisigTransactionToJson(lastTransaction)],
-          },
+          data: pageBuilder()
+            .with('count', 1)
+            .with('results', [multisigTransactionToJson(lastTransaction)])
+            .build(),
         });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -268,7 +261,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(

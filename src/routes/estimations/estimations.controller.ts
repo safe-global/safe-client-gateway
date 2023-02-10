@@ -20,7 +20,7 @@ export class EstimationsController {
     @Param('address') address: string,
     @Body() estimationRequest: EstimationRequest,
   ): Promise<EstimationResponse> {
-    return this.estimationsService.createEstimation(
+    return this.estimationsService.getEstimation(
       chainId,
       address,
       estimationRequest,

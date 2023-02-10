@@ -16,48 +16,49 @@ export class EstimationsService {
   ) {}
 
   /**
-   * Returns and {@link Estimation} and also the current and recommended next nonce to use.
+   * Returns an {@link Estimation}, and also the current and recommended next nonce to use.
    * The current nonce is the Safe nonce.
    * The next recommended nonce is the maximum between the current Safe nonce and the Safe
    * last transaction nonce plus 1. If there is no last transaction, the Safe nonce is returned.
    *
-   * @param chainId
-   * @param address
-   * @param estimationRequest
+   * @param chainId chain id for the estimation.
+   * @param address address of the Safe requesting the estimation.
+   * @param estimationRequest {@link EstimationRequest} data.
    * @returns {@link EstimationResponse} containing {@link Estimation}, and both
    * current and recommended next nonce values
    */
-  async createEstimation(
+  async getEstimation(
     chainId: string,
     address: string,
     estimationRequest: EstimationRequest,
   ): Promise<EstimationResponse> {
-    const estimation = await this.estimationsRepository.createEstimation(
+    const estimation = await this.estimationsRepository.getEstimation(
       chainId,
       address,
       estimationRequest,
     );
-    const currentNonce = await this.getSafeNonce(chainId, address);
+    const safe = await this.safeRepository.getSafe(chainId, address);
     const recommendedNonce = await this.getEstimationRecommendedNonce(
       chainId,
       address,
-      currentNonce,
+      safe.nonce,
     );
     return new EstimationResponse(
-      currentNonce,
+      safe.nonce,
       recommendedNonce,
       estimation.safeTxGas,
     );
   }
 
-  private async getSafeNonce(
-    chainId: string,
-    address: string,
-  ): Promise<number> {
-    const safe = await this.safeRepository.getSafe(chainId, address);
-    return safe.nonce;
-  }
-
+  /**
+   * Gets the maximum between the current Safe nonce and the last transaction nonce plus 1.
+   * If there is no last transaction, the Safe nonce is returned.
+   *
+   * @param chainId chain id for the estimation.
+   * @param safeAddress address of the Safe requesting the estimation.
+   * @param safeNonce nonce of the Safe requesting the estimation.
+   * @returns recommended nonce for next transaction.
+   */
   private async getEstimationRecommendedNonce(
     chainId: string,
     safeAddress: string,

@@ -4,7 +4,7 @@ import { Estimation } from './entities/estimation.entity';
 export const IEstimationsRepository = Symbol('IEstimationsRepository');
 
 export interface IEstimationsRepository {
-  createEstimation(
+  getEstimation(
     chainId: string,
     address: string,
     estimationRequest: EstimationRequest,
