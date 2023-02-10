@@ -1,14 +1,21 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
-import { Delegate } from './entities/delegate.entity';
 import { Page } from '../common/entities/page.entity';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
+import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { Delegate } from './entities/delegate.entity';
 import { DeleteDelegateDto } from './entities/delete-delegate.entity';
+import { DeleteSafeDelegateRequest } from './entities/delete-safe-delegate-request.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -85,6 +92,23 @@ export class DelegatesService {
       delegateAddress,
       deleteDelegateDto.delegator,
       deleteDelegateDto.signature,
+    );
+  }
+
+  async deleteSafeDelegate(
+    chainId: string,
+    delegateAddress: string,
+    deleteSafeDelegateRequest: DeleteSafeDelegateRequest,
+  ): Promise<unknown> {
+    if (delegateAddress !== deleteSafeDelegateRequest.delegate) {
+      throw new BadRequestException();
+    }
+
+    return await this.repository.deleteSafeDelegate(
+      chainId,
+      deleteSafeDelegateRequest.delegate,
+      deleteSafeDelegateRequest.safe,
+      deleteSafeDelegateRequest.signature,
     );
   }
 }

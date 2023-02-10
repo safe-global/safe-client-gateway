@@ -23,22 +23,20 @@ import deleteDelegateDtoFactory from './entities/__tests__/delete-delegate.dto.f
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { TestAppProvider } from '../../app.provider';
+import { DeleteSafeDelegateBuilder } from './entities/__tests__/delete-safe-delegate-request.builder';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
 
+  const safeConfigUrl = faker.internet.url();
+
   beforeAll(async () => {
+    fakeConfigurationService.set('safeConfig.baseUri', safeConfigUrl);
+    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
     fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
+      'exchange.apiKey',
+      faker.random.alphaNumeric(),
     );
-
-    fakeConfigurationService.set(
-      'exchange.baseUri',
-      'https://test.exchange.service',
-    );
-
-    fakeConfigurationService.set('exchange.apiKey', 'https://test.api.key');
   });
 
   beforeEach(async () => {
@@ -237,6 +235,86 @@ describe('Delegates controller', () => {
         .expect({
           message: 'An error occurred',
           code: 503,
+        });
+    });
+  });
+
+  describe('Delete Safe delegates', () => {
+    it('Success', async () => {
+      const chain = chainBuilder().build();
+      const body = DeleteSafeDelegateBuilder().build();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.delete.mockImplementation((url) =>
+        url.includes(`/api/v1/safes/${body.safe}/delegates/${body.delegate}`)
+          ? Promise.resolve({ data: {}, status: 204 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${body.safe}/delegates/${body.delegate}`,
+        )
+        .send(body)
+        .expect(200);
+    });
+
+    it('Should return bad request if safe address does not match', async () => {
+      const chain = chainBuilder().build();
+      const body = DeleteSafeDelegateBuilder().build();
+      const anotherSafeAddress = faker.finance.ethereumAddress();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${anotherSafeAddress}/delegates/${body.delegate}`,
+        )
+        .send(body)
+        .expect(400);
+    });
+
+    it('Should return bad request if delegate address does not match', async () => {
+      const chain = chainBuilder().build();
+      const body = DeleteSafeDelegateBuilder().build();
+      const anotherDelegateAddress = faker.finance.ethereumAddress();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${body.safe}/delegates/${anotherDelegateAddress}`,
+        )
+        .send(body)
+        .expect(400);
+    });
+
+    it('Should return errors from provider', async () => {
+      const chain = chainBuilder().build();
+      const body = DeleteSafeDelegateBuilder().build();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.delete.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/safes/${body.safe}/delegates/${body.delegate}`
+          ? Promise.reject({
+              data: { message: 'Malformed body', status: 400 },
+              status: 400,
+            })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${body.safe}/delegates/${body.delegate}`,
+        )
+        .send(body)
+        .expect(400)
+        .expect({
+          message: 'Malformed body',
+          code: 400,
         });
     });
   });
