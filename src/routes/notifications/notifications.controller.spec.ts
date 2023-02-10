@@ -249,7 +249,7 @@ describe('Notifications Controller (Unit)', () => {
       const chain = chainBuilder().build();
       const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
       mockNetworkService.get.mockImplementation((url) =>
-        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : rejectForUrl(url),
       );
@@ -259,7 +259,7 @@ describe('Notifications Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${faker.random.numeric()}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(200)
         .expect({});
@@ -270,15 +270,16 @@ describe('Notifications Controller (Unit)', () => {
     it('Failure: Config API fails', async () => {
       const uuid = faker.datatype.uuid();
       const safeAddress = faker.finance.ethereumAddress();
+      const chainId = faker.random.numeric();
       mockNetworkService.get.mockImplementation((url) =>
-        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+        url === `${safeConfigUrl}/api/v1/chains/${chainId}`
           ? Promise.reject(new Error())
           : rejectForUrl(url),
       );
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${faker.random.numeric()}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
       expect(mockNetworkService.delete).toBeCalledTimes(0);
@@ -289,7 +290,7 @@ describe('Notifications Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
-        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : rejectForUrl(url),
       );
@@ -302,7 +303,7 @@ describe('Notifications Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${faker.random.numeric()}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
       expect(mockNetworkService.delete).toBeCalledTimes(1);
