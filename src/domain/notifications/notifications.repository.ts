@@ -25,7 +25,7 @@ export class NotificationsRepository implements INotificationsRepository {
     return safeRegistration;
   }
 
-  async deleteDevice(
+  async unregisterDevice(
     chainId: string,
     uuid: string,
     safeAddress: string,

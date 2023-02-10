@@ -16,12 +16,12 @@ export interface INotificationsRepository {
   ): Promise<SafeRegistration>;
 
   /**
-   * Deletes a a notification target, identified by its client {@link uuid}.
+   * Un-registers a notification target, identified by its client {@link uuid}.
    * @param chainId
    * @param uuid
    * @param safeAddress
    */
-  deleteDevice(
+  unregisterDevice(
     chainId: string,
     uuid: string,
     safeAddress: string,

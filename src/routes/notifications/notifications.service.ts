@@ -77,20 +77,20 @@ export class NotificationsService {
   }
 
   /**
-   * Sends a delete request for a chain, notification uuid and safe address.
+   * Sends a delete request.
    * The uuid is expected to be managed by the client. Its value should be equal
-   * to the provided when the client called {@link registerDevice}.
+   * to the one provided when the client called {@link registerDevice}.
    *
-   * @param chainId
+   * @param chainId chain id to use.
    * @param uuid the same uuid provided when the device was registered.
-   * @param safeAddress
+   * @param safeAddress safe address of the un-registration target.
    */
-  async deleteDevice(
+  async unregisterDevice(
     chainId: string,
     uuid: string,
     safeAddress: string,
   ): Promise<void> {
-    return this.notificationsRepository.deleteDevice(
+    return this.notificationsRepository.unregisterDevice(
       chainId,
       uuid,
       safeAddress,

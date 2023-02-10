@@ -246,25 +246,25 @@ describe('Notifications Controller (Unit)', () => {
     it('Success', async () => {
       const uuid = faker.datatype.uuid();
       const safeAddress = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
+      const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
       mockNetworkService.get.mockImplementation((url) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
-          ? Promise.resolve({ data: chainBuilder().build() })
+          ? Promise.resolve({ data: chain })
           : rejectForUrl(url),
       );
       mockNetworkService.delete.mockImplementation((url) =>
-        url.includes(
-          `/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`,
-        )
-          ? Promise.resolve()
-          : rejectForUrl(url),
+        url === expectedProviderURL ? Promise.resolve() : rejectForUrl(url),
       );
 
       await request(app.getHttpServer())
         .delete(
           `/chains/${faker.random.numeric()}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
-        .expect(200);
+        .expect(200)
+        .expect({});
       expect(mockNetworkService.delete).toBeCalledTimes(1);
+      expect(mockNetworkService.delete).toBeCalledWith(expectedProviderURL);
     });
 
     it('Failure: Config API fails', async () => {
@@ -273,13 +273,6 @@ describe('Notifications Controller (Unit)', () => {
       mockNetworkService.get.mockImplementation((url) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.reject(new Error())
-          : rejectForUrl(url),
-      );
-      mockNetworkService.delete.mockImplementation((url) =>
-        url.includes(
-          `/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`,
-        )
-          ? Promise.resolve()
           : rejectForUrl(url),
       );
 
@@ -294,15 +287,15 @@ describe('Notifications Controller (Unit)', () => {
     it('Failure: Transaction API fails', async () => {
       const uuid = faker.datatype.uuid();
       const safeAddress = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
-          ? Promise.resolve({ data: chainBuilder().build() })
+          ? Promise.resolve({ data: chain })
           : rejectForUrl(url),
       );
       mockNetworkService.delete.mockImplementation((url) =>
-        url.includes(
-          `/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`,
-        )
+        url ===
+        `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`
           ? Promise.reject(new Error())
           : rejectForUrl(url),
       );
