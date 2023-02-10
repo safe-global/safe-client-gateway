@@ -1,0 +1,42 @@
+{
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "type": "TRANSACTION",
+        "transaction": {
+          "id": "module_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xf4d5521a554f9a889ba4fd642265ed9688405752f8c2574eca05d325487c0b44",
+          "safeAppInfo": null,
+          "timestamp": 1671023952000,
+          "txStatus": "SUCCESS",
+          "txInfo": {
+            "type": "Transfer",
+            "sender": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+            },
+            "recipient": {
+              "logoUri": null,
+              "name": null,
+              "value": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+            },
+            "direction": "OUTGOING",
+            "transferInfo": {
+              "type": "NATIVE_COIN",
+              "value": "39900000000000000"
+            }
+          },
+          "executionInfo": {
+            "type": "MODULE",
+            "address": {
+              "logoUri": null,
+              "name": null,
+              "value": "0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134"
+            }
+          }
+        },
+        "conflictType": "None"
+      }
+    ]
+  }

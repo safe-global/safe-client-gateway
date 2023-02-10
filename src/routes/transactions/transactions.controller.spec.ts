@@ -26,7 +26,7 @@ import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-a
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import {
   moduleTransactionBuilder,
-  toJson,
+  toJson as moduleTransactionTojson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
@@ -457,8 +457,8 @@ describe('Transactions Controller (Unit)', () => {
         next: null,
         previous: null,
         results: [
-          toJson(moduleTransactionBuilder().build()),
-          toJson(moduleTransactionBuilder().build()),
+          moduleTransactionTojson(moduleTransactionBuilder().build()),
+          moduleTransactionTojson(moduleTransactionBuilder().build()),
         ],
       };
 

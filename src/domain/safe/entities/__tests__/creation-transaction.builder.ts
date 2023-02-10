@@ -13,3 +13,10 @@ export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
     .with('setupData', faker.datatype.hexadecimal())
     .with('dataDecoded', dataDecodedBuilder().build());
 }
+
+export function toJson(creationTransaction: CreationTransaction): unknown {
+  return {
+    ...creationTransaction,
+    created: creationTransaction.created.toISOString(),
+  };
+}

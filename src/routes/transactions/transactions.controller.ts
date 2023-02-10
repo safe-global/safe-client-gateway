@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
@@ -12,6 +19,7 @@ import { MultisigTransactionPage } from './entities/multisig-transaction-page.en
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import { QueuedItemPage } from './entities/queued-item-page.entity';
 import { QueuedItem } from './entities/queued-item.entity';
+import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -128,6 +136,27 @@ export class TransactionsController {
       routeUrl,
       safeAddress,
       paginationData,
+    );
+  }
+
+  @ApiOkResponse({ type: TransactionItemPage })
+  @Get('chains/:chainId/safes/:safeAddress/transactions/history')
+  @ApiQuery({ name: 'timezone_offset', required: false })
+  @ApiQuery({ name: 'cursor', required: false })
+  async getTransactionsHistory(
+    @Param('chainId') chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress') safeAddress: string,
+    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffset: number,
+  ): Promise<Partial<TransactionItemPage>> {
+    return this.transactionsService.getTransactionHistory(
+      chainId,
+      routeUrl,
+      safeAddress,
+      paginationData,
+      timezoneOffset,
     );
   }
 }
