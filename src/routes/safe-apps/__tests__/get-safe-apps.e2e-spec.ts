@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { TestAppProvider } from '../../../app.provider';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;
@@ -15,7 +16,7 @@ describe('Get Safe Apps e2e test', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = await new TestAppProvider().provide(moduleRef);
     await app.init();
     redisClient = await redisClientFactory();
   });
@@ -29,7 +30,7 @@ describe('Get Safe Apps e2e test', () => {
     const safeAppsCacheField = `${chainId}_undefined_undefined`;
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safe-apps`)
+      .get(`/v1/chains/${chainId}/safe-apps`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expect.any(Array));
@@ -58,7 +59,7 @@ describe('Get Safe Apps e2e test', () => {
     const safeAppsCacheField = `${chainId}_undefined_${transactionBuilderUrl}`;
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safe-apps/?url=${transactionBuilderUrl}`)
+      .get(`/v1/chains/${chainId}/safe-apps/?url=${transactionBuilderUrl}`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expect.any(Array));

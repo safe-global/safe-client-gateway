@@ -7,6 +7,7 @@ import { AppModule } from '../../../app.module';
 import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 import { CreateDataDecodedDto } from '../entities/create-data-decoded.dto';
+import { TestAppProvider } from '../../../app.provider';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
@@ -18,7 +19,7 @@ describe('Data decode e2e tests', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = await new TestAppProvider().provide(moduleRef);
     await app.init();
     redisClient = await redisClientFactory();
   });
@@ -46,7 +47,7 @@ describe('Data decode e2e tests', () => {
     );
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/data-decoder`)
+      .post(`/v1/chains/${chainId}/data-decoder`)
       .send(requestBody)
       .expect(200)
       .then(({ body }) => {

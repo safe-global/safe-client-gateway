@@ -17,12 +17,12 @@ import {
 import { Delegate } from './entities/delegate.entity';
 import { Page } from '../../domain/entities/page.entity';
 import { DomainModule } from '../../domain.module';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { faker } from '@faker-js/faker';
 import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
 import deleteDelegateDtoFactory from './entities/__tests__/delete-delegate.dto.factory';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -57,9 +57,7 @@ describe('Delegates controller', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -81,7 +79,7 @@ describe('Delegates controller', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: pageDelegates });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/delegates?safe=${safe}`)
+        .get(`/v1/chains/${chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(pageDelegates);
     });
@@ -100,7 +98,7 @@ describe('Delegates controller', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: pageDelegates });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/delegates?safe=${safe}`)
+        .get(`/v1/chains/${chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(pageDelegates);
     });
@@ -111,7 +109,7 @@ describe('Delegates controller', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/delegates`)
+        .get(`/v1/chains/${chainId}/delegates`)
         .expect(400)
         .expect({
           message: 'At least one query param must be provided',
@@ -129,7 +127,7 @@ describe('Delegates controller', () => {
       mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
 
       await request(app.getHttpServer())
-        .post(`/chains/${chainId}/delegates/`)
+        .post(`/v1/chains/${chainId}/delegates/`)
         .send(body)
         .expect(200);
     });
@@ -143,7 +141,7 @@ describe('Delegates controller', () => {
       mockNetworkService.post.mockResolvedValueOnce({ status: 201 });
 
       await request(app.getHttpServer())
-        .post(`/chains/${chainId}/delegates/`)
+        .post(`/v1/chains/${chainId}/delegates/`)
         .send(body)
         .expect(200);
     });
@@ -162,7 +160,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .post(`/chains/${chainId}/delegates/`)
+        .post(`/v1/chains/${chainId}/delegates/`)
         .send(body)
         .expect(400)
         .expect({
@@ -179,7 +177,7 @@ describe('Delegates controller', () => {
       mockNetworkService.post.mockRejectedValueOnce({ status: 503 });
 
       await request(app.getHttpServer())
-        .post(`/chains/${chainId}/delegates/`)
+        .post(`/v1/chains/${chainId}/delegates/`)
         .send(body)
         .expect(503)
         .expect({
@@ -201,7 +199,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
+        .delete(`/v1/chains/${chainId}/delegates/${body.delegate}`)
         .send(body)
         .expect(200);
     });
@@ -217,7 +215,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .delete(`/chains/${chainId}/delegates/${delegate}`)
+        .delete(`/v1/chains/${chainId}/delegates/${delegate}`)
         .expect(400)
         .expect({
           message: 'Malformed body',
@@ -233,7 +231,7 @@ describe('Delegates controller', () => {
       mockNetworkService.delete.mockRejectedValueOnce({ status: 503 });
 
       await request(app.getHttpServer())
-        .delete(`/chains/${chainId}/delegates/${body.delegate}`)
+        .delete(`/v1/chains/${chainId}/delegates/${body.delegate}`)
         .send(body)
         .expect(503)
         .expect({

@@ -15,9 +15,9 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { OwnersModule } from './owners.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -46,9 +46,7 @@ describe('Owners Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -74,7 +72,7 @@ describe('Owners Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/owners/${ownerAddress}/safes`)
+        .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect(transactionApiSafeListResponse);
     });
@@ -87,7 +85,7 @@ describe('Owners Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/owners/${ownerAddress}/safes`)
+        .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -111,7 +109,7 @@ describe('Owners Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/owners/${ownerAddress}/safes`)
+        .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -146,7 +144,7 @@ describe('Owners Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/owners/${ownerAddress}/safes`)
+        .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
           message: 'Validation failed',

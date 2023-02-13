@@ -6,6 +6,7 @@ import { AppModule } from '../../../app.module';
 import { readFileSync } from 'fs';
 import { Contract } from '../entities/contract.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { TestAppProvider } from '../../../app.provider';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication;
@@ -17,7 +18,7 @@ describe('Get contract e2e test', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = await new TestAppProvider().provide(moduleRef);
     await app.init();
     redisClient = await redisClientFactory();
   });
@@ -39,7 +40,7 @@ describe('Get contract e2e test', () => {
     );
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/contracts/${contractAddress}`)
+      .get(`/v1/chains/${chainId}/contracts/${contractAddress}`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
