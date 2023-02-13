@@ -92,4 +92,9 @@ export interface ISafeRepository {
   ): Promise<Page<MultisigTransaction>>;
 
   getSafesByOwner(chainId: string, ownerAddress: string): Promise<SafeList>;
+
+  getLastTransactionSortedByNonce(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<MultisigTransaction | null>;
 }

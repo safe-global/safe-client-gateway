@@ -20,6 +20,8 @@ import { Token } from '../../domain/tokens/entities/token.entity';
 import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
 import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
 import { Device } from '../../domain/notifications/entities/device.entity';
+import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
+import { Estimation } from '../../domain/estimations/entities/estimation.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -444,6 +446,23 @@ export class TransactionApi implements ITransactionApi {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
       await this.networkService.delete(url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+  async postEstimation(
+    address: string,
+    estimationRequest: EstimationRequest,
+  ): Promise<Estimation> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${address}/multisig-transactions/estimations/`;
+      const { data: estimation } = await this.networkService.post(url, {
+        to: estimationRequest.to,
+        value: estimationRequest.value,
+        data: estimationRequest.data,
+        operation: estimationRequest.operation,
+      });
+      return estimation;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

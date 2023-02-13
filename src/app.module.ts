@@ -24,6 +24,7 @@ import { AboutModule } from './routes/about/about.module';
 import { TransactionsModule } from './routes/transactions/transactions.module';
 import { SafesModule } from './routes/safes/safes.module';
 import { NotificationsModule } from './routes/notifications/notifications.module';
+import { EstimationsModule } from './routes/estimations/estimations.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { NotificationsModule } from './routes/notifications/notifications.module
     ContractsModule,
     DataDecodedModule,
     DelegatesModule,
+    EstimationsModule,
     HealthModule,
     NotificationsModule,
     OwnersModule,

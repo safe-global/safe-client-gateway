@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { isEmpty } from 'lodash';
 import { Safe } from './entities/safe.entity';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { ISafeRepository } from './safe.repository.interface';
@@ -296,5 +297,30 @@ export class SafeRepository implements ISafeRepository {
     const safeList = await transactionService.getSafesByOwner(ownerAddress);
 
     return this.safeListValidator.validate(safeList);
+  }
+
+  async getLastTransactionSortedByNonce(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<MultisigTransaction | null> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page: Page<Transaction> =
+      await transactionService.getMultisigTransactions(
+        safeAddress,
+        '-nonce',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+      );
+
+    return isEmpty(page.results)
+      ? null
+      : this.multisigTransactionValidator.validate(page.results[0]);
   }
 }
