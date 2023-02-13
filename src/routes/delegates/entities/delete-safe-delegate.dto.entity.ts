@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class DeleteSafeDelegateRequest {
+export class DeleteSafeDelegateDto {
   @ApiProperty()
   delegate: string;
   @ApiProperty()

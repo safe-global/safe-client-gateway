@@ -15,7 +15,7 @@ import { CreateDelegateDto } from './entities/create-delegate.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { Delegate } from './entities/delegate.entity';
 import { DeleteDelegateDto } from './entities/delete-delegate.entity';
-import { DeleteSafeDelegateRequest } from './entities/delete-safe-delegate-request.entity';
+import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -98,7 +98,7 @@ export class DelegatesService {
   async deleteSafeDelegate(
     chainId: string,
     delegateAddress: string,
-    deleteSafeDelegateRequest: DeleteSafeDelegateRequest,
+    deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
     if (delegateAddress !== deleteSafeDelegateRequest.delegate) {
       throw new BadRequestException();

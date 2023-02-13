@@ -21,7 +21,7 @@ import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
 import { DeleteDelegateDto } from './entities/delete-delegate.entity';
-import { DeleteSafeDelegateRequest } from './entities/delete-safe-delegate-request.entity';
+import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -98,7 +98,7 @@ export class DelegatesController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Param('delegateAddress') delegateAddress: string,
-    @Body() deleteSafeDelegateRequest: DeleteSafeDelegateRequest,
+    @Body() deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
     if (safeAddress !== deleteSafeDelegateRequest.safe) {
       throw new BadRequestException();

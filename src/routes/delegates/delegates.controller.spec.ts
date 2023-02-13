@@ -20,9 +20,9 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
 import { DelegatesModule } from './delegates.module';
-import createDelegateDtoFactory from './entities/__tests__/create-delegate.dto.factory';
-import deleteDelegateDtoFactory from './entities/__tests__/delete-delegate.dto.factory';
-import { DeleteSafeDelegateRequestBuilder } from './entities/__tests__/delete-safe-delegate-request.builder';
+import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate-dto.builder';
+import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate-dto.builder';
+import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate-dto.builder';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -127,7 +127,7 @@ describe('Delegates controller', () => {
 
   describe('POST delegates for a Safe', () => {
     it('Success', async () => {
-      const createDelegateDto = createDelegateDtoFactory();
+      const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -147,7 +147,7 @@ describe('Delegates controller', () => {
     });
 
     it('Success with safe undefined', async () => {
-      const createDelegateDto = createDelegateDtoFactory();
+      const createDelegateDto = createDelegateDtoBuilder().build();
       createDelegateDto.safe = undefined;
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
@@ -168,7 +168,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should return the tx-service error message', async () => {
-      const createDelegateDto = createDelegateDtoFactory();
+      const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -195,7 +195,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const createDelegateDto = createDelegateDtoFactory();
+      const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -221,7 +221,7 @@ describe('Delegates controller', () => {
 
   describe('Delete delegates', () => {
     it('Success', async () => {
-      const deleteDelegateDto = deleteDelegateDtoFactory();
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -244,7 +244,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should return the tx-service error message', async () => {
-      const deleteDelegateDto = deleteDelegateDtoFactory();
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -273,7 +273,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const deleteDelegateDto = deleteDelegateDtoFactory();
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -303,8 +303,7 @@ describe('Delegates controller', () => {
   describe('Delete Safe delegates', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest =
-        DeleteSafeDelegateRequestBuilder().build();
+      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
@@ -327,8 +326,7 @@ describe('Delegates controller', () => {
 
     it('Should return bad request if safe address does not match', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest =
-        DeleteSafeDelegateRequestBuilder().build();
+      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
       const anotherSafeAddress = faker.finance.ethereumAddress();
 
       await request(app.getHttpServer())
@@ -341,8 +339,7 @@ describe('Delegates controller', () => {
 
     it('Should return bad request if delegate address does not match', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest =
-        DeleteSafeDelegateRequestBuilder().build();
+      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
       const anotherDelegateAddress = faker.finance.ethereumAddress();
 
       await request(app.getHttpServer())
@@ -355,8 +352,7 @@ describe('Delegates controller', () => {
 
     it('Should return errors from provider', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest =
-        DeleteSafeDelegateRequestBuilder().build();
+      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
