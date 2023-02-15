@@ -82,7 +82,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(delegatesPage);
     });
@@ -107,7 +107,7 @@ describe('Delegates controller', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
         .expect(200)
         .expect(delegatesPage);
     });
@@ -116,7 +116,7 @@ describe('Delegates controller', () => {
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
-        .get(`/chains/${chain.chainId}/delegates`)
+        .get(`/v1/chains/${chain.chainId}/delegates`)
         .expect(400)
         .expect({
           message: 'At least one query param must be provided',
@@ -141,7 +141,7 @@ describe('Delegates controller', () => {
       );
 
       await request(app.getHttpServer())
-        .post(`/chains/${chain.chainId}/delegates/`)
+        .post(`/v1/chains/${chain.chainId}/delegates/`)
         .send(createDelegateDto)
         .expect(200);
     });
@@ -162,7 +162,7 @@ describe('Delegates controller', () => {
       );
 
       await request(app.getHttpServer())
-        .post(`/chains/${chain.chainId}/delegates/`)
+        .post(`/v1/chains/${chain.chainId}/delegates/`)
         .send(createDelegateDto)
         .expect(200);
     });
@@ -185,7 +185,7 @@ describe('Delegates controller', () => {
       );
 
       await request(app.getHttpServer())
-        .post(`/chains/${chain.chainId}/delegates/`)
+        .post(`/v1/chains/${chain.chainId}/delegates/`)
         .send(createDelegateDto)
         .expect(400)
         .expect({
@@ -209,7 +209,7 @@ describe('Delegates controller', () => {
       );
 
       await request(app.getHttpServer())
-        .post(`/chains/${chain.chainId}/delegates/`)
+        .post(`/v1/chains/${chain.chainId}/delegates/`)
         .send(createDelegateDto)
         .expect(503)
         .expect({
@@ -237,7 +237,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
         .send(deleteDelegateDto)
         .expect(200);
@@ -263,7 +263,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
         .expect(400)
         .expect({
@@ -289,7 +289,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
         .send(deleteDelegateDto)
         .expect(503)
@@ -318,7 +318,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`,
+          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`,
         )
         .send(deleteSafeDelegateRequest)
         .expect(200);
@@ -331,7 +331,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/safes/${anotherSafeAddress}/delegates/${body.delegate}`,
+          `/v1/chains/${chain.chainId}/safes/${anotherSafeAddress}/delegates/${deleteSafeDelegateRequest.delegate}`,
         )
         .send(deleteSafeDelegateRequest)
         .expect(400);
@@ -344,7 +344,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/safes/${body.safe}/delegates/${anotherDelegateAddress}`,
+          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${anotherDelegateAddress}`,
         )
         .send(deleteSafeDelegateRequest)
         .expect(400);
@@ -370,7 +370,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/safes/${body.safe}/delegates/${body.delegate}`,
+          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`,
         )
         .send(deleteSafeDelegateRequest)
         .expect(400)
