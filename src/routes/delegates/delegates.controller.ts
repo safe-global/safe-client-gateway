@@ -1,6 +1,5 @@
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -100,10 +99,6 @@ export class DelegatesController {
     @Param('delegateAddress') delegateAddress: string,
     @Body() deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
-    if (safeAddress !== deleteSafeDelegateRequest.safe) {
-      throw new BadRequestException();
-    }
-
     return this.service.deleteSafeDelegate(
       chainId,
       delegateAddress,

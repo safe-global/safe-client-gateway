@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
@@ -100,10 +94,6 @@ export class DelegatesService {
     delegateAddress: string,
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
-    if (delegateAddress !== deleteSafeDelegateRequest.delegate) {
-      throw new BadRequestException();
-    }
-
     return await this.repository.deleteSafeDelegate(
       chainId,
       deleteSafeDelegateRequest.delegate,

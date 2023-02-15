@@ -324,32 +324,6 @@ describe('Delegates controller', () => {
         .expect(200);
     });
 
-    it('Should return bad request if safe address does not match', async () => {
-      const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
-      const anotherSafeAddress = faker.finance.ethereumAddress();
-
-      await request(app.getHttpServer())
-        .delete(
-          `/v1/chains/${chain.chainId}/safes/${anotherSafeAddress}/delegates/${deleteSafeDelegateRequest.delegate}`,
-        )
-        .send(deleteSafeDelegateRequest)
-        .expect(400);
-    });
-
-    it('Should return bad request if delegate address does not match', async () => {
-      const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
-      const anotherDelegateAddress = faker.finance.ethereumAddress();
-
-      await request(app.getHttpServer())
-        .delete(
-          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${anotherDelegateAddress}`,
-        )
-        .send(deleteSafeDelegateRequest)
-        .expect(400);
-    });
-
     it('Should return errors from provider', async () => {
       const chain = chainBuilder().build();
       const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
