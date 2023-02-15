@@ -28,6 +28,13 @@ function configureSwagger(app: INestApplication) {
   SwaggerModule.setup('', app, document);
 }
 
+const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
+  configureVersioning,
+  configureShutdownHooks,
+  configureFilters,
+  configureSwagger,
+];
+
 /**
  * The main goal of {@link AppProvider} is to provide
  * a {@link INestApplication}.
@@ -35,20 +42,17 @@ function configureSwagger(app: INestApplication) {
  * Extensions of this class should return the application in
  * {@link getApp}.
  *
- * By default the {@link AppProvider} has a configuration collection ({@link setup})
- * that can be changed by each extension of the class
+ * Each provider should have a {@link configuration} which specifies
+ * the steps taken to configure the application
  */
 export abstract class AppProvider {
-  protected readonly setup: Array<(app: INestApplication) => void> = [
-    configureVersioning,
-    configureShutdownHooks,
-    configureFilters,
-    configureSwagger,
-  ];
+  protected abstract readonly configuration: Array<
+    (app: INestApplication) => void
+  >;
 
   public async provide(module: any): Promise<INestApplication> {
     const app = await this.getApp(module);
-    this.setup.forEach((f) => f(app));
+    this.configuration.forEach((f) => f(app));
     return app;
   }
 
@@ -62,6 +66,9 @@ export abstract class AppProvider {
  * service
  */
 export class DefaultAppProvider extends AppProvider {
+  protected readonly configuration: Array<(app: INestApplication) => void> =
+    DEFAULT_CONFIGURATION;
+
   protected getApp(module: any): Promise<INestApplication> {
     return NestFactory.create(module);
   }
@@ -75,17 +82,17 @@ export class DefaultAppProvider extends AppProvider {
  * If the module provided is not a {@link TestingModule}, an error is thrown
  */
 export class TestAppProvider extends AppProvider {
+  // Disables shutdown hooks for tests (they are not required)
+  // Enabling this in the tests might result in a MaxListenersExceededWarning
+  // as the number of listeners that this adds exceed the default
+  protected readonly configuration: Array<(app: INestApplication) => void> =
+    DEFAULT_CONFIGURATION.filter((config) => config !== configureShutdownHooks);
+
   constructor() {
     super();
     if (process.env.NODE_ENV !== 'test') {
       throw Error('TestAppProvider used outside of a testing environment');
     }
-
-    // Disables shutdown hooks for tests (they are not required)
-    // Enabling this in the tests might result in a MaxListenersExceededWarning
-    // as the number of listeners that this adds exceed the default
-    const index = this.setup.indexOf(configureShutdownHooks);
-    if (index > -1) this.setup.splice(index, 1);
   }
 
   protected getApp(module: any): Promise<INestApplication> {
