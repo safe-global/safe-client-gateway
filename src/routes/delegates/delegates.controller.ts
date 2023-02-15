@@ -20,6 +20,7 @@ import { Page } from '../common/entities/page.entity';
 import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
 import { DeleteDelegateDto } from './entities/delete-delegate.entity';
+import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
 
 @ApiTags('delegates')
 @Controller({
@@ -78,17 +79,30 @@ export class DelegatesController {
     return this.service.postDelegate(chainId, createDelegateDto);
   }
 
-  @HttpCode(200)
-  @Delete('chains/:chainId/delegates/:delegate_address')
+  @Delete('chains/:chainId/delegates/:delegateAddress')
   async deleteDelegate(
     @Param('chainId') chainId: string,
-    @Param('delegate_address') delegateAddress: string,
+    @Param('delegateAddress') delegateAddress: string,
     @Body() deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
     return this.service.deleteDelegate(
       chainId,
       delegateAddress,
       deleteDelegateDto,
+    );
+  }
+
+  @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
+  async deleteSafeDelegate(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Param('delegateAddress') delegateAddress: string,
+    @Body() deleteSafeDelegateRequest: DeleteSafeDelegateDto,
+  ): Promise<unknown> {
+    return this.service.deleteSafeDelegate(
+      chainId,
+      delegateAddress,
+      deleteSafeDelegateRequest,
     );
   }
 }

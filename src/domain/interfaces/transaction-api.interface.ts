@@ -68,6 +68,12 @@ export interface ITransactionApi {
     signature: string,
   ): Promise<unknown>;
 
+  deleteSafeDelegate(
+    delegate: string,
+    safeAddress: string,
+    signature: string,
+  ): Promise<void>;
+
   getTransfers(
     safeAddress: string,
     onlyErc20?: boolean,

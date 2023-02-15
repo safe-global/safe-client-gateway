@@ -72,4 +72,19 @@ export class DelegateRepository implements IDelegateRepository {
     );
     return result;
   }
+
+  async deleteSafeDelegate(
+    chainId: string,
+    delegate: string,
+    safeAddress: string,
+    signature: string,
+  ): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    await transactionService.deleteSafeDelegate(
+      delegate,
+      safeAddress,
+      signature,
+    );
+  }
 }
