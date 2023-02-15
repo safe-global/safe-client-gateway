@@ -12,7 +12,7 @@ import * as winston from 'winston';
 export class ValidationErrorFactory {
   private readonly VALIDATION_ERROR_CODE = 42;
 
-  from(errors: DefinedError[]): HttpException {
+  from(errors: DefinedError[], code?: HttpStatus): HttpException {
     const errPayload: HttpExceptionPayload = {
       message: 'Validation failed',
       code: this.VALIDATION_ERROR_CODE,
@@ -26,6 +26,9 @@ export class ValidationErrorFactory {
     }));
 
     winston.error({ ...errPayload, detail });
-    return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
+    return new HttpException(
+      errPayload,
+      code ?? HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }

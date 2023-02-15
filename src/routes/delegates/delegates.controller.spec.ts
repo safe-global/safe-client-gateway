@@ -265,6 +265,7 @@ describe('Delegates controller', () => {
         .delete(
           `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
+        .send(deleteDelegateDto)
         .expect(400)
         .expect({
           message: 'Malformed body',
@@ -296,6 +297,23 @@ describe('Delegates controller', () => {
         .expect({
           message: 'An error occurred',
           code: 503,
+        });
+    });
+
+    it('Should get a validation error', async () => {
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+        )
+        .send({ ...deleteDelegateDto, signature: faker.datatype.number() })
+        .expect(400)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
         });
     });
   });
