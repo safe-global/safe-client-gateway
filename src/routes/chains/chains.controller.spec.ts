@@ -23,10 +23,10 @@ import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/mas
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -71,9 +71,7 @@ describe('Chains Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -82,7 +80,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainsResponse });
 
       await request(app.getHttpServer())
-        .get('/chains')
+        .get('/v1/chains')
         .expect(200)
         .expect({
           count: chainsResponse.count,
@@ -147,7 +145,7 @@ describe('Chains Controller (Unit)', () => {
         status: 500,
       });
 
-      await request(app.getHttpServer()).get('/chains').expect(500).expect({
+      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'An error occurred',
         code: 500,
       });
@@ -172,7 +170,7 @@ describe('Chains Controller (Unit)', () => {
         },
       });
 
-      await request(app.getHttpServer()).get('/chains').expect(500).expect({
+      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'Validation failed',
         code: 42,
         arguments: [],
@@ -216,7 +214,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainDomain });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}`)
+        .get(`/v1/chains/${chainId}`)
         .expect(200)
         .expect(expectedResult);
     });
@@ -229,7 +227,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}`)
+        .get(`/v1/chains/${chainId}`)
         .expect(404)
         .expect({
           message: 'Not Found',
@@ -244,7 +242,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}`)
+        .get(`/v1/chains/${chainId}`)
         .expect(503)
         .expect({
           message: 'An error occurred',
@@ -259,7 +257,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: backboneResponse });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
+        .get('/v1/chains/1/about/backbone')
         .expect(200)
         .expect(backboneResponse);
 
@@ -279,7 +277,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
+        .get('/v1/chains/1/about/backbone')
         .expect(400)
         .expect({
           message: 'An error occurred',
@@ -300,7 +298,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/backbone')
+        .get('/v1/chains/1/about/backbone')
         .expect(502)
         .expect({
           message: 'An error occurred',
@@ -340,7 +338,7 @@ describe('Chains Controller (Unit)', () => {
       ];
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/master-copies')
+        .get('/v1/chains/1/about/master-copies')
         .expect(200)
         .expect(masterCopiesResponse);
 
@@ -360,7 +358,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/master-copies')
+        .get('/v1/chains/1/about/master-copies')
         .expect(400)
         .expect({
           message: 'An error occurred',
@@ -381,7 +379,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/master-copies')
+        .get('/v1/chains/1/about/master-copies')
         .expect(502)
         .expect({
           message: 'An error occurred',
@@ -409,7 +407,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/chains/1/about/master-copies')
+        .get('/v1/chains/1/about/master-copies')
         .expect(500)
         .expect({
           message: 'Validation failed',
@@ -437,7 +435,7 @@ describe('Chains Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: chainDomain });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainDomain.chainId}/about`)
+        .get(`/v1/chains/${chainDomain.chainId}/about`)
         .expect(200)
         .expect(expectedResult);
     });
@@ -450,7 +448,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/about`)
+        .get(`/v1/chains/${chainId}/about`)
         .expect(404)
         .expect({
           message: 'Not Found',
@@ -465,7 +463,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/about`)
+        .get(`/v1/chains/${chainId}/about`)
         .expect(503)
         .expect({
           message: 'An error occurred',

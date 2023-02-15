@@ -17,7 +17,6 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from '../../datasources/network/entities/network.error.entity';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -29,6 +28,7 @@ import {
   pageBuilder,
 } from '../../domain/entities/__tests__/page.builder';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
@@ -58,8 +58,7 @@ describe('Collectibles Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -95,7 +94,7 @@ describe('Collectibles Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/collectibles`)
+        .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
         .expect(200)
         .expect((response) => {
           expect(response.body.count).toBe(collectiblesResponse.count);
@@ -139,7 +138,7 @@ describe('Collectibles Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/chains/${chainId}/safes/${safeAddress}/collectibles/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+          `/v2/chains/${chainId}/safes/${safeAddress}/collectibles/?cursor=limit%3D${limit}%26offset%3D${offset}`,
         )
         .expect(200);
 
@@ -183,7 +182,7 @@ describe('Collectibles Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/chains/${chainId}/safes/${safeAddress}/collectibles/?exclude_spam=${excludeSpam}&trusted=${trusted}`,
+          `/v2/chains/${chainId}/safes/${safeAddress}/collectibles/?exclude_spam=${excludeSpam}&trusted=${trusted}`,
         )
         .expect(200);
 
@@ -216,7 +215,7 @@ describe('Collectibles Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/collectibles`)
+        .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
         .expect(transactionServiceError.status)
         .expect({
           code: transactionServiceError.status,
@@ -241,7 +240,7 @@ describe('Collectibles Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/collectibles`)
+        .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
         .expect(503)
         .expect({
           code: 503,

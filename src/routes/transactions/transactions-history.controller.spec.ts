@@ -26,7 +26,6 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
 import {
   ethereumTransactionBuilder,
@@ -40,6 +39,7 @@ import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
 } from '../../domain/safe/entities/__tests__/creation-transaction.builder';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -68,9 +68,7 @@ describe('Transactions History Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -90,7 +88,7 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history`)
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history`)
       .expect(500)
       .expect({
         message: 'An error occurred',
@@ -114,7 +112,7 @@ describe('Transactions History Controller (Unit)', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
       .expect(500)
       .expect({
         message: 'An error occurred',
@@ -159,7 +157,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -227,7 +225,7 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
       .expect(200)
       .then(({ body }) => {
         expect(body.results).toHaveLength(
@@ -281,7 +279,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -350,7 +348,7 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
       .expect(200)
       .then(({ body }) => {
         expect(body.results).toHaveLength(
@@ -424,7 +422,7 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
       .expect(200)
       .then(({ body }) => {
         expect(body.results).toHaveLength(3);
@@ -482,7 +480,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/chains/${chainId}/safes/${safeAddress}/transactions/history/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       )
       .expect(200)
       .then(({ body }) => {

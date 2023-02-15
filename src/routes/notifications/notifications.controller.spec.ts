@@ -18,10 +18,10 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { registerDeviceDtoBuilder } from './entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from './entities/__tests__/safe-registration.builder';
 import { NotificationsModule } from './notifications.module';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication;
@@ -52,9 +52,7 @@ describe('Notifications Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -88,7 +86,7 @@ describe('Notifications Controller (Unit)', () => {
       );
 
       await request(app.getHttpServer())
-        .post('/register/notifications')
+        .post('/v1/register/notifications')
         .send(registerDeviceDto)
         .expect(200)
         .expect({});
@@ -117,7 +115,7 @@ describe('Notifications Controller (Unit)', () => {
       );
 
       await request(app.getHttpServer())
-        .post('/register/notifications')
+        .post('/v1/register/notifications')
         .send(registerDeviceDto)
         .expect(400)
         .expect(({ body }) =>
@@ -152,7 +150,7 @@ describe('Notifications Controller (Unit)', () => {
       );
 
       await request(app.getHttpServer())
-        .post('/register/notifications')
+        .post('/v1/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
         .expect({
@@ -194,7 +192,7 @@ describe('Notifications Controller (Unit)', () => {
       );
 
       await request(app.getHttpServer())
-        .post('/register/notifications')
+        .post('/v1/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
         .expect({
@@ -231,7 +229,7 @@ describe('Notifications Controller (Unit)', () => {
       );
 
       await request(app.getHttpServer())
-        .post('/register/notifications')
+        .post('/v1/register/notifications')
         .send(registerDeviceDto)
         .expect(500)
         .expect({
@@ -259,7 +257,7 @@ describe('Notifications Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/v1/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(200)
         .expect({});
@@ -279,7 +277,7 @@ describe('Notifications Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/v1/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
       expect(mockNetworkService.delete).toBeCalledTimes(0);
@@ -303,7 +301,7 @@ describe('Notifications Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
+          `/v1/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
       expect(mockNetworkService.delete).toBeCalledTimes(1);

@@ -34,8 +34,8 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { TransactionsModule } from './transactions.module';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -64,9 +64,7 @@ describe('Transactions Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -83,7 +81,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -107,7 +105,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -141,7 +139,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(500)
         .expect({
           message: 'Validation failed',
@@ -193,7 +191,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
@@ -247,7 +245,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
@@ -326,7 +324,7 @@ describe('Transactions Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/chains/${chainId}/safes/${domainTransaction.safe}/multisig-transactions`,
+          `/v1/chains/${chainId}/safes/${domainTransaction.safe}/multisig-transactions`,
         )
         .expect(200)
         .then(({ body }) => {
@@ -385,7 +383,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/module-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -409,7 +407,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/module-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -434,7 +432,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/module-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
         .expect(404)
         .expect({
           message: 'An error occurred',
@@ -468,7 +466,7 @@ describe('Transactions Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: safe });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/module-transactions`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
         .expect(200);
     });
   });
@@ -482,7 +480,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
         .expect(500)
         .expect({
           message: 'An error occurred',
@@ -509,7 +507,7 @@ describe('Transactions Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+          `/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
         )
         .expect(500)
         .expect({
@@ -540,7 +538,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
         .expect(500)
         .expect({
           message: 'Validation failed',
@@ -592,7 +590,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
@@ -644,7 +642,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
@@ -688,7 +686,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual(
@@ -806,7 +804,7 @@ describe('Transactions Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
         .expect(200)
         .then(({ body }) => {
           expect(body).toEqual({
@@ -1000,7 +998,7 @@ describe('Transactions Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/chains/${chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
+          `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
         )
         .expect(200)
         .then(({ body }) => {

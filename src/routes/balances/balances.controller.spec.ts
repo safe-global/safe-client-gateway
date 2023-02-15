@@ -15,11 +15,11 @@ import {
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
 import { DomainModule } from '../../domain.module';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
 import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -48,8 +48,8 @@ describe('Balances Controller (Unit)', () => {
         TestNetworkModule,
       ],
     }).compile();
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
+
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -86,7 +86,7 @@ describe('Balances Controller (Unit)', () => {
 
       const expectedBalance = transactionApiBalancesResponse[0];
       await request(app.getHttpServer())
-        .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
         .expect(200)
         .expect({
           fiatTotal: expectedBalance.fiatBalance,
@@ -132,7 +132,7 @@ describe('Balances Controller (Unit)', () => {
         );
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'An error occurred',
@@ -167,7 +167,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(503)
           .expect({
             message: 'Error getting exchange data',
@@ -201,7 +201,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'Validation failed',
@@ -239,7 +239,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             statusCode: 500,
@@ -277,7 +277,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             statusCode: 500,
@@ -316,7 +316,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/${toRate}`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/${toRate}`)
           .expect(500)
           .expect({
             statusCode: 500,
@@ -353,7 +353,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'An error occurred',
@@ -387,7 +387,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'Validation failed',
@@ -415,7 +415,7 @@ describe('Balances Controller (Unit)', () => {
       mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodes });
 
       await request(app.getHttpServer())
-        .get('/balances/supported-fiat-codes')
+        .get('/v1/balances/supported-fiat-codes')
         .expect(200)
         .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
     });
@@ -424,7 +424,7 @@ describe('Balances Controller (Unit)', () => {
       mockNetworkService.get.mockRejectedValueOnce(new Error());
 
       await request(app.getHttpServer())
-        .get('/balances/supported-fiat-codes')
+        .get('/v1/balances/supported-fiat-codes')
         .expect(503)
         .expect({
           code: 503,

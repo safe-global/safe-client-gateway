@@ -13,7 +13,6 @@ import {
   mockNetworkService,
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { SafesModule } from './safes.module';
 import * as request from 'supertest';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
@@ -38,6 +37,7 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
@@ -69,9 +69,7 @@ describe('Safes Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -151,7 +149,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect({
         address: {
@@ -233,7 +231,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -283,7 +281,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -334,7 +332,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -388,7 +386,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -454,7 +452,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -523,7 +521,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -591,7 +589,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -659,7 +657,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -720,7 +718,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
@@ -785,7 +783,7 @@ describe('Safes Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({

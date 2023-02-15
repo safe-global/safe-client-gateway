@@ -24,8 +24,8 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { DataSourceErrorFilter } from '../common/filters/data-source-error.filter';
 import { EstimationsModule } from './estimations.module';
+import { TestAppProvider } from '../../app.provider';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication;
@@ -54,9 +54,7 @@ describe('Estimations Controller (Unit)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalFilters(new DataSourceErrorFilter());
-
+    app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
@@ -99,7 +97,7 @@ describe('Estimations Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/estimations`,
+          `/v2/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/estimations`,
         )
         .send(
           new EstimationRequest(
@@ -157,7 +155,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(
@@ -206,7 +204,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(
@@ -261,7 +259,7 @@ describe('Estimations Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .post(
-        `/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
+        `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
         new EstimationRequest(

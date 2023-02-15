@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
+import { TestAppProvider } from '../../../app.provider';
 
 describe('Get health e2e test', () => {
   let app: INestApplication;
@@ -10,8 +11,7 @@ describe('Get health e2e test', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-
-    app = moduleRef.createNestApplication();
+    app = await new TestAppProvider().provide(moduleRef);
     await app.init();
   });
 
