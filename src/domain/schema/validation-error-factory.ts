@@ -1,6 +1,7 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { DefinedError } from 'ajv';
 import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-exception-payload.interface';
+import * as winston from 'winston';
 
 /**
  * Creates an {@link HttpException} from an array of validation errors.
@@ -9,7 +10,6 @@ import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-e
  */
 @Injectable()
 export class ValidationErrorFactory {
-  private readonly logger = new Logger(ValidationErrorFactory.name);
   private readonly VALIDATION_ERROR_CODE = 42;
 
   from(errors: DefinedError[]): HttpException {
@@ -25,7 +25,7 @@ export class ValidationErrorFactory {
       message,
     }));
 
-    this.logger.error({ ...errPayload, detail });
+    winston.error({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

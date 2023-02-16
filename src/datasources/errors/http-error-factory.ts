@@ -1,9 +1,10 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   NetworkError,
   NetworkResponseError,
 } from '../network/entities/network.error.entity';
 import { DataSourceError } from '../../domain/errors/data-source.error';
+import * as winston from 'winston';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}
@@ -16,8 +17,6 @@ import { DataSourceError } from '../../domain/errors/data-source.error';
  */
 @Injectable()
 export class HttpErrorFactory {
-  private readonly logger = new Logger(HttpErrorFactory.name);
-
   private mapError(error: NetworkError | Error): DataSourceError {
     if (isNetworkResponseError(error)) {
       const errorMessage: string = error.data?.message ?? 'An error occurred';
@@ -32,7 +31,7 @@ export class HttpErrorFactory {
 
   from(source: NetworkError | Error): DataSourceError {
     const error = this.mapError(source);
-    this.logger.error(error);
+    winston.error(error);
     return error;
   }
 }
