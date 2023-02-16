@@ -3,7 +3,7 @@ import { CacheService } from './cache.service.interface';
 import { RedisCacheService } from './redis.cache.service';
 import { createClient } from 'redis';
 import { IConfigurationService } from '../../config/configuration.service.interface';
-import winston from 'winston';
+import * as winston from 'winston';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 
