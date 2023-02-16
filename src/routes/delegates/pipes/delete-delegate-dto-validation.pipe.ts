@@ -21,10 +21,11 @@ export class DeleteDelegateDtoValidationPipe
     );
   }
   transform(data: any): DeleteDelegateDto {
-    return this.genericValidator.validate(
-      this.isValid,
-      data,
-      HttpStatus.BAD_REQUEST,
-    );
+    try {
+      return this.genericValidator.validate(this.isValid, data);
+    } catch (err) {
+      err.status = HttpStatus.BAD_REQUEST;
+      throw err;
+    }
   }
 }
