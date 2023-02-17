@@ -21,6 +21,7 @@ import { DelegateParamsDto } from './entities/delegate-params.entity';
 import { CreateDelegateDto } from './entities/create-delegate.entity';
 import { DeleteDelegateDto } from './entities/delete-delegate.entity';
 import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
+import { DeleteDelegateDtoValidationPipe } from './pipes/delete-delegate-dto-validation.pipe';
 
 @ApiTags('delegates')
 @Controller({
@@ -83,7 +84,7 @@ export class DelegatesController {
   async deleteDelegate(
     @Param('chainId') chainId: string,
     @Param('delegateAddress') delegateAddress: string,
-    @Body() deleteDelegateDto: DeleteDelegateDto,
+    @Body(DeleteDelegateDtoValidationPipe) deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
     return this.service.deleteDelegate(
       chainId,
