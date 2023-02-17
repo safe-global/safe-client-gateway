@@ -17,6 +17,7 @@ import { CreationTransaction } from '../safe/entities/creation-transaction.entit
 import { Device } from '../notifications/entities/device.entity';
 import { EstimationRequest } from '../estimations/entities/estimation-request.entity';
 import { Estimation } from '../estimations/entities/estimation.entity';
+import { Message } from '../messages/entities/message.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -148,4 +149,6 @@ export interface ITransactionApi {
     address: string,
     estimationRequest: EstimationRequest,
   ): Promise<Estimation>;
+
+  getMessageByHash(messageHash: string): Promise<Message>;
 }

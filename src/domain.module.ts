@@ -51,6 +51,9 @@ import { NotificationsRepository } from './domain/notifications/notifications.re
 import { IEstimationsRepository } from './domain/estimations/estimations.repository.interface';
 import { EstimationsRepository } from './domain/estimations/estimations.repository';
 import { EstimationsValidator } from './domain/estimations/estimations.validator';
+import { MessagesRepository } from './domain/messages/messages.repository';
+import { IMessagesRepository } from './domain/messages/messages.repository.interface';
+import { MessageValidator } from './domain/messages/message.validator';
 
 @Global()
 @Module({
@@ -65,6 +68,7 @@ import { EstimationsValidator } from './domain/estimations/estimations.validator
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IEstimationsRepository, useClass: EstimationsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
@@ -82,6 +86,7 @@ import { EstimationsValidator } from './domain/estimations/estimations.validator
     ExchangeRatesValidator,
     GenericValidator,
     MasterCopyValidator,
+    MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
     SafeAppsValidator,
@@ -103,6 +108,7 @@ import { EstimationsValidator } from './domain/estimations/estimations.validator
     IDelegateRepository,
     IEstimationsRepository,
     IExchangeRepository,
+    IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,
     ISafeRepository,
