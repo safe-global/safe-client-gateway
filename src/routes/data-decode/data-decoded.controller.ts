@@ -1,8 +1,9 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { CreateDataDecodedDto } from './entities/create-data-decoded.dto';
 import { DataDecodedService } from './data-decoded.service';
 import { DataDecoded } from './entities/data-decoded.entity';
+import { GetDataDecodedDto } from './entities/get-data-decoded.dto.entity';
+import { GetDataDecodedDtoValidationPipe } from './pipes/get-data-decoded.dto.validation.pipe';
 
 @ApiTags('data-decoded')
 @Controller({
@@ -17,11 +18,8 @@ export class DataDecodedController {
   @Post('chains/:chainId/data-decoder')
   async getDataDecoded(
     @Param('chainId') chainId: string,
-    @Body() createDataDecodedDto: CreateDataDecodedDto,
+    @Body(GetDataDecodedDtoValidationPipe) getDataDecodedDto: GetDataDecodedDto,
   ): Promise<DataDecoded> {
-    return this.dataDecodedService.getDataDecoded(
-      chainId,
-      createDataDecodedDto,
-    );
+    return this.dataDecodedService.getDataDecoded(chainId, getDataDecodedDto);
   }
 }

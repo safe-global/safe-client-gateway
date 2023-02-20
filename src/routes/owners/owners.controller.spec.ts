@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -15,9 +16,9 @@ import {
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import { OwnersModule } from './owners.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { TestAppProvider } from '../../app.provider';
+import { ValidationModule } from '../../validation.module';
+import { OwnersModule } from './owners.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -43,6 +44,7 @@ describe('Owners Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 
@@ -146,11 +148,7 @@ describe('Owners Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
   });
 });

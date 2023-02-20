@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { range } from 'lodash';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -18,10 +19,10 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { ValidationModule } from '../../validation.module';
 import { registerDeviceDtoBuilder } from './entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from './entities/__tests__/safe-registration.builder';
 import { NotificationsModule } from './notifications.module';
-import { TestAppProvider } from '../../app.provider';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication;
@@ -49,6 +50,7 @@ describe('Notifications Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 

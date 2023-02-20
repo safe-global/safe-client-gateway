@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { GenericValidator } from './domain/schema/generic.validator';
 import { JsonSchemaService } from './domain/schema/json-schema.service';
 import { ValidationErrorFactory } from './domain/schema/validation-error-factory';
 
+@Global()
 @Module({
   providers: [JsonSchemaService, GenericValidator, ValidationErrorFactory],
   exports: [JsonSchemaService, GenericValidator, ValidationErrorFactory],

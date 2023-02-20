@@ -1,12 +1,9 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository';
 import { IDataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository.interface';
-import {
-  CreateDataDecodedDto,
-  isCreateDataDecodeDto,
-} from './entities/create-data-decoded.dto';
+import { DataDecodedParameter } from './entities/data-decoded-parameter.entity';
 import { DataDecoded } from './entities/data-decoded.entity';
-import { DataDecodedParameter } from './entities/data-decoded-parameter';
+import { GetDataDecodedDto } from './entities/get-data-decoded.dto.entity';
 
 @Injectable()
 export class DataDecodedService {
@@ -17,16 +14,9 @@ export class DataDecodedService {
 
   async getDataDecoded(
     chainId: string,
-    createDataDecodedDto: CreateDataDecodedDto,
+    getDataDecodedDto: GetDataDecodedDto,
   ): Promise<DataDecoded> {
-    if (!isCreateDataDecodeDto(createDataDecodedDto)) {
-      throw new HttpException(
-        'Invalid payload',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const { data, to } = createDataDecodedDto;
+    const { data, to } = getDataDecodedDto;
     const dataDecoded = await this.dataDecodedRepository.getDataDecoded(
       chainId,
       data,

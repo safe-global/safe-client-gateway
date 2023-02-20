@@ -3,7 +3,7 @@ import { Delegate } from './entities/delegate.entity';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
 import { faker } from '@faker-js/faker';
 import { Page } from '../common/entities/page.entity';
-import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { GetDelegateDto } from './entities/get-delegate.dto.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 
@@ -39,7 +39,7 @@ describe('DelegatesService', () => {
     };
     delegateRepositoryMock.getDelegates.mockResolvedValueOnce(delegates);
 
-    const params = new DelegateParamsDto(safe);
+    const params = new GetDelegateDto(safe);
     const actual = await service.getDelegates(
       chainId,
       routeUrl,

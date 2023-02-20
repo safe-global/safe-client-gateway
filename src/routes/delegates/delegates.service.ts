@@ -1,15 +1,15 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
-import { CreateDelegateDto } from './entities/create-delegate.entity';
-import { DelegateParamsDto } from './entities/delegate-params.entity';
+import { CreateDelegateDto } from './entities/create-delegate.dto.entity';
 import { Delegate } from './entities/delegate.entity';
-import { DeleteDelegateDto } from './entities/delete-delegate.entity';
+import { DeleteDelegateDto } from './entities/delete-delegate.dto.entity';
 import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
+import { GetDelegateDto } from './entities/get-delegate.dto.entity';
 
 @Injectable()
 export class DelegatesService {
@@ -21,29 +21,15 @@ export class DelegatesService {
   async getDelegates(
     chainId: string,
     routeUrl: Readonly<URL>,
-    delegateParams: DelegateParamsDto,
+    getDelegateDto: GetDelegateDto,
     paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
-    if (
-      !(
-        delegateParams.safe ||
-        delegateParams.delegate ||
-        delegateParams.delegator ||
-        delegateParams.label
-      )
-    ) {
-      throw new HttpException(
-        'At least one query param must be provided',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     const delegates = await this.repository.getDelegates(
       chainId,
-      delegateParams.safe,
-      delegateParams.delegate,
-      delegateParams.delegator,
-      delegateParams.label,
+      getDelegateDto.safe,
+      getDelegateDto.delegate,
+      getDelegateDto.delegator,
+      getDelegateDto.label,
       paginationData.limit,
       paginationData.offset,
     );

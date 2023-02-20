@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { omit } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
@@ -19,10 +20,11 @@ import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
+import { ValidationModule } from '../../validation.module';
 import { DelegatesModule } from './delegates.module';
-import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate-dto.builder';
-import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate-dto.builder';
-import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate-dto.builder';
+import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
+import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';
+import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate.dto.builder';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -51,6 +53,7 @@ describe('Delegates controller', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 
@@ -118,10 +121,7 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/delegates`)
         .expect(400)
-        .expect({
-          message: 'At least one query param must be provided',
-          statusCode: 400,
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
   });
 
@@ -144,6 +144,16 @@ describe('Delegates controller', () => {
         .post(`/v1/chains/${chain.chainId}/delegates/`)
         .send(createDelegateDto)
         .expect(200);
+    });
+
+    it('should get a validation error', async () => {
+      const createDelegateDto = createDelegateDtoBuilder().build();
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${faker.random.numeric()}/delegates/`)
+        .send(omit(createDelegateDto, 'signature'))
+        .expect(400)
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
 
     it('Success with safe undefined', async () => {
@@ -310,18 +320,14 @@ describe('Delegates controller', () => {
         )
         .send({ ...deleteDelegateDto, signature: faker.datatype.number() })
         .expect(400)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
   });
 
   describe('Delete Safe delegates', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
+      const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
@@ -329,22 +335,22 @@ describe('Delegates controller', () => {
       );
       mockNetworkService.delete.mockImplementation((url) =>
         url ===
-        `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`
+        `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`
           ? Promise.resolve({ data: {}, status: 204 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
       await request(app.getHttpServer())
         .delete(
-          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`,
+          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`,
         )
-        .send(deleteSafeDelegateRequest)
+        .send(deleteSafeDelegateDto)
         .expect(200);
     });
 
     it('Should return errors from provider', async () => {
       const chain = chainBuilder().build();
-      const deleteSafeDelegateRequest = deleteSafeDelegateDtoBuilder().build();
+      const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
@@ -352,7 +358,7 @@ describe('Delegates controller', () => {
       );
       mockNetworkService.delete.mockImplementation((url) =>
         url ===
-        `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`
+        `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`
           ? Promise.reject({
               data: { message: 'Malformed body', status: 400 },
               status: 400,
@@ -362,14 +368,28 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateRequest.safe}/delegates/${deleteSafeDelegateRequest.delegate}`,
+          `/v1/chains/${chain.chainId}/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`,
         )
-        .send(deleteSafeDelegateRequest)
+        .send(deleteSafeDelegateDto)
         .expect(400)
         .expect({
           message: 'Malformed body',
           code: 400,
         });
+    });
+
+    it('Should get a validation error', async () => {
+      const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${faker.random.numeric()}/safes/${
+            deleteSafeDelegateDto.safe
+          }/delegates/${deleteSafeDelegateDto.delegate}`,
+        )
+        .send({ ...deleteSafeDelegateDto, safe: faker.datatype.boolean() })
+        .expect(400)
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
   });
 });

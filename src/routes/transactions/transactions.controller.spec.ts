@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { readFileSync } from 'fs';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -34,8 +35,8 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { ValidationModule } from '../../validation.module';
 import { TransactionsModule } from './transactions.module';
-import { TestAppProvider } from '../../app.provider';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -61,6 +62,7 @@ describe('Transactions Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 
@@ -141,11 +143,7 @@ describe('Transactions Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
         .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
 
     it('Should get a ERC20 transfer mapped to the expected format', async () => {
@@ -540,11 +538,7 @@ describe('Transactions Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
         .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
 
     it('Should get a ERC20 incoming transfer mapped to the expected format', async () => {

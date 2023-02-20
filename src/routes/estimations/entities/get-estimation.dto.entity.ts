@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { EstimationRequest as DomainEstimationRequest } from '../../../domain/estimations/entities/estimation-request.entity';
+import { GetEstimationDto as DomainGetEstimationDto } from '../../../domain/estimations/entities/get-estimation.dto.entity';
 import { Operation } from '../../../domain/safe/entities/operation.entity';
 
-export class EstimationRequest implements DomainEstimationRequest {
+export class GetEstimationDto implements DomainGetEstimationDto {
   @ApiProperty()
   to: string;
   @ApiProperty()

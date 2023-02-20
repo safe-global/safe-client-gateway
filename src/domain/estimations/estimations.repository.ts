@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { EstimationRequest } from './entities/estimation-request.entity';
+import { GetEstimationDto } from './entities/get-estimation.dto.entity';
 import { Estimation } from './entities/estimation.entity';
 import { IEstimationsRepository } from './estimations.repository.interface';
 import { EstimationsValidator } from './estimations.validator';
@@ -16,10 +16,10 @@ export class EstimationsRepository implements IEstimationsRepository {
   async getEstimation(
     chainId: string,
     address: string,
-    estimationRequest: EstimationRequest,
+    getEstimationDto: GetEstimationDto,
   ): Promise<Estimation> {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const data = await api.postEstimation(address, estimationRequest);
+    const data = await api.postEstimation(address, getEstimationDto);
     return this.validator.validate(data);
   }
 }

@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { isHex } from '../../common/utils/utils';
 
-export class CreateDataDecodedDto {
+export class GetDataDecodedDto {
   @ApiProperty({ description: 'Hexadecimal value' })
   data: string;
   @ApiProperty({ description: 'Hexadecimal value' })
@@ -11,10 +10,4 @@ export class CreateDataDecodedDto {
     this.data = data;
     this.to = to;
   }
-}
-
-export function isCreateDataDecodeDto(
-  dto: CreateDataDecodedDto,
-): dto is CreateDataDecodedDto {
-  return isHex(dto.data) && isHex(dto.to);
 }

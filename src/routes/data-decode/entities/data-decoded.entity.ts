@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DataDecodedParameter } from './data-decoded-parameter';
+import { DataDecodedParameter } from './data-decoded-parameter.entity';
 
 export class DataDecoded {
   @ApiProperty()

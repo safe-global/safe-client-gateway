@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -23,10 +24,10 @@ import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/mas
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
+import { ValidationModule } from '../../validation.module';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
-import { TestAppProvider } from '../../app.provider';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -68,6 +69,7 @@ describe('Chains Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 
@@ -170,11 +172,10 @@ describe('Chains Controller (Unit)', () => {
         },
       });
 
-      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      await request(app.getHttpServer())
+        .get('/v1/chains')
+        .expect(500)
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
@@ -409,11 +410,7 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
         .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
   });
 
