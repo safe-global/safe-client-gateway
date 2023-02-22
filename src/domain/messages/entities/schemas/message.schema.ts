@@ -26,11 +26,7 @@ export const messageSchema: Schema = {
     safeAppId: { type: 'number', nullable: true },
     confirmations: {
       type: 'array',
-      nullable: true,
-      items: {
-        $ref: 'message-confirmation.json',
-      },
-      default: null,
+      items: { $ref: 'message-confirmation.json' },
     },
     preparedSignature: { type: 'string', nullable: true },
   },
@@ -41,5 +37,6 @@ export const messageSchema: Schema = {
     'messageHash',
     'message',
     'proposedBy',
+    'confirmations',
   ],
 };

@@ -24,9 +24,8 @@ export class MessageMapper {
     const safeApp = message.safeAppId
       ? await this.safeAppsRepository.getSafeAppById(chainId, message.safeAppId)
       : null;
-    const domainMessageConfirmations = message.confirmations ?? [];
     const status =
-      domainMessageConfirmations.length >= safe.threshold
+      message.confirmations.length >= safe.threshold
         ? MessageStatus.Confirmed
         : MessageStatus.NeedsConfirmation;
     const proposedBy = await this.addressInfoHelper.getOrDefault(
@@ -35,7 +34,7 @@ export class MessageMapper {
     );
     const confirmations = await this.mapConfirmations(
       chainId,
-      message.confirmations ?? [],
+      message.confirmations,
     );
     const preparedSignature =
       message.preparedSignature && status === MessageStatus.Confirmed
@@ -50,7 +49,7 @@ export class MessageMapper {
       message.message,
       message.created.getTime(),
       message.modified.getTime(),
-      domainMessageConfirmations.length,
+      message.confirmations.length,
       safe.threshold,
       proposedBy,
       confirmations,

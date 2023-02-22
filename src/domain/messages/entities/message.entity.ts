@@ -8,6 +8,6 @@ export interface Message {
   message: string | unknown;
   proposedBy: string;
   safeAppId: number | null;
-  confirmations: MessageConfirmation[] | null;
+  confirmations: MessageConfirmation[];
   preparedSignature: string | null;
 }
