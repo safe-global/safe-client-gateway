@@ -22,6 +22,7 @@ import { CreationTransaction } from '../../domain/safe/entities/creation-transac
 import { Device } from '../../domain/notifications/entities/device.entity';
 import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
 import { Estimation } from '../../domain/estimations/entities/estimation.entity';
+import { Message } from '../../domain/messages/entities/message.entity';
 
 function balanceCacheKey(chainId: string, safeAddress: string): string {
   return `${chainId}_${safeAddress}_balances`;
@@ -480,6 +481,16 @@ export class TransactionApi implements ITransactionApi {
         operation: estimationRequest.operation,
       });
       return estimation;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getMessageByHash(messageHash: string): Promise<Message> {
+    try {
+      const cacheKey = `${this.chainId}_${messageHash}_message`;
+      const url = `${this.baseUrl}/api/v1/messages/${messageHash}`;
+      return await this.dataSource.get(cacheKey, '', url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

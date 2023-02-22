@@ -20,4 +20,10 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     const safeApps = await this.configApi.getSafeApps(chainId, clientUrl, url);
     return safeApps.map((safeApp) => this.validator.validate(safeApp));
   }
+
+  async getSafeAppById(chainId: string, id: number): Promise<SafeApp | null> {
+    const safeApps = await this.configApi.getSafeApps(chainId);
+    const safeApp = safeApps.find((safeApp) => safeApp.id === id);
+    return safeApp ? this.validator.validate(safeApp) : null;
+  }
 }
