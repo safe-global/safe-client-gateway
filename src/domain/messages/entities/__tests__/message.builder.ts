@@ -28,7 +28,7 @@ export function toJson(message: Message): unknown {
     ...message,
     created: message.created.toISOString(),
     modified: message.modified.toISOString(),
-    confirmations: message?.confirmations?.map((confirmation) =>
+    confirmations: message?.confirmations.map((confirmation) =>
       messageConfirmationToJson(confirmation),
     ),
   };
