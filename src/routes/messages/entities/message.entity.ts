@@ -12,9 +12,9 @@ export class Message {
   messageHash: string;
   @ApiProperty()
   status: MessageStatus;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   logoUri: string | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   name: string | null;
   @ApiProperty()
   message: string | unknown;
@@ -30,7 +30,7 @@ export class Message {
   proposedBy: AddressInfo;
   @ApiProperty()
   confirmations: MessageConfirmation[];
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   preparedSignature: string | null;
 
   constructor(

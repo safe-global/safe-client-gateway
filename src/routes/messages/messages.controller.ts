@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Message } from './entities/message.entity';
 import { MessagesService } from './messages.service';
 
-@ApiTags('estimations')
+@ApiTags('messages')
 @Controller({
   path: '',
   version: '1',
