@@ -172,10 +172,11 @@ describe('Chains Controller (Unit)', () => {
         },
       });
 
-      await request(app.getHttpServer())
-        .get('/v1/chains')
-        .expect(500)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
@@ -410,7 +411,11 @@ describe('Chains Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
         .expect(500)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
     });
   });
 

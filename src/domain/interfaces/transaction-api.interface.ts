@@ -145,7 +145,7 @@ export interface ITransactionApi {
 
   deleteDeviceRegistration(uuid: string, safeAddress: string): Promise<void>;
 
-  postEstimation(
+  getEstimation(
     address: string,
     getEstimationDto: GetEstimationDto,
   ): Promise<Estimation>;

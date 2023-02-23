@@ -468,7 +468,8 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
-  async postEstimation(
+
+  async getEstimation(
     address: string,
     getEstimationDto: GetEstimationDto,
   ): Promise<Estimation> {

@@ -19,7 +19,7 @@ export class EstimationsRepository implements IEstimationsRepository {
     getEstimationDto: GetEstimationDto,
   ): Promise<Estimation> {
     const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const data = await api.postEstimation(address, getEstimationDto);
+    const data = await api.getEstimation(address, getEstimationDto);
     return this.validator.validate(data);
   }
 }

@@ -205,7 +205,11 @@ describe('Balances Controller (Unit)', () => {
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
-          .expect({ message: 'Validation failed', code: 42, arguments: [] });
+          .expect({
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
+          });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(3);
       });
@@ -387,7 +391,11 @@ describe('Balances Controller (Unit)', () => {
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
-          .expect({ message: 'Validation failed', code: 42, arguments: [] });
+          .expect({
+            message: 'Validation failed',
+            code: 42,
+            arguments: [],
+          });
 
         expect(mockNetworkService.get.mock.calls.length).toBe(2);
       });

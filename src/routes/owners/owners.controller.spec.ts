@@ -148,7 +148,11 @@ describe('Owners Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
     });
   });
 });
