@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { Delegate } from './entities/delegate.entity';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
+import { ValidationErrorFactory } from '../../validation/providers/validation-error-factory';
 import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { ValidationErrorFactory } from '../schema/validation-error-factory';
+import { Delegate } from './entities/delegate.entity';
 import { delegateSchema } from './entities/schemas/delegate.schema';
 
 @Injectable()

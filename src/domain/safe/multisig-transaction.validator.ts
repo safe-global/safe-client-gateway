@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { GenericValidator } from '../schema/generic.validator';
-import {
-  confirmationSchema,
-  multisigTransactionSchema,
-} from './entities/schemas/multisig-transaction.schema';
-import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
+import { IValidator } from '../interfaces/validator.interface';
+import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import {
+  confirmationSchema,
+  multisigTransactionSchema,
+} from './entities/schemas/multisig-transaction.schema';
 
 @Injectable()
 export class MultisigTransactionValidator

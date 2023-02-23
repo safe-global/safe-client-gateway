@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { backboneSchema } from './entities/schemas/backbone.schema';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { GenericValidator } from '../schema/generic.validator';
 import { Backbone } from './entities/backbone.entity';
+import { backboneSchema } from './entities/schemas/backbone.schema';
 
 @Injectable()
 export class BackboneValidator implements IValidator<Backbone> {

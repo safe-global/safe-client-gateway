@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '../../../domain/schema/generic.validator';
-import { JsonSchemaService } from '../../../domain/schema/json-schema.service';
+import { GenericValidator } from '../../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { GetEstimationDto } from '../entities/get-estimation.dto.entity';
 import { getEstimationDtoSchema } from '../entities/schemas/get-estimation.dto.schema';
 

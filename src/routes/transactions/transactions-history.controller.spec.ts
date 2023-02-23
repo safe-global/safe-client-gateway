@@ -40,7 +40,7 @@ import {
   toJson as creationTransactionToJson,
 } from '../../domain/safe/entities/__tests__/creation-transaction.builder';
 import { TestAppProvider } from '../../app.provider';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;

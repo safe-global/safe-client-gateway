@@ -26,7 +26,7 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { EstimationsModule } from './estimations.module';
 
 describe('Estimations Controller (Unit)', () => {

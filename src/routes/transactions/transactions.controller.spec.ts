@@ -35,7 +35,7 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { TransactionsModule } from './transactions.module';
 
 describe('Transactions Controller (Unit)', () => {

@@ -25,7 +25,7 @@ import {
 } from '../../domain/messages/entities/__tests__/message.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { MessageStatus } from './entities/message.entity';
 import { MessagesModule } from './messages.module';
 

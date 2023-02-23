@@ -17,7 +17,7 @@ import { CacheHooksModule } from './cache-hooks.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;

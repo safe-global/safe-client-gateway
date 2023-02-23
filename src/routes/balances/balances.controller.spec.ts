@@ -19,7 +19,7 @@ import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { BalancesModule } from './balances.module';
 
 describe('Balances Controller (Unit)', () => {

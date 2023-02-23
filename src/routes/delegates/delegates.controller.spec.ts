@@ -20,7 +20,7 @@ import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { DelegatesModule } from './delegates.module';
 import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { GenericValidator } from '../schema/generic.validator';
-import { collectibleSchema } from './entities/schemas/collectible.schema';
 import { Collectible } from './entities/collectible.entity';
+import { collectibleSchema } from './entities/schemas/collectible.schema';
 
 @Injectable()
 export class CollectiblesValidator implements IValidator<Collectible> {

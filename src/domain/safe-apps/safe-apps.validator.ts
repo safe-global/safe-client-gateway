@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
-import { GenericValidator } from '../schema/generic.validator';
-import { JsonSchemaService } from '../schema/json-schema.service';
 import { SafeApp } from './entities/safe-app.entity';
 import {
   safeAppAccessControlSchema,

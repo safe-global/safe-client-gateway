@@ -24,7 +24,7 @@ import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/mas
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';

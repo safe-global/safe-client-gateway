@@ -38,7 +38,7 @@ import {
   toJson as moduleTransactionToJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import { TestAppProvider } from '../../app.provider';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;

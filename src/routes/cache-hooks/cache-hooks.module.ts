@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { CacheHooksController } from './cache-hooks.controller';
-import { JsonSchemaService } from '../../domain/schema/json-schema.service';
 import { CacheHooksService } from './cache-hooks.service';
 
 @Module({

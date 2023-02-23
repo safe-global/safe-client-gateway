@@ -17,7 +17,7 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { OwnersModule } from './owners.module';
 
 describe('Owners Controller (Unit)', () => {

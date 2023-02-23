@@ -26,7 +26,7 @@ import { SafesModule } from './routes/safes/safes.module';
 import { NotificationsModule } from './routes/notifications/notifications.module';
 import { EstimationsModule } from './routes/estimations/estimations.module';
 import { MessagesModule } from './routes/messages/messages.module';
-import { ValidationModule } from './validation.module';
+import { ValidationModule } from './validation/validation.module';
 
 @Module({
   imports: [

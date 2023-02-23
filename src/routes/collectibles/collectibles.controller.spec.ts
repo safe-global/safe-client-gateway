@@ -29,7 +29,7 @@ import {
 } from '../../domain/entities/__tests__/page.builder';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { TestAppProvider } from '../../app.provider';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
