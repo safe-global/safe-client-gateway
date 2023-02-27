@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { Page } from '../../common/entities/page.entity';
-import { DateLabel } from './date-label.entity';
+import { DateLabel } from '../../common/entities/date-label.entity';
 import { TransactionItem } from './transaction-item.entity';
 
 @ApiExtraModels(TransactionItem, DateLabel)

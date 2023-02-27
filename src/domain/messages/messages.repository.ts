@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Page } from '../entities/page.entity';
 import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
 import { Message } from './entities/message.entity';
 import { MessageValidator } from './message.validator';
@@ -20,5 +21,23 @@ export class MessagesRepository implements IMessagesRepository {
       await this.transactionApiManager.getTransactionApi(chainId);
     const message = await transactionService.getMessageByHash(messageHash);
     return this.messageValidator.validate(message);
+  }
+
+  async getMessagesBySafe(
+    chainId: string,
+    safeAddress: string,
+    limit?: number | undefined,
+    offset?: number | undefined,
+  ): Promise<Page<Message>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const page = await transactionService.getMessagesBySafe(
+      safeAddress,
+      undefined,
+      limit,
+      offset,
+    );
+    page.results.map((message) => this.messageValidator.validate(message));
+    return page;
   }
 }

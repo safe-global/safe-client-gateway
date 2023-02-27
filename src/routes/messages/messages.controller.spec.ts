@@ -18,6 +18,7 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
 import { messageConfirmationBuilder } from '../../domain/messages/entities/__tests__/message-confirmation.builder';
 import {
   messageBuilder,
@@ -422,6 +423,183 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: null,
+        });
+    });
+  });
+
+  describe('Get messages by Safe address', () => {
+    it('should group messages by date', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const messageCreationDate = faker.date.recent();
+      const messages = range(4).map(() =>
+        messageBuilder()
+          .with('safeAppId', null)
+          .with('created', messageCreationDate)
+          .build(),
+      );
+      const page = pageBuilder()
+        .with('previous', null)
+        .with('next', null)
+        .with('count', messages.length)
+        .with(
+          'results',
+          messages.map((m) => messageToJson(m)),
+        )
+        .build();
+      mockNetworkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({ data: page });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(
+            pageBuilder()
+              .with('next', null)
+              .with('previous', null)
+              .with('count', messages.length)
+              .with('results', [
+                {
+                  type: 'DATE_LABEL',
+                  timestamp: new Date(
+                    Date.UTC(
+                      messageCreationDate.getFullYear(),
+                      messageCreationDate.getMonth(),
+                      messageCreationDate.getDate(),
+                    ),
+                  ).getTime(),
+                },
+                ...messages.map((m) =>
+                  expect.objectContaining({
+                    type: 'MESSAGE',
+                    messageHash: m.messageHash,
+                  }),
+                ),
+              ])
+              .build(),
+          );
+        });
+    });
+
+    it('should group messages by date (2)', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const messages = [
+        messageBuilder()
+          .with('safeAppId', null)
+          .with(
+            'created',
+            faker.date.between(
+              new Date(Date.UTC(2025, 0, 1)).toISOString(),
+              new Date(Date.UTC(2025, 0, 2) - 1).toISOString(),
+            ),
+          )
+          .build(),
+        messageBuilder()
+          .with('safeAppId', null)
+          .with(
+            'created',
+            faker.date.between(
+              new Date(Date.UTC(2025, 0, 2)).toISOString(),
+              new Date(Date.UTC(2025, 0, 3) - 1).toISOString(),
+            ),
+          )
+          .build(),
+        messageBuilder()
+          .with('safeAppId', null)
+          .with(
+            'created',
+            faker.date.between(
+              new Date(Date.UTC(2025, 0, 1)).toISOString(),
+              new Date(Date.UTC(2025, 0, 2) - 1).toISOString(),
+            ),
+          )
+          .build(),
+        messageBuilder()
+          .with('safeAppId', null)
+          .with(
+            'created',
+            faker.date.between(
+              new Date(Date.UTC(2025, 0, 3)).toISOString(),
+              new Date(Date.UTC(2025, 0, 4) - 1).toISOString(),
+            ),
+          )
+          .build(),
+      ];
+      const page = pageBuilder()
+        .with('previous', null)
+        .with('next', null)
+        .with('count', messages.length)
+        .with(
+          'results',
+          messages.map((m) => messageToJson(m)),
+        )
+        .build();
+      mockNetworkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({ data: page });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(
+            pageBuilder()
+              .with('next', null)
+              .with('previous', null)
+              .with('count', messages.length)
+              .with('results', [
+                {
+                  type: 'DATE_LABEL',
+                  timestamp: Date.UTC(2025, 0, 1),
+                },
+                expect.objectContaining({
+                  type: 'MESSAGE',
+                  messageHash: messages[0].messageHash,
+                }),
+                expect.objectContaining({
+                  type: 'MESSAGE',
+                  messageHash: messages[2].messageHash,
+                }),
+                {
+                  type: 'DATE_LABEL',
+                  timestamp: Date.UTC(2025, 0, 2),
+                },
+                expect.objectContaining({
+                  type: 'MESSAGE',
+                  messageHash: messages[1].messageHash,
+                }),
+                {
+                  type: 'DATE_LABEL',
+                  timestamp: Date.UTC(2025, 0, 3),
+                },
+                expect.objectContaining({
+                  type: 'MESSAGE',
+                  messageHash: messages[3].messageHash,
+                }),
+              ])
+              .build(),
+          );
         });
     });
   });

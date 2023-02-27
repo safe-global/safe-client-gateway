@@ -151,4 +151,11 @@ export interface ITransactionApi {
   ): Promise<Estimation>;
 
   getMessageByHash(messageHash: string): Promise<Message>;
+
+  getMessagesBySafe(
+    safeAddress: string,
+    ordering?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<Message>>;
 }

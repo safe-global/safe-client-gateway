@@ -15,7 +15,7 @@ import { EthereumTransaction } from '../../../domain/safe/entities/ethereum-tran
 import { groupBy } from 'lodash';
 import { IncomingTransferMapper } from './transfers/transfer.mapper';
 import { TransactionItem } from '../entities/transaction-item.entity';
-import { DateLabel } from '../entities/date-label.entity';
+import { DateLabel } from '../../common/entities/date-label.entity';
 import { Transfer } from '../../../domain/safe/entities/transfer.entity';
 import { CreationTransaction } from '../../../domain/safe/entities/creation-transaction.entity';
 import { CreationTransactionMapper } from './creation-transaction/creation-transaction.mapper';
