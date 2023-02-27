@@ -690,4 +690,67 @@ describe('Messages controller', () => {
         });
     });
   });
+
+  describe('Create messages', () => {
+    it('Success', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .build();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.post.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
+          ? Promise.resolve({ data: messageToJson(message) })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(message)
+        .expect(200)
+        .expect(JSON.stringify(messageToJson(message)));
+    });
+
+    it('should return an error from the provider', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .build();
+      const errorMessage = faker.random.words();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.post.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
+          ? Promise.reject({
+              status: 400,
+              data: { message: errorMessage },
+            })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(message)
+        .expect(400)
+        .expect({
+          message: errorMessage,
+          code: 400,
+        });
+    });
+
+    // TODO: test DTO validation error.
+  });
 });
