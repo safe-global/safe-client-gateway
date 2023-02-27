@@ -6,6 +6,7 @@ import { ISafeAppsRepository } from '../../../domain/safe-apps/safe-apps.reposit
 import { Safe } from '../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../common/address-info/address-info.helper';
 import { MessageConfirmation } from '../entities/message-confirmation.entity';
+import { MessageItem } from '../entities/message-item.entity';
 import { Message, MessageStatus } from '../entities/message.entity';
 
 @Injectable()
@@ -15,6 +16,32 @@ export class MessageMapper {
     private readonly safeAppsRepository: SafeAppsRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
+
+  async mapMessageItems(
+    chainId: string,
+    domainMessages: DomainMessage[],
+    safe: Safe,
+  ): Promise<MessageItem[]> {
+    return Promise.all(
+      domainMessages.map(async (domainMessage) => {
+        const message = await this.mapMessage(chainId, domainMessage, safe);
+        return new MessageItem(
+          message.messageHash,
+          message.status,
+          message.logoUri,
+          message.name,
+          message.message,
+          message.creationTimestamp,
+          message.modifiedTimestamp,
+          message.confirmationsSubmitted,
+          message.confirmationsRequired,
+          message.proposedBy,
+          message.confirmations,
+          message.preparedSignature,
+        );
+      }),
+    );
+  }
 
   async mapMessage(
     chainId: string,

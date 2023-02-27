@@ -496,4 +496,26 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async getMessagesBySafe(
+    safeAddress: string,
+    ordering?: string | undefined,
+    limit?: number | undefined,
+    offset?: number | undefined,
+  ): Promise<Page<Message>> {
+    try {
+      const cacheKey = `${this.chainId}_${safeAddress}_messages`;
+      const cacheKeyField = `${ordering}_${limit}_${offset}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/messages/`;
+      return await this.dataSource.get(cacheKey, cacheKeyField, url, {
+        params: {
+          ordering: ordering,
+          limit: limit,
+          offset: offset,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 }
