@@ -11,6 +11,8 @@ import {
   cursorUrlFromLimitAndOffset,
   PaginationData,
 } from '../common/pagination/pagination.data';
+import { CreateMessageDto } from './entities/create-message.dto.entity';
+import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessageMapper } from './mappers/message-mapper';
@@ -101,6 +103,20 @@ export class MessagesService {
 
     return sortBy(Object.entries(groups), ([timestamp]) => timestamp).map(
       ([timestamp, messages]) => [Number(timestamp), messages],
+    );
+  }
+
+  async createMessage(
+    chainId: string,
+    safeAddress: string,
+    createMessageDto: CreateMessageDto,
+  ): Promise<CreatedMessage> {
+    return await this.messagesRepository.createMessage(
+      chainId,
+      safeAddress,
+      createMessageDto.message,
+      createMessageDto.safeAppId,
+      createMessageDto.signature,
     );
   }
 }

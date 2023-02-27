@@ -1,10 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { DateLabel } from '../common/entities/date-label.entity';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { CreateMessageDto } from './entities/create-message.dto.entity';
+import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessagePage } from './entities/messages-page.entity';
@@ -41,6 +43,22 @@ export class MessagesController {
       safeAddress,
       paginationData,
       routeUrl,
+    );
+  }
+
+  @HttpCode(200)
+  @ApiOkResponse({ type: CreatedMessage })
+  // TODO: add ValidationPipe for DTO (see https://github.com/5afe/safe-client-gateway-nest/pull/278)
+  @Post('chains/:chainId/safes/:safeAddress/messages')
+  async createMessage(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body() createMessageDto: CreateMessageDto,
+  ): Promise<CreatedMessage> {
+    return this.messagesService.createMessage(
+      chainId,
+      safeAddress,
+      createMessageDto,
     );
   }
 }

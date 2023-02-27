@@ -39,4 +39,22 @@ export class MessagesRepository implements IMessagesRepository {
     page.results.map((message) => this.messageValidator.validate(message));
     return page;
   }
+
+  async createMessage(
+    chainId: string,
+    safeAddress: string,
+    message: unknown,
+    safeAppId: number | null,
+    signature: string,
+  ): Promise<Message> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const createdMessage = await transactionService.postMessage(
+      safeAddress,
+      message,
+      safeAppId,
+      signature,
+    );
+    return this.messageValidator.validate(createdMessage);
+  }
 }

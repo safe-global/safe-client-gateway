@@ -516,4 +516,23 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async postMessage(
+    safeAddress: string,
+    message: unknown,
+    safeAppId: number | null,
+    signature: string,
+  ): Promise<Message> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/messages/`;
+      const { data } = await this.networkService.post(url, {
+        message,
+        safeAppId,
+        signature,
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 }
