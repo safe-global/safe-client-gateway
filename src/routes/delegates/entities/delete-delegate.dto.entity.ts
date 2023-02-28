@@ -7,10 +7,4 @@ export class DeleteDelegateDto {
   delegator: string;
   @ApiProperty()
   signature: string;
-
-  constructor(delegate: string, delegator: string, signature: string) {
-    this.delegate = delegate;
-    this.delegator = delegator;
-    this.signature = signature;
-  }
 }
