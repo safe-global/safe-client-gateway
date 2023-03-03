@@ -33,7 +33,6 @@ export class MessagesRepository implements IMessagesRepository {
       await this.transactionApiManager.getTransactionApi(chainId);
     const page = await transactionService.getMessagesBySafe(
       safeAddress,
-      undefined,
       limit,
       offset,
     );

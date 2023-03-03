@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { groupBy, orderBy } from 'lodash';
+import { groupBy, sortBy } from 'lodash';
 import { Message as DomainMessage } from '../../domain/messages/entities/message.entity';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
@@ -81,6 +81,8 @@ export class MessagesService {
    * of the day the messages were created, and the messages created in
    * that UTC date.
    *
+   * Tuples are ordered ascending by timestamp.
+   *
    * @param messages messages to group
    * @returns ordered tuples containing [timestamp, message[]]
    */
@@ -97,9 +99,8 @@ export class MessagesService {
       ).getTime(),
     );
 
-    return orderBy(Object.entries(groups), '0').map(([timestamp, messages]) => [
-      Number(timestamp),
-      messages,
-    ]);
+    return sortBy(Object.entries(groups), ([timestamp]) => timestamp).map(
+      ([timestamp, messages]) => [Number(timestamp), messages],
+    );
   }
 }
