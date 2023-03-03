@@ -10,8 +10,10 @@ import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessagePage } from './entities/messages-page.entity';
+import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
 import { MessagesService } from './messages.service';
 import { CreateMessageDtoValidationPipe } from './pipes/create-message.dto.validation.pipe';
+import { UpdateMessageSignatureDtoValidationPipe } from './pipes/update-message-signature.dto.validation.pipe';
 
 @ApiTags('messages')
 @Controller({
@@ -59,6 +61,21 @@ export class MessagesController {
       chainId,
       safeAddress,
       createMessageDto,
+    );
+  }
+
+  @HttpCode(200)
+  @Post('chains/:chainId/messages/:messageHash/signatures')
+  async updateMessageSignature(
+    @Param('chainId') chainId: string,
+    @Param('messageHash') messageHash: string,
+    @Body(UpdateMessageSignatureDtoValidationPipe)
+    updateMessageSignatureDto: UpdateMessageSignatureDto,
+  ): Promise<unknown> {
+    return this.messagesService.updateMessageSignature(
+      chainId,
+      messageHash,
+      updateMessageSignatureDto,
     );
   }
 }

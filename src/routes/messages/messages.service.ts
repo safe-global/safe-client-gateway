@@ -15,6 +15,7 @@ import { CreateMessageDto } from './entities/create-message.dto.entity';
 import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
+import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
 import { MessageMapper } from './mappers/message-mapper';
 
 @Injectable()
@@ -117,6 +118,18 @@ export class MessagesService {
       createMessageDto.message,
       createMessageDto.safeAppId,
       createMessageDto.signature,
+    );
+  }
+
+  async updateMessageSignature(
+    chainId: string,
+    messageHash: string,
+    updateMessageSignatureDto: UpdateMessageSignatureDto,
+  ): Promise<unknown> {
+    return await this.messagesRepository.updateMessageSignature(
+      chainId,
+      messageHash,
+      updateMessageSignatureDto.signature,
     );
   }
 }

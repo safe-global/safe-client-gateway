@@ -57,4 +57,15 @@ export class MessagesRepository implements IMessagesRepository {
     );
     return this.messageValidator.validate(createdMessage);
   }
+
+  async updateMessageSignature(
+    chainId: string,
+    messageHash: string,
+    signature: string,
+  ): Promise<unknown> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+
+    return transactionService.postMessageSignature(messageHash, signature);
+  }
 }
