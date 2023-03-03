@@ -90,6 +90,38 @@ describe('Delegates controller', () => {
         .expect(delegatesPage);
     });
 
+    it('Should return a validation error', async () => {
+      const safe = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
+      const delegatesPage = pageBuilder()
+        .with('count', 2)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          delegateBuilder().with('safe', safe).build(),
+          { ...delegateBuilder().with('safe', safe).build(), label: true },
+        ])
+        .build();
+      mockNetworkService.get.mockImplementation((url) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain });
+        }
+        if (url === `${chain.transactionService}/api/v1/delegates/`) {
+          return Promise.resolve({ data: delegatesPage });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .expect(500)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
+    });
+
     it('Should return empty result', async () => {
       const safe = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();

@@ -11,18 +11,4 @@ export class CreateDelegateDto {
   signature: string;
   @ApiProperty()
   label: string;
-
-  constructor(
-    delegate: string,
-    delegator: string,
-    signature: string,
-    label: string,
-    safe?: string,
-  ) {
-    this.safe = safe;
-    this.delegate = delegate;
-    this.delegator = delegator;
-    this.signature = signature;
-    this.label = label;
-  }
 }
