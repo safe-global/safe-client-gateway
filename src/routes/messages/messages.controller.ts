@@ -11,6 +11,7 @@ import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessagePage } from './entities/messages-page.entity';
 import { MessagesService } from './messages.service';
+import { CreateMessageDtoValidationPipe } from './pipes/create-message.dto.validation.pipe';
 
 @ApiTags('messages')
 @Controller({
@@ -48,12 +49,11 @@ export class MessagesController {
 
   @HttpCode(200)
   @ApiOkResponse({ type: CreatedMessage })
-  // TODO: add ValidationPipe for DTO (see https://github.com/5afe/safe-client-gateway-nest/pull/278)
   @Post('chains/:chainId/safes/:safeAddress/messages')
   async createMessage(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body() createMessageDto: CreateMessageDto,
+    @Body(CreateMessageDtoValidationPipe) createMessageDto: CreateMessageDto,
   ): Promise<CreatedMessage> {
     return this.messagesService.createMessage(
       chainId,

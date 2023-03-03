@@ -28,6 +28,7 @@ import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-a
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { ValidationModule } from '../../validation/validation.module';
 import { MessageStatus } from './entities/message.entity';
+import { createMessageDtoBuilder } from './entities/__tests__/create-message.dto.builder';
 import { MessagesModule } from './messages.module';
 
 describe('Messages controller', () => {
@@ -713,7 +714,7 @@ describe('Messages controller', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(message)
+        .send(createMessageDtoBuilder().build())
         .expect(200)
         .expect(JSON.stringify(messageToJson(message)));
     });
@@ -721,10 +722,6 @@ describe('Messages controller', () => {
     it('should return an error from the provider', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
-      const message = messageBuilder()
-        .with('safeAppId', null)
-        .with('created', faker.date.recent())
-        .build();
       const errorMessage = faker.random.words();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -743,7 +740,7 @@ describe('Messages controller', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(message)
+        .send(createMessageDtoBuilder().build())
         .expect(400)
         .expect({
           message: errorMessage,
@@ -751,6 +748,23 @@ describe('Messages controller', () => {
         });
     });
 
-    // TODO: test DTO validation error.
+    it('should get a validation error', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(
+          createMessageDtoBuilder()
+            .with('message', faker.datatype.number())
+            .build(),
+        )
+        .expect(400)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
+    });
   });
 });
