@@ -2,26 +2,26 @@ import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
-import { GetEstimationDto } from '../entities/get-estimation.dto.entity';
-import { getEstimationDtoSchema } from '../entities/schemas/get-estimation.dto.schema';
+import { CreateMessageDto } from '../entities/create-message.dto.entity';
+import { createMessageDtoSchema } from '../entities/schemas/create-message.dto.schema';
 
 @Injectable()
-export class GetEstimationDtoValidationPipe
-  implements PipeTransform<any, GetEstimationDto>
+export class CreateMessageDtoValidationPipe
+  implements PipeTransform<any, CreateMessageDto>
 {
-  private readonly isValid: ValidateFunction<GetEstimationDto>;
+  private readonly isValid: ValidateFunction<CreateMessageDto>;
 
   constructor(
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/estimations/get-estimation.dto.json',
-      getEstimationDtoSchema,
+      'https://safe-client.safe.global/schemas/messages/create-message.dto.json',
+      createMessageDtoSchema,
     );
   }
 
-  transform(data: any): GetEstimationDto {
+  transform(data: any): CreateMessageDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
