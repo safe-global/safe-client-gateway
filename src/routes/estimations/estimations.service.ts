@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
+import { GetEstimationDto } from '../../domain/estimations/entities/get-estimation.dto.entity';
 import { EstimationsRepository } from '../../domain/estimations/estimations.repository';
 import { IEstimationsRepository } from '../../domain/estimations/estimations.repository.interface';
 import { SafeRepository } from '../../domain/safe/safe.repository';
@@ -23,19 +23,19 @@ export class EstimationsService {
    *
    * @param chainId chain id for the estimation.
    * @param address address of the Safe requesting the estimation.
-   * @param estimationRequest {@link EstimationRequest} data.
+   * @param getEstimationDto {@link GetEstimationDto} data.
    * @returns {@link EstimationResponse} containing {@link Estimation}, and both
    * current and recommended next nonce values
    */
   async getEstimation(
     chainId: string,
     address: string,
-    estimationRequest: EstimationRequest,
+    getEstimationDto: GetEstimationDto,
   ): Promise<EstimationResponse> {
     const estimation = await this.estimationsRepository.getEstimation(
       chainId,
       address,
-      estimationRequest,
+      getEstimationDto,
     );
     const safe = await this.safeRepository.getSafe(chainId, address);
     const recommendedNonce = await this.getEstimationRecommendedNonce(

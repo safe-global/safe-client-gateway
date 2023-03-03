@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { GenericValidator } from '../schema/generic.validator';
-import { CreationTransaction } from './entities/creation-transaction.entity';
-import { creationTransactionSchema } from './entities/schemas/creation-transaction.schema';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
+import { IValidator } from '../interfaces/validator.interface';
+import { CreationTransaction } from './entities/creation-transaction.entity';
+import { creationTransactionSchema } from './entities/schemas/creation-transaction.schema';
 
 @Injectable()
 export class CreationTransactionValidator

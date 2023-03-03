@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ValidationModule } from '../../validation.module';
+import { ValidationModule } from '../../validation/validation.module';
 import { DelegatesController } from './delegates.controller';
 import { DelegatesService } from './delegates.service';
 

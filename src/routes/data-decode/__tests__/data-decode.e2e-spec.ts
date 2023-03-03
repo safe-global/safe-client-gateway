@@ -1,13 +1,14 @@
+import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { readFileSync } from 'fs';
 import { RedisClientType } from 'redis';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
+import { TestAppProvider } from '../../../app.provider';
 import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
-import { CreateDataDecodedDto } from '../entities/create-data-decoded.dto';
-import { TestAppProvider } from '../../../app.provider';
+import { GetDataDecodedDto } from '../entities/get-data-decoded.dto.entity';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
@@ -29,7 +30,7 @@ describe('Data decode e2e tests', () => {
   });
 
   it('POST /data-decoder', async () => {
-    const requestBody: CreateDataDecodedDto = JSON.parse(
+    const requestBody: GetDataDecodedDto = JSON.parse(
       readFileSync(
         'src/routes/data-decode/__tests__/resources/data-decode-request-body.json',
         {
@@ -53,6 +54,40 @@ describe('Data decode e2e tests', () => {
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
       });
+  });
+
+  it('POST /data-decoder should throw a validation error', async () => {
+    const requestBody: GetDataDecodedDto = JSON.parse(
+      readFileSync(
+        'src/routes/data-decode/__tests__/resources/data-decode-request-body.json',
+        {
+          encoding: 'utf-8',
+        },
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/data-decoder`)
+      .send({ ...requestBody, to: faker.datatype.number() })
+      .expect(400)
+      .expect({ message: 'Validation failed', code: 42, arguments: [] });
+  });
+
+  it('POST /data-decoder should throw a validation error (2)', async () => {
+    const requestBody: GetDataDecodedDto = JSON.parse(
+      readFileSync(
+        'src/routes/data-decode/__tests__/resources/data-decode-request-body.json',
+        {
+          encoding: 'utf-8',
+        },
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/data-decoder`)
+      .send({ ...requestBody, to: faker.random.alphaNumeric() })
+      .expect(400)
+      .expect({ message: 'Validation failed', code: 42, arguments: [] });
   });
 
   afterAll(async () => {

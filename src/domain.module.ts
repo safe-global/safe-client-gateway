@@ -10,8 +10,6 @@ import { IExchangeRepository } from './domain/exchange/exchange.repository.inter
 import { ExchangeRepository } from './domain/exchange/exchange.repository';
 import { IBackboneRepository } from './domain/backbone/backbone.repository.interface';
 import { BackboneRepository } from './domain/backbone/backbone.repository';
-import { ValidationErrorFactory } from './domain/schema/validation-error-factory';
-import { JsonSchemaService } from './domain/schema/json-schema.service';
 import { ICollectiblesRepository } from './domain/collectibles/collectibles.repository.interface';
 import { CollectiblesRepository } from './domain/collectibles/collectibles.repository';
 import { ISafeRepository } from './domain/safe/safe.repository.interface';
@@ -26,7 +24,6 @@ import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
-import { GenericValidator } from './domain/schema/generic.validator';
 import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
 import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 import { DelegateValidator } from './domain/delegate/delegate.validator';
@@ -84,7 +81,6 @@ import { MessageValidator } from './domain/messages/message.validator';
     EstimationsValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
-    GenericValidator,
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
@@ -95,8 +91,6 @@ import { MessageValidator } from './domain/messages/message.validator';
     TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
-    ValidationErrorFactory,
-    JsonSchemaService,
   ],
   exports: [
     IBackboneRepository,

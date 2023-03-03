@@ -1,11 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
-import { BalancesModule } from './balances.module';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -14,12 +10,17 @@ import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
+import {
+  mockNetworkService,
+  TestNetworkModule,
+} from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
-import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
-import { TestAppProvider } from '../../app.provider';
+import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
+import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
+import { ValidationModule } from '../../validation/validation.module';
+import { BalancesModule } from './balances.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -46,6 +47,7 @@ describe('Balances Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 

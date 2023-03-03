@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { GenericValidator } from '../schema/generic.validator';
-import { Transaction } from './entities/transaction.entity';
-import { transactionTypeSchema } from './entities/schemas/transaction-type.schema';
-import { ethereumTransactionTypeSchema } from './entities/schemas/ethereum-transaction-type.schema';
-import { transferSchema } from './entities/schemas/transfer.schema';
-import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
-import { erc20TransferSchema } from './entities/schemas/erc20-transfer.schema';
-import { erc721TransferSchema } from './entities/schemas/erc721-transfer.schema';
-import { moduleTransactionTypeSchema } from './entities/schemas/module-transaction-type.schema';
-import { multisigTransactionTypeSchema } from './entities/schemas/multisig-transaction-type.schema';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
+import { IValidator } from '../interfaces/validator.interface';
+import { erc20TransferSchema } from './entities/schemas/erc20-transfer.schema';
+import { erc721TransferSchema } from './entities/schemas/erc721-transfer.schema';
+import { ethereumTransactionTypeSchema } from './entities/schemas/ethereum-transaction-type.schema';
+import { moduleTransactionTypeSchema } from './entities/schemas/module-transaction-type.schema';
+import { multisigTransactionTypeSchema } from './entities/schemas/multisig-transaction-type.schema';
+import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
+import { transactionTypeSchema } from './entities/schemas/transaction-type.schema';
+import { transferSchema } from './entities/schemas/transfer.schema';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionTypeValidator implements IValidator<Transaction> {

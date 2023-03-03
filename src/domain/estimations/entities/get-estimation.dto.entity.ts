@@ -1,6 +1,6 @@
 import { Operation } from '../../safe/entities/operation.entity';
 
-export class EstimationRequest {
+export class GetEstimationDto {
   to: string;
   value: number;
   data: string | null;

@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../../../domain/schema/json-schema.service';
-import { executedTransactionEventSchema } from '../entities/schemas/executed-transaction.schema';
+import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { ExecutedTransaction } from '../entities/executed-transaction.entity';
-import { newConfirmationEventSchema } from '../entities/schemas/new-confirmation.schema';
 import { NewConfirmation } from '../entities/new-confirmation.entity';
 import { PendingTransaction } from '../entities/pending-transaction.entity';
+import { executedTransactionEventSchema } from '../entities/schemas/executed-transaction.schema';
+import { newConfirmationEventSchema } from '../entities/schemas/new-confirmation.schema';
 import { pendingTransactionEventSchema } from '../entities/schemas/pending-transaction.schema';
 
 @Injectable()

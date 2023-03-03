@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { readFileSync } from 'fs';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -34,8 +35,8 @@ import {
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { ValidationModule } from '../../validation/validation.module';
 import { TransactionsModule } from './transactions.module';
-import { TestAppProvider } from '../../app.provider';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -61,6 +62,7 @@ describe('Transactions Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 

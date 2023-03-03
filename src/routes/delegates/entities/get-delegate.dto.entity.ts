@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class DelegateParamsDto {
+export class GetDelegateDto {
   @ApiPropertyOptional()
   safe?: string;
   @ApiPropertyOptional()

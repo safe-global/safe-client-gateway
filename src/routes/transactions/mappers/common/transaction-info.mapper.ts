@@ -15,7 +15,7 @@ import { Erc721TransferMapper } from './erc721-transfer.mapper';
 import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
-import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter';
+import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {

@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { omit } from 'lodash';
 import * as request from 'supertest';
+import { TestAppProvider } from '../../app.provider';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
@@ -17,15 +19,15 @@ import {
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
-import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
+import { GetEstimationDto } from '../../domain/estimations/entities/get-estimation.dto.entity';
 import { estimationBuilder } from '../../domain/estimations/entities/__tests__/estimation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
+import { ValidationModule } from '../../validation/validation.module';
 import { EstimationsModule } from './estimations.module';
-import { TestAppProvider } from '../../app.provider';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication;
@@ -51,6 +53,7 @@ describe('Estimations Controller (Unit)', () => {
         TestCacheModule,
         TestConfigurationModule,
         TestNetworkModule,
+        ValidationModule,
       ],
     }).compile();
 
@@ -62,7 +65,7 @@ describe('Estimations Controller (Unit)', () => {
     await app.close();
   });
 
-  describe('Create estimations', () => {
+  describe('Get estimations', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
@@ -100,7 +103,7 @@ describe('Estimations Controller (Unit)', () => {
           `/v2/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/estimations`,
         )
         .send(
-          new EstimationRequest(
+          new GetEstimationDto(
             faker.finance.ethereumAddress(),
             faker.datatype.number(),
             faker.datatype.hexadecimal(32),
@@ -114,6 +117,22 @@ describe('Estimations Controller (Unit)', () => {
           safeTxGas: estimation.safeTxGas,
         });
     });
+  });
+
+  it('Should get a validation error', async () => {
+    const getEstimationDto = new GetEstimationDto(
+      faker.finance.ethereumAddress(),
+      faker.datatype.number(),
+      faker.datatype.hexadecimal(32),
+      1,
+    );
+    await request(app.getHttpServer())
+      .post(
+        `/v2/chains/${faker.random.numeric()}/safes/${faker.finance.ethereumAddress()}/multisig-transactions/estimations`,
+      )
+      .send(omit(getEstimationDto, 'value'))
+      .expect(400)
+      .expect({ message: 'Validation failed', code: 42, arguments: [] });
   });
 
   it('should return last transaction nonce plus 1 as recommended nonce', async () => {
@@ -158,7 +177,7 @@ describe('Estimations Controller (Unit)', () => {
         `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
-        new EstimationRequest(
+        new GetEstimationDto(
           faker.finance.ethereumAddress(),
           faker.datatype.number(),
           faker.datatype.hexadecimal(32),
@@ -207,7 +226,7 @@ describe('Estimations Controller (Unit)', () => {
         `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
-        new EstimationRequest(
+        new GetEstimationDto(
           faker.finance.ethereumAddress(),
           faker.datatype.number(),
           faker.datatype.hexadecimal(32),
@@ -262,7 +281,7 @@ describe('Estimations Controller (Unit)', () => {
         `/v2/chains/${chain.chainId}/safes/${address}/multisig-transactions/estimations`,
       )
       .send(
-        new EstimationRequest(
+        new GetEstimationDto(
           faker.finance.ethereumAddress(),
           faker.datatype.number(),
           faker.datatype.hexadecimal(32),

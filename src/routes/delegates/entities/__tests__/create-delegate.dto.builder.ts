@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '../../../../__tests__/builder';
-import { CreateDelegateDto } from '../create-delegate.entity';
+import { CreateDelegateDto } from '../create-delegate.dto.entity';
 
 export function createDelegateDtoBuilder(): IBuilder<CreateDelegateDto> {
   return Builder.new<CreateDelegateDto>()

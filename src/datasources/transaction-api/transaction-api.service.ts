@@ -20,7 +20,7 @@ import { Token } from '../../domain/tokens/entities/token.entity';
 import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
 import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
 import { Device } from '../../domain/notifications/entities/device.entity';
-import { EstimationRequest } from '../../domain/estimations/entities/estimation-request.entity';
+import { GetEstimationDto } from '../../domain/estimations/entities/get-estimation.dto.entity';
 import { Estimation } from '../../domain/estimations/entities/estimation.entity';
 import { Message } from '../../domain/messages/entities/message.entity';
 
@@ -468,17 +468,18 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
-  async postEstimation(
+
+  async getEstimation(
     address: string,
-    estimationRequest: EstimationRequest,
+    getEstimationDto: GetEstimationDto,
   ): Promise<Estimation> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       const { data: estimation } = await this.networkService.post(url, {
-        to: estimationRequest.to,
-        value: estimationRequest.value,
-        data: estimationRequest.data,
-        operation: estimationRequest.operation,
+        to: getEstimationDto.to,
+        value: getEstimationDto.value,
+        data: getEstimationDto.data,
+        operation: getEstimationDto.operation,
       });
       return estimation;
     } catch (error) {

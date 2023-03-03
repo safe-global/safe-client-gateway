@@ -15,7 +15,7 @@ import { ModuleTransaction } from '../safe/entities/module-transaction.entity';
 import { SafeList } from '../safe/entities/safe-list.entity';
 import { CreationTransaction } from '../safe/entities/creation-transaction.entity';
 import { Device } from '../notifications/entities/device.entity';
-import { EstimationRequest } from '../estimations/entities/estimation-request.entity';
+import { GetEstimationDto } from '../estimations/entities/get-estimation.dto.entity';
 import { Estimation } from '../estimations/entities/estimation.entity';
 import { Message } from '../messages/entities/message.entity';
 
@@ -145,9 +145,9 @@ export interface ITransactionApi {
 
   deleteDeviceRegistration(uuid: string, safeAddress: string): Promise<void>;
 
-  postEstimation(
+  getEstimation(
     address: string,
-    estimationRequest: EstimationRequest,
+    getEstimationDto: GetEstimationDto,
   ): Promise<Estimation>;
 
   getMessageByHash(messageHash: string): Promise<Message>;

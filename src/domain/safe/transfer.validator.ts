@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
+import { GenericValidator } from '../../validation/providers/generic.validator';
+import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
-import { JsonSchemaService } from '../schema/json-schema.service';
-import { Transfer } from './entities/transfer.entity';
-import { GenericValidator } from '../schema/generic.validator';
-import { transferSchema } from './entities/schemas/transfer.schema';
-import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
 import { erc20TransferSchema } from './entities/schemas/erc20-transfer.schema';
 import { erc721TransferSchema } from './entities/schemas/erc721-transfer.schema';
+import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
+import { transferSchema } from './entities/schemas/transfer.schema';
+import { Transfer } from './entities/transfer.entity';
 
 @Injectable()
 export class TransferValidator implements IValidator<Transfer> {

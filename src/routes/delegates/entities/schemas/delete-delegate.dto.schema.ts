@@ -1,8 +1,8 @@
 import { JSONSchemaType } from 'ajv';
-import { DeleteDelegateDto } from '../delete-delegate.entity';
+import { DeleteDelegateDto } from '../delete-delegate.dto.entity';
 
 export const deleteDelegateDtoSchema: JSONSchemaType<DeleteDelegateDto> = {
-  $id: 'https://safe-client.safe.global/schemas/delegates/delete-delegate.json',
+  $id: 'https://safe-client.safe.global/schemas/delegates/delete-delegate.dto.json',
   type: 'object',
   properties: {
     delegate: { type: 'string' },
