@@ -696,10 +696,7 @@ describe('Messages controller', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
-      const message = messageBuilder()
-        .with('safeAppId', null)
-        .with('created', faker.date.recent())
-        .build();
+      const message = messageBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
@@ -719,7 +716,7 @@ describe('Messages controller', () => {
         .expect(JSON.stringify(messageToJson(message)));
     });
 
-    it('should return an error from the provider', async () => {
+    it('should return an error from the Transaction Service', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const errorMessage = faker.random.words();
