@@ -428,6 +428,93 @@ describe('Messages controller', () => {
   });
 
   describe('Get messages by Safe address', () => {
+    it('should get a message with a date label', async () => {
+      const chain = chainBuilder().build();
+      const messageConfirmations = range(random(2, 5)).map(() =>
+        messageConfirmationBuilder().build(),
+      );
+      const safe = safeBuilder()
+        .with(
+          'threshold',
+          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+        )
+        .build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .with('confirmations', messageConfirmations)
+        .build();
+      const page = pageBuilder()
+        .with('previous', null)
+        .with('next', null)
+        .with('count', 1)
+        .with('results', [messageToJson(message)])
+        .build();
+      mockNetworkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({ data: page });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(
+            pageBuilder()
+              .with('next', null)
+              .with('previous', null)
+              .with('count', 1)
+              .with('results', [
+                {
+                  type: 'DATE_LABEL',
+                  timestamp: new Date(
+                    Date.UTC(
+                      message.created.getFullYear(),
+                      message.created.getMonth(),
+                      message.created.getDate(),
+                    ),
+                  ).getTime(),
+                },
+                {
+                  type: 'MESSAGE',
+                  messageHash: message.messageHash,
+                  status: MessageStatus.NeedsConfirmation,
+                  logoUri: null,
+                  name: null,
+                  message: message.message,
+                  creationTimestamp: message.created.getTime(),
+                  modifiedTimestamp: message.modified.getTime(),
+                  confirmationsSubmitted: messageConfirmations.length,
+                  confirmationsRequired: safe.threshold,
+                  proposedBy: {
+                    value: message.proposedBy,
+                    name: null,
+                    logoUri: null,
+                  },
+                  confirmations: messageConfirmations.map((confirmation) => ({
+                    owner: {
+                      value: confirmation.owner,
+                      name: null,
+                      logoUri: null,
+                    },
+                    signature: confirmation.signature,
+                  })),
+                  preparedSignature: null,
+                },
+              ])
+              .build(),
+          );
+        });
+    });
+
     it('should group messages by date', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
