@@ -6,7 +6,6 @@ import { DateLabel } from '../common/entities/date-label.entity';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { CreateMessageDto } from './entities/create-message.dto.entity';
-import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessagePage } from './entities/messages-page.entity';
@@ -50,13 +49,12 @@ export class MessagesController {
   }
 
   @HttpCode(200)
-  @ApiOkResponse({ type: CreatedMessage })
   @Post('chains/:chainId/safes/:safeAddress/messages')
   async createMessage(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Body(CreateMessageDtoValidationPipe) createMessageDto: CreateMessageDto,
-  ): Promise<CreatedMessage> {
+  ): Promise<unknown> {
     return this.messagesService.createMessage(
       chainId,
       safeAddress,

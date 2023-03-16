@@ -12,7 +12,6 @@ import {
   PaginationData,
 } from '../common/pagination/pagination.data';
 import { CreateMessageDto } from './entities/create-message.dto.entity';
-import { CreatedMessage } from './entities/created-message.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
@@ -111,7 +110,7 @@ export class MessagesService {
     chainId: string,
     safeAddress: string,
     createMessageDto: CreateMessageDto,
-  ): Promise<CreatedMessage> {
+  ): Promise<unknown> {
     return await this.messagesRepository.createMessage(
       chainId,
       safeAddress,
