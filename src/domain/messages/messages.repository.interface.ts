@@ -20,4 +20,10 @@ export interface IMessagesRepository {
     safeAppId: number,
     signature: string,
   ): Promise<Message>;
+
+  updateMessageSignature(
+    chainId: string,
+    messageHash: string,
+    signature: string,
+  ): Promise<unknown>;
 }

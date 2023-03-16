@@ -164,4 +164,9 @@ export interface ITransactionApi {
     safeAppId: number | null,
     signature: string,
   ): Promise<Message>;
+
+  postMessageSignature(
+    messageHash: string,
+    signature: string,
+  ): Promise<unknown>;
 }

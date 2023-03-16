@@ -29,6 +29,7 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { ValidationModule } from '../../validation/validation.module';
 import { MessageStatus } from './entities/message.entity';
 import { createMessageDtoBuilder } from './entities/__tests__/create-message.dto.builder';
+import { updateMessageSignatureDtoBuilder } from './entities/__tests__/update-message-signature.dto.builder';
 import { MessagesModule } from './messages.module';
 
 describe('Messages controller', () => {
@@ -756,6 +757,92 @@ describe('Messages controller', () => {
             .with('message', faker.datatype.number())
             .build(),
         )
+        .expect(400)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
+    });
+  });
+
+  describe('Update message signatures', () => {
+    it('Success', async () => {
+      const chain = chainBuilder().build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .build();
+      const expectedResponse = {
+        data: { signature: faker.datatype.hexadecimal() },
+      };
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.post.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
+          ? Promise.resolve(expectedResponse)
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+        )
+        .send(updateMessageSignatureDtoBuilder().build())
+        .expect(200)
+        .expect(expectedResponse.data);
+    });
+
+    it('should return an error from the provider', async () => {
+      const chain = chainBuilder().build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .build();
+      const errorMessage = faker.random.words();
+      mockNetworkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      mockNetworkService.post.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
+          ? Promise.reject({
+              status: 400,
+              data: { message: errorMessage },
+            })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+        )
+        .send(updateMessageSignatureDtoBuilder().build())
+        .expect(400)
+        .expect({
+          message: errorMessage,
+          code: 400,
+        });
+    });
+
+    it('should get a validation error', async () => {
+      const chain = chainBuilder().build();
+      const message = messageBuilder()
+        .with('safeAppId', null)
+        .with('created', faker.date.recent())
+        .build();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+        )
+        .send({})
         .expect(400)
         .expect({
           message: 'Validation failed',
