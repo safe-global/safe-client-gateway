@@ -27,6 +27,7 @@ import { NotificationsModule } from './routes/notifications/notifications.module
 import { EstimationsModule } from './routes/estimations/estimations.module';
 import { MessagesModule } from './routes/messages/messages.module';
 import { ValidationModule } from './validation/validation.module';
+import { FlushModule } from './routes/flush/flush.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ValidationModule } from './validation/validation.module';
     DataDecodedModule,
     DelegatesModule,
     EstimationsModule,
+    FlushModule,
     HealthModule,
     MessagesModule,
     NotificationsModule,

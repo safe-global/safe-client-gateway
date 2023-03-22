@@ -53,6 +53,10 @@ export class CacheRouter {
     );
   }
 
+  static getContractsCachePattern(chainId: string): string {
+    return `${chainId}_*_${CacheRouter.CONTRACT_KEY}`;
+  }
+
   static getBackboneCacheDir(chainId: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.BACKBONE_KEY}`, '');
   }
@@ -203,6 +207,10 @@ export class CacheRouter {
       `${chainId}_${CacheRouter.TOKENS_KEY}`,
       `${limit}_${offset}`,
     );
+  }
+
+  static getTokensCachePattern(chainId: string): string {
+    return `${chainId}_*_${CacheRouter.TOKEN_KEY}`;
   }
 
   static getSafesByOwnerCacheDir(

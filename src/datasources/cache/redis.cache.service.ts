@@ -46,6 +46,12 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
     return await this.client.unlink(cacheDir.key);
   }
 
+  async deleteByPattern(pattern: string): Promise<void> {
+    for await (const key of this.client.scanIterator({ MATCH: pattern })) {
+      await this.client.unlink(key);
+    }
+  }
+
   /**
    * Closes the connection to Redis when the module associated with this service
    * is destroyed. This tries to gracefully close the connection. If the Redis

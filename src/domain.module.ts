@@ -51,6 +51,8 @@ import { EstimationsValidator } from './domain/estimations/estimations.validator
 import { MessagesRepository } from './domain/messages/messages.repository';
 import { IMessagesRepository } from './domain/messages/messages.repository.interface';
 import { MessageValidator } from './domain/messages/message.validator';
+import { FlushRepository } from './domain/flush/flush.repository';
+import { IFlushRepository } from './domain/flush/flush.repository.interface';
 
 @Global()
 @Module({
@@ -65,6 +67,7 @@ import { MessageValidator } from './domain/messages/message.validator';
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IEstimationsRepository, useClass: EstimationsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
+    { provide: IFlushRepository, useClass: FlushRepository },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
@@ -102,6 +105,7 @@ import { MessageValidator } from './domain/messages/message.validator';
     IDelegateRepository,
     IEstimationsRepository,
     IExchangeRepository,
+    IFlushRepository,
     IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,
