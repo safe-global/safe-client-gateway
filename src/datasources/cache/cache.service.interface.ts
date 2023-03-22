@@ -1,14 +1,15 @@
+import { CacheDir } from './entities/cache-dir.entity';
+
 export const CacheService = Symbol('ICacheService');
 
 export interface ICacheService {
   set(
-    key: string,
-    field: string,
+    cacheDir: CacheDir,
     value: string,
     expireTimeSeconds?: number,
   ): Promise<void>;
 
-  get(key: string, field: string): Promise<string | undefined>;
+  get(cacheDir: CacheDir): Promise<string | undefined>;
 
   delete(key: string): Promise<number>;
 }

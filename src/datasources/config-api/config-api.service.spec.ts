@@ -6,6 +6,7 @@ import { DataSourceError } from '../../domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
+import { CacheDir } from '../cache/entities/cache-dir.entity';
 
 const dataSource = {
   get: jest.fn(),
@@ -58,8 +59,7 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      'chains',
-      'undefined_undefined',
+      new CacheDir('chains', 'undefined_undefined'),
       `${baseUri}/api/v1/chains`,
       { params: { limit: undefined, offset: undefined } },
     );
@@ -75,8 +75,7 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `${data.chainId}_chain`,
-      '',
+      new CacheDir(`${data.chainId}_chain`, ''),
       `${baseUri}/api/v1/chains/${data.chainId}`,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
@@ -92,8 +91,7 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `safe_apps`,
-      `${chainId}_undefined_undefined`,
+      new CacheDir(`safe_apps`, `${chainId}_undefined_undefined`),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url: undefined } },
     );
@@ -111,8 +109,7 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `safe_apps`,
-      `${chainId}_undefined_${url}`,
+      new CacheDir(`safe_apps`, `${chainId}_undefined_${url}`),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url } },
     );
@@ -130,8 +127,7 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
     expect(mockDataSource.get).toBeCalledWith(
-      `safe_apps`,
-      `${chainId}_${clientUrl}_undefined`,
+      new CacheDir(`safe_apps`, `${chainId}_${clientUrl}_undefined`),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl, url: undefined } },
     );

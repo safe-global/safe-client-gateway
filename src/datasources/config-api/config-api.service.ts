@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '../../domain/entities/page.entity';
-import { Chain } from '../../domain/chains/entities/chain.entity';
 import { IConfigurationService } from '../../config/configuration.service.interface';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { Chain } from '../../domain/chains/entities/chain.entity';
+import { Page } from '../../domain/entities/page.entity';
 import { IConfigApi } from '../../domain/interfaces/config-api.interface';
-import { HttpErrorFactory } from '../errors/http-error-factory';
 import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
+import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { CacheRouter } from '../cache/cache.router';
+import { HttpErrorFactory } from '../errors/http-error-factory';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
@@ -23,15 +24,17 @@ export class ConfigApi implements IConfigApi {
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     try {
-      const cacheKey = `chains`;
-      const field = `${limit}_${offset}`;
       const url = `${this.baseUri}/api/v1/chains`;
-      return await this.dataSource.get(cacheKey, field, url, {
-        params: {
-          limit,
-          offset,
+      return await this.dataSource.get(
+        CacheRouter.getChainsCacheDir(limit, offset),
+        url,
+        {
+          params: {
+            limit,
+            offset,
+          },
         },
-      });
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -39,10 +42,11 @@ export class ConfigApi implements IConfigApi {
 
   async getChain(chainId: string): Promise<Chain> {
     try {
-      const cacheKey = `${chainId}_chain`;
-      const field = '';
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
-      return await this.dataSource.get(cacheKey, field, url);
+      return await this.dataSource.get(
+        CacheRouter.getChainCacheDir(chainId),
+        url,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -54,11 +58,8 @@ export class ConfigApi implements IConfigApi {
     url?: string,
   ): Promise<SafeApp[]> {
     try {
-      const cacheKey = `safe_apps`;
-      const field = `${chainId}_${clientUrl}_${url}`;
       return await this.dataSource.get(
-        cacheKey,
-        field,
+        CacheRouter.getSafeAppsCacheDir(chainId, clientUrl, url),
         `${this.baseUri}/api/v1/safe-apps/`,
         { params: { chainId, clientUrl, url } },
       );

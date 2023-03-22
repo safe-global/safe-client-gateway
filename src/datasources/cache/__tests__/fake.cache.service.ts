@@ -1,4 +1,5 @@
 import { ICacheService } from '../cache.service.interface';
+import { CacheDir } from '../entities/cache-dir.entity';
 
 export class FakeCacheService implements ICacheService {
   private cache: Record<string, Record<string, any>> = {};
@@ -16,24 +17,23 @@ export class FakeCacheService implements ICacheService {
     return Promise.resolve(1);
   }
 
-  get(key: string, field: string): Promise<string | undefined> {
-    const fields = this.cache[key];
+  get(cacheDir: CacheDir): Promise<string | undefined> {
+    const fields = this.cache[cacheDir.key];
     if (fields === undefined) return Promise.resolve(undefined);
-    return Promise.resolve(this.cache[key][field]);
+    return Promise.resolve(this.cache[cacheDir.key][cacheDir.field]);
   }
 
   set(
-    key: string,
-    field: string,
+    cacheDir: CacheDir,
     value: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     expireTimeSeconds?: number,
   ): Promise<void> {
-    const fields = this.cache[key];
+    const fields = this.cache[cacheDir.key];
     if (fields === undefined) {
-      this.cache[key] = {};
+      this.cache[cacheDir.key] = {};
     }
-    this.cache[key][field] = value;
+    this.cache[cacheDir.key][cacheDir.field] = value;
     return Promise.resolve();
   }
 }

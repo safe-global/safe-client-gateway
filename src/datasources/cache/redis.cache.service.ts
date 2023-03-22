@@ -1,8 +1,9 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { ICacheService } from './cache.service.interface';
-import { RedisClientType } from './cache.module';
-import { IConfigurationService } from '../../config/configuration.service.interface';
 import * as winston from 'winston';
+import { IConfigurationService } from '../../config/configuration.service.interface';
+import { RedisClientType } from './cache.module';
+import { ICacheService } from './cache.service.interface';
+import { CacheDir } from './entities/cache-dir.entity';
 
 @Injectable()
 export class RedisCacheService implements ICacheService, OnModuleDestroy {
@@ -20,25 +21,24 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
   }
 
   async set(
-    key: string,
-    field: string,
+    cacheDir: CacheDir,
     value: string,
     expireTimeSeconds?: number,
   ): Promise<void> {
     try {
-      await this.client.hSet(key, field, value);
+      await this.client.hSet(cacheDir.key, cacheDir.field, value);
       await this.client.expire(
-        key,
+        cacheDir.key,
         expireTimeSeconds ?? this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
-      await this.client.hDel(key, field);
+      await this.client.hDel(cacheDir.key, cacheDir.field);
       throw error;
     }
   }
 
-  async get(key: string, field: string): Promise<string | undefined> {
-    return await this.client.hGet(key, field);
+  async get(cacheDir: CacheDir): Promise<string | undefined> {
+    return await this.client.hGet(cacheDir.key, cacheDir.field);
   }
 
   async delete(key: string): Promise<number> {
