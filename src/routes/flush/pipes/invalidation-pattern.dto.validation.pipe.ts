@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { InvalidationPatternDto } from '../entities/invalidation-pattern.dto.entity';
-import { invalidationPatternDtoSchema } from '../entities/schemas/invalidation-pattern.dto.schema';
+import {
+  invalidationPatternDetailSchema,
+  invalidationPatternDtoSchema,
+} from '../entities/schemas/invalidation-pattern.dto.schema';
 
 @Injectable()
 export class InvalidationPatternDtoValidationPipe
@@ -15,6 +18,10 @@ export class InvalidationPatternDtoValidationPipe
     private readonly genericValidator: GenericValidator,
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/flush/invalidation-pattern-detail.json',
+      invalidationPatternDetailSchema,
+    );
     this.isValid = this.jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/delegates/invalidation-pattern.dto.json',
       invalidationPatternDtoSchema,

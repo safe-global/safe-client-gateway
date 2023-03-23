@@ -30,6 +30,7 @@ import { ValidationModule } from '../../validation/validation.module';
 import { ChainsModule } from '../chains/chains.module';
 import { ContractsModule } from '../contracts/contracts.module';
 import { TransactionsModule } from '../transactions/transactions.module';
+import { invalidationPatternDetailsBuilder } from './entities/__tests__/invalidation-pattern-details.dto.builder';
 import { invalidationPatternDtoBuilder } from './entities/__tests__/invalidation-pattern.dto.builder';
 import { FlushModule } from './flush.module';
 
@@ -75,6 +76,19 @@ describe('Flush Controller (Unit)', () => {
   describe('Execute selective cache invalidations', () => {
     it('should throw an error for a malformed request', async () => {
       await request(app.getHttpServer()).post('/v2/flush').send({}).expect(400);
+    });
+
+    it('should throw an error if a bad pattern detail is provided when invalidating tokens', async () => {
+      await request(app.getHttpServer())
+        .post('/v2/flush')
+        .send({
+          ...invalidationPatternDtoBuilder()
+            .with('invalidate', 'tokens')
+            .build(),
+          patternDetails: 3,
+        })
+        .expect(400)
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
 
     it('should invalidate chains', async () => {
@@ -159,6 +173,7 @@ describe('Flush Controller (Unit)', () => {
         .send(
           invalidationPatternDtoBuilder()
             .with('invalidate', 'contracts')
+            .with('patternDetails', null)
             .build(),
         )
         .expect(200);
@@ -243,7 +258,12 @@ describe('Flush Controller (Unit)', () => {
         .send(
           invalidationPatternDtoBuilder()
             .with('invalidate', 'tokens')
-            .with('patternDetails', { chain_id: chain.chainId })
+            .with(
+              'patternDetails',
+              invalidationPatternDetailsBuilder()
+                .with('chain_id', chain.chainId)
+                .build(),
+            )
             .build(),
         )
         .expect(200);
@@ -268,86 +288,6 @@ describe('Flush Controller (Unit)', () => {
           CacheRouter.getSafeCacheDir(chain.chainId, safe.address),
         ),
       ).toBeDefined();
-    });
-
-    it('should throw an error if a bad pattern detail is provided when invalidating tokens', async () => {
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().build();
-      const tokens = [tokenBuilder().build(), tokenBuilder().build()];
-      const transfers = pageBuilder()
-        .with('results', [
-          toJson(
-            erc20TransferBuilder()
-              .with('tokenAddress', tokens[0].address)
-              .build(),
-          ),
-          toJson(
-            erc20TransferBuilder()
-              .with('tokenAddress', tokens[1].address)
-              .build(),
-          ),
-        ])
-        .build();
-      mockNetworkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${safeConfigApiUrl}/api/v1/chains`:
-            return Promise.resolve({
-              data: pageBuilder().with('results', [chain]).build(),
-            });
-          case `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe });
-          case `${chain.transactionService}/api/v1/tokens/${tokens[0].address}`:
-            return Promise.resolve({ data: tokens[0] });
-          case `${chain.transactionService}/api/v1/tokens/${tokens[1].address}`:
-            return Promise.resolve({ data: tokens[1] });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`:
-            return Promise.resolve({ data: transfers });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-
-      // fill tokens cache by requesting transfers
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers`,
-        )
-        .expect(200);
-
-      // check the cache is filled
-      await Promise.all(
-        tokens.map(async (token) =>
-          expect(
-            await fakeCacheService.get(
-              CacheRouter.getTokenCacheDir(chain.chainId, token.address),
-            ),
-          ).toBeDefined(),
-        ),
-      );
-
-      // execute flush
-      const invalidPatternDetail = {
-        [faker.random.word()]: faker.random.word(),
-        [faker.random.word()]: faker.random.word(),
-      };
-      await request(app.getHttpServer())
-        .post('/v2/flush')
-        .send(
-          invalidationPatternDtoBuilder()
-            .with('invalidate', 'tokens')
-            .with('patternDetails', invalidPatternDetail)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: `Unprocessable cache invalidation pattern detail: ${JSON.stringify(
-            invalidPatternDetail,
-          )}`,
-          error: 'Unprocessable Entity',
-        });
     });
   });
 });

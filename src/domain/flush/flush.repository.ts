@@ -55,7 +55,7 @@ export class FlushRepository implements IFlushRepository {
   private async invalidateTokens(
     pattern: InvalidationPatternDto,
   ): Promise<void> {
-    const chainId = pattern.patternDetails.chain_id;
+    const chainId = pattern?.patternDetails?.chainId;
     if (!chainId) {
       throw new UnprocessableEntityException(
         `Unprocessable cache invalidation pattern detail: ${JSON.stringify(

@@ -1,15 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { InvalidationPatternDto as DomainInvalidationPatternDto } from '../../../domain/flush/entities/invalidation-pattern.dto.entity';
 
-class InvalidationPatternDetails {
-  @ApiPropertyOptional()
-  chain_id?: string;
+export class InvalidationPatternDetails {
+  @ApiPropertyOptional({ type: 'string', nullable: true })
+  chain_id: string | null;
 }
 
-export class InvalidationPatternDto implements DomainInvalidationPatternDto {
+export class InvalidationPatternDto {
   @ApiProperty()
   invalidate: string;
 
   @ApiPropertyOptional({ type: Object, nullable: true })
-  patternDetails: InvalidationPatternDetails;
+  patternDetails: InvalidationPatternDetails | null;
 }
