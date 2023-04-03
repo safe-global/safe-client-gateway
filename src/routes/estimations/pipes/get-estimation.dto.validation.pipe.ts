@@ -16,11 +16,10 @@ export class GetEstimationDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/estimations/get-estimation.dto.json',
+      'https://safe-client.safe.global/schemas/delegates/get-estimation.dto.json',
       getEstimationDtoSchema,
     );
   }
-
   transform(data: any): GetEstimationDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
