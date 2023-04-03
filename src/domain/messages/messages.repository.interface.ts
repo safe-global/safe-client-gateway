@@ -12,4 +12,18 @@ export interface IMessagesRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<Message>>;
+
+  createMessage(
+    chainId: string,
+    safeAddress: string,
+    message: unknown,
+    safeAppId: number,
+    signature: string,
+  ): Promise<Message>;
+
+  updateMessageSignature(
+    chainId: string,
+    messageHash: string,
+    signature: string,
+  ): Promise<unknown>;
 }

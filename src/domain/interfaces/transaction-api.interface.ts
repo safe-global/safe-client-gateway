@@ -157,4 +157,16 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Message>>;
+
+  postMessage(
+    safeAddress: string,
+    message: string | unknown,
+    safeAppId: number | null,
+    signature: string,
+  ): Promise<Message>;
+
+  postMessageSignature(
+    messageHash: string,
+    signature: string,
+  ): Promise<unknown>;
 }

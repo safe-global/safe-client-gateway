@@ -1,14 +1,18 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { DateLabel } from '../common/entities/date-label.entity';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { CreateMessageDto } from './entities/create-message.dto.entity';
 import { MessageItem } from './entities/message-item.entity';
 import { Message } from './entities/message.entity';
 import { MessagePage } from './entities/messages-page.entity';
+import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
 import { MessagesService } from './messages.service';
+import { CreateMessageDtoValidationPipe } from './pipes/create-message.dto.validation.pipe';
+import { UpdateMessageSignatureDtoValidationPipe } from './pipes/update-message-signature.dto.validation.pipe';
 
 @ApiTags('messages')
 @Controller({
@@ -41,6 +45,35 @@ export class MessagesController {
       safeAddress,
       paginationData,
       routeUrl,
+    );
+  }
+
+  @HttpCode(200)
+  @Post('chains/:chainId/safes/:safeAddress/messages')
+  async createMessage(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body(CreateMessageDtoValidationPipe) createMessageDto: CreateMessageDto,
+  ): Promise<unknown> {
+    return this.messagesService.createMessage(
+      chainId,
+      safeAddress,
+      createMessageDto,
+    );
+  }
+
+  @HttpCode(200)
+  @Post('chains/:chainId/messages/:messageHash/signatures')
+  async updateMessageSignature(
+    @Param('chainId') chainId: string,
+    @Param('messageHash') messageHash: string,
+    @Body(UpdateMessageSignatureDtoValidationPipe)
+    updateMessageSignatureDto: UpdateMessageSignatureDto,
+  ): Promise<unknown> {
+    return this.messagesService.updateMessageSignature(
+      chainId,
+      messageHash,
+      updateMessageSignatureDto,
     );
   }
 }
