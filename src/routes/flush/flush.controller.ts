@@ -19,6 +19,6 @@ export class FlushController {
     @Body(InvalidationPatternDtoValidationPipe)
     invalidationPatternDto: InvalidationPatternDto,
   ): Promise<void> {
-    await this.flushService.flush(invalidationPatternDto);
+    return this.flushService.flush(invalidationPatternDto);
   }
 }
