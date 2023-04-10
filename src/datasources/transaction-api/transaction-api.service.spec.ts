@@ -105,7 +105,7 @@ describe('TransactionApi', () => {
 
       expect(mockCacheService.delete).toBeCalledTimes(1);
       expect(mockCacheService.delete).toBeCalledWith(
-        CacheRouter.balanceCacheKey(chainId, safeAddress),
+        CacheRouter.getBalanceCacheDir(chainId, safeAddress),
       );
       expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });

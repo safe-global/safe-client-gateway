@@ -24,13 +24,6 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFERS_KEY = 'transfers';
 
-  static balanceCacheKey(chainId: string, safeAddress: string): CacheDir {
-    return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.BALANCES_KEY}`,
-      '',
-    );
-  }
-
   static getBalanceCacheDir(
     chainId: string,
     safeAddress: string,
