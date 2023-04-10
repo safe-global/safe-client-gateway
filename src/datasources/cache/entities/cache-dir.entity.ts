@@ -1,6 +1,6 @@
 export class CacheDir {
-  key: string;
-  field: string;
+  readonly key: string;
+  readonly field: string;
 
   constructor(key: string, field: string) {
     this.key = key;
