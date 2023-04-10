@@ -41,9 +41,9 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
     return await this.client.hGet(cacheDir.key, cacheDir.field);
   }
 
-  async delete(key: string): Promise<number> {
+  async delete(cacheDir: CacheDir): Promise<number> {
     // see https://redis.io/commands/unlink/
-    return await this.client.unlink(key);
+    return await this.client.unlink(cacheDir.key);
   }
 
   /**

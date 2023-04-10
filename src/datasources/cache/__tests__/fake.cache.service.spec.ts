@@ -30,7 +30,7 @@ describe('FakeCacheService', () => {
     const value = faker.random.alphaNumeric();
 
     await target.set(cacheDir, value, 0);
-    await target.delete(cacheDir.key);
+    await target.delete(cacheDir);
 
     await expect(target.get(cacheDir)).resolves.toBe(undefined);
     expect(target.keyCount()).toBe(0);

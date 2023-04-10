@@ -25,16 +25,9 @@ export class ConfigApi implements IConfigApi {
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     try {
       const url = `${this.baseUri}/api/v1/chains`;
-      return await this.dataSource.get(
-        CacheRouter.getChainsCacheDir(limit, offset),
-        url,
-        {
-          params: {
-            limit,
-            offset,
-          },
-        },
-      );
+      const params = { limit, offset };
+      const cacheDir = CacheRouter.getChainsCacheDir(limit, offset);
+      return await this.dataSource.get(cacheDir, url, { params });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -43,10 +36,8 @@ export class ConfigApi implements IConfigApi {
   async getChain(chainId: string): Promise<Chain> {
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
-      return await this.dataSource.get(
-        CacheRouter.getChainCacheDir(chainId),
-        url,
-      );
+      const cacheDir = CacheRouter.getChainCacheDir(chainId);
+      return await this.dataSource.get(cacheDir, url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -58,11 +49,10 @@ export class ConfigApi implements IConfigApi {
     url?: string,
   ): Promise<SafeApp[]> {
     try {
-      return await this.dataSource.get(
-        CacheRouter.getSafeAppsCacheDir(chainId, clientUrl, url),
-        `${this.baseUri}/api/v1/safe-apps/`,
-        { params: { chainId, clientUrl, url } },
-      );
+      const providerUrl = `${this.baseUri}/api/v1/safe-apps/`;
+      const params = { chainId, clientUrl, url };
+      const cacheDir = CacheRouter.getSafeAppsCacheDir(chainId, clientUrl, url);
+      return await this.dataSource.get(cacheDir, providerUrl, { params });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

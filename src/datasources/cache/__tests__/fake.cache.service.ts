@@ -12,8 +12,8 @@ export class FakeCacheService implements ICacheService {
     this.cache = {};
   }
 
-  delete(key: string): Promise<number> {
-    delete this.cache[key];
+  delete(cacheDir: CacheDir): Promise<number> {
+    delete this.cache[cacheDir.key];
     return Promise.resolve(1);
   }
 

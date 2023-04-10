@@ -159,9 +159,12 @@ describe('RedisCacheService', () => {
   });
 
   it(`Deleting key calls delete`, async () => {
-    const key = faker.random.alphaNumeric();
+    const cacheDir = new CacheDir(
+      faker.random.alphaNumeric(),
+      faker.datatype.string(),
+    );
 
-    await redisCacheService.delete(key);
+    await redisCacheService.delete(cacheDir);
 
     expect(redisClientTypeMock.unlink).toBeCalledTimes(1);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
