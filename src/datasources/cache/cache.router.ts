@@ -11,7 +11,7 @@ export class CacheRouter {
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
-  private static readonly MASTER_COPIES_KEY = 'master-copies';
+  private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
