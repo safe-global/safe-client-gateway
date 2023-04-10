@@ -52,18 +52,16 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes keys by pattern', async () => {
-    const prefix = faker.datatype.uuid();
-
+    const prefix = faker.random.word();
     // insert 5 items matching the pattern
     await Promise.all(
-      range(5).map(async () =>
+      range(5).map(() =>
         target.set(new CacheDir(`${prefix}${faker.datatype.uuid()}`, ''), ''),
       ),
     );
-
     // insert 4 items not matching the pattern
     await Promise.all(
-      range(4).map(async () =>
+      range(4).map(() =>
         target.set(new CacheDir(`${faker.datatype.uuid()}`, ''), ''),
       ),
     );
@@ -74,22 +72,20 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes keys by pattern (2)', async () => {
-    const prefix = faker.datatype.uuid();
-    const suffix = faker.datatype.uuid();
-
+    const prefix = faker.random.word();
+    const suffix = faker.random.word();
     // insert 5 items matching the pattern
     await Promise.all(
-      range(5).map(async () =>
+      range(5).map(() =>
         target.set(
           new CacheDir(`${prefix}_${faker.datatype.uuid()}_${suffix}`, ''),
           '',
         ),
       ),
     );
-
     // insert 4 items not matching the pattern
     await Promise.all(
-      range(4).map(async () =>
+      range(4).map(() =>
         target.set(new CacheDir(`${faker.datatype.uuid()}`, ''), ''),
       ),
     );
