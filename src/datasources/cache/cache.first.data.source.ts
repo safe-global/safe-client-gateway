@@ -1,11 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
-import * as winston from 'winston';
 import { NetworkRequest } from '../network/entities/network.request.entity';
+import { CacheService, ICacheService } from './cache.service.interface';
 import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { CacheService, ICacheService } from './cache.service.interface';
+import { Inject, Injectable } from '@nestjs/common';
+import * as winston from 'winston';
 import { CacheDir } from './entities/cache-dir.entity';
 
 /**
