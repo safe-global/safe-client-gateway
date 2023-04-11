@@ -2,13 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '../../../common/constants';
+import {
+  MULTI_SEND_METHOD_NAME,
+  NULL_ADDRESS,
+  TRANSACTIONS_PARAMETER_NAME,
+} from '../../../common/constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
-  private static readonly MULTI_SEND = 'multiSend';
-  private static readonly TRANSACTIONS = 'transactions';
   constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
 
   async mapCustomTransaction(
@@ -36,9 +38,9 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
   ): number | null {
     const { dataDecoded } = transaction;
-    if (dataDecoded?.method === CustomTransactionMapper.MULTI_SEND) {
+    if (dataDecoded?.method === MULTI_SEND_METHOD_NAME) {
       const parameter = dataDecoded.parameters?.find(
-        (parameter) => parameter.name === CustomTransactionMapper.TRANSACTIONS,
+        (parameter) => parameter.name === TRANSACTIONS_PARAMETER_NAME,
       );
       return parameter?.valueDecoded?.length ?? null;
     }
