@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { CacheDir } from '../entities/cache-dir.entity';
 import { FakeCacheService } from './fake.cache.service';
 
 describe('FakeCacheService', () => {
@@ -8,32 +10,38 @@ describe('FakeCacheService', () => {
   });
 
   it(`sets key`, async () => {
-    const key = 'test-key';
-    const field = 'test-field';
-    const value = 'some-value';
+    const cacheDir = new CacheDir(
+      faker.random.alphaNumeric(),
+      faker.random.alphaNumeric(),
+    );
+    const value = faker.random.alphaNumeric();
 
-    await target.set(key, field, value, 0);
+    await target.set(cacheDir, value, 0);
 
-    await expect(target.get(key, field)).resolves.toBe(value);
+    await expect(target.get(cacheDir)).resolves.toBe(value);
     expect(target.keyCount()).toBe(1);
   });
 
   it(`deletes key`, async () => {
-    const key = 'test-key';
-    const field = 'test-field';
-    const value = 'some-value';
+    const cacheDir = new CacheDir(
+      faker.random.alphaNumeric(),
+      faker.random.alphaNumeric(),
+    );
+    const value = faker.random.alphaNumeric();
 
-    await target.set(key, field, value, 0);
-    await target.delete(key);
+    await target.set(cacheDir, value, 0);
+    await target.delete(cacheDir);
 
-    await expect(target.get(key, field)).resolves.toBe(undefined);
+    await expect(target.get(cacheDir)).resolves.toBe(undefined);
     expect(target.keyCount()).toBe(0);
   });
 
   it(`clears keys`, async () => {
     const actions: Promise<void>[] = [];
     for (let i = 0; i < 5; i++) {
-      actions.push(target.set(`key${i}`, `field${i}`, `value${i}`, 0));
+      actions.push(
+        target.set(new CacheDir(`key${i}`, `field${i}`), `value${i}`, 0),
+      );
     }
 
     await Promise.all(actions);

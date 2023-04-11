@@ -8,6 +8,8 @@ import { AxiosNetworkService } from '../network/axios.network.service';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
+import { CacheDir } from '../cache/entities/cache-dir.entity';
+import { CacheRouter } from '../cache/cache.router';
 
 const dataSource = {
   get: jest.fn(),
@@ -103,7 +105,7 @@ describe('TransactionApi', () => {
 
       expect(mockCacheService.delete).toBeCalledTimes(1);
       expect(mockCacheService.delete).toBeCalledWith(
-        `${chainId}_${safeAddress}_balances`,
+        CacheRouter.getBalanceCacheDir(chainId, safeAddress),
       );
       expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
@@ -118,8 +120,7 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(safe);
       expect(mockDataSource.get).toBeCalledWith(
-        `${chainId}_${safe.address}_safe`,
-        '',
+        new CacheDir(`${chainId}_${safe.address}_safe`, ''),
         `${baseUrl}/api/v1/safes/${safe.address}`,
       );
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(0);

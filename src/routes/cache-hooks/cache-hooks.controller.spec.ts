@@ -1,23 +1,24 @@
+import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import * as request from 'supertest';
 import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../config/__tests__/test.configuration.module';
+import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
 import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
-import { Test, TestingModule } from '@nestjs/testing';
-import { DomainModule } from '../../domain.module';
 import {
   mockNetworkService,
   TestNetworkModule,
 } from '../../datasources/network/__tests__/test.network.module';
-import { CacheHooksModule } from './cache-hooks.module';
-import * as request from 'supertest';
-import { faker } from '@faker-js/faker';
+import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { CacheHooksModule } from './cache-hooks.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
@@ -162,9 +163,11 @@ describe('Post Hook Events (Unit)', () => {
     it('clears local balances', async () => {
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = '1';
-      const cacheKey = `${chainId}_${safeAddress}_balances`;
-      const cacheField = faker.random.alpha();
-      await fakeCacheService.set(cacheKey, cacheField, faker.random.alpha());
+      const cacheDir = new CacheDir(
+        `${chainId}_${safeAddress}_balances`,
+        faker.random.alpha(),
+      );
+      await fakeCacheService.set(cacheDir, faker.random.alpha());
       const data = {
         address: safeAddress,
         chainId: chainId,
@@ -188,9 +191,7 @@ describe('Post Hook Events (Unit)', () => {
         .send(data)
         .expect(200);
 
-      await expect(
-        fakeCacheService.get(cacheKey, cacheField),
-      ).resolves.toBeUndefined();
+      await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
     });
   });
 });
