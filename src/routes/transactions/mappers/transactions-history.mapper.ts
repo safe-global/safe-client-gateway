@@ -151,9 +151,9 @@ export class TransactionsHistoryMapper {
     }
     return new Date(
       Date.UTC(
-        timestamp.getFullYear(),
-        timestamp.getMonth(),
-        timestamp.getDate(),
+        timestamp.getUTCFullYear(),
+        timestamp.getUTCMonth(),
+        timestamp.getUTCDate(),
       ),
     );
   }

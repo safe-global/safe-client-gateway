@@ -177,7 +177,7 @@ describe('Transactions History Controller (Unit)', () => {
         .with('dataDecoded', null)
         .with(
           'executionDate',
-          faker.date.between('2022-12-06T00:00:00Z', '2022-12-06T23:59:59Z'),
+          faker.date.between('2022-12-06T23:00:00Z', '2022-12-06T23:59:59Z'),
         )
         .build(),
     );
@@ -187,7 +187,7 @@ describe('Transactions History Controller (Unit)', () => {
         .with('origin', null)
         .with(
           'executionDate',
-          faker.date.between('2022-12-25T00:00:00Z', '2022-12-25T23:59:59Z'),
+          faker.date.between('2022-12-25T00:00:00Z', '2022-12-25T00:59:59Z'),
         )
         .build(),
     );
