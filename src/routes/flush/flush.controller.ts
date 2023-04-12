@@ -15,7 +15,7 @@ export class FlushController {
   @ApiOkResponse()
   @HttpCode(200)
   @Post('flush')
-  async getContract(
+  async flush(
     @Body(InvalidationPatternDtoValidationPipe)
     invalidationPatternDto: InvalidationPatternDto,
   ): Promise<void> {
