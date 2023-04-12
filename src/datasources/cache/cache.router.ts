@@ -48,13 +48,9 @@ export class CacheRouter {
     contractAddress: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${contractAddress}_${CacheRouter.CONTRACT_KEY}`,
-      '',
+      `${chainId}_${CacheRouter.CONTRACT_KEY}`,
+      contractAddress,
     );
-  }
-
-  static getContractsCachePattern(chainId: string): string {
-    return `${chainId}_*_${CacheRouter.CONTRACT_KEY}`;
   }
 
   static getBackboneCacheDir(chainId: string): CacheDir {
@@ -195,7 +191,7 @@ export class CacheRouter {
   }
 
   static getTokenCacheDir(chainId: string, address: string): CacheDir {
-    return new CacheDir(`${chainId}_${address}_${CacheRouter.TOKEN_KEY}`, '');
+    return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}`, address);
   }
 
   static getTokensCacheDir(
@@ -207,10 +203,6 @@ export class CacheRouter {
       `${chainId}_${CacheRouter.TOKENS_KEY}`,
       `${limit}_${offset}`,
     );
-  }
-
-  static getTokensCachePattern(chainId: string): string {
-    return `${chainId}_*_${CacheRouter.TOKEN_KEY}`;
   }
 
   static getSafesByOwnerCacheDir(

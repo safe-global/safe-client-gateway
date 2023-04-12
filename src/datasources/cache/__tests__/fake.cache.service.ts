@@ -17,13 +17,6 @@ export class FakeCacheService implements ICacheService {
     return Promise.resolve(1);
   }
 
-  deleteByPattern(pattern: string): Promise<void> {
-    this.cache = Object.entries(this.cache)
-      .filter(([k]) => !RegExp(pattern.replace('*', '.*')).test(k))
-      .reduce((res, i) => ({ ...res, ...{ [i[0]]: i[1] } }), {});
-    return Promise.resolve();
-  }
-
   get(cacheDir: CacheDir): Promise<string | undefined> {
     const fields = this.cache[cacheDir.key];
     if (fields === undefined) return Promise.resolve(undefined);

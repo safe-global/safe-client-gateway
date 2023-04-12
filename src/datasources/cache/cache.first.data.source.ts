@@ -44,10 +44,10 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
-      winston.debug(`[Cache] Cache hit: ${cacheDir.key}`);
+      winston.debug(`[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`);
       return JSON.parse(cached);
     }
-    winston.debug(`[Cache] Cache miss: ${cacheDir.key}`);
+    winston.debug(`[Cache] Cache miss: [${cacheDir.key}, ${cacheDir.field}]`);
     const { data } = await this.networkService.get(url, params);
     const rawJson = JSON.stringify(data);
     await this.cacheService.set(

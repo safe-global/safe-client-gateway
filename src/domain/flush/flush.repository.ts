@@ -35,7 +35,7 @@ export class FlushRepository implements IFlushRepository {
     const chains = await this.configApi.getChains();
     await this.cacheService.delete(CacheRouter.getChainsCacheDir());
     await Promise.all(
-      chains.results.map(async (chain) =>
+      chains.results.map((chain) =>
         this.cacheService.delete(CacheRouter.getChainCacheDir(chain.chainId)),
       ),
     );
@@ -44,9 +44,9 @@ export class FlushRepository implements IFlushRepository {
   private async invalidateContracts(): Promise<void> {
     const chains = await this.configApi.getChains();
     await Promise.all(
-      chains.results.map(async (chain) =>
-        this.cacheService.deleteByPattern(
-          CacheRouter.getContractsCachePattern(chain.chainId),
+      chains.results.map((chain) =>
+        this.cacheService.delete(
+          CacheRouter.getContractCacheDir(chain.chainId, ''),
         ),
       ),
     );
@@ -64,8 +64,6 @@ export class FlushRepository implements IFlushRepository {
       );
     }
     await this.cacheService.delete(CacheRouter.getTokensCacheDir(chainId));
-    await this.cacheService.deleteByPattern(
-      CacheRouter.getTokensCachePattern(chainId),
-    );
+    await this.cacheService.delete(CacheRouter.getTokenCacheDir(chainId, ''));
   }
 }

@@ -11,7 +11,6 @@ const redisClientType = {
   hDel: jest.fn(),
   expire: jest.fn(),
   unlink: jest.fn(),
-  scanIterator: jest.fn(),
   quit: jest.fn(),
 } as unknown as RedisClientType;
 const redisClientTypeMock = jest.mocked(redisClientType);
@@ -168,24 +167,6 @@ describe('RedisCacheService', () => {
     await redisCacheService.delete(cacheDir);
 
     expect(redisClientTypeMock.unlink).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
-  });
-
-  it(`Deleting keys by pattern calls scan and unlink`, async () => {
-    const matches = [
-      faker.random.alphaNumeric(),
-      faker.random.alphaNumeric(),
-      faker.random.alphaNumeric(),
-    ];
-    redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
-
-    await redisCacheService.deleteByPattern(faker.random.alphaNumeric());
-
-    expect(redisClientTypeMock.scanIterator).toBeCalledTimes(1);
-    expect(redisClientTypeMock.unlink).toBeCalledTimes(matches.length);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
     expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
     expect(redisClientTypeMock.hDel).toBeCalledTimes(0);

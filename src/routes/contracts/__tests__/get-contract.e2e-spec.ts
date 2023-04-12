@@ -29,7 +29,6 @@ describe('Get contract e2e test', () => {
 
   it('GET /contracts/<address>', async () => {
     const contractAddress = '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4';
-    const contractCacheKey = `${chainId}_${contractAddress}_contract`;
     const expectedResponse: Contract = JSON.parse(
       readFileSync(
         'src/routes/contracts/__tests__/resources/contract-expected-response.json',
@@ -46,7 +45,10 @@ describe('Get contract e2e test', () => {
         expect(body).toEqual(expectedResponse);
       });
 
-    const cacheContent = await redisClient.hGet(contractCacheKey, '');
+    const cacheContent = await redisClient.hGet(
+      `${chainId}_contract`,
+      contractAddress,
+    );
     expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
   });
 
