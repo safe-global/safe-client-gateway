@@ -7,7 +7,7 @@ import {
   fakeConfigurationService,
   TestConfigurationModule,
 } from '../../config/__tests__/test.configuration.module';
-import { CacheRouter } from '../../datasources/cache/cache.router';
+import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
 import {
   fakeCacheService,
   TestCacheModule,
@@ -161,7 +161,7 @@ describe('Flush Controller (Unit)', () => {
         contracts.map(async (contract) =>
           expect(
             await fakeCacheService.get(
-              CacheRouter.getContractCacheDir(chain.chainId, contract.address),
+              new CacheDir(`${chain.chainId}_contract`, contract.address),
             ),
           ).toBeDefined(),
         ),
@@ -183,7 +183,7 @@ describe('Flush Controller (Unit)', () => {
         contracts.map(async (contract) =>
           expect(
             await fakeCacheService.get(
-              CacheRouter.getContractCacheDir(chain.chainId, contract.address),
+              new CacheDir(`${chain.chainId}_contract`, contract.address),
             ),
           ).toBeUndefined(),
         ),
@@ -191,7 +191,7 @@ describe('Flush Controller (Unit)', () => {
 
       // check the chains remain
       expect(
-        await fakeCacheService.get(CacheRouter.getChainCacheDir(chain.chainId)),
+        await fakeCacheService.get(new CacheDir(`${chain.chainId}_chain`, '')),
       ).toBeDefined();
     });
 
@@ -246,7 +246,7 @@ describe('Flush Controller (Unit)', () => {
         tokens.map(async (token) =>
           expect(
             await fakeCacheService.get(
-              CacheRouter.getTokenCacheDir(chain.chainId, token.address),
+              new CacheDir(`${chain.chainId}_token`, token.address),
             ),
           ).toBeDefined(),
         ),
@@ -273,7 +273,7 @@ describe('Flush Controller (Unit)', () => {
         tokens.map(async (token) =>
           expect(
             await fakeCacheService.get(
-              CacheRouter.getTokenCacheDir(chain.chainId, token.address),
+              new CacheDir(`${chain.chainId}_token`, token.address),
             ),
           ).toBeUndefined(),
         ),
@@ -281,11 +281,11 @@ describe('Flush Controller (Unit)', () => {
 
       // check the chain and safe remain
       expect(
-        await fakeCacheService.get(CacheRouter.getChainCacheDir(chain.chainId)),
+        await fakeCacheService.get(new CacheDir(`${chain.chainId}_chain`, '')),
       ).toBeDefined();
       expect(
         await fakeCacheService.get(
-          CacheRouter.getSafeCacheDir(chain.chainId, safe.address),
+          new CacheDir(`${chain.chainId}_${safe.address}_safe`, ''),
         ),
       ).toBeDefined();
     });
