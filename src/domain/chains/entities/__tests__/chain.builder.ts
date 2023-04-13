@@ -10,7 +10,7 @@ import { rpcUriBuilder } from './rpc-uri.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return Builder.new<Chain>()
-    .with('chainId', faker.random.numeric())
+    .with('chainId', faker.random.numeric(6))
     .with('chainName', faker.company.name())
     .with('description', faker.random.words())
     .with('l2', faker.datatype.boolean())
