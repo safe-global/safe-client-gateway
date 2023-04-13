@@ -57,11 +57,7 @@ export class FlushRepository implements IFlushRepository {
   ): Promise<void> {
     const chainId = pattern?.patternDetails?.chainId;
     if (!chainId) {
-      throw new UnprocessableEntityException(
-        `Unprocessable cache invalidation pattern detail: ${JSON.stringify(
-          pattern.patternDetails,
-        )}`,
-      );
+      throw new UnprocessableEntityException(`Chain id parameter is required`);
     }
     await this.cacheService.delete(CacheRouter.getTokensCacheDir(chainId));
     await this.cacheService.delete(CacheRouter.getTokenCacheDir(chainId, ''));
