@@ -48,8 +48,8 @@ export class CacheRouter {
     contractAddress: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${contractAddress}_${CacheRouter.CONTRACT_KEY}`,
-      '',
+      `${chainId}_${CacheRouter.CONTRACT_KEY}`,
+      contractAddress,
     );
   }
 
@@ -191,7 +191,7 @@ export class CacheRouter {
   }
 
   static getTokenCacheDir(chainId: string, address: string): CacheDir {
-    return new CacheDir(`${chainId}_${address}_${CacheRouter.TOKEN_KEY}`, '');
+    return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}`, address);
   }
 
   static getTokensCacheDir(
