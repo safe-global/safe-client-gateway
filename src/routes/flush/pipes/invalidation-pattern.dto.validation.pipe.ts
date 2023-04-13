@@ -29,7 +29,6 @@ export class InvalidationPatternDtoValidationPipe
   }
   transform(data: any): InvalidationPatternDto {
     try {
-      data.invalidate = data.invalidate?.toUpperCase();
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
       err.status = HttpStatus.BAD_REQUEST;

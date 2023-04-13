@@ -120,7 +120,7 @@ describe('Flush Controller (Unit)', () => {
       await request(app.getHttpServer())
         .post('/v2/flush')
         .send(
-          invalidationPatternDtoBuilder().with('invalidate', 'chains').build(),
+          invalidationPatternDtoBuilder().with('invalidate', 'Chains').build(),
         )
         .expect(200);
 
@@ -172,7 +172,7 @@ describe('Flush Controller (Unit)', () => {
         .post('/v2/flush')
         .send(
           invalidationPatternDtoBuilder()
-            .with('invalidate', 'contracts')
+            .with('invalidate', 'Contracts')
             .with('patternDetails', null)
             .build(),
         )
@@ -257,7 +257,7 @@ describe('Flush Controller (Unit)', () => {
         .post('/v2/flush')
         .send(
           invalidationPatternDtoBuilder()
-            .with('invalidate', 'tokens')
+            .with('invalidate', 'Tokens')
             .with(
               'patternDetails',
               invalidationPatternDetailsBuilder()

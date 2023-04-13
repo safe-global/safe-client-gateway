@@ -22,11 +22,11 @@ export class FlushRepository implements IFlushRepository {
 
   async execute(pattern: InvalidationPatternDto): Promise<void> {
     switch (pattern.invalidate) {
-      case InvalidationTarget.Chains:
+      case InvalidationTarget[InvalidationTarget.Chains]:
         return this.invalidateChains();
-      case InvalidationTarget.Contracts:
+      case InvalidationTarget[InvalidationTarget.Contracts]:
         return this.invalidateContracts();
-      case InvalidationTarget.Tokens:
+      case InvalidationTarget[InvalidationTarget.Tokens]:
         return this.invalidateTokens(pattern);
     }
   }
