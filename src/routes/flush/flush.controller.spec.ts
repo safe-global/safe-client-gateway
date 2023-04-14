@@ -92,7 +92,10 @@ describe('Flush Controller (Unit)', () => {
     });
 
     it('should invalidate chains', async () => {
-      const chains = [chainBuilder().build(), chainBuilder().build()];
+      const chains = [
+        chainBuilder().with('chainId', '1').build(),
+        chainBuilder().with('chainId', '2').build(),
+      ];
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigApiUrl}/api/v1/chains`:
