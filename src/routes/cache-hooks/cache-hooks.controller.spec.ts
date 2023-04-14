@@ -63,7 +63,7 @@ describe('Post Hook Events (Unit)', () => {
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
         .send({})
-        .expect(401);
+        .expect(403);
     });
 
     it('accepts ExecutedTransaction', async () => {

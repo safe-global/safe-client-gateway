@@ -77,7 +77,7 @@ describe('Flush Controller (Unit)', () => {
 
   describe('Execute selective cache invalidations', () => {
     it('should throw an error if authorization is not sent in the request headers', async () => {
-      await request(app.getHttpServer()).post('/v2/flush').send({}).expect(401);
+      await request(app.getHttpServer()).post('/v2/flush').send({}).expect(403);
     });
 
     it('should throw an error for a malformed request', async () => {

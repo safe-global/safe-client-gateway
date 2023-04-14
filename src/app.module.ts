@@ -28,7 +28,6 @@ import { EstimationsModule } from './routes/estimations/estimations.module';
 import { MessagesModule } from './routes/messages/messages.module';
 import { ValidationModule } from './validation/validation.module';
 import { FlushModule } from './routes/flush/flush.module';
-import { AuthModule } from './routes/common/auth/auth.module';
 
 @Module({
   imports: [
@@ -51,7 +50,6 @@ import { AuthModule } from './routes/common/auth/auth.module';
     SafesModule,
     TransactionsModule,
     // common
-    AuthModule,
     CacheModule,
     ConfigurationModule,
     DomainModule,
