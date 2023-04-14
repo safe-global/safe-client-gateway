@@ -5,6 +5,9 @@ export default () => ({
     buildNumber: process.env.GITHUB_RUN_NUMBER || '',
   },
   applicationPort: process.env.APPLICATION_PORT || '3000',
+  auth: {
+    token: process.env.AUTH_TOKEN,
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',

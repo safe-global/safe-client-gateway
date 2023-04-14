@@ -22,6 +22,7 @@ import { CacheHooksModule } from './cache-hooks.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
+  const authToken = faker.datatype.uuid();
 
   beforeAll(async () => {
     fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
@@ -30,6 +31,7 @@ describe('Post Hook Events (Unit)', () => {
       'safeConfig.baseUri',
       'https://test.safe.config',
     );
+    fakeConfigurationService.set('auth.token', authToken);
   });
 
   beforeEach(async () => {
@@ -57,6 +59,13 @@ describe('Post Hook Events (Unit)', () => {
   });
 
   describe('Accepts payloads', () => {
+    it('should throw an error if authorization is not sent in the request headers', async () => {
+      await request(app.getHttpServer())
+        .post(`/chains/1/hooks/events`)
+        .send({})
+        .expect(401);
+    });
+
     it('accepts ExecutedTransaction', async () => {
       const chainId = '1';
       const data = {
@@ -79,6 +88,7 @@ describe('Post Hook Events (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(200);
     });
@@ -106,6 +116,7 @@ describe('Post Hook Events (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(200);
     });
@@ -132,6 +143,7 @@ describe('Post Hook Events (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(200);
     });
@@ -154,6 +166,7 @@ describe('Post Hook Events (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(400);
     });
@@ -188,6 +201,7 @@ describe('Post Hook Events (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/chains/1/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(200);
 
