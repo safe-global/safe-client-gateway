@@ -1,9 +1,17 @@
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ExecutedTransaction } from './entities/executed-transaction.entity';
 import { NewConfirmation } from './entities/new-confirmation.entity';
 import { PendingTransaction } from './entities/pending-transaction.entity';
 import { EventValidationPipe } from './pipes/event-validation.pipe';
 import { CacheHooksService } from './cache-hooks.service';
+import { BasicAuthGuard } from '../common/auth/basic-auth.guard';
 
 @Controller({
   path: '',
@@ -12,7 +20,7 @@ import { CacheHooksService } from './cache-hooks.service';
 export class CacheHooksController {
   constructor(private readonly service: CacheHooksService) {}
 
-  // TODO this endpoint should implement authentication
+  @UseGuards(BasicAuthGuard)
   @Post('/chains/:chainId/hooks/events')
   @HttpCode(200)
   async postEvent(

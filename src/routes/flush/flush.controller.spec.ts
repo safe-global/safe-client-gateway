@@ -37,12 +37,14 @@ import { FlushModule } from './flush.module';
 describe('Flush Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigApiUrl: string;
+  const authToken = faker.datatype.uuid();
 
   beforeAll(async () => {
     safeConfigApiUrl = faker.internet.url();
     fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
     fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
     fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
+    fakeConfigurationService.set('auth.token', authToken);
   });
 
   beforeEach(async () => {
@@ -74,13 +76,22 @@ describe('Flush Controller (Unit)', () => {
   });
 
   describe('Execute selective cache invalidations', () => {
+    it('should throw an error if authorization is not sent in the request headers', async () => {
+      await request(app.getHttpServer()).post('/v2/flush').send({}).expect(403);
+    });
+
     it('should throw an error for a malformed request', async () => {
-      await request(app.getHttpServer()).post('/v2/flush').send({}).expect(400);
+      await request(app.getHttpServer())
+        .post('/v2/flush')
+        .set('Authorization', `Basic ${authToken}`)
+        .send({})
+        .expect(400);
     });
 
     it('should throw an error if a bad pattern detail is provided when invalidating tokens', async () => {
       await request(app.getHttpServer())
         .post('/v2/flush')
+        .set('Authorization', `Basic ${authToken}`)
         .send({
           ...invalidationPatternDtoBuilder()
             .with('invalidate', 'tokens')
@@ -122,6 +133,7 @@ describe('Flush Controller (Unit)', () => {
       // execute flush
       await request(app.getHttpServer())
         .post('/v2/flush')
+        .set('Authorization', `Basic ${authToken}`)
         .send(
           invalidationPatternDtoBuilder().with('invalidate', 'Chains').build(),
         )
@@ -173,6 +185,7 @@ describe('Flush Controller (Unit)', () => {
       // execute flush
       await request(app.getHttpServer())
         .post('/v2/flush')
+        .set('Authorization', `Basic ${authToken}`)
         .send(
           invalidationPatternDtoBuilder()
             .with('invalidate', 'Contracts')
@@ -258,6 +271,7 @@ describe('Flush Controller (Unit)', () => {
       // execute flush
       await request(app.getHttpServer())
         .post('/v2/flush')
+        .set('Authorization', `Basic ${authToken}`)
         .send(
           invalidationPatternDtoBuilder()
             .with('invalidate', 'Tokens')
