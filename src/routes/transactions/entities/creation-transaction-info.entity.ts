@@ -7,9 +7,9 @@ export class CreationTransactionInfo extends TransactionInfo {
   creator: AddressInfo;
   @ApiProperty()
   transactionHash: string;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   implementation: AddressInfo | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   factory: AddressInfo | null;
 
   constructor(
