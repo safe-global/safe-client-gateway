@@ -2,19 +2,22 @@ import { Inject, Injectable } from '@nestjs/common';
 import { isArray, isNull } from 'lodash';
 import { ContractsRepository } from '../../../../domain/contracts/contracts.repository';
 import { IContractsRepository } from '../../../../domain/contracts/contracts.repository.interface';
-import { Operation } from '../../../../domain/safe/entities/operation.entity';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import {
-  ADDRESS_PARAMETER_TYPE,
-  MULTI_SEND_METHOD_NAME,
-  NULL_ADDRESS,
-  TRANSACTIONS_PARAMETER_NAME,
-} from '../../../common/constants';
+  DELEGATE_OPERATION,
+  Operation,
+} from '../../../../domain/safe/entities/operation.entity';
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { isHex } from '../../../common/utils/utils';
 import { Contract } from '../../../contracts/entities/contract.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
+import {
+  ADDRESS_PARAMETER_TYPE,
+  MULTI_SEND_METHOD_NAME,
+  TRANSACTIONS_PARAMETER_NAME,
+} from '../../constants';
 import { PreviewTransactionDto } from '../../entities/preview-transaction.dto.entity';
 import { TransactionData } from '../../entities/transaction-data.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
@@ -31,7 +34,7 @@ export class TransactionDataMapper {
   async mapTransactionData(
     chainId: string,
     previewTransactionDto: PreviewTransactionDto,
-    dataDecoded: DataDecoded,
+    dataDecoded: DataDecoded | null,
   ): Promise<TransactionData> {
     const toAddress = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -75,9 +78,10 @@ export class TransactionDataMapper {
     chainId: string,
     operation: Operation,
     to: string,
-    dataDecoded: DataDecoded,
+    dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
-    if (operation !== 1) return null;
+    if (dataDecoded === null || operation !== DELEGATE_OPERATION) return null;
+
     let contract: Contract;
     try {
       contract = await this.contractRepository.getContract(chainId, to);
@@ -101,9 +105,9 @@ export class TransactionDataMapper {
    */
   async buildAddressInfoIndex(
     chainId: string,
-    dataDecoded: DataDecoded,
+    dataDecoded: DataDecoded | null,
   ): Promise<Record<string, AddressInfo>> {
-    if (!isArray(dataDecoded.parameters)) return {};
+    if (dataDecoded === null || !isArray(dataDecoded.parameters)) return {};
 
     const addressInfos = await Promise.all(
       this.getAddressParametersFromDataDecoded(dataDecoded).map((param) =>

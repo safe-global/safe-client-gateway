@@ -1,12 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Operation } from '../../../domain/safe/entities/operation.entity';
-import { PreviewTransactionDto as DomainPreviewTransactionDto } from '../../../domain/transactions/entities/preview-transaction.entity';
 
-export class PreviewTransactionDto implements DomainPreviewTransactionDto {
+export class PreviewTransactionDto {
   @ApiProperty()
   to: string;
-  @ApiProperty()
-  data: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  data: string | null;
   @ApiProperty()
   value: string;
   @ApiProperty()

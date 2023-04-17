@@ -8,7 +8,7 @@ import { DataDecodedParamHelper } from './data-decoded-param.helper';
 describe('DataDecoded param helper (Unit)', () => {
   const helper = new DataDecodedParamHelper();
 
-  describe('getFromParam function tests', () => {
+  describe('getFromParam', () => {
     it('should return the fallback value if null parameters in DataDecoded', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
@@ -112,7 +112,7 @@ describe('DataDecoded param helper (Unit)', () => {
     });
   });
 
-  describe('getToParam function tests', () => {
+  describe('getToParam', () => {
     it('should return the fallback value if null parameters in DataDecoded', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
@@ -249,7 +249,7 @@ describe('DataDecoded param helper (Unit)', () => {
     });
   });
 
-  describe('getValueParam function tests', () => {
+  describe('getValueParam', () => {
     it('should return the fallback value if null parameters in DataDecoded', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
@@ -401,7 +401,7 @@ describe('DataDecoded param helper (Unit)', () => {
     });
   });
 
-  describe('hasNestedDelegate function tests', () => {
+  describe('hasNestedDelegate', () => {
     it('should return false if the nested data decoded only contains a CALL operation', () => {
       const dataDecoded = <DataDecoded>{
         method: faker.random.word(),

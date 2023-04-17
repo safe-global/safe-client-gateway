@@ -6,11 +6,9 @@ import {
   dataDecodedParameterBuilder,
 } from '../../../../domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import {
-  MULTI_SEND_METHOD_NAME,
-  NULL_ADDRESS,
-} from '../../../common/constants';
+import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
+import { MULTI_SEND_METHOD_NAME } from '../../constants';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { TransactionDataMapper } from './transaction-data.mapper';
 

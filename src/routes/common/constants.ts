@@ -1,4 +1,1 @@
 export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
-export const MULTI_SEND_METHOD_NAME = 'multiSend';
-export const TRANSACTIONS_PARAMETER_NAME = 'transactions';
-export const ADDRESS_PARAMETER_TYPE = 'address';

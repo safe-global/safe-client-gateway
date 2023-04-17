@@ -38,6 +38,10 @@ import { MultisigTransaction } from '../../domain/safe/entities/multisig-transac
 import { ValidationModule } from '../../validation/validation.module';
 import { previewTransactionDtoBuilder } from './entities/__tests__/preview-transaction.dto.builder';
 import { TransactionsModule } from './transactions.module';
+import {
+  CALL_OPERATION,
+  DELEGATE_OPERATION,
+} from '../../domain/safe/entities/operation.entity';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -715,7 +719,9 @@ describe('Transactions Controller (Unit)', () => {
     });
 
     it('should preview a transaction', async () => {
-      const previewTransactionDto = previewTransactionDtoBuilder().build();
+      const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('operation', CALL_OPERATION)
+        .build();
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const safeResponse = safeBuilder().with('address', safeAddress).build();
@@ -748,38 +754,40 @@ describe('Transactions Controller (Unit)', () => {
         .post(`/v1/chains/${chainId}/transactions/${safeAddress}/preview`)
         .send(previewTransactionDto)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toMatchObject({
-            txInfo: {
-              type: 'Custom',
-              to: {
-                value: contractResponse.address,
-                name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
-              },
-              dataSize: '16',
-              value: previewTransactionDto.value,
-              methodName: dataDecodedResponse.method,
-              actionCount: null,
-              isCancellation: false,
+        .expect({
+          txInfo: {
+            type: 'Custom',
+            to: {
+              value: contractResponse.address,
+              name: contractResponse.displayName,
+              logoUri: contractResponse.logoUri,
             },
-            txData: {
-              hexData: previewTransactionDto.data,
-              dataDecoded: dataDecodedResponse,
-              to: {
-                value: contractResponse.address,
-                name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
-              },
-              value: previewTransactionDto.value,
-              operation: previewTransactionDto.operation,
+            dataSize: '16',
+            value: previewTransactionDto.value,
+            methodName: dataDecodedResponse.method,
+            actionCount: null,
+            isCancellation: false,
+          },
+          txData: {
+            hexData: previewTransactionDto.data,
+            dataDecoded: dataDecodedResponse,
+            to: {
+              value: contractResponse.address,
+              name: contractResponse.displayName,
+              logoUri: contractResponse.logoUri,
             },
-          });
+            value: previewTransactionDto.value,
+            operation: previewTransactionDto.operation,
+            trustedDelegateCallTarget: null,
+            addressInfoIndex: {},
+          },
         });
     });
 
     it('should preview a transaction with an unknown "to" address', async () => {
-      const previewTransactionDto = previewTransactionDtoBuilder().build();
+      const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('operation', CALL_OPERATION)
+        .build();
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const safeResponse = safeBuilder().with('address', safeAddress).build();
@@ -811,38 +819,40 @@ describe('Transactions Controller (Unit)', () => {
         .post(`/v1/chains/${chainId}/transactions/${safeAddress}/preview`)
         .send(previewTransactionDto)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toMatchObject({
-            txInfo: {
-              type: 'Custom',
-              to: {
-                value: previewTransactionDto.to,
-                name: null,
-                logoUri: null,
-              },
-              dataSize: '16',
-              value: previewTransactionDto.value,
-              methodName: dataDecodedResponse.method,
-              actionCount: null,
-              isCancellation: false,
+        .expect({
+          txInfo: {
+            type: 'Custom',
+            to: {
+              value: previewTransactionDto.to,
+              name: null,
+              logoUri: null,
             },
-            txData: {
-              hexData: previewTransactionDto.data,
-              dataDecoded: dataDecodedResponse,
-              to: {
-                value: previewTransactionDto.to,
-                name: null,
-                logoUri: null,
-              },
-              value: previewTransactionDto.value,
-              operation: previewTransactionDto.operation,
+            dataSize: '16',
+            value: previewTransactionDto.value,
+            methodName: dataDecodedResponse.method,
+            actionCount: null,
+            isCancellation: false,
+          },
+          txData: {
+            hexData: previewTransactionDto.data,
+            dataDecoded: dataDecodedResponse,
+            to: {
+              value: previewTransactionDto.to,
+              name: null,
+              logoUri: null,
             },
-          });
+            value: previewTransactionDto.value,
+            operation: previewTransactionDto.operation,
+            trustedDelegateCallTarget: null,
+            addressInfoIndex: {},
+          },
         });
     });
 
     it('should preview a transaction even if the data cannot be decoded', async () => {
-      const previewTransactionDto = previewTransactionDtoBuilder().build();
+      const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('operation', CALL_OPERATION)
+        .build();
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const safeResponse = safeBuilder().with('address', safeAddress).build();
@@ -874,7 +884,7 @@ describe('Transactions Controller (Unit)', () => {
         .send(previewTransactionDto)
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toMatchObject({
+          expect(body).toEqual({
             txInfo: {
               type: 'Custom',
               to: {
@@ -898,6 +908,8 @@ describe('Transactions Controller (Unit)', () => {
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
+              trustedDelegateCallTarget: null,
+              addressInfoIndex: {},
             },
           });
         });
@@ -905,7 +917,7 @@ describe('Transactions Controller (Unit)', () => {
 
     it('should preview a transaction with a nested delegate call', async () => {
       const previewTransactionDto = previewTransactionDtoBuilder()
-        .with('operation', 1)
+        .with('operation', DELEGATE_OPERATION)
         .build();
       const chainId = faker.random.numeric();
       const safeAddress = faker.finance.ethereumAddress();
@@ -952,34 +964,33 @@ describe('Transactions Controller (Unit)', () => {
         .post(`/v1/chains/${chainId}/transactions/${safeAddress}/preview`)
         .send(previewTransactionDto)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toMatchObject({
-            txInfo: {
-              type: 'Custom',
-              to: {
-                value: contractResponse.address,
-                name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
-              },
-              dataSize: '16',
-              value: previewTransactionDto.value,
-              methodName: dataDecodedResponse.method,
-              actionCount: null,
-              isCancellation: false,
+        .expect({
+          txInfo: {
+            type: 'Custom',
+            to: {
+              value: contractResponse.address,
+              name: contractResponse.displayName,
+              logoUri: contractResponse.logoUri,
             },
-            txData: {
-              hexData: previewTransactionDto.data,
-              dataDecoded: dataDecodedResponse,
-              to: {
-                value: contractResponse.address,
-                name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
-              },
-              value: previewTransactionDto.value,
-              operation: previewTransactionDto.operation,
-              isTrustedDelegateCall: true,
+            dataSize: '16',
+            value: previewTransactionDto.value,
+            methodName: dataDecodedResponse.method,
+            actionCount: null,
+            isCancellation: false,
+          },
+          txData: {
+            hexData: previewTransactionDto.data,
+            dataDecoded: dataDecodedResponse,
+            to: {
+              value: contractResponse.address,
+              name: contractResponse.displayName,
+              logoUri: contractResponse.logoUri,
             },
-          });
+            value: previewTransactionDto.value,
+            operation: previewTransactionDto.operation,
+            trustedDelegateCallTarget: true,
+            addressInfoIndex: {},
+          },
         });
     });
   });

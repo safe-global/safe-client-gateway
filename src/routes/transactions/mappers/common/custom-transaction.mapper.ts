@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '../../../common/constants';
 import {
   MULTI_SEND_METHOD_NAME,
-  NULL_ADDRESS,
   TRANSACTIONS_PARAMETER_NAME,
-} from '../../../common/constants';
+} from '../../constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 
 @Injectable()

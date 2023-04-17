@@ -24,17 +24,17 @@ export class TransactionPreviewMapper {
   ): Promise<TransactionPreview> {
     let dataDecoded;
     try {
-      dataDecoded = await this.dataDecodedService.getDataDecoded(
-        chainId,
-        new GetDataDecodedDto(
-          previewTransactionDto.data,
-          previewTransactionDto.to,
-        ),
-      );
+      if (previewTransactionDto.data !== null) {
+        dataDecoded = await this.dataDecodedService.getDataDecoded(
+          chainId,
+          new GetDataDecodedDto(
+            previewTransactionDto.data,
+            previewTransactionDto.to,
+          ),
+        );
+      }
     } catch (error) {
-      winston.warn(
-        `Error trying to decode the input data: ${JSON.stringify(error)}`,
-      );
+      winston.warn(`Error trying to decode the input data: ${error.message}`);
       dataDecoded = previewTransactionDto.data;
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
