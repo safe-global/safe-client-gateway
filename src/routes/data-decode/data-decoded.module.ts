@@ -5,6 +5,5 @@ import { DataDecodedService } from './data-decoded.service';
 @Module({
   controllers: [DataDecodedController],
   providers: [DataDecodedService],
-  exports: [DataDecodedService],
 })
 export class DataDecodedModule {}

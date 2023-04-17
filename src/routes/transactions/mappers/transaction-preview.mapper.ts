@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as winston from 'winston';
+import { DataDecodedRepository } from '../../../domain/data-decoder/data-decoded.repository';
+import { IDataDecodedRepository } from '../../../domain/data-decoder/data-decoded.repository.interface';
 import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../domain/safe/entities/safe.entity';
-import { DataDecodedService } from '../../data-decode/data-decoded.service';
-import { GetDataDecodedDto } from '../../data-decode/entities/get-data-decoded.dto.entity';
 import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entity';
 import { TransactionPreview } from '../entities/transaction-preview.entity';
 import { TransactionDataMapper } from './common/transaction-data.mapper';
@@ -14,7 +14,8 @@ export class TransactionPreviewMapper {
   constructor(
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly transactionDataMapper: TransactionDataMapper,
-    private readonly dataDecodedService: DataDecodedService,
+    @Inject(IDataDecodedRepository)
+    private readonly dataDecodedRepository: DataDecodedRepository,
   ) {}
 
   async mapTransactionPreview(
@@ -25,12 +26,10 @@ export class TransactionPreviewMapper {
     let dataDecoded;
     try {
       if (previewTransactionDto.data !== null) {
-        dataDecoded = await this.dataDecodedService.getDataDecoded(
+        dataDecoded = await this.dataDecodedRepository.getDataDecoded(
           chainId,
-          new GetDataDecodedDto(
-            previewTransactionDto.data,
-            previewTransactionDto.to,
-          ),
+          previewTransactionDto.data,
+          previewTransactionDto.to,
         );
       }
     } catch (error) {
