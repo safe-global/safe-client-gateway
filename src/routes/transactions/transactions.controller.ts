@@ -1,9 +1,12 @@
 import {
+  Body,
   Controller,
   DefaultValuePipe,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
+  Post,
   Query,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -17,9 +20,12 @@ import { ModuleTransactionPage } from './entities/module-transaction-page.entity
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransactionPage } from './entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { PreviewTransactionDto } from './entities/preview-transaction.dto.entity';
 import { QueuedItemPage } from './entities/queued-item-page.entity';
 import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
+import { TransactionPreview } from './entities/transaction-preview.entity';
+import { PreviewTransactionDtoValidationPipe } from './pipes/preview-transaction.validation.pipe';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
@@ -117,6 +123,22 @@ export class TransactionsController {
       value,
       tokenAddress,
       paginationData,
+    );
+  }
+
+  @ApiOkResponse({ type: TransactionPreview })
+  @HttpCode(200)
+  @Post('chains/:chainId/transactions/:safeAddress/preview')
+  async previewTransaction(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body(PreviewTransactionDtoValidationPipe)
+    previewTransactionDto: PreviewTransactionDto,
+  ): Promise<TransactionPreview> {
+    return this.transactionsService.previewTransaction(
+      chainId,
+      safeAddress,
+      previewTransactionDto,
     );
   }
 

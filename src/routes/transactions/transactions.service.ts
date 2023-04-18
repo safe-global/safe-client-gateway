@@ -14,13 +14,16 @@ import { ConflictType } from './entities/conflict-type.entity';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
+import { PreviewTransactionDto } from './entities/preview-transaction.dto.entity';
 import { QueuedItem } from './entities/queued-item.entity';
-import { TransactionsHistoryMapper } from './mappers/transactions-history.mapper';
+import { TransactionItemPage } from './entities/transaction-item-page.entity';
+import { TransactionPreview } from './entities/transaction-preview.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
+import { TransactionPreviewMapper } from './mappers/transaction-preview.mapper';
+import { TransactionsHistoryMapper } from './mappers/transactions-history.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
-import { TransactionItemPage } from './entities/transaction-item-page.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -31,6 +34,7 @@ export class TransactionsService {
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionsHistoryMapper: TransactionsHistoryMapper,
+    private readonly transactionPreviewMapper: TransactionPreviewMapper,
   ) {}
 
   async getMultisigTransactions(
@@ -186,6 +190,19 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async previewTransaction(
+    chainId: string,
+    safeAddress: string,
+    previewTransactionDto: PreviewTransactionDto,
+  ): Promise<TransactionPreview> {
+    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+    return this.transactionPreviewMapper.mapTransactionPreview(
+      chainId,
+      safe,
+      previewTransactionDto,
+    );
   }
 
   async getTransactionQueue(
