@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { isArray, isNull } from 'lodash';
+import { isArray } from 'lodash';
 import { ContractsRepository } from '../../../../domain/contracts/contracts.repository';
 import { IContractsRepository } from '../../../../domain/contracts/contracts.repository.interface';
 import {
@@ -115,15 +115,13 @@ export class TransactionDataMapper {
       ),
     );
 
-    return addressInfos
-      .filter((addressInfo) => !isNull(addressInfo))
-      .reduce(
-        (addressInfoIndex, addressInfo) =>
-          addressInfo
-            ? { ...addressInfoIndex, [addressInfo.value]: addressInfo }
-            : addressInfoIndex,
-        {},
-      );
+    return addressInfos.reduce(
+      (addressInfoIndex, addressInfo) =>
+        addressInfo
+          ? { ...addressInfoIndex, [addressInfo.value]: addressInfo }
+          : addressInfoIndex,
+      {},
+    );
   }
 
   private getAddressParametersFromDataDecoded({

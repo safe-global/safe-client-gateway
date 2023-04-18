@@ -883,35 +883,33 @@ describe('Transactions Controller (Unit)', () => {
         .post(`/v1/chains/${chainId}/transactions/${safeAddress}/preview`)
         .send(previewTransactionDto)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            txInfo: {
-              type: 'Custom',
-              to: {
-                value: previewTransactionDto.to,
-                name: null,
-                logoUri: null,
-              },
-              dataSize: '16',
-              value: previewTransactionDto.value,
-              methodName: null,
-              actionCount: null,
-              isCancellation: false,
+        .expect({
+          txInfo: {
+            type: 'Custom',
+            to: {
+              value: previewTransactionDto.to,
+              name: null,
+              logoUri: null,
             },
-            txData: {
-              hexData: previewTransactionDto.data,
-              dataDecoded: previewTransactionDto.data,
-              to: {
-                value: previewTransactionDto.to,
-                name: null,
-                logoUri: null,
-              },
-              value: previewTransactionDto.value,
-              operation: previewTransactionDto.operation,
-              trustedDelegateCallTarget: null,
-              addressInfoIndex: {},
+            dataSize: '16',
+            value: previewTransactionDto.value,
+            methodName: null,
+            actionCount: null,
+            isCancellation: false,
+          },
+          txData: {
+            hexData: previewTransactionDto.data,
+            dataDecoded: previewTransactionDto.data,
+            to: {
+              value: previewTransactionDto.to,
+              name: null,
+              logoUri: null,
             },
-          });
+            value: previewTransactionDto.value,
+            operation: previewTransactionDto.operation,
+            trustedDelegateCallTarget: null,
+            addressInfoIndex: {},
+          },
         });
     });
 

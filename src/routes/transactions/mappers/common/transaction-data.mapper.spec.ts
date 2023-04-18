@@ -25,14 +25,15 @@ const dataDecodedParamHelper = jest.mocked({
 } as unknown as DataDecodedParamHelper);
 
 describe('Transaction Data Mapper (Unit)', () => {
-  const mapper = new TransactionDataMapper(
-    addressInfoHelper,
-    contractsRepository,
-    dataDecodedParamHelper,
-  );
+  let mapper: TransactionDataMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    mapper = new TransactionDataMapper(
+      addressInfoHelper,
+      contractsRepository,
+      dataDecodedParamHelper,
+    );
   });
 
   describe('Detect trusted delegate calls', () => {
