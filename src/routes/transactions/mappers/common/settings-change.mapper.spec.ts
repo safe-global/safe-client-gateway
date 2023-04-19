@@ -24,14 +24,18 @@ const addressInfoHelper = jest.mocked({
 } as unknown as AddressInfoHelper);
 
 describe('Multisig Settings Change Transaction mapper (Unit)', () => {
-  const mapper = new SettingsChangeMapper(
-    addressInfoHelper,
-    new DataDecodedParamHelper(),
-  );
+  let mapper: SettingsChangeMapper;
+
+  beforeEach(() => {
+    mapper = new SettingsChangeMapper(
+      addressInfoHelper,
+      new DataDecodedParamHelper(),
+    );
+  });
 
   it('should build a SetFallbackHandler setting', async () => {
     const handlerValue = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+    addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(handlerValue),
     );
     const transaction = multisigTransactionBuilder()
@@ -166,7 +170,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a ChangeMasterCopy setting', async () => {
     const newMasterCopy = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+    addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(newMasterCopy),
     );
     const transaction = multisigTransactionBuilder()
@@ -192,7 +196,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a EnableModule setting', async () => {
     const moduleAddress = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+    addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
     const transaction = multisigTransactionBuilder()
@@ -220,7 +224,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a DisableModule setting', async () => {
     const moduleAddress = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(
+    addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
     const transaction = multisigTransactionBuilder()
@@ -273,7 +277,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a SetGuard setting', async () => {
     const guardAddress = faker.finance.ethereumAddress();
     const guardAddressInfo = new AddressInfo(guardAddress);
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(guardAddressInfo);
+    addressInfoHelper.getOrDefault.mockResolvedValue(guardAddressInfo);
     const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',

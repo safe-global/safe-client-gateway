@@ -28,7 +28,7 @@ describe('Transaction Data Mapper (Unit)', () => {
   let mapper: TransactionDataMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
     mapper = new TransactionDataMapper(
       addressInfoHelper,
       contractsRepository,

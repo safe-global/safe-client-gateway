@@ -5,7 +5,11 @@ import { confirmationBuilder } from '../../../../domain/safe/entities/__tests__/
 import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
 
 describe('Multisig Transaction status mapper (Unit)', () => {
-  const mapper = new MultisigTransactionStatusMapper();
+  let mapper: MultisigTransactionStatusMapper;
+
+  beforeEach(() => {
+    mapper = new MultisigTransactionStatusMapper();
+  });
 
   it('should return a SUCCESS status', () => {
     const transaction = multisigTransactionBuilder()
