@@ -8,7 +8,11 @@ import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
 
 describe('Multisig Transaction execution info mapper (Unit)', () => {
-  const mapper = new MultisigTransactionExecutionInfoMapper();
+  let mapper: MultisigTransactionExecutionInfoMapper;
+
+  beforeEach(() => {
+    mapper = new MultisigTransactionExecutionInfoMapper();
+  });
 
   it('should return a MultiSigExecutionInfo with no missing signers', () => {
     const safe = safeBuilder().build();

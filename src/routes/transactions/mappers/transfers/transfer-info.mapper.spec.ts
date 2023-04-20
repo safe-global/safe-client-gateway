@@ -25,10 +25,11 @@ const tokenRepository = jest.mocked({
 } as unknown as TokenRepository);
 
 describe('Transfer Info mapper (Unit)', () => {
-  const mapper = new TransferInfoMapper(tokenRepository, addressInfoHelper);
+  let mapper: TransferInfoMapper;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mapper = new TransferInfoMapper(tokenRepository, addressInfoHelper);
   });
 
   it('should build an ERC20 TransferTransactionInfo', async () => {

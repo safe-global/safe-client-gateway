@@ -15,11 +15,16 @@ const addressInfoHelper = jest.mocked({
 } as unknown as AddressInfoHelper);
 
 describe('Multisig Custom Transaction mapper (Unit)', () => {
-  const mapper = new CustomTransactionMapper(addressInfoHelper);
+  let mapper: CustomTransactionMapper;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mapper = new CustomTransactionMapper(addressInfoHelper);
+  });
 
   it('should build a CustomTransactionInfo with null actionCount', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(toAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const value = faker.datatype.number();
     const dataSize = faker.datatype.number();
     const chainId = faker.random.numeric();
@@ -47,7 +52,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
   it('should build a multiSend CustomTransactionInfo with null actionCount', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(toAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
     const value = faker.datatype.number();
     const dataSize = faker.datatype.number();
@@ -76,7 +81,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
   it('should build a multiSend CustomTransactionInfo with actionCount', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(toAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
     const value = faker.datatype.number();
     const dataSize = faker.datatype.number();
@@ -116,7 +121,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
   it('should build a cancellation CustomTransactionInfo', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValueOnce(toAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = faker.random.word();
     const value = faker.datatype.number();
     const dataSize = 0;
