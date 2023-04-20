@@ -4,6 +4,7 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import { CreationTransactionInfo } from './creation-transaction-info.entity';
 import { CustomTransactionInfo } from './custom-transaction.entity';
 import { ExecutionInfo } from './execution-info.entity';
 import { ModuleExecutionInfo } from './module-execution-info.entity';
@@ -14,6 +15,7 @@ import { TransactionInfo } from './transaction-info.entity';
 import { TransferTransactionInfo } from './transfer-transaction-info.entity';
 
 @ApiExtraModels(
+  CreationTransactionInfo,
   CustomTransactionInfo,
   SettingsChangeTransaction,
   TransferTransactionInfo,
@@ -29,6 +31,7 @@ export class Transaction {
   txStatus: string;
   @ApiProperty({
     oneOf: [
+      { $ref: getSchemaPath(CreationTransactionInfo) },
       { $ref: getSchemaPath(CustomTransactionInfo) },
       { $ref: getSchemaPath(SettingsChangeTransaction) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
