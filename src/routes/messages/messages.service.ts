@@ -92,13 +92,11 @@ export class MessagesService {
     messages: DomainMessage[],
   ): [number, DomainMessage[]][] {
     const groups = groupBy(messages, (m) =>
-      new Date(
-        Date.UTC(
-          m.created.getFullYear(),
-          m.created.getMonth(),
-          m.created.getDate(),
-        ),
-      ).getTime(),
+      Date.UTC(
+        m.created.getUTCFullYear(),
+        m.created.getUTCMonth(),
+        m.created.getUTCDate(),
+      ),
     );
 
     return sortBy(Object.entries(groups), ([timestamp]) => timestamp).map(

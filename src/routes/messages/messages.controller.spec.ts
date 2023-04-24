@@ -479,9 +479,9 @@ describe('Messages controller', () => {
                   type: 'DATE_LABEL',
                   timestamp: new Date(
                     Date.UTC(
-                      message.created.getFullYear(),
-                      message.created.getMonth(),
-                      message.created.getDate(),
+                      message.created.getUTCFullYear(),
+                      message.created.getUTCMonth(),
+                      message.created.getUTCDate(),
                     ),
                   ).getTime(),
                 },
@@ -563,9 +563,9 @@ describe('Messages controller', () => {
                   type: 'DATE_LABEL',
                   timestamp: new Date(
                     Date.UTC(
-                      messageCreationDate.getFullYear(),
-                      messageCreationDate.getMonth(),
-                      messageCreationDate.getDate(),
+                      messageCreationDate.getUTCFullYear(),
+                      messageCreationDate.getUTCMonth(),
+                      messageCreationDate.getUTCDate(),
                     ),
                   ).getTime(),
                 },
