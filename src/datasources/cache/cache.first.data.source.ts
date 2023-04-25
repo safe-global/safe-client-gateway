@@ -4,10 +4,11 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as winston from 'winston';
 import { CacheDir } from './entities/cache-dir.entity';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
+import { get } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -49,7 +50,7 @@ export class CacheFirstDataSource {
       winston.debug(`[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`);
       const data = JSON.parse(cached);
       if (this.isNotFoundError(data)) {
-        throw new NotFoundException(data.message);
+        throw new NetworkResponseError(404);
       }
       return data;
     }
@@ -61,28 +62,22 @@ export class CacheFirstDataSource {
       return data;
     } catch (error) {
       if (this.isNotFoundError(error)) {
-        await this.cacheError(cacheDir, error);
+        await this.cacheNotFoundError(cacheDir);
       }
       throw error;
     }
   }
 
   private isNotFoundError(data: unknown) {
-    const error = data as NetworkResponseError;
-    return error.status === 404;
+    return get(data, 'status') === 404;
   }
 
   /**
    * Caches an error.
    * @param cacheDir - {@link CacheDir} where the error should be placed
-   * @param error - the error to save in cache
    */
-  private async cacheError(cacheDir: CacheDir, error: Error): Promise<void> {
-    const errorData = error as NetworkResponseError;
-    const value = JSON.stringify({
-      status: errorData.status,
-      message: errorData.message,
-    });
+  private async cacheNotFoundError(cacheDir: CacheDir): Promise<void> {
+    const value = JSON.stringify({ status: 404 });
     return this.cacheService.set(cacheDir, value, this.ERROR_TTL_SECONDS);
   }
 }
