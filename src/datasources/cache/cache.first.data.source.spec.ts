@@ -4,14 +4,15 @@ import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { CacheFirstDataSource } from './cache.first.data.source';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
-import { fakeCacheService } from './__tests__/test.cache.module';
+import { FakeCacheService } from './__tests__/fake.cache.service';
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
+  let fakeCacheService: FakeCacheService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    fakeCacheService.clear();
+    fakeCacheService = new FakeCacheService();
     cacheFirstDataSource = new CacheFirstDataSource(
       fakeCacheService,
       mockNetworkService,
