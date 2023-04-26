@@ -48,11 +48,11 @@ export class CacheFirstDataSource {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
       winston.debug(`[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`);
-      const data = JSON.parse(cached);
-      if (this.isNotFoundError(data)) {
-        throw new NetworkResponseError(404);
+      const cachedData = JSON.parse(cached);
+      if (get(cachedData, 'status') === 404) {
+        throw new NetworkResponseError(cachedData.status, cachedData.data);
       }
-      return data;
+      return cachedData;
     }
     try {
       winston.debug(`[Cache] Cache miss: [${cacheDir.key}, ${cacheDir.field}]`);
@@ -61,23 +61,25 @@ export class CacheFirstDataSource {
       await this.cacheService.set(cacheDir, rawJson, expireTimeSeconds);
       return data;
     } catch (error) {
-      if (this.isNotFoundError(error)) {
-        await this.cacheNotFoundError(cacheDir);
+      if (get(error, 'status') === 404) {
+        await this.cacheNotFoundError(
+          cacheDir,
+          new NetworkResponseError(error.status, error),
+        );
       }
       throw error;
     }
-  }
-
-  private isNotFoundError(data: unknown) {
-    return get(data, 'status') === 404;
   }
 
   /**
    * Caches an error.
    * @param cacheDir - {@link CacheDir} where the error should be placed
    */
-  private async cacheNotFoundError(cacheDir: CacheDir): Promise<void> {
-    const value = JSON.stringify({ status: 404 });
+  private async cacheNotFoundError(
+    cacheDir: CacheDir,
+    error: NetworkResponseError,
+  ): Promise<void> {
+    const value = JSON.stringify({ status: error.status, data: error });
     return this.cacheService.set(cacheDir, value, this.ERROR_TTL_SECONDS);
   }
 }
