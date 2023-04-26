@@ -56,6 +56,10 @@ describe('Contracts controller', () => {
     await app.init();
   });
 
+  afterAll(async () => {
+    await app.close();
+  });
+
   describe('GET contract data for an address', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
