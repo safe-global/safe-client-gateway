@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { IConfigurationService } from './configuration.service.interface';
 import { NestConfigurationService } from './nest.configuration.service';
 import configuration from './entities/configuration';
+import { validate } from './configuration.validator';
 
 /**
  * A {@link Global} Module which provides local configuration support via {@link IConfigurationService}
@@ -15,6 +16,7 @@ import configuration from './entities/configuration';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      validate,
       load: [configuration],
     }),
   ],
