@@ -5,7 +5,6 @@ import {
   NetworkService,
 } from '../network/network.service.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import * as winston from 'winston';
 import { CacheDir } from './entities/cache-dir.entity';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
 import { get } from 'lodash';
@@ -47,7 +46,7 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
-      winston.debug(`[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`);
+      // winston.debug(`[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`);
       const cachedData = JSON.parse(cached);
       if (get(cachedData, 'status') === 404) {
         throw new NetworkResponseError(cachedData.status, cachedData.data);
@@ -55,7 +54,7 @@ export class CacheFirstDataSource {
       return cachedData;
     }
     try {
-      winston.debug(`[Cache] Cache miss: [${cacheDir.key}, ${cacheDir.field}]`);
+      // winston.debug(`[Cache] Cache miss: [${cacheDir.key}, ${cacheDir.field}]`);
       const { data } = await this.networkService.get(url, params);
       const rawJson = JSON.stringify(data);
       await this.cacheService.set(cacheDir, rawJson, expireTimeSeconds);

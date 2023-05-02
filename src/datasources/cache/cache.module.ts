@@ -3,7 +3,6 @@ import { CacheService } from './cache.service.interface';
 import { RedisCacheService } from './redis.cache.service';
 import { createClient } from 'redis';
 import { IConfigurationService } from '../../config/configuration.service.interface';
-import * as winston from 'winston';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 
@@ -15,7 +14,7 @@ async function redisClientFactory(
   const client: RedisClientType = createClient({
     url: `redis://${redisHost}:${redisPort}`,
   });
-  client.on('error', (err) => winston.error('Redis Client Error', err));
+  // client.on('error', (err) => winston.error('Redis Client Error', err));
   client.connect();
   return client;
 }

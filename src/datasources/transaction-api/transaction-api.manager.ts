@@ -10,7 +10,6 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
-import * as winston from 'winston';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
@@ -25,13 +24,13 @@ export class TransactionApiManager implements ITransactionApiManager {
   ) {}
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
-    winston.debug(`Getting TransactionApi instance for chain ${chainId}`);
+    // winston.debug(`Getting TransactionApi instance for chain ${chainId}`);
     const transactionApi = this.transactionApiMap[chainId];
     if (transactionApi !== undefined) return transactionApi;
 
-    winston.debug(
-      `Transaction API for chain ${chainId} not available. Fetching from the Config Service`,
-    );
+    // winston.debug(
+    //   `Transaction API for chain ${chainId} not available. Fetching from the Config Service`,
+    // );
     const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(
       chainId,

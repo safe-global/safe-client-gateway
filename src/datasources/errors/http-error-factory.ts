@@ -4,7 +4,6 @@ import {
   NetworkResponseError,
 } from '../network/entities/network.error.entity';
 import { DataSourceError } from '../../domain/errors/data-source.error';
-import * as winston from 'winston';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}
@@ -31,7 +30,7 @@ export class HttpErrorFactory {
 
   from(source: NetworkError | Error): DataSourceError {
     const error = this.mapError(source);
-    winston.error(error);
+    // winston.error(error);
     return error;
   }
 }

@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { DefinedError } from 'ajv';
-import * as winston from 'winston';
 import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-exception-payload.interface';
 
 /**
@@ -25,7 +24,7 @@ export class ValidationErrorFactory {
       message,
     }));
 
-    winston.error({ ...errPayload, detail });
+    console.log({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as winston from 'winston';
 import { DataDecodedRepository } from '../../../domain/data-decoder/data-decoded.repository';
 import { IDataDecodedRepository } from '../../../domain/data-decoder/data-decoded.repository.interface';
 import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
@@ -33,7 +32,7 @@ export class TransactionPreviewMapper {
         );
       }
     } catch (error) {
-      winston.warn(`Error trying to decode the input data: ${error.message}`);
+      // winston.warn(`Error trying to decode the input data: ${error.message}`);
       dataDecoded = previewTransactionDto.data;
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(

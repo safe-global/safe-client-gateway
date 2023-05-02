@@ -3,7 +3,6 @@ import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repos
 import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
-import * as winston from 'winston';
 
 @Injectable()
 export class SafeAppInfoMapper {
@@ -28,9 +27,9 @@ export class SafeAppInfoMapper {
       originUrl,
     );
     if (!safeApp) {
-      winston.warn(
-        `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
-      );
+      // winston.warn(
+      //   `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
+      // );
       return null;
     }
 

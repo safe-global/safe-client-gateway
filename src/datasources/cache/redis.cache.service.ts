@@ -1,5 +1,4 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import * as winston from 'winston';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { RedisClientType } from './cache.module';
 import { ICacheService } from './cache.service.interface';
@@ -58,22 +57,22 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
    * instance is not responding it invokes {@link forceQuit}.
    */
   async onModuleDestroy(): Promise<void> {
-    winston.verbose('Closing Redis connection');
+    // winston.verbose('Closing Redis connection');
     const forceQuitTimeout = setTimeout(
       this.forceQuit.bind(this),
       this.quitTimeoutInSeconds * 1000,
     );
     await this.client.quit();
     clearTimeout(forceQuitTimeout);
-    winston.verbose('Redis connection closed');
+    // winston.verbose('Redis connection closed');
   }
 
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
   private async forceQuit() {
-    winston.verbose('Forcing Redis connection close');
+    // winston.verbose('Forcing Redis connection close');
     await this.client.disconnect();
-    winston.verbose('Redis connection closed');
+    // winston.verbose('Redis connection closed');
   }
 }
