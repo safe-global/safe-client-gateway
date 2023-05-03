@@ -15,8 +15,8 @@ export function validate(
   if (process.env.NODE_ENV !== 'test') {
     const ajv = new Ajv({ allErrors: true });
     if (!ajv.validate(configurationSchema, configuration)) {
-      const errors = ajv.errors?.reduce((acc, e) => [...acc, e.message], []);
-      throw Error(`Mandatory configuration is missing: ${errors?.join(', ')}`);
+      const errors = ajv.errors?.map((error) => error.message)?.join(', ');
+      throw Error(`Mandatory configuration is missing: ${errors}`);
     }
   }
   return configuration;

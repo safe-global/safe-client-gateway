@@ -2,12 +2,6 @@ import { faker } from '@faker-js/faker';
 import { validate } from './configuration.validator';
 
 describe('Configuration validator', () => {
-  const { NODE_ENV } = process.env;
-
-  afterAll(() => {
-    process.env.NODE_ENV = NODE_ENV;
-  });
-
   it('should bypass this validation on tests', () => {
     process.env.NODE_ENV = 'test';
     const expected = JSON.parse(faker.datatype.json());
@@ -17,15 +11,17 @@ describe('Configuration validator', () => {
 
   it('should detect a malformed configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
-    expect(() => validate(JSON.parse(faker.datatype.json()))).toThrow();
+    expect(() => validate(JSON.parse(faker.datatype.json()))).toThrow(
+      /Mandatory configuration is missing: .*AUTH_TOKEN.*EXCHANGE_API_KEY/,
+    );
   });
 
   it('should return the input configuration if validated in production environment', () => {
     process.env.NODE_ENV = 'production';
     const expected = {
       ...JSON.parse(faker.datatype.json()),
-      AUTH_TOKEN: 'foo',
-      EXCHANGE_API_KEY: 'bar',
+      AUTH_TOKEN: faker.datatype.uuid(),
+      EXCHANGE_API_KEY: faker.datatype.uuid(),
     };
     const validated = validate(expected);
     expect(validated).toBe(expected);
