@@ -176,7 +176,7 @@ describe('Flush Controller (Unit)', () => {
         contracts.map(async (contract) =>
           expect(
             await fakeCacheService.get(
-              new CacheDir(`${chain.chainId}_contract`, contract.address),
+              new CacheDir(`${chain.chainId}_contract_${contract.address}`, ''),
             ),
           ).toBeDefined(),
         ),
@@ -199,7 +199,7 @@ describe('Flush Controller (Unit)', () => {
         contracts.map(async (contract) =>
           expect(
             await fakeCacheService.get(
-              new CacheDir(`${chain.chainId}_contract`, contract.address),
+              new CacheDir(`${chain.chainId}_contract_${contract.address}`, ''),
             ),
           ).toBeUndefined(),
         ),
@@ -262,7 +262,7 @@ describe('Flush Controller (Unit)', () => {
         tokens.map(async (token) =>
           expect(
             await fakeCacheService.get(
-              new CacheDir(`${chain.chainId}_token`, token.address),
+              new CacheDir(`${chain.chainId}_token_${token.address}`, ''),
             ),
           ).toBeDefined(),
         ),
@@ -290,7 +290,7 @@ describe('Flush Controller (Unit)', () => {
         tokens.map(async (token) =>
           expect(
             await fakeCacheService.get(
-              new CacheDir(`${chain.chainId}_token`, token.address),
+              new CacheDir(`${chain.chainId}_token_${token.address}`, ''),
             ),
           ).toBeUndefined(),
         ),
@@ -302,7 +302,7 @@ describe('Flush Controller (Unit)', () => {
       ).toBeDefined();
       expect(
         await fakeCacheService.get(
-          new CacheDir(`${chain.chainId}_${safe.address}_safe`, ''),
+          new CacheDir(`${chain.chainId}_safe_${safe.address}`, ''),
         ),
       ).toBeDefined();
     });

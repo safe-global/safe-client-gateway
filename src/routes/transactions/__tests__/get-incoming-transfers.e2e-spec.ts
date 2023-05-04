@@ -30,7 +30,7 @@ describe('Get incoming transfers e2e test', () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const executionDateGte = '2022-10-20T00:00:00.000Z';
     const executionDateLte = '2022-11-03T00:00:00.000Z';
-    const cacheKey = `${chainId}_${safeAddress}_incoming_transfers`;
+    const cacheKey = `${chainId}_incoming_transfers_${safeAddress}`;
     const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expected = getJsonResource('e2e/erc20-expected-response.json');
 
@@ -51,7 +51,7 @@ describe('Get incoming transfers e2e test', () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const executionDateGte = '2022-08-01T00:00:00.000Z';
     const executionDateLte = '2022-08-04T12:50:00.000Z';
-    const cacheKey = `${chainId}_${safeAddress}_incoming_transfers`;
+    const cacheKey = `${chainId}_incoming_transfers_${safeAddress}`;
     const cacheKeyField = `${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expected = getJsonResource('e2e/erc721-expected-response.json');
 

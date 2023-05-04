@@ -28,7 +28,7 @@ describe('Get module transactions e2e test', () => {
 
   it('GET /safes/<address>/module-transactions (native token)', async () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
-    const cacheKey = `${chainId}_${safeAddress}_module_transactions`;
+    const cacheKey = `${chainId}_module_transactions_${safeAddress}`;
     const cacheKeyField = `undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/module-transactions/native-token-expected-response.json',

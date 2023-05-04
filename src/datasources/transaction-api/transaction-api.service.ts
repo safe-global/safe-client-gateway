@@ -60,8 +60,8 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const cacheDir = CacheRouter.getBalanceCacheDir(this.chainId, safeAddress);
-    await this.cacheService.delete(cacheDir);
+    const cacheKey = CacheRouter.getBalancesCacheKey(this.chainId, safeAddress);
+    await this.cacheService.deleteByKey(cacheKey);
   }
 
   async getDataDecoded(data: string, to: string): Promise<DataDecoded> {

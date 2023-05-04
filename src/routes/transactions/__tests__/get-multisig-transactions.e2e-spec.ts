@@ -30,7 +30,7 @@ describe('Get multisig transactions e2e test', () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const executionDateGte = '2022-11-04T00:00:00.000Z';
     const executionDateLte = '2022-11-08T00:00:00.000Z';
-    const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
+    const cacheKey = `${chainId}_multisig_transactions_${safeAddress}`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/native-token-expected-response.json',
@@ -53,7 +53,7 @@ describe('Get multisig transactions e2e test', () => {
     const safeAddress = '0xCe95F1F4ACADEe697993B0E3a0FE48B444679046';
     const executionDateGte = '2022-12-01T00:00:00.000Z';
     const executionDateLte = '2022-12-07T11:00:00.000Z';
-    const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
+    const cacheKey = `${chainId}_multisig_transactions_${safeAddress}`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/erc20-expected-response.json',
@@ -76,7 +76,7 @@ describe('Get multisig transactions e2e test', () => {
     const safeAddress = '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C';
     const executionDateGte = '2022-11-29T14:00:00.000Z';
     const executionDateLte = '2022-12-06T00:00:00.000Z';
-    const cacheKey = `${chainId}_${safeAddress}_multisig_transactions`;
+    const cacheKey = `${chainId}_multisig_transactions_${safeAddress}`;
     const cacheKeyField = `-modified_undefined_true_${executionDateGte}_${executionDateLte}_undefined_undefined_undefined_${PaginationData.DEFAULT_LIMIT}_${PaginationData.DEFAULT_OFFSET}`;
     const expectedResponse = getJsonResource(
       'e2e/erc721-expected-response.json',

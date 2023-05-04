@@ -11,5 +11,7 @@ export interface ICacheService {
 
   get(cacheDir: CacheDir): Promise<string | undefined>;
 
-  delete(cacheDir: CacheDir): Promise<number>;
+  deleteByKey(key: string): Promise<number>;
+
+  deleteByKeyPattern(pattern: string): Promise<void>;
 }
