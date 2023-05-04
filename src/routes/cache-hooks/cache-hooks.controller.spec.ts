@@ -177,7 +177,7 @@ describe('Post Hook Events (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = '1';
       const cacheDir = new CacheDir(
-        `${chainId}_${safeAddress}_balances`,
+        `${chainId}_balances_${safeAddress}`,
         faker.random.alpha(),
       );
       await fakeCacheService.set(cacheDir, faker.random.alpha());

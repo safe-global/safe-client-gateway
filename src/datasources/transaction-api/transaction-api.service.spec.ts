@@ -9,7 +9,6 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
-import { CacheRouter } from '../cache/cache.router';
 
 const dataSource = {
   get: jest.fn(),
@@ -17,7 +16,7 @@ const dataSource = {
 const mockDataSource = jest.mocked(dataSource);
 
 const cacheService = {
-  delete: jest.fn(),
+  deleteByKey: jest.fn(),
 } as unknown as ICacheService;
 const mockCacheService = jest.mocked(cacheService);
 
@@ -99,13 +98,13 @@ describe('TransactionApi', () => {
   describe('Clear Local Balances', () => {
     it('should call delete', async () => {
       const safeAddress = faker.finance.ethereumAddress();
-      mockCacheService.delete.mockResolvedValueOnce(1);
+      mockCacheService.deleteByKey.mockResolvedValueOnce(1);
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.delete).toBeCalledTimes(1);
-      expect(mockCacheService.delete).toBeCalledWith(
-        CacheRouter.getBalanceCacheDir(chainId, safeAddress),
+      expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toBeCalledWith(
+        `${chainId}_balances_${safeAddress}`,
       );
       expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
@@ -120,7 +119,7 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(safe);
       expect(mockDataSource.get).toBeCalledWith(
-        new CacheDir(`${chainId}_${safe.address}_safe`, ''),
+        new CacheDir(`${chainId}_safe_${safe.address}`, ''),
         `${baseUrl}/api/v1/safes/${safe.address}`,
       );
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(0);

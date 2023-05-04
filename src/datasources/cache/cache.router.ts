@@ -24,6 +24,10 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFERS_KEY = 'transfers';
 
+  static getBalancesCacheKey(chainId: string, safeAddress: string): string {
+    return `${chainId}_${CacheRouter.BALANCES_KEY}_${safeAddress}`;
+  }
+
   static getBalanceCacheDir(
     chainId: string,
     safeAddress: string,
@@ -31,14 +35,14 @@ export class CacheRouter {
     excludeSpam?: boolean,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.BALANCES_KEY}`,
+      CacheRouter.getBalancesCacheKey(chainId, safeAddress),
       `${trusted}_${excludeSpam}`,
     );
   }
 
   static getSafeCacheDir(chainId: string, safeAddress: string): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.SAFE_KEY}`,
+      `${chainId}_${CacheRouter.SAFE_KEY}_${safeAddress}`,
       '',
     );
   }
@@ -48,9 +52,13 @@ export class CacheRouter {
     contractAddress: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.CONTRACT_KEY}`,
-      contractAddress,
+      `${chainId}_${CacheRouter.CONTRACT_KEY}_${contractAddress}`,
+      '',
     );
+  }
+
+  static getContractsCachePattern(): string {
+    return `*_${CacheRouter.CONTRACT_KEY}_*`;
   }
 
   static getBackboneCacheDir(chainId: string): CacheDir {
@@ -70,7 +78,7 @@ export class CacheRouter {
     excludeSpam?: boolean,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.COLLECTIBLES_KEY}`,
+      `${chainId}_${CacheRouter.COLLECTIBLES_KEY}_${safeAddress}`,
       `${limit}_${offset}_${trusted}_${excludeSpam}`,
     );
   }
@@ -85,8 +93,8 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.DELEGATES_KEY}`,
-      `${safeAddress}_${delegate}_${delegator}_${label}_${limit}_${offset}`,
+      `${chainId}_${CacheRouter.DELEGATES_KEY}_${safeAddress}`,
+      `${delegate}_${delegator}_${label}_${limit}_${offset}`,
     );
   }
 
@@ -99,7 +107,7 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.TRANSFERS_KEY}`,
+      `${chainId}_${CacheRouter.TRANSFERS_KEY}_${safeAddress}`,
       `${onlyErc20}_${onlyErc721}_${limit}_${offset}`,
     );
   }
@@ -113,7 +121,7 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.MODULE_TRANSACTIONS_KEY}`,
+      `${chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${safeAddress}`,
       `${to}_${module}_${limit}_${offset}`,
     );
   }
@@ -130,7 +138,7 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.INCOMING_TRANSFERS_KEY}`,
+      `${chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${safeAddress}`,
       `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${limit}_${offset}`,
     );
   }
@@ -150,7 +158,7 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}`,
+      `${chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${safeAddress}`,
       `${ordering}_${executed}_${trusted}_${executionDateGte}_${executionDateLte}_${to}_${value}_${nonce}_${limit}_${offset}`,
     );
   }
@@ -160,7 +168,7 @@ export class CacheRouter {
     safeTransactionHash: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeTransactionHash}_${CacheRouter.MULTISIG_TRANSACTION_KEY}`,
+      `${chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${safeTransactionHash}`,
       '',
     );
   }
@@ -170,7 +178,7 @@ export class CacheRouter {
     safeAddress: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.CREATION_TRANSACTION_KEY}`,
+      `${chainId}_${CacheRouter.CREATION_TRANSACTION_KEY}_${safeAddress}`,
       '',
     );
   }
@@ -185,13 +193,17 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.ALL_TRANSACTIONS_KEY}`,
+      `${chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${safeAddress}`,
       `${ordering}_${executed}_${queued}_${limit}_${offset}`,
     );
   }
 
   static getTokenCacheDir(chainId: string, address: string): CacheDir {
-    return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}`, address);
+    return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}_${address}`, '');
+  }
+
+  static getTokensCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.TOKENS_KEY}`;
   }
 
   static getTokensCacheDir(
@@ -200,9 +212,13 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.TOKENS_KEY}`,
+      CacheRouter.getTokensCacheKey(chainId),
       `${limit}_${offset}`,
     );
+  }
+
+  static getTokensCachePattern(chainId: string): string {
+    return `${chainId}_${CacheRouter.TOKEN_KEY}_*`;
   }
 
   static getSafesByOwnerCacheDir(
@@ -210,7 +226,7 @@ export class CacheRouter {
     ownerAddress: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${ownerAddress}_${CacheRouter.OWNERS_SAFE_KEY}`,
+      `${chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${ownerAddress}`,
       '',
     );
   }
@@ -220,7 +236,7 @@ export class CacheRouter {
     messageHash: string,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${messageHash}_${CacheRouter.MESSAGE_KEY}`,
+      `${chainId}_${CacheRouter.MESSAGE_KEY}_${messageHash}`,
       '',
     );
   }
@@ -232,17 +248,25 @@ export class CacheRouter {
     offset?: number,
   ): CacheDir {
     return new CacheDir(
-      `${chainId}_${safeAddress}_${CacheRouter.MESSAGES_KEY}`,
+      `${chainId}_${CacheRouter.MESSAGES_KEY}_${safeAddress}`,
       `${limit}_${offset}`,
     );
   }
 
+  static getChainsCacheKey(): string {
+    return CacheRouter.CHAINS_KEY;
+  }
+
   static getChainsCacheDir(limit?: number, offset?: number): CacheDir {
-    return new CacheDir(CacheRouter.CHAINS_KEY, `${limit}_${offset}`);
+    return new CacheDir(CacheRouter.getChainsCacheKey(), `${limit}_${offset}`);
   }
 
   static getChainCacheDir(chainId: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.CHAIN_KEY}`, '');
+  }
+
+  static getChainsCachePattern(): string {
+    return `*_${CacheRouter.CHAIN_KEY}$`;
   }
 
   static getSafeAppsCacheDir(
@@ -251,8 +275,8 @@ export class CacheRouter {
     url?: string,
   ): CacheDir {
     return new CacheDir(
-      CacheRouter.SAFE_APPS_KEY,
-      `${chainId}_${clientUrl}_${url}`,
+      `${chainId}_${CacheRouter.SAFE_APPS_KEY}`,
+      `${clientUrl}_${url}`,
     );
   }
 }

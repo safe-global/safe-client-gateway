@@ -12,9 +12,19 @@ export class FakeCacheService implements ICacheService {
     this.cache = {};
   }
 
-  delete(cacheDir: CacheDir): Promise<number> {
-    delete this.cache[cacheDir.key];
+  deleteByKey(key: string): Promise<number> {
+    delete this.cache[key];
     return Promise.resolve(1);
+  }
+
+  deleteByKeyPattern(pattern: string): Promise<void> {
+    const patternRegex = RegExp(pattern.replace('*', '.*'));
+    for (const key in this.cache) {
+      if (patternRegex.test(key)) {
+        delete this.cache[key];
+      }
+    }
+    return Promise.resolve();
   }
 
   get(cacheDir: CacheDir): Promise<string | undefined> {

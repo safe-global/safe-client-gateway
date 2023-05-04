@@ -12,6 +12,7 @@ const redisClientType = {
   expire: jest.fn(),
   unlink: jest.fn(),
   quit: jest.fn(),
+  scanIterator: jest.fn(),
 } as unknown as RedisClientType;
 const redisClientTypeMock = jest.mocked(redisClientType);
 
@@ -35,7 +36,7 @@ describe('RedisCacheService', () => {
     );
   });
 
-  it(`Setting key without setting expireTimeSeconds`, async () => {
+  it('Setting key without setting expireTimeSeconds', async () => {
     const cacheDir = new CacheDir(
       faker.random.alphaNumeric(),
       faker.datatype.string(),
@@ -60,7 +61,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Setting key with expireTimeSeconds`, async () => {
+  it('Setting key with expireTimeSeconds', async () => {
     const cacheDir = new CacheDir(
       faker.random.alphaNumeric(),
       faker.datatype.string(),
@@ -83,7 +84,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Setting key throws on expire`, async () => {
+  it('Setting key throws on expire', async () => {
     const cacheDir = new CacheDir(
       faker.random.alphaNumeric(),
       faker.datatype.string(),
@@ -114,7 +115,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Setting key throws on set`, async () => {
+  it('Setting key throws on set', async () => {
     const cacheDir = new CacheDir(
       faker.random.alphaNumeric(),
       faker.datatype.string(),
@@ -141,7 +142,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Getting key calls hGet`, async () => {
+  it('Getting key calls hGet', async () => {
     const cacheDir = new CacheDir(
       faker.random.alphaNumeric(),
       faker.datatype.string(),
@@ -158,13 +159,10 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`Deleting key calls delete`, async () => {
-    const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
-    );
+  it('Deleting key calls delete', async () => {
+    const key = faker.random.alphaNumeric();
 
-    await redisCacheService.delete(cacheDir);
+    await redisCacheService.deleteByKey(key);
 
     expect(redisClientTypeMock.unlink).toBeCalledTimes(1);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
@@ -173,7 +171,25 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
   });
 
-  it(`When Module gets destroyed, redis connection is closed`, async () => {
+  it('Deleting keys by pattern calls scan and unlink', async () => {
+    const matches = [
+      faker.random.alphaNumeric(),
+      faker.random.alphaNumeric(),
+      faker.random.alphaNumeric(),
+    ];
+    redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
+
+    await redisCacheService.deleteByKeyPattern(faker.random.alphaNumeric());
+
+    expect(redisClientTypeMock.scanIterator).toBeCalledTimes(1);
+    expect(redisClientTypeMock.unlink).toBeCalledTimes(matches.length);
+    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+  });
+
+  it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);

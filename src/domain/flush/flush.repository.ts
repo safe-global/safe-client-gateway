@@ -32,34 +32,25 @@ export class FlushRepository implements IFlushRepository {
   }
 
   private async invalidateChains(): Promise<void> {
-    const chains = await this.configApi.getChains();
-    await this.cacheService.delete(CacheRouter.getChainsCacheDir());
-    await Promise.all(
-      chains.results.map((chain) =>
-        this.cacheService.delete(CacheRouter.getChainCacheDir(chain.chainId)),
-      ),
-    );
+    await this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey());
+    const pattern = CacheRouter.getChainsCachePattern();
+    await this.cacheService.deleteByKeyPattern(pattern);
   }
 
   private async invalidateContracts(): Promise<void> {
-    const chains = await this.configApi.getChains();
-    await Promise.all(
-      chains.results.map((chain) =>
-        this.cacheService.delete(
-          CacheRouter.getContractCacheDir(chain.chainId, ''),
-        ),
-      ),
-    );
+    const pattern = CacheRouter.getContractsCachePattern();
+    await this.cacheService.deleteByKeyPattern(pattern);
   }
 
   private async invalidateTokens(
-    pattern: InvalidationPatternDto,
+    invalidationPatternDto: InvalidationPatternDto,
   ): Promise<void> {
-    const chainId = pattern?.patternDetails?.chainId;
+    const chainId = invalidationPatternDto?.patternDetails?.chainId;
     if (!chainId) {
       throw new UnprocessableEntityException(`Chain id parameter is required`);
     }
-    await this.cacheService.delete(CacheRouter.getTokensCacheDir(chainId));
-    await this.cacheService.delete(CacheRouter.getTokenCacheDir(chainId, ''));
+    await this.cacheService.deleteByKey(CacheRouter.getTokensCacheKey(chainId));
+    const pattern = CacheRouter.getTokensCachePattern(chainId);
+    await this.cacheService.deleteByKeyPattern(pattern);
   }
 }
