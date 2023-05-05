@@ -5,6 +5,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 
 import { ChainsModule } from './routes/chains/chains.module';
@@ -29,10 +30,9 @@ import { EstimationsModule } from './routes/estimations/estimations.module';
 import { MessagesModule } from './routes/messages/messages.module';
 import { ValidationModule } from './validation/validation.module';
 import { FlushModule } from './routes/flush/flush.module';
-import { ClsMiddleware, ClsModule } from 'nestjs-cls';
-import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
 import { RequestScopedLoggingModule } from './routes/common/logging/logging.module';
 import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logger.interceptor';
+import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
 
 @Module({
   imports: [

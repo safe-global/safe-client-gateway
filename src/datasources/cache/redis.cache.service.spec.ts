@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
+import { ILoggingService } from '../../routes/common/logging/logging.interface';
 import { RedisClientType } from './cache.module';
 import { CacheDir } from './entities/cache-dir.entity';
 import { RedisCacheService } from './redis.cache.service';
@@ -15,6 +16,13 @@ const redisClientType = {
   scanIterator: jest.fn(),
 } as unknown as RedisClientType;
 const redisClientTypeMock = jest.mocked(redisClientType);
+
+const mockLoggingService = {
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+} as unknown as ILoggingService;
 
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
@@ -33,6 +41,7 @@ describe('RedisCacheService', () => {
     redisCacheService = new RedisCacheService(
       redisClientTypeMock,
       configurationService,
+      mockLoggingService,
     );
   });
 

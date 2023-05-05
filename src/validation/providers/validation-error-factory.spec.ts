@@ -1,9 +1,17 @@
 import { DefinedError } from 'ajv';
 import { faker } from '@faker-js/faker';
 import { ValidationErrorFactory } from './validation-error-factory';
+import { ILoggingService } from '../../routes/common/logging/logging.interface';
+
+const mockLoggingService = {
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+} as unknown as ILoggingService;
 
 describe('ValidationErrorFactory', () => {
-  const validationErrorFactory = new ValidationErrorFactory();
+  const validationErrorFactory = new ValidationErrorFactory(mockLoggingService);
 
   it('should create an HttpException from an array of errors', async () => {
     const errors: DefinedError[] = [

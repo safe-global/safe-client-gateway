@@ -27,9 +27,6 @@ export class SafeAppInfoMapper {
       originUrl,
     );
     if (!safeApp) {
-      // winston.warn(
-      //   `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
-      // );
       return null;
     }
 

@@ -1,6 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { DefinedError } from 'ajv';
 import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-exception-payload.interface';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../routes/common/logging/logging.interface';
 
 /**
  * Creates an {@link HttpException} from an array of validation errors.
@@ -10,6 +14,10 @@ import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-e
 @Injectable()
 export class ValidationErrorFactory {
   private readonly VALIDATION_ERROR_CODE = 42;
+
+  constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {}
 
   from(errors: DefinedError[]): HttpException {
     const errPayload: HttpExceptionPayload = {
@@ -24,7 +32,7 @@ export class ValidationErrorFactory {
       message,
     }));
 
-    console.log({ ...errPayload, detail });
+    this.loggingService.info({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

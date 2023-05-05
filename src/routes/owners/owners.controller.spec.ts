@@ -18,6 +18,7 @@ import {
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../common/logging/__tests__/test.logging.module';
 import { OwnersModule } from './owners.module';
 
 describe('Owners Controller (Unit)', () => {
@@ -43,6 +44,7 @@ describe('Owners Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

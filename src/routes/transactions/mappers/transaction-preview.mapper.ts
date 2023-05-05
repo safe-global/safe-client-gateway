@@ -32,7 +32,6 @@ export class TransactionPreviewMapper {
         );
       }
     } catch (error) {
-      // winston.warn(`Error trying to decode the input data: ${error.message}`);
       dataDecoded = previewTransactionDto.data;
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(

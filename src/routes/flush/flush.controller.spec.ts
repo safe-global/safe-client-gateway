@@ -28,6 +28,7 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '../../domain/tokens/__tests__/token.builder';
 import { ValidationModule } from '../../validation/validation.module';
 import { ChainsModule } from '../chains/chains.module';
+import { TestLoggingModule } from '../common/logging/__tests__/test.logging.module';
 import { ContractsModule } from '../contracts/contracts.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { invalidationPatternDetailsBuilder } from './entities/__tests__/invalidation-pattern-details.dto.builder';
@@ -62,6 +63,7 @@ describe('Flush Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
