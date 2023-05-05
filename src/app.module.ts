@@ -30,7 +30,7 @@ import { EstimationsModule } from './routes/estimations/estimations.module';
 import { MessagesModule } from './routes/messages/messages.module';
 import { ValidationModule } from './validation/validation.module';
 import { FlushModule } from './routes/flush/flush.module';
-import { RequestScopedLoggingModule } from './routes/common/logging/logging.module';
+import { RequestScopedLoggingModule } from './logging/logging.module';
 import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
 

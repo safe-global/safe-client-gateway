@@ -1,5 +1,5 @@
 import { RouteLoggerInterceptor } from './route-logger.interceptor';
-import { ILoggingService } from '../logging/logging.interface';
+import { ILoggingService } from '../../../logging/logging.interface';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   Controller,

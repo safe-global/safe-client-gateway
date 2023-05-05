@@ -6,10 +6,13 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '../logging/logging.interface';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../../logging/logging.interface';
 import { Inject } from '@nestjs/common/decorators';
 import { Observable, tap } from 'rxjs';
-import { formatRouteLogMessage } from '../logging/utils';
+import { formatRouteLogMessage } from '../../../logging/utils';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests

@@ -11,7 +11,7 @@ import { get } from 'lodash';
 import {
   LoggingService,
   ILoggingService,
-} from '../../routes/common/logging/logging.interface';
+} from '../../logging/logging.interface';
 
 /**
  * A data source which tries to retrieve values from cache using

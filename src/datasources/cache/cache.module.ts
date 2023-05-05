@@ -6,7 +6,7 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 import {
   ILoggingService,
   LoggingService,
-} from '../../routes/common/logging/logging.interface';
+} from '../../logging/logging.interface';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 

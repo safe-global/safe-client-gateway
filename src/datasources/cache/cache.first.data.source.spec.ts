@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { ILoggingService } from '../../routes/common/logging/logging.interface';
+import { ILoggingService } from '../../logging/logging.interface';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
 import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { CacheFirstDataSource } from './cache.first.data.source';

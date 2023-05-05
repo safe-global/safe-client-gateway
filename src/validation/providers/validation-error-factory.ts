@@ -4,7 +4,7 @@ import { HttpExceptionPayload } from '../../datasources/errors/interfaces/http-e
 import {
   ILoggingService,
   LoggingService,
-} from '../../routes/common/logging/logging.interface';
+} from '../../logging/logging.interface';
 
 /**
  * Creates an {@link HttpException} from an array of validation errors.

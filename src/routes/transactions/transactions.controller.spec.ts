@@ -42,7 +42,7 @@ import {
   CALL_OPERATION,
   DELEGATE_OPERATION,
 } from '../../domain/safe/entities/operation.entity';
-import { TestLoggingModule } from '../common/logging/__tests__/test.logging.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;

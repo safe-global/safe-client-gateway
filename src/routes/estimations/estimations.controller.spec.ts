@@ -27,7 +27,7 @@ import {
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { ValidationModule } from '../../validation/validation.module';
-import { TestLoggingModule } from '../common/logging/__tests__/test.logging.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { EstimationsModule } from './estimations.module';
 
 describe('Estimations Controller (Unit)', () => {

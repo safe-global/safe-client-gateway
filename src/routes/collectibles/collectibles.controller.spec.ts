@@ -30,7 +30,7 @@ import {
 import { PaginationData } from '../common/pagination/pagination.data';
 import { TestAppProvider } from '../../app.provider';
 import { ValidationModule } from '../../validation/validation.module';
-import { TestLoggingModule } from '../common/logging/__tests__/test.logging.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;

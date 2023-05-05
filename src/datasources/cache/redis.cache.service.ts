@@ -3,7 +3,7 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 import {
   ILoggingService,
   LoggingService,
-} from '../../routes/common/logging/logging.interface';
+} from '../../logging/logging.interface';
 import { RedisClientType } from './cache.module';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
