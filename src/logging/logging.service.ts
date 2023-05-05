@@ -5,7 +5,7 @@ import { Inject } from '@nestjs/common/decorators';
 import winston from 'winston';
 
 /**
- * Implementation of LoggerService which prepends the current time and a unique request ID to every logged message.
+ * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
  *
  * The requestID is generated and provided using the `nestjs-cls` `ClsService` which uses the async local storage to store a uuid for each processed request through a middleware.
  */

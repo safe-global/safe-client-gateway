@@ -3,6 +3,10 @@ import { DataDecodedRepository } from '../../../domain/data-decoder/data-decoded
 import { IDataDecodedRepository } from '../../../domain/data-decoder/data-decoded.repository.interface';
 import { MultisigTransaction } from '../../../domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '../../../domain/safe/entities/safe.entity';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../../logging/logging.interface';
 import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entity';
 import { TransactionPreview } from '../entities/transaction-preview.entity';
 import { TransactionDataMapper } from './common/transaction-data.mapper';
@@ -15,6 +19,8 @@ export class TransactionPreviewMapper {
     private readonly transactionDataMapper: TransactionDataMapper,
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: DataDecodedRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   async mapTransactionPreview(
@@ -32,6 +38,9 @@ export class TransactionPreviewMapper {
         );
       }
     } catch (error) {
+      this.loggingService.info(
+        `Error trying to decode the input data: ${error.message}`,
+      );
       dataDecoded = previewTransactionDto.data;
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(

@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { safeAppBuilder } from '../../../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
 import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { ILoggingService } from '../../../../logging/logging.interface';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
@@ -10,11 +11,18 @@ describe('SafeAppInfo mapper (Unit)', () => {
     getSafeApps: jest.fn(),
   } as unknown as SafeAppsRepository);
 
+  const mockLoggingService = {
+    info: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  } as unknown as ILoggingService;
+
   let mapper: SafeAppInfoMapper;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mapper = new SafeAppInfoMapper(safeAppsRepositoryMock);
+    mapper = new SafeAppInfoMapper(safeAppsRepositoryMock, mockLoggingService);
   });
 
   it('should get a null SafeAppInfo for a transaction with no origin', async () => {

@@ -2,6 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import {
+  LoggingService,
+  ILoggingService,
+} from '../../../../logging/logging.interface';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 
 @Injectable()
@@ -12,6 +16,8 @@ export class SafeAppInfoMapper {
   constructor(
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: SafeAppsRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   async mapSafeAppInfo(
@@ -27,6 +33,9 @@ export class SafeAppInfoMapper {
       originUrl,
     );
     if (!safeApp) {
+      this.loggingService.info(
+        `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
+      );
       return null;
     }
 
