@@ -5,7 +5,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700",
+        "id": "i276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a27000,0,0",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667395620000,
@@ -34,7 +34,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700",
+        "id": "e276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700181",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667395620000,
@@ -68,7 +68,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700",
+        "id": "e276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700182",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667395620000,
@@ -102,7 +102,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700",
+        "id": "e276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700183",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667395620000,
@@ -136,7 +136,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700",
+        "id": "e276abf83da6aabc61b429a1663b2bd647d5c9ff5594aa1d55ba49c70e99a2700184",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667395620000,
@@ -170,7 +170,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "ethereum_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0xb16cbf2479d8bd20485bbb8683480d38be244cb9fbc047bd68b1fd4752630409",
+        "id": "eb16cbf2479d8bd20485bbb8683480d38be244cb9fbc047bd68b1fd475263040986",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1667373708000,
