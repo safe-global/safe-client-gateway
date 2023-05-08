@@ -4,6 +4,7 @@ export interface Transfer {
   from: string;
   to: string;
   transactionHash: string;
+  transferId: string;
 }
 
 export interface ERC20Transfer extends Transfer {

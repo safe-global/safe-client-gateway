@@ -10,7 +10,8 @@ export function erc721TransferBuilder(): IBuilder<ERC721Transfer> {
     .with('to', faker.finance.ethereumAddress())
     .with('transactionHash', faker.datatype.hexadecimal())
     .with('tokenAddress', faker.finance.ethereumAddress())
-    .with('tokenId', faker.datatype.string());
+    .with('tokenId', faker.datatype.string())
+    .with('transferId', faker.datatype.string());
 }
 
 export function toJson(erc721Transfer: ERC721Transfer): unknown {

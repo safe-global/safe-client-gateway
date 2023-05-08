@@ -20,7 +20,8 @@
         "decimals": null,
         "logoUri": "https://safe-transaction-assets.safe.global/tokens/logos/ENS.png"
       },
-      "from": "0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5"
+      "from": "0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5",
+      "transferId": "e1015fc6905859c6957ab918abc19840f035e3da0c9fc9fa9df075d5c72dcfd31167"
     }
   ]
 }

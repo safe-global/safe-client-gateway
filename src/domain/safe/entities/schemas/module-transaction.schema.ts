@@ -23,6 +23,7 @@ export const moduleTransactionSchema: Schema = {
     isSuccessful: { type: 'boolean' },
     transactionHash: { type: 'string' },
     module: { type: 'string' },
+    moduleTransactionId: { type: 'string' },
   },
   required: [
     'safe',
@@ -34,5 +35,6 @@ export const moduleTransactionSchema: Schema = {
     'isSuccessful',
     'transactionHash',
     'module',
+    'moduleTransactionId',
   ],
 };
