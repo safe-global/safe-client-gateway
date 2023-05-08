@@ -11,6 +11,7 @@ export const nativeTokenTransferSchema: Schema = {
     to: { type: 'string' },
     from: { type: 'string' },
     value: { type: 'string' },
+    transferId: { type: 'string' },
   },
   required: [
     'type',
@@ -20,5 +21,6 @@ export const nativeTokenTransferSchema: Schema = {
     'to',
     'from',
     'value',
+    'transferId',
   ],
 };

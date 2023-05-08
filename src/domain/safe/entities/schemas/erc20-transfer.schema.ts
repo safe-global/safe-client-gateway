@@ -15,6 +15,7 @@ export const erc20TransferSchema: Schema = {
     from: { type: 'string' },
     value: { type: 'string' },
     tokenAddress: { type: 'string', nullable: true, default: null },
+    transferId: { type: 'string' },
   },
   required: [
     'type',
@@ -24,5 +25,6 @@ export const erc20TransferSchema: Schema = {
     'to',
     'from',
     'value',
+    'transferId',
   ],
 };

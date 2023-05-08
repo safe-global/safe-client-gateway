@@ -20,7 +20,8 @@
         "decimals": 18,
         "logoUri": "https://safe-transaction-assets.safe.global/tokens/logos/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60.png"
       },
-      "from": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C"
+      "from": "0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C",
+      "transferId": "e1015fc6905859c6957ab918abc19840f035e3da0c9fc9fa9df075d5c72dcfd31167"
     }
   ]
 }

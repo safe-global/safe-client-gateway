@@ -9,6 +9,7 @@ export interface ModuleTransaction {
   executionDate: Date;
   isSuccessful: boolean;
   module: string;
+  moduleTransactionId: string;
   operation: Operation;
   safe: string;
   to: string;
