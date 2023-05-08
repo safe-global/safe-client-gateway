@@ -32,7 +32,7 @@ export class ValidationErrorFactory {
       message,
     }));
 
-    this.loggingService.info({ ...errPayload, detail });
+    this.loggingService.error({ ...errPayload, detail });
     return new HttpException(errPayload, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
