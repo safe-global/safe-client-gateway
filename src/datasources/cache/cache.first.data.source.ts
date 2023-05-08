@@ -51,9 +51,11 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
-      this.loggingService.debug(
-        `[Cache] Cache hit: [${cacheDir.key}, ${cacheDir.field}]`,
-      );
+      this.loggingService.debug({
+        type: 'cache_hit',
+        key: cacheDir.key,
+        field: cacheDir.field,
+      });
       const cachedData = JSON.parse(cached);
       if (get(cachedData, 'status') === 404) {
         throw new NetworkResponseError(cachedData.status, cachedData.data);
@@ -61,9 +63,11 @@ export class CacheFirstDataSource {
       return cachedData;
     }
     try {
-      this.loggingService.debug(
-        `[Cache] Cache miss: [${cacheDir.key}, ${cacheDir.field}]`,
-      );
+      this.loggingService.debug({
+        type: 'cache_miss',
+        key: cacheDir.key,
+        field: cacheDir.field,
+      });
       const { data } = await this.networkService.get(url, params);
       const rawJson = JSON.stringify(data);
       await this.cacheService.set(cacheDir, rawJson, expireTimeSeconds);

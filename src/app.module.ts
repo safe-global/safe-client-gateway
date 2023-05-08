@@ -81,6 +81,7 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       // The ClsMiddleware needs to be applied before the LoggerMiddleware
+      // in order to generate the request ids that will be logged afterward
       .apply(ClsMiddleware, NotFoundLoggerMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
