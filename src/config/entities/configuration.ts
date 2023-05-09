@@ -12,6 +12,7 @@ export default () => ({
     baseUri:
       process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
     apiKey: process.env.EXCHANGE_API_KEY,
+    cacheTtlSeconds: process.env.EXCHANGE_API_CACHE_TTL_SECONDS,
   },
   safeConfig: {
     baseUri:

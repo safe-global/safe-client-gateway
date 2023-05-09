@@ -10,6 +10,8 @@ export class CacheRouter {
   private static readonly CONTRACT_KEY = 'contract';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
+  private static readonly EXCHANGE_FIAT_CODES_KEY = 'exchange_fiat_codes';
+  private static readonly EXCHANGE_RATES_KEY = 'exchange_rates';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
@@ -278,5 +280,13 @@ export class CacheRouter {
       `${chainId}_${CacheRouter.SAFE_APPS_KEY}`,
       `${clientUrl}_${url}`,
     );
+  }
+
+  static getExchangeFiatCodesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.EXCHANGE_FIAT_CODES_KEY, '');
+  }
+
+  static getExchangeRatesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.EXCHANGE_RATES_KEY, '');
   }
 }
