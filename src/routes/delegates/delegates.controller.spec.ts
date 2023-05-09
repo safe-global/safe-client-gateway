@@ -21,6 +21,7 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { DelegatesModule } from './delegates.module';
 import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';
@@ -52,6 +53,7 @@ describe('Delegates controller', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

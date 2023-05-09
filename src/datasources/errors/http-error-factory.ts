@@ -1,10 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 import {
   NetworkError,
   NetworkResponseError,
 } from '../network/entities/network.error.entity';
-import { DataSourceError } from '../../domain/errors/data-source.error';
-import * as winston from 'winston';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}
@@ -17,22 +16,16 @@ import * as winston from 'winston';
  */
 @Injectable()
 export class HttpErrorFactory {
-  private mapError(error: NetworkError | Error): DataSourceError {
-    if (isNetworkResponseError(error)) {
-      const errorMessage: string = error.data?.message ?? 'An error occurred';
-      return new DataSourceError(errorMessage, error.status);
+  from(source: NetworkError | Error): DataSourceError {
+    if (isNetworkResponseError(source)) {
+      const errorMessage: string = source.data?.message ?? 'An error occurred';
+      return new DataSourceError(errorMessage, source.status);
     } else {
       return new DataSourceError(
         'Service unavailable',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
-  }
-
-  from(source: NetworkError | Error): DataSourceError {
-    const error = this.mapError(source);
-    winston.error(error);
-    return error;
   }
 }
 

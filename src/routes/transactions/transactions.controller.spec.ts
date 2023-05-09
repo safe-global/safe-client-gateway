@@ -42,6 +42,7 @@ import {
   CALL_OPERATION,
   DELEGATE_OPERATION,
 } from '../../domain/safe/entities/operation.entity';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 
 describe('Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -66,6 +67,7 @@ describe('Transactions Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

@@ -1,10 +1,18 @@
 import { faker } from '@faker-js/faker';
+import { ILoggingService } from '../../logging/logging.interface';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
 import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { CacheFirstDataSource } from './cache.first.data.source';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
 import { FakeCacheService } from './__tests__/fake.cache.service';
+
+const mockLoggingService = {
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+} as unknown as ILoggingService;
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
@@ -16,6 +24,7 @@ describe('CacheFirstDataSource', () => {
     cacheFirstDataSource = new CacheFirstDataSource(
       fakeCacheService,
       mockNetworkService,
+      mockLoggingService,
     );
   });
 
@@ -111,6 +120,7 @@ describe('CacheFirstDataSource', () => {
     cacheFirstDataSource = new CacheFirstDataSource(
       mockCache,
       mockNetworkService,
+      mockLoggingService,
     );
 
     const targetUrl = faker.internet.url();

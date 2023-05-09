@@ -25,6 +25,7 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
@@ -68,6 +69,7 @@ describe('Chains Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

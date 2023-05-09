@@ -39,6 +39,7 @@ import {
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
 import { TestAppProvider } from '../../app.provider';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
@@ -66,6 +67,7 @@ describe('Safes Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

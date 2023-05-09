@@ -3,19 +3,25 @@ import { CacheService } from './cache.service.interface';
 import { RedisCacheService } from './redis.cache.service';
 import { createClient } from 'redis';
 import { IConfigurationService } from '../../config/configuration.service.interface';
-import * as winston from 'winston';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../logging/logging.interface';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 
 async function redisClientFactory(
   configurationService: IConfigurationService,
+  loggingService: ILoggingService,
 ): Promise<RedisClientType> {
   const redisHost = configurationService.getOrThrow<string>('redis.host');
   const redisPort = configurationService.getOrThrow<string>('redis.port');
   const client: RedisClientType = createClient({
     url: `redis://${redisHost}:${redisPort}`,
   });
-  client.on('error', (err) => winston.error('Redis Client Error', err));
+  client.on('error', (err) =>
+    loggingService.error(`Redis client error: ${err}`),
+  );
   client.connect();
   return client;
 }
@@ -26,7 +32,7 @@ async function redisClientFactory(
     {
       provide: 'RedisClient',
       useFactory: redisClientFactory,
-      inject: [IConfigurationService],
+      inject: [IConfigurationService, LoggingService],
     },
     { provide: CacheService, useClass: RedisCacheService },
   ],

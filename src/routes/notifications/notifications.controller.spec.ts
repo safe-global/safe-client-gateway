@@ -20,6 +20,7 @@ import {
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { registerDeviceDtoBuilder } from './entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from './entities/__tests__/safe-registration.builder';
 import { NotificationsModule } from './notifications.module';
@@ -49,6 +50,7 @@ describe('Notifications Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

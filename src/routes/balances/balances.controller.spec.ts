@@ -20,6 +20,7 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { BalancesModule } from './balances.module';
 
 describe('Balances Controller (Unit)', () => {
@@ -46,6 +47,7 @@ describe('Balances Controller (Unit)', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],

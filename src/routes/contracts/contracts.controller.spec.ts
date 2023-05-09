@@ -19,6 +19,7 @@ import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../domain/contracts/entities/__tests__/contract.builder';
 import { ValidationModule } from '../../validation/validation.module';
+import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ContractsModule } from './contracts.module';
 
 describe('Contracts controller', () => {
@@ -47,6 +48,7 @@ describe('Contracts controller', () => {
         DomainModule,
         TestCacheModule,
         TestConfigurationModule,
+        TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
