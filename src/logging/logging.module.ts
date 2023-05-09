@@ -3,7 +3,6 @@ import { LoggingService } from './logging.interface';
 import { RequestScopedLoggingService } from './logging.service';
 import * as winston from 'winston';
 import * as Transport from 'winston-transport';
-import { Logger } from './logger.symbol';
 
 /**
  * Provides a new instance of a Winston logger using the provided {@link transports}
@@ -38,7 +37,7 @@ function winstonTransportsFactory(): Transport[] | Transport {
     { provide: LoggingService, useClass: RequestScopedLoggingService },
     { provide: LoggerTransports, useFactory: winstonTransportsFactory },
     {
-      provide: Logger,
+      provide: 'Logger',
       useFactory: winstonFactory,
       inject: [LoggerTransports],
     },

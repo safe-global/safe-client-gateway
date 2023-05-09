@@ -3,7 +3,6 @@ import { ClsService } from 'nestjs-cls';
 import { ILoggingService } from './logging.interface';
 import { Inject } from '@nestjs/common/decorators';
 import winston from 'winston';
-import { Logger } from './logger.symbol';
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
@@ -13,7 +12,7 @@ import { Logger } from './logger.symbol';
 @Injectable()
 export class RequestScopedLoggingService implements ILoggingService {
   constructor(
-    @Inject(Logger) private readonly logger: winston.Logger,
+    @Inject('Logger') private readonly logger: winston.Logger,
     private readonly cls: ClsService,
   ) {}
 
