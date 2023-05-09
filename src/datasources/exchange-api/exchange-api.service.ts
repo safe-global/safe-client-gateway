@@ -13,7 +13,7 @@ export class ExchangeApi implements IExchangeApi {
   private readonly apiKey: string;
   private readonly cacheTtlSeconds: number;
 
-  static readonly DEFAULT_CACHE_TTL_SECONDS = 60 * 60 * 12;
+  private static readonly DEFAULT_CACHE_TTL_SECONDS = 60 * 60 * 12;
 
   constructor(
     @Inject(IConfigurationService)

@@ -6,11 +6,11 @@ import { CacheFirstDataSourceModule } from '../cache/cache.first.data.source.mod
 
 @Global()
 @Module({
-  exports: [IExchangeApi],
   imports: [CacheFirstDataSourceModule],
   providers: [
     HttpErrorFactory,
     { provide: IExchangeApi, useClass: ExchangeApi },
   ],
+  exports: [IExchangeApi],
 })
 export class ExchangeApiModule {}
