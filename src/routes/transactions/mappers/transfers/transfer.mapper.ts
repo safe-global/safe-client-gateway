@@ -15,8 +15,7 @@ export class IncomingTransferMapper {
     safe: Safe,
   ): Promise<Transaction> {
     return new Transaction(
-      // TODO: include ID from source (https://github.com/safe-global/safe-transaction-service/issues/1230)
-      `ethereum_${safe.address}_${transfer.transactionHash}`,
+      transfer.transferId,
       transfer.executionDate.getTime(),
       TransactionStatus.Success,
       await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),

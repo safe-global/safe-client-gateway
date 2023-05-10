@@ -30,7 +30,7 @@ export class ModuleTransactionMapper {
       await this.addressInfoHelper.getOrDefault(chainId, transaction.module),
     );
     return new Transaction(
-      `module_${transaction.safe}_${transaction.transactionHash}`,
+      transaction.moduleTransactionId,
       transaction.executionDate.getTime(),
       txStatus,
       txInfo,
