@@ -40,13 +40,13 @@ export class CacheFirstDataSource {
    *
    * @param cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
    * @param url - the HTTP endpoint to retrieve the JSON payload
-   * @param params - the parameters to be used for the HTTP request
+   * @param networkRequest - the HTTP request to be used if there is a cache miss
    * @param expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
    */
   async get<T>(
     cacheDir: CacheDir,
     url: string,
-    params?: NetworkRequest,
+    networkRequest?: NetworkRequest,
     expireTimeSeconds?: number,
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
@@ -68,7 +68,7 @@ export class CacheFirstDataSource {
         key: cacheDir.key,
         field: cacheDir.field,
       });
-      const { data } = await this.networkService.get(url, params);
+      const { data } = await this.networkService.get(url, networkRequest);
       const rawJson = JSON.stringify(data);
       await this.cacheService.set(cacheDir, rawJson, expireTimeSeconds);
       return data;

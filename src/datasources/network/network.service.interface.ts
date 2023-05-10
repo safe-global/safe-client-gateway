@@ -6,13 +6,13 @@ export const NetworkService = Symbol('INetworkService');
 export interface INetworkService {
   get<T = any, R = NetworkResponse<T>>(
     url: string,
-    config?: NetworkRequest,
+    networkRequest?: NetworkRequest,
   ): Promise<R>;
 
   post<T = any, R = NetworkResponse<T>>(
     url: string,
     data: object,
-    config?: NetworkRequest,
+    networkRequest?: NetworkRequest,
   ): Promise<R>;
 
   delete<T = any, R = NetworkResponse<T>>(
