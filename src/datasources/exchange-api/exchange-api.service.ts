@@ -51,7 +51,7 @@ export class ExchangeApi implements IExchangeApi {
         CacheRouter.getExchangeRatesCacheDir(),
         `${this.baseUrl}/latest`,
         {
-          params: { access_key: this.apiKey },
+          headers: { apikey: this.apiKey },
         },
         this.cacheTtlSeconds,
       );
