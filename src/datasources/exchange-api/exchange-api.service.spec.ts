@@ -60,7 +60,7 @@ describe('ExchangeApi', () => {
     expect(mockCacheFirstDataSource.get).toBeCalledWith(
       new CacheDir('exchange_fiat_codes', ''),
       `${exchangeBaseUri}/symbols`,
-      { params: { access_key: exchangeApiKey } },
+      { headers: { apikey: exchangeApiKey } },
       60 * 60 * 12, // 12h in seconds
     );
   });
@@ -85,7 +85,7 @@ describe('ExchangeApi', () => {
     expect(mockCacheFirstDataSource.get).toBeCalledWith(
       new CacheDir('exchange_fiat_codes', ''),
       `${exchangeBaseUri}/symbols`,
-      { params: { access_key: exchangeApiKey } },
+      { headers: { apikey: exchangeApiKey } },
       ttl, // 60 seconds
     );
   });

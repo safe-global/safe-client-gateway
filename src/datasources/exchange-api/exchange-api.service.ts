@@ -36,7 +36,7 @@ export class ExchangeApi implements IExchangeApi {
         CacheRouter.getExchangeFiatCodesCacheDir(),
         `${this.baseUrl}/symbols`,
         {
-          params: { access_key: this.apiKey },
+          headers: { apikey: this.apiKey },
         },
         this.cacheTtlSeconds,
       );
