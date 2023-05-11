@@ -10,7 +10,8 @@ export default () => ({
   },
   exchange: {
     baseUri:
-      process.env.EXCHANGE_API_BASE_URI || 'http://api.exchangeratesapi.io/v1',
+      process.env.EXCHANGE_API_BASE_URI ||
+      'https://api.apilayer.com/exchangerates_data',
     apiKey: process.env.EXCHANGE_API_KEY,
     cacheTtlSeconds: process.env.EXCHANGE_API_CACHE_TTL_SECONDS,
   },
