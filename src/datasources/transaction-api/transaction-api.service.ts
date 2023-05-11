@@ -391,7 +391,7 @@ export class TransactionApi implements ITransactionApi {
     safeTransactionHash: string,
   ): Promise<MultisigTransaction> {
     try {
-      const cacheDir = CacheRouter.getMultisigTransactionsCacheDir(
+      const cacheDir = CacheRouter.getMultisigTransactionCacheDir(
         this.chainId,
         safeTransactionHash,
       );
