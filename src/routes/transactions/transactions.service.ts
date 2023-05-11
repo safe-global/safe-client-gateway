@@ -22,8 +22,10 @@ import { ModuleTransactionMapper } from './mappers/module-transactions/module-tr
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
 import { TransactionPreviewMapper } from './mappers/transaction-preview.mapper';
+import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
 import { TransactionsHistoryMapper } from './mappers/transactions-history.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -287,6 +289,30 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async proposeTransaction(
+    chainId: string,
+    safeAddress: string,
+    proposeTransactionDto: ProposeTransactionDto,
+  ): Promise<Transaction> {
+    await this.safeRepository.proposeTransaction(
+      chainId,
+      safeAddress,
+      proposeTransactionDto,
+    );
+
+    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+    const domainTransaction = await this.safeRepository.getMultiSigTransaction(
+      chainId,
+      proposeTransactionDto.safeTxHash,
+    );
+
+    return this.multisigTransactionMapper.mapTransaction(
+      chainId,
+      domainTransaction,
+      safe,
+    );
   }
 
   /**

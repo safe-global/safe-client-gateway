@@ -26,7 +26,10 @@ import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionPreview } from './entities/transaction-preview.entity';
 import { PreviewTransactionDtoValidationPipe } from './pipes/preview-transaction.validation.pipe';
+import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
+import { ProposeTransactionDtoValidationPipe } from './pipes/propose-transaction.dto.validation.pipe';
 import { TransactionsService } from './transactions.service';
+import { Transaction } from './entities/transaction.entity';
 
 @ApiTags('transactions')
 @Controller({
@@ -179,6 +182,22 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       timezoneOffset,
+    );
+  }
+
+  @HttpCode(200)
+  @ApiOkResponse({ type: Transaction })
+  @Post('chains/:chainId/transactions/:safeAddress/propose')
+  async proposeTransaction(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body(ProposeTransactionDtoValidationPipe)
+    proposeTransactionDto: ProposeTransactionDto,
+  ): Promise<Transaction> {
+    return this.transactionsService.proposeTransaction(
+      chainId,
+      safeAddress,
+      proposeTransactionDto,
     );
   }
 }

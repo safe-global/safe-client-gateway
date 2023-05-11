@@ -18,6 +18,7 @@ import { Device } from '../notifications/entities/device.entity';
 import { GetEstimationDto } from '../estimations/entities/get-estimation.dto.entity';
 import { Estimation } from '../estimations/entities/estimation.entity';
 import { Message } from '../messages/entities/message.entity';
+import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -157,6 +158,11 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Message>>;
+
+  postMultisigTransaction(
+    address: string,
+    data: ProposeTransactionDto,
+  ): Promise<unknown>;
 
   postMessage(
     safeAddress: string,

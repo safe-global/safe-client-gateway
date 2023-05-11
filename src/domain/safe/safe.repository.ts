@@ -17,10 +17,17 @@ import { SafeListValidator } from './safe-list.validator';
 import { ModuleTransactionValidator } from './module-transaction.validator';
 import { CreationTransaction } from './entities/creation-transaction.entity';
 import { CreationTransactionValidator } from './creation-transaction.validator';
+import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
+import {
+  CacheService,
+  ICacheService,
+} from '../../datasources/cache/cache.service.interface';
+import { CacheRouter } from '../../datasources/cache/cache.router';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
   constructor(
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
@@ -322,5 +329,38 @@ export class SafeRepository implements ISafeRepository {
     return isEmpty(page.results)
       ? null
       : this.multisigTransactionValidator.validate(page.results[0]);
+  }
+
+  async proposeTransaction(
+    chainId: string,
+    safeAddress: string,
+    proposeTransactionDto: ProposeTransactionDto,
+  ): Promise<unknown> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+
+    const transaction = await transactionService.postMultisigTransaction(
+      safeAddress,
+      proposeTransactionDto,
+    );
+
+    await this.invalidateTransactions(chainId, safeAddress);
+    return transaction;
+  }
+
+  private async invalidateTransactions(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void> {
+    const cacheDirs = [
+      CacheRouter.getMultisigTransactionsCacheDir(chainId, safeAddress),
+      CacheRouter.getModuleTransactionsCacheDir(chainId, safeAddress),
+      CacheRouter.getTransfersCacheDir(chainId, safeAddress, false, false),
+      CacheRouter.getIncomingTransfersCacheDir(chainId, safeAddress),
+    ];
+
+    for (const cacheDir of cacheDirs) {
+      await this.cacheService.deleteByKey(cacheDir.key);
+    }
   }
 }
