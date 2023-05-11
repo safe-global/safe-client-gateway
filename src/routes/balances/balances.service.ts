@@ -79,7 +79,7 @@ export class BalancesService {
 
     return <Balance>{
       tokenInfo: <Token>{
-        tokenType: tokenType,
+        type: tokenType,
         address: txBalance.tokenAddress,
         decimals: txBalance.token?.decimals,
         symbol: txBalance.token?.symbol,

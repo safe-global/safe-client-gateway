@@ -13,5 +13,5 @@ export class Token {
   @ApiProperty()
   symbol: string;
   @ApiProperty({ enum: Object.values(TokenType) })
-  tokenType: TokenType;
+  type: TokenType;
 }

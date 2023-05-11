@@ -97,7 +97,7 @@ describe('Balances Controller (Unit)', () => {
           items: [
             {
               tokenInfo: {
-                tokenType: 'ERC20',
+                type: 'ERC20',
                 address: expectedBalance.tokenAddress,
                 decimals: expectedBalance.token?.decimals,
                 symbol: expectedBalance.token?.symbol,
