@@ -6,6 +6,7 @@ import { Transaction } from './entities/transaction.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 import { CreationTransaction } from './entities/creation-transaction.entity';
+import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -97,4 +98,10 @@ export interface ISafeRepository {
     chainId: string,
     safeAddress: string,
   ): Promise<MultisigTransaction | null>;
+
+  proposeTransaction(
+    chainId: string,
+    safeAddress: string,
+    proposeTransactionDto: ProposeTransactionDto,
+  ): Promise<unknown>;
 }

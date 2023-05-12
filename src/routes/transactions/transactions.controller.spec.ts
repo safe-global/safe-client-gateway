@@ -37,6 +37,7 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { ValidationModule } from '../../validation/validation.module';
 import { previewTransactionDtoBuilder } from './entities/__tests__/preview-transaction.dto.builder';
+import { proposeTransactionDtoBuilder } from './entities/__tests__/propose-transaction.dto.builder';
 import { TransactionsModule } from './transactions.module';
 import {
   CALL_OPERATION,
@@ -1368,6 +1369,80 @@ describe('Transactions Controller (Unit)', () => {
             ],
           });
         });
+    });
+  });
+
+  describe('Propose transactions', () => {
+    it('should throw a validation error', async () => {
+      const safeAddress = faker.random.numeric();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const { safeTxHash } = proposeTransactionDto;
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${safeAddress}/transactions/${safeTxHash}/propose`)
+        .send({ ...proposeTransactionDto, value: 1 })
+        .expect(400);
+    });
+
+    it('should propose a transaction', async () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const chainId = faker.random.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chain = chainBuilder().with('chainId', chainId).build();
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const safeApps = [safeAppBuilder().build()];
+      const contract = contractBuilder().build();
+      const transaction = multisigToJson(
+        multisigTransactionBuilder().build(),
+      ) as MultisigTransaction;
+      mockNetworkService.get.mockImplementation((url) => {
+        const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+        const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+        const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: chain });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({ data: transaction });
+          case getSafeUrl:
+            return Promise.resolve({ data: safe });
+          case getSafeAppsUrl:
+            return Promise.resolve({ data: safeApps });
+          case getContractUrl:
+            return Promise.resolve({ data: contract });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      mockNetworkService.post.mockImplementation((url) => {
+        const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        switch (url) {
+          case proposeTransactionUrl:
+            return Promise.resolve({ data: {} });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
+        .send(proposeTransactionDto)
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual(
+            expect.objectContaining({
+              id: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
+              timestamp: expect.any(Number),
+              txStatus: expect.any(String),
+              txInfo: expect.any(Object),
+              executionInfo: expect.objectContaining({
+                type: 'MULTISIG',
+                nonce: transaction.nonce,
+              }),
+              safeAppInfo: expect.any(Object),
+            }),
+          ),
+        );
     });
   });
 });

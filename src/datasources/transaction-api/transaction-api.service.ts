@@ -19,6 +19,7 @@ import { Safe } from '../../domain/safe/entities/safe.entity';
 import { Transaction } from '../../domain/safe/entities/transaction.entity';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { Token } from '../../domain/tokens/entities/token.entity';
+import { ProposeTransactionDto } from '../../domain/transactions/entities/propose-transaction.dto.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { ICacheService } from '../cache/cache.service.interface';
@@ -577,6 +578,32 @@ export class TransactionApi implements ITransactionApi {
           limit: limit,
           offset: offset,
         },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async postMultisigTransaction(
+    address: string,
+    proposeTransactionDto: ProposeTransactionDto,
+  ): Promise<unknown> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${address}/multisig-transactions/`;
+      return await this.networkService.post(url, {
+        to: proposeTransactionDto.to,
+        value: proposeTransactionDto.value,
+        data: proposeTransactionDto.data,
+        operation: proposeTransactionDto.operation,
+        baseGas: proposeTransactionDto.baseGas,
+        gasPrice: proposeTransactionDto.gasPrice,
+        gasToken: proposeTransactionDto.gasToken,
+        refundReceiver: proposeTransactionDto.refundReceiver,
+        nonce: proposeTransactionDto.nonce,
+        safeTxGas: proposeTransactionDto.safeTxGas,
+        contractTransactionHash: proposeTransactionDto.safeTxHash,
+        sender: proposeTransactionDto.sender,
+        signature: proposeTransactionDto.signature,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
