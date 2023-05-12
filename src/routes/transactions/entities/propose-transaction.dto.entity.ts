@@ -19,8 +19,8 @@ export class ProposeTransactionDto implements DomainProposeTransactionDto {
   baseGas: string;
   @ApiProperty()
   gasPrice: string;
-  @ApiPropertyOptional({ type: String, nullable: true })
-  gasToken: string | null;
+  @ApiProperty()
+  gasToken: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   refundReceiver: string | null;
   @ApiProperty()

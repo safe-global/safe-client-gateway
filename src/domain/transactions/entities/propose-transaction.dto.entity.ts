@@ -9,7 +9,7 @@ export class ProposeTransactionDto {
   safeTxGas: string;
   baseGas: string;
   gasPrice: string;
-  gasToken: string | null;
+  gasToken: string;
   refundReceiver: string | null;
   safeTxHash: string;
   sender: string;

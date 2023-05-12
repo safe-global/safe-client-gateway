@@ -357,6 +357,10 @@ export class SafeRepository implements ISafeRepository {
       CacheRouter.getModuleTransactionsCacheDir(chainId, safeAddress),
       CacheRouter.getTransfersCacheDir(chainId, safeAddress, false, false),
       CacheRouter.getIncomingTransfersCacheDir(chainId, safeAddress),
+      CacheRouter.getBalanceCacheDir(chainId, safeAddress),
+      CacheRouter.getSafeCacheDir(chainId, safeAddress),
+      CacheRouter.getCollectiblesCacheDir(chainId, safeAddress),
+      CacheRouter.getAllTransactionsCacheDir(chainId, safeAddress),
     ];
 
     for (const cacheDir of cacheDirs) {

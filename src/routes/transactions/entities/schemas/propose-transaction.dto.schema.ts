@@ -14,7 +14,7 @@ export const proposeTransactionDtoSchema: JSONSchemaType<ProposeTransactionDto> 
       safeTxGas: { type: 'string' },
       baseGas: { type: 'string' },
       gasPrice: { type: 'string' },
-      gasToken: { type: 'string', nullable: true },
+      gasToken: { type: 'string' },
       refundReceiver: { type: 'string', nullable: true },
       safeTxHash: { type: 'string' },
       sender: { type: 'string' },
