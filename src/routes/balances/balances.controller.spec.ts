@@ -63,8 +63,8 @@ describe('Balances Controller (Unit)', () => {
     await app.close();
   });
 
-  describe('GET /balances maps ERC20 token correctly', () => {
-    it(`Success`, async () => {
+  describe('GET /balances', () => {
+    it(`maps ERC20 token correctly`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
       const transactionApiBalancesResponse = [balanceBuilder().build()];
@@ -129,7 +129,7 @@ describe('Balances Controller (Unit)', () => {
       );
     });
 
-    it(`GET /balances maps native token correctly`, async () => {
+    it(`maps native token correctly`, async () => {
       const safeAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder().with('tokenAddress', null).build(),
