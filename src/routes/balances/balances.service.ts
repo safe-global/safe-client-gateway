@@ -8,6 +8,7 @@ import { Balance } from './entities/balance.entity';
 import { IBalancesRepository } from '../../domain/balances/balances.repository.interface';
 import { IExchangeRepository } from '../../domain/exchange/exchange.repository.interface';
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
+import { NULL_ADDRESS } from '../common/constants';
 
 @Injectable()
 export class BalancesService {
@@ -68,23 +69,30 @@ export class BalancesService {
   ): Balance {
     const fiatConversion = Number(txBalance.fiatConversion) * usdToFiatRate;
     const fiatBalance = Number(txBalance.fiatBalance) * usdToFiatRate;
+    const tokenAddress = txBalance.tokenAddress ?? NULL_ADDRESS;
     const tokenType =
-      txBalance.tokenAddress === undefined
-        ? TokenType.NativeToken
-        : TokenType.Erc20;
-    const logoUri =
+      tokenAddress === NULL_ADDRESS ? TokenType.NativeToken : TokenType.Erc20;
+
+    const tokenMetaData =
       tokenType === TokenType.NativeToken
-        ? nativeCurrency.logoUri
-        : txBalance.token?.logoUri;
+        ? {
+            decimals: nativeCurrency.decimals,
+            symbol: nativeCurrency.symbol,
+            name: nativeCurrency.name,
+            logoUri: nativeCurrency.logoUri,
+          }
+        : {
+            decimals: txBalance.token?.decimals,
+            symbol: txBalance.token?.symbol,
+            name: txBalance.token?.name,
+            logoUri: txBalance.token?.logoUri,
+          };
 
     return <Balance>{
       tokenInfo: <Token>{
         type: tokenType,
-        address: txBalance.tokenAddress,
-        decimals: txBalance.token?.decimals,
-        symbol: txBalance.token?.symbol,
-        name: txBalance.token?.name,
-        logoUri: logoUri,
+        address: tokenAddress,
+        ...tokenMetaData,
       },
       balance: txBalance.balance.toString(),
       fiatBalance: fiatBalance.toString(),

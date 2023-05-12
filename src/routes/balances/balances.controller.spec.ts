@@ -22,6 +22,8 @@ import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/e
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { BalancesModule } from './balances.module';
+import { NULL_ADDRESS } from '../common/constants';
+import { faker } from '@faker-js/faker';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -61,7 +63,7 @@ describe('Balances Controller (Unit)', () => {
     await app.close();
   });
 
-  describe('GET /balances', () => {
+  describe('Maps ERC20 token correctly', () => {
     it(`Success`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
@@ -125,6 +127,57 @@ describe('Balances Controller (Unit)', () => {
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
         'https://test.exchange/latest',
       );
+    });
+
+    it(`Maps native token correctly`, async () => {
+      const safeAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        balanceBuilder().with('tokenAddress', null).build(),
+      ];
+      const exchangeApiResponse = exchangeRatesBuilder()
+        .with('success', true)
+        .with('rates', { USD: 2.0 })
+        .build();
+      const chain = chainBuilder().build();
+      mockNetworkService.get.mockImplementation((url) => {
+        if (url == `https://test.safe.config/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain });
+        } else if (
+          url ==
+          `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
+        ) {
+          return Promise.resolve({
+            data: transactionApiBalancesResponse,
+          });
+        } else if (url == 'https://test.exchange/latest') {
+          return Promise.resolve({ data: exchangeApiResponse });
+        } else {
+          return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      const expectedBalance = transactionApiBalancesResponse[0];
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
+        .expect(200)
+        .expect({
+          fiatTotal: expectedBalance.fiatBalance,
+          items: [
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
+              },
+              balance: expectedBalance.balance.toString(),
+              fiatBalance: expectedBalance.fiatBalance,
+              fiatConversion: expectedBalance.fiatConversion,
+            },
+          ],
+        });
     });
 
     describe('Config API Error', () => {
