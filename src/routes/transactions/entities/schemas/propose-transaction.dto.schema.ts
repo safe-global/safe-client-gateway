@@ -29,6 +29,7 @@ export const proposeTransactionDtoSchema: JSONSchemaType<ProposeTransactionDto> 
       'safeTxGas',
       'baseGas',
       'gasPrice',
+      'gasToken',
       'safeTxHash',
       'sender',
     ],
