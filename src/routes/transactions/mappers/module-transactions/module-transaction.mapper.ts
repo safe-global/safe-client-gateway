@@ -6,6 +6,7 @@ import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import { ModuleExecutionInfo } from '../../entities/module-execution-info.entity';
+import { MODULE_TRANSACTION_PREFIX } from '../../constants';
 
 @Injectable()
 export class ModuleTransactionMapper {
@@ -30,7 +31,7 @@ export class ModuleTransactionMapper {
       await this.addressInfoHelper.getOrDefault(chainId, transaction.module),
     );
     return new Transaction(
-      transaction.moduleTransactionId,
+      `${MODULE_TRANSACTION_PREFIX}_${transaction.moduleTransactionId}`,
       transaction.executionDate.getTime(),
       txStatus,
       txInfo,
