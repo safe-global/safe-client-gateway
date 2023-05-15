@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
+import { TRANSFER_PREFIX } from '../../constants';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { TransferInfoMapper } from './transfer-info.mapper';
@@ -15,7 +16,7 @@ export class IncomingTransferMapper {
     safe: Safe,
   ): Promise<Transaction> {
     return new Transaction(
-      transfer.transferId,
+      `${TRANSFER_PREFIX}_${transfer.transferId}`,
       transfer.executionDate.getTime(),
       TransactionStatus.Success,
       await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
