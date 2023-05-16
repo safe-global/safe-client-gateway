@@ -51,10 +51,10 @@ export class SafesService {
         moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
     }
 
-    const fallbackHandlerInfo: AddressInfo | null =
-      await this.addressInfoHelper.get(chainId, safe.fallbackHandler);
+    const fallbackHandlerInfo: AddressInfo =
+      await this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler);
 
-    const guardInfo: AddressInfo | null = await this.addressInfoHelper.get(
+    const guardInfo: AddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       safe.guard,
     );
