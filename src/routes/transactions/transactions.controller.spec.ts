@@ -38,7 +38,7 @@ import { MultisigTransaction } from '../../domain/safe/entities/multisig-transac
 import { ValidationModule } from '../../validation/validation.module';
 import { previewTransactionDtoBuilder } from './entities/__tests__/preview-transaction.dto.builder';
 import { proposeTransactionDtoBuilder } from './entities/__tests__/propose-transaction.dto.builder';
-import { createConfirmationDtoBuilder } from './__tests__/entities/create-confirmation.dto.builder';
+import { addConfirmationDtoBuilder } from './__tests__/entities/add-confirmation.dto.builder';
 import { TransactionsModule } from './transactions.module';
 import {
   CALL_OPERATION,
@@ -1459,7 +1459,7 @@ describe('Transactions Controller (Unit)', () => {
     it('should create a confirmation and return the updated transaction', async () => {
       const chain = chainBuilder().build();
       const safeTxHash = faker.datatype.hexadecimal(32);
-      const createConfirmationDto = createConfirmationDtoBuilder().build();
+      const addConfirmationDto = addConfirmationDtoBuilder().build();
       const safeApps = [safeAppBuilder().build()];
       const contract = contractBuilder().build();
       const transaction = multisigToJson(
@@ -1501,7 +1501,7 @@ describe('Transactions Controller (Unit)', () => {
         .post(
           `/v1/chains/${chain.chainId}/transactions/${safeTxHash}/confirmations`,
         )
-        .send(createConfirmationDto)
+        .send(addConfirmationDto)
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual(

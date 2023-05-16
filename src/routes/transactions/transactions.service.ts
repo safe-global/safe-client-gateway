@@ -3,7 +3,7 @@ import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
-import { CreateConfirmationDto } from '../../domain/transactions/entities/create-confirmation.dto.entity';
+import { AddConfirmationDto } from '../../domain/transactions/entities/add-confirmation.dto.entity';
 import { Page } from '../common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -96,24 +96,25 @@ export class TransactionsService {
     };
   }
 
-  async createConfirmation(
+  async addConfirmation(
     chainId: string,
     safeTxHash: string,
-    createConfirmationDto: CreateConfirmationDto,
+    addConfirmationDto: AddConfirmationDto,
   ): Promise<Transaction> {
-    const domainTransaction = await this.safeRepository.createConfirmation(
+    await this.safeRepository.addConfirmation(
       chainId,
       safeTxHash,
-      createConfirmationDto,
+      addConfirmationDto,
     );
-    const safe = await this.safeRepository.getSafe(
+    const transaction = await this.safeRepository.getMultiSigTransaction(
       chainId,
-      domainTransaction.safe,
+      safeTxHash,
     );
+    const safe = await this.safeRepository.getSafe(chainId, transaction.safe);
 
     return this.multisigTransactionMapper.mapTransaction(
       chainId,
-      domainTransaction,
+      transaction,
       safe,
     );
   }

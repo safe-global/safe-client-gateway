@@ -20,7 +20,7 @@ import { Transaction } from '../../domain/safe/entities/transaction.entity';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { Token } from '../../domain/tokens/entities/token.entity';
 import { ProposeTransactionDto } from '../../domain/transactions/entities/propose-transaction.dto.entity';
-import { CreateConfirmationDto } from '../../domain/transactions/entities/create-confirmation.dto.entity';
+import { AddConfirmationDto } from '../../domain/transactions/entities/add-confirmation.dto.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { ICacheService } from '../cache/cache.service.interface';
@@ -312,12 +312,12 @@ export class TransactionApi implements ITransactionApi {
 
   async postConfirmation(
     safeTxHash: string,
-    createConfirmationDto: CreateConfirmationDto,
+    addConfirmationDto: AddConfirmationDto,
   ): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmation`;
       return await this.networkService.post(url, {
-        signature: createConfirmationDto.signedSafeTxHash,
+        signature: addConfirmationDto.signedSafeTxHash,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);

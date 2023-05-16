@@ -14,7 +14,7 @@ import { PaginationDataDecorator } from '../common/decorators/pagination.data.de
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
-import { CreateConfirmationDto } from './entities/create-confirmation.dto';
+import { AddConfirmationDto } from './entities/add-confirmation.dto';
 import { IncomingTransferPage } from './entities/incoming-transfer-page.entity';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransactionPage } from './entities/module-transaction-page.entity';
@@ -29,7 +29,7 @@ import { TransactionPreview } from './entities/transaction-preview.entity';
 import { PreviewTransactionDtoValidationPipe } from './pipes/preview-transaction.validation.pipe';
 import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
 import { ProposeTransactionDtoValidationPipe } from './pipes/propose-transaction.dto.validation.pipe';
-import { CreateConfirmationDtoValidationPipe } from './pipes/create-confirmation.validation.pipe';
+import { AddConfirmationDtoValidationPipe } from './pipes/add-confirmation.validation.pipe';
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
 
@@ -102,16 +102,16 @@ export class TransactionsController {
   @HttpCode(200)
   @ApiOkResponse({ type: Transaction })
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
-  async createConfirmation(
+  async addConfirmation(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
-    @Body(CreateConfirmationDtoValidationPipe)
-    createConfirmationDto: CreateConfirmationDto,
+    @Body(AddConfirmationDtoValidationPipe)
+    addConfirmationDto: AddConfirmationDto,
   ): Promise<Transaction> {
-    return this.transactionsService.createConfirmation(
+    return this.transactionsService.addConfirmation(
       chainId,
       safeTxHash,
-      createConfirmationDto,
+      addConfirmationDto,
     );
   }
 
