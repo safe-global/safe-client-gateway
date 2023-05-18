@@ -100,13 +100,12 @@ export class SafeRepository implements ISafeRepository {
     chainId: string,
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
-  ): Promise<MultisigTransaction> {
+  ): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
     await transactionService.postConfirmation(safeTxHash, addConfirmationDto);
     const transaction = await this.getMultiSigTransaction(chainId, safeTxHash);
     await this.invalidateTransactions(chainId, transaction.safe);
-    return transaction;
   }
 
   async getModuleTransactions(
