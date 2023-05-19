@@ -9,6 +9,7 @@ import {
   INestApplication,
 } from '@nestjs/common';
 import * as request from 'supertest';
+import { DataSourceError } from '../../../domain/errors/data-source.error';
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -22,6 +23,14 @@ class TestController {
   @Get('server-error')
   getServerError() {
     throw new HttpException('Some 500 error', HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @Get('server-data-source-error')
+  getServerDataSourceError() {
+    throw new DataSourceError(
+      'Some DataSource error',
+      HttpStatus.NOT_IMPLEMENTED,
+    );
   }
 
   @Get('server-error-non-http')
@@ -71,6 +80,31 @@ describe('RouteLoggerInterceptor tests', () => {
       response_time_ms: expect.any(Number),
       route: '/test/server-error',
       status_code: 500,
+    });
+    expect(mockLoggingService.info).not.toBeCalled();
+    expect(mockLoggingService.debug).not.toBeCalled();
+    expect(mockLoggingService.warn).not.toBeCalled();
+  });
+
+  it('500 Datasource error triggers error level', async () => {
+    await request(app.getHttpServer())
+      .get('/test/server-data-source-error')
+      // We expect 500 instead of the status code of the DataSourceError
+      // The reason is that this test webserver does not have logic to map
+      // DataSourceErrors to HTTP responses (it is not the goal of this test)
+      // The goal of the test is to test that we are logging correctly
+      // (see expects below)
+      .expect(500);
+
+    expect(mockLoggingService.error).toBeCalledTimes(1);
+    expect(mockLoggingService.error).toBeCalledWith({
+      client_ip: null,
+      detail: 'Some DataSource error',
+      method: 'GET',
+      path: '/test/server-data-source-error',
+      response_time_ms: expect.any(Number),
+      route: '/test/server-data-source-error',
+      status_code: 501,
     });
     expect(mockLoggingService.info).not.toBeCalled();
     expect(mockLoggingService.debug).not.toBeCalled();
