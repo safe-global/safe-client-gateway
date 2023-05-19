@@ -19,6 +19,7 @@ import { GetEstimationDto } from '../estimations/entities/get-estimation.dto.ent
 import { Estimation } from '../estimations/entities/estimation.entity';
 import { Message } from '../messages/entities/message.entity';
 import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
+import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
 
 export interface ITransactionApi {
   getBalances(
@@ -94,6 +95,11 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+
+  postConfirmation(
+    safeTxHash: string,
+    addConfirmationDto: AddConfirmationDto,
+  ): Promise<unknown>;
 
   getModuleTransactions(
     safeAddress: string,

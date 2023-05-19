@@ -3,6 +3,7 @@ import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { AddConfirmationDto } from '../../domain/transactions/entities/add-confirmation.dto.entity';
 import { Page } from '../common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -18,6 +19,7 @@ import { PreviewTransactionDto } from './entities/preview-transaction.dto.entity
 import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionPreview } from './entities/transaction-preview.entity';
+import { Transaction } from './entities/transaction.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
@@ -25,7 +27,6 @@ import { TransactionPreviewMapper } from './mappers/transaction-preview.mapper';
 import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
 import { TransactionsHistoryMapper } from './mappers/transactions-history.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
-import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -93,6 +94,29 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async addConfirmation(
+    chainId: string,
+    safeTxHash: string,
+    addConfirmationDto: AddConfirmationDto,
+  ): Promise<Transaction> {
+    await this.safeRepository.addConfirmation(
+      chainId,
+      safeTxHash,
+      addConfirmationDto,
+    );
+    const transaction = await this.safeRepository.getMultiSigTransaction(
+      chainId,
+      safeTxHash,
+    );
+    const safe = await this.safeRepository.getSafe(chainId, transaction.safe);
+
+    return this.multisigTransactionMapper.mapTransaction(
+      chainId,
+      transaction,
+      safe,
+    );
   }
 
   async getModuleTransactions(

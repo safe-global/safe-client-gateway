@@ -7,6 +7,7 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { SafeList } from './entities/safe-list.entity';
 import { CreationTransaction } from './entities/creation-transaction.entity';
 import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
+import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -31,6 +32,12 @@ export interface ISafeRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<Transfer>>;
+
+  addConfirmation(
+    chainId: string,
+    safeTxHash: string,
+    addConfirmationDto: AddConfirmationDto,
+  ): Promise<unknown>;
 
   getModuleTransactions(
     chainId: string,

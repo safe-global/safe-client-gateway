@@ -18,6 +18,7 @@ import { ModuleTransactionValidator } from './module-transaction.validator';
 import { CreationTransaction } from './entities/creation-transaction.entity';
 import { CreationTransactionValidator } from './creation-transaction.validator';
 import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
+import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
 import {
   CacheService,
   ICacheService,
@@ -93,6 +94,18 @@ export class SafeRepository implements ISafeRepository {
     page.results.map((transfer) => this.transferValidator.validate(transfer));
 
     return page;
+  }
+
+  async addConfirmation(
+    chainId: string,
+    safeTxHash: string,
+    addConfirmationDto: AddConfirmationDto,
+  ): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    await transactionService.postConfirmation(safeTxHash, addConfirmationDto);
+    const transaction = await this.getMultiSigTransaction(chainId, safeTxHash);
+    await this.invalidateTransactions(chainId, transaction.safe);
   }
 
   async getModuleTransactions(

@@ -14,6 +14,7 @@ import { PaginationDataDecorator } from '../common/decorators/pagination.data.de
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
 import { PaginationData } from '../common/pagination/pagination.data';
+import { AddConfirmationDto } from './entities/add-confirmation.dto';
 import { IncomingTransferPage } from './entities/incoming-transfer-page.entity';
 import { IncomingTransfer } from './entities/incoming-transfer.entity';
 import { ModuleTransactionPage } from './entities/module-transaction-page.entity';
@@ -28,6 +29,7 @@ import { TransactionPreview } from './entities/transaction-preview.entity';
 import { PreviewTransactionDtoValidationPipe } from './pipes/preview-transaction.validation.pipe';
 import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
 import { ProposeTransactionDtoValidationPipe } from './pipes/propose-transaction.dto.validation.pipe';
+import { AddConfirmationDtoValidationPipe } from './pipes/add-confirmation.validation.pipe';
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
 
@@ -94,6 +96,22 @@ export class TransactionsController {
       to,
       module,
       paginationData,
+    );
+  }
+
+  @HttpCode(200)
+  @ApiOkResponse({ type: Transaction })
+  @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
+  async addConfirmation(
+    @Param('chainId') chainId: string,
+    @Param('safeTxHash') safeTxHash: string,
+    @Body(AddConfirmationDtoValidationPipe)
+    addConfirmationDto: AddConfirmationDto,
+  ): Promise<Transaction> {
+    return this.transactionsService.addConfirmation(
+      chainId,
+      safeTxHash,
+      addConfirmationDto,
     );
   }
 
