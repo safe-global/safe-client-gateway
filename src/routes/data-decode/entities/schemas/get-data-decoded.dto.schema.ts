@@ -6,7 +6,7 @@ export const getDataDecodedDtoSchema: JSONSchemaType<GetDataDecodedDto> = {
   type: 'object',
   properties: {
     data: { type: 'string' },
-    to: { type: 'string' },
+    to: { type: 'string', nullable: true },
   },
-  required: ['data', 'to'],
+  required: ['data'],
 };

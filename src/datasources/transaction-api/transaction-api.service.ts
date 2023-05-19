@@ -65,7 +65,7 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.deleteByKey(cacheKey);
   }
 
-  async getDataDecoded(data: string, to: string): Promise<DataDecoded> {
+  async getDataDecoded(data: string, to?: string): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
       const { data: dataDecoded } = await this.networkService.post(url, {

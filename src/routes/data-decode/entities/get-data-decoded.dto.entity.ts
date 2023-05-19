@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GetDataDecodedDto {
   @ApiProperty({ description: 'Hexadecimal value' })
   data: string;
-  @ApiProperty({ description: 'Hexadecimal value' })
-  to: string;
+  @ApiPropertyOptional({ description: 'The target Ethereum address' })
+  to?: string;
 
   constructor(data: string, to: string) {
     this.data = data;
