@@ -13,6 +13,7 @@ import {
 import { Inject } from '@nestjs/common/decorators';
 import { Observable, tap } from 'rxjs';
 import { formatRouteLogMessage } from '../../../logging/utils';
+import { DataSourceError } from '../../../domain/errors/data-source.error';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests
@@ -63,10 +64,14 @@ export class RouteLoggerInterceptor implements NestInterceptor {
    * @private
    */
   private onError(request: any, error: Error, startTimeMs: number) {
-    const statusCode =
-      error instanceof HttpException
-        ? error.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let statusCode;
+    if (error instanceof HttpException) {
+      statusCode = error.getStatus();
+    } else if (error instanceof DataSourceError) {
+      statusCode = error.code ?? HttpStatus.INTERNAL_SERVER_ERROR;
+    } else {
+      statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+    }
 
     const message = formatRouteLogMessage(
       statusCode,
