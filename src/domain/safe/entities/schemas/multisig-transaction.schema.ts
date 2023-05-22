@@ -43,12 +43,7 @@ export const multisigTransactionSchema: Schema = {
       isDate: true,
       default: null,
     },
-    submissionDate: {
-      type: 'string',
-      nullable: true,
-      isDate: true,
-      default: null,
-    },
+    submissionDate: { type: 'string', isDate: true },
     modified: {
       type: 'string',
       nullable: true,

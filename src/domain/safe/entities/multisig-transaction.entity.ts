@@ -14,7 +14,7 @@ export type MultisigTransaction = {
   blockNumber: number | null;
   confirmations: Confirmation[] | null;
   confirmationsRequired: number;
-  data: string | null; // TODO will be added under https://github.com/5afe/safe-client-gateway-nest/pull/132
+  data: string | null;
   dataDecoded: DataDecoded | null;
   ethGasPrice: string | null;
   executionDate: Date | null;
@@ -34,7 +34,7 @@ export type MultisigTransaction = {
   safeTxGas: number | null;
   safeTxHash: string;
   signatures: string | null;
-  submissionDate: Date | null;
+  submissionDate: Date;
   to: string;
   transactionHash: string | null;
   value: string;
