@@ -37,5 +37,6 @@ export type MultisigTransaction = {
   submissionDate: Date | null;
   to: string;
   transactionHash: string | null;
+  trusted: boolean;
   value: string;
 };

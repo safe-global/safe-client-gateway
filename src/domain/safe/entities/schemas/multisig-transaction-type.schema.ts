@@ -57,6 +57,7 @@ export const multisigTransactionTypeSchema: Schema = {
       default: null,
     },
     signatures: { type: 'string', nullable: true, default: null },
+    trusted: { type: 'boolean' },
   },
   required: [
     'txType',
@@ -66,5 +67,6 @@ export const multisigTransactionTypeSchema: Schema = {
     'nonce',
     'safeTxHash',
     'isExecuted',
+    'trusted',
   ],
 };
