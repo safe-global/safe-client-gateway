@@ -8,22 +8,31 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from './entities/network.error.entity';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../logging/logging.interface';
 
 /**
  * A {@link INetworkService} which uses Axios as the main HTTP client
  */
 @Injectable()
 export class AxiosNetworkService implements INetworkService {
-  constructor(@Inject('AxiosClient') private readonly client: Axios) {}
+  constructor(
+    @Inject('AxiosClient') private readonly client: Axios,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {}
 
   async get<T = any, R = NetworkResponse<T>>(
     url: string,
     config?: NetworkRequest,
   ): Promise<R> {
+    const startTimeMs: number = performance.now();
     try {
       return await this.client.get(url, config);
     } catch (error) {
-      this.handleError(error);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
@@ -32,10 +41,11 @@ export class AxiosNetworkService implements INetworkService {
     data: object,
     config?: NetworkRequest,
   ): Promise<R> {
+    const startTimeMs: number = performance.now();
     try {
       return await this.client.post(url, data, config);
     } catch (error) {
-      this.handleError(error);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
@@ -43,15 +53,17 @@ export class AxiosNetworkService implements INetworkService {
     url: string,
     data?: object,
   ): Promise<R> {
+    const startTimeMs: number = performance.now();
     try {
       return await this.client.delete(url, { data: data });
     } catch (error) {
-      this.handleError(error);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
-  private handleError(error): never {
+  private handleError(error, responseTimeMs): never {
     if (error.response) {
+      this.logErrorResponse(error, responseTimeMs);
       throw new NetworkResponseError(
         error.response.status,
         error.response.data,
@@ -61,5 +73,17 @@ export class AxiosNetworkService implements INetworkService {
     } else {
       throw new NetworkOtherError(error.message);
     }
+  }
+
+  private logErrorResponse(error, responseTimeMs) {
+    this.loggingService.debug({
+      type: 'external_request',
+      protocol: error.request.protocol,
+      host: error.request.host,
+      path: error.request.path,
+      status: error.response.status,
+      message: error.response.statusText,
+      response_time_ms: responseTimeMs,
+    });
   }
 }

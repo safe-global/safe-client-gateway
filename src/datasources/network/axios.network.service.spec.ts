@@ -8,6 +8,7 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from './entities/network.error.entity';
+import { ILoggingService } from '../../logging/logging.interface';
 
 const axios = {
   get: jest.fn(),
@@ -17,12 +18,18 @@ const axios = {
 
 const axiosMock = jest.mocked<Axios>(axios);
 
+const loggingService = {
+  debug: jest.fn(),
+} as unknown as ILoggingService;
+
+const loggingServiceMock = jest.mocked(loggingService);
+
 describe('AxiosNetworkService', () => {
   let target: AxiosNetworkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    target = new AxiosNetworkService(axiosMock);
+    target = new AxiosNetworkService(axiosMock, loggingServiceMock);
   });
 
   describe('GET requests', () => {
@@ -63,6 +70,7 @@ describe('AxiosNetworkService', () => {
       const url = faker.internet.url();
       const error = {
         response: { data: 'data', status: 100 },
+        request: {},
       };
       (axiosMock.get as any).mockRejectedValueOnce(error);
 
@@ -87,6 +95,38 @@ describe('AxiosNetworkService', () => {
 
       expect(axiosMock.get).toBeCalledTimes(1);
       expect(axiosMock.get).toBeCalledWith(url, undefined);
+    });
+
+    it(`get logs response error`, async () => {
+      const url = faker.internet.url();
+      const error = {
+        response: {
+          data: 'data',
+          status: 100,
+          statusText: 'Some error happened',
+        },
+        request: {
+          protocol: faker.internet.protocol(),
+          host: faker.internet.domainName(),
+          path: faker.system.filePath(),
+        },
+      };
+      (axiosMock.get as any).mockRejectedValueOnce(error);
+
+      await expect(target.get(url)).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(loggingService.debug).toBeCalledTimes(1);
+      expect(loggingService.debug).toBeCalledWith({
+        type: 'external_request',
+        protocol: error.request.protocol,
+        host: error.request.host,
+        path: error.request.path,
+        status: error.response.status,
+        message: error.response.statusText,
+        response_time_ms: expect.any(Number),
+      });
     });
   });
 
@@ -132,6 +172,7 @@ describe('AxiosNetworkService', () => {
       const data = { [faker.random.word()]: faker.random.alphaNumeric() };
       const error = {
         response: { data: 'data', status: 100 },
+        request: {},
       };
       (axiosMock.post as any).mockRejectedValueOnce(error);
 
@@ -157,6 +198,38 @@ describe('AxiosNetworkService', () => {
 
       expect(axiosMock.post).toBeCalledTimes(1);
       expect(axiosMock.post).toBeCalledWith(url, data, undefined);
+    });
+
+    it(`post logs response error`, async () => {
+      const url = faker.internet.url();
+      const error = {
+        response: {
+          data: 'data',
+          status: 100,
+          statusText: 'Some error happened',
+        },
+        request: {
+          protocol: faker.internet.protocol(),
+          host: faker.internet.domainName(),
+          path: faker.system.filePath(),
+        },
+      };
+      (axiosMock.post as any).mockRejectedValueOnce(error);
+
+      await expect(target.post(url, {})).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(loggingService.debug).toBeCalledTimes(1);
+      expect(loggingService.debug).toBeCalledWith({
+        type: 'external_request',
+        protocol: error.request.protocol,
+        host: error.request.host,
+        path: error.request.path,
+        status: error.response.status,
+        message: error.response.statusText,
+        response_time_ms: expect.any(Number),
+      });
     });
   });
 
@@ -189,6 +262,7 @@ describe('AxiosNetworkService', () => {
       const data = { some_data: 'some_data' };
       const error = {
         response: { data: 'data', status: 100 },
+        request: {},
       };
       axiosMock.delete.mockRejectedValueOnce(error);
 
@@ -214,6 +288,38 @@ describe('AxiosNetworkService', () => {
 
       expect(axiosMock.delete).toBeCalledTimes(1);
       expect(axiosMock.delete).toBeCalledWith(url, { data: data });
+    });
+
+    it(`delete logs response error`, async () => {
+      const url = faker.internet.url();
+      const error = {
+        response: {
+          data: 'data',
+          status: 100,
+          statusText: 'Some error happened',
+        },
+        request: {
+          protocol: faker.internet.protocol(),
+          host: faker.internet.domainName(),
+          path: faker.system.filePath(),
+        },
+      };
+      (axiosMock.delete as any).mockRejectedValueOnce(error);
+
+      await expect(target.delete(url)).rejects.toThrowError(
+        new NetworkRequestError(error.request),
+      );
+
+      expect(loggingService.debug).toBeCalledTimes(1);
+      expect(loggingService.debug).toBeCalledWith({
+        type: 'external_request',
+        protocol: error.request.protocol,
+        host: error.request.host,
+        path: error.request.path,
+        status: error.response.status,
+        message: error.response.statusText,
+        response_time_ms: expect.any(Number),
+      });
     });
   });
 });
