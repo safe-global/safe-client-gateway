@@ -83,6 +83,17 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(actual).toEqual(expected);
   });
 
+  it('should return null origin on invalid JSON', async () => {
+    const chainId = faker.random.numeric();
+    const transaction = multisigTransactionBuilder()
+      .with('origin', faker.datatype.string())
+      .build();
+
+    const actual = await mapper.mapSafeAppInfo(chainId, transaction);
+
+    expect(actual).toBeNull();
+  });
+
   it('should replace IPFS origin urls', async () => {
     const chainId = faker.random.numeric();
     const originUrl = 'https://ipfs.io/test';
