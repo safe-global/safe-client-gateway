@@ -50,8 +50,17 @@ export class SafeAppInfoMapper {
   }
 
   private getOriginUrl(transaction: MultisigTransaction): string | null {
-    return transaction.origin
-      ? JSON.parse(transaction.origin).url ?? null
-      : null;
+    if (!transaction.origin) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(transaction.origin).url ?? null;
+    } catch (e) {
+      this.loggingService.debug(
+        `Safe TX Hash ${transaction.safeTxHash} origin is not valid JSON. origin=${transaction.origin}`,
+      );
+      return null;
+    }
   }
 }
