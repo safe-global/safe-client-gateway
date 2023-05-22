@@ -132,39 +132,33 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
+  async getTransactionQueue(
+    chainId: string,
+    safe: Safe,
+    limit?: number,
+    offset?: number,
+  ): Promise<Page<MultisigTransaction>> {
+    return this._getTransactionQueue(
+      chainId,
+      safe,
+      'nonce,submissionDate',
+      limit,
+      offset,
+    );
+  }
+
   async getTransactionQueueByModified(
     chainId: string,
-    safeAddress: string,
+    safe: Safe,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>> {
-    return this.getTransactionQueue(
-      chainId,
-      safeAddress,
-      '-modified',
-      limit,
-      offset,
-    );
+    return this._getTransactionQueue(chainId, safe, '-modified', limit, offset);
   }
 
-  async getTransactionQueueByNonce(
+  private async _getTransactionQueue(
     chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>> {
-    return this.getTransactionQueue(
-      chainId,
-      safeAddress,
-      'nonce',
-      limit,
-      offset,
-    );
-  }
-
-  private async getTransactionQueue(
-    chainId: string,
-    safeAddress: string,
+    safe: Safe,
     ordering: string,
     limit?: number,
     offset?: number,
@@ -173,7 +167,7 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(chainId);
     const page: Page<MultisigTransaction> =
       await transactionService.getMultisigTransactions(
-        safeAddress,
+        safe.address,
         ordering,
         false,
         true,
@@ -182,6 +176,7 @@ export class SafeRepository implements ISafeRepository {
         undefined,
         undefined,
         undefined,
+        safe.nonce,
         limit,
         offset,
       );
@@ -282,6 +277,7 @@ export class SafeRepository implements ISafeRepository {
     to?: string,
     value?: string,
     nonce?: string,
+    nonceGte?: number,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>> {
@@ -297,6 +293,7 @@ export class SafeRepository implements ISafeRepository {
       to,
       value,
       nonce,
+      nonceGte,
       limit,
       offset,
     );

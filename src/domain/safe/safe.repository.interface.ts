@@ -48,16 +48,37 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<ModuleTransaction>>;
 
-  getTransactionQueueByModified(
+  /**
+   * Returns the Safe Transaction Queue in ascending order.
+   *
+   * The ascending order is first considered for the nonce.
+   * If multiple transactions have the same nonce, then they
+   * will be sorted according to the submission date
+   *
+   * @param chainId - the chain id from where to retrieve the transactions from
+   * @param safe - the target safe from where to get the transaction from
+   * @param limit - the maximum number of transactions to be returned
+   * @param offset - the starting point from which to start the pagination
+   */
+  getTransactionQueue(
     chainId: string,
-    safeAddress: string,
+    safe: Safe,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
 
-  getTransactionQueueByNonce(
+  /**
+   * Returns the Safe Transaction Queue sorted by modified status.
+   * (from most recently modified to last)
+   *
+   * @param chainId - the chain id from where to retrieve the transactions from
+   * @param safe - the target safe from where to get the transaction from
+   * @param limit - the maximum number of transactions to be returned
+   * @param offset - the starting point from which to start the pagination
+   */
+  getTransactionQueueByModified(
     chainId: string,
-    safeAddress: string,
+    safe: Safe,
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
