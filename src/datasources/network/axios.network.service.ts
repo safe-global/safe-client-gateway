@@ -32,7 +32,7 @@ export class AxiosNetworkService implements INetworkService {
     try {
       return await this.client.get(url, config);
     } catch (error) {
-      this.handleError(error, startTimeMs);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
@@ -45,7 +45,7 @@ export class AxiosNetworkService implements INetworkService {
     try {
       return await this.client.post(url, data, config);
     } catch (error) {
-      this.handleError(error, startTimeMs);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
@@ -57,13 +57,13 @@ export class AxiosNetworkService implements INetworkService {
     try {
       return await this.client.delete(url, { data: data });
     } catch (error) {
-      this.handleError(error, startTimeMs);
+      this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
-  private handleError(error, startTimeMs): never {
+  private handleError(error, responseTimeMs): never {
     if (error.response) {
-      this.logErrorResponse(error, startTimeMs);
+      this.logErrorResponse(error, responseTimeMs);
       throw new NetworkResponseError(
         error.response.status,
         error.response.data,
@@ -75,7 +75,7 @@ export class AxiosNetworkService implements INetworkService {
     }
   }
 
-  private logErrorResponse(error, startTimeMs) {
+  private logErrorResponse(error, responseTimeMs) {
     this.loggingService.debug({
       type: 'external_request',
       protocol: error.request.protocol,
@@ -83,7 +83,7 @@ export class AxiosNetworkService implements INetworkService {
       path: error.request.path,
       status: error.response.status,
       message: error.response.statusText,
-      response_time_ms: performance.now() - startTimeMs,
+      response_time_ms: responseTimeMs,
     });
   }
 }
