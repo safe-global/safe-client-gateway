@@ -62,7 +62,7 @@ export class SafesService {
     const collectiblesTag = await this.getCollectiblesTag(chainId, safeAddress);
     const queuedTransactionTag = await this.getQueuedTransactionTag(
       chainId,
-      safeAddress,
+      safe,
     );
     const transactionHistoryTag = await this.executedTransactionTag(
       chainId,
@@ -109,14 +109,10 @@ export class SafesService {
 
   private async getQueuedTransactionTag(
     chainId: string,
-    safeAddress: string,
+    safe: Safe,
   ): Promise<Date | null> {
     const lastQueuedTransaction =
-      await this.safeRepository.getTransactionQueueByModified(
-        chainId,
-        safeAddress,
-        1,
-      );
+      await this.safeRepository.getTransactionQueueByModified(chainId, safe, 1);
 
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }

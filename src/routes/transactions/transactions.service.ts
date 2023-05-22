@@ -62,6 +62,7 @@ export class TransactionsService {
         to,
         value,
         nonce,
+        undefined,
         paginationData.limit,
         paginationData.offset,
       );
@@ -239,9 +240,9 @@ export class TransactionsService {
   ): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(paginationData);
     const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const transactions = await this.safeRepository.getTransactionQueueByNonce(
+    const transactions = await this.safeRepository.getTransactionQueue(
       chainId,
-      safeAddress,
+      safeInfo,
       pagination.limit,
       pagination.offset,
     );

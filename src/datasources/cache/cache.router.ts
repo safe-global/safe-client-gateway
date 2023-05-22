@@ -156,12 +156,13 @@ export class CacheRouter {
     to?: string,
     value?: string,
     nonce?: string,
+    nonceGte?: number,
     limit?: number,
     offset?: number,
   ): CacheDir {
     return new CacheDir(
       `${chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${safeAddress}`,
-      `${ordering}_${executed}_${trusted}_${executionDateGte}_${executionDateLte}_${to}_${value}_${nonce}_${limit}_${offset}`,
+      `${ordering}_${executed}_${trusted}_${executionDateGte}_${executionDateLte}_${to}_${value}_${nonce}_${nonceGte}_${limit}_${offset}`,
     );
   }
 
