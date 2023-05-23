@@ -1,13 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ContractsRepository } from '../../../domain/contracts/contracts.repository';
 import { IContractsRepository } from '../../../domain/contracts/contracts.repository.interface';
+import { TokenRepository } from '../../../domain/tokens/token.repository';
+import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
 import { AddressInfo } from '../entities/address-info.entity';
 
 @Injectable()
 export class AddressInfoHelper {
   constructor(
     @Inject(IContractsRepository)
-    private readonly repository: ContractsRepository,
+    private readonly contractsRepository: ContractsRepository,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: TokenRepository,
   ) {}
 
   /**
@@ -26,7 +30,7 @@ export class AddressInfoHelper {
   get(chainId: string, address: string): Promise<AddressInfo | null> {
     if (address == '0x0000000000000000000000000000000000000000')
       return Promise.resolve(null);
-    return this.repository
+    return this.contractsRepository
       .getContract(chainId, address)
       .then(
         (contract) =>
@@ -36,6 +40,23 @@ export class AddressInfoHelper {
             contract.logoUri,
           ),
       );
+  }
+
+  /**
+   * Gets the AddressInfo from any source (token, contract).
+   * TokenRepository is queried first. If the token is not found, it fallbacks to {@link getOrDefault} function.
+   *
+   * @param chainId - the chain id where the token or contract exists
+   * @param address - the address of the token or contract to which we want to retrieve its metadata
+   */
+  getFromAnySourceOrDefault(
+    chainId: string,
+    address: string,
+  ): Promise<AddressInfo> {
+    return this.tokenRepository
+      .getToken(chainId, address)
+      .then((t) => new AddressInfo(t.address, t.name, t.logoUri))
+      .catch(() => this.getOrDefault(chainId, address));
   }
 
   /**
