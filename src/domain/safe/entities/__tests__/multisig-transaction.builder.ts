@@ -57,6 +57,6 @@ export function toJson(multisigTransaction: MultisigTransaction): unknown {
     txType: 'MULTISIG_TRANSACTION',
     executionDate: multisigTransaction.executionDate?.toISOString(),
     modified: multisigTransaction.modified?.toISOString(),
-    submissionDate: multisigTransaction.submissionDate?.toISOString(),
+    submissionDate: multisigTransaction.submissionDate.toISOString(),
   };
 }
