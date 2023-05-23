@@ -44,6 +44,7 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('submissionDate', faker.date.recent())
     .with('to', faker.finance.ethereumAddress())
     .with('transactionHash', faker.datatype.hexadecimal())
+    .with('trusted', faker.datatype.boolean())
     .with('value', faker.datatype.hexadecimal());
 }
 
