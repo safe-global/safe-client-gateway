@@ -1,5 +1,4 @@
 export function getRouteUrl(request: any) {
-  return new URL(
-    `${request.protocol}://${request.get('Host')}${request.originalUrl}`,
-  );
+  const protocol = request.get('X-Forwarded-Proto') ?? request.protocol;
+  return new URL(`${protocol}://${request.get('Host')}${request.originalUrl}`);
 }
