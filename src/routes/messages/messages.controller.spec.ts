@@ -662,15 +662,11 @@ describe('Messages controller', () => {
               .with('results', [
                 {
                   type: 'DATE_LABEL',
-                  timestamp: Date.UTC(2025, 0, 1),
+                  timestamp: Date.UTC(2025, 0, 3),
                 },
                 expect.objectContaining({
                   type: 'MESSAGE',
-                  messageHash: messages[0].messageHash,
-                }),
-                expect.objectContaining({
-                  type: 'MESSAGE',
-                  messageHash: messages[2].messageHash,
+                  messageHash: messages[3].messageHash,
                 }),
                 {
                   type: 'DATE_LABEL',
@@ -682,11 +678,15 @@ describe('Messages controller', () => {
                 }),
                 {
                   type: 'DATE_LABEL',
-                  timestamp: Date.UTC(2025, 0, 3),
+                  timestamp: Date.UTC(2025, 0, 1),
                 },
                 expect.objectContaining({
                   type: 'MESSAGE',
-                  messageHash: messages[3].messageHash,
+                  messageHash: messages[0].messageHash,
+                }),
+                expect.objectContaining({
+                  type: 'MESSAGE',
+                  messageHash: messages[2].messageHash,
                 }),
               ])
               .build(),
