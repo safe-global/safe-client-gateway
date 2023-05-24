@@ -17,17 +17,18 @@ export class AddressInfoHelper {
   ) {}
 
   /**
-   * Returns a promise for {@link AddressInfo} which contains the contract
+   * Returns a promise for {@link AddressInfo} which contains the source
    * information for {@link address}
    *
    * If the {@link address} is 0x0000000000000000000000000000000000000000,
    * null is returned
    *
-   * The promise can result in rejection if the contract information
+   * The promise can result in rejection if the source information
    * is not found or cannot be retrieved
    *
-   * @param chainId - the chain id where the contract exists
-   * @param address - the address of the contract to which we want to retrieve its metadata
+   * @param chainId - the chain id where the source exists
+   * @param address - the address of the source to which we want to retrieve its metadata
+   * @param source - the {@link Source} to which we want to retrieve its metadata
    */
   get(
     chainId: string,
@@ -43,20 +44,25 @@ export class AddressInfoHelper {
   /**
    * Similar to {@see get} but should never fail.
    *
-   * If a contract address cannot be retrieved, a {@link AddressInfo} is returned
-   * containing just the contract address
+   * If a source address cannot be retrieved, a {@link AddressInfo} is returned
+   * containing just the source address
    *
-   * @param chainId - the chain id where the contract exists
-   * @param address - the address of the contract to which we want to retrieve its metadata
+   * @param chainId - the chain id where the source exists
+   * @param address - the address of the source to which we want to retrieve its metadata
+   * @param source - the {@link Source} to which we want to retrieve its metadata
    */
-  getOrDefault(chainId: string, address: string): Promise<AddressInfo> {
-    return this.get(chainId, address)
+  getOrDefault(
+    chainId: string,
+    address: string,
+    source: Source = 'CONTRACT',
+  ): Promise<AddressInfo> {
+    return this.get(chainId, address, source)
       .then((addressInfo) => addressInfo ?? new AddressInfo(address))
       .catch(() => new AddressInfo(address));
   }
 
   /**
-   * Similar to {@see getOrDefault} but works with a collection
+   * Similar to {@see getOrDefault} but works with a collection of contract addresses
    *
    * @param chainId - the chain id where the contract exists
    * @param addresses - the collection of addresses to which we want to retrieve the respective metadata
@@ -66,7 +72,9 @@ export class AddressInfoHelper {
     addresses: string[],
   ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
-      addresses.map((address) => this.getOrDefault(chainId, address)),
+      addresses.map((address) =>
+        this.getOrDefault(chainId, address, 'CONTRACT'),
+      ),
     ).then((results) =>
       results.map((result) => {
         if (result.status == 'fulfilled') return result.value;
