@@ -10,12 +10,15 @@ import {
   INetworkService,
   NetworkService,
 } from '../network/network.service.interface';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
   private transactionApiMap: Record<string, TransactionApi> = {};
 
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     private readonly dataSource: CacheFirstDataSource,
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -27,10 +30,17 @@ export class TransactionApiManager implements ITransactionApiManager {
     const transactionApi = this.transactionApiMap[chainId];
     if (transactionApi !== undefined) return transactionApi;
 
+    // TODO replace with getOrThrow once https://github.com/safe-global/safe-client-gateway-nest/issues/318 is done
+    // By requiring a new environment variable to be set, a lot of tests need to be adjusted to configure this
+    // new variable
+    const useVpcUrl =
+      this.configurationService.get<boolean>('safeTransaction.useVpcUrl') ??
+      false;
+
     const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(
       chainId,
-      chain.transactionService,
+      useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
       this.dataSource,
       this.cacheService,
       this.httpErrorFactory,
