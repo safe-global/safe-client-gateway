@@ -62,19 +62,19 @@ export class AddressInfoHelper {
   }
 
   /**
-   * Similar to {@see getOrDefault} but works with a collection of contract addresses
+   * Similar to {@see getOrDefault} but works with a collection of source addresses
    *
-   * @param chainId - the chain id where the contract exists
+   * @param chainId - the chain id where the source exists
    * @param addresses - the collection of addresses to which we want to retrieve the respective metadata
+   * @param source - the {@link Source} to which we want to retrieve its metadata
    */
   getCollection(
     chainId: string,
     addresses: string[],
+    source: Source = 'CONTRACT',
   ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
-      addresses.map((address) =>
-        this.getOrDefault(chainId, address, 'CONTRACT'),
-      ),
+      addresses.map((address) => this.getOrDefault(chainId, address, source)),
     ).then((results) =>
       results.map((result) => {
         if (result.status == 'fulfilled') return result.value;
