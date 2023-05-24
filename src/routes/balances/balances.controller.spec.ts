@@ -129,6 +129,47 @@ describe('Balances Controller (Unit)', () => {
       );
     });
 
+    it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
+      const chainId = '1';
+      const safeAddress = '0x0000000000000000000000000000000000000001';
+      const transactionApiBalancesResponse = [balanceBuilder().build()];
+      const exchangeApiResponse = exchangeRatesBuilder().build();
+      const chainResponse = chainBuilder().build();
+      const excludeSpam = true;
+      const trusted = true;
+
+      mockNetworkService.get.mockImplementation((url) => {
+        if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          return Promise.resolve({ data: chainResponse });
+        } else if (
+          url ==
+          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
+        ) {
+          return Promise.resolve({
+            data: transactionApiBalancesResponse,
+          });
+        } else if (url == 'https://test.exchange/latest') {
+          return Promise.resolve({ data: exchangeApiResponse });
+        } else {
+          return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainId}/safes/${safeAddress}/balances/usd/?trusted=${trusted}&exclude_spam=${excludeSpam}`,
+        )
+        .expect(200);
+
+      // trusted and exclude_spam params are passed
+      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+        params: {
+          trusted: trusted.toString(),
+          exclude_spam: excludeSpam.toString(),
+        },
+      });
+    });
+
     it(`maps native token correctly`, async () => {
       const safeAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [

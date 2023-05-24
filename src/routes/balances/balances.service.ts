@@ -27,10 +27,14 @@ export class BalancesService {
     chainId: string,
     safeAddress: string,
     fiatCode: string,
+    trusted?: boolean,
+    excludeSpam?: boolean,
   ): Promise<Balances> {
     const txServiceBalances = await this.balancesRepository.getBalances(
       chainId,
       safeAddress,
+      trusted,
+      excludeSpam,
     );
 
     const usdToFiatRate: number = await this.exchangeRepository.convertRates(
