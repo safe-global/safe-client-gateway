@@ -5,6 +5,8 @@ import { TokenRepository } from '../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
 import { AddressInfo } from '../entities/address-info.entity';
 
+export type Source = 'CONTRACT' | 'TOKEN';
+
 @Injectable()
 export class AddressInfoHelper {
   constructor(
@@ -27,36 +29,15 @@ export class AddressInfoHelper {
    * @param chainId - the chain id where the contract exists
    * @param address - the address of the contract to which we want to retrieve its metadata
    */
-  get(chainId: string, address: string): Promise<AddressInfo | null> {
-    if (address == '0x0000000000000000000000000000000000000000')
-      return Promise.resolve(null);
-    return this.contractsRepository
-      .getContract(chainId, address)
-      .then(
-        (contract) =>
-          new AddressInfo(
-            contract.address,
-            contract.displayName,
-            contract.logoUri,
-          ),
-      );
-  }
-
-  /**
-   * Gets the AddressInfo from any source (token, contract).
-   * TokenRepository is queried first. If the token is not found, it fallbacks to {@link getOrDefault} function.
-   *
-   * @param chainId - the chain id where the token or contract exists
-   * @param address - the address of the token or contract to which we want to retrieve its metadata
-   */
-  getFromAnySourceOrDefault(
+  get(
     chainId: string,
     address: string,
-  ): Promise<AddressInfo> {
-    return this.tokenRepository
-      .getToken(chainId, address)
-      .then((t) => new AddressInfo(t.address, t.name, t.logoUri))
-      .catch(() => this.getOrDefault(chainId, address));
+    source: Source = 'CONTRACT',
+  ): Promise<AddressInfo | null> {
+    if (address == '0x0000000000000000000000000000000000000000')
+      return Promise.resolve(null);
+
+    return this._getFromSource(chainId, address, source);
   }
 
   /**
@@ -92,5 +73,24 @@ export class AddressInfoHelper {
         else throw new Error('Error processing address collection');
       }),
     );
+  }
+
+  private _getFromSource(
+    chainId: string,
+    address: string,
+    source: Source,
+  ): Promise<AddressInfo> {
+    switch (source) {
+      case 'CONTRACT':
+        return this.contractsRepository
+          .getContract(chainId, address)
+          .then((c) => new AddressInfo(c.address, c.displayName, c.logoUri));
+      case 'TOKEN':
+        return this.tokenRepository
+          .getToken(chainId, address)
+          .then((t) => new AddressInfo(t.address, t.name, t.logoUri));
+      default:
+        return Promise.reject('Unknown source');
+    }
   }
 }
