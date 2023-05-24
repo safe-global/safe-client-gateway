@@ -13,8 +13,6 @@ export class ExchangeApi implements IExchangeApi {
   private readonly apiKey: string;
   private readonly cacheTtlSeconds: number;
 
-  private static readonly DEFAULT_CACHE_TTL_SECONDS = 60 * 60 * 12;
-
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -24,10 +22,9 @@ export class ExchangeApi implements IExchangeApi {
       this.configurationService.getOrThrow<string>('exchange.baseUri');
     this.apiKey =
       this.configurationService.getOrThrow<string>('exchange.apiKey');
-    this.cacheTtlSeconds =
-      this.configurationService.get<number | undefined>(
-        'exchange.cacheTtlSeconds',
-      ) ?? ExchangeApi.DEFAULT_CACHE_TTL_SECONDS;
+    this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
+      'exchange.cacheTtlSeconds',
+    );
   }
 
   async getFiatCodes(): Promise<ExchangeFiatCodes> {
