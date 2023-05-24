@@ -79,10 +79,10 @@ export class AxiosNetworkService implements INetworkService {
     this.loggingService.debug({
       type: 'external_request',
       protocol: error.request.protocol,
-      host: error.request.host,
+      target_host: error.request.host,
       path: error.request.path,
-      status: error.response.status,
-      message: error.response.statusText,
+      request_status: error.response.status,
+      detail: error.response.statusText,
       response_time_ms: responseTimeMs,
     });
   }
