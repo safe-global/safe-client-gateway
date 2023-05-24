@@ -133,11 +133,8 @@ describe('Balances Controller (Unit)', () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
       const transactionApiBalancesResponse = [balanceBuilder().build()];
-      const exchangeApiResponse = exchangeRatesBuilder()
-        .with('success', true)
-        .with('rates', { USD: 2.0 })
-        .build();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const exchangeApiResponse = exchangeRatesBuilder().build();
+      const chainResponse = chainBuilder().build();
       const excludeSpam = true;
       const trusted = true;
 
