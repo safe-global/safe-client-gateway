@@ -6,7 +6,7 @@ export class GetEstimationDto implements DomainGetEstimationDto {
   @ApiProperty()
   to: string;
   @ApiProperty()
-  value: number;
+  value: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   data: string | null;
   @ApiProperty()

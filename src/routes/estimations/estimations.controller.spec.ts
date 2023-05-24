@@ -107,7 +107,7 @@ describe('Estimations Controller (Unit)', () => {
         .send(
           new GetEstimationDto(
             faker.finance.ethereumAddress(),
-            faker.datatype.number(),
+            faker.random.numeric(),
             faker.datatype.hexadecimal(32),
             0,
           ),
@@ -124,7 +124,7 @@ describe('Estimations Controller (Unit)', () => {
   it('Should get a validation error', async () => {
     const getEstimationDto = new GetEstimationDto(
       faker.finance.ethereumAddress(),
-      faker.datatype.number(),
+      faker.random.numeric(),
       faker.datatype.hexadecimal(32),
       1,
     );
@@ -181,7 +181,7 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.datatype.number(),
+          faker.random.numeric(),
           faker.datatype.hexadecimal(32),
           0,
         ),
@@ -230,7 +230,7 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.datatype.number(),
+          faker.random.numeric(),
           faker.datatype.hexadecimal(32),
           0,
         ),
@@ -285,7 +285,7 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.datatype.number(),
+          faker.random.numeric(),
           faker.datatype.hexadecimal(32),
           0,
         ),
