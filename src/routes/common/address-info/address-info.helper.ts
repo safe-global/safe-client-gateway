@@ -4,6 +4,7 @@ import { IContractsRepository } from '../../../domain/contracts/contracts.reposi
 import { TokenRepository } from '../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
 import { AddressInfo } from '../entities/address-info.entity';
+import { NULL_ADDRESS } from '../constants';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
@@ -35,8 +36,7 @@ export class AddressInfoHelper {
     address: string,
     source: Source = 'CONTRACT',
   ): Promise<AddressInfo | null> {
-    if (address == '0x0000000000000000000000000000000000000000')
-      return Promise.resolve(null);
+    if (address == NULL_ADDRESS) return Promise.resolve(null);
 
     return this._getFromSource(chainId, address, source);
   }

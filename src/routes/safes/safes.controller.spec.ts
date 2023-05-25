@@ -40,6 +40,7 @@ import {
 import { TestAppProvider } from '../../app.provider';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
+import { NULL_ADDRESS } from '../common/constants';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
@@ -193,6 +194,50 @@ describe('Safes Controller (Unit)', () => {
         },
         version: safeInfo.version,
       });
+  });
+
+  it('guard returns null if it is an empty address', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder().build();
+    const fallbackHandlerInfo = contractBuilder().build();
+    const guardInfo = contractBuilder().with('address', NULL_ADDRESS).build();
+    const collectibleTransfers = pageBuilder().build();
+    const queuedTransactions = pageBuilder().build();
+    const allTransactions = pageBuilder().build();
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          guard: null,
+        }),
+      );
   });
 
   it('Version State is UNKNOWN when safe has an invalid safe version', async () => {

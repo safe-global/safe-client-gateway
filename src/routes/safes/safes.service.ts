@@ -40,9 +40,6 @@ export class SafesService {
       supportedMasterCopies,
     );
 
-    const masterCopyInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy);
-
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
       const moduleInfoCollection: Array<AddressInfo> =
@@ -51,23 +48,21 @@ export class SafesService {
         moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
     }
 
-    const fallbackHandlerInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler);
-
-    const guardInfo: AddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      safe.guard,
-    );
-
-    const collectiblesTag = await this.getCollectiblesTag(chainId, safeAddress);
-    const queuedTransactionTag = await this.getQueuedTransactionTag(
-      chainId,
-      safe,
-    );
-    const transactionHistoryTag = await this.executedTransactionTag(
-      chainId,
-      safeAddress,
-    );
+    const [
+      masterCopyInfo,
+      fallbackHandlerInfo,
+      guardInfo,
+      collectiblesTag,
+      queuedTransactionTag,
+      transactionHistoryTag,
+    ] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy),
+      this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler),
+      this.addressInfoHelper.get(chainId, safe.guard).catch(() => null),
+      this.getCollectiblesTag(chainId, safeAddress),
+      this.getQueuedTransactionTag(chainId, safe),
+      this.executedTransactionTag(chainId, safeAddress),
+    ]);
 
     return new SafeState(
       new AddressInfo(safe.address),
