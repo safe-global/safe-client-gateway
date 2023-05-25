@@ -241,6 +241,19 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getTransfer(transferId: string): Promise<Transfer> {
+    try {
+      const cacheDir = CacheRouter.getTransferCacheDir(
+        this.chainId,
+        transferId,
+      );
+      const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
+      return await this.dataSource.get(cacheDir, url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getTransfers(
     safeAddress: string,
     onlyErc20: boolean,
@@ -319,6 +332,21 @@ export class TransactionApi implements ITransactionApi {
       return await this.networkService.post(url, {
         signature: addConfirmationDto.signedSafeTxHash,
       });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getModuleTransaction(
+    moduleTransactionId: string,
+  ): Promise<ModuleTransaction> {
+    try {
+      const cacheDir = CacheRouter.getModuleTransactionsCacheDir(
+        this.chainId,
+        moduleTransactionId,
+      );
+      const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
+      return await this.dataSource.get(cacheDir, url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

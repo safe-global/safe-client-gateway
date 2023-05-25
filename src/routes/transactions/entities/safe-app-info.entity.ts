@@ -6,11 +6,11 @@ export class SafeAppInfo {
   @ApiProperty()
   url: string;
   @ApiProperty()
-  logo_uri: string;
+  logoUri: string;
 
   constructor(name: string, url: string, logoUri: string) {
     this.name = name;
     this.url = url;
-    this.logo_uri = logoUri;
+    this.logoUri = logoUri;
   }
 }

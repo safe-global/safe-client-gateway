@@ -77,6 +77,8 @@ export interface ITransactionApi {
     signature: string,
   ): Promise<void>;
 
+  getTransfer(transferId: string): Promise<Transfer>;
+
   getTransfers(
     safeAddress: string,
     onlyErc20?: boolean,
@@ -100,6 +102,8 @@ export interface ITransactionApi {
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
   ): Promise<unknown>;
+
+  getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
   getModuleTransactions(
     safeAddress: string,

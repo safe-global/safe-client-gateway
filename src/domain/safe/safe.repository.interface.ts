@@ -39,6 +39,11 @@ export interface ISafeRepository {
     addConfirmationDto: AddConfirmationDto,
   ): Promise<unknown>;
 
+  getModuleTransaction(
+    chainId: string,
+    moduleTransactionId: string,
+  ): Promise<ModuleTransaction>;
+
   getModuleTransactions(
     chainId: string,
     safeAddress: string,
@@ -119,6 +124,8 @@ export interface ISafeRepository {
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
+
+  getTransfer(chainId: string, transferId: string): Promise<Transfer>;
 
   getSafesByOwner(chainId: string, ownerAddress: string): Promise<SafeList>;
 

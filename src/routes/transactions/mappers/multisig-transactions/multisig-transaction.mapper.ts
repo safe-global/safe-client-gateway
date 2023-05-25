@@ -6,7 +6,10 @@ import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-e
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
 import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
-import { MULTISIG_TRANSACTION_PREFIX } from '../../constants';
+import {
+  MULTISIG_TRANSACTION_PREFIX,
+  TRANSACTION_ID_SEPARATOR,
+} from '../../constants';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -40,7 +43,7 @@ export class MultisigTransactionMapper {
     const timestamp = transaction.executionDate ?? transaction.submissionDate;
 
     return new Transaction(
-      `${MULTISIG_TRANSACTION_PREFIX}_${transaction.safe}_${transaction.safeTxHash}`,
+      `${MULTISIG_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.safeTxHash}`,
       timestamp?.getTime() ?? null,
       txStatus,
       txInfo,

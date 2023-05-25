@@ -5,7 +5,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "transfer_i5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b0,0,10",
+        "id": "transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_i5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b0,0,10",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1659617062000,
@@ -34,7 +34,7 @@
     {
       "type": "TRANSACTION",
       "transaction": {
-        "id": "transfer_e5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b25",
+        "id": "transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_e5009500e71ff0dc12ddce3cbe64fd346df9bce9f2413f4dd4c4e82877313112b25",
         "executionInfo": null,
         "safeAppInfo": null,
         "timestamp": 1659617062000,
