@@ -28,22 +28,19 @@ export class ModuleTransactionDetailsMapper {
     transaction: ModuleTransaction,
     safe: Safe,
   ): Promise<TransactionDetails> {
-    const moduleAddress = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.module,
-    );
+    const [moduleAddress, txInfo, txData] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(chainId, transaction.module),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
+      this.mapTransactionData(chainId, transaction),
+    ]);
 
     return {
       safeAddress: safe.address,
       txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime() ?? null,
       txStatus: this.statusMapper.mapTransactionStatus(transaction),
-      txInfo: await this.transactionInfoMapper.mapTransactionInfo(
-        chainId,
-        transaction,
-        safe,
-      ),
-      txData: await this.mapTransactionData(chainId, transaction),
+      txInfo,
+      txData,
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(moduleAddress),
       safeAppInfo: null,
@@ -54,21 +51,23 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionData> {
-    const addressInfoIndex =
-      await this.transactionDataMapper.buildAddressInfoIndex(
-        chainId,
-        transaction.dataDecoded,
-      );
-    const trustedDelegateCallTarget =
-      await this.transactionDataMapper.isTrustedDelegateCall(
-        chainId,
-        transaction.operation,
-        transaction.to,
-        transaction.dataDecoded,
-      );
+    const [addressInfoIndex, trustedDelegateCallTarget, toAddress] =
+      await Promise.all([
+        this.transactionDataMapper.buildAddressInfoIndex(
+          chainId,
+          transaction.dataDecoded,
+        ),
+        this.transactionDataMapper.isTrustedDelegateCall(
+          chainId,
+          transaction.operation,
+          transaction.to,
+          transaction.dataDecoded,
+        ),
+        this.addressInfoHelper.getOrDefault(chainId, transaction.to),
+      ]);
 
     return {
-      to: await this.addressInfoHelper.getOrDefault(chainId, transaction.to),
+      to: toAddress,
       value: transaction.value,
       hexData: transaction.data,
       dataDecoded: transaction.dataDecoded,

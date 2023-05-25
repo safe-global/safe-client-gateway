@@ -57,18 +57,24 @@ export class TransactionsService {
     const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
 
     if (txType === MODULE_TRANSACTION_PREFIX) {
-      const tx = await this.safeRepository.getModuleTransaction(chainId, id);
-      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      const [tx, safe] = await Promise.all([
+        this.safeRepository.getModuleTransaction(chainId, id),
+        this.safeRepository.getSafe(chainId, safeAddress),
+      ]);
       return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx, safe);
     }
     if (txType === TRANSFER_PREFIX) {
-      const transfer = await this.safeRepository.getTransfer(chainId, id);
-      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      const [transfer, safe] = await Promise.all([
+        this.safeRepository.getTransfer(chainId, id),
+        this.safeRepository.getSafe(chainId, safeAddress),
+      ]);
       return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
     }
     if (txType === MULTISIG_TRANSACTION_PREFIX) {
-      const tx = await this.safeRepository.getMultiSigTransaction(chainId, id);
-      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      const [tx, safe] = await Promise.all([
+        this.safeRepository.getMultiSigTransaction(chainId, id),
+        this.safeRepository.getSafe(chainId, safeAddress),
+      ]);
       return this.multisigTransactionDetailsMapper.mapDetails(
         chainId,
         tx,

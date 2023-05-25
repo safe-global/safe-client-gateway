@@ -4,6 +4,7 @@ import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-t
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { SafeRepository } from '../../../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../../../domain/safe/safe.repository.interface';
+import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import {
@@ -47,38 +48,30 @@ export class MultisigTransactionDetailsMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): Promise<TransactionDetails> {
-    const isTrustedDelegateCall =
-      await this.transactionDataMapper.isTrustedDelegateCall(
+    const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
+    const [
+      isTrustedDelegateCall,
+      addressInfoIndex,
+      safeAppInfo,
+      txInfo,
+      detailedExecutionInfo,
+      recipientAddressInfo,
+    ] = await Promise.all([
+      this.transactionDataMapper.isTrustedDelegateCall(
         chainId,
         transaction.operation,
         transaction.to,
         transaction.dataDecoded,
-      );
-    const addressInfoIndex =
-      await this.transactionDataMapper.buildAddressInfoIndex(
+      ),
+      this.transactionDataMapper.buildAddressInfoIndex(
         chainId,
         transaction.dataDecoded,
-      );
-    const safeAppInfo = await this.safeAppInfoMapper.mapSafeAppInfo(
-      chainId,
-      transaction,
-    );
-    const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
-      chainId,
-      transaction,
-      safe,
-    );
-    const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
-    const detailedExecutionInfo = await this._mapMultisigExecutionDetails(
-      chainId,
-      transaction,
-      txStatus,
-      safe,
-    );
-    const recipientAddressInfo = await this._getRecipientAddressInfo(
-      chainId,
-      transaction.to,
-    );
+      ),
+      this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
+      this._mapMultisigExecutionDetails(chainId, transaction, txStatus, safe),
+      this._getRecipientAddressInfo(chainId, transaction.to),
+    ]);
 
     return {
       safeAddress: safe.address,
@@ -107,15 +100,8 @@ export class MultisigTransactionDetailsMapper {
     txStatus: TransactionStatus,
     safe: Safe,
   ): Promise<MultisigExecutionDetails> {
-    const gasToken = transaction.gasToken ?? NULL_ADDRESS;
-    const gasTokenInfo =
-      gasToken != NULL_ADDRESS
-        ? await this.tokenRepository.getToken(chainId, gasToken)
-        : null;
-    const executor = transaction.executor
-      ? await this.addressInfoHelper.getOrDefault(chainId, transaction.executor)
-      : null;
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
+    const gasToken = transaction.gasToken ?? NULL_ADDRESS;
     const confirmationsRequired =
       transaction.confirmationsRequired ?? safe.threshold;
     const confirmations = !transaction.confirmations
@@ -128,14 +114,31 @@ export class MultisigTransactionDetailsMapper {
               confirmation.submissionDate.getTime(),
             ),
         );
-    const refundReceiver = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.refundReceiver ?? NULL_ADDRESS,
+
+    const promises: Promise<unknown>[] = [];
+    promises.push(
+      gasToken != NULL_ADDRESS
+        ? this.tokenRepository.getToken(chainId, gasToken)
+        : Promise.resolve(null),
     );
-    const rejectors =
+    promises.push(
+      transaction.executor
+        ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor)
+        : Promise.resolve(null),
+    );
+    promises.push(
+      this.addressInfoHelper.getOrDefault(
+        chainId,
+        transaction.refundReceiver ?? NULL_ADDRESS,
+      ),
+    );
+    promises.push(
       txStatus === TransactionStatus.Cancelled
-        ? await this._getRejectors(chainId, transaction, safe)
-        : null;
+        ? this._getRejectors(chainId, transaction, safe)
+        : Promise.resolve(null),
+    );
+    const [gasTokenInfo, executor, refundReceiver, rejectors] =
+      await Promise.all(promises);
 
     return {
       submittedAt: transaction.submissionDate.getTime(),
@@ -143,15 +146,15 @@ export class MultisigTransactionDetailsMapper {
       safeTxGas: transaction.safeTxGas?.toString() ?? '0',
       baseGas: transaction.baseGas?.toString() ?? '0',
       gasPrice: transaction.gasPrice?.toString() ?? '0',
-      refundReceiver,
+      refundReceiver: refundReceiver as AddressInfo,
       safeTxHash: transaction.safeTxHash,
-      executor,
+      executor: executor as AddressInfo,
       signers,
       confirmationsRequired,
       confirmations,
-      rejectors,
+      rejectors: rejectors as AddressInfo[] | null,
       gasToken,
-      gasTokenInfo,
+      gasTokenInfo: gasTokenInfo as Token | null,
       trusted: transaction.trusted,
     };
   }
@@ -177,11 +180,7 @@ export class MultisigTransactionDetailsMapper {
       );
       return tokenAddressInfo ?? new AddressInfo(address);
     } catch (err) {
-      return await this.addressInfoHelper.getOrDefault(
-        chainId,
-        address,
-        'CONTRACT',
-      );
+      return this.addressInfoHelper.getOrDefault(chainId, address, 'CONTRACT');
     }
   }
 

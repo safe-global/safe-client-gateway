@@ -123,7 +123,7 @@ describe('Transactions Controller (Unit)', () => {
           code: 500,
         });
 
-      expect(mockNetworkService.get).toBeCalledTimes(1);
+      expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get).toBeCalledWith(getChainUrl, undefined);
     });
 
@@ -154,7 +154,7 @@ describe('Transactions Controller (Unit)', () => {
           code: 500,
         });
 
-      expect(mockNetworkService.get).toBeCalledTimes(2);
+      expect(mockNetworkService.get).toBeCalledTimes(4);
       expect(mockNetworkService.get).toBeCalledWith(getChainUrl, undefined);
       expect(mockNetworkService.get).toBeCalledWith(
         getModuleTransactionUrl,
@@ -168,11 +168,14 @@ describe('Transactions Controller (Unit)', () => {
       const safe = safeBuilder().build();
       const id = faker.datatype.uuid();
       const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: chain });
+          case getSafeUrl:
+            return Promise.resolve({ data: safe });
           case getModuleTransactionUrl:
             return Promise.reject({ status: 404 });
           default:
@@ -276,11 +279,14 @@ describe('Transactions Controller (Unit)', () => {
       const safe = safeBuilder().build();
       const id = faker.datatype.uuid();
       const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: chain });
+          case getSafeUrl:
+            return Promise.resolve({ data: safe });
           case getTransferUrl:
             return Promise.reject({ status: 404 });
           default:
@@ -368,11 +374,14 @@ describe('Transactions Controller (Unit)', () => {
       const safe = safeBuilder().build();
       const txHash = faker.datatype.hexadecimal();
       const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${txHash}/`;
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: chain });
+          case getSafeUrl:
+            return Promise.resolve({ data: safe });
           case getMultisigTransactionUrl:
             return Promise.reject({ status: 404 });
           default:
