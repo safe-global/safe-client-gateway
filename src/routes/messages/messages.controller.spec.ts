@@ -592,8 +592,8 @@ describe('Messages controller', () => {
           .with(
             'created',
             faker.date.between(
-              new Date(Date.UTC(2025, 0, 1)).toISOString(),
-              new Date(Date.UTC(2025, 0, 2) - 1).toISOString(),
+              new Date(Date.UTC(2025, 0, 1, 16)).toISOString(),
+              new Date(Date.UTC(2025, 0, 1, 17)).toISOString(),
             ),
           )
           .build(),
@@ -612,8 +612,8 @@ describe('Messages controller', () => {
           .with(
             'created',
             faker.date.between(
-              new Date(Date.UTC(2025, 0, 1)).toISOString(),
-              new Date(Date.UTC(2025, 0, 2) - 1).toISOString(),
+              new Date(Date.UTC(2025, 0, 1, 10)).toISOString(),
+              new Date(Date.UTC(2025, 0, 1, 11)).toISOString(),
             ),
           )
           .build(),

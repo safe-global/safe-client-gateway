@@ -56,22 +56,23 @@ export class MessagesService {
     const previousURL = cursorUrlFromLimitAndOffset(routeUrl, page.previous);
     const groups = this.getOrderedGroups(page.results);
 
-    const results: (DateLabel | MessageItem)[] = [];
-    for (const [timestamp, messages] of groups) {
-      const messageItems = await this.messageMapper.mapMessageItems(
-        chainId,
-        messages,
-        safe,
-      );
-      results.push(new DateLabel(timestamp));
-      results.push(...messageItems);
-    }
+    const labelledGroups = await Promise.all(
+      groups.map(async ([timestamp, messages]) => {
+        const messageItems = await this.messageMapper.mapMessageItems(
+          chainId,
+          messages,
+          safe,
+        );
+
+        return [new DateLabel(timestamp), ...messageItems];
+      }),
+    );
 
     return <Page<DateLabel | MessageItem>>{
       count: page.count,
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      results,
+      results: labelledGroups.flat(),
     };
   }
 
@@ -109,7 +110,7 @@ export class MessagesService {
             orderBy(
               groups[groupKey],
               (message) => {
-                message.created.getTime();
+                return message.created.getTime();
               },
               ['desc'],
             ),
