@@ -103,35 +103,40 @@ export class MultisigTransactionInfoMapper {
       );
     }
 
-    if (this.isValidTokenTransfer(transaction)) {
-      const token = await this.tokenRepository.getToken(
+    if (!this.isValidTokenTransfer(transaction)) {
+      return this.customTransactionMapper.mapCustomTransaction(
+        transaction,
+        value,
+        dataSize,
         chainId,
-        transaction.to,
       );
+    }
 
-      if (token.type === TokenType.Erc20) {
+    const token = await this.tokenRepository
+      .getToken(chainId, transaction.to)
+      .catch(() => null);
+
+    switch (token?.type) {
+      case TokenType.Erc20:
         return this.erc20TransferMapper.mapErc20Transfer(
           token,
           chainId,
           transaction,
         );
-      }
-
-      if (token.type === TokenType.Erc721) {
+      case TokenType.Erc721:
         return this.erc721TransferMapper.mapErc721Transfer(
           token,
           chainId,
           transaction,
         );
-      }
+      default:
+        return this.customTransactionMapper.mapCustomTransaction(
+          transaction,
+          value,
+          dataSize,
+          chainId,
+        );
     }
-
-    return this.customTransactionMapper.mapCustomTransaction(
-      transaction,
-      value,
-      dataSize,
-      chainId,
-    );
   }
 
   private isCustomTransaction(

@@ -52,24 +52,29 @@ export class TransferInfoMapper {
   ): Promise<Transfer> {
     if (isERC20Transfer(domainTransfer)) {
       const { tokenAddress, value } = domainTransfer;
-      const token = await this.getToken(chainId, tokenAddress);
+      const token: Token | null = await this.getToken(
+        chainId,
+        tokenAddress,
+      ).catch(() => null);
       return new Erc20Transfer(
-        token.address,
+        tokenAddress,
         value,
-        token.name,
-        token.symbol,
-        token.logoUri,
-        token.decimals,
+        token?.name,
+        token?.symbol,
+        token?.logoUri,
+        token?.decimals,
       );
     } else if (isERC721Transfer(domainTransfer)) {
       const { tokenAddress, tokenId } = domainTransfer;
-      const token = await this.getToken(chainId, tokenAddress);
+      const token = await this.getToken(chainId, tokenAddress).catch(
+        () => null,
+      );
       return new Erc721Transfer(
-        token.address,
+        tokenAddress,
         tokenId,
-        token.name,
-        token.symbol,
-        token.logoUri,
+        token?.name,
+        token?.symbol,
+        token?.logoUri,
       );
     } else if (isNativeTokenTransfer(domainTransfer)) {
       return new NativeCoinTransfer(domainTransfer.value);
