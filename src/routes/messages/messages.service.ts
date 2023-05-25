@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { groupBy, sortBy } from 'lodash';
+import { groupBy } from 'lodash';
 import { Message as DomainMessage } from '../../domain/messages/entities/message.entity';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
@@ -56,16 +56,15 @@ export class MessagesService {
     const previousURL = cursorUrlFromLimitAndOffset(routeUrl, page.previous);
     const groups = this.getOrderedGroups(page.results);
 
-    const results: (DateLabel | MessageItem)[] = [];
-    await Promise.all(
+    const labelledGroups = await Promise.all(
       groups.map(async ([timestamp, messages]) => {
         const messageItems = await this.messageMapper.mapMessageItems(
           chainId,
           messages,
           safe,
         );
-        results.push(new DateLabel(timestamp));
-        results.push(...messageItems);
+
+        return [new DateLabel(timestamp), ...messageItems];
       }),
     );
 
@@ -73,7 +72,7 @@ export class MessagesService {
       count: page.count,
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      results,
+      results: labelledGroups.flat(),
     };
   }
 
@@ -83,7 +82,7 @@ export class MessagesService {
    * of the day the messages were created, and the messages created in
    * that UTC date.
    *
-   * Tuples are ordered ascending by timestamp.
+   * Tuples are in descending order (by timestamp).
    *
    * @param messages messages to group
    * @returns ordered tuples containing [timestamp, message[]]
@@ -99,8 +98,18 @@ export class MessagesService {
       ),
     );
 
-    return sortBy(Object.entries(groups), ([timestamp]) => timestamp).map(
-      ([timestamp, messages]) => [Number(timestamp), messages],
+    return (
+      Object.keys(groups)
+        // We first sort the groups in descending order (most recent first)
+        .sort((day1, day2) => day2.localeCompare(day1))
+        // For each group we create a tuple of the timestamp of the day
+        // with the messages for that day sorted by creation in descending order
+        .map((groupKey) => {
+          const sortedMessages = groups[groupKey].sort((m1, m2) => {
+            return m2.created.getTime() - m1.created.getTime();
+          });
+          return [Number(groupKey), sortedMessages];
+        })
     );
   }
 
