@@ -1,0 +1,80 @@
+import { Injectable } from '@nestjs/common';
+import { isEmpty } from 'lodash';
+import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
+import {
+  MODULE_TRANSACTION_PREFIX,
+  TRANSACTION_ID_SEPARATOR,
+} from '../../constants';
+import { TransactionData } from '../../entities/transaction-data.entity';
+import { ModuleExecutionDetails } from '../../entities/transaction-details/module-execution-details.entity';
+import { TransactionDetails } from '../../entities/transaction-details/transaction-details.entity';
+import { TransactionDataMapper } from '../common/transaction-data.mapper';
+import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
+import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
+
+@Injectable()
+export class ModuleTransactionDetailsMapper {
+  constructor(
+    private readonly addressInfoHelper: AddressInfoHelper,
+    private readonly statusMapper: ModuleTransactionStatusMapper,
+    private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
+    private readonly transactionDataMapper: TransactionDataMapper,
+  ) {}
+
+  async mapDetails(
+    chainId: string,
+    transaction: ModuleTransaction,
+    safe: Safe,
+  ): Promise<TransactionDetails> {
+    const moduleAddress = await this.addressInfoHelper.getOrDefault(
+      chainId,
+      transaction.module,
+    );
+
+    return {
+      safeAddress: safe.address,
+      txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
+      executedAt: transaction.executionDate?.getTime() ?? null,
+      txStatus: this.statusMapper.mapTransactionStatus(transaction),
+      txInfo: await this.transactionInfoMapper.mapTransactionInfo(
+        chainId,
+        transaction,
+        safe,
+      ),
+      txData: await this.mapTransactionData(chainId, transaction),
+      txHash: transaction.transactionHash,
+      detailedExecutionInfo: new ModuleExecutionDetails(moduleAddress),
+      safeAppInfo: null,
+    };
+  }
+
+  private async mapTransactionData(
+    chainId: string,
+    transaction: ModuleTransaction,
+  ): Promise<TransactionData> {
+    const addressInfoIndex =
+      await this.transactionDataMapper.buildAddressInfoIndex(
+        chainId,
+        transaction.dataDecoded,
+      );
+    const trustedDelegateCallTarget =
+      await this.transactionDataMapper.isTrustedDelegateCall(
+        chainId,
+        transaction.operation,
+        transaction.to,
+        transaction.dataDecoded,
+      );
+
+    return {
+      to: await this.addressInfoHelper.getOrDefault(chainId, transaction.to),
+      value: transaction.value,
+      hexData: transaction.data,
+      dataDecoded: transaction.dataDecoded,
+      operation: transaction.operation,
+      addressInfoIndex: isEmpty(addressInfoIndex) ? null : addressInfoIndex,
+      trustedDelegateCallTarget,
+    };
+  }
+}

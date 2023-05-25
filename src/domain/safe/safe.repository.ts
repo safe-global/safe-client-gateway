@@ -108,6 +108,18 @@ export class SafeRepository implements ISafeRepository {
     await this.invalidateTransactions(chainId, transaction.safe);
   }
 
+  async getModuleTransaction(
+    chainId: string,
+    moduleTransactionId: string,
+  ): Promise<ModuleTransaction> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const moduleTransaction = await transactionService.getModuleTransaction(
+      moduleTransactionId,
+    );
+    return this.moduleTransactionValidator.validate(moduleTransaction);
+  }
+
   async getModuleTransactions(
     chainId: string,
     safeAddress: string,
@@ -303,6 +315,13 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return page;
+  }
+
+  async getTransfer(chainId: string, transferId: string): Promise<Transfer> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    const transfer = await transactionService.getTransfer(transferId);
+    return this.transferValidator.validate(transfer);
   }
 
   async getSafesByOwner(

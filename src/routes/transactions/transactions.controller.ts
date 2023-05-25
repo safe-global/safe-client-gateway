@@ -32,6 +32,7 @@ import { ProposeTransactionDtoValidationPipe } from './pipes/propose-transaction
 import { AddConfirmationDtoValidationPipe } from './pipes/add-confirmation.validation.pipe';
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
+import { TransactionDetails } from './entities/transaction-details/transaction-details.entity';
 
 @ApiTags('transactions')
 @Controller({
@@ -40,6 +41,15 @@ import { Transaction } from './entities/transaction.entity';
 })
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
+
+  @ApiOkResponse({ type: TransactionDetails })
+  @Get(`chains/:chainId/transactions/:id`)
+  async getTransactionById(
+    @Param('chainId') chainId: string,
+    @Param('id') id: string,
+  ): Promise<TransactionDetails> {
+    return this.transactionsService.getById(chainId, id);
+  }
 
   @ApiOkResponse({ type: MultisigTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
@@ -27,6 +27,16 @@ import { TransactionPreviewMapper } from './mappers/transaction-preview.mapper';
 import { ProposeTransactionDto } from './entities/propose-transaction.dto.entity';
 import { TransactionsHistoryMapper } from './mappers/transactions-history.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
+import {
+  MODULE_TRANSACTION_PREFIX,
+  MULTISIG_TRANSACTION_PREFIX,
+  TRANSACTION_ID_SEPARATOR,
+  TRANSFER_PREFIX,
+} from './constants';
+import { ModuleTransactionDetailsMapper } from './mappers/module-transactions/module-transaction-details.mapper';
+import { TransactionDetails } from './entities/transaction-details/transaction-details.entity';
+import { TransferDetailsMapper } from './mappers/transfers/transfer-details.mapper';
+import { MultisigTransactionDetailsMapper } from './mappers/multisig-transactions/multisig-transaction-details.mapper';
 
 @Injectable()
 export class TransactionsService {
@@ -38,7 +48,39 @@ export class TransactionsService {
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionsHistoryMapper: TransactionsHistoryMapper,
     private readonly transactionPreviewMapper: TransactionPreviewMapper,
+    private readonly moduleTransactionDetailsMapper: ModuleTransactionDetailsMapper,
+    private readonly multisigTransactionDetailsMapper: MultisigTransactionDetailsMapper,
+    private readonly transferDetailsMapper: TransferDetailsMapper,
   ) {}
+
+  async getById(chainId: string, txId: string): Promise<TransactionDetails> {
+    const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
+
+    if (txType === MODULE_TRANSACTION_PREFIX) {
+      const tx = await this.safeRepository.getModuleTransaction(chainId, id);
+      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx, safe);
+    }
+    if (txType === TRANSFER_PREFIX) {
+      const transfer = await this.safeRepository.getTransfer(chainId, id);
+      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
+    }
+    if (txType === MULTISIG_TRANSACTION_PREFIX) {
+      const tx = await this.safeRepository.getMultiSigTransaction(chainId, id);
+      const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+      return this.multisigTransactionDetailsMapper.mapDetails(
+        chainId,
+        tx,
+        safe,
+      );
+    }
+
+    throw new BadRequestException({
+      message: 'Invalid transaction type',
+      code: 400,
+    });
+  }
 
   async getMultisigTransactions(
     chainId: string,

@@ -16,6 +16,7 @@ export class CacheRouter {
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
+  private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
@@ -24,6 +25,7 @@ export class CacheRouter {
   private static readonly SAFE_KEY = 'safe';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKENS_KEY = 'tokens';
+  private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
 
   static getBalancesCacheKey(chainId: string, safeAddress: string): string {
@@ -100,6 +102,13 @@ export class CacheRouter {
     );
   }
 
+  static getTransferCacheDir(chainId: string, transferId: string): CacheDir {
+    return new CacheDir(
+      `${chainId}_${CacheRouter.TRANSFER_KEY}_${transferId}`,
+      '',
+    );
+  }
+
   static getTransfersCacheDir(
     chainId: string,
     safeAddress: string,
@@ -111,6 +120,16 @@ export class CacheRouter {
     return new CacheDir(
       `${chainId}_${CacheRouter.TRANSFERS_KEY}_${safeAddress}`,
       `${onlyErc20}_${onlyErc721}_${limit}_${offset}`,
+    );
+  }
+
+  static getModuleTransactionCacheDir(
+    chainId: string,
+    moduleTransactionId: string,
+  ): CacheDir {
+    return new CacheDir(
+      `${chainId}_${CacheRouter.MODULE_TRANSACTION_KEY}_${moduleTransactionId}`,
+      '',
     );
   }
 
