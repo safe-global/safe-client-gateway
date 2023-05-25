@@ -6,7 +6,7 @@ export const getEstimationDtoSchema: JSONSchemaType<GetEstimationDto> = {
   type: 'object',
   properties: {
     to: { type: 'string' },
-    value: { type: 'string', pattern: '^([0-9]+)$' },
+    value: { type: 'string', pattern: '^d*.?d+$' },
     data: { type: 'string', nullable: true },
     operation: { type: 'number', enum: [0, 1] },
   },
