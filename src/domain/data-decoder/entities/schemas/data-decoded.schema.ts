@@ -6,7 +6,7 @@ export const dataDecodedParameterSchema: Schema = {
   properties: {
     name: { type: 'string' },
     type: { type: 'string' },
-    value: {},
+    value: { type: 'string' },
     valueDecoded: { type: ['object', 'array', 'null'] },
   },
   required: ['name', 'type', 'value'],
