@@ -37,7 +37,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder().build();
+    const token = tokenBuilder().with('address', transfer.tokenAddress).build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
@@ -68,7 +68,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder().build();
+    const token = tokenBuilder().with('address', transfer.tokenAddress).build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
