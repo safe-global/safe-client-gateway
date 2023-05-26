@@ -465,9 +465,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           txInfo: {
             type: 'Custom',
             to: {
-              value: contract.address,
-              name: contract.displayName,
-              logoUri: contract.logoUri,
+              value: token.address,
+              name: token.name,
+              logoUri: token.logoUri,
             },
             dataSize: '16',
             value: Number(tx.value).toString(),

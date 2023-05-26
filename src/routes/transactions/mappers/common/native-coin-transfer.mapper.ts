@@ -22,6 +22,7 @@ export class NativeCoinTransferMapper {
     const recipient = await this.addressInfoHelper.getOrDefault(
       chainId,
       transaction.to,
+      ['TOKEN', 'CONTRACT'],
     );
 
     return new TransferTransactionInfo(

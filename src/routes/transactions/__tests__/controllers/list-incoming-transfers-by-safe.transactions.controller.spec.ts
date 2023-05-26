@@ -143,7 +143,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
       }
@@ -166,7 +166,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
           detail: 'Not found',
         });
       }
-      if (url.includes(getTokenUrlPattern)) {
+      if (url === getTokenUrlPattern) {
         return Promise.resolve({
           data: getJsonResource(
             'incoming-transfers/erc20/token-source-data.json',
@@ -195,7 +195,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
       }
@@ -218,7 +218,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
           detail: 'Not found',
         });
       }
-      if (url.includes(getTokenUrlPattern)) {
+      if (url === getTokenUrlPattern) {
         return Promise.resolve({
           data: getJsonResource(
             'incoming-transfers/erc721/token-source-data.json',

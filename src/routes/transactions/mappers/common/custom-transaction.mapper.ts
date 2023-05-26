@@ -22,6 +22,7 @@ export class CustomTransactionMapper {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       transaction.to,
+      ['TOKEN', 'CONTRACT'],
     );
 
     return new CustomTransactionInfo(

@@ -4,6 +4,10 @@ import { IContractsRepository } from '../../../domain/contracts/contracts.reposi
 import { TokenRepository } from '../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
 import { AddressInfo } from '../entities/address-info.entity';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../../logging/logging.interface';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
@@ -14,6 +18,7 @@ export class AddressInfoHelper {
     private readonly contractsRepository: ContractsRepository,
     @Inject(ITokenRepository)
     private readonly tokenRepository: TokenRepository,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -21,18 +26,30 @@ export class AddressInfoHelper {
    * information for {@link address}
    *
    * The promise can be rejected if the address info cannot be retrieved for
-   * the specified {@link source}
+   * any specified {@link source}
    *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
-   * @param source - the {@link Source} to which we want to retrieve its metadata
+   * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-  get(
+
+  async get(
     chainId: string,
     address: string,
-    source: Source = 'CONTRACT',
+    sources: Source[],
   ): Promise<AddressInfo> {
-    return this._getFromSource(chainId, address, source);
+    for (const source of sources) {
+      try {
+        return await this._getFromSource(chainId, address, source as Source);
+      } catch (e) {
+        this.loggingService.debug(
+          `Could not get address info with source=${source} for ${address}`,
+        );
+      }
+    }
+    return Promise.reject(
+      `Could not get address info from provided sources=${sources} for ${address}`,
+    );
   }
 
   /**
@@ -43,14 +60,14 @@ export class AddressInfoHelper {
    *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
-   * @param source - the {@link Source} to which we want to retrieve its metadata
+   * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
   getOrDefault(
     chainId: string,
     address: string,
-    source: Source = 'CONTRACT',
+    sources: Source[],
   ): Promise<AddressInfo> {
-    return this.get(chainId, address, source).catch(
+    return this.get(chainId, address, sources).catch(
       () => new AddressInfo(address),
     );
   }
@@ -60,15 +77,15 @@ export class AddressInfoHelper {
    *
    * @param chainId - the chain id where the source exists
    * @param addresses - the collection of addresses to which we want to retrieve the respective metadata
-   * @param source - the {@link Source} to which we want to retrieve its metadata
+   * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
   getCollection(
     chainId: string,
     addresses: string[],
-    source: Source = 'CONTRACT',
+    sources: Source[],
   ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
-      addresses.map((address) => this.getOrDefault(chainId, address, source)),
+      addresses.map((address) => this.getOrDefault(chainId, address, sources)),
     ).then((results) =>
       results.map((result) => {
         if (result.status == 'fulfilled') return result.value;

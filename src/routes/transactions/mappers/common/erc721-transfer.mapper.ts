@@ -34,10 +34,13 @@ export class Erc721TransferMapper {
     const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       sender,
+      ['TOKEN', 'CONTRACT'],
     );
+
     const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       recipient,
+      ['TOKEN', 'CONTRACT'],
     );
 
     return new TransferTransactionInfo(
