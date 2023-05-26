@@ -20,11 +20,8 @@ export class AddressInfoHelper {
    * Returns a promise for {@link AddressInfo} which contains the source
    * information for {@link address}
    *
-   * If the {@link address} is 0x0000000000000000000000000000000000000000,
-   * null is returned
-   *
-   * The promise can result in rejection if the source information
-   * is not found or cannot be retrieved
+   * The promise can be rejected if the address info cannot be retrieved for
+   * the specified {@link source}
    *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
@@ -34,10 +31,7 @@ export class AddressInfoHelper {
     chainId: string,
     address: string,
     source: Source = 'CONTRACT',
-  ): Promise<AddressInfo | null> {
-    if (address == '0x0000000000000000000000000000000000000000')
-      return Promise.resolve(null);
-
+  ): Promise<AddressInfo> {
     return this._getFromSource(chainId, address, source);
   }
 
@@ -56,9 +50,9 @@ export class AddressInfoHelper {
     address: string,
     source: Source = 'CONTRACT',
   ): Promise<AddressInfo> {
-    return this.get(chainId, address, source)
-      .then((addressInfo) => addressInfo ?? new AddressInfo(address))
-      .catch(() => new AddressInfo(address));
+    return this.get(chainId, address, source).catch(
+      () => new AddressInfo(address),
+    );
   }
 
   /**
