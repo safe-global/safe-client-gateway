@@ -29,9 +29,12 @@ export class SafeAppsService {
           safeApp.iconUrl,
           safeApp.description,
           safeApp.chainIds.map((chainId) => chainId.toString()),
+          safeApp.provider,
           safeApp.accessControl,
           safeApp.tags,
-          safeApp.provider,
+          safeApp.features,
+          safeApp.developerWebsite,
+          safeApp.socialProfiles,
         ),
     );
   }

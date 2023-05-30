@@ -8,6 +8,7 @@ import {
   safeAppAccessControlSchema,
   safeAppProviderSchema,
   safeAppSchema,
+  safeAppSocialProfileSchema,
 } from './entities/schemas/safe-app.schema';
 
 @Injectable()
@@ -26,6 +27,11 @@ export class SafeAppsValidator implements IValidator<SafeApp> {
     this.jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json',
       safeAppAccessControlSchema,
+    );
+
+    this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe-apps/safe-app-social-profile.json',
+      safeAppSocialProfileSchema,
     );
 
     this.isValidSafeApp = this.jsonSchemaService.getSchema(

@@ -41,6 +41,14 @@ describe('Get Safe Apps e2e test', () => {
               name: expect.any(String),
               url: expect.any(String),
               chainIds: expect.arrayContaining([chainId]),
+              iconUrl: expect.any(String),
+              description: expect.any(String),
+              accessControl: expect.objectContaining({
+                type: expect.any(String),
+              }),
+              tags: expect.any(Array),
+              features: expect.any(Array),
+              socialProfiles: expect.any(Array),
             }),
           ),
         );
@@ -70,6 +78,14 @@ describe('Get Safe Apps e2e test', () => {
             name: 'Transaction Builder',
             url: transactionBuilderUrl,
             chainIds: expect.arrayContaining([chainId]),
+            iconUrl: expect.any(String),
+            description: expect.any(String),
+            accessControl: expect.objectContaining({
+              type: expect.any(String),
+            }),
+            tags: expect.any(Array),
+            features: expect.any(Array),
+            socialProfiles: expect.any(Array),
           }),
         );
       });
