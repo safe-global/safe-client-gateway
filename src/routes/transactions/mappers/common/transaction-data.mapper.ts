@@ -9,7 +9,6 @@ import {
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { isHex } from '../../../common/utils/utils';
 import { Contract } from '../../../contracts/entities/contract.entity';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import {
@@ -110,18 +109,17 @@ export class TransactionDataMapper {
     const { method, parameters } = dataDecoded;
     const promises: Promise<(AddressInfo | null)[] | AddressInfo | null>[] = [];
 
-    if (method === MULTI_SEND_METHOD_NAME) {
-      for (const parameter of parameters) {
-        const { name, valueDecoded } = parameter;
-        if (name === TRANSACTIONS_PARAMETER_NAME && valueDecoded) {
-          promises.push(this._getFromValueDecoded(chainId, valueDecoded));
-        }
-      }
-    } else {
-      for (const parameter of parameters) {
-        if (parameter.type === ADDRESS_PARAMETER_TYPE) {
-          promises.push(this._getIfValid(chainId, parameter.value));
-        }
+    for (const parameter of parameters) {
+      if (
+        method === MULTI_SEND_METHOD_NAME &&
+        parameter.name === TRANSACTIONS_PARAMETER_NAME &&
+        parameter.valueDecoded
+      ) {
+        promises.push(
+          this._getFromValueDecoded(chainId, parameter.valueDecoded),
+        );
+      } else if (parameter.type === ADDRESS_PARAMETER_TYPE) {
+        promises.push(this._getIfValid(chainId, parameter.value));
       }
     }
 
@@ -148,12 +146,10 @@ export class TransactionDataMapper {
     if (!isArray(valueDecoded)) return [];
     const promises: Promise<AddressInfo | null>[] = [];
 
-    for (const operation of valueDecoded) {
-      if (operation.to) {
-        promises.push(this._getIfValid(chainId, operation.to));
-      }
-      if (operation?.dataDecoded?.parameters) {
-        for (const param of operation?.dataDecoded?.parameters) {
+    for (const transaction of valueDecoded) {
+      promises.push(this._getIfValid(chainId, transaction.to));
+      if (transaction?.dataDecoded?.parameters) {
+        for (const param of transaction?.dataDecoded?.parameters) {
           if (param.type === ADDRESS_PARAMETER_TYPE) {
             promises.push(this._getIfValid(chainId, param.value));
           }
@@ -172,12 +168,7 @@ export class TransactionDataMapper {
     chainId: string,
     value: unknown,
   ): Promise<AddressInfo | null> {
-    if (
-      typeof value === 'string' &&
-      value.length == 42 &&
-      isHex(value) &&
-      value !== NULL_ADDRESS
-    ) {
+    if (typeof value === 'string' && value !== NULL_ADDRESS) {
       const addressInfo = await this.addressInfoHelper
         .get(chainId, value, 'TOKEN')
         .catch(() => this.addressInfoHelper.get(chainId, value, 'CONTRACT'))
