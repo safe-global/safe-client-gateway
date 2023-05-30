@@ -6,7 +6,8 @@ export const dataDecodedParameterSchema: Schema = {
   properties: {
     name: { type: 'string' },
     type: { type: 'string' },
-    value: { type: 'string' },
+    // bypassing validation for 'value' property, it has type 'any' in the source (Transaction Service)
+    value: {},
     valueDecoded: { type: ['object', 'array', 'null'] },
   },
   required: ['name', 'type', 'value'],

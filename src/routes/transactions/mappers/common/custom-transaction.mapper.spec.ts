@@ -94,6 +94,10 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
           .with('parameters', [
             dataDecodedParameterBuilder()
               .with('name', 'transactions')
+              .with('value', [
+                faker.random.alphaNumeric(),
+                faker.random.alphaNumeric(),
+              ])
               .with('valueDecoded', [1, 2, 3])
               .build(),
           ])
