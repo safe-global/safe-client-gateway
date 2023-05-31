@@ -39,10 +39,7 @@ export const safeAppAccessControlSchema: JSONSchemaType<SafeAppAccessControl> =
         properties: {
           type: {
             type: 'string',
-            enum: [
-              SafeAppAccessControlPolicies.NoRestrictions,
-              SafeAppAccessControlPolicies.Unknown,
-            ],
+            not: { enum: [SafeAppAccessControlPolicies.DomainAllowlist] },
           },
         },
       },

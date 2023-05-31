@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { SafeAppAccessControlPolicies } from '../../domain/safe-apps/entities/safe-app-access-control.entity';
+import { SafeApp as DomainSafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
 import { SafeAppsRepository } from '../../domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '../../domain/safe-apps/safe-apps.repository.interface';
+import { SafeAppAccessControl } from './entities/safe-app-access-control.entity';
 import { SafeApp } from './entities/safe-app.entity';
 
 @Injectable()
@@ -20,6 +23,7 @@ export class SafeAppsService {
       clientUrl,
       url,
     );
+
     return result.map(
       (safeApp) =>
         new SafeApp(
@@ -30,12 +34,34 @@ export class SafeAppsService {
           safeApp.description,
           safeApp.chainIds.map((chainId) => chainId.toString()),
           safeApp.provider,
-          safeApp.accessControl,
+          this._parseAccessControl(safeApp),
           safeApp.tags,
           safeApp.features,
           safeApp.developerWebsite,
           safeApp.socialProfiles,
         ),
     );
+  }
+
+  private _parseAccessControl(
+    domainSafeApp: DomainSafeApp,
+  ): SafeAppAccessControl {
+    switch (domainSafeApp.accessControl.type) {
+      case SafeAppAccessControlPolicies.NoRestrictions:
+        return <SafeAppAccessControl>{
+          type: SafeAppAccessControlPolicies.NoRestrictions,
+          value: domainSafeApp.accessControl.value,
+        };
+      case SafeAppAccessControlPolicies.DomainAllowlist:
+        return <SafeAppAccessControl>{
+          type: SafeAppAccessControlPolicies.DomainAllowlist,
+          value: domainSafeApp.accessControl.value,
+        };
+      default:
+        return <SafeAppAccessControl>{
+          type: SafeAppAccessControlPolicies.Unknown,
+          value: domainSafeApp.accessControl.value,
+        };
+    }
   }
 }

@@ -17,7 +17,6 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { SafeAppAccessControlPolicies } from '../../domain/safe-apps/entities/safe-app-access-control.entity';
 import { safeAppAccessControlBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
@@ -62,42 +61,22 @@ describe('Safe Apps Controller (Unit)', () => {
   });
 
   describe('Get Safe Apps', () => {
-    it('Success with DOMAIN_ALLOWLIST accessControl', async () => {
+    it('Success', async () => {
       const chain = chainBuilder().build();
       const safeAppsResponse = [
-        safeAppBuilder().build(),
         safeAppBuilder()
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
+              .with('type', 'DOMAIN_ALLOWLIST')
               .build(),
           )
           .build(),
-      ];
-
-      mockNetworkService.get.mockImplementation((url) => {
-        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
-        if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chain.chainId}/safe-apps`)
-        .expect(200);
-    });
-
-    it('Success with NO_RESTRICTIONS accessControl', async () => {
-      const chain = chainBuilder().build();
-      const safeAppsResponse = [
-        safeAppBuilder().build(),
         safeAppBuilder()
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', SafeAppAccessControlPolicies.NoRestrictions)
+              .with('type', 'NO_RESTRICTIONS')
               .with('value', null)
               .build(),
           )
@@ -114,18 +93,22 @@ describe('Safe Apps Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
-        .expect(200);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toBeInstanceOf(Array);
+          expect(body[0].accessControl.type).toBe('DOMAIN_ALLOWLIST');
+          expect(body[1].accessControl.type).toBe('NO_RESTRICTIONS');
+        });
     });
 
     it('Success with UNKNOWN accessControl', async () => {
       const chain = chainBuilder().build();
       const safeAppsResponse = [
-        safeAppBuilder().build(),
         safeAppBuilder()
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', SafeAppAccessControlPolicies.Unknown)
+              .with('type', faker.random.word())
               .with('value', null)
               .build(),
           )
@@ -142,7 +125,11 @@ describe('Safe Apps Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
-        .expect(200);
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toBeInstanceOf(Array);
+          expect(body[0].accessControl.type).toBe('UNKNOWN');
+        });
     });
 
     it('Should get a data source validation error: DOMAIN_ALLOWLIST values are not URIs', async () => {
@@ -153,7 +140,7 @@ describe('Safe Apps Controller (Unit)', () => {
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
+              .with('type', 'DOMAIN_ALLOWLIST')
               .with('value', [
                 faker.datatype.hexadecimal(),
                 faker.datatype.hexadecimal(),
