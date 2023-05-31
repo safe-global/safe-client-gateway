@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { isArray } from 'lodash';
+import { isArray, isEmpty } from 'lodash';
 import { ContractsRepository } from '../../../../domain/contracts/contracts.repository';
 import { IContractsRepository } from '../../../../domain/contracts/contracts.repository.interface';
 import {
@@ -9,9 +9,7 @@ import {
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { isHex } from '../../../common/utils/utils';
 import { Contract } from '../../../contracts/entities/contract.entity';
-import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import {
   ADDRESS_PARAMETER_TYPE,
@@ -58,7 +56,7 @@ export class TransactionDataMapper {
       previewTransactionDto.value,
       previewTransactionDto.operation,
       isTrustedDelegateCall ?? null,
-      addressInfoIndex,
+      isEmpty(addressInfoIndex) ? null : addressInfoIndex,
     );
   }
 
@@ -99,7 +97,7 @@ export class TransactionDataMapper {
    * Builds a {@link Record<string, AddressInfo>} which contains all the addresses
    * extracted from {@link DataDecoded} as keys, and their related {@link AddressInfo}
    * as value.
-   * @param chainId chain id
+   * @param chainId - chain id to use
    * @param dataDecoded data decoded to use
    * @returns {@link Record<string, AddressInfo>}
    */
@@ -108,61 +106,75 @@ export class TransactionDataMapper {
     dataDecoded: DataDecoded | null,
   ): Promise<Record<string, AddressInfo>> {
     if (dataDecoded === null || !isArray(dataDecoded.parameters)) return {};
+    const { method, parameters } = dataDecoded;
+    const promises: Promise<(AddressInfo | null)[] | AddressInfo | null>[] = [];
 
-    const addressInfos = await Promise.all(
-      this.getAddressParametersFromDataDecoded(dataDecoded).map((param) =>
-        this.getIfValidAddress(chainId, param),
-      ),
-    );
+    for (const parameter of parameters) {
+      if (
+        method === MULTI_SEND_METHOD_NAME &&
+        parameter.name === TRANSACTIONS_PARAMETER_NAME &&
+        parameter.valueDecoded
+      ) {
+        promises.push(
+          this._getFromValueDecoded(chainId, parameter.valueDecoded),
+        );
+      } else if (parameter.type === ADDRESS_PARAMETER_TYPE) {
+        promises.push(this._getIfValid(chainId, parameter.value));
+      }
+    }
 
-    return addressInfos.reduce(
-      (addressInfoIndex, addressInfo) =>
-        addressInfo
-          ? { ...addressInfoIndex, [addressInfo.value]: addressInfo }
-          : addressInfoIndex,
-      {},
-    );
+    const addressInfos = (await Promise.all(promises))
+      .flat()
+      .filter((i): i is AddressInfo => i !== null);
+
+    return Object.fromEntries(addressInfos.map((i) => [i.value, i]));
   }
 
-  private getAddressParametersFromDataDecoded({
-    parameters,
-    method,
-  }: DataDecoded): DataDecodedParameter[] {
-    if (!isArray(parameters)) return [];
-    return method === MULTI_SEND_METHOD_NAME
-      ? this.getAddressParametersFromMultiSend(parameters)
-      : parameters.filter((p) => p.type === ADDRESS_PARAMETER_TYPE);
-  }
-
-  private getAddressParametersFromMultiSend(
-    parameters: DataDecodedParameter[] | null,
-  ): DataDecodedParameter[] {
-    if (!isArray(parameters)) return [];
-    return parameters
-      .filter((p) => p.name === TRANSACTIONS_PARAMETER_NAME)
-      .flatMap((p) =>
-        this.getAddressParametersFromValueDecoded(p.valueDecoded),
-      );
-  }
-
-  private getAddressParametersFromValueDecoded(
-    valueDecoded: unknown,
-  ): DataDecodedParameter[] {
-    if (!isArray(valueDecoded)) return [];
-    return valueDecoded.flatMap((operation) =>
-      this.getAddressParametersFromDataDecoded(operation.dataDecoded),
-    );
-  }
-
-  private async getIfValidAddress(
+  /**
+   * Gets an array of {@link AddressInfo} for the passed valueDecoded, by iterating
+   * through its operations. For each operation, both its 'to' address and the addresses
+   * contained in its dataDecoded parameters are collected.
+   *
+   * Null values are added to the result array for each invalid value encountered.
+   * @param chainId - chain id to use
+   * @param valueDecoded - valueDecoded to use
+   */
+  private async _getFromValueDecoded(
     chainId: string,
-    { value }: DataDecodedParameter,
+    valueDecoded: unknown,
+  ): Promise<(AddressInfo | null)[]> {
+    if (!isArray(valueDecoded)) return [];
+    const promises: Promise<AddressInfo | null>[] = [];
+
+    for (const transaction of valueDecoded) {
+      promises.push(this._getIfValid(chainId, transaction.to));
+      if (transaction?.dataDecoded?.parameters) {
+        for (const param of transaction?.dataDecoded?.parameters) {
+          if (param.type === ADDRESS_PARAMETER_TYPE) {
+            promises.push(this._getIfValid(chainId, param.value));
+          }
+        }
+      }
+    }
+    return Promise.all(promises);
+  }
+
+  /**
+   * Gets an {@link AddressInfo} for the passed value, if it is valid.
+   * @param chainId - chain id to use
+   * @param value - value to use
+   */
+  private async _getIfValid(
+    chainId: string,
+    value: unknown,
   ): Promise<AddressInfo | null> {
-    return typeof value === 'string' &&
-      value.length == 42 &&
-      isHex(value) &&
-      value !== NULL_ADDRESS
-      ? this.addressInfoHelper.getOrDefault(chainId, value)
-      : null;
+    if (typeof value === 'string' && value !== NULL_ADDRESS) {
+      const addressInfo = await this.addressInfoHelper
+        .get(chainId, value, 'TOKEN')
+        .catch(() => this.addressInfoHelper.get(chainId, value, 'CONTRACT'))
+        .catch(() => null);
+      return addressInfo?.name ? addressInfo : null;
+    }
+    return null;
   }
 }
