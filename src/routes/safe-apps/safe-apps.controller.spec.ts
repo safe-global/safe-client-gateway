@@ -94,11 +94,39 @@ describe('Safe Apps Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toBeInstanceOf(Array);
-          expect(body[0].accessControl.type).toBe('DOMAIN_ALLOWLIST');
-          expect(body[1].accessControl.type).toBe('NO_RESTRICTIONS');
-        });
+        .expect([
+          {
+            id: safeAppsResponse[0].id,
+            url: safeAppsResponse[0].url,
+            name: safeAppsResponse[0].name,
+            iconUrl: safeAppsResponse[0].iconUrl,
+            description: safeAppsResponse[0].description,
+            chainIds: safeAppsResponse[0].chainIds.map((c) => c.toString()),
+            provider: safeAppsResponse[0].provider,
+            accessControl: {
+              type: 'DOMAIN_ALLOWLIST',
+              value: safeAppsResponse[0].accessControl.value,
+            },
+            tags: safeAppsResponse[0].tags,
+            features: safeAppsResponse[0].features,
+            developerWebsite: safeAppsResponse[0].developerWebsite,
+            socialProfiles: safeAppsResponse[0].socialProfiles,
+          },
+          {
+            id: safeAppsResponse[1].id,
+            url: safeAppsResponse[1].url,
+            name: safeAppsResponse[1].name,
+            iconUrl: safeAppsResponse[1].iconUrl,
+            description: safeAppsResponse[1].description,
+            chainIds: safeAppsResponse[1].chainIds.map((c) => c.toString()),
+            provider: safeAppsResponse[1].provider,
+            accessControl: { type: 'NO_RESTRICTIONS' },
+            tags: safeAppsResponse[1].tags,
+            features: safeAppsResponse[1].features,
+            developerWebsite: safeAppsResponse[1].developerWebsite,
+            socialProfiles: safeAppsResponse[1].socialProfiles,
+          },
+        ]);
     });
 
     it('Success with UNKNOWN accessControl', async () => {
@@ -126,10 +154,22 @@ describe('Safe Apps Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toBeInstanceOf(Array);
-          expect(body[0].accessControl.type).toBe('UNKNOWN');
-        });
+        .expect([
+          {
+            id: safeAppsResponse[0].id,
+            url: safeAppsResponse[0].url,
+            name: safeAppsResponse[0].name,
+            iconUrl: safeAppsResponse[0].iconUrl,
+            description: safeAppsResponse[0].description,
+            chainIds: safeAppsResponse[0].chainIds.map((c) => c.toString()),
+            provider: safeAppsResponse[0].provider,
+            accessControl: { type: 'UNKNOWN' },
+            tags: safeAppsResponse[0].tags,
+            features: safeAppsResponse[0].features,
+            developerWebsite: safeAppsResponse[0].developerWebsite,
+            socialProfiles: safeAppsResponse[0].socialProfiles,
+          },
+        ]);
     });
 
     it('Should get a data source validation error: DOMAIN_ALLOWLIST values are not URIs', async () => {
