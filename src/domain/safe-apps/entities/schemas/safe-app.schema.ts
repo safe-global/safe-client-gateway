@@ -1,5 +1,8 @@
 import { JSONSchemaType, Schema } from 'ajv';
-import { SafeAppAccessControl } from '../safe-app-access-control.entity';
+import {
+  SafeAppAccessControl,
+  SafeAppAccessControlPolicies,
+} from '../safe-app-access-control.entity';
 import { SafeAppProvider } from '../safe-app-provider.entity';
 import { SafeAppSocialProfile } from '../safe-app-social-profile.entity';
 
@@ -17,10 +20,33 @@ export const safeAppAccessControlSchema: JSONSchemaType<SafeAppAccessControl> =
   {
     $id: 'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json',
     type: 'object',
-    properties: {
-      type: { type: 'string' },
-      value: { type: 'array', items: { type: 'string' }, nullable: true },
-    },
+    anyOf: [
+      {
+        properties: {
+          type: {
+            type: 'string',
+            enum: [SafeAppAccessControlPolicies.DomainAllowlist],
+          },
+          value: {
+            type: 'array',
+            items: { type: 'string', format: 'uri' },
+            nullable: true,
+          },
+        },
+        required: ['type', 'value'],
+      },
+      {
+        properties: {
+          type: {
+            type: 'string',
+            enum: [
+              SafeAppAccessControlPolicies.NoRestrictions,
+              SafeAppAccessControlPolicies.Unknown,
+            ],
+          },
+        },
+      },
+    ],
     required: ['type'],
   };
 
@@ -30,7 +56,7 @@ export const safeAppSocialProfileSchema: JSONSchemaType<SafeAppSocialProfile> =
     type: 'object',
     properties: {
       platform: { type: 'string' },
-      url: { type: 'string' },
+      url: { type: 'string', format: 'uri' },
     },
     required: ['platform', 'url'],
   };
@@ -49,7 +75,7 @@ export const safeAppSchema: Schema = {
     accessControl: { $ref: 'safe-app-access-control.json' },
     tags: { type: 'array', items: { type: 'string' } },
     features: { type: 'array', items: { type: 'string' } },
-    developerWebsite: { type: 'string', nullable: true },
+    developerWebsite: { type: 'string', format: 'uri', nullable: true },
     socialProfiles: {
       type: 'array',
       items: { $ref: 'safe-app-social-profile.json' },
