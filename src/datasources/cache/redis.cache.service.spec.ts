@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import { ILoggingService } from '../../logging/logging.interface';
 import { RedisClientType } from './cache.module';
 import { CacheDir } from './entities/cache-dir.entity';
 import { RedisCacheService } from './redis.cache.service';
+import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import clearAllMocks = jest.clearAllMocks;
 
 const redisClientType = {

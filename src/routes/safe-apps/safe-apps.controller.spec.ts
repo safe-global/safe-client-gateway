@@ -4,10 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -23,17 +19,13 @@ import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-a
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ValidationModule } from '../../validation/validation.module';
 import { SafeAppsModule } from './safe-apps.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Safe Apps Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -46,12 +38,15 @@ describe('Safe Apps Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -83,7 +78,7 @@ describe('Safe Apps Controller (Unit)', () => {
           .build(),
       ];
       mockNetworkService.get.mockImplementation((url) => {
-        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+        const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({ data: safeAppsResponse });
         }
@@ -132,7 +127,7 @@ describe('Safe Apps Controller (Unit)', () => {
       const chain = chainBuilder().build();
       const safeAppsResponse = [safeAppBuilder().build()];
       mockNetworkService.get.mockImplementation((url) => {
-        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+        const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({
             data: [
@@ -189,7 +184,7 @@ describe('Safe Apps Controller (Unit)', () => {
       ];
 
       mockNetworkService.get.mockImplementation((url) => {
-        const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+        const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({ data: safeAppsResponse });
         }

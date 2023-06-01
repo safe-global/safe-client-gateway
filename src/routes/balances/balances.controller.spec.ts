@@ -3,10 +3,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -24,18 +20,14 @@ import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { BalancesModule } from './balances.module';
 import { NULL_ADDRESS } from '../common/constants';
 import { faker } from '@faker-js/faker';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
-    fakeConfigurationService.set('exchange.apiKey', 'testKey');
-    fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
-    );
-  });
+  let safeConfigUrl;
+  let exchangeUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -48,12 +40,16 @@ describe('Balances Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    exchangeUrl = configurationService.get('exchange.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -74,7 +70,7 @@ describe('Balances Controller (Unit)', () => {
         .build();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
         } else if (
           url ==
@@ -83,7 +79,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == 'https://test.exchange/latest') {
+        } else if (url == `${exchangeUrl}/latest`) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -116,7 +112,7 @@ describe('Balances Controller (Unit)', () => {
       // 3 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API
       expect(mockNetworkService.get.mock.calls.length).toBe(3);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
@@ -125,7 +121,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: undefined, exclude_spam: undefined },
       });
       expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        'https://test.exchange/latest',
+        `${exchangeUrl}/latest`,
       );
     });
 
@@ -139,7 +135,7 @@ describe('Balances Controller (Unit)', () => {
       const trusted = true;
 
       mockNetworkService.get.mockImplementation((url) => {
-        if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
         } else if (
           url ==
@@ -148,7 +144,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == 'https://test.exchange/latest') {
+        } else if (url == `${exchangeUrl}/latest`) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -181,7 +177,7 @@ describe('Balances Controller (Unit)', () => {
         .build();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) => {
-        if (url == `https://test.safe.config/api/v1/chains/${chain.chainId}`) {
+        if (url == `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: chain });
         } else if (
           url ==
@@ -190,7 +186,7 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == 'https://test.exchange/latest') {
+        } else if (url == `${exchangeUrl}/latest`) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -248,7 +244,7 @@ describe('Balances Controller (Unit)', () => {
         const transactionApiBalancesResponse = [balanceBuilder().build()];
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -257,7 +253,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange/latest') {
+          } else if (url == `${exchangeUrl}/latest`) {
             return Promise.reject({ status: 500 });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -282,7 +278,7 @@ describe('Balances Controller (Unit)', () => {
         const exchangeApiResponse = { success: true, base: 'USD' }; // no rates
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -291,7 +287,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange/latest') {
+          } else if (url == `${exchangeUrl}/latest`) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -320,7 +316,7 @@ describe('Balances Controller (Unit)', () => {
           .build(); // Returns different rate than USD
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -329,7 +325,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange/latest') {
+          } else if (url == `${exchangeUrl}/latest`) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -358,7 +354,7 @@ describe('Balances Controller (Unit)', () => {
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -367,7 +363,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange/latest') {
+          } else if (url == `${exchangeUrl}/latest`) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -397,7 +393,7 @@ describe('Balances Controller (Unit)', () => {
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
@@ -406,7 +402,7 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == 'https://test.exchange/latest') {
+          } else if (url == `${exchangeUrl}/latest`) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -436,14 +432,14 @@ describe('Balances Controller (Unit)', () => {
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.reject({ status: 500 });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == '${exchangeUrl}') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -470,14 +466,14 @@ describe('Balances Controller (Unit)', () => {
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         mockNetworkService.get.mockImplementation((url) => {
-          if (url == `https://test.safe.config/api/v1/chains/${chainId}`) {
+          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
           ) {
             return Promise.resolve({ data: [{ invalid: 'data' }] });
-          } else if (url == 'https://test.exchange') {
+          } else if (url == '${exchangeUrl}') {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));

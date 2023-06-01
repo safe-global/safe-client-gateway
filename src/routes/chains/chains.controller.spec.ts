@@ -4,10 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -29,9 +25,17 @@ import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
+
+  let safeConfigUrl;
+  let name;
+  let version;
+  let buildNumber;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
@@ -42,20 +46,6 @@ describe('Chains Controller (Unit)', () => {
 
   const chainResponse: Chain = chainBuilder().build();
   const backboneResponse: Backbone = backboneBuilder().build();
-
-  beforeAll(async () => {
-    fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
-    );
-
-    fakeConfigurationService.set(
-      'exchange.baseUri',
-      'https://test.exchange.service',
-    );
-
-    fakeConfigurationService.set('exchange.apiKey', 'https://test.api.key');
-  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -68,12 +58,18 @@ describe('Chains Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    name = configurationService.get('about.name');
+    version = configurationService.get('about.version');
+    buildNumber = configurationService.get('about.buildNumber');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -134,7 +130,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        'https://test.safe.config/api/v1/chains',
+        `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
@@ -156,7 +152,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        'https://test.safe.config/api/v1/chains',
+        `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
@@ -182,7 +178,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        'https://test.safe.config/api/v1/chains',
+        `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
@@ -267,7 +263,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/about`,
@@ -290,7 +286,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
     });
@@ -311,7 +307,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/about`,
@@ -348,7 +344,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/about/master-copies/`,
@@ -371,7 +367,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(1);
       expect(mockNetworkService.get).toBeCalledWith(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
     });
@@ -392,7 +388,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(mockNetworkService.get).toBeCalledTimes(2);
       expect(mockNetworkService.get.mock.calls[0][0]).toBe(
-        'https://test.safe.config/api/v1/chains/1',
+        `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(mockNetworkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/about/master-copies/`,
@@ -424,12 +420,6 @@ describe('Chains Controller (Unit)', () => {
   describe('GET /:chainId/about', () => {
     it('Success', async () => {
       const chainDomain = chainBuilder().build();
-      const name = faker.random.words();
-      const version = faker.system.semver();
-      const buildNumber = faker.random.numeric();
-      fakeConfigurationService.set('about.name', name);
-      fakeConfigurationService.set('about.version', version);
-      fakeConfigurationService.set('about.buildNumber', buildNumber);
       const expectedResult = {
         transactionServiceBaseUri: chainDomain.transactionService,
         name,

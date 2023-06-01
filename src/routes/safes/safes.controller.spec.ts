@@ -1,9 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -40,20 +36,13 @@ import {
 import { TestAppProvider } from '../../app.provider';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
-
-  const safeConfigUri = faker.internet.url();
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigUri);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set(
-      'exchange.apiKey',
-      faker.random.alphaNumeric(),
-    );
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -66,12 +55,15 @@ describe('Safes Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -130,7 +122,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -212,7 +204,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -262,7 +254,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -313,7 +305,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -367,7 +359,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -433,7 +425,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -502,7 +494,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -570,7 +562,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -638,7 +630,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -693,7 +685,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -764,7 +756,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -807,7 +799,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });
@@ -856,7 +848,7 @@ describe('Safes Controller (Unit)', () => {
     const allTransactions = pageBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
-        case `${safeConfigUri}/api/v1/chains/${chain.chainId}`:
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo });

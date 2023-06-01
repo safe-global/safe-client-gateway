@@ -4,10 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../../../datasources/cache/__tests__/test.cache.module';
@@ -29,17 +25,13 @@ import { TestLoggingModule } from '../../../../logging/__tests__/test.logging.mo
 import { ValidationModule } from '../../../../validation/validation.module';
 import { TransactionsModule } from '../../transactions.module';
 import { addConfirmationDtoBuilder } from '../entities/add-confirmation.dto.builder';
+import { ConfigurationModule } from '../../../../config/configuration.module';
+import configuration from '../../../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -52,12 +44,15 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -86,10 +81,10 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     ) as MultisigTransaction;
     const safe = safeBuilder().with('address', transaction.safe).build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
-      const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
       switch (url) {
         case getChainUrl:

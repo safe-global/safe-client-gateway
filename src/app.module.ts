@@ -33,6 +33,7 @@ import { FlushModule } from './routes/flush/flush.module';
 import { RequestScopedLoggingModule } from './logging/logging.module';
 import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
+import configuration from './config/entities/configuration';
 
 @Module({
   imports: [
@@ -64,7 +65,7 @@ import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middlewa
         idGenerator: () => uuidv4(),
       },
     }),
-    ConfigurationModule,
+    ConfigurationModule.register(configuration),
     DomainModule,
     NetworkModule,
     RequestScopedLoggingModule,

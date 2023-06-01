@@ -17,10 +17,6 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from '../../datasources/network/entities/network.error.entity';
-import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { collectibleBuilder } from '../../domain/collectibles/entities/__tests__/collectible.builder';
 import {
@@ -31,18 +27,13 @@ import { PaginationData } from '../common/pagination/pagination.data';
 import { TestAppProvider } from '../../app.provider';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
-    fakeConfigurationService.set('exchange.apiKey', 'testKey');
-    fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
-    );
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -55,12 +46,15 @@ describe('Collectibles Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -88,7 +82,7 @@ describe('Collectibles Controller (Unit)', () => {
 
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `https://test.safe.config/api/v1/chains/${chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse });
@@ -131,7 +125,7 @@ describe('Collectibles Controller (Unit)', () => {
 
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `https://test.safe.config/api/v1/chains/${chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse });
@@ -175,7 +169,7 @@ describe('Collectibles Controller (Unit)', () => {
 
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `https://test.safe.config/api/v1/chains/${chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse });
@@ -209,7 +203,7 @@ describe('Collectibles Controller (Unit)', () => {
       });
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `https://test.safe.config/api/v1/chains/${chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
@@ -234,7 +228,7 @@ describe('Collectibles Controller (Unit)', () => {
       const transactionServiceError = new NetworkRequestError({});
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `https://test.safe.config/api/v1/chains/${chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
