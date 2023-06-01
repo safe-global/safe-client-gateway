@@ -1,10 +1,10 @@
-import * as request from 'supertest';
-import { RedisClientType } from 'redis';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { RedisClientType } from 'redis';
+import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
-import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 import { TestAppProvider } from '../../../app.provider';
+import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;
@@ -32,15 +32,23 @@ describe('Get Safe Apps e2e test', () => {
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safe-apps`)
       .expect(200)
-      .then(({ body }) => {
-        expect(body).toEqual(expect.any(Array));
-        body.map((safeApp) =>
+      .expect(({ body }) => {
+        expect(body).toBeInstanceOf(Array);
+        body.forEach((safeApp) =>
           expect(safeApp).toEqual(
             expect.objectContaining({
               id: expect.any(Number),
               name: expect.any(String),
               url: expect.any(String),
               chainIds: expect.arrayContaining([chainId]),
+              iconUrl: expect.any(String),
+              description: expect.any(String),
+              accessControl: expect.objectContaining({
+                type: expect.any(String),
+              }),
+              tags: expect.any(Array),
+              features: expect.any(Array),
+              socialProfiles: expect.any(Array),
             }),
           ),
         );
@@ -61,8 +69,8 @@ describe('Get Safe Apps e2e test', () => {
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safe-apps/?url=${transactionBuilderUrl}`)
       .expect(200)
-      .then(({ body }) => {
-        expect(body).toEqual(expect.any(Array));
+      .expect(({ body }) => {
+        expect(body).toBeInstanceOf(Array);
         expect(body.length).toBe(1);
         expect(body[0]).toEqual(
           expect.objectContaining({
@@ -70,6 +78,14 @@ describe('Get Safe Apps e2e test', () => {
             name: 'Transaction Builder',
             url: transactionBuilderUrl,
             chainIds: expect.arrayContaining([chainId]),
+            iconUrl: expect.any(String),
+            description: expect.any(String),
+            accessControl: expect.objectContaining({
+              type: expect.any(String),
+            }),
+            tags: expect.any(Array),
+            features: expect.any(Array),
+            socialProfiles: expect.any(Array),
           }),
         );
       });
