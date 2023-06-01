@@ -143,23 +143,23 @@ export class MultisigTransactionDetailsMapper {
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all(promises);
 
-    return {
-      submittedAt: transaction.submissionDate.getTime(),
-      nonce: transaction.nonce,
-      safeTxGas: transaction.safeTxGas?.toString() ?? '0',
-      baseGas: transaction.baseGas?.toString() ?? '0',
-      gasPrice: transaction.gasPrice?.toString() ?? '0',
-      refundReceiver: refundReceiver as AddressInfo,
-      safeTxHash: transaction.safeTxHash,
-      executor: executor as AddressInfo,
+    return new MultisigExecutionDetails(
+      transaction.submissionDate.getTime(),
+      transaction.nonce,
+      transaction.safeTxGas?.toString() ?? '0',
+      transaction.baseGas?.toString() ?? '0',
+      transaction.gasPrice?.toString() ?? '0',
+      gasToken,
+      refundReceiver as AddressInfo,
+      transaction.safeTxHash,
+      executor as AddressInfo,
       signers,
       confirmationsRequired,
       confirmations,
-      rejectors: rejectors as AddressInfo[] | null,
-      gasToken,
-      gasTokenInfo: gasTokenInfo as Token | null,
-      trusted: transaction.trusted,
-    };
+      rejectors as AddressInfo[] | null,
+      gasTokenInfo as Token | null,
+      transaction.trusted,
+    );
   }
 
   /**

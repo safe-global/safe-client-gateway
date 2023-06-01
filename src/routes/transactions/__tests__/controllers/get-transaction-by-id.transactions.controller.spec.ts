@@ -489,6 +489,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             addressInfoIndex: null,
           },
           detailedExecutionInfo: {
+            type: 'MULTISIG',
             submittedAt: tx.submissionDate.getTime(),
             nonce: tx.nonce,
             safeTxGas: safeTxGas.toString(),
