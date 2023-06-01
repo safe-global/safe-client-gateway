@@ -5,6 +5,6 @@ export enum SafeAppAccessControlPolicies {
 }
 
 export interface SafeAppAccessControl {
-  type: string;
+  type: SafeAppAccessControlPolicies;
   value: string[] | null;
 }

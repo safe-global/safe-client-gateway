@@ -17,6 +17,7 @@ import {
 } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { SafeAppAccessControlPolicies } from '../../domain/safe-apps/entities/safe-app-access-control.entity';
 import { safeAppAccessControlBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
@@ -68,7 +69,7 @@ describe('Safe Apps Controller (Unit)', () => {
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', 'DOMAIN_ALLOWLIST')
+              .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
               .build(),
           )
           .build(),
@@ -76,13 +77,11 @@ describe('Safe Apps Controller (Unit)', () => {
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', 'NO_RESTRICTIONS')
-              .with('value', null)
+              .with('type', SafeAppAccessControlPolicies.NoRestrictions)
               .build(),
           )
           .build(),
       ];
-
       mockNetworkService.get.mockImplementation((url) => {
         const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
@@ -131,22 +130,21 @@ describe('Safe Apps Controller (Unit)', () => {
 
     it('Success with UNKNOWN accessControl', async () => {
       const chain = chainBuilder().build();
-      const safeAppsResponse = [
-        safeAppBuilder()
-          .with(
-            'accessControl',
-            safeAppAccessControlBuilder()
-              .with('type', faker.random.word())
-              .with('value', null)
-              .build(),
-          )
-          .build(),
-      ];
-
+      const safeAppsResponse = [safeAppBuilder().build()];
       mockNetworkService.get.mockImplementation((url) => {
         const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({
+            data: [
+              {
+                ...safeAppsResponse[0],
+                accessControl: {
+                  type: faker.random.word(),
+                  value: safeAppsResponse[0].accessControl.value,
+                },
+              },
+            ],
+          });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -180,7 +178,7 @@ describe('Safe Apps Controller (Unit)', () => {
           .with(
             'accessControl',
             safeAppAccessControlBuilder()
-              .with('type', 'DOMAIN_ALLOWLIST')
+              .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
               .with('value', [
                 faker.datatype.hexadecimal(),
                 faker.datatype.hexadecimal(),
