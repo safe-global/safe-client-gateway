@@ -58,6 +58,7 @@ export class MessageMapper {
     const proposedBy = await this.addressInfoHelper.getOrDefault(
       chainId,
       message.proposedBy,
+      ['CONTRACT'],
     );
     const confirmations = await this.mapConfirmations(
       chainId,
@@ -93,6 +94,7 @@ export class MessageMapper {
         const owner = await this.addressInfoHelper.getOrDefault(
           chainId,
           confirmation.owner,
+          ['CONTRACT'],
         );
         return new MessageConfirmation(owner, confirmation.signature);
       }),

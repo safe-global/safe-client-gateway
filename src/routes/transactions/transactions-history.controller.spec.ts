@@ -329,7 +329,7 @@ describe('Transactions History Controller (Unit)', () => {
       const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chainResponse });
       }
@@ -343,7 +343,7 @@ describe('Transactions History Controller (Unit)', () => {
           data: safe,
         });
       }
-      if (url.includes(getTokenUrlPattern)) {
+      if (url === getTokenUrlPattern) {
         return Promise.resolve({
           data: tokenResponse,
         });

@@ -29,7 +29,9 @@ export class ModuleTransactionDetailsMapper {
     safe: Safe,
   ): Promise<TransactionDetails> {
     const [moduleAddress, txInfo, txData] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(chainId, transaction.module),
+      this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
+        'CONTRACT',
+      ]),
       this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
       this.mapTransactionData(chainId, transaction),
     ]);
@@ -63,7 +65,10 @@ export class ModuleTransactionDetailsMapper {
           transaction.to,
           transaction.dataDecoded,
         ),
-        this.addressInfoHelper.getOrDefault(chainId, transaction.to),
+        this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
+          'TOKEN',
+          'CONTRACT',
+        ]),
       ]);
 
     return {

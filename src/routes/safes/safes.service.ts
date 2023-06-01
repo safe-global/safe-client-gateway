@@ -41,22 +41,29 @@ export class SafesService {
     );
 
     const masterCopyInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy);
+      await this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
+        'CONTRACT',
+      ]);
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
       const moduleInfoCollection: Array<AddressInfo> =
-        await this.addressInfoHelper.getCollection(chainId, safe.modules);
+        await this.addressInfoHelper.getCollection(chainId, safe.modules, [
+          'CONTRACT',
+        ]);
       moduleAddressesInfo =
         moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
     }
 
     const fallbackHandlerInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler);
+      await this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler, [
+        'CONTRACT',
+      ]);
 
     const guardInfo: AddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       safe.guard,
+      ['CONTRACT'],
     );
 
     const collectiblesTag = await this.getCollectiblesTag(chainId, safeAddress);

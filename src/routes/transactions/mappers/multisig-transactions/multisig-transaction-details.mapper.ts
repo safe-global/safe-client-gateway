@@ -8,8 +8,8 @@ import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import {
-  LoggingService,
   ILoggingService,
+  LoggingService,
 } from '../../../../logging/logging.interface';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
@@ -123,13 +123,16 @@ export class MultisigTransactionDetailsMapper {
     );
     promises.push(
       transaction.executor
-        ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor)
+        ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
+            'CONTRACT',
+          ])
         : Promise.resolve(null),
     );
     promises.push(
       this.addressInfoHelper.getOrDefault(
         chainId,
         transaction.refundReceiver ?? NULL_ADDRESS,
+        ['CONTRACT'],
       ),
     );
     promises.push(
@@ -172,16 +175,10 @@ export class MultisigTransactionDetailsMapper {
     chainId: string,
     address: string,
   ): Promise<AddressInfo> {
-    try {
-      const tokenAddressInfo = await this.addressInfoHelper.get(
-        chainId,
-        address,
-        'TOKEN',
-      );
-      return tokenAddressInfo ?? new AddressInfo(address);
-    } catch (err) {
-      return this.addressInfoHelper.getOrDefault(chainId, address, 'CONTRACT');
-    }
+    return await this.addressInfoHelper.getOrDefault(chainId, address, [
+      'TOKEN',
+      'CONTRACT',
+    ]);
   }
 
   /**

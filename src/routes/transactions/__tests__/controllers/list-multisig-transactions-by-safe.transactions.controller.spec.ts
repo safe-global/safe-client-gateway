@@ -154,7 +154,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
       }
@@ -177,7 +177,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           detail: 'Not found',
         });
       }
-      if (url.includes(getTokenUrlPattern)) {
+      if (url === getTokenUrlPattern) {
         return Promise.resolve({
           data: getJsonResource(
             'multisig-transactions/erc20/token-source-data.json',
@@ -206,7 +206,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chainResponse });
       }
@@ -229,7 +229,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           detail: 'Not found',
         });
       }
-      if (url.includes(getTokenUrlPattern)) {
+      if (url === getTokenUrlPattern) {
         return Promise.resolve({
           data: getJsonResource(
             'multisig-transactions/erc721/token-source-data.json',

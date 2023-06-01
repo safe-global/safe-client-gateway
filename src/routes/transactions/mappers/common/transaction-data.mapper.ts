@@ -37,6 +37,7 @@ export class TransactionDataMapper {
     const toAddress = await this.addressInfoHelper.getOrDefault(
       chainId,
       previewTransactionDto.to,
+      ['CONTRACT'],
     );
     const isTrustedDelegateCall = await this.isTrustedDelegateCall(
       chainId,
@@ -170,8 +171,7 @@ export class TransactionDataMapper {
   ): Promise<AddressInfo | null> {
     if (typeof value === 'string' && value !== NULL_ADDRESS) {
       const addressInfo = await this.addressInfoHelper
-        .get(chainId, value, 'TOKEN')
-        .catch(() => this.addressInfoHelper.get(chainId, value, 'CONTRACT'))
+        .get(chainId, value, ['TOKEN', 'CONTRACT'])
         .catch(() => null);
       return addressInfo?.name ? addressInfo : null;
     }

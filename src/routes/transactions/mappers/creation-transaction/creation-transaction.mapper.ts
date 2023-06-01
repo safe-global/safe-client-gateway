@@ -9,6 +9,7 @@ import { CreationTransactionInfo } from '../../entities/creation-transaction-inf
 @Injectable()
 export class CreationTransactionMapper {
   private static readonly TRANSACTION_TYPE = 'creation';
+
   constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
 
   async mapTransaction(
@@ -19,16 +20,19 @@ export class CreationTransactionMapper {
     const creator = await this.addressInfoHelper.getOrDefault(
       chainId,
       transaction.creator,
+      ['CONTRACT'],
     );
     const implementation = transaction.masterCopy
       ? await this.addressInfoHelper.getOrDefault(
           chainId,
           transaction.masterCopy,
+          ['CONTRACT'],
         )
       : null;
     const factory = await this.addressInfoHelper.getOrDefault(
       chainId,
       transaction.factoryAddress,
+      ['CONTRACT'],
     );
     const txInfo = new CreationTransactionInfo(
       creator,

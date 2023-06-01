@@ -34,8 +34,16 @@ export class TransferInfoMapper {
     safe: Safe,
   ): Promise<TransferTransactionInfo> {
     const { from, to } = domainTransfer;
-    const sender = await this.addressInfoHelper.getOrDefault(chainId, from);
-    const recipient = await this.addressInfoHelper.getOrDefault(chainId, to);
+    const sender = await this.addressInfoHelper.getOrDefault(chainId, from, [
+      'TOKEN',
+      'CONTRACT',
+    ]);
+
+    const recipient = await this.addressInfoHelper.getOrDefault(chainId, to, [
+      'TOKEN',
+      'CONTRACT',
+    ]);
+
     const direction = getTransferDirection(safe.address, from, to);
 
     return new TransferTransactionInfo(

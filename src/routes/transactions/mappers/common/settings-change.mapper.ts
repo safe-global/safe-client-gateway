@@ -59,6 +59,7 @@ export class SettingsChangeMapper {
     const addressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       handler,
+      ['CONTRACT'],
     );
     return new SetFallbackHandler(addressInfo);
   }
@@ -123,6 +124,7 @@ export class SettingsChangeMapper {
     const implementationInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       implementation,
+      ['CONTRACT'],
     );
     return new ChangeMasterCopy(implementationInfo);
   }
@@ -141,6 +143,7 @@ export class SettingsChangeMapper {
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       module,
+      ['CONTRACT'],
     );
     return new EnableModule(moduleInfo);
   }
@@ -159,6 +162,7 @@ export class SettingsChangeMapper {
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       module,
+      ['CONTRACT'],
     );
     return new DisableModule(moduleInfo);
   }
@@ -190,6 +194,7 @@ export class SettingsChangeMapper {
       const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
         chainId,
         guardValue,
+        ['CONTRACT'],
       );
       return new SetGuard(guardAddressInfo);
     } else {
