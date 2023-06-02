@@ -2,10 +2,6 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
 import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
 import {
   fakeCacheService,
@@ -20,20 +16,14 @@ import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.build
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { CacheHooksModule } from './cache-hooks.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
-  const authToken = faker.datatype.uuid();
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('exchange.baseUri', 'https://test.exchange');
-    fakeConfigurationService.set('exchange.apiKey', 'testKey');
-    fakeConfigurationService.set(
-      'safeConfig.baseUri',
-      'https://test.safe.config',
-    );
-    fakeConfigurationService.set('auth.token', authToken);
-  });
+  let authToken;
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -46,13 +36,18 @@ describe('Post Hook Events (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
     app = moduleFixture.createNestApplication();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    authToken = configurationService.get('auth.token');
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+
     await app.init();
   });
 
@@ -79,7 +74,7 @@ describe('Post Hook Events (Unit)', () => {
       };
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case 'https://test.safe.config/api/v1/chains/1':
+          case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({
               data: chainBuilder().with('chainId', chainId).build(),
             });
@@ -107,7 +102,7 @@ describe('Post Hook Events (Unit)', () => {
       };
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case 'https://test.safe.config/api/v1/chains/1':
+          case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({
               data: chainBuilder().with('chainId', chainId).build(),
             });
@@ -134,7 +129,7 @@ describe('Post Hook Events (Unit)', () => {
       };
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case 'https://test.safe.config/api/v1/chains/1':
+          case '${safeConfigUrl}/api/v1/chains/1':
             return Promise.resolve({
               data: chainBuilder().with('chainId', chainId).build(),
             });
@@ -157,7 +152,7 @@ describe('Post Hook Events (Unit)', () => {
       };
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case 'https://test.safe.config/api/v1/chains/1':
+          case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({
               data: chainBuilder().with('chainId', '1').build(),
             });
@@ -192,7 +187,7 @@ describe('Post Hook Events (Unit)', () => {
       };
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case 'https://test.safe.config/api/v1/chains/1':
+          case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({
               data: chainBuilder().with('chainId', chainId).build(),
             });

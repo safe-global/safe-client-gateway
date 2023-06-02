@@ -5,10 +5,6 @@ import { omit } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -29,17 +25,13 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { EstimationsModule } from './estimations.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -52,12 +44,15 @@ describe('Estimations Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -74,7 +69,7 @@ describe('Estimations Controller (Unit)', () => {
       const estimation = estimationBuilder().build();
       const lastTransaction = multisigTransactionBuilder().build();
       mockNetworkService.get.mockImplementation((url) => {
-        const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+        const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
         const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
         if (url === chainsUrl) {
@@ -148,7 +143,7 @@ describe('Estimations Controller (Unit)', () => {
       .with('nonce', faker.datatype.number({ min: 51 }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {
@@ -200,7 +195,7 @@ describe('Estimations Controller (Unit)', () => {
     const safe = safeBuilder().with('nonce', faker.datatype.number()).build();
     const estimation = estimationBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {
@@ -252,7 +247,7 @@ describe('Estimations Controller (Unit)', () => {
       .with('nonce', faker.datatype.number({ max: safe.nonce }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const chainsUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+      const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
       if (url === chainsUrl) {

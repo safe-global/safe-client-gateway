@@ -5,10 +5,6 @@ import { random, range } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -32,20 +28,13 @@ import { MessageStatus } from './entities/message.entity';
 import { createMessageDtoBuilder } from './entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from './entities/__tests__/update-message-signature.dto.builder';
 import { MessagesModule } from './messages.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Messages controller', () => {
   let app: INestApplication;
-
-  const safeConfigUrl = faker.internet.url();
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set(
-      'exchange.apiKey',
-      faker.random.alphaNumeric(),
-    );
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -58,12 +47,15 @@ describe('Messages controller', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();

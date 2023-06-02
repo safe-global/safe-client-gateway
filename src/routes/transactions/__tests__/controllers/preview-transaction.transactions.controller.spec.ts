@@ -4,10 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../../../datasources/cache/__tests__/test.cache.module';
@@ -31,17 +27,13 @@ import { TestLoggingModule } from '../../../../logging/__tests__/test.logging.mo
 import { ValidationModule } from '../../../../validation/validation.module';
 import { previewTransactionDtoBuilder } from '../../entities/__tests__/preview-transaction.dto.builder';
 import { TransactionsModule } from '../../transactions.module';
+import { ConfigurationModule } from '../../../../config/configuration.module';
+import configuration from '../../../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -54,12 +46,15 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -92,7 +87,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const dataDecodedResponse = dataDecodedBuilder().build();
     const contractResponse = contractBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
@@ -157,7 +152,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
@@ -221,7 +216,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
@@ -300,7 +295,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('trustedForDelegateCall', true)
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {

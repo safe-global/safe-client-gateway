@@ -4,10 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../../../datasources/cache/__tests__/test.cache.module';
@@ -39,17 +35,13 @@ import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder'
 import { TestLoggingModule } from '../../../../logging/__tests__/test.logging.module';
 import { ValidationModule } from '../../../../validation/validation.module';
 import { TransactionsModule } from '../../transactions.module';
+import { ConfigurationModule } from '../../../../config/configuration.module';
+import configuration from '../../../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -62,12 +54,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -93,7 +88,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   it('Failure: Config API fails', async () => {
     const chainId = faker.random.numeric();
     const id = `module_${faker.datatype.uuid()}`;
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
     mockNetworkService.get.mockImplementation((url) => {
       if (url === getChainUrl) {
         return Promise.reject({ status: 500 });
@@ -116,7 +111,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   it('Failure: Transaction API fails', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const moduleTransactionId = faker.datatype.uuid();
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
     mockNetworkService.get.mockImplementation((url) => {
@@ -153,7 +148,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const id = faker.datatype.uuid();
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
     mockNetworkService.get.mockImplementation((url) => {
@@ -196,7 +191,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('isSuccessful', true)
       .build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
     const getContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.to}`;
     const getModuleContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.module}`;
@@ -264,7 +259,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const id = faker.datatype.uuid();
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
     mockNetworkService.get.mockImplementation((url) => {
@@ -302,7 +297,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('to', safe.address)
       .build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${transferId}`;
     const getFromContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.from}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.to}`;
@@ -359,7 +354,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const txHash = faker.datatype.hexadecimal();
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${txHash}/`;
     mockNetworkService.get.mockImplementation((url) => {
@@ -424,8 +419,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
@@ -587,8 +582,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     ];
     const gasToken = tokenBuilder().build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getChainUrl = `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeAppsUrl = `${safeConfigApiUrl}/api/v1/safe-apps/`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;

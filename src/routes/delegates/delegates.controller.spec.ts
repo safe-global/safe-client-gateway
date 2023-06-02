@@ -5,10 +5,6 @@ import { omit } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
-import {
   fakeCacheService,
   TestCacheModule,
 } from '../../datasources/cache/__tests__/test.cache.module';
@@ -26,20 +22,13 @@ import { DelegatesModule } from './delegates.module';
 import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';
 import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate.dto.builder';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
-
-  const safeConfigUrl = faker.internet.url();
-
-  beforeAll(async () => {
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set(
-      'exchange.apiKey',
-      faker.random.alphaNumeric(),
-    );
-  });
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -52,12 +41,15 @@ describe('Delegates controller', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();

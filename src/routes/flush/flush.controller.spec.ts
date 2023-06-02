@@ -1,12 +1,7 @@
-import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
-import {
-  fakeConfigurationService,
-  TestConfigurationModule,
-} from '../../config/__tests__/test.configuration.module';
 import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
 import {
   fakeCacheService,
@@ -34,19 +29,14 @@ import { TransactionsModule } from '../transactions/transactions.module';
 import { invalidationPatternDetailsBuilder } from './entities/__tests__/invalidation-pattern-details.dto.builder';
 import { invalidationPatternDtoBuilder } from './entities/__tests__/invalidation-pattern.dto.builder';
 import { FlushModule } from './flush.module';
+import { ConfigurationModule } from '../../config/configuration.module';
+import configuration from '../../config/entities/__tests__/configuration';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 describe('Flush Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigApiUrl: string;
-  const authToken = faker.datatype.uuid();
-
-  beforeAll(async () => {
-    safeConfigApiUrl = faker.internet.url();
-    fakeConfigurationService.set('safeConfig.baseUri', safeConfigApiUrl);
-    fakeConfigurationService.set('exchange.baseUri', faker.internet.url());
-    fakeConfigurationService.set('exchange.apiKey', faker.datatype.uuid());
-    fakeConfigurationService.set('auth.token', authToken);
-  });
+  let safeConfigUrl;
+  let authToken;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -62,12 +52,16 @@ describe('Flush Controller (Unit)', () => {
         // common
         DomainModule,
         TestCacheModule,
-        TestConfigurationModule,
+        ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
         ValidationModule,
       ],
     }).compile();
+
+    const configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    authToken = configurationService.get('auth.token');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -111,13 +105,13 @@ describe('Flush Controller (Unit)', () => {
       ];
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${safeConfigApiUrl}/api/v1/chains`:
+          case `${safeConfigUrl}/api/v1/chains`:
             return Promise.resolve({
               data: pageBuilder().with('results', chains).build(),
             });
-          case `${safeConfigApiUrl}/api/v1/chains/${chains[0].chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chains[0].chainId}`:
             return Promise.resolve({ data: chains[0] });
-          case `${safeConfigApiUrl}/api/v1/chains/${chains[1].chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chains[1].chainId}`:
             return Promise.resolve({ data: chains[1] });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -150,11 +144,11 @@ describe('Flush Controller (Unit)', () => {
       const contracts = [contractBuilder().build(), contractBuilder().build()];
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${safeConfigApiUrl}/api/v1/chains`:
+          case `${safeConfigUrl}/api/v1/chains`:
             return Promise.resolve({
               data: pageBuilder().with('results', [chain]).build(),
             });
-          case `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
           case `${chain.transactionService}/api/v1/contracts/${contracts[0].address}`:
             return Promise.resolve({ data: contracts[0] });
@@ -233,11 +227,11 @@ describe('Flush Controller (Unit)', () => {
         .build();
       mockNetworkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${safeConfigApiUrl}/api/v1/chains`:
+          case `${safeConfigUrl}/api/v1/chains`:
             return Promise.resolve({
               data: pageBuilder().with('results', [chain]).build(),
             });
-          case `${safeConfigApiUrl}/api/v1/chains/${chain.chainId}`:
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
