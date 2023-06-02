@@ -15,11 +15,16 @@ describe('ExchangeApi', () => {
   let fakeConfigurationService: FakeConfigurationService;
   const exchangeBaseUri = faker.internet.url();
   const exchangeApiKey = faker.random.alphaNumeric();
+  const exchangeCacheTtlSeconds = faker.datatype.number();
 
   beforeAll(async () => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('exchange.baseUri', exchangeBaseUri);
     fakeConfigurationService.set('exchange.apiKey', exchangeApiKey);
+    fakeConfigurationService.set(
+      'exchange.cacheTtlSeconds',
+      exchangeCacheTtlSeconds,
+    );
   });
 
   beforeEach(async () => {
@@ -49,20 +54,6 @@ describe('ExchangeApi', () => {
     const fiatCodes = await service.getFiatCodes();
 
     expect(fiatCodes).toBe(expectedFiatCodes);
-  });
-
-  it('fiatCodes uses default cache TTL (12h) if none is set', async () => {
-    const expectedFiatCodes = exchangeFiatCodesBuilder().build();
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
-
-    await service.getFiatCodes();
-
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_fiat_codes', ''),
-      `${exchangeBaseUri}/symbols`,
-      { headers: { apikey: exchangeApiKey } },
-      60 * 60 * 12, // 12h in seconds
-    );
   });
 
   it('fiatCodes uses set cache TTL', async () => {
@@ -101,17 +92,6 @@ describe('ExchangeApi', () => {
     const rates = await service.getRates();
 
     expect(rates).toBe(expectedRates);
-  });
-
-  it('exchangeRates uses default cache TTL (12h) if none is set', async () => {
-    await service.getRates();
-
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_rates', ''),
-      `${exchangeBaseUri}/latest`,
-      { headers: { apikey: exchangeApiKey } },
-      60 * 60 * 12, // 12h in seconds
-    );
   });
 
   it('exchangeRates uses set cache TTL', async () => {
