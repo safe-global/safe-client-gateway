@@ -46,6 +46,8 @@ export interface ITransactionApi {
 
   getSafe(safeAddress: string): Promise<Safe>;
 
+  clearSafe(address: string): Promise<void>;
+
   getContract(contractAddress: string): Promise<Contract>;
 
   getDelegates(
@@ -117,6 +119,8 @@ export interface ITransactionApi {
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
 
+  clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
+
   getMultisigTransactions(
     safeAddress: string,
     ordering?: string,
@@ -131,6 +135,8 @@ export interface ITransactionApi {
     limit?: number,
     offset?: number,
   ): Promise<Page<MultisigTransaction>>;
+
+  clearMultisigTransactions(safeAddress): Promise<void>;
 
   getCreationTransaction(safeAddress: string): Promise<CreationTransaction>;
 
