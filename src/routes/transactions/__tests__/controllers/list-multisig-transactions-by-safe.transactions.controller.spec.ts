@@ -113,7 +113,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`,
       expect.objectContaining({
         params: expect.objectContaining({
-          ordering: '-modified',
+          ordering: '-nonce',
           safe: safeAddress,
           trusted: true,
         }),
