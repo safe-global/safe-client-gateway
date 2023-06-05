@@ -293,7 +293,7 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(chainId);
     const page = await transactionService.getMultisigTransactions(
       safeAddress,
-      '-modified',
+      '-nonce',
       executed,
       true,
       executionDateGte,
