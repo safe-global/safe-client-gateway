@@ -3,10 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
-import {
-  fakeCacheService,
-  TestCacheModule,
-} from '../../datasources/cache/__tests__/test.cache.module';
+import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -19,15 +16,17 @@ import { CacheHooksModule } from './cache-hooks.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { FakeCacheService } from '../../datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '../../datasources/cache/cache.service.interface';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
   let authToken;
   let safeConfigUrl;
+  let fakeCacheService: FakeCacheService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
@@ -43,6 +42,8 @@ describe('Post Hook Events (Unit)', () => {
       ],
     }).compile();
     app = moduleFixture.createNestApplication();
+
+    fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
 
     const configurationService = moduleFixture.get(IConfigurationService);
     authToken = configurationService.get('auth.token');

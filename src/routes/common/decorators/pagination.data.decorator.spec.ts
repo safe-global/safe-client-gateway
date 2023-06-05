@@ -1,7 +1,6 @@
 import { PaginationDataDecorator } from './pagination.data.decorator';
 import { PaginationData } from '../pagination/pagination.data';
 import { Controller, Get, INestApplication, Module } from '@nestjs/common';
-import { fakeCacheService } from '../../../datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 
@@ -23,7 +22,6 @@ describe('PaginationDataDecorator', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestModule],

@@ -1,7 +1,4 @@
-import {
-  fakeCacheService,
-  TestCacheModule,
-} from '../../datasources/cache/__tests__/test.cache.module';
+import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DomainModule } from '../../domain.module';
 import {
@@ -37,7 +34,6 @@ describe('Collectibles Controller (Unit)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
