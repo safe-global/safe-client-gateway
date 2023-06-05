@@ -2,10 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
-import {
-  fakeCacheService,
-  TestCacheModule,
-} from '../../datasources/cache/__tests__/test.cache.module';
+import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import {
   mockNetworkService,
   TestNetworkModule,
@@ -26,7 +23,6 @@ describe('Contracts controller', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    fakeCacheService.clear();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
