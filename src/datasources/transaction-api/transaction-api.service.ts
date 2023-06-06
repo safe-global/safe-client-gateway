@@ -139,6 +139,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async clearSafe(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getSafeCacheKey(this.chainId, safeAddress);
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getContract(contractAddress: string): Promise<Contract> {
     try {
       const cacheDir = CacheRouter.getContractCacheDir(
@@ -434,6 +441,16 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async clearMultisigTransactions(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getMultisigTransactionsCacheKey(
+      this.chainId,
+      safeAddress,
+    );
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getMultisigTransaction(
     safeTransactionHash: string,
   ): Promise<MultisigTransaction> {
@@ -447,6 +464,16 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  clearMultisigTransaction(safeTransactionHash: string): Promise<void> {
+    const key = CacheRouter.getMultisigTransactionCacheKey(
+      this.chainId,
+      safeTransactionHash,
+    );
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
   }
 
   async getCreationTransaction(

@@ -14,6 +14,8 @@ export const ISafeRepository = Symbol('ISafeRepository');
 export interface ISafeRepository {
   getSafe(chainId: string, address: string): Promise<Safe>;
 
+  clearSafe(chainId: string, address: string): Promise<void>;
+
   getCollectibleTransfers(
     chainId: string,
     safeAddress: string,
@@ -111,6 +113,16 @@ export interface ISafeRepository {
     chainId: string,
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
+
+  clearMultisigTransaction(
+    chainId: string,
+    safeTransactionHash: string,
+  ): Promise<void>;
+
+  clearMultisigTransactions(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void>;
 
   getMultisigTransactions(
     chainId: string,

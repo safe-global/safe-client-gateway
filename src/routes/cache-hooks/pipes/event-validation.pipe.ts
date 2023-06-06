@@ -8,17 +8,37 @@ import { webHookSchema } from '../entities/schemas/web-hook.schema';
 import { ExecutedTransaction } from '../entities/executed-transaction.entity';
 import { NewConfirmation } from '../entities/new-confirmation.entity';
 import { PendingTransaction } from '../entities/pending-transaction.entity';
+import { IncomingEther } from '../entities/incoming-ether.entity';
+import { incomingEtherEventSchema } from '../entities/schemas/incoming-ether.schema';
+import { incomingTokenEventSchema } from '../entities/schemas/incoming-token.schema';
+import { IncomingToken } from '../entities/incoming-token.entity';
+import { outgoingEtherEventSchema } from '../entities/schemas/outgoing-ether.schema';
+import { OutgoingEther } from '../entities/outgoing-ether.entity';
+import { outgoingTokenEventSchema } from '../entities/schemas/outgoing-token.schema';
+import { OutgoingToken } from '../entities/outgoing-token.entity';
 
 @Injectable()
 export class EventValidationPipe
   implements
     PipeTransform<
       any,
-      ExecutedTransaction | NewConfirmation | PendingTransaction
+      | ExecutedTransaction
+      | NewConfirmation
+      | PendingTransaction
+      | IncomingToken
+      | OutgoingToken
+      | IncomingEther
+      | OutgoingEther
     >
 {
   private readonly isWebHookEvent: ValidateFunction<
-    ExecutedTransaction | NewConfirmation | PendingTransaction
+    | ExecutedTransaction
+    | NewConfirmation
+    | PendingTransaction
+    | IncomingToken
+    | OutgoingToken
+    | IncomingEther
+    | OutgoingEther
   >;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
@@ -27,8 +47,24 @@ export class EventValidationPipe
       executedTransactionEventSchema,
     );
     jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/incoming-ether.json',
+      incomingEtherEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/incoming-token.json',
+      incomingTokenEventSchema,
+    );
+    jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/cache-hooks/new-confirmation.json',
       newConfirmationEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/outgoing-ether.json',
+      outgoingEtherEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/outgoing-token.json',
+      outgoingTokenEventSchema,
     );
     jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/cache-hooks/pending-transaction.json',
@@ -42,7 +78,14 @@ export class EventValidationPipe
 
   transform(
     value: any,
-  ): ExecutedTransaction | NewConfirmation | PendingTransaction {
+  ):
+    | ExecutedTransaction
+    | NewConfirmation
+    | PendingTransaction
+    | IncomingToken
+    | OutgoingToken
+    | IncomingEther
+    | OutgoingEther {
     if (this.isWebHookEvent(value)) {
       return value;
     }

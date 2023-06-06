@@ -51,6 +51,10 @@ export class CacheRouter {
     );
   }
 
+  static getSafeCacheKey(chainId: string, safeAddress: string): string {
+    return `${chainId}_${CacheRouter.SAFE_KEY}_${safeAddress}`;
+  }
+
   static getContractCacheDir(
     chainId: string,
     contractAddress: string,
@@ -185,6 +189,13 @@ export class CacheRouter {
     );
   }
 
+  static getMultisigTransactionsCacheKey(
+    chainId: string,
+    safeAddress: string,
+  ): string {
+    return `${chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${safeAddress}`;
+  }
+
   static getMultisigTransactionCacheDir(
     chainId: string,
     safeTransactionHash: string,
@@ -193,6 +204,13 @@ export class CacheRouter {
       `${chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${safeTransactionHash}`,
       '',
     );
+  }
+
+  static getMultisigTransactionCacheKey(
+    chainId: string,
+    safeTransactionHash: string,
+  ): string {
+    return `${chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${safeTransactionHash}`;
   }
 
   static getCreationTransactionCacheDir(

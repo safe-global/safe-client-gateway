@@ -12,6 +12,10 @@ import { BasicAuthGuard } from '../common/auth/basic-auth.guard';
 import { ExecutedTransaction } from './entities/executed-transaction.entity';
 import { NewConfirmation } from './entities/new-confirmation.entity';
 import { PendingTransaction } from './entities/pending-transaction.entity';
+import { IncomingToken } from './entities/incoming-token.entity';
+import { OutgoingToken } from './entities/outgoing-token.entity';
+import { IncomingEther } from './entities/incoming-ether.entity';
+import { OutgoingEther } from './entities/outgoing-ether.entity';
 
 @Controller({
   path: '',
@@ -26,8 +30,15 @@ export class CacheHooksController {
   async postEvent(
     @Param('chainId') chainId: string,
     @Body(EventValidationPipe)
-    eventPayload: ExecutedTransaction | NewConfirmation | PendingTransaction,
-  ): Promise<void> {
+    eventPayload:
+      | ExecutedTransaction
+      | NewConfirmation
+      | PendingTransaction
+      | IncomingToken
+      | OutgoingToken
+      | IncomingEther
+      | OutgoingEther,
+  ): Promise<void[]> {
     return await this.service.onEvent(chainId, eventPayload);
   }
 }

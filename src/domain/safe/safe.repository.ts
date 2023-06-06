@@ -41,6 +41,12 @@ export class SafeRepository implements ISafeRepository {
     return this.safeValidator.validate(safe);
   }
 
+  async clearSafe(chainId: string, address: string): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    return transactionService.clearSafe(address);
+  }
+
   async getCollectibleTransfers(
     chainId: string,
     safeAddress: string,
@@ -263,6 +269,15 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
+  async clearMultisigTransaction(
+    chainId: string,
+    safeTransactionHash: string,
+  ): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    return transactionService.clearMultisigTransaction(safeTransactionHash);
+  }
+
   async getMultiSigTransaction(
     chainId: string,
     safeTransactionHash: string,
@@ -274,6 +289,15 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return this.multisigTransactionValidator.validate(multiSigTransaction);
+  }
+
+  async clearMultisigTransactions(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+    return transactionService.clearMultisigTransactions(safeAddress);
   }
 
   async getMultisigTransactions(
