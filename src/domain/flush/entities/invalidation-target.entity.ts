@@ -1,5 +1,3 @@
 export enum InvalidationTarget {
-  Chains,
-  Contracts,
-  Tokens,
+  Chains = 'Chains',
 }

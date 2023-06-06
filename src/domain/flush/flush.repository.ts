@@ -1,8 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CacheRouter } from '../../datasources/cache/cache.router';
 import {
   CacheService,
@@ -12,10 +8,15 @@ import { IConfigApi } from '../interfaces/config-api.interface';
 import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
 import { InvalidationTarget } from './entities/invalidation-target.entity';
 import { IFlushRepository } from './flush.repository.interface';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../logging/logging.interface';
 
 @Injectable()
 export class FlushRepository implements IFlushRepository {
   constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
   ) {}
@@ -24,33 +25,16 @@ export class FlushRepository implements IFlushRepository {
     switch (pattern.invalidate) {
       case InvalidationTarget[InvalidationTarget.Chains]:
         return this.invalidateChains();
-      case InvalidationTarget[InvalidationTarget.Contracts]:
-        return this.invalidateContracts();
-      case InvalidationTarget[InvalidationTarget.Tokens]:
-        return this.invalidateTokens(pattern);
+      default:
+        this.loggingService.debug(
+          `Unknown flush pattern ${pattern.invalidate}`,
+        );
     }
   }
 
   private async invalidateChains(): Promise<void> {
     await this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey());
     const pattern = CacheRouter.getChainsCachePattern();
-    await this.cacheService.deleteByKeyPattern(pattern);
-  }
-
-  private async invalidateContracts(): Promise<void> {
-    const pattern = CacheRouter.getContractsCachePattern();
-    await this.cacheService.deleteByKeyPattern(pattern);
-  }
-
-  private async invalidateTokens(
-    invalidationPatternDto: InvalidationPatternDto,
-  ): Promise<void> {
-    const chainId = invalidationPatternDto?.patternDetails?.chainId;
-    if (!chainId) {
-      throw new UnprocessableEntityException(`Chain id parameter is required`);
-    }
-    await this.cacheService.deleteByKey(CacheRouter.getTokensCacheKey(chainId));
-    const pattern = CacheRouter.getTokensCachePattern(chainId);
     await this.cacheService.deleteByKeyPattern(pattern);
   }
 }
