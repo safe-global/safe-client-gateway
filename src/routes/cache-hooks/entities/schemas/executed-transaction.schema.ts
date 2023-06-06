@@ -9,7 +9,7 @@ export const executedTransactionEventSchema: JSONSchemaType<ExecutedTransaction>
     properties: {
       address: { type: 'string' },
       chainId: { type: 'string' },
-      type: { type: 'string', enum: [EventType.EXECUTED_MULTISIG_TRANSACTION] },
+      type: { type: 'string', const: EventType.EXECUTED_MULTISIG_TRANSACTION },
       safeTxHash: { type: 'string' },
       txHash: { type: 'string' },
     },

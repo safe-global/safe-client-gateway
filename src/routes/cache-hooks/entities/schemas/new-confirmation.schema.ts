@@ -8,7 +8,7 @@ export const newConfirmationEventSchema: JSONSchemaType<NewConfirmation> = {
   properties: {
     address: { type: 'string' },
     chainId: { type: 'string' },
-    type: { type: 'string', enum: [EventType.NEW_CONFIRMATION] },
+    type: { type: 'string', const: EventType.NEW_CONFIRMATION },
     owner: { type: 'string' },
     safeTxHash: { type: 'string' },
   },
