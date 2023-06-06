@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { EventType } from './entities/event-payload.entity';
+import { IBalancesRepository } from '../../domain/balances/balances.repository.interface';
 import { ExecutedTransaction } from './entities/executed-transaction.entity';
 import { NewConfirmation } from './entities/new-confirmation.entity';
 import { PendingTransaction } from './entities/pending-transaction.entity';
-import { EventType } from './entities/event-payload.entity';
-import { IBalancesRepository } from '../../domain/balances/balances.repository.interface';
 
 @Injectable()
 export class CacheHooksService {
