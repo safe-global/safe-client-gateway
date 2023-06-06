@@ -7,11 +7,18 @@ import { faker } from '@faker-js/faker';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
+import { ICacheService } from '../cache/cache.service.interface';
 
 const dataSource = {
   get: jest.fn(),
 } as unknown as CacheFirstDataSource;
 const mockDataSource = jest.mocked(dataSource);
+
+const cacheService = {
+  deleteByKey: jest.fn(),
+  deleteByKeyPattern: jest.fn(),
+} as unknown as ICacheService;
+const mockCacheService = jest.mocked(cacheService);
 
 const httpErrorFactory = {
   from: jest.fn(),
@@ -32,6 +39,7 @@ describe('ConfigApi', () => {
     jest.clearAllMocks();
     service = new ConfigApi(
       dataSource,
+      mockCacheService,
       fakeConfigurationService,
       mockHttpErrorFactory,
     );
@@ -44,6 +52,7 @@ describe('ConfigApi', () => {
       () =>
         new ConfigApi(
           dataSource,
+          mockCacheService,
           fakeConfigurationService,
           mockHttpErrorFactory,
         ),
@@ -143,5 +152,14 @@ describe('ConfigApi', () => {
 
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+  });
+
+  it('clear chains should trigger delete on cache service', async () => {
+    await service.clearChains();
+
+    expect(mockCacheService.deleteByKey).toBeCalledWith('chains');
+    expect(mockCacheService.deleteByKeyPattern).toBeCalledWith('*_chain$');
+    expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
+    expect(mockCacheService.deleteByKeyPattern).toBeCalledTimes(1);
   });
 });

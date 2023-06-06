@@ -14,6 +14,11 @@ export interface IChainsRepository {
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
 
   /**
+   * Triggers the removal of chain data stored in the DataSource (e.g. cache)
+   */
+  clearChains(): Promise<void>;
+
+  /**
    * Gets the {@link Chain} associated with {@link chainId}
    *
    * @param chainId
