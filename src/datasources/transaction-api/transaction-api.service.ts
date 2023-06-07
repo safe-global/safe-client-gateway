@@ -298,6 +298,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  clearTransfers(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getTransfersCacheKey(this.chainId, safeAddress);
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getIncomingTransfers(
     safeAddress: string,
     executionDateGte?: string,

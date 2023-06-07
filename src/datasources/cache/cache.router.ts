@@ -131,6 +131,10 @@ export class CacheRouter {
     );
   }
 
+  static getTransfersCacheKey(chainId: string, safeAddress: string) {
+    return `${chainId}_${CacheRouter.TRANSFERS_KEY}_${safeAddress}`;
+  }
+
   static getModuleTransactionCacheDir(
     chainId: string,
     moduleTransactionId: string,
