@@ -277,11 +277,6 @@ describe('Post Hook Events (Unit)', () => {
 
   it.each([
     {
-      type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
-    },
-    {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.datatype.hexadecimal(32),

@@ -49,7 +49,6 @@ export class CacheHooksService {
         break;
       // A new executed multisig transaction affects:
       // - the collectibles that the safe has
-      // - the balance of the safe - clear safe balance
       // - the collectible transfers for that safe
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
@@ -57,7 +56,6 @@ export class CacheHooksService {
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
         promises.push(
           this.collectiblesRepository.clearCollectibles(chainId, event.address),
-          this.balancesRepository.clearLocalBalances(chainId, event.address),
           this.safeRepository.clearCollectibleTransfers(chainId, event.address),
           this.safeRepository.clearMultisigTransactions(chainId, event.address),
           this.safeRepository.clearMultisigTransaction(
