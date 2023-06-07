@@ -109,6 +109,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  clearCollectibles(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getCollectiblesKey(this.chainId, safeAddress);
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getBackbone(): Promise<Backbone> {
     try {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);

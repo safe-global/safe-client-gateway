@@ -40,6 +40,8 @@ export interface ITransactionApi {
     excludeSpam?: boolean,
   ): Promise<Page<Collectible>>;
 
+  clearCollectibles(safeAddress: string): Promise<void>;
+
   getBackbone(): Promise<Backbone>;
 
   getMasterCopies(): Promise<MasterCopy[]>;

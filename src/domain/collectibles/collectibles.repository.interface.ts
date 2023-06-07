@@ -14,4 +14,6 @@ export interface ICollectiblesRepository {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Page<Collectible>>;
+
+  clearCollectibles(chainId: string, safeAddress: string): Promise<void>;
 }
