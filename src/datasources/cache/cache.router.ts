@@ -176,6 +176,13 @@ export class CacheRouter {
     );
   }
 
+  static getIncomingTransfersCacheKey(
+    chainId: string,
+    safeAddress: string,
+  ): string {
+    return `${chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${safeAddress}`;
+  }
+
   static getMultisigTransactionsCacheDir(
     chainId: string,
     safeAddress: string,

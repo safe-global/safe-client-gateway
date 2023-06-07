@@ -79,19 +79,39 @@ export class CacheHooksService {
           ),
         );
         break;
-      // An incoming/outgoing ether affects:
+      // Incoming ether affects:
       // - the balance of the safe - clear safe balance
+      // - the incoming transfers for that safe
       case EventType.INCOMING_ETHER:
+        promises.push(
+          this.balancesRepository.clearLocalBalances(chainId, event.address),
+          this.safeRepository.clearIncomingTransfers(chainId, event.address),
+        );
+        break;
+      // Outgoing ether affects:
+      // - the balance of the safe - clear safe balance
       case EventType.OUTGOING_ETHER:
         promises.push(
           this.balancesRepository.clearLocalBalances(chainId, event.address),
         );
         break;
-      // An incoming/outgoing token affects:
+      // An incoming token affects:
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
       // - the collectible transfers for that safe
+      // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
+        promises.push(
+          this.balancesRepository.clearLocalBalances(chainId, event.address),
+          this.collectiblesRepository.clearCollectibles(chainId, event.address),
+          this.safeRepository.clearCollectibleTransfers(chainId, event.address),
+          this.safeRepository.clearIncomingTransfers(chainId, event.address),
+        );
+        break;
+      // An outgoing token affects:
+      // - the balance of the safe - clear safe balance
+      // - the collectibles that the safe has
+      // - the collectible transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearLocalBalances(chainId, event.address),

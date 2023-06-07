@@ -104,6 +104,8 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  clearIncomingTransfers(safeAddress: string): Promise<void>;
+
   postConfirmation(
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
