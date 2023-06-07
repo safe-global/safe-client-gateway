@@ -10,6 +10,7 @@ import { OutgoingToken } from './entities/outgoing-token.entity';
 import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 
 @Injectable()
 export class CacheHooksService {
@@ -26,12 +27,13 @@ export class CacheHooksService {
     chainId: string,
     event:
       | ExecutedTransaction
-      | NewConfirmation
-      | PendingTransaction
-      | IncomingToken
-      | OutgoingToken
       | IncomingEther
-      | OutgoingEther,
+      | IncomingToken
+      | ModuleTransaction
+      | NewConfirmation
+      | OutgoingToken
+      | OutgoingEther
+      | PendingTransaction,
   ): Promise<void[]> {
     const promises: Promise<void>[] = [];
     switch (event.type) {
@@ -45,6 +47,13 @@ export class CacheHooksService {
             chainId,
             event.safeTxHash,
           ),
+        );
+        break;
+      // An executed module transaction might affect:
+      // - the list of module transactions for the safe
+      case EventType.MODULE_TRANSACTION:
+        promises.push(
+          this.safeRepository.clearModuleTransactions(chainId, event.address),
         );
         break;
       // A new executed multisig transaction affects:

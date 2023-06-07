@@ -62,6 +62,8 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<ModuleTransaction>>;
 
+  clearModuleTransactions(chainId: string, safeAddress: string): Promise<void>;
+
   /**
    * Returns the Safe Transaction Queue in ascending order.
    *

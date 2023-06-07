@@ -16,6 +16,7 @@ import { IncomingToken } from './entities/incoming-token.entity';
 import { OutgoingToken } from './entities/outgoing-token.entity';
 import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
+import { ModuleTransaction } from './entities/module-transaction.entity';
 
 @Controller({
   path: '',
@@ -32,12 +33,13 @@ export class CacheHooksController {
     @Body(EventValidationPipe)
     eventPayload:
       | ExecutedTransaction
-      | NewConfirmation
-      | PendingTransaction
-      | IncomingToken
-      | OutgoingToken
       | IncomingEther
-      | OutgoingEther,
+      | IncomingToken
+      | ModuleTransaction
+      | NewConfirmation
+      | OutgoingToken
+      | OutgoingEther
+      | PendingTransaction,
   ): Promise<void[]> {
     return await this.service.onEvent(chainId, eventPayload);
   }
