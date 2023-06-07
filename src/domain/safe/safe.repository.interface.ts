@@ -40,6 +40,8 @@ export interface ISafeRepository {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  clearIncomingTransfers(chainId: string, safeAddress: string): Promise<void>;
+
   addConfirmation(
     chainId: string,
     safeTxHash: string,

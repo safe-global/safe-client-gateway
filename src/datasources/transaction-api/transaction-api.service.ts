@@ -344,6 +344,17 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  clearIncomingTransfers(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getIncomingTransfersCacheKey(
+      this.chainId,
+      safeAddress,
+    );
+
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async postConfirmation(
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
