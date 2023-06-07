@@ -68,6 +68,16 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
+  async clearCollectibleTransfers(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(chainId);
+
+    return transactionService.clearTransfers(safeAddress);
+  }
+
   async getIncomingTransfers(
     chainId: string,
     safeAddress: string,

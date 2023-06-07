@@ -91,6 +91,8 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transfer>>;
 
+  clearTransfers(safeAddress: string): Promise<void>;
+
   getIncomingTransfers(
     safeAddress: string,
     executionDateGte?: string,

@@ -48,21 +48,23 @@ export class CacheHooksService {
         );
         break;
       // A new executed multisig transaction affects:
+      // - the collectibles that the safe has
       // - the balance of the safe - clear safe balance
-      // - the safe configuration - clear safe info
+      // - the collectible transfers for that safe
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
-      // - the collectibles that the safe has
+      // - the safe configuration - clear safe info
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
         promises.push(
+          this.collectiblesRepository.clearCollectibles(chainId, event.address),
           this.balancesRepository.clearLocalBalances(chainId, event.address),
-          this.safeRepository.clearSafe(chainId, event.address),
+          this.safeRepository.clearCollectibleTransfers(chainId, event.address),
           this.safeRepository.clearMultisigTransactions(chainId, event.address),
           this.safeRepository.clearMultisigTransaction(
             chainId,
             event.safeTxHash,
           ),
-          this.collectiblesRepository.clearCollectibles(chainId, event.address),
+          this.safeRepository.clearSafe(chainId, event.address),
         );
         break;
       // A new confirmation for a pending transaction affects:
@@ -88,11 +90,13 @@ export class CacheHooksService {
       // An incoming/outgoing token affects:
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
+      // - the collectible transfers for that safe
       case EventType.INCOMING_TOKEN:
       case EventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearLocalBalances(chainId, event.address),
           this.collectiblesRepository.clearCollectibles(chainId, event.address),
+          this.safeRepository.clearCollectibleTransfers(chainId, event.address),
         );
         break;
     }
