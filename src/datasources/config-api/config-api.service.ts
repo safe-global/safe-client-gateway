@@ -7,6 +7,7 @@ import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { HttpErrorFactory } from '../errors/http-error-factory';
+import { CacheService, ICacheService } from '../cache/cache.service.interface';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
@@ -14,6 +15,7 @@ export class ConfigApi implements IConfigApi {
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -31,6 +33,17 @@ export class ConfigApi implements IConfigApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  clearChains(): Promise<void> {
+    const pattern = CacheRouter.getChainsCachePattern();
+
+    return Promise.all([
+      this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey()),
+      this.cacheService.deleteByKeyPattern(pattern),
+    ]).then(() => {
+      return;
+    });
   }
 
   async getChain(chainId: string): Promise<Chain> {

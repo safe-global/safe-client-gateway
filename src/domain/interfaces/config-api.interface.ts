@@ -6,6 +6,7 @@ export const IConfigApi = Symbol('IConfigApi');
 
 export interface IConfigApi {
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
+  clearChains(): Promise<void>;
   getChain(chainId: string): Promise<Chain>;
   getSafeApps(
     chainId?: string,

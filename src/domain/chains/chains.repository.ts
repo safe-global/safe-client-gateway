@@ -29,6 +29,10 @@ export class ChainsRepository implements IChainsRepository {
     return page;
   }
 
+  async clearChains(): Promise<void> {
+    return this.configApi.clearChains();
+  }
+
   async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
     const transactionApi = await this.transactionApiManager.getTransactionApi(
       chainId,
