@@ -468,4 +468,53 @@ describe('Post Hook Events (Unit)', () => {
 
     await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
+
+  it.each([
+    {
+      type: 'EXECUTED_MULTISIG_TRANSACTION',
+      safeTxHash: faker.datatype.hexadecimal(32),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+    {
+      type: 'INCOMING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+    {
+      type: 'OUTGOING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+  ])('$type clears safe collectibles', async (payload) => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainId = faker.random.numeric();
+    const cacheDir = new CacheDir(
+      `${chainId}_collectibles_${safeAddress}`,
+      faker.random.alpha(),
+    );
+    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/chains/${chainId}/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
 });

@@ -35,4 +35,12 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     page?.results.map((result) => this.validator.validate(result));
     return page;
   }
+
+  async clearCollectibles(chainId: string, safeAddress: string): Promise<void> {
+    const transactionApi = await this.transactionApiManager.getTransactionApi(
+      chainId,
+    );
+
+    return transactionApi.clearCollectibles(safeAddress);
+  }
 }

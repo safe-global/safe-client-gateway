@@ -9,12 +9,15 @@ import { IncomingToken } from './entities/incoming-token.entity';
 import { OutgoingToken } from './entities/outgoing-token.entity';
 import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
+import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
 
 @Injectable()
 export class CacheHooksService {
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    @Inject(ICollectiblesRepository)
+    private readonly collectiblesRepository: ICollectiblesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
@@ -49,6 +52,7 @@ export class CacheHooksService {
       // - the safe configuration - clear safe info
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
+      // - the collectibles that the safe has
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
         promises.push(
           this.balancesRepository.clearLocalBalances(chainId, event.address),
@@ -58,6 +62,7 @@ export class CacheHooksService {
             chainId,
             event.safeTxHash,
           ),
+          this.collectiblesRepository.clearCollectibles(chainId, event.address),
         );
         break;
       // A new confirmation for a pending transaction affects:
@@ -72,14 +77,22 @@ export class CacheHooksService {
           ),
         );
         break;
-      // An incoming/outgoing token/ether affects:
+      // An incoming/outgoing ether affects:
       // - the balance of the safe - clear safe balance
       case EventType.INCOMING_ETHER:
       case EventType.OUTGOING_ETHER:
+        promises.push(
+          this.balancesRepository.clearLocalBalances(chainId, event.address),
+        );
+        break;
+      // An incoming/outgoing token affects:
+      // - the balance of the safe - clear safe balance
+      // - the collectibles that the safe has
       case EventType.INCOMING_TOKEN:
       case EventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearLocalBalances(chainId, event.address),
+          this.collectiblesRepository.clearCollectibles(chainId, event.address),
         );
         break;
     }

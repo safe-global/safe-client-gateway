@@ -91,6 +91,10 @@ export class CacheRouter {
     );
   }
 
+  static getCollectiblesKey(chainId: string, safeAddress: string) {
+    return `${chainId}_${CacheRouter.COLLECTIBLES_KEY}_${safeAddress}`;
+  }
+
   static getDelegatesCacheDir(
     chainId: string,
     safeAddress?: string,
