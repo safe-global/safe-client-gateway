@@ -16,6 +16,8 @@ import { outgoingEtherEventSchema } from '../entities/schemas/outgoing-ether.sch
 import { OutgoingEther } from '../entities/outgoing-ether.entity';
 import { outgoingTokenEventSchema } from '../entities/schemas/outgoing-token.schema';
 import { OutgoingToken } from '../entities/outgoing-token.entity';
+import { ModuleTransaction } from '../entities/module-transaction.entity';
+import { moduleTransactionEventSchema } from '../entities/schemas/module-transaction.schema';
 
 @Injectable()
 export class EventValidationPipe
@@ -23,22 +25,24 @@ export class EventValidationPipe
     PipeTransform<
       any,
       | ExecutedTransaction
-      | NewConfirmation
-      | PendingTransaction
-      | IncomingToken
-      | OutgoingToken
       | IncomingEther
+      | IncomingToken
+      | ModuleTransaction
+      | NewConfirmation
+      | OutgoingToken
       | OutgoingEther
+      | PendingTransaction
     >
 {
   private readonly isWebHookEvent: ValidateFunction<
     | ExecutedTransaction
-    | NewConfirmation
-    | PendingTransaction
-    | IncomingToken
-    | OutgoingToken
     | IncomingEther
+    | IncomingToken
+    | ModuleTransaction
+    | NewConfirmation
+    | OutgoingToken
     | OutgoingEther
+    | PendingTransaction
   >;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
@@ -53,6 +57,10 @@ export class EventValidationPipe
     jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/cache-hooks/incoming-token.json',
       incomingTokenEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/cache-hooks/module-transaction.json',
+      moduleTransactionEventSchema,
     );
     jsonSchemaService.getSchema(
       'https://safe-client.safe.global/schemas/cache-hooks/new-confirmation.json',
@@ -80,12 +88,13 @@ export class EventValidationPipe
     value: any,
   ):
     | ExecutedTransaction
-    | NewConfirmation
-    | PendingTransaction
-    | IncomingToken
-    | OutgoingToken
     | IncomingEther
-    | OutgoingEther {
+    | IncomingToken
+    | ModuleTransaction
+    | NewConfirmation
+    | OutgoingToken
+    | OutgoingEther
+    | PendingTransaction {
     if (this.isWebHookEvent(value)) {
       return value;
     }

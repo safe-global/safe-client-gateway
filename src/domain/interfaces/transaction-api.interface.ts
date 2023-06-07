@@ -121,6 +121,8 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<ModuleTransaction>>;
 
+  clearModuleTransactions(safeAddress: string): Promise<void>;
+
   getMultisigTransaction(
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;

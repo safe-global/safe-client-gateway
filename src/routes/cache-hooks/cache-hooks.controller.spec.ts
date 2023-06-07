@@ -252,6 +252,34 @@ describe('Post Hook Events (Unit)', () => {
       .expect(200);
   });
 
+  it('accepts MODULE_TRANSACTION', async () => {
+    const chainId = faker.random.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    };
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/chains/${chainId}/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+  });
+
   it('returns 400 (Bad Request) on unknown payload', async () => {
     const data = {
       type: 'SOME_TEST_TYPE_THAT_WE_DO_NOT_SUPPORT',
@@ -578,6 +606,45 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.random.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_incoming_transfers_${safeAddress}`,
+      faker.random.alpha(),
+    );
+    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/chains/${chainId}/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+  ])('$type clears module transactions', async (payload) => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainId = faker.random.numeric();
+    const cacheDir = new CacheDir(
+      `${chainId}_module_transactions_${safeAddress}`,
       faker.random.alpha(),
     );
     await fakeCacheService.set(cacheDir, faker.random.alpha());

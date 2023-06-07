@@ -414,6 +414,16 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  clearModuleTransactions(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getModuleTransactionsCacheKey(
+      this.chainId,
+      safeAddress,
+    );
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getMultisigTransactions(
     safeAddress: string,
     ordering?: string,
