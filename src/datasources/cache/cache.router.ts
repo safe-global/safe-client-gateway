@@ -260,6 +260,10 @@ export class CacheRouter {
     );
   }
 
+  static getAllTransactionsKey(chainId: string, safeAddress: string): string {
+    return `${chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${safeAddress}`;
+  }
+
   static getTokenCacheDir(chainId: string, address: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}_${address}`, '');
   }
