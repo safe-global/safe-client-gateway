@@ -27,14 +27,6 @@ const mockLoggingService = {
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
   const configurationService = new FakeConfigurationService();
-  const defaultExpirationTime = 10;
-
-  beforeAll(async () => {
-    configurationService.set(
-      'expirationTimeInSeconds.default',
-      defaultExpirationTime,
-    );
-  });
 
   beforeEach(async () => {
     clearAllMocks();
@@ -54,17 +46,8 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.set(cacheDir, value, undefined);
 
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toBeCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-      value,
-    );
-    expect(redisClientTypeMock.expire).toBeCalledTimes(1);
-    expect(redisClientTypeMock.expire).toBeCalledWith(
-      cacheDir.key,
-      defaultExpirationTime,
-    );
+    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
+    expect(redisClientTypeMock.expire).toBeCalledTimes(0);
     expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
     expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
     expect(redisClientTypeMock.quit).toBeCalledTimes(0);
@@ -99,11 +82,12 @@ describe('RedisCacheService', () => {
       faker.datatype.string(),
     );
     const value = faker.datatype.json();
+    const expireTimeSeconds = faker.datatype.number({ min: 5 });
     redisClientTypeMock.expire.mockRejectedValueOnce(new Error('cache error'));
 
-    await expect(redisCacheService.set(cacheDir, value)).rejects.toThrow(
-      'cache error',
-    );
+    await expect(
+      redisCacheService.set(cacheDir, value, expireTimeSeconds),
+    ).rejects.toThrow('cache error');
 
     expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
     expect(redisClientTypeMock.hSet).toBeCalledWith(
@@ -114,7 +98,7 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.expire).toBeCalledTimes(1);
     expect(redisClientTypeMock.expire).toBeCalledWith(
       cacheDir.key,
-      defaultExpirationTime,
+      expireTimeSeconds,
     );
     expect(redisClientTypeMock.hDel).toBeCalledTimes(1);
     expect(redisClientTypeMock.hDel).toBeCalledWith(
@@ -132,9 +116,9 @@ describe('RedisCacheService', () => {
     const value = faker.datatype.json();
     redisClientTypeMock.hSet.mockRejectedValueOnce(new Error('cache error'));
 
-    await expect(redisCacheService.set(cacheDir, value)).rejects.toThrow(
-      'cache error',
-    );
+    await expect(
+      redisCacheService.set(cacheDir, value, faker.datatype.number({ min: 5 })),
+    ).rejects.toThrow('cache error');
 
     expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
     expect(redisClientTypeMock.hSet).toBeCalledWith(

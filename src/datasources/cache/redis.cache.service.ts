@@ -10,7 +10,6 @@ import { CacheDir } from './entities/cache-dir.entity';
 
 @Injectable()
 export class RedisCacheService implements ICacheService, OnModuleDestroy {
-  private readonly defaultExpirationTimeInSeconds: number;
   private readonly quitTimeoutInSeconds: number = 2;
 
   constructor(
@@ -18,23 +17,20 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
     @Inject(IConfigurationService)
     private readonly configuration: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {
-    this.defaultExpirationTimeInSeconds = this.configuration.getOrThrow<number>(
-      'expirationTimeInSeconds.default',
-    );
-  }
+  ) {}
 
   async set(
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds?: number,
   ): Promise<void> {
+    if (!expireTimeSeconds || expireTimeSeconds <= 0) {
+      return;
+    }
+
     try {
       await this.client.hSet(cacheDir.key, cacheDir.field, value);
-      await this.client.expire(
-        cacheDir.key,
-        expireTimeSeconds ?? this.defaultExpirationTimeInSeconds,
-      );
+      await this.client.expire(cacheDir.key, expireTimeSeconds);
     } catch (error) {
       await this.client.hDel(cacheDir.key, cacheDir.field);
       throw error;
