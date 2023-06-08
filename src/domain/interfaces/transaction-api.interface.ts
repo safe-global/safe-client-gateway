@@ -157,6 +157,8 @@ export interface ITransactionApi {
     offset?: number,
   ): Promise<Page<Transaction>>;
 
+  clearAllTransactions(safeAddress: string): Promise<void>;
+
   getToken(address: string): Promise<Token>;
 
   getTokens(limit?: number, offset?: number): Promise<Page<Token>>;

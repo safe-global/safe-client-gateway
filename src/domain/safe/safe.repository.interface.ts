@@ -123,6 +123,11 @@ export interface ISafeRepository {
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
 
+  clearAllExecutedTransactions(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<void>;
+
   clearMultisigTransaction(
     chainId: string,
     safeTransactionHash: string,

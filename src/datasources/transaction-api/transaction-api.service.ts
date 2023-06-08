@@ -560,6 +560,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  clearAllTransactions(safeAddress: string): Promise<void> {
+    const key = CacheRouter.getAllTransactionsKey(this.chainId, safeAddress);
+    return this.cacheService.deleteByKey(key).then(() => {
+      return;
+    });
+  }
+
   async getToken(address: string): Promise<Token> {
     try {
       const cacheDir = CacheRouter.getTokenCacheDir(this.chainId, address);
