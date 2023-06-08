@@ -62,205 +62,52 @@ describe('Post Hook Events (Unit)', () => {
       .expect(403);
   });
 
-  it('accepts ExecutedTransaction', async () => {
-    const chainId = '1';
-    const data = {
-      address: faker.finance.ethereumAddress(),
-      chainId: chainId,
+  it.each([
+    {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: 'some-safe-tx-hash',
-      txHash: 'some-tx-hash',
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/1`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/1/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts INCOMING_ETHER', async () => {
-    const chainId = faker.random.numeric();
-    const data = {
-      address: faker.finance.ethereumAddress(),
-      chainId: chainId,
+      safeTxHash: faker.datatype.hexadecimal(32),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+    {
       type: 'INCOMING_ETHER',
       txHash: faker.datatype.hexadecimal(32),
       value: faker.random.numeric(),
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts INCOMING_TOKEN', async () => {
-    const chainId = faker.random.numeric();
-    const data = {
-      address: faker.finance.ethereumAddress(),
-      chainId: chainId,
+    },
+    {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.datatype.hexadecimal(32),
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts OUTGOING_ETHER', async () => {
-    const chainId = faker.random.numeric();
-    const data = {
-      address: faker.finance.ethereumAddress(),
-      chainId: chainId,
+    },
+    {
       type: 'OUTGOING_ETHER',
       txHash: faker.datatype.hexadecimal(32),
       value: faker.random.numeric(),
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts OUTGOING_TOKEN', async () => {
+    },
+    {
+      type: 'OUTGOING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+    {
+      type: 'NEW_CONFIRMATION',
+      owner: faker.finance.ethereumAddress(),
+      safeTxHash: faker.datatype.hexadecimal(32),
+    },
+    {
+      type: 'PENDING_MULTISIG_TRANSACTION',
+      safeTxHash: faker.datatype.hexadecimal(32),
+    },
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.datatype.hexadecimal(32),
+    },
+  ])('accepts $type', async (payload) => {
     const chainId = faker.random.numeric();
     const data = {
       address: faker.finance.ethereumAddress(),
       chainId: chainId,
-      type: 'OUTGOING_TOKEN',
-      tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts NewConfirmation', async () => {
-    const chainId = '1';
-    const safeAddress = faker.finance.ethereumAddress();
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      type: 'NEW_CONFIRMATION',
-      owner: faker.finance.ethereumAddress(),
-      safeTxHash: 'some-safe-tx-hash',
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/1`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/1/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts PENDING_MULTISIG_TRANSACTION', async () => {
-    const chainId = '1';
-    const safeAddress = faker.finance.ethereumAddress();
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      type: 'PENDING_MULTISIG_TRANSACTION',
-      safeTxHash: 'some-safe-tx-hash',
-    };
-    mockNetworkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/1`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    await request(app.getHttpServer())
-      .post(`/chains/1/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(200);
-  });
-
-  it('accepts MODULE_TRANSACTION', async () => {
-    const chainId = faker.random.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      type: 'MODULE_TRANSACTION',
-      module: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      ...payload,
     };
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
