@@ -9,6 +9,7 @@ import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
 import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 const dataSource = {
   get: jest.fn(),
@@ -19,6 +20,11 @@ const cacheService = {
   deleteByKey: jest.fn(),
 } as unknown as ICacheService;
 const mockCacheService = jest.mocked(cacheService);
+
+const configurationService = {
+  getOrThrow: jest.fn(),
+} as unknown as IConfigurationService;
+const mockConfigurationService = jest.mocked(configurationService);
 
 const httpErrorFactory = {
   from: jest.fn(),
@@ -33,15 +39,26 @@ describe('TransactionApi', () => {
   const chainId = '1';
   const baseUrl = faker.internet.url();
   let service: TransactionApi;
+  let defaultExpirationTimeInSeconds: number;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    defaultExpirationTimeInSeconds = faker.datatype.number();
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') {
+        return defaultExpirationTimeInSeconds;
+      } else {
+        throw Error(`Unexpected key: ${key}`);
+      }
+    });
 
     service = new TransactionApi(
       chainId,
       baseUrl,
       mockDataSource,
       mockCacheService,
+      mockConfigurationService,
       mockHttpErrorFactory,
       networkService,
     );
@@ -121,6 +138,8 @@ describe('TransactionApi', () => {
       expect(mockDataSource.get).toBeCalledWith(
         new CacheDir(`${chainId}_safe_${safe.address}`, ''),
         `${baseUrl}/api/v1/safes/${safe.address}`,
+        undefined,
+        defaultExpirationTimeInSeconds,
       );
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(0);
     });

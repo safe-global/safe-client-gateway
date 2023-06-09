@@ -27,8 +27,7 @@ describe('Get contract e2e test', () => {
     await redisClient.flushAll();
   });
 
-  // TODO: test relies on the value being cached. Default cache timeout was removed.
-  it.skip('GET /contracts/<address>', async () => {
+  it('GET /contracts/<address>', async () => {
     const contractAddress = '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4';
     const expectedResponse: Contract = JSON.parse(
       readFileSync(

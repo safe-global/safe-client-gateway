@@ -6,6 +6,7 @@ import { INetworkService } from '../network/network.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { faker } from '@faker-js/faker';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -36,61 +37,46 @@ describe('Transaction API Manager Tests', () => {
     jest.resetAllMocks();
   });
 
+  const txServiceUrl = faker.internet.url();
+  const vpcTxServiceUrl = faker.internet.url();
+
   /**
    * In the following tests, getBackbone is used to check the parameters to
    * which {@link CacheFirstDataSource} was called with.
    */
-  describe('VPC Url', () => {
-    it('useVpcUrl is true', async () => {
-      const chain = chainBuilder().build();
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key !== 'safeTransaction.useVpcUrl')
-          throw new Error(`Expected key safeTransaction.useVpcUrl. Got ${key}`);
-        return true;
-      });
-      configApiMock.getChain.mockResolvedValue(chain);
-      const target = new TransactionApiManager(
-        configurationServiceMock,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        networkService,
-      );
-
-      const transactionApi = await target.getTransactionApi(chain.chainId);
-      await transactionApi.getBackbone();
-
-      expect(dataSourceMock.get).toBeCalledWith(
-        expect.anything(),
-        `${chain.vpcTransactionService}/api/v1/about`,
-      );
+  it.each([
+    [true, vpcTxServiceUrl],
+    [false, txServiceUrl],
+  ])('vpcUrl is %s', async (useVpcUrl, expectedUrl) => {
+    const chain = chainBuilder()
+      .with('transactionService', txServiceUrl)
+      .with('vpcTransactionService', vpcTxServiceUrl)
+      .build();
+    const expirationTimeInSeconds = faker.datatype.number();
+    configurationServiceMock.getOrThrow.mockImplementation((key) => {
+      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
+      else if (key === 'expirationTimeInSeconds.default')
+        return expirationTimeInSeconds;
+      throw new Error(`Unexpected key: ${key}`);
     });
+    configApiMock.getChain.mockResolvedValue(chain);
+    const target = new TransactionApiManager(
+      configurationServiceMock,
+      configApiMock,
+      dataSourceMock,
+      cacheService,
+      httpErrorFactory,
+      networkService,
+    );
 
-    it('useVpcUrl is false', async () => {
-      const chain = chainBuilder().build();
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key !== 'safeTransaction.useVpcUrl')
-          throw new Error(`Expected key safeTransaction.useVpcUrl. Got ${key}`);
-        return false;
-      });
-      configApiMock.getChain.mockResolvedValue(chain);
-      const target = new TransactionApiManager(
-        configurationServiceMock,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        networkService,
-      );
+    const transactionApi = await target.getTransactionApi(chain.chainId);
+    await transactionApi.getBackbone();
 
-      const transactionApi = await target.getTransactionApi(chain.chainId);
-      await transactionApi.getBackbone();
-
-      expect(dataSourceMock.get).toBeCalledWith(
-        expect.anything(),
-        `${chain.transactionService}/api/v1/about`,
-      );
-    });
+    expect(dataSourceMock.get).toBeCalledWith(
+      expect.anything(),
+      `${expectedUrl}/api/v1/about`,
+      undefined,
+      expirationTimeInSeconds,
+    );
   });
 });

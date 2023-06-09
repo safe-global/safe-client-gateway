@@ -26,16 +26,25 @@ import { CacheRouter } from '../cache/cache.router';
 import { ICacheService } from '../cache/cache.service.interface';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { INetworkService } from '../network/network.service.interface';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 export class TransactionApi implements ITransactionApi {
+  private readonly defaultExpirationTimeInSeconds: number;
+
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
     private readonly dataSource: CacheFirstDataSource,
     private readonly cacheService: ICacheService,
+    private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly networkService: INetworkService,
-  ) {}
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+  }
 
   async getBalances(
     safeAddress: string,
@@ -50,12 +59,17 @@ export class TransactionApi implements ITransactionApi {
         excludeSpam,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          trusted: trusted,
-          exclude_spam: excludeSpam,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            trusted: trusted,
+            exclude_spam: excludeSpam,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -96,14 +110,19 @@ export class TransactionApi implements ITransactionApi {
         excludeSpam,
       );
       const url = `${this.baseUrl}/api/v2/safes/${safeAddress}/collectibles/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          limit: limit,
-          offset: offset,
-          trusted: trusted,
-          exclude_spam: excludeSpam,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            limit: limit,
+            offset: offset,
+            trusted: trusted,
+            exclude_spam: excludeSpam,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -116,21 +135,35 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getBackbone(): Promise<Backbone> {
     try {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getMasterCopies(): Promise<MasterCopy[]> {
     try {
       const cacheDir = CacheRouter.getMasterCopiesCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/master-copies/`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -140,7 +173,12 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getSafeCacheDir(this.chainId, safeAddress);
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -153,6 +191,8 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getContract(contractAddress: string): Promise<Contract> {
     try {
       const cacheDir = CacheRouter.getContractCacheDir(
@@ -160,7 +200,12 @@ export class TransactionApi implements ITransactionApi {
         contractAddress,
       );
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -255,6 +300,8 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getTransfer(transferId: string): Promise<Transfer> {
     try {
       const cacheDir = CacheRouter.getTransferCacheDir(
@@ -262,7 +309,12 @@ export class TransactionApi implements ITransactionApi {
         transferId,
       );
       const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -285,14 +337,19 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          erc20: onlyErc20,
-          erc721: onlyErc721,
-          limit: limit,
-          offset: offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            erc20: onlyErc20,
+            erc721: onlyErc721,
+            limit: limit,
+            offset: offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -328,17 +385,22 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          execution_date__gte: executionDateGte,
-          execution_date__lte: executionDateLte,
-          to,
-          value,
-          tokenAddress,
-          limit,
-          offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            execution_date__gte: executionDateGte,
+            execution_date__lte: executionDateLte,
+            to,
+            value,
+            tokenAddress,
+            limit,
+            offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -369,6 +431,8 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getModuleTransaction(
     moduleTransactionId: string,
   ): Promise<ModuleTransaction> {
@@ -378,7 +442,12 @@ export class TransactionApi implements ITransactionApi {
         moduleTransactionId,
       );
       const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -401,14 +470,19 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/module-transactions/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          to,
-          module,
-          limit,
-          offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            to,
+            module,
+            limit,
+            offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -455,22 +529,27 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          safe: safeAddress,
-          ordering,
-          executed,
-          trusted,
-          execution_date__gte: executionDateGte,
-          execution_date__lte: executionDateLte,
-          to,
-          value,
-          nonce,
-          nonce__gte: nonceGte,
-          limit,
-          offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            safe: safeAddress,
+            ordering,
+            executed,
+            trusted,
+            execution_date__gte: executionDateGte,
+            execution_date__lte: executionDateLte,
+            to,
+            value,
+            nonce,
+            nonce__gte: nonceGte,
+            limit,
+            offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -495,7 +574,12 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       );
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -511,6 +595,8 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getCreationTransaction(
     safeAddress: string,
   ): Promise<CreationTransaction> {
@@ -520,7 +606,12 @@ export class TransactionApi implements ITransactionApi {
         safeAddress,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -545,16 +636,21 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          safe: safeAddress,
-          ordering: ordering,
-          executed: executed,
-          queued: queued,
-          limit: limit,
-          offset: offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            safe: safeAddress,
+            ordering: ordering,
+            executed: executed,
+            queued: queued,
+            limit: limit,
+            offset: offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -567,16 +663,25 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getToken(address: string): Promise<Token> {
     try {
       const cacheDir = CacheRouter.getTokenCacheDir(this.chainId, address);
       const url = `${this.baseUrl}/api/v1/tokens/${address}`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getTokens(limit?: number, offset?: number): Promise<Page<Token>> {
     try {
       const cacheDir = CacheRouter.getTokensCacheDir(
@@ -585,17 +690,24 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/tokens/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          limit: limit,
-          offset: offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        {
+          params: {
+            limit: limit,
+            offset: offset,
+          },
         },
-      });
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getSafesByOwner(ownerAddress: string): Promise<SafeList> {
     try {
       const cacheDir = CacheRouter.getSafesByOwnerCacheDir(
@@ -603,7 +715,12 @@ export class TransactionApi implements ITransactionApi {
         ownerAddress,
       );
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
