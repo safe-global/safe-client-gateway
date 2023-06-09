@@ -16,6 +16,8 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 export class TransactionApiManager implements ITransactionApiManager {
   private transactionApiMap: Record<string, TransactionApi> = {};
 
+  private readonly useVpcUrl: boolean;
+
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -24,23 +26,20 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-  ) {}
+  ) {
+    this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
+      'safeTransaction.useVpcUrl',
+    );
+  }
 
   async getTransactionApi(chainId: string): Promise<TransactionApi> {
     const transactionApi = this.transactionApiMap[chainId];
     if (transactionApi !== undefined) return transactionApi;
 
-    // TODO replace with getOrThrow once https://github.com/safe-global/safe-client-gateway-nest/issues/318 is done
-    // By requiring a new environment variable to be set, a lot of tests need to be adjusted to configure this
-    // new variable
-    const useVpcUrl =
-      this.configurationService.get<boolean>('safeTransaction.useVpcUrl') ??
-      false;
-
     const chain: Chain = await this.configApi.getChain(chainId);
     this.transactionApiMap[chainId] = new TransactionApi(
       chainId,
-      useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
+      this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
       this.dataSource,
       this.cacheService,
       this.httpErrorFactory,
