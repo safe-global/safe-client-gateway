@@ -8,7 +8,7 @@ import { HttpErrorFactory } from '../errors/http-error-factory';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 
 const configurationService = {
-  get: jest.fn(),
+  getOrThrow: jest.fn(),
 } as unknown as IConfigurationService;
 
 const configurationServiceMock = jest.mocked(configurationService);
@@ -32,18 +32,8 @@ const httpErrorFactory = {} as unknown as HttpErrorFactory;
 const networkService = {} as unknown as INetworkService;
 
 describe('Transaction API Manager Tests', () => {
-  let target: TransactionApiManager;
-
   beforeEach(() => {
     jest.resetAllMocks();
-    target = new TransactionApiManager(
-      configurationServiceMock,
-      configApiMock,
-      dataSourceMock,
-      cacheService,
-      httpErrorFactory,
-      networkService,
-    );
   });
 
   /**
@@ -53,12 +43,20 @@ describe('Transaction API Manager Tests', () => {
   describe('VPC Url', () => {
     it('useVpcUrl is true', async () => {
       const chain = chainBuilder().build();
-      configurationServiceMock.get.mockImplementation((key) => {
+      configurationServiceMock.getOrThrow.mockImplementation((key) => {
         if (key !== 'safeTransaction.useVpcUrl')
           throw new Error(`Expected key safeTransaction.useVpcUrl. Got ${key}`);
         return true;
       });
       configApiMock.getChain.mockResolvedValue(chain);
+      const target = new TransactionApiManager(
+        configurationServiceMock,
+        configApiMock,
+        dataSourceMock,
+        cacheService,
+        httpErrorFactory,
+        networkService,
+      );
 
       const transactionApi = await target.getTransactionApi(chain.chainId);
       await transactionApi.getBackbone();
@@ -71,12 +69,20 @@ describe('Transaction API Manager Tests', () => {
 
     it('useVpcUrl is false', async () => {
       const chain = chainBuilder().build();
-      configurationServiceMock.get.mockImplementation((key) => {
+      configurationServiceMock.getOrThrow.mockImplementation((key) => {
         if (key !== 'safeTransaction.useVpcUrl')
           throw new Error(`Expected key safeTransaction.useVpcUrl. Got ${key}`);
         return false;
       });
       configApiMock.getChain.mockResolvedValue(chain);
+      const target = new TransactionApiManager(
+        configurationServiceMock,
+        configApiMock,
+        dataSourceMock,
+        cacheService,
+        httpErrorFactory,
+        networkService,
+      );
 
       const transactionApi = await target.getTransactionApi(chain.chainId);
       await transactionApi.getBackbone();
