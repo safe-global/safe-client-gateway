@@ -27,12 +27,17 @@ const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('ConfigApi', () => {
   const baseUri = faker.internet.url();
+  const expirationTimeInSeconds = faker.datatype.number();
   let fakeConfigurationService;
   let service: ConfigApi;
 
   beforeAll(async () => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('safeConfig.baseUri', baseUri);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      expirationTimeInSeconds,
+    );
   });
 
   beforeEach(async () => {
@@ -71,6 +76,7 @@ describe('ConfigApi', () => {
       new CacheDir('chains', 'undefined_undefined'),
       `${baseUri}/api/v1/chains`,
       { params: { limit: undefined, offset: undefined } },
+      expirationTimeInSeconds,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
@@ -86,6 +92,8 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir(`${data.chainId}_chain`, ''),
       `${baseUri}/api/v1/chains/${data.chainId}`,
+      undefined,
+      expirationTimeInSeconds,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
@@ -103,6 +111,7 @@ describe('ConfigApi', () => {
       new CacheDir(`${chainId}_safe_apps`, 'undefined_undefined'),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url: undefined } },
+      expirationTimeInSeconds,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
@@ -121,6 +130,7 @@ describe('ConfigApi', () => {
       new CacheDir(`${chainId}_safe_apps`, `undefined_${url}`),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl: undefined, url } },
+      expirationTimeInSeconds,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
@@ -139,6 +149,7 @@ describe('ConfigApi', () => {
       new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
       `${baseUri}/api/v1/safe-apps/`,
       { params: { chainId, clientUrl, url: undefined } },
+      expirationTimeInSeconds,
     );
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });

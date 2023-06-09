@@ -12,6 +12,7 @@ import { CacheService, ICacheService } from '../cache/cache.service.interface';
 @Injectable()
 export class ConfigApi implements IConfigApi {
   private readonly baseUri: string;
+  private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
@@ -22,6 +23,10 @@ export class ConfigApi implements IConfigApi {
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('safeConfig.baseUri');
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
   }
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
@@ -29,7 +34,12 @@ export class ConfigApi implements IConfigApi {
       const url = `${this.baseUri}/api/v1/chains`;
       const params = { limit, offset };
       const cacheDir = CacheRouter.getChainsCacheDir(limit, offset);
-      return await this.dataSource.get(cacheDir, url, { params });
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        { params },
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -50,7 +60,12 @@ export class ConfigApi implements IConfigApi {
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDir(chainId);
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -65,7 +80,12 @@ export class ConfigApi implements IConfigApi {
       const providerUrl = `${this.baseUri}/api/v1/safe-apps/`;
       const params = { chainId, clientUrl, url };
       const cacheDir = CacheRouter.getSafeAppsCacheDir(chainId, clientUrl, url);
-      return await this.dataSource.get(cacheDir, providerUrl, { params });
+      return await this.dataSource.get(
+        cacheDir,
+        providerUrl,
+        { params },
+        this.defaultExpirationTimeInSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

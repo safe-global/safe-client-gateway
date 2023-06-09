@@ -42,6 +42,7 @@ export class TransactionApiManager implements ITransactionApiManager {
       this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
       this.dataSource,
       this.cacheService,
+      this.configurationService,
       this.httpErrorFactory,
       this.networkService,
     );
