@@ -29,6 +29,6 @@ export default () => ({
     port: process.env.REDIS_PORT || '6379',
   },
   expirationTimeInSeconds: {
-    default: process.env.EXPIRATION_TIME_DEFAULT_SECONDS || 60,
+    default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
   },
 });
