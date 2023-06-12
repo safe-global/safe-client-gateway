@@ -40,6 +40,8 @@ export class SafesService {
 
     const [
       masterCopyInfo,
+      fallbackHandlerInfo,
+      guardInfo,
       collectiblesTag,
       queuedTransactionTag,
       transactionHistoryTag,
@@ -47,29 +49,20 @@ export class SafesService {
       this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
         'CONTRACT',
       ]),
-
+      safe.fallbackHandler === NULL_ADDRESS
+        ? Promise.resolve(null)
+        : this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler, [
+            'CONTRACT',
+          ]),
+      safe.guard === NULL_ADDRESS
+        ? Promise.resolve(null)
+        : this.addressInfoHelper.getOrDefault(chainId, safe.guard, [
+            'CONTRACT',
+          ]),
       this.getCollectiblesTag(chainId, safeAddress),
       this.getQueuedTransactionTag(chainId, safe),
       this.executedTransactionTag(chainId, safeAddress),
     ]);
-
-    let fallbackHandlerInfo: AddressInfo | null = null;
-    if (safe.fallbackHandler !== NULL_ADDRESS) {
-      fallbackHandlerInfo = await this.addressInfoHelper.getOrDefault(
-        chainId,
-        safe.fallbackHandler,
-        ['CONTRACT'],
-      );
-    }
-
-    let guardInfo: AddressInfo | null = null;
-    if (safe.guard !== NULL_ADDRESS) {
-      guardInfo = await this.addressInfoHelper.getOrDefault(
-        chainId,
-        safe.guard,
-        ['CONTRACT'],
-      );
-    }
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
