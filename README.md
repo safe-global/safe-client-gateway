@@ -3,7 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/5afe/safe-client-gateway-nest/badge.svg?branch=main)](https://coveralls.io/github/5afe/safe-client-gateway-nest?branch=main)
 
 ## Requirements
-- Node 16.16.0 – https://nodejs.org/en/
+- Node 18.16.0 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
