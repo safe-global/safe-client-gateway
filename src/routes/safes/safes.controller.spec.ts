@@ -785,6 +785,54 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
+  it('fallback handler guard returns null if it is a null address', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('fallbackHandler', NULL_ADDRESS)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().build();
+    const collectibleTransfers = pageBuilder().build();
+    const queuedTransactions = pageBuilder().build();
+    const allTransactions = pageBuilder().build();
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((res) =>
+        expect(res.body).toMatchObject({
+          fallbackHandler: null,
+        }),
+      );
+  });
+
   it('fallback handler is serialised if there is no address info', async () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
