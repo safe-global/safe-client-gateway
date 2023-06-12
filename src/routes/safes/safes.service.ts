@@ -12,6 +12,7 @@ import {
   isMultisigTransaction,
 } from '../../domain/safe/entities/transaction.entity';
 import { AddressInfo } from '../common/entities/address-info.entity';
+import { NULL_ADDRESS } from '../common/constants';
 
 @Injectable()
 export class SafesService {
@@ -24,15 +25,12 @@ export class SafesService {
   ) {}
 
   async getSafeInfo(chainId: string, safeAddress: string): Promise<SafeState> {
-    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
-
-    const recommendedMasterCopyVersion = (
-      await this.chainsRepository.getChain(chainId)
-    ).recommendedMasterCopyVersion;
-
-    const supportedMasterCopies = await this.chainsRepository.getMasterCopies(
-      chainId,
-    );
+    const [safe, { recommendedMasterCopyVersion }, supportedMasterCopies] =
+      await Promise.all([
+        this.safeRepository.getSafe(chainId, safeAddress),
+        this.chainsRepository.getChain(chainId),
+        this.chainsRepository.getMasterCopies(chainId),
+      ]);
 
     const versionState = this.computeVersionState(
       safe,
@@ -40,10 +38,33 @@ export class SafesService {
       supportedMasterCopies,
     );
 
-    const masterCopyInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
+    const [
+      masterCopyInfo,
+      fallbackHandlerInfo,
+      collectiblesTag,
+      queuedTransactionTag,
+      transactionHistoryTag,
+    ] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
         'CONTRACT',
-      ]);
+      ]),
+      this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler, [
+        'CONTRACT',
+      ]),
+
+      this.getCollectiblesTag(chainId, safeAddress),
+      this.getQueuedTransactionTag(chainId, safe),
+      this.executedTransactionTag(chainId, safeAddress),
+    ]);
+
+    let guardInfo: AddressInfo | null = null;
+    if (safe.guard !== NULL_ADDRESS) {
+      guardInfo = await this.addressInfoHelper.getOrDefault(
+        chainId,
+        safe.guard,
+        ['CONTRACT'],
+      );
+    }
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
@@ -54,27 +75,6 @@ export class SafesService {
       moduleAddressesInfo =
         moduleInfoCollection.length == 0 ? null : moduleInfoCollection;
     }
-
-    const fallbackHandlerInfo: AddressInfo =
-      await this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler, [
-        'CONTRACT',
-      ]);
-
-    const guardInfo: AddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      safe.guard,
-      ['CONTRACT'],
-    );
-
-    const collectiblesTag = await this.getCollectiblesTag(chainId, safeAddress);
-    const queuedTransactionTag = await this.getQueuedTransactionTag(
-      chainId,
-      safe,
-    );
-    const transactionHistoryTag = await this.executedTransactionTag(
-      chainId,
-      safeAddress,
-    );
 
     return new SafeState(
       new AddressInfo(safe.address),

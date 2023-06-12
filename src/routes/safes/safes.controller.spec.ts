@@ -36,6 +36,7 @@ import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { NULL_ADDRESS } from '../common/constants';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
@@ -828,6 +829,50 @@ describe('Safes Controller (Unit)', () => {
             name: null,
             logoUri: null,
           },
+        }),
+      );
+  });
+
+  it('guard returns null if it is a null address', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder().with('guard', NULL_ADDRESS).build();
+    const fallbackHandlerInfo = contractBuilder().build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const collectibleTransfers = pageBuilder().build();
+    const queuedTransactions = pageBuilder().build();
+    const allTransactions = pageBuilder().build();
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
+          return Promise.resolve({ data: allTransactions });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          guard: null,
         }),
       );
   });
