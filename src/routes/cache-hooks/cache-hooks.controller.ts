@@ -40,7 +40,7 @@ export class CacheHooksController {
       | OutgoingToken
       | OutgoingEther
       | PendingTransaction,
-  ): Promise<void[]> {
-    return await this.service.onEvent(chainId, eventPayload);
+  ): Promise<void> {
+    await this.service.onEvent(chainId, eventPayload);
   }
 }
