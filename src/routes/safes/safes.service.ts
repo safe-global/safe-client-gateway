@@ -171,7 +171,7 @@ export class SafesService {
     }
 
     const sortedMessages = messages.results.sort((m1, m2) => {
-      return m2.modified > m1.modified ? 1 : -1;
+      return m2.modified.getTime() - m1.modified.getTime();
     });
 
     return sortedMessages[0].modified;
