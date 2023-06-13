@@ -13,6 +13,8 @@ import {
 } from '../../domain/safe/entities/transaction.entity';
 import { AddressInfo } from '../common/entities/address-info.entity';
 import { NULL_ADDRESS } from '../common/constants';
+import { MessagesRepository } from '../../domain/messages/messages.repository';
+import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
 
 @Injectable()
 export class SafesService {
@@ -22,6 +24,8 @@ export class SafesService {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(IMessagesRepository)
+    private readonly messagesRepository: MessagesRepository,
   ) {}
 
   async getSafeInfo(chainId: string, safeAddress: string): Promise<SafeState> {
@@ -45,6 +49,7 @@ export class SafesService {
       collectiblesTag,
       queuedTransactionTag,
       transactionHistoryTag,
+      messagesTag,
     ] = await Promise.all([
       this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
         'CONTRACT',
@@ -62,6 +67,7 @@ export class SafesService {
       this.getCollectiblesTag(chainId, safeAddress),
       this.getQueuedTransactionTag(chainId, safe),
       this.executedTransactionTag(chainId, safeAddress),
+      this.modifiedMessageTag(chainId, safeAddress),
     ]);
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
@@ -85,6 +91,7 @@ export class SafesService {
       this.toUnixTimestampInSecondsOrNow(collectiblesTag).toString(),
       this.toUnixTimestampInSecondsOrNow(queuedTransactionTag).toString(),
       this.toUnixTimestampInSecondsOrNow(transactionHistoryTag).toString(),
+      this.toUnixTimestampInSecondsOrNow(messagesTag).toString(),
       moduleAddressesInfo,
       fallbackHandlerInfo,
       guardInfo,
@@ -148,6 +155,26 @@ export class SafesService {
       // This should never happen as AJV would not allow an unknown transaction to get to this stage
       throw Error('Unrecognized transaction type');
     }
+  }
+
+  private async modifiedMessageTag(
+    chainId: string,
+    safeAddress: string,
+  ): Promise<Date | null> {
+    const messages = await this.messagesRepository.getMessagesBySafe(
+      chainId,
+      safeAddress,
+    );
+
+    if (messages.results.length === 0) {
+      return null;
+    }
+
+    const sortedMessages = messages.results.sort((m1, m2) => {
+      return m2.modified.getTime() - m1.modified.getTime();
+    });
+
+    return sortedMessages[0].modified;
   }
 
   private computeVersionState(

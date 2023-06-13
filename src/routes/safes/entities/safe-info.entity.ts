@@ -36,6 +36,8 @@ export class SafeState {
   readonly txQueuedTag: string;
   @ApiProperty()
   readonly txHistoryTag: string;
+  @ApiProperty()
+  readonly messagesTag: string;
 
   constructor(
     address: AddressInfo,
@@ -48,6 +50,7 @@ export class SafeState {
     collectiblesTag: string,
     txQueuedTag: string,
     txHistoryTag: string,
+    messagesTag: string,
     modules: AddressInfo[] | null,
     fallbackHandler: AddressInfo | null,
     guard: AddressInfo | null,
@@ -63,6 +66,7 @@ export class SafeState {
     this.collectiblesTag = collectiblesTag;
     this.txQueuedTag = txQueuedTag;
     this.txHistoryTag = txHistoryTag;
+    this.messagesTag = messagesTag;
     this.modules = modules;
     this.fallbackHandler = fallbackHandler;
     this.guard = guard;
