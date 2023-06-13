@@ -4,7 +4,6 @@ import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-t
 import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { SafeRepository } from '../../../../domain/safe/safe.repository';
 import { ISafeRepository } from '../../../../domain/safe/safe.repository.interface';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import {
@@ -115,33 +114,23 @@ export class MultisigTransactionDetailsMapper {
             ),
         );
 
-    const promises: Promise<unknown>[] = [];
-    promises.push(
-      gasToken != NULL_ADDRESS
-        ? this.tokenRepository.getToken(chainId, gasToken)
-        : Promise.resolve(null),
-    );
-    promises.push(
-      transaction.executor
-        ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
-            'CONTRACT',
-          ])
-        : Promise.resolve(null),
-    );
-    promises.push(
-      this.addressInfoHelper.getOrDefault(
-        chainId,
-        transaction.refundReceiver ?? NULL_ADDRESS,
-        ['CONTRACT'],
-      ),
-    );
-    promises.push(
-      txStatus === TransactionStatus.Cancelled
-        ? this._getRejectors(chainId, transaction, safe)
-        : Promise.resolve(null),
-    );
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
-      await Promise.all(promises);
+      await Promise.all([
+        gasToken != NULL_ADDRESS
+          ? this.tokenRepository.getToken(chainId, gasToken)
+          : Promise.resolve(null),
+        transaction.executor
+          ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
+              'CONTRACT',
+            ])
+          : Promise.resolve(null),
+        this.addressInfoHelper.getOrDefault(
+          chainId,
+          transaction.refundReceiver ?? NULL_ADDRESS,
+          ['CONTRACT'],
+        ),
+        this._getRejectors(chainId, transaction, safe),
+      ]);
 
     return new MultisigExecutionDetails(
       transaction.submissionDate.getTime(),
@@ -150,14 +139,14 @@ export class MultisigTransactionDetailsMapper {
       transaction.baseGas?.toString() ?? '0',
       transaction.gasPrice?.toString() ?? '0',
       gasToken,
-      refundReceiver as AddressInfo,
+      refundReceiver,
       transaction.safeTxHash,
-      executor as AddressInfo,
+      executor,
       signers,
       confirmationsRequired,
       confirmations,
-      rejectors as AddressInfo[] | null,
-      gasTokenInfo as Token | null,
+      rejectors,
+      gasTokenInfo,
       transaction.trusted,
     );
   }
