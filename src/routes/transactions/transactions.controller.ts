@@ -221,7 +221,7 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @Body(ProposeTransactionDtoValidationPipe)
     proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     return this.transactionsService.proposeTransaction(
       chainId,
       safeAddress,

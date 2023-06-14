@@ -12,7 +12,7 @@ import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
 import { safeAppBuilder } from '../../../../domain/safe-apps/entities/__tests__/safe-app.builder';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
@@ -25,6 +25,7 @@ import { TransactionsModule } from '../../transactions.module';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -76,26 +77,36 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const safe = safeBuilder().with('address', safeAddress).build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
-    const transaction = multisigToJson(
-      multisigTransactionBuilder().build(),
-    ) as MultisigTransaction;
+    const transaction = multisigTransactionBuilder().build();
+    const transactions = pageBuilder().build();
+    const token = tokenBuilder().build();
+    const gasToken = tokenBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
         case getMultisigTransactionUrl:
-          return Promise.resolve({ data: transaction });
+          return Promise.resolve({ data: multisigToJson(transaction) });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: transactions });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getSafeAppsUrl:
           return Promise.resolve({ data: safeApps });
         case getContractUrl:
           return Promise.resolve({ data: contract });
+        case getTokenUrl:
+          return Promise.resolve({ data: token });
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: gasToken });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -116,15 +127,17 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .expect(({ body }) =>
         expect(body).toEqual(
           expect.objectContaining({
-            id: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-            timestamp: expect.any(Number),
+            txId: `multisig_${safeAddress}_${transaction.safeTxHash}`,
+            executedAt: transaction.executionDate?.getTime(),
             txStatus: expect.any(String),
             txInfo: expect.any(Object),
-            executionInfo: expect.objectContaining({
+            detailedExecutionInfo: expect.objectContaining({
               type: 'MULTISIG',
               nonce: transaction.nonce,
             }),
             safeAppInfo: expect.any(Object),
+            safeAddress,
+            txHash: transaction.transactionHash,
           }),
         ),
       );
