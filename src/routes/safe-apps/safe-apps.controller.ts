@@ -13,8 +13,8 @@ export class SafeAppsController {
 
   @ApiOkResponse({ type: SafeApp, isArray: true })
   @Get('chains/:chainId/safe-apps')
-  @ApiQuery({ name: 'clientUrl', required: false })
-  @ApiQuery({ name: 'url', required: false })
+  @ApiQuery({ name: 'clientUrl', required: false, type: String })
+  @ApiQuery({ name: 'url', required: false, type: String })
   async getSafeApps(
     @Param('chainId') chainId: string,
     @Query('clientUrl') clientUrl?: string,
