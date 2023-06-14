@@ -405,6 +405,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
       .build();
+    const replacementTxConfirmations = [confirmationBuilder().build()];
+    const replacementTx = multisigTransactionBuilder()
+      .with('confirmations', replacementTxConfirmations)
+      .build();
+    const replacementTxsPage = pageBuilder()
+      .with('results', [multisigToJson(replacementTx)])
+      .build();
     const safeAppsResponse = [
       safeAppBuilder()
         .with('url', faker.internet.url())
@@ -418,6 +425,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
@@ -427,6 +435,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.resolve({ data: chain });
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: multisigToJson(tx) });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: replacementTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getGasTokenContractUrl:
@@ -512,7 +522,11 @@ describe('Get by id - Transactions Controller (Unit)', () => {
                 submittedAt: confirmations[1].submissionDate.getTime(),
               },
             ],
-            rejectors: null,
+            rejectors: expect.arrayContaining([
+              expect.objectContaining({
+                value: replacementTxConfirmations[0].owner,
+              }),
+            ]),
             gasToken: tx.gasToken,
             gasTokenInfo: gasToken,
             trusted: tx.trusted,
