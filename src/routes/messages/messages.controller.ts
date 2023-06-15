@@ -33,7 +33,7 @@ export class MessagesController {
 
   @ApiOkResponse({ type: MessagePage })
   @Get('chains/:chainId/safes/:safeAddress/messages')
-  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMessagesBySafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
