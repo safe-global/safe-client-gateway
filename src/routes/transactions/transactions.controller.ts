@@ -58,7 +58,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'to', required: false, type: String })
   @ApiQuery({ name: 'value', required: false, type: String })
   @ApiQuery({ name: 'nonce', required: false, type: String })
-  @ApiQuery({ name: 'executed', required: false, type: String })
+  @ApiQuery({ name: 'executed', required: false, type: Boolean })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMultisigTransactions(
     @Param('chainId') chainId: string,
