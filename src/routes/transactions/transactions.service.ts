@@ -368,7 +368,7 @@ export class TransactionsService {
     chainId: string,
     safeAddress: string,
     proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(
       chainId,
       safeAddress,
@@ -381,7 +381,7 @@ export class TransactionsService {
       proposeTransactionDto.safeTxHash,
     );
 
-    return this.multisigTransactionMapper.mapTransaction(
+    return this.multisigTransactionDetailsMapper.mapDetails(
       chainId,
       domainTransaction,
       safe,
