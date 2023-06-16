@@ -54,6 +54,21 @@ export class TransactionsService {
   ) {}
 
   async getById(chainId: string, txId: string): Promise<TransactionDetails> {
+    const isSafeTxHash = !txId.includes(TRANSACTION_ID_SEPARATOR);
+
+    if (isSafeTxHash) {
+      const tx = await this.safeRepository.getMultiSigTransaction(
+        chainId,
+        txId,
+      );
+      const safe = await this.safeRepository.getSafe(chainId, tx.safe);
+      return this.multisigTransactionDetailsMapper.mapDetails(
+        chainId,
+        tx,
+        safe,
+      );
+    }
+
     const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
 
     if (txType === MODULE_TRANSACTION_PREFIX) {
