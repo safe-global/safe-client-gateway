@@ -11,6 +11,7 @@ import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MULTI_SEND_METHOD_NAME } from '../../constants';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { TransactionDataMapper } from './transaction-data.mapper';
+import { DELEGATE_OPERATION } from '../../../../domain/safe/entities/operation.entity';
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),
@@ -45,6 +46,20 @@ describe('Transaction Data Mapper (Unit)', () => {
         dataDecodedBuilder().build(),
       );
       expect(actual).toBeNull();
+    });
+
+    it('should return false if data decoded is null', async () => {
+      const contract = contractBuilder().build();
+      contractsRepository.getContract.mockResolvedValue(contract);
+
+      const actual = await mapper.isTrustedDelegateCall(
+        faker.random.numeric(),
+        DELEGATE_OPERATION,
+        faker.finance.ethereumAddress(),
+        null,
+      );
+
+      expect(actual).toBe(false);
     });
 
     it('should mark as non-trusted for delegate call if the contract cannot be retrieved', async () => {
