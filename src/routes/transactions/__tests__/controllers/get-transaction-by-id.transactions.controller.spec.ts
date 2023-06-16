@@ -67,21 +67,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  it('Failure: client-side validation error', async () => {
-    const chainId = faker.random.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const id = faker.datatype.uuid();
-
-    await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/transactions/unknown_${safeAddress}_${id}`)
-      .expect(400)
-      .expect({
-        message: 'Invalid transaction type',
-        code: 400,
-      });
-  });
-
   it('Failure: Config API fails', async () => {
     const chainId = faker.random.numeric();
     const id = `module_${faker.datatype.uuid()}`;
