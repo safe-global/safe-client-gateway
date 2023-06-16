@@ -71,7 +71,7 @@ export class TransactionDataMapper {
    * If the transaction operation is DELEGATE, and the target {@link Contract}
    * is trusted, and the {@link DataDecoded} received contains a nested
    * DELEGATE operation, then true is returned.
-   * Otherwise the function will return false.
+   * Otherwise, the function will return false.
    */
   async isTrustedDelegateCall(
     chainId: string,
@@ -79,7 +79,7 @@ export class TransactionDataMapper {
     to: string,
     dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
-    if (dataDecoded === null || operation !== DELEGATE_OPERATION) return null;
+    if (operation !== DELEGATE_OPERATION) return null;
 
     let contract: Contract;
     try {
@@ -88,10 +88,11 @@ export class TransactionDataMapper {
       return false;
     }
 
-    return (
-      contract.trustedForDelegateCall &&
-      this.dataDecodedParamHelper.hasNestedDelegate(dataDecoded)
-    );
+    const hasNestedDelegate = dataDecoded
+      ? this.dataDecodedParamHelper.hasNestedDelegate(dataDecoded)
+      : false;
+
+    return contract.trustedForDelegateCall && hasNestedDelegate;
   }
 
   /**
