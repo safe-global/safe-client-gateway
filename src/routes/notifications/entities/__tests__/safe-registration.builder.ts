@@ -5,7 +5,7 @@ import { SafeRegistration } from '../safe-registration.entity';
 
 export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {
   return Builder.new<SafeRegistration>()
-    .with('chain_id', faker.random.numeric())
+    .with('chainId', faker.random.numeric())
     .with(
       'safes',
       range(random(5)).map(() => faker.finance.ethereumAddress()),
