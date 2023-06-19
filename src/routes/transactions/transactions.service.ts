@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
@@ -56,36 +56,53 @@ export class TransactionsService {
   async getById(chainId: string, txId: string): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
 
-    if (txType === MODULE_TRANSACTION_PREFIX) {
-      const [tx, safe] = await Promise.all([
-        this.safeRepository.getModuleTransaction(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx, safe);
-    }
-    if (txType === TRANSFER_PREFIX) {
-      const [transfer, safe] = await Promise.all([
-        this.safeRepository.getTransfer(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
-    }
-    if (txType === MULTISIG_TRANSACTION_PREFIX) {
-      const [tx, safe] = await Promise.all([
-        this.safeRepository.getMultiSigTransaction(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.multisigTransactionDetailsMapper.mapDetails(
-        chainId,
-        tx,
-        safe,
-      );
-    }
+    switch (txType) {
+      case MODULE_TRANSACTION_PREFIX: {
+        const [tx, safe] = await Promise.all([
+          this.safeRepository.getModuleTransaction(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.moduleTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
 
-    throw new BadRequestException({
-      message: 'Invalid transaction type',
-      code: 400,
-    });
+      case TRANSFER_PREFIX: {
+        const [transfer, safe] = await Promise.all([
+          this.safeRepository.getTransfer(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
+      }
+
+      case MULTISIG_TRANSACTION_PREFIX: {
+        const [tx, safe] = await Promise.all([
+          this.safeRepository.getMultiSigTransaction(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.multisigTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
+
+      // txId is safeTxHash
+      default: {
+        const tx = await this.safeRepository.getMultiSigTransaction(
+          chainId,
+          txId,
+        );
+        const safe = await this.safeRepository.getSafe(chainId, tx.safe);
+        return this.multisigTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
+    }
   }
 
   async getMultisigTransactions(
