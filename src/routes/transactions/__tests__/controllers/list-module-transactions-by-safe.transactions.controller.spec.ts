@@ -55,7 +55,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     mockNetworkService.get.mockRejectedValueOnce({
       status: 500,
@@ -77,7 +77,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('Failure: Transaction API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -101,7 +101,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('Get module transaction should return 404', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -126,7 +126,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('Get module transaction successfully', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     const moduleTransaction = {

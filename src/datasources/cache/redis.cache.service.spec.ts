@@ -39,8 +39,8 @@ describe('RedisCacheService', () => {
 
   it('Setting key without setting expireTimeSeconds', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
+      faker.string.alphanumeric(),
+      faker.string.sample(),
     );
     const value = faker.datatype.json();
 
@@ -55,11 +55,11 @@ describe('RedisCacheService', () => {
 
   it('Setting key with expireTimeSeconds', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
+      faker.string.alphanumeric(),
+      faker.string.sample(),
     );
     const value = faker.datatype.json();
-    const expireTime = faker.datatype.number();
+    const expireTime = faker.number.int();
 
     await redisCacheService.set(cacheDir, value, expireTime);
 
@@ -78,11 +78,11 @@ describe('RedisCacheService', () => {
 
   it('Setting key throws on expire', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
+      faker.string.alphanumeric(),
+      faker.string.sample(),
     );
     const value = faker.datatype.json();
-    const expireTimeSeconds = faker.datatype.number({ min: 5 });
+    const expireTimeSeconds = faker.number.int({ min: 5 });
     redisClientTypeMock.expire.mockRejectedValueOnce(new Error('cache error'));
 
     await expect(
@@ -110,14 +110,14 @@ describe('RedisCacheService', () => {
 
   it('Setting key throws on set', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
+      faker.string.alphanumeric(),
+      faker.string.sample(),
     );
     const value = faker.datatype.json();
     redisClientTypeMock.hSet.mockRejectedValueOnce(new Error('cache error'));
 
     await expect(
-      redisCacheService.set(cacheDir, value, faker.datatype.number({ min: 5 })),
+      redisCacheService.set(cacheDir, value, faker.number.int({ min: 5 })),
     ).rejects.toThrow('cache error');
 
     expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
@@ -137,8 +137,8 @@ describe('RedisCacheService', () => {
 
   it('Getting key calls hGet', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.datatype.string(),
+      faker.string.alphanumeric(),
+      faker.string.sample(),
     );
     await redisCacheService.get(cacheDir);
 
@@ -153,7 +153,7 @@ describe('RedisCacheService', () => {
   });
 
   it('Deleting key calls delete', async () => {
-    const key = faker.random.alphaNumeric();
+    const key = faker.string.alphanumeric();
 
     await redisCacheService.deleteByKey(key);
 
@@ -166,13 +166,13 @@ describe('RedisCacheService', () => {
 
   it('Deleting keys by pattern calls scan and unlink', async () => {
     const matches = [
-      faker.random.alphaNumeric(),
-      faker.random.alphaNumeric(),
-      faker.random.alphaNumeric(),
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
     ];
     redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
 
-    await redisCacheService.deleteByKeyPattern(faker.random.alphaNumeric());
+    await redisCacheService.deleteByKeyPattern(faker.string.alphanumeric());
 
     expect(redisClientTypeMock.scanIterator).toBeCalledTimes(1);
     expect(redisClientTypeMock.unlink).toBeCalledTimes(matches.length);

@@ -7,6 +7,6 @@ export function createDelegateDtoBuilder(): IBuilder<CreateDelegateDto> {
     .with('safe', faker.finance.ethereumAddress())
     .with('delegate', faker.finance.ethereumAddress())
     .with('delegator', faker.finance.ethereumAddress())
-    .with('signature', faker.datatype.hexadecimal(32))
-    .with('label', faker.datatype.hexadecimal(32));
+    .with('signature', faker.string.hexadecimal({ length: 32 }))
+    .with('label', faker.string.hexadecimal({ length: 32 }));
 }

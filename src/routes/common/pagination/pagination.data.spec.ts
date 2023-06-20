@@ -160,7 +160,7 @@ describe('PaginationData', () => {
 
   describe('buildNextPageURL', () => {
     it('next url is the default if no cursor is passed', async () => {
-      const currentUrl = faker.internet.url();
+      const currentUrl = faker.internet.url({ appendSlash: false });
       const expected = new URL(
         `${currentUrl}/?cursor=limit%3D${
           PaginationData.DEFAULT_LIMIT
@@ -171,15 +171,15 @@ describe('PaginationData', () => {
 
       const actual = buildNextPageURL(
         currentUrl,
-        faker.datatype.number({ min: PaginationData.DEFAULT_LIMIT + 1 }),
+        faker.number.int({ min: PaginationData.DEFAULT_LIMIT + 1 }),
       );
 
       expect(actual).toStrictEqual(expected);
     });
 
     it('next url is the default if an invalid cursor is passed', async () => {
-      const base = faker.internet.url();
-      const currentUrl = new URL(`${base}/?cursor=${faker.random.word()}`);
+      const base = faker.internet.url({ appendSlash: false });
+      const currentUrl = new URL(`${base}/?cursor=${faker.word.sample()}`);
       const expected = new URL(
         `${base}/?cursor=limit%3D${PaginationData.DEFAULT_LIMIT}%26offset%3D${
           PaginationData.DEFAULT_LIMIT + PaginationData.DEFAULT_OFFSET
@@ -188,7 +188,7 @@ describe('PaginationData', () => {
 
       const actual = buildNextPageURL(
         currentUrl,
-        faker.datatype.number({ min: PaginationData.DEFAULT_LIMIT + 1 }),
+        faker.number.int({ min: PaginationData.DEFAULT_LIMIT + 1 }),
       );
 
       expect(actual).toStrictEqual(expected);
@@ -196,23 +196,27 @@ describe('PaginationData', () => {
 
     it('next url is null if an invalid cursor is passed but there is no next page', async () => {
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=limit%3D${faker.random.word()}%26offset%3D${faker.random.word()}`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=limit%3D${faker.word.sample()}%26offset%3D${faker.word.sample()}`,
       );
 
       const actual = buildNextPageURL(
         currentUrl,
-        faker.datatype.number({ max: 20 }),
+        faker.number.int({ max: 20 }),
       );
 
       expect(actual).toStrictEqual(null);
     });
 
     it('next url is null if items count is equal to next offset', async () => {
-      const limit = faker.datatype.number({ min: 1, max: 100 });
-      const offset = faker.datatype.number({ min: 1, max: 100 });
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const offset = faker.number.int({ min: 1, max: 100 });
       const itemsCount = limit + offset;
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       );
 
       const actual = buildNextPageURL(currentUrl, itemsCount);
@@ -221,11 +225,13 @@ describe('PaginationData', () => {
     });
 
     it('next url is null if items count is less than next offset', async () => {
-      const limit = faker.datatype.number({ min: 1, max: 100 });
-      const offset = faker.datatype.number({ min: 1, max: 100 });
-      const itemsCount = faker.datatype.number({ max: limit + offset - 1 });
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const offset = faker.number.int({ min: 1, max: 100 });
+      const itemsCount = faker.number.int({ max: limit + offset - 1 });
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       );
 
       const actual = buildNextPageURL(currentUrl, itemsCount);
@@ -234,11 +240,11 @@ describe('PaginationData', () => {
     });
 
     it('next url contains a new offset and the same limit', async () => {
-      const limit = faker.datatype.number({ min: 1, max: 100 });
-      const offset = faker.datatype.number({ min: 1, max: 100 });
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const offset = faker.number.int({ min: 1, max: 100 });
       const expectedOffset = limit + offset;
-      const itemsCount = faker.datatype.number({ min: limit + offset + 1 });
-      const base = faker.internet.url();
+      const itemsCount = faker.number.int({ min: limit + offset + 1 });
+      const base = faker.internet.url({ appendSlash: false });
       const currentUrl = new URL(
         `${base}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       );
@@ -254,7 +260,9 @@ describe('PaginationData', () => {
 
   describe('buildPreviousPageURL', () => {
     it('previous url is null if no cursor is passed', async () => {
-      const currentUrl = new URL(`${faker.internet.url()}`);
+      const currentUrl = new URL(
+        `${faker.internet.url({ appendSlash: false })}`,
+      );
 
       const actual = buildPreviousPageURL(currentUrl);
 
@@ -263,7 +271,9 @@ describe('PaginationData', () => {
 
     it('previous url is null if an invalid cursor is passed', async () => {
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=${faker.random.word()}`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=${faker.word.sample()}`,
       );
 
       const actual = buildPreviousPageURL(currentUrl);
@@ -273,7 +283,9 @@ describe('PaginationData', () => {
 
     it('previous url is null if an invalid cursor is passed (2)', async () => {
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=limit%3D${faker.random.word()}%26offsetlimit%3D${faker.random.word()}`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=limit%3D${faker.word.sample()}%26offsetlimit%3D${faker.word.sample()}`,
       );
 
       const actual = buildPreviousPageURL(currentUrl);
@@ -283,7 +295,9 @@ describe('PaginationData', () => {
 
     it('previous url is null if offset is zero', async () => {
       const currentUrl = new URL(
-        `${faker.internet.url()}/?cursor=limit%3D3%26offset%3D0`,
+        `${faker.internet.url({
+          appendSlash: false,
+        })}/?cursor=limit%3D3%26offset%3D0`,
       );
 
       const actual = buildPreviousPageURL(currentUrl);
@@ -292,9 +306,9 @@ describe('PaginationData', () => {
     });
 
     it('previous url contains a zero offset if limit >= offset', async () => {
-      const limit = faker.datatype.number({ min: 2, max: 100 });
-      const offset = faker.datatype.number({ min: 1, max: limit });
-      const base = faker.internet.url();
+      const limit = faker.number.int({ min: 2, max: 100 });
+      const offset = faker.number.int({ min: 1, max: limit });
+      const base = faker.internet.url({ appendSlash: false });
       const currentUrl = new URL(
         `${base}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       );
@@ -306,10 +320,10 @@ describe('PaginationData', () => {
     });
 
     it('previous url contains a new offset and the same limit', async () => {
-      const limit = faker.datatype.number({ min: 1, max: 100 });
-      const offset = faker.datatype.number({ min: limit + 1 });
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const offset = faker.number.int({ min: limit + 1 });
       const expectedOffset = offset - limit;
-      const base = faker.internet.url();
+      const base = faker.internet.url({ appendSlash: false });
       const currentUrl = new URL(
         `${base}/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       );

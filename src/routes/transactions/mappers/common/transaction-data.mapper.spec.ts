@@ -40,7 +40,7 @@ describe('Transaction Data Mapper (Unit)', () => {
   describe('Detect trusted delegate calls', () => {
     it('should return null if the operation is not a DELEGATE call', async () => {
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         0,
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
@@ -53,7 +53,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       contractsRepository.getContract.mockResolvedValue(contract);
 
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         DELEGATE_OPERATION,
         faker.finance.ethereumAddress(),
         null,
@@ -65,7 +65,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     it('should mark as non-trusted for delegate call if the contract cannot be retrieved', async () => {
       contractsRepository.getContract.mockRejectedValue({ status: 404 });
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         1,
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
@@ -78,7 +78,7 @@ describe('Transaction Data Mapper (Unit)', () => {
         contractBuilder().with('trustedForDelegateCall', false).build(),
       );
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         1,
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
@@ -92,7 +92,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       );
       dataDecodedParamHelper.hasNestedDelegate.mockReturnValue(false);
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         1,
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
@@ -106,7 +106,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       );
       dataDecodedParamHelper.hasNestedDelegate.mockReturnValue(true);
       const actual = await mapper.isTrustedDelegateCall(
-        faker.random.numeric(),
+        faker.string.numeric(),
         1,
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
@@ -128,13 +128,13 @@ describe('Transaction Data Mapper (Unit)', () => {
         .build();
       const addressInfo = new AddressInfo(
         faker.finance.ethereumAddress(),
-        faker.random.word(),
-        faker.internet.url(),
+        faker.word.sample(),
+        faker.internet.url({ appendSlash: false }),
       );
       addressInfoHelper.get.mockResolvedValueOnce(addressInfo);
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 
@@ -154,7 +154,7 @@ describe('Transaction Data Mapper (Unit)', () => {
         .build();
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 
@@ -167,19 +167,19 @@ describe('Transaction Data Mapper (Unit)', () => {
         .with('method', 'changeMasterCopy')
         .with('parameters', [
           dataDecodedParameterBuilder()
-            .with('value', faker.random.alphaNumeric(42)) // non-hex
+            .with('value', faker.string.alphanumeric(42)) // non-hex
             .build(),
           dataDecodedParameterBuilder()
             .with('value', NULL_ADDRESS) // null address (zero hex)
             .build(),
           dataDecodedParameterBuilder()
-            .with('value', faker.datatype.hexadecimal(5)) // invalid (short) hex
+            .with('value', faker.string.hexadecimal({ length: 5 })) // invalid (short) hex
             .build(),
         ])
         .build();
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 
@@ -218,18 +218,18 @@ describe('Transaction Data Mapper (Unit)', () => {
       const addressInfos = [
         new AddressInfo(
           addresses[0],
-          faker.random.word(),
-          faker.internet.url(),
+          faker.word.sample(),
+          faker.internet.url({ appendSlash: false }),
         ),
         new AddressInfo(
           addresses[1],
-          faker.random.word(),
-          faker.internet.url(),
+          faker.word.sample(),
+          faker.internet.url({ appendSlash: false }),
         ),
         new AddressInfo(
           addresses[2],
-          faker.random.word(),
-          faker.internet.url(),
+          faker.word.sample(),
+          faker.internet.url({ appendSlash: false }),
         ),
       ];
       addressInfoHelper.get.mockResolvedValueOnce(addressInfos[0]);
@@ -238,7 +238,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       addressInfoHelper.get.mockResolvedValueOnce(addressInfos[2]);
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 
@@ -265,20 +265,20 @@ describe('Transaction Data Mapper (Unit)', () => {
     it('should build an address info index for a nested multiSend', async () => {
       const addressInfo = new AddressInfo(
         faker.finance.ethereumAddress(),
-        faker.random.word(),
-        faker.internet.url(),
+        faker.word.sample(),
+        faker.internet.url({ appendSlash: false }),
       );
       const dataDecoded = dataDecodedBuilder()
         .with('method', MULTI_SEND_METHOD_NAME)
         .with('parameters', [
           dataDecodedParameterBuilder()
             .with('name', 'transactions')
-            .with('value', faker.datatype.hexadecimal())
+            .with('value', faker.string.hexadecimal())
             .with('valueDecoded', [
               {
                 operation: 0,
                 to: faker.finance.ethereumAddress(),
-                data: faker.datatype.hexadecimal(),
+                data: faker.string.hexadecimal(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -299,7 +299,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       addressInfoHelper.get.mockResolvedValue(addressInfo);
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 
@@ -317,20 +317,20 @@ describe('Transaction Data Mapper (Unit)', () => {
       const contractAddress = faker.finance.ethereumAddress();
       const contractAddressInfo = new AddressInfo(
         contractAddress,
-        faker.random.word(),
-        faker.internet.url(),
+        faker.word.sample(),
+        faker.internet.url({ appendSlash: false }),
       );
       const dataDecoded = dataDecodedBuilder()
         .with('method', MULTI_SEND_METHOD_NAME)
         .with('parameters', [
           dataDecodedParameterBuilder()
             .with('name', 'transactions')
-            .with('value', faker.datatype.hexadecimal())
+            .with('value', faker.string.hexadecimal())
             .with('valueDecoded', [
               {
                 operation: 0,
                 to: faker.finance.ethereumAddress(),
-                data: faker.datatype.hexadecimal(),
+                data: faker.string.hexadecimal(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -347,7 +347,7 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: contractAddress,
-                data: faker.datatype.hexadecimal(),
+                data: faker.string.hexadecimal(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -364,7 +364,7 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: contractAddress,
-                data: faker.datatype.hexadecimal(),
+                data: faker.string.hexadecimal(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -389,7 +389,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       });
 
       const actual = await mapper.buildAddressInfoIndex(
-        faker.random.numeric(),
+        faker.string.numeric(),
         dataDecoded,
       );
 

@@ -8,17 +8,17 @@ import { safeAppSocialProfileBuilder } from './safe-app-social-profile.builder';
 
 export function safeAppBuilder(): IBuilder<SafeApp> {
   return Builder.new<SafeApp>()
-    .with('id', faker.datatype.number())
-    .with('url', faker.internet.url())
-    .with('name', faker.random.word())
-    .with('iconUrl', faker.internet.url())
-    .with('description', faker.random.word())
-    .with('chainIds', [faker.datatype.number(), faker.datatype.number()])
+    .with('id', faker.number.int())
+    .with('url', faker.internet.url({ appendSlash: false }))
+    .with('name', faker.word.sample())
+    .with('iconUrl', faker.internet.url({ appendSlash: false }))
+    .with('description', faker.word.sample())
+    .with('chainIds', [faker.number.int(), faker.number.int()])
     .with('provider', safeAppProviderBuilder().build())
     .with('accessControl', safeAppAccessControlBuilder().build())
-    .with('tags', [faker.random.word(), faker.random.word()])
-    .with('features', [faker.random.word(), faker.random.word()])
-    .with('developerWebsite', faker.internet.url())
+    .with('tags', [faker.word.sample(), faker.word.sample()])
+    .with('features', [faker.word.sample(), faker.word.sample()])
+    .with('developerWebsite', faker.internet.url({ appendSlash: false }))
     .with(
       'socialProfiles',
       range(random(5)).map(() => safeAppSocialProfileBuilder().build()),

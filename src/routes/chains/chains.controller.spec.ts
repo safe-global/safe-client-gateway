@@ -187,7 +187,7 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /:chainId', () => {
     it('Success', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const chainDomain = chainBuilder().with('chainId', chainId).build();
       const expectedResult = {
         chainId: chainDomain.chainId,
@@ -216,7 +216,7 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should return not Not found', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockRejectedValueOnce({
         data: { message: 'Not Found', status: 404 },
         status: 404,
@@ -232,7 +232,7 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockRejectedValueOnce({
         status: 503,
       });
@@ -431,7 +431,7 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should return not Not found', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockRejectedValueOnce({
         data: { message: 'Not Found', status: 404 },
         status: 404,
@@ -447,7 +447,7 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockRejectedValueOnce({
         status: 503,
       });

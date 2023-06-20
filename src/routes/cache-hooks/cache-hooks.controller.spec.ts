@@ -65,45 +65,45 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MODULE_TRANSACTION',
       module: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('accepts $type', async (payload) => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const data = {
       address: faker.finance.ethereumAddress(),
       chainId: chainId,
@@ -154,26 +154,26 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'INCOMING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears balances', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_balances_${safeAddress}`,
       faker.random.alpha(),
@@ -207,21 +207,21 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transactions', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transactions_${safeAddress}`,
       faker.random.alpha(),
@@ -255,21 +255,21 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
-      safeTxHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transaction', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
       faker.random.alpha(),
@@ -303,12 +303,12 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe info', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_safe_${safeAddress}`,
       faker.random.alpha(),
@@ -342,22 +342,22 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectibles', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_collectibles_${safeAddress}`,
       faker.random.alpha(),
@@ -391,22 +391,22 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectible transfers', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_transfers_${safeAddress}`,
       faker.random.alpha(),
@@ -441,16 +441,16 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
   ])('$type clears incoming transfers', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_incoming_transfers_${safeAddress}`,
       faker.random.alpha(),
@@ -485,11 +485,11 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'MODULE_TRANSACTION',
       module: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears module transactions', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_module_transactions_${safeAddress}`,
       faker.random.alpha(),
@@ -524,36 +524,36 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'MODULE_TRANSACTION',
       module: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
-      safeTxHash: faker.datatype.hexadecimal(32),
-      txHash: faker.datatype.hexadecimal(32),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'INCOMING_ETHER',
-      txHash: faker.datatype.hexadecimal(32),
-      value: faker.random.numeric(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.datatype.hexadecimal(32),
+      txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears all transactions', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_all_transactions_${safeAddress}`,
       faker.random.alpha(),

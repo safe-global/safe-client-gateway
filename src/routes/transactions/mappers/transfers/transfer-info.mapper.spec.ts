@@ -33,7 +33,7 @@ describe('Transfer Info mapper (Unit)', () => {
   });
 
   it('should build an ERC20 TransferTransactionInfo', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
@@ -64,7 +64,7 @@ describe('Transfer Info mapper (Unit)', () => {
   });
 
   it('should build an ERC721 TransferTransactionInfo', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
@@ -94,7 +94,7 @@ describe('Transfer Info mapper (Unit)', () => {
   });
 
   it('should build an Native Token TransferTransactionInfo', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transfer = nativeTokenTransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());

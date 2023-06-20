@@ -17,7 +17,7 @@ describe('NestConfigurationService', () => {
   });
 
   it(`get key is successful`, async () => {
-    const key = faker.datatype.string();
+    const key = faker.string.sample();
     const value = { some: { value: 10 } };
     configServiceMock.get.mockReturnValue(value);
 
@@ -30,7 +30,7 @@ describe('NestConfigurationService', () => {
   });
 
   it(`get key returns undefined when no key is found`, async () => {
-    const key = faker.datatype.string();
+    const key = faker.string.sample();
     configServiceMock.get.mockReturnValue(undefined);
 
     const result = target.get(key);
@@ -42,7 +42,7 @@ describe('NestConfigurationService', () => {
   });
 
   it(`getOrThrow key is successful`, async () => {
-    const key = faker.datatype.string();
+    const key = faker.string.sample();
     const value = { some: { value: 10 } };
     configServiceMock.getOrThrow.mockReturnValue(value);
 
@@ -55,7 +55,7 @@ describe('NestConfigurationService', () => {
   });
 
   it(`getOrThrow key throws error`, async () => {
-    const key = faker.datatype.string();
+    const key = faker.string.sample();
     configServiceMock.getOrThrow.mockImplementation(() => {
       throw new Error('some error');
     });

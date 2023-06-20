@@ -5,6 +5,6 @@ import { AddConfirmationDto } from '../../entities/add-confirmation.dto';
 export function addConfirmationDtoBuilder(): IBuilder<AddConfirmationDto> {
   return Builder.new<AddConfirmationDto>().with(
     'signedSafeTxHash',
-    faker.datatype.hexadecimal(32),
+    faker.string.hexadecimal({ length: 32 }),
   );
 }

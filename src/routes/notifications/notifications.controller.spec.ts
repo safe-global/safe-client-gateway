@@ -96,7 +96,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 400, max: 499 }),
+                faker.number.int({ min: 400, max: 499 }),
               ),
             )
           : rejectForUrl(url),
@@ -131,7 +131,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 500, max: 599 }),
+                faker.number.int({ min: 500, max: 599 }),
               ),
             )
           : rejectForUrl(url),
@@ -164,7 +164,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 400, max: 499 }),
+                faker.number.int({ min: 400, max: 499 }),
               ),
             )
           : rejectForUrl(url),
@@ -173,7 +173,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 500, max: 599 }),
+                faker.number.int({ min: 500, max: 599 }),
               ),
             )
           : rejectForUrl(url),
@@ -235,7 +235,7 @@ describe('Notifications Controller (Unit)', () => {
 
   describe('DELETE /chains/:chainId/notifications/devices/:uuid/safes/:safeAddress', () => {
     it('Success', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
@@ -259,9 +259,9 @@ describe('Notifications Controller (Unit)', () => {
     });
 
     it('Failure: Config API fails', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chainId}`
           ? Promise.reject(new Error())
@@ -277,7 +277,7 @@ describe('Notifications Controller (Unit)', () => {
     });
 
     it('Failure: Transaction API fails', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>

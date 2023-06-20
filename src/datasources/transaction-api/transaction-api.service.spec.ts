@@ -37,14 +37,14 @@ const networkService = jest.mocked({
 
 describe('TransactionApi', () => {
   const chainId = '1';
-  const baseUrl = faker.internet.url();
+  const baseUrl = faker.internet.url({ appendSlash: false });
   let service: TransactionApi;
   let defaultExpirationTimeInSeconds: number;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    defaultExpirationTimeInSeconds = faker.datatype.number();
+    defaultExpirationTimeInSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;

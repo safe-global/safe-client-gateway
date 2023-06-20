@@ -11,7 +11,7 @@ export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
     .with('owner', faker.finance.ethereumAddress())
-    .with('signature', faker.datatype.hexadecimal(32))
+    .with('signature', faker.string.hexadecimal({ length: 32 }))
     .with(
       'signatureType',
       sample(Object.values(SignatureType)) ?? SignatureType.ContractSignature,

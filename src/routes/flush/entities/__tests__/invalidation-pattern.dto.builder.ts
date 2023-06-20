@@ -5,6 +5,6 @@ import { invalidationPatternDetailsBuilder } from './invalidation-pattern-detail
 
 export function invalidationPatternDtoBuilder(): IBuilder<InvalidationPatternDto> {
   return Builder.new<InvalidationPatternDto>()
-    .with('invalidate', faker.random.word())
+    .with('invalidate', faker.word.sample())
     .with('patternDetails', invalidationPatternDetailsBuilder().build());
 }

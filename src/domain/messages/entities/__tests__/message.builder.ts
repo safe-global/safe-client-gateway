@@ -12,15 +12,15 @@ export function messageBuilder(): IBuilder<Message> {
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
     .with('safe', faker.finance.ethereumAddress())
-    .with('message', faker.random.words(random(1, 5)))
-    .with('messageHash', faker.datatype.hexadecimal(32))
+    .with('message', faker.word.words(random(1, 5)))
+    .with('messageHash', faker.string.hexadecimal({ length: 32 }))
     .with('proposedBy', faker.finance.ethereumAddress())
-    .with('safeAppId', faker.datatype.number())
+    .with('safeAppId', faker.number.int())
     .with(
       'confirmations',
       range(random(2, 5)).map(() => messageConfirmationBuilder().build()),
     )
-    .with('preparedSignature', faker.datatype.hexadecimal(32));
+    .with('preparedSignature', faker.string.hexadecimal({ length: 32 }));
 }
 
 export function toJson(message: Message): unknown {

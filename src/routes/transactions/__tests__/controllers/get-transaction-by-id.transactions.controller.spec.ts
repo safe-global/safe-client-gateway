@@ -68,8 +68,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
-    const id = `module_${faker.datatype.uuid()}`;
+    const chainId = faker.string.numeric();
+    const id = `module_${faker.string.uuid()}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
     mockNetworkService.get.mockImplementation((url) => {
       if (url === getChainUrl) {
@@ -94,7 +94,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const moduleTransactionId = faker.datatype.uuid();
+    const moduleTransactionId = faker.string.uuid();
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -126,10 +126,10 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get module transaction by ID should return 404', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const id = faker.datatype.uuid();
+    const id = faker.string.uuid();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
@@ -158,13 +158,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get module transaction by ID', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const contract = contractBuilder()
       .with('trustedForDelegateCall', false)
       .build();
-    const moduleTransactionId = faker.datatype.uuid();
+    const moduleTransactionId = faker.string.uuid();
     const moduleTransaction = moduleTransactionBuilder()
       .with('safe', safe.address)
       .with('data', null)
@@ -237,10 +237,10 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get an ERC20 transfer by ID should return 404', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const id = faker.datatype.uuid();
+    const id = faker.string.uuid();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
@@ -269,11 +269,11 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get an native token transfer by ID', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const contract = contractBuilder().build();
-    const transferId = faker.datatype.uuid();
+    const transferId = faker.string.uuid();
     const transfer = nativeTokenTransferBuilder()
       .with('transferId', transferId)
       .with('to', safe.address)
@@ -332,10 +332,10 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get an Multisig Transaction by ID should return 404', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const txHash = faker.datatype.hexadecimal();
+    const txHash = faker.string.hexadecimal();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${txHash}/`;
@@ -364,7 +364,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get an Multisig Transaction by ID', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
       faker.finance.ethereumAddress(),
@@ -373,16 +373,16 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
-    const safeTxGas = faker.datatype.number();
-    const gasPrice = faker.datatype.hexadecimal();
-    const baseGas = faker.datatype.number();
+    const safeTxGas = faker.number.int();
+    const gasPrice = faker.string.hexadecimal();
+    const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
       confirmationBuilder().build(),
     ];
     const tx = multisigTransactionBuilder()
       .with('operation', 0)
-      .with('data', faker.datatype.hexadecimal(32))
+      .with('data', faker.string.hexadecimal({ length: 32 }))
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -400,9 +400,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const gasToken = tokenBuilder().build();
@@ -528,7 +528,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get an Multisig Transaction by safeTxHash', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
       faker.finance.ethereumAddress(),
@@ -537,9 +537,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
-    const safeTxGas = faker.datatype.number();
-    const gasPrice = faker.datatype.hexadecimal();
-    const baseGas = faker.datatype.number();
+    const safeTxGas = faker.number.int();
+    const gasPrice = faker.string.hexadecimal();
+    const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
       confirmationBuilder().build(),
@@ -547,7 +547,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('operation', 0)
-      .with('data', faker.datatype.hexadecimal(32))
+      .with('data', faker.string.hexadecimal({ length: 32 }))
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -565,9 +565,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const gasToken = tokenBuilder().build();
@@ -693,7 +693,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   });
 
   it('Get a CANCELLED Multisig Transaction by ID', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
       faker.finance.ethereumAddress(),
@@ -705,9 +705,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .build();
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
-    const safeTxGas = faker.datatype.number();
-    const gasPrice = faker.datatype.hexadecimal();
-    const baseGas = faker.datatype.number();
+    const safeTxGas = faker.number.int();
+    const gasPrice = faker.string.hexadecimal();
+    const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
       confirmationBuilder().build(),
@@ -715,7 +715,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = multisigTransactionBuilder()
       .with('operation', 0)
       .with('nonce', 4)
-      .with('data', faker.datatype.hexadecimal(32))
+      .with('data', faker.string.hexadecimal({ length: 32 }))
       .with('isExecuted', false)
       .with('isSuccessful', null)
       .with('executionDate', executionDate)
@@ -736,9 +736,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const gasToken = tokenBuilder().build();

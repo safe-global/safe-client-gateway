@@ -5,13 +5,13 @@ import { SafeRegistration } from '../safe-registration.entity';
 
 export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {
   return Builder.new<SafeRegistration>()
-    .with('chain_id', faker.random.numeric())
+    .with('chain_id', faker.string.numeric())
     .with(
       'safes',
       range(random(5)).map(() => faker.finance.ethereumAddress()),
     )
     .with(
       'signatures',
-      range(random(5)).map(() => faker.datatype.hexadecimal(32)),
+      range(random(5)).map(() => faker.string.hexadecimal({ length: 32 })),
     );
 }
