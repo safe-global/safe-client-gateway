@@ -7,7 +7,7 @@ export const getEstimationDtoSchema: JSONSchemaType<GetEstimationDto> = {
   properties: {
     to: { type: 'string' },
     value: { type: 'string' },
-    data: { type: 'string', nullable: true },
+    data: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },
     operation: { type: 'number', enum: [0, 1] },
   },
   required: ['to', 'value'],
