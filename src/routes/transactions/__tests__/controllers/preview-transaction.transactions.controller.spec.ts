@@ -267,7 +267,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should preview a transaction with a nested delegate call', async () => {
+  it('should preview a transaction with a nested call', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', DELEGATE_OPERATION)
       .build();
@@ -280,7 +280,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         dataDecodedParameterBuilder()
           .with('valueDecoded', [
             {
-              operation: 1,
+              operation: 0,
               data: faker.string.hexadecimal({ length: 32 }),
             },
           ])

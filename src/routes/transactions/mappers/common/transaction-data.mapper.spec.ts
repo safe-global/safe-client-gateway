@@ -48,8 +48,10 @@ describe('Transaction Data Mapper (Unit)', () => {
       expect(actual).toBeNull();
     });
 
-    it('should return false if data decoded is null', async () => {
-      const contract = contractBuilder().build();
+    it('should return true if data decoded is null', async () => {
+      const contract = contractBuilder()
+        .with('trustedForDelegateCall', true)
+        .build();
       contractsRepository.getContract.mockResolvedValue(contract);
 
       const actual = await mapper.isTrustedDelegateCall(
@@ -59,7 +61,7 @@ describe('Transaction Data Mapper (Unit)', () => {
         null,
       );
 
-      expect(actual).toBe(false);
+      expect(actual).toBe(true);
     });
 
     it('should mark as non-trusted for delegate call if the contract cannot be retrieved', async () => {
@@ -86,7 +88,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       expect(actual).toBe(false);
     });
 
-    it('should mark as non-trusted for delegate call if there is not nested delegate calls', async () => {
+    it('should mark as trusted for delegate call if there is not nested delegate calls', async () => {
       contractsRepository.getContract.mockResolvedValue(
         contractBuilder().with('trustedForDelegateCall', true).build(),
       );
@@ -97,10 +99,10 @@ describe('Transaction Data Mapper (Unit)', () => {
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
       );
-      expect(actual).toBe(false);
+      expect(actual).toBe(true);
     });
 
-    it('should mark as trusted for delegate call', async () => {
+    it('should mark as non-trusted for delegate call if there are nested delegate calls', async () => {
       contractsRepository.getContract.mockResolvedValue(
         contractBuilder().with('trustedForDelegateCall', true).build(),
       );
@@ -111,7 +113,7 @@ describe('Transaction Data Mapper (Unit)', () => {
         faker.finance.ethereumAddress(),
         dataDecodedBuilder().build(),
       );
-      expect(actual).toBe(true);
+      expect(actual).toBe(false);
     });
   });
 

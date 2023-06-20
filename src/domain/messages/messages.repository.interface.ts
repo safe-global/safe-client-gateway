@@ -19,7 +19,7 @@ export interface IMessagesRepository {
     message: unknown,
     safeAppId: number,
     signature: string,
-  ): Promise<Message>;
+  ): Promise<unknown>;
 
   updateMessageSignature(
     chainId: string,
