@@ -68,7 +68,7 @@ describe('Data decode e2e tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/data-decoder`)
-      .send({ ...requestBody, to: faker.datatype.number() })
+      .send({ ...requestBody, to: faker.number.int() })
       .expect(400)
       .expect({ message: 'Validation failed', code: 42, arguments: [] });
   });
@@ -85,7 +85,7 @@ describe('Data decode e2e tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/data-decoder`)
-      .send({ ...requestBody, to: faker.random.alphaNumeric() })
+      .send({ ...requestBody, to: faker.string.alphanumeric() })
       .expect(400)
       .expect({ message: 'Validation failed', code: 42, arguments: [] });
   });

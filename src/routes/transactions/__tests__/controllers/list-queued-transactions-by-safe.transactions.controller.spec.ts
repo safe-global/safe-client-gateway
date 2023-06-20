@@ -58,7 +58,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('should get a transactions queue with labels and conflict headers', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chainResponse = chainBuilder().build();
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder()
@@ -67,9 +67,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const contractResponse = contractBuilder().build();
@@ -234,7 +234,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const contractResponse = contractBuilder().build();
@@ -244,9 +244,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const transactions: MultisigTransaction[] = [
@@ -336,8 +336,12 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         return Promise.resolve({
           data: {
             count: 20,
-            next: `${faker.internet.url()}/?limit=10&offset=50`,
-            previous: `${faker.internet.url()}/?limit=10&offset=30`,
+            next: `${faker.internet.url({
+              appendSlash: false,
+            })}/?limit=10&offset=50`,
+            previous: `${faker.internet.url({
+              appendSlash: false,
+            })}/?limit=10&offset=30`,
             results: transactions,
           },
         });

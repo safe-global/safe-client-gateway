@@ -62,7 +62,7 @@ describe('Collectibles Controller (Unit)', () => {
 
   describe('GET /v2/collectibles', () => {
     it('is successful', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const pageLimit = 1;
@@ -103,7 +103,7 @@ describe('Collectibles Controller (Unit)', () => {
     });
 
     it('pagination data is forwarded to tx service', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = 10;
@@ -147,7 +147,7 @@ describe('Collectibles Controller (Unit)', () => {
     });
 
     it('excludeSpam and trusted params are forwarded to tx service', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const excludeSpam = true;
@@ -191,7 +191,7 @@ describe('Collectibles Controller (Unit)', () => {
     });
 
     it('tx service collectibles returns 400', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkResponseError(400, {
@@ -218,7 +218,7 @@ describe('Collectibles Controller (Unit)', () => {
     });
 
     it('tx service collectibles does not return a response', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkRequestError({});

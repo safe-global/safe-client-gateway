@@ -7,7 +7,7 @@ export function masterCopyBuilder(): IBuilder<MasterCopy> {
     .with('address', faker.finance.ethereumAddress())
     .with('version', faker.system.semver())
     .with('deployer', faker.finance.ethereumAddress())
-    .with('deployedBlockNumber', faker.datatype.number())
-    .with('lastIndexedBlockNumber', faker.datatype.number())
+    .with('deployedBlockNumber', faker.number.int())
+    .with('lastIndexedBlockNumber', faker.number.int())
     .with('l2', faker.datatype.boolean());
 }

@@ -26,8 +26,8 @@ const httpErrorFactory = {
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('ConfigApi', () => {
-  const baseUri = faker.internet.url();
-  const expirationTimeInSeconds = faker.datatype.number();
+  const baseUri = faker.internet.url({ appendSlash: false });
+  const expirationTimeInSeconds = faker.number.int();
   let fakeConfigurationService;
   let service: ConfigApi;
 
@@ -99,7 +99,7 @@ describe('ConfigApi', () => {
   });
 
   it('should return the safe apps retrieved by chainId', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
@@ -117,8 +117,8 @@ describe('ConfigApi', () => {
   });
 
   it('should return the safe apps retrieved by chainId and url', async () => {
-    const chainId = faker.random.numeric();
-    const url = faker.internet.url();
+    const chainId = faker.string.numeric();
+    const url = faker.internet.url({ appendSlash: false });
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
@@ -136,8 +136,8 @@ describe('ConfigApi', () => {
   });
 
   it('should return the safe apps retrieved by chainId and clientUrl', async () => {
-    const chainId = faker.random.numeric();
-    const clientUrl = faker.internet.url();
+    const chainId = faker.string.numeric();
+    const clientUrl = faker.internet.url({ appendSlash: false });
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 

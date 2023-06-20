@@ -13,7 +13,7 @@ describe('Generic validator', () => {
 
   it('should throw a validation error when validation fails', async () => {
     const validationFunction = jest.fn().mockImplementation(() => false);
-    const errMsg = faker.random.words();
+    const errMsg = faker.word.words();
     mockValidationErrorFactory.from.mockReturnValueOnce(
       new HttpException(errMsg, 500),
     );

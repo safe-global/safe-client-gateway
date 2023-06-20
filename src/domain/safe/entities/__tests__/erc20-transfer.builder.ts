@@ -4,14 +4,14 @@ import { ERC20Transfer } from '../transfer.entity';
 
 export function erc20TransferBuilder(): IBuilder<ERC20Transfer> {
   return Builder.new<ERC20Transfer>()
-    .with('blockNumber', faker.datatype.number())
+    .with('blockNumber', faker.number.int())
     .with('executionDate', faker.date.recent())
     .with('from', faker.finance.ethereumAddress())
     .with('to', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.datatype.hexadecimal())
+    .with('transactionHash', faker.string.hexadecimal())
     .with('tokenAddress', faker.finance.ethereumAddress())
-    .with('value', faker.datatype.hexadecimal())
-    .with('transferId', faker.datatype.string());
+    .with('value', faker.string.hexadecimal())
+    .with('transferId', faker.string.sample());
 }
 
 export function toJson(erc20Transfer: ERC20Transfer): unknown {

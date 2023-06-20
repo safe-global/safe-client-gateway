@@ -6,7 +6,7 @@ import { PreviewTransactionDto } from '../preview-transaction.dto.entity';
 export function previewTransactionDtoBuilder(): IBuilder<PreviewTransactionDto> {
   return Builder.new<PreviewTransactionDto>()
     .with('to', faker.finance.ethereumAddress())
-    .with('data', faker.datatype.hexadecimal(32))
-    .with('value', faker.random.numeric())
+    .with('data', faker.string.hexadecimal({ length: 32 }))
+    .with('value', faker.string.numeric())
     .with('operation', faker.helpers.arrayElement([0, 1]) as Operation);
 }

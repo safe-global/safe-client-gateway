@@ -72,7 +72,7 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;

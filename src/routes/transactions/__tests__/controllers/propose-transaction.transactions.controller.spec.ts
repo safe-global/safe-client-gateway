@@ -60,7 +60,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
   });
 
   it('should throw a validation error', async () => {
-    const safeAddress = faker.random.numeric();
+    const safeAddress = faker.string.numeric();
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const { safeTxHash } = proposeTransactionDto;
     await request(app.getHttpServer())
@@ -71,7 +71,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
 
   it('should propose a transaction', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().with('address', safeAddress).build();

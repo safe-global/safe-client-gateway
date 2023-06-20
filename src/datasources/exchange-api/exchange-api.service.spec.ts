@@ -13,9 +13,9 @@ const mockCacheFirstDataSource = jest.mocked({
 describe('ExchangeApi', () => {
   let service: ExchangeApi;
   let fakeConfigurationService: FakeConfigurationService;
-  const exchangeBaseUri = faker.internet.url();
-  const exchangeApiKey = faker.random.alphaNumeric();
-  const exchangeCacheTtlSeconds = faker.datatype.number();
+  const exchangeBaseUri = faker.internet.url({ appendSlash: false });
+  const exchangeApiKey = faker.string.alphanumeric();
+  const exchangeCacheTtlSeconds = faker.number.int();
 
   beforeAll(async () => {
     fakeConfigurationService = new FakeConfigurationService();
@@ -57,8 +57,8 @@ describe('ExchangeApi', () => {
   });
 
   it('fiatCodes uses set cache TTL', async () => {
-    const exchangeBaseUri = faker.internet.url();
-    const exchangeApiKey = faker.random.alphaNumeric();
+    const exchangeBaseUri = faker.internet.url({ appendSlash: false });
+    const exchangeApiKey = faker.string.alphanumeric();
     const ttl = 60;
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('exchange.baseUri', exchangeBaseUri);
@@ -85,7 +85,7 @@ describe('ExchangeApi', () => {
     const expectedRates = exchangeRatesBuilder()
       .with('success', true)
       .with('rates', {
-        USD: faker.datatype.number(),
+        USD: faker.number.int(),
       });
     mockCacheFirstDataSource.get.mockResolvedValue(expectedRates);
 
@@ -95,8 +95,8 @@ describe('ExchangeApi', () => {
   });
 
   it('exchangeRates uses set cache TTL', async () => {
-    const exchangeBaseUri = faker.internet.url();
-    const exchangeApiKey = faker.random.alphaNumeric();
+    const exchangeBaseUri = faker.internet.url({ appendSlash: false });
+    const exchangeApiKey = faker.string.alphanumeric();
     const ttl = 60;
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('exchange.baseUri', exchangeBaseUri);

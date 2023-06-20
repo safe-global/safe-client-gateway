@@ -30,8 +30,8 @@ describe('RequestScopedLoggingService', () => {
   });
 
   it('info', () => {
-    const message = faker.random.words();
-    const requestId = faker.datatype.uuid();
+    const message = faker.word.words();
+    const requestId = faker.string.uuid();
     mockClsService.getId.mockReturnValue(requestId);
 
     loggingService.info(message);
@@ -45,8 +45,8 @@ describe('RequestScopedLoggingService', () => {
   });
 
   it('error', () => {
-    const message = faker.random.words();
-    const requestId = faker.datatype.uuid();
+    const message = faker.word.words();
+    const requestId = faker.string.uuid();
     mockClsService.getId.mockReturnValue(requestId);
 
     loggingService.error(message);
@@ -60,8 +60,8 @@ describe('RequestScopedLoggingService', () => {
   });
 
   it('warn', () => {
-    const message = faker.random.words();
-    const requestId = faker.datatype.uuid();
+    const message = faker.word.words();
+    const requestId = faker.string.uuid();
     mockClsService.getId.mockReturnValue(requestId);
 
     loggingService.warn(message);
@@ -75,8 +75,8 @@ describe('RequestScopedLoggingService', () => {
   });
 
   it('debug', () => {
-    const message = faker.random.words();
-    const requestId = faker.datatype.uuid();
+    const message = faker.word.words();
+    const requestId = faker.string.uuid();
     mockClsService.getId.mockReturnValue(requestId);
 
     loggingService.debug(message);

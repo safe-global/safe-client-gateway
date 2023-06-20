@@ -3,21 +3,21 @@ import configuration from '../../entities/configuration';
 
 export default (): ReturnType<typeof configuration> => ({
   about: {
-    name: faker.random.words(),
+    name: faker.word.words(),
     version: faker.system.semver(),
-    buildNumber: faker.random.numeric(),
+    buildNumber: faker.string.numeric(),
   },
   applicationPort: faker.internet.port().toString(),
   auth: {
-    token: faker.datatype.hexadecimal(32),
+    token: faker.string.hexadecimal({ length: 32 }),
   },
   exchange: {
-    baseUri: faker.internet.url(),
-    apiKey: faker.datatype.hexadecimal(32),
-    cacheTtlSeconds: faker.datatype.number(),
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+    cacheTtlSeconds: faker.number.int(),
   },
   safeConfig: {
-    baseUri: faker.internet.url(),
+    baseUri: faker.internet.url({ appendSlash: false }),
   },
   safeTransaction: {
     useVpcUrl: false,
@@ -27,6 +27,6 @@ export default (): ReturnType<typeof configuration> => ({
     port: faker.internet.port().toString(),
   },
   expirationTimeInSeconds: {
-    default: faker.datatype.number(),
+    default: faker.number.int(),
   },
 });

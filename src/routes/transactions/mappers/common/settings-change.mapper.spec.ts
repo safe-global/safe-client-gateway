@@ -51,7 +51,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -71,7 +71,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -79,8 +79,8 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a AddOwner setting', async () => {
-    const ownerValue = faker.random.numeric();
-    const thresholdValue = faker.random.numeric();
+    const ownerValue = faker.string.numeric();
+    const thresholdValue = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
@@ -95,7 +95,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -108,7 +108,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a RemoveOwner setting', async () => {
     const ownerValue = faker.finance.ethereumAddress();
-    const thresholdValue = faker.random.numeric();
+    const thresholdValue = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
@@ -116,7 +116,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
           .with('method', 'removeOwner')
           .with('parameters', [
             dataDecodedParameterBuilder()
-              .with('value', faker.random.numeric())
+              .with('value', faker.string.numeric())
               .build(),
             dataDecodedParameterBuilder().with('value', ownerValue).build(),
             dataDecodedParameterBuilder().with('value', thresholdValue).build(),
@@ -126,7 +126,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -138,8 +138,8 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SwapOwner setting', async () => {
-    const oldOwner = faker.random.numeric();
-    const newOwner = faker.random.numeric();
+    const oldOwner = faker.string.numeric();
+    const newOwner = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
@@ -147,7 +147,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
           .with('method', 'swapOwner')
           .with('parameters', [
             dataDecodedParameterBuilder()
-              .with('value', faker.random.numeric())
+              .with('value', faker.string.numeric())
               .build(),
             dataDecodedParameterBuilder().with('value', oldOwner).build(),
             dataDecodedParameterBuilder().with('value', newOwner).build(),
@@ -157,7 +157,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -186,7 +186,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -206,7 +206,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
           .with('method', 'enableModule')
           .with('parameters', [
             dataDecodedParameterBuilder()
-              .with('value', faker.random.numeric())
+              .with('value', faker.string.numeric())
               .build(),
           ])
           .build(),
@@ -214,7 +214,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -234,7 +234,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
           .with('method', 'disableModule')
           .with('parameters', [
             dataDecodedParameterBuilder()
-              .with('value', faker.random.numeric())
+              .with('value', faker.string.numeric())
               .build(),
             dataDecodedParameterBuilder().with('value', moduleAddress).build(),
           ])
@@ -243,7 +243,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -252,7 +252,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a ChangeThreshold setting', async () => {
-    const thresholdValue = faker.random.numeric();
+    const thresholdValue = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
@@ -266,7 +266,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -291,7 +291,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -314,7 +314,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     const actual = await mapper.mapSettingsChange(
-      faker.random.numeric(),
+      faker.string.numeric(),
       transaction,
     );
 
@@ -333,7 +333,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     await expect(
-      mapper.mapSettingsChange(faker.random.numeric(), transaction),
+      mapper.mapSettingsChange(faker.string.numeric(), transaction),
     ).rejects.toThrow();
   });
 });

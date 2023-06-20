@@ -6,5 +6,5 @@ import { Builder, IBuilder } from '../../../../__tests__/builder';
 export function rpcUriBuilder(): IBuilder<RpcUri> {
   return Builder.new<RpcUri>()
     .with('authentication', RpcUriAuthentication.NoAuthentication)
-    .with('value', faker.internet.url());
+    .with('value', faker.internet.url({ appendSlash: false }));
 }

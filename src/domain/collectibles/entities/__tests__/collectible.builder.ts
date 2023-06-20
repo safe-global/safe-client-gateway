@@ -7,11 +7,11 @@ export function collectibleBuilder(): IBuilder<Collectible> {
     .with('address', faker.finance.ethereumAddress())
     .with('tokenName', faker.company.name())
     .with('tokenSymbol', faker.finance.currencySymbol())
-    .with('logoUri', faker.internet.url())
-    .with('id', faker.datatype.uuid())
-    .with('uri', faker.internet.url())
+    .with('logoUri', faker.internet.url({ appendSlash: false }))
+    .with('id', faker.string.uuid())
+    .with('uri', faker.internet.url({ appendSlash: false }))
     .with('name', faker.company.name())
-    .with('description', faker.random.words())
-    .with('imageUri', faker.internet.url())
+    .with('description', faker.word.words())
+    .with('imageUri', faker.internet.url({ appendSlash: false }))
     .with('metadata', {});
 }

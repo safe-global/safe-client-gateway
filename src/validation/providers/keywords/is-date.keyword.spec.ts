@@ -83,7 +83,7 @@ describe('AJV Keyword – isDate', () => {
 
     it('valid on random string', async () => {
       const actual = validateFunction({
-        date: faker.datatype.string(),
+        date: faker.string.sample(),
       });
 
       expect(actual).toBe(true);
