@@ -52,11 +52,11 @@ describe('Notifications Controller (Unit)', () => {
   const buildInputDto = () =>
     registerDeviceDtoBuilder()
       .with(
-        'safeRegistration',
+        'safeRegistrations',
         range(4)
           .map((i) => chainBuilder().with('chainId', i.toString()).build())
           .map((chain) =>
-            safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
+            safeRegistrationBuilder().with('chainId', chain.chainId).build(),
           ),
       )
       .build();
@@ -114,7 +114,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(({ body }) =>
           expect(body).toMatchObject({
             statusCode: 400,
-            message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[0].chain_id}`,
+            message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[0].chainId}`,
             error: 'Bad Request',
           }),
         );
@@ -148,7 +148,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[0].chain_id}`,
+          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[0].chainId}`,
           error: 'Internal Server Error',
         });
     });
@@ -191,8 +191,8 @@ describe('Notifications Controller (Unit)', () => {
         .expect({
           statusCode: 500,
           message: `Push notification registration failed for chain IDs: ${[
-            registerDeviceDto.safeRegistration[0].chain_id,
-            registerDeviceDto.safeRegistration[1].chain_id,
+            registerDeviceDto.safeRegistrations[0].chainId,
+            registerDeviceDto.safeRegistrations[1].chainId,
           ]}`,
           error: 'Internal Server Error',
         });
@@ -227,7 +227,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[1].chain_id}`,
+          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[1].chainId}`,
           error: 'Internal Server Error',
         });
     });

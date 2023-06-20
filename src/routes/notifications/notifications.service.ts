@@ -40,25 +40,25 @@ export class NotificationsService {
    * @param registerDeviceDto {@link RegisterDeviceDto} containing the data to register
    */
   async registerDevice(registerDeviceDto: RegisterDeviceDto): Promise<void> {
-    const { deviceData, safeRegistration } = registerDeviceDto;
     const device = new Device(
-      deviceData.uuid,
-      deviceData.cloud_messaging_token,
-      deviceData.buildNumber,
-      deviceData.bundle,
-      deviceData.device_type,
-      deviceData.version,
-      deviceData.timestamp,
+      registerDeviceDto.uuid,
+      registerDeviceDto.cloudMessagingToken,
+      registerDeviceDto.buildNumber,
+      registerDeviceDto.bundle,
+      registerDeviceDto.deviceType,
+      registerDeviceDto.version,
+      registerDeviceDto.timestamp,
     );
 
+    const { safeRegistrations } = registerDeviceDto;
     const registrationResults = await Promise.allSettled(
-      safeRegistration.map((safeRegistrationItem) =>
+      safeRegistrations.map((safeRegistration) =>
         this.notificationsRepository.registerDevice(
           device,
           new DomainSafeRegistration(
-            safeRegistrationItem.chain_id,
-            safeRegistrationItem.safes,
-            safeRegistrationItem.signatures,
+            safeRegistration.chainId,
+            safeRegistration.safes,
+            safeRegistration.signatures,
           ),
         ),
       ),
@@ -66,12 +66,12 @@ export class NotificationsService {
 
     if (registrationResults.some((result) => this.isServerError(result))) {
       throw new InternalServerErrorException(
-        this.getErrorMessage(registrationResults, safeRegistration),
+        this.getErrorMessage(registrationResults, safeRegistrations),
       );
     }
     if (registrationResults.some((result) => this.isClientError(result))) {
       throw new BadRequestException(
-        this.getErrorMessage(registrationResults, safeRegistration),
+        this.getErrorMessage(registrationResults, safeRegistrations),
       );
     }
   }
@@ -115,7 +115,7 @@ export class NotificationsService {
 
   private getErrorMessage(
     registrationResults: PromiseSettledResult<DomainSafeRegistration>[],
-    safeRegistration: SafeRegistration[],
+    safeRegistrations: SafeRegistration[],
   ): string {
     const successChainIds = (
       registrationResults.filter(
@@ -123,8 +123,8 @@ export class NotificationsService {
       ) as PromiseFulfilledResult<DomainSafeRegistration>[]
     ).map((registrationResult) => registrationResult.value.chainId);
 
-    const erroredChainIds = safeRegistration
-      .map((safeRegistrationItem) => safeRegistrationItem.chain_id)
+    const erroredChainIds = safeRegistrations
+      .map((safeRegistration) => safeRegistration.chainId)
       .filter((chainId) => !successChainIds.includes(chainId));
 
     return `Push notification registration failed for chain IDs: ${erroredChainIds}`;
