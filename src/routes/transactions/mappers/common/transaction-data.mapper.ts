@@ -69,8 +69,8 @@ export class TransactionDataMapper {
    * @param dataDecoded data decoded to check
    * @returns null if the transaction operation is not DELEGATE.
    * If the transaction operation is DELEGATE, and the target {@link Contract}
-   * is trusted, and the {@link DataDecoded} received contains a nested
-   * DELEGATE operation, then true is returned.
+   * is trusted, and the {@link DataDecoded} received does not contain
+   * a nested DELEGATE operation, then true is returned.
    * Otherwise, the function will return false.
    */
   async isTrustedDelegateCall(
@@ -92,7 +92,7 @@ export class TransactionDataMapper {
       ? this.dataDecodedParamHelper.hasNestedDelegate(dataDecoded)
       : false;
 
-    return contract.trustedForDelegateCall && hasNestedDelegate;
+    return contract.trustedForDelegateCall && !hasNestedDelegate;
   }
 
   /**
