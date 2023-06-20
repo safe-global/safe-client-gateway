@@ -11,6 +11,6 @@ export function safeAppAccessControlBuilder(): IBuilder<SafeAppAccessControl> {
     .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
     .with(
       'value',
-      range(random(2, 5)).map(() => faker.internet.url()),
+      range(random(2, 5)).map(() => faker.internet.url({ appendSlash: false })),
     );
 }

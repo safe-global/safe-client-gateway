@@ -20,8 +20,8 @@ describe('Configuration validator', () => {
     process.env.NODE_ENV = 'production';
     const expected = {
       ...JSON.parse(faker.datatype.json()),
-      AUTH_TOKEN: faker.datatype.uuid(),
-      EXCHANGE_API_KEY: faker.datatype.uuid(),
+      AUTH_TOKEN: faker.string.uuid(),
+      EXCHANGE_API_KEY: faker.string.uuid(),
     };
     const validated = validate(expected);
     expect(validated).toBe(expected);

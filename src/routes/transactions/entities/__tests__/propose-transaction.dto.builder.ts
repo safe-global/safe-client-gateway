@@ -6,17 +6,17 @@ import { ProposeTransactionDto } from '../propose-transaction.dto.entity';
 export function proposeTransactionDtoBuilder(): IBuilder<ProposeTransactionDto> {
   return Builder.new<ProposeTransactionDto>()
     .with('to', faker.finance.ethereumAddress())
-    .with('value', faker.random.numeric())
-    .with('data', faker.datatype.hexadecimal(32))
-    .with('nonce', faker.random.numeric())
+    .with('value', faker.string.numeric())
+    .with('data', faker.string.hexadecimal({ length: 32 }))
+    .with('nonce', faker.string.numeric())
     .with('operation', faker.helpers.arrayElement([0, 1]) as Operation)
-    .with('safeTxGas', faker.random.numeric())
-    .with('baseGas', faker.random.numeric())
-    .with('gasPrice', faker.random.numeric())
-    .with('gasToken', faker.datatype.hexadecimal(32))
+    .with('safeTxGas', faker.string.numeric())
+    .with('baseGas', faker.string.numeric())
+    .with('gasPrice', faker.string.numeric())
+    .with('gasToken', faker.string.hexadecimal({ length: 32 }))
     .with('refundReceiver', faker.finance.ethereumAddress())
-    .with('safeTxHash', faker.datatype.hexadecimal(32))
+    .with('safeTxHash', faker.string.hexadecimal({ length: 32 }))
     .with('sender', faker.finance.ethereumAddress())
-    .with('signature', faker.datatype.hexadecimal(32))
-    .with('origin', faker.random.word());
+    .with('signature', faker.string.hexadecimal({ length: 32 }))
+    .with('origin', faker.word.sample());
 }

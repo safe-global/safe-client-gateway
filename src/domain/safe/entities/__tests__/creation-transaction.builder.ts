@@ -7,10 +7,10 @@ export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
   return Builder.new<CreationTransaction>()
     .with('created', faker.date.recent())
     .with('creator', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.datatype.hexadecimal())
+    .with('transactionHash', faker.string.hexadecimal())
     .with('factoryAddress', faker.finance.ethereumAddress())
     .with('masterCopy', faker.finance.ethereumAddress())
-    .with('setupData', faker.datatype.hexadecimal())
+    .with('setupData', faker.string.hexadecimal())
     .with('dataDecoded', dataDecodedBuilder().build());
 }
 

@@ -7,9 +7,9 @@ import { safeRegistrationBuilder } from './safe-registration.builder';
 
 export function registerDeviceDtoBuilder(): IBuilder<RegisterDeviceDto> {
   return Builder.new<RegisterDeviceDto>()
-    .with('uuid', faker.datatype.uuid())
-    .with('cloudMessagingToken', faker.datatype.uuid())
-    .with('buildNumber', faker.random.numeric())
+    .with('uuid', faker.string.uuid())
+    .with('cloudMessagingToken', faker.string.uuid())
+    .with('buildNumber', faker.string.numeric())
     .with('bundle', faker.internet.domainName())
     .with('deviceType', sample(Object.values(DeviceType)) ?? DeviceType.Android)
     .with('version', faker.system.semver())

@@ -4,10 +4,10 @@ import { Builder, IBuilder } from '../../../../__tests__/builder';
 
 export function dataDecodedBuilder(): IBuilder<DataDecoded> {
   return Builder.new<DataDecoded>()
-    .with('method', faker.random.alphaNumeric())
+    .with('method', faker.string.alphanumeric())
     .with(
       'parameters',
-      Array.from({ length: faker.datatype.number({ min: 0, max: 10 }) }, () =>
+      Array.from({ length: faker.number.int({ min: 0, max: 10 }) }, () =>
         dataDecodedParameterBuilder().build(),
       ),
     );
@@ -15,12 +15,12 @@ export function dataDecodedBuilder(): IBuilder<DataDecoded> {
 
 export function dataDecodedParameterBuilder(): IBuilder<DataDecodedParameter> {
   return Builder.new<DataDecodedParameter>()
-    .with('name', faker.random.alphaNumeric())
-    .with('type', faker.random.alphaNumeric())
-    .with('value', faker.random.alphaNumeric())
+    .with('name', faker.string.alphanumeric())
+    .with('type', faker.string.alphanumeric())
+    .with('value', faker.string.alphanumeric())
     .with('valueDecoded', {
-      [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
-      [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
-      [faker.random.alphaNumeric()]: faker.random.alphaNumeric(),
+      [faker.string.alphanumeric()]: faker.string.alphanumeric(),
+      [faker.string.alphanumeric()]: faker.string.alphanumeric(),
+      [faker.string.alphanumeric()]: faker.string.alphanumeric(),
     });
 }

@@ -64,8 +64,8 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const previewTransactionDto = previewTransactionDtoBuilder().build();
     await request(app.getHttpServer())
       .post(
-        `/v1/chains/${faker.random.numeric()}/transactions/${faker.datatype.hexadecimal(
-          16,
+        `/v1/chains/${faker.string.numeric()}/transactions/${faker.string.hexadecimal(
+          { length: 16 },
         )}/preview`,
       )
       .send({ ...previewTransactionDto, value: 1 })
@@ -76,7 +76,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', CALL_OPERATION)
       .build();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
@@ -142,7 +142,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', CALL_OPERATION)
       .build();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
@@ -207,7 +207,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', CALL_OPERATION)
       .build();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
@@ -271,7 +271,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', DELEGATE_OPERATION)
       .build();
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
@@ -281,7 +281,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           .with('valueDecoded', [
             {
               operation: 0,
-              data: faker.datatype.hexadecimal(32),
+              data: faker.string.hexadecimal({ length: 32 }),
             },
           ])
           .build(),

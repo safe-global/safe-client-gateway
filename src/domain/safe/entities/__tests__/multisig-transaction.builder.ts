@@ -11,41 +11,43 @@ import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/dat
 
 export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
   return Builder.new<MultisigTransaction>()
-    .with('baseGas', faker.datatype.number())
-    .with('blockNumber', faker.datatype.number())
+    .with('baseGas', faker.number.int())
+    .with('blockNumber', faker.number.int())
     .with(
       'confirmations',
       range(random(5)).map(() => confirmationBuilder().build()),
     )
-    .with('confirmationsRequired', faker.datatype.number())
-    .with('data', faker.datatype.hexadecimal())
+    .with('confirmationsRequired', faker.number.int())
+    .with('data', faker.string.hexadecimal())
     .with('dataDecoded', dataDecodedBuilder().build())
-    .with('ethGasPrice', faker.datatype.hexadecimal())
+    .with('ethGasPrice', faker.string.hexadecimal())
     .with('executor', faker.finance.ethereumAddress())
     .with('executionDate', faker.date.recent())
-    .with('fee', faker.datatype.hexadecimal())
-    .with('gasPrice', faker.datatype.hexadecimal())
+    .with('fee', faker.string.hexadecimal())
+    .with('gasPrice', faker.string.hexadecimal())
     .with('gasToken', faker.finance.ethereumAddress())
-    .with('gasUsed', faker.datatype.number())
+    .with('gasUsed', faker.number.int())
     .with('isExecuted', faker.datatype.boolean())
     .with('isSuccessful', faker.datatype.boolean())
     .with('modified', faker.date.recent())
-    .with('nonce', faker.datatype.number())
+    .with('nonce', faker.number.int())
     .with('operation', faker.helpers.arrayElement([0, 1]) as Operation)
     .with(
       'origin',
-      `{"url": "${faker.internet.url()}", "name": "${faker.random.words()}"}`,
+      `{"url": "${faker.internet.url({
+        appendSlash: false,
+      })}", "name": "${faker.word.words()}"}`,
     )
     .with('refundReceiver', faker.finance.ethereumAddress())
     .with('safe', faker.finance.ethereumAddress())
-    .with('safeTxGas', faker.datatype.number())
-    .with('safeTxHash', faker.datatype.hexadecimal())
-    .with('signatures', faker.datatype.hexadecimal())
+    .with('safeTxGas', faker.number.int())
+    .with('safeTxHash', faker.string.hexadecimal())
+    .with('signatures', faker.string.hexadecimal())
     .with('submissionDate', faker.date.recent())
     .with('to', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.datatype.hexadecimal())
+    .with('transactionHash', faker.string.hexadecimal())
     .with('trusted', faker.datatype.boolean())
-    .with('value', faker.datatype.hexadecimal());
+    .with('value', faker.string.hexadecimal());
 }
 
 export function toJson(multisigTransaction: MultisigTransaction): unknown {

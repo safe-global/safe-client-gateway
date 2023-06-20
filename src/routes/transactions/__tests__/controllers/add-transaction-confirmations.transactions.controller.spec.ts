@@ -61,14 +61,14 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
   it('should throw a validation error', async () => {
     await request(app.getHttpServer())
       .post(
-        `/v1/chains/${faker.random.numeric()}/transactions/${faker.datatype.hexadecimal()}/confirmations`,
+        `/v1/chains/${faker.string.numeric()}/transactions/${faker.string.hexadecimal()}/confirmations`,
       )
       .send({ signedSafeTxHash: 1 });
   });
 
   it('should create a confirmation and return the updated transaction', async () => {
     const chain = chainBuilder().build();
-    const safeTxHash = faker.datatype.hexadecimal(32);
+    const safeTxHash = faker.string.hexadecimal({ length: 32 });
     const addConfirmationDto = addConfirmationDtoBuilder().build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();

@@ -16,11 +16,11 @@ describe('ValidationErrorFactory', () => {
   it('should create an HttpException from an array of errors', async () => {
     const errors: DefinedError[] = [
       {
-        instancePath: faker.random.word(),
-        schemaPath: faker.random.word(),
+        instancePath: faker.word.sample(),
+        schemaPath: faker.word.sample(),
         keyword: 'additionalProperties',
-        params: { additionalProperty: faker.random.word() },
-        message: faker.random.word(),
+        params: { additionalProperty: faker.word.sample() },
+        message: faker.word.sample(),
       },
     ];
 

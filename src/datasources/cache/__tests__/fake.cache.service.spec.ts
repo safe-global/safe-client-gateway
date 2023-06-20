@@ -12,10 +12,10 @@ describe('FakeCacheService', () => {
 
   it('sets key', async () => {
     const cacheDir = new CacheDir(
-      faker.random.alphaNumeric(),
-      faker.random.alphaNumeric(),
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
     );
-    const value = faker.random.alphaNumeric();
+    const value = faker.string.alphanumeric();
 
     await target.set(cacheDir, value, 0);
 
@@ -24,10 +24,10 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes key', async () => {
-    const key = faker.random.alphaNumeric();
-    const field = faker.random.alphaNumeric();
+    const key = faker.string.alphanumeric();
+    const field = faker.string.alphanumeric();
     const cacheDir = new CacheDir(key, field);
-    const value = faker.random.alphaNumeric();
+    const value = faker.string.alphanumeric();
 
     await target.set(cacheDir, value, 0);
     await target.deleteByKey(key);
@@ -51,17 +51,17 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes keys by pattern', async () => {
-    const prefix = faker.random.word();
+    const prefix = faker.word.sample();
     // insert 5 items matching the pattern
     await Promise.all(
       range(5).map(() =>
-        target.set(new CacheDir(`${prefix}${faker.datatype.uuid()}`, ''), ''),
+        target.set(new CacheDir(`${prefix}${faker.string.uuid()}`, ''), ''),
       ),
     );
     // insert 4 items not matching the pattern
     await Promise.all(
       range(4).map(() =>
-        target.set(new CacheDir(`${faker.datatype.uuid()}`, ''), ''),
+        target.set(new CacheDir(`${faker.string.uuid()}`, ''), ''),
       ),
     );
 
@@ -71,13 +71,13 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes keys by pattern (2)', async () => {
-    const prefix = faker.random.word();
-    const suffix = faker.random.word();
+    const prefix = faker.word.sample();
+    const suffix = faker.word.sample();
     // insert 5 items matching the pattern
     await Promise.all(
       range(5).map(() =>
         target.set(
-          new CacheDir(`${prefix}_${faker.datatype.uuid()}_${suffix}`, ''),
+          new CacheDir(`${prefix}_${faker.string.uuid()}_${suffix}`, ''),
           '',
         ),
       ),
@@ -85,7 +85,7 @@ describe('FakeCacheService', () => {
     // insert 4 items not matching the pattern
     await Promise.all(
       range(4).map(() =>
-        target.set(new CacheDir(`${faker.datatype.uuid()}`, ''), ''),
+        target.set(new CacheDir(`${faker.string.uuid()}`, ''), ''),
       ),
     );
 

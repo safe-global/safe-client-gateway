@@ -130,7 +130,7 @@ describe('Safe Apps Controller (Unit)', () => {
               {
                 ...safeAppsResponse[0],
                 accessControl: {
-                  type: faker.random.word(),
+                  type: faker.word.sample(),
                   value: safeAppsResponse[0].accessControl.value,
                 },
               },
@@ -171,8 +171,8 @@ describe('Safe Apps Controller (Unit)', () => {
             safeAppAccessControlBuilder()
               .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
               .with('value', [
-                faker.datatype.hexadecimal(),
-                faker.datatype.hexadecimal(),
+                faker.string.hexadecimal(),
+                faker.string.hexadecimal(),
               ])
               .build(),
           )
