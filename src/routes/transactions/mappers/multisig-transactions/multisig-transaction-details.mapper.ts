@@ -23,7 +23,6 @@ import {
   MultisigExecutionDetails,
 } from '../../entities/transaction-details/multisig-execution-details.entity';
 import { TransactionDetails } from '../../entities/transaction-details/transaction-details.entity';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
 import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
@@ -68,7 +67,7 @@ export class MultisigTransactionDetailsMapper {
       ),
       this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
       this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
-      this._mapMultisigExecutionDetails(chainId, transaction, txStatus, safe),
+      this._mapMultisigExecutionDetails(chainId, transaction, safe),
       this._getRecipientAddressInfo(chainId, transaction.to),
     ]);
 
@@ -96,7 +95,6 @@ export class MultisigTransactionDetailsMapper {
   private async _mapMultisigExecutionDetails(
     chainId: string,
     transaction: MultisigTransaction,
-    txStatus: TransactionStatus,
     safe: Safe,
   ): Promise<MultisigExecutionDetails> {
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
@@ -192,7 +190,7 @@ export class MultisigTransactionDetailsMapper {
       await this.safeRepository.getMultisigTransactions(
         chainId,
         safe.address,
-        true,
+        undefined,
         undefined,
         undefined,
         undefined,
