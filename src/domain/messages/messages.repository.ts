@@ -46,16 +46,16 @@ export class MessagesRepository implements IMessagesRepository {
     message: unknown,
     safeAppId: number | null,
     signature: string,
-  ): Promise<Message> {
+  ): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const createdMessage = await transactionService.postMessage(
+
+    return transactionService.postMessage(
       safeAddress,
       message,
       safeAppId,
       signature,
     );
-    return this.messageValidator.validate(createdMessage);
   }
 
   async updateMessageSignature(
