@@ -11,12 +11,27 @@ export const collectibleSchema: JSONSchemaType<Collectible> = {
     logoUri: { type: 'string' },
     id: { type: 'string' },
     // Do not use format: 'uri' as it fails on some payloads that should be considered valid
-    uri: { type: 'string', nullable: true, default: null },
-    name: { type: 'string', nullable: true, default: null },
-    description: { type: 'string', nullable: true, default: null },
+    uri: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    name: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    description: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
     // Do not use format: 'uri' as it fails on some payloads that should be considered valid
-    imageUri: { type: 'string', nullable: true, default: null },
-    metadata: { type: 'object', nullable: true, default: null },
+    imageUri: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    metadata: {
+      oneOf: [{ type: 'object' }, { type: 'null', nullable: true }],
+      default: null,
+    },
   },
   required: ['address', 'tokenName', 'tokenSymbol', 'logoUri', 'id'],
 };

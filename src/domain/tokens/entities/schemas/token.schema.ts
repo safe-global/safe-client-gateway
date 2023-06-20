@@ -6,7 +6,7 @@ export const tokenSchema: JSONSchemaType<Token> = {
   type: 'object',
   properties: {
     address: { type: 'string' },
-    decimals: { type: 'number', nullable: true },
+    decimals: { oneOf: [{ type: 'number' }, { type: 'null', nullable: true }] },
     logoUri: { type: 'string' },
     name: { type: 'string' },
     symbol: { type: 'string' },
