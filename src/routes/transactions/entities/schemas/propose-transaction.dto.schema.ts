@@ -8,18 +8,30 @@ export const proposeTransactionDtoSchema: JSONSchemaType<ProposeTransactionDto> 
     properties: {
       to: { type: 'string' },
       value: { type: 'string' },
-      data: { type: 'string', nullable: true },
+      data: {
+        oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+        default: null,
+      },
       nonce: { type: 'string' },
       operation: { type: 'number', enum: [0, 1] },
       safeTxGas: { type: 'string' },
       baseGas: { type: 'string' },
       gasPrice: { type: 'string' },
       gasToken: { type: 'string' },
-      refundReceiver: { type: 'string', nullable: true },
+      refundReceiver: {
+        oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+        default: null,
+      },
       safeTxHash: { type: 'string' },
       sender: { type: 'string' },
-      signature: { type: 'string', nullable: true },
-      origin: { type: 'string', nullable: true },
+      signature: {
+        oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+        default: null,
+      },
+      origin: {
+        oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+        default: null,
+      },
     },
     required: [
       'to',

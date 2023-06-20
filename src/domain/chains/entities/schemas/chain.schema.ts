@@ -1,12 +1,12 @@
 import { JSONSchemaType } from 'ajv';
+import { BlockExplorerUriTemplate } from '../block-explorer-uri-template.entity';
 import { Chain } from '../chain.entity';
+import { GasPriceFixed } from '../gas-price-fixed.entity';
+import { GasPriceOracle } from '../gas-price-oracle.entity';
 import { NativeCurrency } from '../native.currency.entity';
 import { RpcUriAuthentication } from '../rpc-uri-authentication.entity';
 import { RpcUri } from '../rpc-uri.entity';
-import { BlockExplorerUriTemplate } from '../block-explorer-uri-template.entity';
 import { Theme } from '../theme.entity';
-import { GasPriceOracle } from '../gas-price-oracle.entity';
-import { GasPriceFixed } from '../gas-price-fixed.entity';
 
 export const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   $id: 'https://safe-client.safe.global/schemas/chains/native-currency.json',
@@ -103,7 +103,10 @@ export const chainSchema: JSONSchemaType<Chain> = {
     vpcTransactionService: { type: 'string', format: 'uri' },
     theme: { $ref: 'theme.json' },
     gasPrice: { $ref: 'gas-price.json' },
-    ensRegistryAddress: { type: 'string', nullable: true, default: null },
+    ensRegistryAddress: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
     disabledWallets: { type: 'array', items: { type: 'string' } },
     features: { type: 'array', items: { type: 'string' } },
     recommendedMasterCopyVersion: { type: 'string' },
