@@ -6412,7 +6412,7 @@ __metadata:
     ts-jest: 28.0.5
     ts-loader: ^9.4.3
     ts-node: ^10.0.0
-    tsconfig-paths: 4.0.0
+    tsconfig-paths: 4.2.0
     typescript: ^5.1.3
     winston: ^3.9.0
   languageName: unknown
@@ -7160,17 +7160,6 @@ __metadata:
     enhanced-resolve: ^5.7.0
     tsconfig-paths: ^4.1.2
   checksum: a09e765c4939379fa060f78bbc906d0a7be541b9b49d3ad4744e99a2e87f28aa30d549a549196159bc5a50f420fdb1391b8eed360f47ee8ce40e15dcb800b5aa
-  languageName: node
-  linkType: hard
-
-"tsconfig-paths@npm:4.0.0":
-  version: 4.0.0
-  resolution: "tsconfig-paths@npm:4.0.0"
-  dependencies:
-    json5: ^2.2.1
-    minimist: ^1.2.6
-    strip-bom: ^3.0.0
-  checksum: a8cf746ffe438513a71c70c1bcdee8da7d62ab2af286efbe2728ff55c4d4c92c2aea80a0822982ded6d0a13c7686c24632934d7c0f4f564be9e1b2cdc3d65eea
   languageName: node
   linkType: hard
 
