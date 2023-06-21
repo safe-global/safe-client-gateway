@@ -1600,7 +1600,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^5.60.0":
+"@typescript-eslint/eslint-plugin@npm:^5.59.9":
   version: 5.60.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.60.0"
   dependencies:
@@ -1624,7 +1624,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^5.60.0":
+"@typescript-eslint/parser@npm:^5.32.0":
   version: 5.60.0
   resolution: "@typescript-eslint/parser@npm:5.60.0"
   dependencies:
@@ -6277,8 +6277,8 @@ __metadata:
     "@types/node": ^16.0.0
     "@types/semver": ^7.5.0
     "@types/supertest": ^2.0.11
-    "@typescript-eslint/eslint-plugin": ^5.60.0
-    "@typescript-eslint/parser": ^5.60.0
+    "@typescript-eslint/eslint-plugin": ^5.59.9
+    "@typescript-eslint/parser": ^5.32.0
     ajv: ^8.12.0
     ajv-formats: ^2.1.1
     axios: ^0.27.2
@@ -6300,7 +6300,7 @@ __metadata:
     ts-loader: ^9.4.3
     ts-node: ^10.0.0
     tsconfig-paths: 4.0.0
-    typescript: ^4.8.4
+    typescript: ^4.7.4
     winston: ^3.9.0
   languageName: unknown
   linkType: soft
@@ -7135,7 +7135,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^4.8.4":
+"typescript@npm:^4.7.4":
   version: 4.9.5
   resolution: "typescript@npm:4.9.5"
   bin:
@@ -7155,7 +7155,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^4.8.4#~builtin<compat/typescript>":
+"typescript@patch:typescript@^4.7.4#~builtin<compat/typescript>":
   version: 4.9.5
   resolution: "typescript@patch:typescript@npm%3A4.9.5#~builtin<compat/typescript>::version=4.9.5&hash=23ec76"
   bin:
