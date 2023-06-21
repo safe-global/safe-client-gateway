@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Backbone } from '../backbone.entity';
 import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { fakeJson } from '../../../../__tests__/faker';
 
 export function backboneBuilder(): IBuilder<Backbone> {
   return Builder.new<Backbone>()
@@ -15,5 +16,5 @@ export function backboneBuilder(): IBuilder<Backbone> {
         faker.word.sample(),
       ),
     )
-    .with('settings', JSON.parse(faker.datatype.json()));
+    .with('settings', JSON.parse(fakeJson()));
 }

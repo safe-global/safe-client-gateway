@@ -579,40 +579,40 @@ describe('Messages controller', () => {
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 1, 16)).toISOString(),
-              new Date(Date.UTC(2025, 0, 1, 17)).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 1, 16)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 1, 17)).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 2)).toISOString(),
-              new Date(Date.UTC(2025, 0, 3) - 1).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 2)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 3) - 1).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 1, 10)).toISOString(),
-              new Date(Date.UTC(2025, 0, 1, 11)).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 1, 10)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 1, 11)).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 3)).toISOString(),
-              new Date(Date.UTC(2025, 0, 4) - 1).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 3)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 4) - 1).toISOString(),
+            }),
           )
           .build(),
       ];

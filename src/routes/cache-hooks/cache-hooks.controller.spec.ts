@@ -176,9 +176,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_balances_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -224,9 +224,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transactions_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -272,9 +272,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -311,9 +311,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_safe_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -360,9 +360,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_collectibles_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -409,9 +409,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_transfers_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -453,9 +453,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_incoming_transfers_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -492,9 +492,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_module_transactions_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -556,9 +556,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_all_transactions_${safeAddress}`,
-      faker.random.alpha(),
+      faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.random.alpha());
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
