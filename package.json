@@ -55,7 +55,7 @@
     "ajv-formats": "^2.1.1",
     "axios": "^0.27.2",
     "lodash": "^4.17.21",
-    "nestjs-cls": "^3.4.0",
+    "nestjs-cls": "^3.5.0",
     "redis": "^4.6.7",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^5.0.1",
