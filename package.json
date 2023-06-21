@@ -48,7 +48,7 @@
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
-    "@nestjs/swagger": "^6.3.0",
+    "@nestjs/swagger": "^7.0.2",
     "@node-redis/json": "^1.0.2",
     "@types/lodash": "^4.14.191",
     "ajv": "^8.12.0",
