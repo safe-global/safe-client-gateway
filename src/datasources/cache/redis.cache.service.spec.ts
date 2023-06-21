@@ -5,6 +5,7 @@ import { CacheDir } from './entities/cache-dir.entity';
 import { RedisCacheService } from './redis.cache.service';
 import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
 import clearAllMocks = jest.clearAllMocks;
+import { fakeJson } from '../../__tests__/faker';
 
 const redisClientType = {
   hGet: jest.fn(),
@@ -42,7 +43,7 @@ describe('RedisCacheService', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    const value = faker.datatype.json();
+    const value = fakeJson();
 
     await redisCacheService.set(cacheDir, value, undefined);
 
@@ -58,7 +59,7 @@ describe('RedisCacheService', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    const value = faker.datatype.json();
+    const value = fakeJson();
     const expireTime = faker.number.int();
 
     await redisCacheService.set(cacheDir, value, expireTime);
@@ -81,7 +82,7 @@ describe('RedisCacheService', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    const value = faker.datatype.json();
+    const value = fakeJson();
     const expireTimeSeconds = faker.number.int({ min: 5 });
     redisClientTypeMock.expire.mockRejectedValueOnce(new Error('cache error'));
 
@@ -113,7 +114,7 @@ describe('RedisCacheService', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    const value = faker.datatype.json();
+    const value = fakeJson();
     redisClientTypeMock.hSet.mockRejectedValueOnce(new Error('cache error'));
 
     await expect(

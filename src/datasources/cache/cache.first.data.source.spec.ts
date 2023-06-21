@@ -6,6 +6,7 @@ import { CacheFirstDataSource } from './cache.first.data.source';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
 import { FakeCacheService } from './__tests__/fake.cache.service';
+import { fakeJson } from '../../__tests__/faker';
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -31,7 +32,7 @@ describe('CacheFirstDataSource', () => {
   it('should return the data returned by the underlying network interface', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const data = JSON.parse(faker.datatype.json());
+    const data = JSON.parse(fakeJson());
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -49,7 +50,7 @@ describe('CacheFirstDataSource', () => {
 
   it('should return the cached data without calling the underlying network interface', async () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const rawJson = faker.datatype.json();
+    const rawJson = fakeJson();
     fakeCacheService.set(cacheDir, rawJson);
     mockNetworkService.get.mockImplementation((url) =>
       Promise.reject(`Unexpected request to ${url}`),
