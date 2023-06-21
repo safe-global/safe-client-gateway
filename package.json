@@ -58,7 +58,7 @@
     "nestjs-cls": "^3.4.0",
     "redis": "^4.6.7",
     "reflect-metadata": "^0.1.13",
-    "rimraf": "^3.0.2",
+    "rimraf": "^5.0.1",
     "rxjs": "^7.8.1",
     "semver": "^7.5.2",
     "winston": "^3.9.0"
