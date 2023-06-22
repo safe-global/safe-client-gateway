@@ -121,7 +121,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       }
     });
     mockNetworkService.post.mockImplementation((url) => {
-      const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations`;
+      const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       switch (url) {
         case postConfirmationUrl:
           return Promise.resolve();

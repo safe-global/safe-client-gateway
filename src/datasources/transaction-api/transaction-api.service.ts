@@ -422,7 +422,7 @@ export class TransactionApi implements ITransactionApi {
     addConfirmationDto: AddConfirmationDto,
   ): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       return await this.networkService.post(url, {
         signature: addConfirmationDto.signedSafeTxHash,
       });
