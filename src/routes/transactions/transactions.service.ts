@@ -19,7 +19,6 @@ import { PreviewTransactionDto } from './entities/preview-transaction.dto.entity
 import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionPreview } from './entities/transaction-preview.entity';
-import { Transaction } from './entities/transaction.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
@@ -166,7 +165,7 @@ export class TransactionsService {
     chainId: string,
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     await this.safeRepository.addConfirmation(
       chainId,
       safeTxHash,
@@ -178,7 +177,7 @@ export class TransactionsService {
     );
     const safe = await this.safeRepository.getSafe(chainId, transaction.safe);
 
-    return this.multisigTransactionMapper.mapTransaction(
+    return this.multisigTransactionDetailsMapper.mapDetails(
       chainId,
       transaction,
       safe,
