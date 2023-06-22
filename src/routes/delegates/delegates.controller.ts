@@ -79,8 +79,8 @@ export class DelegatesController {
   async postDelegate(
     @Param('chainId') chainId: string,
     @Body(CreateDelegateDtoValidationPipe) createDelegateDto: CreateDelegateDto,
-  ): Promise<unknown> {
-    return this.service.postDelegate(chainId, createDelegateDto);
+  ): Promise<void> {
+    await this.service.postDelegate(chainId, createDelegateDto);
   }
 
   @Delete('chains/:chainId/delegates/:delegateAddress')

@@ -44,17 +44,16 @@ export class DelegateRepository implements IDelegateRepository {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<unknown> {
+  ): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const result = await transactionService.postDelegate(
+    await transactionService.postDelegate(
       safeAddress,
       delegate,
       delegator,
       signature,
       label,
     );
-    return result;
   }
 
   async deleteDelegate(
