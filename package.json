@@ -2,24 +2,6 @@
   "name": "safe-client-gateway",
   "version": "0.0.1",
   "description": "",
-  "contributors": [
-    {
-      "name": "Frederico Sabino",
-      "url": "https://github.com/fmrsabino"
-    },
-    {
-      "name": "Héctor Gómez",
-      "url": "https://github.com/hectorgomezv"
-    },
-    {
-      "name": "Uxío Fuentefría",
-      "url": "https://github.com/uxio0"
-    },
-    {
-      "name": "Moisés Fernández",
-      "url": "https://github.com/moisses89"
-    }
-  ],
   "private": true,
   "license": "MIT",
   "scripts": {
