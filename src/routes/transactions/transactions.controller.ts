@@ -117,7 +117,7 @@ export class TransactionsController {
     @Param('safeTxHash') safeTxHash: string,
     @Body(AddConfirmationDtoValidationPipe)
     addConfirmationDto: AddConfirmationDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     return this.transactionsService.addConfirmation(
       chainId,
       safeTxHash,
