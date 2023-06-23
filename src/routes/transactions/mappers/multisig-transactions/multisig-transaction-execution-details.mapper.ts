@@ -18,8 +18,6 @@ import {
   MultisigExecutionDetails,
 } from '../../entities/transaction-details/multisig-execution-details.entity';
 
-// TODO: unit tests are missing for this mapper.
-// multisig-transaction-execution-details.mapper.spec
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
   constructor(
