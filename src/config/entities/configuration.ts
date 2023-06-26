@@ -31,4 +31,11 @@ export default () => ({
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
   },
+  httpClient: {
+    // Timeout in milliseconds to be used for the HTTP client.
+    // A value of 0 disables the timeout.
+    requestTimeout: parseInt(
+      process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
+    ),
+  },
 });

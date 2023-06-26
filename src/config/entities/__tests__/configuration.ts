@@ -29,4 +29,5 @@ export default (): ReturnType<typeof configuration> => ({
   expirationTimeInSeconds: {
     default: faker.number.int(),
   },
+  httpClient: { requestTimeout: faker.number.int() },
 });

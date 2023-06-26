@@ -2,13 +2,17 @@ import { Global, Module } from '@nestjs/common';
 import { AxiosNetworkService } from './axios.network.service';
 import { NetworkService } from './network.service.interface';
 import axios, { Axios } from 'axios';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 /**
  * Use this factory to add any default parameter to the
  * {@link Axios} instance
  */
-function axiosFactory(): Axios {
-  return axios.create();
+function axiosFactory(configurationService: IConfigurationService): Axios {
+  const requestTimeout = configurationService.getOrThrow<number>(
+    'httpClient.requestTimeout',
+  );
+  return axios.create({ timeout: requestTimeout });
 }
 
 /**
@@ -21,7 +25,11 @@ function axiosFactory(): Axios {
 @Global()
 @Module({
   providers: [
-    { provide: 'AxiosClient', useFactory: axiosFactory },
+    {
+      provide: 'AxiosClient',
+      useFactory: axiosFactory,
+      inject: [IConfigurationService],
+    },
     { provide: NetworkService, useClass: AxiosNetworkService },
   ],
   exports: [NetworkService],
