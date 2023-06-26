@@ -52,11 +52,11 @@ describe('Notifications Controller (Unit)', () => {
   const buildInputDto = () =>
     registerDeviceDtoBuilder()
       .with(
-        'safeRegistration',
+        'safeRegistrations',
         range(4)
           .map((i) => chainBuilder().with('chainId', i.toString()).build())
           .map((chain) =>
-            safeRegistrationBuilder().with('chain_id', chain.chainId).build(),
+            safeRegistrationBuilder().with('chainId', chain.chainId).build(),
           ),
       )
       .build();
@@ -96,7 +96,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 400, max: 499 }),
+                faker.number.int({ min: 400, max: 499 }),
               ),
             )
           : rejectForUrl(url),
@@ -114,7 +114,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(({ body }) =>
           expect(body).toMatchObject({
             statusCode: 400,
-            message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[0].chain_id}`,
+            message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[0].chainId}`,
             error: 'Bad Request',
           }),
         );
@@ -131,7 +131,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 500, max: 599 }),
+                faker.number.int({ min: 500, max: 599 }),
               ),
             )
           : rejectForUrl(url),
@@ -148,7 +148,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[0].chain_id}`,
+          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[0].chainId}`,
           error: 'Internal Server Error',
         });
     });
@@ -164,7 +164,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 400, max: 499 }),
+                faker.number.int({ min: 400, max: 499 }),
               ),
             )
           : rejectForUrl(url),
@@ -173,7 +173,7 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.datatype.number({ min: 500, max: 599 }),
+                faker.number.int({ min: 500, max: 599 }),
               ),
             )
           : rejectForUrl(url),
@@ -191,8 +191,8 @@ describe('Notifications Controller (Unit)', () => {
         .expect({
           statusCode: 500,
           message: `Push notification registration failed for chain IDs: ${[
-            registerDeviceDto.safeRegistration[0].chain_id,
-            registerDeviceDto.safeRegistration[1].chain_id,
+            registerDeviceDto.safeRegistrations[0].chainId,
+            registerDeviceDto.safeRegistrations[1].chainId,
           ]}`,
           error: 'Internal Server Error',
         });
@@ -227,7 +227,7 @@ describe('Notifications Controller (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistration[1].chain_id}`,
+          message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[1].chainId}`,
           error: 'Internal Server Error',
         });
     });
@@ -235,7 +235,7 @@ describe('Notifications Controller (Unit)', () => {
 
   describe('DELETE /chains/:chainId/notifications/devices/:uuid/safes/:safeAddress', () => {
     it('Success', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
@@ -259,9 +259,9 @@ describe('Notifications Controller (Unit)', () => {
     });
 
     it('Failure: Config API fails', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chainId}`
           ? Promise.reject(new Error())
@@ -277,7 +277,7 @@ describe('Notifications Controller (Unit)', () => {
     });
 
     it('Failure: Transaction API fails', async () => {
-      const uuid = faker.datatype.uuid();
+      const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       mockNetworkService.get.mockImplementation((url) =>

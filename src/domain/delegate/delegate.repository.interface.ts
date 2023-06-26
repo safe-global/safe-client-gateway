@@ -21,7 +21,7 @@ export interface IDelegateRepository {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<unknown>;
+  ): Promise<void>;
 
   deleteDelegate(
     chainId: string,

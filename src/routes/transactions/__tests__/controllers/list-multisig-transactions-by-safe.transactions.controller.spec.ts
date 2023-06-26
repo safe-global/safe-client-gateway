@@ -62,7 +62,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     mockNetworkService.get.mockRejectedValueOnce({
       status: 500,
@@ -84,7 +84,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Failure: Transaction API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -118,7 +118,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Failure: data validation fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -137,7 +137,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockImplementation((url) => {
@@ -189,7 +189,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a ERC721 transfer mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockImplementation((url) => {
@@ -243,23 +243,23 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a Custom transaction mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const chainResponse = chainBuilder().build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url())
-        .with('iconUrl', faker.internet.url())
-        .with('name', faker.random.words())
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
         .build(),
     ];
     const contractResponse = contractBuilder()
       .with('address', faker.finance.ethereumAddress())
-      .with('displayName', faker.random.words())
-      .with('logoUri', faker.internet.url())
+      .with('displayName', faker.word.words())
+      .with('logoUri', faker.internet.url({ appendSlash: false }))
       .build();
     const domainTransaction = multisigTransactionBuilder()
       .with('value', '0')
-      .with('data', faker.datatype.hexadecimal(32))
+      .with('data', faker.string.hexadecimal({ length: 32 }))
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with(

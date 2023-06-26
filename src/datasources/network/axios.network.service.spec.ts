@@ -34,7 +34,7 @@ describe('AxiosNetworkService', () => {
 
   describe('GET requests', () => {
     it(`get calls axios get`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
 
       await target.get(url);
 
@@ -43,7 +43,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`get calls axios get with request`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const request = <NetworkRequest>{
         params: { some_query_param: 'query_param' },
       };
@@ -55,7 +55,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`get forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
 
       await expect(target.get(url)).rejects.toThrowError(
@@ -67,7 +67,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`get forwards response error as NetworkResponseError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const error = {
         response: { data: 'data', status: 100 },
         request: {},
@@ -83,7 +83,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`get forwards response error as NetworkRequestError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const error = {
         request: 'some error',
       };
@@ -98,7 +98,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`get logs response error`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const error = {
         response: {
           data: 'data',
@@ -132,8 +132,8 @@ describe('AxiosNetworkService', () => {
 
   describe('POST requests', () => {
     it(`post calls axios post`, async () => {
-      const url = faker.internet.url();
-      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
 
       await target.post(url, data);
 
@@ -142,8 +142,8 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`post calls axios post with request`, async () => {
-      const url = faker.internet.url();
-      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       const request = <NetworkRequest>{
         params: { some_query_param: 'query_param' },
       };
@@ -155,8 +155,8 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`post forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url();
-      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       (axiosMock.post as any).mockRejectedValueOnce(new Error('Axios error'));
 
       await expect(target.post(url, data)).rejects.toThrowError(
@@ -168,8 +168,8 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`post forwards response error as NetworkResponseError`, async () => {
-      const url = faker.internet.url();
-      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       const error = {
         response: { data: 'data', status: 100 },
         request: {},
@@ -185,8 +185,8 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`post forwards response error as NetworkRequestError`, async () => {
-      const url = faker.internet.url();
-      const data = { [faker.random.word()]: faker.random.alphaNumeric() };
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       const error = {
         request: 'some error',
       };
@@ -201,7 +201,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`post logs response error`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const error = {
         response: {
           data: 'data',
@@ -235,7 +235,7 @@ describe('AxiosNetworkService', () => {
 
   describe('DELETE requests', () => {
     it(`delete calls axios delete`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const data = { some_data: 'some_data' };
 
       await target.delete(url, data);
@@ -245,7 +245,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`delete forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const data = { some_data: 'some_data' };
       axiosMock.delete.mockRejectedValueOnce(new Error('Axios error'));
 
@@ -258,7 +258,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`delete forwards response error as NetworkResponseError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const data = { some_data: 'some_data' };
       const error = {
         response: { data: 'data', status: 100 },
@@ -275,7 +275,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`delete forwards response error as NetworkRequestError`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const data = { some_data: 'some_data' };
       const error = {
         request: 'some error',
@@ -291,7 +291,7 @@ describe('AxiosNetworkService', () => {
     });
 
     it(`delete logs response error`, async () => {
-      const url = faker.internet.url();
+      const url = faker.internet.url({ appendSlash: false });
       const error = {
         response: {
           data: 'data',

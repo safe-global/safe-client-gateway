@@ -7,8 +7,10 @@ export function formatRouteLogMessage(
   detail?: string,
 ) {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
+  const chainId = request.params['chainId'] ?? null;
 
   return {
+    chain_id: chainId,
     client_ip: clientIp,
     method: request.method,
     response_time_ms: performance.now() - startTimeMs,

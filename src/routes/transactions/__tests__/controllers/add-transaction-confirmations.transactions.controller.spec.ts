@@ -25,6 +25,8 @@ import { addConfirmationDtoBuilder } from '../entities/add-confirmation.dto.buil
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
+import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -61,14 +63,14 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
   it('should throw a validation error', async () => {
     await request(app.getHttpServer())
       .post(
-        `/v1/chains/${faker.random.numeric()}/transactions/${faker.datatype.hexadecimal()}/confirmations`,
+        `/v1/chains/${faker.string.numeric()}/transactions/${faker.string.hexadecimal()}/confirmations`,
       )
       .send({ signedSafeTxHash: 1 });
   });
 
   it('should create a confirmation and return the updated transaction', async () => {
     const chain = chainBuilder().build();
-    const safeTxHash = faker.datatype.hexadecimal(32);
+    const safeTxHash = faker.string.hexadecimal({ length: 32 });
     const addConfirmationDto = addConfirmationDtoBuilder().build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
@@ -76,29 +78,50 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       multisigTransactionBuilder().build(),
     ) as MultisigTransaction;
     const safe = safeBuilder().with('address', transaction.safe).build();
+    const gasToken = tokenBuilder().build();
+    const token = tokenBuilder().build();
+    const safeAppsResponse = [
+      safeAppBuilder()
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
+        .build(),
+    ];
+    const replacementTxsPage = pageBuilder().with('results', []).build();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-      const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: transaction });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: replacementTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getSafeAppsUrl:
           return Promise.resolve({ data: safeApps });
-        case getContractUrl:
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: gasToken });
+        case getToContractUrl:
           return Promise.resolve({ data: contract });
+        case getToTokenUrl:
+          return Promise.resolve({ data: token });
+        case getSafeAppsUrl:
+          return Promise.resolve({ data: safeAppsResponse });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
     mockNetworkService.post.mockImplementation((url) => {
-      const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations`;
+      const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       switch (url) {
         case postConfirmationUrl:
           return Promise.resolve();
@@ -114,19 +137,17 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       .send(addConfirmationDto)
       .expect(200)
       .expect(({ body }) =>
-        expect(body).toEqual(
-          expect.objectContaining({
-            id: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-            timestamp: expect.any(Number),
-            txStatus: expect.any(String),
-            txInfo: expect.any(Object),
-            executionInfo: expect.objectContaining({
-              type: 'MULTISIG',
-              nonce: transaction.nonce,
-            }),
-            safeAppInfo: expect.any(Object),
-          }),
-        ),
+        expect(body).toMatchObject({
+          safeAddress: safe.address,
+          txId: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
+          executedAt: expect.any(Number),
+          txStatus: expect.any(String),
+          txInfo: expect.any(Object),
+          txData: expect.any(Object),
+          txHash: transaction.transactionHash,
+          detailedExecutionInfo: expect.any(Object),
+          safeAppInfo: expect.any(Object),
+        }),
       );
   });
 });

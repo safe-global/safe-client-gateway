@@ -37,8 +37,8 @@ describe('Transaction API Manager Tests', () => {
     jest.resetAllMocks();
   });
 
-  const txServiceUrl = faker.internet.url();
-  const vpcTxServiceUrl = faker.internet.url();
+  const txServiceUrl = faker.internet.url({ appendSlash: false });
+  const vpcTxServiceUrl = faker.internet.url({ appendSlash: false });
 
   /**
    * In the following tests, getBackbone is used to check the parameters to
@@ -52,7 +52,7 @@ describe('Transaction API Manager Tests', () => {
       .with('transactionService', txServiceUrl)
       .with('vpcTransactionService', vpcTxServiceUrl)
       .build();
-    const expirationTimeInSeconds = faker.datatype.number();
+    const expirationTimeInSeconds = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
       else if (key === 'expirationTimeInSeconds.default')

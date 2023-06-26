@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '../../domain/safe/safe.repository';
@@ -19,7 +19,6 @@ import { PreviewTransactionDto } from './entities/preview-transaction.dto.entity
 import { QueuedItem } from './entities/queued-item.entity';
 import { TransactionItemPage } from './entities/transaction-item-page.entity';
 import { TransactionPreview } from './entities/transaction-preview.entity';
-import { Transaction } from './entities/transaction.entity';
 import { ModuleTransactionMapper } from './mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from './mappers/multisig-transactions/multisig-transaction.mapper';
 import { QueuedItemsMapper } from './mappers/queued-items/queued-items.mapper';
@@ -56,36 +55,53 @@ export class TransactionsService {
   async getById(chainId: string, txId: string): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
 
-    if (txType === MODULE_TRANSACTION_PREFIX) {
-      const [tx, safe] = await Promise.all([
-        this.safeRepository.getModuleTransaction(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx, safe);
-    }
-    if (txType === TRANSFER_PREFIX) {
-      const [transfer, safe] = await Promise.all([
-        this.safeRepository.getTransfer(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
-    }
-    if (txType === MULTISIG_TRANSACTION_PREFIX) {
-      const [tx, safe] = await Promise.all([
-        this.safeRepository.getMultiSigTransaction(chainId, id),
-        this.safeRepository.getSafe(chainId, safeAddress),
-      ]);
-      return this.multisigTransactionDetailsMapper.mapDetails(
-        chainId,
-        tx,
-        safe,
-      );
-    }
+    switch (txType) {
+      case MODULE_TRANSACTION_PREFIX: {
+        const [tx, safe] = await Promise.all([
+          this.safeRepository.getModuleTransaction(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.moduleTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
 
-    throw new BadRequestException({
-      message: 'Invalid transaction type',
-      code: 400,
-    });
+      case TRANSFER_PREFIX: {
+        const [transfer, safe] = await Promise.all([
+          this.safeRepository.getTransfer(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
+      }
+
+      case MULTISIG_TRANSACTION_PREFIX: {
+        const [tx, safe] = await Promise.all([
+          this.safeRepository.getMultiSigTransaction(chainId, id),
+          this.safeRepository.getSafe(chainId, safeAddress),
+        ]);
+        return this.multisigTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
+
+      // txId is safeTxHash
+      default: {
+        const tx = await this.safeRepository.getMultiSigTransaction(
+          chainId,
+          txId,
+        );
+        const safe = await this.safeRepository.getSafe(chainId, tx.safe);
+        return this.multisigTransactionDetailsMapper.mapDetails(
+          chainId,
+          tx,
+          safe,
+        );
+      }
+    }
   }
 
   async getMultisigTransactions(
@@ -149,7 +165,7 @@ export class TransactionsService {
     chainId: string,
     safeTxHash: string,
     addConfirmationDto: AddConfirmationDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     await this.safeRepository.addConfirmation(
       chainId,
       safeTxHash,
@@ -161,7 +177,7 @@ export class TransactionsService {
     );
     const safe = await this.safeRepository.getSafe(chainId, transaction.safe);
 
-    return this.multisigTransactionMapper.mapTransaction(
+    return this.multisigTransactionDetailsMapper.mapDetails(
       chainId,
       transaction,
       safe,
@@ -368,7 +384,7 @@ export class TransactionsService {
     chainId: string,
     safeAddress: string,
     proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(
       chainId,
       safeAddress,
@@ -381,7 +397,7 @@ export class TransactionsService {
       proposeTransactionDto.safeTxHash,
     );
 
-    return this.multisigTransactionMapper.mapTransaction(
+    return this.multisigTransactionDetailsMapper.mapDetails(
       chainId,
       domainTransaction,
       safe,

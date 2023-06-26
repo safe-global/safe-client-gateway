@@ -41,7 +41,7 @@ export class ModuleTransactionMapper {
       txStatus,
       txInfo,
       executionInfo,
-      null, // TODO: include safeAppInfo retrieval logic where needed
+      null,
     );
   }
 }

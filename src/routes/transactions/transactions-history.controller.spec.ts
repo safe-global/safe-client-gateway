@@ -72,7 +72,7 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
@@ -170,7 +170,10 @@ describe('Transactions History Controller (Unit)', () => {
         .with('dataDecoded', null)
         .with(
           'executionDate',
-          faker.date.between('2022-12-06T23:00:00Z', '2022-12-06T23:59:59Z'),
+          faker.date.between({
+            from: '2022-12-06T23:00:00Z',
+            to: '2022-12-06T23:59:59Z',
+          }),
         )
         .build(),
     );
@@ -180,7 +183,10 @@ describe('Transactions History Controller (Unit)', () => {
         .with('origin', null)
         .with(
           'executionDate',
-          faker.date.between('2022-12-25T00:00:00Z', '2022-12-25T00:59:59Z'),
+          faker.date.between({
+            from: '2022-12-25T00:00:00Z',
+            to: '2022-12-25T00:59:59Z',
+          }),
         )
         .build(),
     );
@@ -191,7 +197,10 @@ describe('Transactions History Controller (Unit)', () => {
       ethereumTransactionBuilder()
         .with(
           'executionDate',
-          faker.date.between('2022-12-31T00:00:00Z', '2022-12-31T23:59:59Z'),
+          faker.date.between({
+            from: '2022-12-31T00:00:00Z',
+            to: '2022-12-31T23:59:59Z',
+          }),
         )
         .with('transfers', [transfer])
         .build(),

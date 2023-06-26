@@ -6,6 +6,7 @@ import { CacheFirstDataSource } from './cache.first.data.source';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
 import { FakeCacheService } from './__tests__/fake.cache.service';
+import { fakeJson } from '../../__tests__/faker';
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -29,9 +30,9 @@ describe('CacheFirstDataSource', () => {
   });
 
   it('should return the data returned by the underlying network interface', async () => {
-    const targetUrl = faker.internet.url();
-    const cacheDir = new CacheDir(faker.random.word(), faker.random.word());
-    const data = JSON.parse(faker.datatype.json());
+    const targetUrl = faker.internet.url({ appendSlash: false });
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const data = JSON.parse(fakeJson());
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -48,8 +49,8 @@ describe('CacheFirstDataSource', () => {
   });
 
   it('should return the cached data without calling the underlying network interface', async () => {
-    const cacheDir = new CacheDir(faker.random.word(), faker.random.word());
-    const rawJson = faker.datatype.json();
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const rawJson = fakeJson();
     fakeCacheService.set(cacheDir, rawJson);
     mockNetworkService.get.mockImplementation((url) =>
       Promise.reject(`Unexpected request to ${url}`),
@@ -57,7 +58,7 @@ describe('CacheFirstDataSource', () => {
 
     const actual = await cacheFirstDataSource.get(
       cacheDir,
-      faker.internet.url(),
+      faker.internet.url({ appendSlash: false }),
     );
 
     expect(actual).toEqual(JSON.parse(rawJson));
@@ -65,8 +66,8 @@ describe('CacheFirstDataSource', () => {
   });
 
   it('should cache 404 errors coming from the network', async () => {
-    const targetUrl = faker.internet.url();
-    const cacheDir = new CacheDir(faker.random.word(), faker.random.word());
+    const targetUrl = faker.internet.url({ appendSlash: false });
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -86,8 +87,8 @@ describe('CacheFirstDataSource', () => {
   });
 
   it('should return a 404 cached error without a second call to the underlying network interface', async () => {
-    const targetUrl = faker.internet.url();
-    const cacheDir = new CacheDir(faker.random.word(), faker.random.word());
+    const targetUrl = faker.internet.url({ appendSlash: false });
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -123,8 +124,8 @@ describe('CacheFirstDataSource', () => {
       mockLoggingService,
     );
 
-    const targetUrl = faker.internet.url();
-    const cacheDir = new CacheDir(faker.random.word(), faker.random.word());
+    const targetUrl = faker.internet.url({ appendSlash: false });
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {

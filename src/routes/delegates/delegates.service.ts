@@ -51,8 +51,8 @@ export class DelegatesService {
   async postDelegate(
     chainId: string,
     createDelegateDto: CreateDelegateDto,
-  ): Promise<unknown> {
-    return await this.repository.postDelegate(
+  ): Promise<void> {
+    await this.repository.postDelegate(
       chainId,
       createDelegateDto.safe,
       createDelegateDto.delegate,

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { EventValidationPipe } from './pipes/event-validation.pipe';
 import { CacheHooksService } from './cache-hooks.service';
 import { BasicAuthGuard } from '../common/auth/basic-auth.guard';
@@ -26,10 +19,9 @@ export class CacheHooksController {
   constructor(private readonly service: CacheHooksService) {}
 
   @UseGuards(BasicAuthGuard)
-  @Post('/chains/:chainId/hooks/events')
+  @Post('/hooks/events')
   @HttpCode(200)
   async postEvent(
-    @Param('chainId') chainId: string,
     @Body(EventValidationPipe)
     eventPayload:
       | ExecutedTransaction
@@ -41,6 +33,6 @@ export class CacheHooksController {
       | OutgoingEther
       | PendingTransaction,
   ): Promise<void> {
-    await this.service.onEvent(chainId, eventPayload);
+    await this.service.onEvent(eventPayload);
   }
 }

@@ -5,6 +5,6 @@ import { UpdateMessageSignatureDto } from '../update-message-signature.entity';
 export function updateMessageSignatureDtoBuilder(): IBuilder<UpdateMessageSignatureDto> {
   return Builder.new<UpdateMessageSignatureDto>().with(
     'signature',
-    faker.datatype.hexadecimal(32),
+    faker.string.hexadecimal({ length: 32 }),
   );
 }

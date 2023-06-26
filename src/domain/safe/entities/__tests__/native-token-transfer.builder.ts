@@ -4,13 +4,13 @@ import { NativeTokenTransfer } from '../transfer.entity';
 
 export function nativeTokenTransferBuilder(): IBuilder<NativeTokenTransfer> {
   return Builder.new<NativeTokenTransfer>()
-    .with('blockNumber', faker.datatype.number())
+    .with('blockNumber', faker.number.int())
     .with('executionDate', faker.date.recent())
     .with('from', faker.finance.ethereumAddress())
     .with('to', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.datatype.hexadecimal())
-    .with('value', faker.datatype.hexadecimal())
-    .with('transferId', faker.datatype.string());
+    .with('transactionHash', faker.string.hexadecimal())
+    .with('value', faker.string.hexadecimal())
+    .with('transferId', faker.string.sample());
 }
 
 export function toJson(nativeTokenTransfer: NativeTokenTransfer): unknown {

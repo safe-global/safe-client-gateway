@@ -26,6 +26,7 @@ import { TransferInfoMapper } from './mappers/transfers/transfer-info.mapper';
 import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
+import { MultisigTransactionExecutionDetailsMapper } from './mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 
 @Module({
   controllers: [TransactionsController],
@@ -41,6 +42,7 @@ import { TransactionsService } from './transactions.service';
     ModuleTransactionMapper,
     ModuleTransactionStatusMapper,
     MultisigTransactionDetailsMapper,
+    MultisigTransactionExecutionDetailsMapper,
     MultisigTransactionExecutionInfoMapper,
     MultisigTransactionInfoMapper,
     MultisigTransactionMapper,

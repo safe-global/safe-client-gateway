@@ -98,8 +98,8 @@ describe('Estimations Controller (Unit)', () => {
         .send(
           new GetEstimationDto(
             faker.finance.ethereumAddress(),
-            faker.random.numeric(),
-            faker.datatype.hexadecimal(32),
+            faker.string.numeric(),
+            faker.string.hexadecimal({ length: 32 }),
             0,
           ),
         )
@@ -115,13 +115,13 @@ describe('Estimations Controller (Unit)', () => {
   it('Should get a validation error', async () => {
     const getEstimationDto = new GetEstimationDto(
       faker.finance.ethereumAddress(),
-      faker.random.numeric(),
-      faker.datatype.hexadecimal(32),
+      faker.string.numeric(),
+      faker.string.hexadecimal({ length: 32 }),
       1,
     );
     await request(app.getHttpServer())
       .post(
-        `/v2/chains/${faker.random.numeric()}/safes/${faker.finance.ethereumAddress()}/multisig-transactions/estimations`,
+        `/v2/chains/${faker.string.numeric()}/safes/${faker.finance.ethereumAddress()}/multisig-transactions/estimations`,
       )
       .send(omit(getEstimationDto, 'value'))
       .expect(400)
@@ -132,11 +132,11 @@ describe('Estimations Controller (Unit)', () => {
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
     const safe = safeBuilder()
-      .with('nonce', faker.datatype.number({ max: 50 }))
+      .with('nonce', faker.number.int({ max: 50 }))
       .build();
     const estimation = estimationBuilder().build();
     const lastTransaction = multisigTransactionBuilder()
-      .with('nonce', faker.datatype.number({ min: 51 }))
+      .with('nonce', faker.number.int({ min: 51 }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -172,8 +172,8 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.random.numeric(),
-          faker.datatype.hexadecimal(32),
+          faker.string.numeric(),
+          faker.string.hexadecimal({ length: 32 }),
           0,
         ),
       )
@@ -188,7 +188,7 @@ describe('Estimations Controller (Unit)', () => {
   it('should return the current safe nonce if there is no last transaction', async () => {
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
-    const safe = safeBuilder().with('nonce', faker.datatype.number()).build();
+    const safe = safeBuilder().with('nonce', faker.number.int()).build();
     const estimation = estimationBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -221,8 +221,8 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.random.numeric(),
-          faker.datatype.hexadecimal(32),
+          faker.string.numeric(),
+          faker.string.hexadecimal({ length: 32 }),
           0,
         ),
       )
@@ -237,10 +237,10 @@ describe('Estimations Controller (Unit)', () => {
   it('should return safe nonce as recommended nonce if it is greater than last transaction nonce', async () => {
     const address = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
-    const safe = safeBuilder().with('nonce', faker.datatype.number()).build();
+    const safe = safeBuilder().with('nonce', faker.number.int()).build();
     const estimation = estimationBuilder().build();
     const lastTransaction = multisigTransactionBuilder()
-      .with('nonce', faker.datatype.number({ max: safe.nonce }))
+      .with('nonce', faker.number.int({ max: safe.nonce }))
       .build();
     mockNetworkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -276,8 +276,8 @@ describe('Estimations Controller (Unit)', () => {
       .send(
         new GetEstimationDto(
           faker.finance.ethereumAddress(),
-          faker.random.numeric(),
-          faker.datatype.hexadecimal(32),
+          faker.string.numeric(),
+          faker.string.hexadecimal({ length: 32 }),
           0,
         ),
       )

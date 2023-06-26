@@ -51,7 +51,7 @@ describe('Owners Controller (Unit)', () => {
 
   describe('GET safes by owner address', () => {
     it(`Success`, async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionApiSafeListResponse = {
@@ -73,7 +73,7 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it('Failure: Config API fails', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       mockNetworkService.get.mockRejectedValueOnce({
         status: 500,
@@ -95,7 +95,7 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it('Failure: Transaction API fails', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -123,13 +123,13 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it('Failure: data validation fails', async () => {
-      const chainId = faker.random.numeric();
+      const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionApiSafeListResponse = {
         safes: [
           faker.finance.ethereumAddress(),
-          faker.datatype.number(),
+          faker.number.int(),
           faker.finance.ethereumAddress(),
         ],
       };

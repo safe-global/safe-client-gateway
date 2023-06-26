@@ -172,7 +172,7 @@ describe('Delegates controller', () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
 
       await request(app.getHttpServer())
-        .post(`/v1/chains/${faker.random.numeric()}/delegates/`)
+        .post(`/v1/chains/${faker.string.numeric()}/delegates/`)
         .send(omit(createDelegateDto, 'signature'))
         .expect(400)
         .expect({ message: 'Validation failed', code: 42, arguments: [] });
@@ -340,7 +340,7 @@ describe('Delegates controller', () => {
         .delete(
           `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
-        .send({ ...deleteDelegateDto, signature: faker.datatype.number() })
+        .send({ ...deleteDelegateDto, signature: faker.number.int() })
         .expect(400)
         .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
@@ -405,7 +405,7 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .delete(
-          `/v1/chains/${faker.random.numeric()}/safes/${
+          `/v1/chains/${faker.string.numeric()}/safes/${
             deleteSafeDelegateDto.safe
           }/delegates/${deleteSafeDelegateDto.delegate}`,
         )

@@ -67,7 +67,7 @@ export interface ITransactionApi {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<unknown>;
+  ): Promise<void>;
 
   deleteDelegate(
     delegate: string,

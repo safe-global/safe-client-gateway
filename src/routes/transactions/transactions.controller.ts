@@ -53,13 +53,13 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: MultisigTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
-  @ApiQuery({ name: 'execution_date__gte', required: false })
-  @ApiQuery({ name: 'execution_date__lte', required: false })
-  @ApiQuery({ name: 'to', required: false })
-  @ApiQuery({ name: 'value', required: false })
-  @ApiQuery({ name: 'nonce', required: false })
-  @ApiQuery({ name: 'executed', required: false })
-  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
+  @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
+  @ApiQuery({ name: 'to', required: false, type: String })
+  @ApiQuery({ name: 'value', required: false, type: String })
+  @ApiQuery({ name: 'nonce', required: false, type: String })
+  @ApiQuery({ name: 'executed', required: false, type: Boolean })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMultisigTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -88,9 +88,9 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: ModuleTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
-  @ApiQuery({ name: 'to', required: false })
-  @ApiQuery({ name: 'module', required: false })
-  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'to', required: false, type: String })
+  @ApiQuery({ name: 'module', required: false, type: String })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getModuleTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -117,7 +117,7 @@ export class TransactionsController {
     @Param('safeTxHash') safeTxHash: string,
     @Body(AddConfirmationDtoValidationPipe)
     addConfirmationDto: AddConfirmationDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     return this.transactionsService.addConfirmation(
       chainId,
       safeTxHash,
@@ -127,12 +127,12 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: IncomingTransferPage })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
-  @ApiQuery({ name: 'execution_date__gte', required: false })
-  @ApiQuery({ name: 'execution_date__lte', required: false })
-  @ApiQuery({ name: 'to', required: false })
-  @ApiQuery({ name: 'value', required: false })
-  @ApiQuery({ name: 'token_address', required: false })
-  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
+  @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
+  @ApiQuery({ name: 'to', required: false, type: String })
+  @ApiQuery({ name: 'value', required: false, type: String })
+  @ApiQuery({ name: 'token_address', required: false, type: String })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getIncomingTransfers(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -175,9 +175,9 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: QueuedItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
-  @ApiQuery({ name: 'cursor', required: false })
-  @ApiQuery({ name: 'timezone_offset', required: false })
-  @ApiQuery({ name: 'trusted', required: false })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'timezone_offset', required: false, type: String })
+  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
   async getTransactionQueue(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -194,8 +194,8 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: TransactionItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
-  @ApiQuery({ name: 'timezone_offset', required: false })
-  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'timezone_offset', required: false, type: String })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
   async getTransactionsHistory(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -221,7 +221,7 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @Body(ProposeTransactionDtoValidationPipe)
     proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDetails> {
     return this.transactionsService.proposeTransaction(
       chainId,
       safeAddress,

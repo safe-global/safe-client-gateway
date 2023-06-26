@@ -10,25 +10,25 @@ import { rpcUriBuilder } from './rpc-uri.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return Builder.new<Chain>()
-    .with('chainId', faker.random.numeric())
+    .with('chainId', faker.string.numeric())
     .with('chainName', faker.company.name())
-    .with('description', faker.random.words())
+    .with('description', faker.word.words())
     .with('l2', faker.datatype.boolean())
-    .with('shortName', faker.company.companySuffix())
+    .with('shortName', faker.company.name())
     .with('rpcUri', rpcUriBuilder().build())
     .with('safeAppsRpcUri', rpcUriBuilder().build())
     .with('publicRpcUri', rpcUriBuilder().build())
     .with('blockExplorerUriTemplate', blockExplorerUriTemplateBuilder().build())
     .with('nativeCurrency', nativeCurrencyBuilder().build())
-    .with('transactionService', faker.internet.url())
-    .with('vpcTransactionService', faker.internet.url())
+    .with('transactionService', faker.internet.url({ appendSlash: false }))
+    .with('vpcTransactionService', faker.internet.url({ appendSlash: false }))
     .with('theme', themeBuilder().build())
     .with('gasPrice', [
       gasPriceFixedBuilder().build(),
       gasPriceOracleBuilder().build(),
     ])
     .with('ensRegistryAddress', faker.finance.ethereumAddress())
-    .with('disabledWallets', [faker.random.word(), faker.random.word()])
-    .with('features', [faker.random.word(), faker.random.word()])
+    .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
+    .with('features', [faker.word.sample(), faker.word.sample()])
     .with('recommendedMasterCopyVersion', faker.system.semver());
 }

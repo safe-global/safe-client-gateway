@@ -51,7 +51,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Failure: Config API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     mockNetworkService.get.mockRejectedValueOnce({
       status: 500,
@@ -73,11 +73,11 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Failure: Transaction API fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
-    const limit = faker.datatype.number({ min: 0, max: 100 });
-    const offset = faker.datatype.number({ min: 0, max: 100 });
+    const limit = faker.number.int({ min: 0, max: 100 });
+    const offset = faker.number.int({ min: 0, max: 100 });
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
     mockNetworkService.get.mockRejectedValueOnce({
       status: 500,
@@ -107,7 +107,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Failure: data validation fails', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
@@ -126,7 +126,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a ERC20 incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockImplementation((url) => {
@@ -178,7 +178,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a ERC721 incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockImplementation((url) => {
@@ -230,7 +230,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a native coin incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().with('chainId', chainId).build();
     mockNetworkService.get.mockImplementation((url) => {

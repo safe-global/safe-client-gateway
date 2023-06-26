@@ -6,5 +6,5 @@ export function deleteDelegateDtoBuilder(): IBuilder<DeleteDelegateDto> {
   return Builder.new<DeleteDelegateDto>()
     .with('delegate', faker.finance.ethereumAddress())
     .with('delegator', faker.finance.ethereumAddress())
-    .with('signature', faker.datatype.hexadecimal(32));
+    .with('signature', faker.string.hexadecimal({ length: 32 }));
 }

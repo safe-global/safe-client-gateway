@@ -10,11 +10,28 @@ export const collectibleSchema: JSONSchemaType<Collectible> = {
     tokenSymbol: { type: 'string' },
     logoUri: { type: 'string' },
     id: { type: 'string' },
-    uri: { type: 'string', nullable: true, default: null, format: 'uri' },
-    name: { type: 'string', nullable: true, default: null },
-    description: { type: 'string', nullable: true, default: null },
-    imageUri: { type: 'string', nullable: true, default: null, format: 'uri' },
-    metadata: { type: 'object', nullable: true, default: null },
+    // Do not use format: 'uri' as it fails on some payloads that should be considered valid
+    uri: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    name: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    description: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    // Do not use format: 'uri' as it fails on some payloads that should be considered valid
+    imageUri: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
+    metadata: {
+      oneOf: [{ type: 'object' }, { type: 'null', nullable: true }],
+      default: null,
+    },
   },
   required: ['address', 'tokenName', 'tokenSymbol', 'logoUri', 'id'],
 };

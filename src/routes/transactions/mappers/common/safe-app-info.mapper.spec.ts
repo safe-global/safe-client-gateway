@@ -26,7 +26,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should get a null SafeAppInfo for a transaction with no origin', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with('origin', null)
       .build();
@@ -39,11 +39,11 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should get a null SafeAppInfo for a transaction with no url into origin', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with(
         'origin',
-        `{ \"${faker.random.word()}\": \"${faker.random.word()}\" }`,
+        `{ \"${faker.word.sample()}\": \"${faker.word.sample()}\" }`,
       )
       .build();
     const safeApps = [safeAppBuilder().build(), safeAppBuilder().build()];
@@ -55,7 +55,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should return null if no SafeApp is found and origin is not null', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeApps = [];
     const transaction = multisigTransactionBuilder().build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
@@ -66,7 +66,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should get SafeAppInfo for a transaction with origin', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const safeApp = safeAppBuilder().build();
     const anotherSafeApp = safeAppBuilder().build();
     const safeApps = [safeApp, anotherSafeApp];
@@ -84,9 +84,9 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should return null origin on invalid JSON', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('origin', faker.datatype.string())
+      .with('origin', faker.string.sample())
       .build();
 
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
@@ -95,7 +95,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   });
 
   it('should replace IPFS origin urls', async () => {
-    const chainId = faker.random.numeric();
+    const chainId = faker.string.numeric();
     const originUrl = 'https://ipfs.io/test';
     const safeApp = safeAppBuilder().with('url', originUrl).build();
     const safeApps = [safeApp];

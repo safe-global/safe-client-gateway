@@ -70,7 +70,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ max: messageConfirmations.length }),
+          faker.number.int({ max: messageConfirmations.length }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -131,7 +131,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ max: messageConfirmations.length }),
+          faker.number.int({ max: messageConfirmations.length }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -191,7 +191,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+          faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -252,7 +252,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+          faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -306,13 +306,13 @@ describe('Messages controller', () => {
         messageConfirmationBuilder().build(),
       );
       const message = messageBuilder()
-        .with('safeAppId', faker.datatype.number())
+        .with('safeAppId', faker.number.int())
         .with('confirmations', messageConfirmations)
         .build();
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+          faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -372,7 +372,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+          faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
       mockNetworkService.get.mockImplementation((url) => {
@@ -428,7 +428,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder()
         .with(
           'threshold',
-          faker.datatype.number({ min: messageConfirmations.length + 1 }),
+          faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
       const message = messageBuilder()
@@ -579,40 +579,40 @@ describe('Messages controller', () => {
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 1, 16)).toISOString(),
-              new Date(Date.UTC(2025, 0, 1, 17)).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 1, 16)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 1, 17)).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 2)).toISOString(),
-              new Date(Date.UTC(2025, 0, 3) - 1).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 2)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 3) - 1).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 1, 10)).toISOString(),
-              new Date(Date.UTC(2025, 0, 1, 11)).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 1, 10)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 1, 11)).toISOString(),
+            }),
           )
           .build(),
         messageBuilder()
           .with('safeAppId', null)
           .with(
             'created',
-            faker.date.between(
-              new Date(Date.UTC(2025, 0, 3)).toISOString(),
-              new Date(Date.UTC(2025, 0, 4) - 1).toISOString(),
-            ),
+            faker.date.between({
+              from: new Date(Date.UTC(2025, 0, 3)).toISOString(),
+              to: new Date(Date.UTC(2025, 0, 4) - 1).toISOString(),
+            }),
           )
           .build(),
       ];
@@ -710,7 +710,7 @@ describe('Messages controller', () => {
     it('should return an error from the Transaction Service', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
-      const errorMessage = faker.random.words();
+      const errorMessage = faker.word.words();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
@@ -743,9 +743,7 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
         .send(
-          createMessageDtoBuilder()
-            .with('message', faker.datatype.number())
-            .build(),
+          createMessageDtoBuilder().with('message', faker.number.int()).build(),
         )
         .expect(400)
         .expect({
@@ -764,7 +762,7 @@ describe('Messages controller', () => {
         .with('created', faker.date.recent())
         .build();
       const expectedResponse = {
-        data: { signature: faker.datatype.hexadecimal() },
+        data: { signature: faker.string.hexadecimal() },
       };
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -793,7 +791,7 @@ describe('Messages controller', () => {
         .with('safeAppId', null)
         .with('created', faker.date.recent())
         .build();
-      const errorMessage = faker.random.words();
+      const errorMessage = faker.word.words();
       mockNetworkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })

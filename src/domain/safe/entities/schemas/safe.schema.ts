@@ -11,10 +11,11 @@ export const safeSchema: JSONSchemaType<Safe> = {
     owners: { type: 'array', items: { type: 'string' } },
     masterCopy: { type: 'string' },
     modules: {
-      type: 'array',
-      nullable: true,
+      oneOf: [
+        { type: 'array', items: { type: 'string' } },
+        { type: 'null', nullable: true },
+      ],
       default: null,
-      items: { type: 'string' },
     },
     fallbackHandler: { type: 'string' },
     guard: { type: 'string' },

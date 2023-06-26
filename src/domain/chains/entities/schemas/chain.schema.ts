@@ -103,7 +103,10 @@ export const chainSchema: JSONSchemaType<Chain> = {
     vpcTransactionService: { type: 'string', format: 'uri' },
     theme: { $ref: 'theme.json' },
     gasPrice: { $ref: 'gas-price.json' },
-    ensRegistryAddress: { type: 'string', nullable: true, default: null },
+    ensRegistryAddress: {
+      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
+      default: null,
+    },
     disabledWallets: { type: 'array', items: { type: 'string' } },
     features: { type: 'array', items: { type: 'string' } },
     recommendedMasterCopyVersion: { type: 'string' },

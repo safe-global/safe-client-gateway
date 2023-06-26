@@ -251,11 +251,11 @@ export class TransactionApi implements ITransactionApi {
     delegator?: string,
     signature?: string,
     label?: string,
-  ): Promise<unknown> {
+  ): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
-      return await this.networkService.post(url, {
-        safe: safeAddress,
+      await this.networkService.post(url, {
+        safe: safeAddress ?? null, // TODO: this is a workaround while https://github.com/safe-global/safe-transaction-service/issues/1521 is not fixed.
         delegate: delegate,
         delegator: delegator,
         signature: signature,
@@ -422,7 +422,7 @@ export class TransactionApi implements ITransactionApi {
     addConfirmationDto: AddConfirmationDto,
   ): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       return await this.networkService.post(url, {
         signature: addConfirmationDto.signedSafeTxHash,
       });
