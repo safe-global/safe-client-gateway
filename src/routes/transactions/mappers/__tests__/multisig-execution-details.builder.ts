@@ -14,7 +14,7 @@ const MAX_SIGNERS = 5;
 function multisigConfirmationDetailsBuilder(): IBuilder<MultisigConfirmationDetails> {
   return Builder.new<MultisigConfirmationDetails>()
     .with('signer', addressInfoBuilder().build())
-    .with('signature', faker.string.sample())
+    .with('signature', faker.string.hexadecimal())
     .with('submittedAt', faker.number.int());
 }
 
