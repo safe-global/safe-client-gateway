@@ -30,7 +30,7 @@
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.3",
     "@nestjs/platform-express": "^10.0.3",
-    "@nestjs/swagger": "^7.0.3",
+    "@nestjs/swagger": "^7.0.6",
     "@node-redis/json": "^1.0.2",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
