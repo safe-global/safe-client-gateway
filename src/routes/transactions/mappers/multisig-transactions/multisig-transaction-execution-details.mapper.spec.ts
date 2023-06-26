@@ -46,10 +46,11 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   it('should return a MultisigExecutionDetails object with gasToken, empty confirmations and empty rejections', async () => {
     const chainId = faker.string.numeric();
+    const safe = safeBuilder().build();
     const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
       .with('confirmations', [])
       .build();
-    const safe = safeBuilder().build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     safeRepository.getMultisigTransactions.mockResolvedValue(
