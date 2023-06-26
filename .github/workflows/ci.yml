@@ -59,6 +59,7 @@ jobs:
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
       - name: Coveralls Parallel
+        continue-on-error: true
         uses: coverallsapp/github-action@v2.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
