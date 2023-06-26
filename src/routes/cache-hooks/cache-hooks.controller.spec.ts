@@ -57,7 +57,7 @@ describe('Post Hook Events (Unit)', () => {
 
   it('should throw an error if authorization is not sent in the request headers', async () => {
     await request(app.getHttpServer())
-      .post(`/chains/1/hooks/events`)
+      .post(`/hooks/events`)
       .send({})
       .expect(403);
   });
@@ -121,7 +121,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -144,7 +144,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/1/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(400);
@@ -196,7 +196,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -244,7 +244,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -292,7 +292,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -331,7 +331,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -380,7 +380,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -429,7 +429,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -473,7 +473,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -512,7 +512,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
@@ -576,7 +576,7 @@ describe('Post Hook Events (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .post(`/chains/${chainId}/hooks/events`)
+      .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
       .expect(200);
