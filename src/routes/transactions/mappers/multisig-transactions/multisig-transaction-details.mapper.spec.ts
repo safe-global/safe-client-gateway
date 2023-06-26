@@ -57,8 +57,10 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder().build();
     const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .build();
     const txStatus =
       sample(Object.values(TransactionStatus)) ?? TransactionStatus.Success;
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
