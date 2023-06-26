@@ -86,8 +86,10 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
 
   it('should return a TransactionDetails object with an non-empty addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
-    const transaction = moduleTransactionBuilder().build();
     const safe = safeBuilder().build();
+    const transaction = moduleTransactionBuilder()
+      .with('safe', safe.address)
+      .build();
     const txStatus =
       sample(Object.values(TransactionStatus)) ?? TransactionStatus.Success;
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
