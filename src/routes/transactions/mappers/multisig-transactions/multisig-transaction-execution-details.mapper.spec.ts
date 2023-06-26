@@ -93,11 +93,12 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       confirmationBuilder().build(),
       confirmationBuilder().build(),
     ];
+    const safe = safeBuilder().build();
     const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
       .with('gasToken', NULL_ADDRESS)
       .with('confirmations', transactionConfirmations)
       .build();
-    const safe = safeBuilder().build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     const replacementTxConfirmation = confirmationBuilder().build();
