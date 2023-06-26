@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import * as request from 'supertest';
 import { DataSourceError } from '../../../domain/errors/data-source.error';
+import { faker } from '@faker-js/faker';
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -47,6 +48,11 @@ class TestController {
   getSuccess() {
     return;
   }
+
+  @Get('success/:chainId')
+  getSuccessWithChainId() {
+    return;
+  }
 }
 
 describe('RouteLoggerInterceptor tests', () => {
@@ -73,6 +79,7 @@ describe('RouteLoggerInterceptor tests', () => {
 
     expect(mockLoggingService.error).toBeCalledTimes(1);
     expect(mockLoggingService.error).toBeCalledWith({
+      chain_id: null,
       client_ip: null,
       detail: 'Some 500 error',
       method: 'GET',
@@ -98,6 +105,7 @@ describe('RouteLoggerInterceptor tests', () => {
 
     expect(mockLoggingService.error).toBeCalledTimes(1);
     expect(mockLoggingService.error).toBeCalledWith({
+      chain_id: null,
       client_ip: null,
       detail: 'Some DataSource error',
       method: 'GET',
@@ -116,6 +124,7 @@ describe('RouteLoggerInterceptor tests', () => {
 
     expect(mockLoggingService.info).toBeCalledTimes(1);
     expect(mockLoggingService.info).toBeCalledWith({
+      chain_id: null,
       client_ip: null,
       detail: 'Some 400 error',
       method: 'GET',
@@ -134,12 +143,35 @@ describe('RouteLoggerInterceptor tests', () => {
 
     expect(mockLoggingService.info).toBeCalledTimes(1);
     expect(mockLoggingService.info).toBeCalledWith({
+      chain_id: null,
       client_ip: null,
       detail: null,
       method: 'GET',
       path: '/test/success',
       response_time_ms: expect.any(Number),
       route: '/test/success',
+      status_code: 200,
+    });
+    expect(mockLoggingService.error).not.toBeCalled();
+    expect(mockLoggingService.debug).not.toBeCalled();
+    expect(mockLoggingService.warn).not.toBeCalled();
+  });
+
+  it('200 with chainId logs chain id', async () => {
+    const chainId = faker.string.numeric();
+    await request(app.getHttpServer())
+      .get(`/test/success/${chainId}`)
+      .expect(200);
+
+    expect(mockLoggingService.info).toBeCalledTimes(1);
+    expect(mockLoggingService.info).toBeCalledWith({
+      chain_id: chainId,
+      client_ip: null,
+      detail: null,
+      method: 'GET',
+      path: `/test/success/${chainId}`,
+      response_time_ms: expect.any(Number),
+      route: '/test/success/:chainId',
       status_code: 200,
     });
     expect(mockLoggingService.error).not.toBeCalled();
@@ -154,6 +186,7 @@ describe('RouteLoggerInterceptor tests', () => {
 
     expect(mockLoggingService.error).toBeCalledTimes(1);
     expect(mockLoggingService.error).toBeCalledWith({
+      chain_id: null,
       client_ip: null,
       detail: 'Some random error',
       method: 'GET',
