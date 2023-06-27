@@ -3,6 +3,7 @@ import { ClsService } from 'nestjs-cls';
 import { ILoggingService } from './logging.interface';
 import { Inject } from '@nestjs/common/decorators';
 import winston from 'winston';
+import { IConfigurationService } from '../config/configuration.service.interface';
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
@@ -11,10 +12,18 @@ import winston from 'winston';
  */
 @Injectable()
 export class RequestScopedLoggingService implements ILoggingService {
+  private readonly version?: string;
+  private readonly buildNumber?: string;
+
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject('Logger') private readonly logger: winston.Logger,
     private readonly cls: ClsService,
-  ) {}
+  ) {
+    this.version = configurationService.get('about.version');
+    this.buildNumber = configurationService.get('about.buildNumber');
+  }
 
   info(message: string | unknown) {
     this.logger.log('info', this.formatMessage(message));
@@ -39,8 +48,10 @@ export class RequestScopedLoggingService implements ILoggingService {
 
     return {
       message,
+      build_number: this.buildNumber,
       request_id: requestId,
       timestamp: dateAsString,
+      version: this.version,
     };
   }
 }
