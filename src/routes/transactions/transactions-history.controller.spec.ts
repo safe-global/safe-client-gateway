@@ -45,6 +45,7 @@ import { TokenType } from '../../domain/tokens/entities/token.entity';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ValidationModule } from '../../validation/validation.module';
 import { TransactionsModule } from './transactions.module';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -134,9 +135,7 @@ describe('Transactions History Controller (Unit)', () => {
       previous: null,
       results: [],
     };
-    const creationTransactionResponse: any = creationTransactionToJson(
-      creationTransactionBuilder().build(),
-    );
+    const creationTransaction = creationTransactionBuilder().build();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
@@ -152,7 +151,9 @@ describe('Transactions History Controller (Unit)', () => {
         return Promise.resolve({ data: safe });
       }
       if (url === getSafeCreationUrl) {
-        return Promise.resolve({ data: creationTransactionResponse });
+        return Promise.resolve({
+          data: creationTransactionToJson(creationTransaction),
+        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -169,9 +170,8 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Should return correctly each date label', async () => {
-    const safeAddress = faker.finance.ethereumAddress();
-    const chainResponse = chainBuilder().build();
-    const chainId = chainResponse.chainId;
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
         .with('dataDecoded', null)
@@ -197,9 +197,7 @@ describe('Transactions History Controller (Unit)', () => {
         )
         .build(),
     );
-    const transfer: any = nativeTokenTransferToJson(
-      nativeTokenTransferBuilder().build(),
-    );
+    const nativeTokenTransfer = nativeTokenTransferBuilder().build();
     const incomingTransaction = ethereumTransactionToJson(
       ethereumTransactionBuilder()
         .with(
@@ -209,22 +207,23 @@ describe('Transactions History Controller (Unit)', () => {
             to: '2022-12-31T23:59:59Z',
           }),
         )
-        .with('transfers', [transfer])
+        .with('transfers', [
+          nativeTokenTransferToJson(nativeTokenTransfer) as Transfer,
+        ])
         .build(),
     );
-    const safe = safeBuilder().build();
     const transactionHistoryBuilder = {
       count: 40,
-      next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+      next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
       previous: null,
       results: [moduleTransaction, multisigTransaction, incomingTransaction],
     };
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chain });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({ data: transactionHistoryBuilder });
@@ -236,7 +235,9 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body.results).toHaveLength(
@@ -302,13 +303,12 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Should return correctly each transaction', async () => {
-    const safeAddress = faker.finance.ethereumAddress();
-    const chainResponse = chainBuilder().build();
-    const chainId = chainResponse.chainId;
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
+      .with('safe', safe.address)
       .with('isSuccessful', true)
-      .with('safe', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
       .with('data', null)
       .with('operation', 0)
       .with('value', faker.number.int({ min: 1 }).toString())
@@ -317,7 +317,7 @@ describe('Transactions History Controller (Unit)', () => {
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
     const multisigTransaction = multisigTransactionBuilder()
-      .with('safe', '0xC22de4CeeAFd9436d20A9b18C5970D680D3498c8')
+      .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('safeTxGas', 0)
@@ -351,29 +351,28 @@ describe('Transactions History Controller (Unit)', () => {
         confirmationBuilder().build(),
       ])
       .build();
-    const safe = safeBuilder()
-      .with('address', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
-      .build();
+
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
       .with('transferId', 'e1015fc6905859c69')
       .build();
-    const transfer: any = nativeTokenTransferToJson(nativeTokenTransfer);
     const incomingTransaction = ethereumTransactionBuilder()
-      .with('transfers', [transfer])
+      .with('transfers', [
+        nativeTokenTransferToJson(nativeTokenTransfer) as Transfer,
+      ])
       .build();
     const tokenResponse = tokenBuilder()
       .with('type', TokenType.Erc20)
       .with('address', multisigTransaction.to)
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chain });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
@@ -396,14 +395,16 @@ describe('Transactions History Controller (Unit)', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body.results).toHaveLength(6); //3 date labels and 3 transactions
         expect(body.results[1]).toMatchObject({
           type: 'TRANSACTION',
           transaction: {
-            id: 'module_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_i5a6754140f0432d3b',
+            id: `module_${safe.address}_i5a6754140f0432d3b`,
             safeAppInfo: null,
             timestamp: moduleTransaction.executionDate.getTime(),
             txStatus: 'SUCCESS',
@@ -427,7 +428,7 @@ describe('Transactions History Controller (Unit)', () => {
         expect(body.results[3]).toMatchObject({
           type: 'TRANSACTION',
           transaction: {
-            id: 'multisig_0xC22de4CeeAFd9436d20A9b18C5970D680D3498c8_0x31d44c67',
+            id: `multisig_${safe.address}_0x31d44c67`,
             timestamp: 1668583871000,
             txStatus: 'SUCCESS',
             txInfo: {
@@ -459,7 +460,7 @@ describe('Transactions History Controller (Unit)', () => {
         expect(body.results[5]).toMatchObject({
           type: 'TRANSACTION',
           transaction: {
-            id: 'transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_e1015fc6905859c69',
+            id: `transfer_${safe.address}_e1015fc6905859c69`,
             executionInfo: null,
             safeAppInfo: null,
             timestamp: nativeTokenTransfer.executionDate.getTime(),
@@ -469,7 +470,10 @@ describe('Transactions History Controller (Unit)', () => {
               sender: { value: nativeTokenTransfer.from },
               recipient: { value: nativeTokenTransfer.to },
               direction: 'INCOMING',
-              transferInfo: { type: 'NATIVE_COIN', value: transfer.value },
+              transferInfo: {
+                type: 'NATIVE_COIN',
+                value: nativeTokenTransfer.value,
+              },
             },
           },
           conflictType: 'None',
@@ -481,21 +485,19 @@ describe('Transactions History Controller (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
-    const moduleTransaction: any = moduleTransactionToJson(
-      moduleTransactionBuilder().with('dataDecoded', null).build(),
-    );
+    const moduleTransaction = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .build();
     const safe = safeBuilder().build();
     const allTransactionsResponse = {
       count: 2,
       next: null,
       previous: null,
-      results: [moduleTransaction],
+      results: [moduleTransactionToJson(moduleTransaction)],
     };
-    const creationTransactionResponse: any = creationTransactionToJson(
-      creationTransactionBuilder()
-        .with('created', new Date(moduleTransaction.executionDate))
-        .build(),
-    );
+    const creationTransaction = creationTransactionBuilder()
+      .with('created', new Date(moduleTransaction.executionDate))
+      .build();
     mockNetworkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
@@ -517,7 +519,7 @@ describe('Transactions History Controller (Unit)', () => {
       }
       if (url === getSafeCreationUrl) {
         return Promise.resolve({
-          data: creationTransactionResponse,
+          data: creationTransactionToJson(creationTransaction),
         });
       }
       if (url.includes(getContractUrl)) {
@@ -534,19 +536,19 @@ describe('Transactions History Controller (Unit)', () => {
       .then(({ body }) => {
         expect(body.results).toHaveLength(3);
         expect(body.results[2].transaction.timestamp).toEqual(
-          creationTransactionResponse.created.getTime(),
+          creationTransaction.created.getTime(),
         );
         expect(body.results[2].transaction.txInfo.creator.value).toEqual(
-          creationTransactionResponse.creator,
+          creationTransaction.creator,
         );
         expect(body.results[2].transaction.txInfo.factory.value).toEqual(
-          creationTransactionResponse.factoryAddress,
+          creationTransaction.factoryAddress,
         );
         expect(body.results[2].transaction.txInfo.implementation.value).toEqual(
-          creationTransactionResponse.masterCopy,
+          creationTransaction.masterCopy,
         );
         expect(body.results[2].transaction.txInfo.transactionHash).toEqual(
-          creationTransactionResponse.transactionHash,
+          creationTransaction.transactionHash,
         );
       });
   });

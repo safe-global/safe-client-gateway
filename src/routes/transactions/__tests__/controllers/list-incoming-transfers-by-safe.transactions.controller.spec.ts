@@ -141,30 +141,25 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a ERC20 incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const chain = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder()
-      .with('address', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
-      .build();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const erc20Transfer = erc20TransferBuilder()
       .with('executionDate', new Date('2022-11-07T09:03:48Z'))
       .with('to', safe.address)
       .with('from', safe.address)
       .with('transferId', 'e1015fc6905')
       .with('value', faker.number.int({ min: 1 }).toString())
-      .with('tokenAddress', '0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60')
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
       .with('address', erc20Transfer.tokenAddress)
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
       }
@@ -188,7 +183,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toMatchObject({
@@ -196,7 +193,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: 'transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_e1015fc6905',
+                id: `transfer_${safe.address}_e1015fc6905`,
                 executionInfo: null,
                 safeAppInfo: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
@@ -225,16 +222,11 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a ERC721 incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const chain = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder()
-      .with('address', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
-      .build();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const erc721Transfer = erc721TransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
-      .with('tokenId', '110380171')
       .with('transferId', 'e1015fc6905')
       .build();
     const token = tokenBuilder()
@@ -242,9 +234,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('address', erc721Transfer.tokenAddress)
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc721Transfer.tokenAddress}`;
       if (url === getChainUrl) {
@@ -270,7 +262,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toMatchObject({
@@ -278,7 +272,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: 'transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_e1015fc6905',
+                id: `transfer_${safe.address}_e1015fc6905`,
                 timestamp: erc721Transfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -304,12 +298,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   });
 
   it('Should get a native coin incoming transfer mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const chain = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder()
-      .with('address', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
-      .build();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
@@ -317,9 +307,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('transferId', 'e1015fc690')
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
@@ -341,7 +331,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toMatchObject({
@@ -349,7 +341,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: 'transfer_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_e1015fc690',
+                id: `transfer_${safe.address}_e1015fc690`,
                 timestamp: nativeTokenTransfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {

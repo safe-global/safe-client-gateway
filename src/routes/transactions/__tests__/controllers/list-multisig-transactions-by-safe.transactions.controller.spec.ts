@@ -140,15 +140,10 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const chain = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder()
-      .with('address', '0xC22de4CeeAFd9436d20A9b18C5970D680D3498c8')
-      .build();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const multisigTransaction = multisigTransactionBuilder()
       .with('safe', safe.address)
-      .with('to', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
       .with('value', '0')
       .with('operation', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
@@ -185,11 +180,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('address', multisigTransaction.to)
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: chain });
       }
@@ -213,7 +208,9 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toMatchObject({
@@ -221,7 +218,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: 'multisig_0xC22de4CeeAFd9436d20A9b18C5970D680D3498c8_0x31d44c6',
+                id: `multisig_${safe.address}_0x31d44c6`,
                 timestamp: multisigTransaction.executionDate?.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -258,12 +255,8 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a ERC721 transfer mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const chainResponse = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder()
-      .with('address', '0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C')
-      .build();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc721)
       .with('address', '0x7Af3460d552f832fD7E2DE973c628ACeA59B0712')
@@ -309,13 +302,13 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       ])
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
-      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chain });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
@@ -337,7 +330,9 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toMatchObject({
@@ -345,7 +340,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: 'multisig_0x4127839cdf4F73d9fC9a2C2861d8d1799e9DF40C_0x0f9f1b72',
+                id: `multisig_${safe.address}_0x0f9f1b72`,
                 timestamp: 1655853152000,
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -381,8 +376,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   });
 
   it('Should get a Custom transaction mapped to the expected format', async () => {
-    const chainId = faker.string.numeric();
-    const chainResponse = chainBuilder().build();
+    const chain = chainBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
     const domainTransaction = multisigTransactionBuilder()
@@ -404,13 +398,13 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       )
       .build();
     mockNetworkService.get.mockImplementation((url) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
-      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${domainTransaction.safe}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${domainTransaction.safe}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}`;
+      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chain });
       }
       if (url === getSafeAppsUrl) {
         return Promise.resolve({ data: safeAppsResponse });
@@ -431,7 +425,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainId}/safes/${domainTransaction.safe}/multisig-transactions`,
+        `/v1/chains/${chain.chainId}/safes/${domainTransaction.safe}/multisig-transactions`,
       )
       .expect(200)
       .then(({ body }) => {
