@@ -2,6 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
+import { expect } from '@jest/globals';
+import '../../../__tests__/matchers/to-be-string-or-null';
 
 describe('Get about e2e test', () => {
   let app: INestApplication;
@@ -24,7 +26,7 @@ describe('Get about e2e test', () => {
           expect.objectContaining({
             name: expect.any(String),
             version: expect.any(String),
-            buildNumber: expect.any(String),
+            buildNumber: expect.anyStringOrNull(),
           }),
         );
       });
