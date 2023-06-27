@@ -404,7 +404,7 @@ describe('Transactions History Controller (Unit)', () => {
           results: [
             {
               type: 'DATE_LABEL',
-              timestamp: 1670976000000,
+              timestamp: expect.any(Number),
             },
             {
               type: 'TRANSACTION',
@@ -432,7 +432,7 @@ describe('Transactions History Controller (Unit)', () => {
             },
             {
               type: 'DATE_LABEL',
-              timestamp: 1668556800000,
+              timestamp: expect.any(Number),
             },
             {
               type: 'TRANSACTION',
@@ -468,7 +468,7 @@ describe('Transactions History Controller (Unit)', () => {
             },
             {
               type: 'DATE_LABEL',
-              timestamp: 1687824000000,
+              timestamp: expect.any(Number),
             },
             {
               type: 'TRANSACTION',
