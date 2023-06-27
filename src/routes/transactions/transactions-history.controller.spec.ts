@@ -400,83 +400,98 @@ describe('Transactions History Controller (Unit)', () => {
       )
       .expect(200)
       .then(({ body }) => {
-        expect(body.results).toHaveLength(6); //3 date labels and 3 transactions
-        expect(body.results[1]).toMatchObject({
-          type: 'TRANSACTION',
-          transaction: {
-            id: `module_${safe.address}_i5a6754140f0432d3b`,
-            safeAppInfo: null,
-            timestamp: moduleTransaction.executionDate.getTime(),
-            txStatus: 'SUCCESS',
-            txInfo: {
-              type: 'Transfer',
-              sender: { value: moduleTransaction.safe },
-              recipient: { value: moduleTransaction.to },
-              direction: 'OUTGOING',
-              transferInfo: {
-                type: 'NATIVE_COIN',
-                value: moduleTransaction.value,
+        expect(body).toMatchObject({
+          results: [
+            {
+              type: 'DATE_LABEL',
+              timestamp: 1670976000000,
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `module_${safe.address}_i5a6754140f0432d3b`,
+                safeAppInfo: null,
+                timestamp: moduleTransaction.executionDate.getTime(),
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: moduleTransaction.safe },
+                  recipient: { value: moduleTransaction.to },
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'NATIVE_COIN',
+                    value: moduleTransaction.value,
+                  },
+                },
+                executionInfo: {
+                  type: 'MODULE',
+                  address: { value: moduleTransaction.module },
+                },
               },
+              conflictType: 'None',
             },
-            executionInfo: {
-              type: 'MODULE',
-              address: { value: moduleTransaction.module },
+            {
+              type: 'DATE_LABEL',
+              timestamp: 1668556800000,
             },
-          },
-          conflictType: 'None',
-        });
-        expect(body.results[3]).toMatchObject({
-          type: 'TRANSACTION',
-          transaction: {
-            id: `multisig_${safe.address}_0x31d44c67`,
-            timestamp: 1668583871000,
-            txStatus: 'SUCCESS',
-            txInfo: {
-              type: 'Transfer',
-              sender: { value: multisigTransaction.safe },
-              recipient: { value: multisigTransactionToAddress },
-              direction: 'OUTGOING',
-              transferInfo: {
-                type: 'ERC20',
-                tokenAddress: multisigTransaction.to,
-                tokenName: tokenResponse.name,
-                tokenSymbol: tokenResponse.symbol,
-                logoUri: tokenResponse.logoUri,
-                decimals: tokenResponse.decimals,
-                value: multisigTransactionValue,
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `multisig_${safe.address}_0x31d44c67`,
+                timestamp: 1668583871000,
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: multisigTransaction.safe },
+                  recipient: { value: multisigTransactionToAddress },
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'ERC20',
+                    tokenAddress: multisigTransaction.to,
+                    tokenName: tokenResponse.name,
+                    tokenSymbol: tokenResponse.symbol,
+                    logoUri: tokenResponse.logoUri,
+                    decimals: tokenResponse.decimals,
+                    value: multisigTransactionValue,
+                  },
+                },
+                executionInfo: {
+                  type: 'MULTISIG',
+                  nonce: multisigTransaction.nonce,
+                  confirmationsRequired: 2,
+                  confirmationsSubmitted: 2,
+                  missingSigners: null,
+                },
+                safeAppInfo: null,
               },
+              conflictType: 'None',
             },
-            executionInfo: {
-              type: 'MULTISIG',
-              nonce: multisigTransaction.nonce,
-              confirmationsRequired: 2,
-              confirmationsSubmitted: 2,
-              missingSigners: null,
+            {
+              type: 'DATE_LABEL',
+              timestamp: 1687824000000,
             },
-            safeAppInfo: null,
-          },
-          conflictType: 'None',
-        });
-        expect(body.results[5]).toMatchObject({
-          type: 'TRANSACTION',
-          transaction: {
-            id: `transfer_${safe.address}_e1015fc6905859c69`,
-            executionInfo: null,
-            safeAppInfo: null,
-            timestamp: nativeTokenTransfer.executionDate.getTime(),
-            txStatus: 'SUCCESS',
-            txInfo: {
-              type: 'Transfer',
-              sender: { value: nativeTokenTransfer.from },
-              recipient: { value: nativeTokenTransfer.to },
-              direction: 'INCOMING',
-              transferInfo: {
-                type: 'NATIVE_COIN',
-                value: nativeTokenTransfer.value,
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `transfer_${safe.address}_e1015fc6905859c69`,
+                executionInfo: null,
+                safeAppInfo: null,
+                timestamp: nativeTokenTransfer.executionDate.getTime(),
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: nativeTokenTransfer.from },
+                  recipient: { value: nativeTokenTransfer.to },
+                  direction: 'INCOMING',
+                  transferInfo: {
+                    type: 'NATIVE_COIN',
+                    value: nativeTokenTransfer.value,
+                  },
+                },
               },
+              conflictType: 'None',
             },
-          },
-          conflictType: 'None',
+          ],
         });
       });
   });
