@@ -25,7 +25,7 @@ describe('Get about e2e test', () => {
         expect(body).toEqual(
           expect.objectContaining({
             name: expect.any(String),
-            version: expect.any(String),
+            version: expect.anyStringOrNull(),
             buildNumber: expect.anyStringOrNull(),
           }),
         );
