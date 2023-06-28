@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { sample } from 'lodash';
 import configuration from '../../entities/configuration';
 
 export default (): ReturnType<typeof configuration> => ({
@@ -20,6 +21,9 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
   },
   httpClient: { requestTimeout: faker.number.int() },
+  log: {
+    level: sample(['error', 'warn', 'info', 'debug']) ?? 'debug',
+  },
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),
