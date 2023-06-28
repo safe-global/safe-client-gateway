@@ -51,17 +51,6 @@ export default () => ({
       process.env.EXCHANGE_API_CACHE_TTL_SECONDS ?? `${60 * 60 * 12}`,
     ),
   },
-  safeConfig: {
-    baseUri:
-      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
-  },
-  safeTransaction: {
-    useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
-  },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || '6379',
-  },
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
   },
@@ -71,5 +60,16 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
+  },
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || '6379',
+  },
+  safeConfig: {
+    baseUri:
+      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
+  },
+  safeTransaction: {
+    useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
 });
