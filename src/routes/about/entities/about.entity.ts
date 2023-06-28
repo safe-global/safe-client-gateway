@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class About {
   @ApiProperty()
   name: string;
-  @ApiProperty()
-  version: string;
-  @ApiProperty()
-  buildNumber: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  version: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  buildNumber: string | null;
 }

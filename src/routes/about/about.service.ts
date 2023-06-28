@@ -12,9 +12,9 @@ export class AboutService {
   getAbout(): About {
     return {
       name: this.configurationService.getOrThrow<string>('about.name'),
-      version: this.configurationService.getOrThrow<string>('about.version'),
+      version: this.configurationService.get<string>('about.version') ?? null,
       buildNumber:
-        this.configurationService.getOrThrow<string>('about.buildNumber'),
+        this.configurationService.get<string>('about.buildNumber') ?? null,
     };
   }
 }

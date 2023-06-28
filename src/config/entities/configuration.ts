@@ -1,42 +1,8 @@
-import * as child_process from 'child_process';
-
-/**
- * Returns the version number using the local git client.
- *
- * If git is not available or there is an error, returns null
- */
-function getVersion(): null | string {
-  try {
-    return child_process
-      .execSync('git describe --tags --abbrev=0')
-      .toString()
-      .trim();
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
- * Returns the build number using the local git client.
- *
- * If git is not available or there is an error, returns null
- */
-function getBuildNumber(): null | string {
-  try {
-    return child_process
-      .execSync('git rev-parse --short HEAD')
-      .toString()
-      .trim();
-  } catch (error) {
-    return null;
-  }
-}
-
 export default () => ({
   about: {
     name: 'safe-client-gateway',
-    version: getVersion(),
-    buildNumber: getBuildNumber(),
+    version: process.env.APPLICATION_VERSION,
+    buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
