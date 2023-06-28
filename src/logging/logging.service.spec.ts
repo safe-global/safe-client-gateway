@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { ClsService } from 'nestjs-cls';
 import * as winston from 'winston';
 import { RequestScopedLoggingService } from './logging.service';
+import { IConfigurationService } from '../config/configuration.service.interface';
 
 const mockClsService = jest.mocked({
   getId: jest.fn(),
@@ -11,8 +12,14 @@ const mockLogger = {
   log: jest.fn(),
 } as unknown as winston.Logger;
 
+const mockConfigurationService = jest.mocked({
+  get: jest.fn(),
+} as unknown as IConfigurationService);
+
 describe('RequestScopedLoggingService', () => {
   const systemTime: Date = faker.date.recent();
+  const buildNumber = faker.string.alphanumeric();
+  const version = faker.system.semver();
 
   let loggingService: RequestScopedLoggingService;
 
@@ -23,7 +30,18 @@ describe('RequestScopedLoggingService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConfigurationService.get.mockImplementation((key) => {
+      switch (key) {
+        case 'about.version':
+          return version;
+        case 'about.buildNumber':
+          return buildNumber;
+        default:
+          throw Error(`No value set for key ${key}`);
+      }
+    });
     loggingService = new RequestScopedLoggingService(
+      mockConfigurationService,
       mockLogger,
       mockClsService,
     );
@@ -39,8 +57,10 @@ describe('RequestScopedLoggingService', () => {
     expect(mockLogger.log).toHaveBeenCalledTimes(1);
     expect(mockLogger.log).toHaveBeenCalledWith('info', {
       message,
+      build_number: buildNumber,
       request_id: requestId,
       timestamp: systemTime.toISOString(),
+      version: version,
     });
   });
 
@@ -54,8 +74,10 @@ describe('RequestScopedLoggingService', () => {
     expect(mockLogger.log).toHaveBeenCalledTimes(1);
     expect(mockLogger.log).toHaveBeenCalledWith('error', {
       message,
+      build_number: buildNumber,
       request_id: requestId,
       timestamp: systemTime.toISOString(),
+      version: version,
     });
   });
 
@@ -69,8 +91,10 @@ describe('RequestScopedLoggingService', () => {
     expect(mockLogger.log).toHaveBeenCalledTimes(1);
     expect(mockLogger.log).toHaveBeenCalledWith('warn', {
       message,
+      build_number: buildNumber,
       request_id: requestId,
       timestamp: systemTime.toISOString(),
+      version: version,
     });
   });
 
@@ -84,8 +108,10 @@ describe('RequestScopedLoggingService', () => {
     expect(mockLogger.log).toHaveBeenCalledTimes(1);
     expect(mockLogger.log).toHaveBeenCalledWith('debug', {
       message,
+      build_number: buildNumber,
       request_id: requestId,
       timestamp: systemTime.toISOString(),
+      version: version,
     });
   });
 });
