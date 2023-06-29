@@ -9,9 +9,16 @@ import { IConfigurationService } from '../config/configuration.service.interface
  * Provides a new instance of a Winston logger using the provided {@link transports}
  *
  * @param transports - the logger transports to be used in the winston instance
+ * @param configurationService - the configuration service to retrieve service-level settings
  */
-function winstonFactory(transports: Transport[] | Transport): winston.Logger {
-  return winston.createLogger({ transports: transports });
+function winstonFactory(
+  transports: Transport[] | Transport,
+  configurationService: IConfigurationService,
+): winston.Logger {
+  return winston.createLogger({
+    transports: transports,
+    silent: configurationService.getOrThrow<boolean>('log.silent'),
+  });
 }
 
 const LoggerTransports = Symbol('LoggerTransports');
@@ -46,7 +53,7 @@ function winstonTransportsFactory(
     {
       provide: 'Logger',
       useFactory: winstonFactory,
-      inject: [LoggerTransports],
+      inject: [LoggerTransports, IConfigurationService],
     },
   ],
   exports: [LoggingService],

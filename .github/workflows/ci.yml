@@ -58,6 +58,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
+          LOG_SILENT: true
       - name: Coveralls Parallel
         continue-on-error: true
         uses: coverallsapp/github-action@v2.2.0
