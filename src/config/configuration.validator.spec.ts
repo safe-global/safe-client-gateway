@@ -18,7 +18,6 @@ describe('Configuration validator', () => {
   });
 
   it('should an invalid LOG_LEVEL configuration in production environment', () => {
-    process.env.NODE_ENV = 'production';
     expect(() =>
       validate({
         ...JSON.parse(fakeJson()),
