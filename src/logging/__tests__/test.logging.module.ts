@@ -1,18 +1,41 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Inject, Module } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '../logging.interface';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
-const loggingService: ILoggingService = {
-  info: console.log,
-  error: console.error,
-  warn: console.warn,
-  debug: console.debug,
-};
+class TestLoggingService implements ILoggingService {
+  private readonly isSilent: boolean;
 
-const mockLoggingService = jest.mocked(loggingService);
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isSilent = configurationService.getOrThrow<boolean>('log.silent');
+  }
+
+  debug(message: string | unknown): void {
+    if (this.isSilent) return;
+    console.debug(message);
+  }
+
+  error(message: string | unknown): void {
+    if (this.isSilent) return;
+    console.error(message);
+  }
+
+  info(message: string | unknown): void {
+    if (this.isSilent) return;
+    console.info(message);
+  }
+
+  warn(message: string | unknown): void {
+    if (this.isSilent) return;
+    console.warn(message);
+  }
+}
 
 @Global()
 @Module({
-  providers: [{ provide: LoggingService, useValue: mockLoggingService }],
+  providers: [{ provide: LoggingService, useClass: TestLoggingService }],
   exports: [LoggingService],
 })
 export class TestLoggingModule {}

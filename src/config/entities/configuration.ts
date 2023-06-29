@@ -29,6 +29,7 @@ export default () => ({
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',
+    silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

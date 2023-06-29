@@ -20,7 +20,10 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
   },
   httpClient: { requestTimeout: faker.number.int() },
-  log: { level: 'debug' },
+  log: {
+    level: 'debug',
+    silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+  },
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),
