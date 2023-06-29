@@ -10,11 +10,22 @@ describe('Configuration validator', () => {
     expect(validated).toBe(expected);
   });
 
-  it('should detect a malformed configuration in production environment', () => {
+  it('should detect missing mandatory configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
     expect(() => validate(JSON.parse(fakeJson()))).toThrow(
-      /Mandatory configuration is missing: .*AUTH_TOKEN.*EXCHANGE_API_KEY/,
+      /must have required property 'AUTH_TOKEN'.*must have required property 'EXCHANGE_API_KEY'/,
     );
+  });
+
+  it('should an invalid LOG_LEVEL configuration in production environment', () => {
+    expect(() =>
+      validate({
+        ...JSON.parse(fakeJson()),
+        AUTH_TOKEN: faker.string.uuid(),
+        EXCHANGE_API_KEY: faker.string.uuid(),
+        LOG_LEVEL: faker.word.words(),
+      }),
+    ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
   });
 
   it('should return the input configuration if validated in production environment', () => {

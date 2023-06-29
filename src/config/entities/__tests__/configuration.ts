@@ -20,6 +20,7 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
   },
   httpClient: { requestTimeout: faker.number.int() },
+  log: { level: 'debug' },
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),

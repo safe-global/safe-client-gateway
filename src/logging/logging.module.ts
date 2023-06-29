@@ -3,6 +3,7 @@ import { LoggingService } from './logging.interface';
 import { RequestScopedLoggingService } from './logging.service';
 import * as winston from 'winston';
 import * as Transport from 'winston-transport';
+import { IConfigurationService } from '../config/configuration.service.interface';
 
 /**
  * Provides a new instance of a Winston logger using the provided {@link transports}
@@ -19,9 +20,11 @@ const LoggerTransports = Symbol('LoggerTransports');
  * Factory which provides a collection of transports to be used by the
  * logger instance
  */
-function winstonTransportsFactory(): Transport[] | Transport {
+function winstonTransportsFactory(
+  configurationService: IConfigurationService,
+): Transport[] | Transport {
   return new winston.transports.Console({
-    level: 'debug',
+    level: configurationService.getOrThrow<string>('log.level'),
     format: winston.format.json(),
   });
 }
@@ -35,7 +38,11 @@ function winstonTransportsFactory(): Transport[] | Transport {
 @Module({
   providers: [
     { provide: LoggingService, useClass: RequestScopedLoggingService },
-    { provide: LoggerTransports, useFactory: winstonTransportsFactory },
+    {
+      provide: LoggerTransports,
+      useFactory: winstonTransportsFactory,
+      inject: [IConfigurationService],
+    },
     {
       provide: 'Logger',
       useFactory: winstonFactory,
