@@ -111,7 +111,7 @@ export class TransactionDataMapper {
     const { method, parameters } = dataDecoded;
     const promises: Promise<(AddressInfo | null)[] | AddressInfo | null>[] = [];
 
-    for (const parameter of parameters ?? []) {
+    for (const parameter of parameters) {
       if (
         method === MULTI_SEND_METHOD_NAME &&
         parameter.name === TRANSACTIONS_PARAMETER_NAME &&
@@ -148,7 +148,7 @@ export class TransactionDataMapper {
     if (!isArray(valueDecoded)) return [];
     const promises: Promise<AddressInfo | null>[] = [];
 
-    for (const transaction of valueDecoded as Array<any>) {
+    for (const transaction of valueDecoded) {
       promises.push(this._getIfValid(chainId, transaction.to));
       if (transaction?.dataDecoded?.parameters) {
         for (const param of transaction?.dataDecoded?.parameters) {
