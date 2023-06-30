@@ -3,8 +3,6 @@ import { RedisClientType } from 'redis';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../app.module';
-import { readFileSync } from 'fs';
-import { Contract } from '../entities/contract.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 import { TestAppProvider } from '../../../app.provider';
 
@@ -29,14 +27,85 @@ describe('Get contract e2e test', () => {
 
   it('GET /contracts/<address>', async () => {
     const contractAddress = '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4';
-    const expectedResponse: Contract = JSON.parse(
-      readFileSync(
-        'src/routes/contracts/__tests__/resources/contract-expected-response.json',
-        {
-          encoding: 'utf-8',
-        },
-      ),
-    );
+    const expectedResponse = {
+      address: '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4',
+      name: 'CreateCall',
+      displayName: '',
+      logoUri: null,
+      contractAbi: {
+        abi: [
+          {
+            name: 'ContractCreation',
+            type: 'event',
+            inputs: [
+              {
+                name: 'newContract',
+                type: 'address',
+                indexed: false,
+                internalType: 'address',
+              },
+            ],
+            anonymous: false,
+          },
+          {
+            name: 'performCreate',
+            type: 'function',
+            inputs: [
+              {
+                name: 'value',
+                type: 'uint256',
+                internalType: 'uint256',
+              },
+              {
+                name: 'deploymentData',
+                type: 'bytes',
+                internalType: 'bytes',
+              },
+            ],
+            outputs: [
+              {
+                name: 'newContract',
+                type: 'address',
+                internalType: 'address',
+              },
+            ],
+            stateMutability: 'nonpayable',
+          },
+          {
+            name: 'performCreate2',
+            type: 'function',
+            inputs: [
+              {
+                name: 'value',
+                type: 'uint256',
+                internalType: 'uint256',
+              },
+              {
+                name: 'deploymentData',
+                type: 'bytes',
+                internalType: 'bytes',
+              },
+              {
+                name: 'salt',
+                type: 'bytes32',
+                internalType: 'bytes32',
+              },
+            ],
+            outputs: [
+              {
+                name: 'newContract',
+                type: 'address',
+                internalType: 'address',
+              },
+            ],
+            stateMutability: 'nonpayable',
+          },
+        ],
+        description: 'CreateCall',
+        relevance: 100,
+      },
+      trustedForDelegateCall: false,
+    };
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/contracts/${contractAddress}`)

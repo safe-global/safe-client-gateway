@@ -58,6 +58,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
+          LOG_SILENT: true
       - name: Coveralls Parallel
         continue-on-error: true
         uses: coverallsapp/github-action@v2.2.0
@@ -82,6 +83,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: |
+          BUILD_NUMBER=${{ github.sha }}
+          echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
       - uses: docker/setup-qemu-action@v2.2.0
         with:
           platforms: arm64
@@ -96,6 +100,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            BUILD_NUMBER=${{ env.BUILD_NUMBER }}
+            VERSION=${{ github.ref_name }}
           tags: ${{ env.DOCKER_IMAGE_TAG }}
           # Use inline cache storage https://docs.docker.com/build/cache/backends/inline/
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_TAG }}

@@ -5,6 +5,10 @@ const configurationSchema: Schema = {
   properties: {
     AUTH_TOKEN: { type: 'string' },
     EXCHANGE_API_KEY: { type: 'string' },
+    LOG_LEVEL: {
+      type: 'string',
+      enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
+    },
   },
   required: ['AUTH_TOKEN', 'EXCHANGE_API_KEY'],
 };
@@ -15,8 +19,10 @@ export function validate(
   if (process.env.NODE_ENV !== 'test') {
     const ajv = new Ajv({ allErrors: true });
     if (!ajv.validate(configurationSchema, configuration)) {
-      const errors = ajv.errors?.map((error) => error.message)?.join(', ');
-      throw Error(`Mandatory configuration is missing: ${errors}`);
+      const errors = ajv.errors
+        ?.map((error) => `${error.instancePath} ${error.message}`)
+        ?.join(', ');
+      throw Error(`Configuration is invalid: ${errors}`);
     }
   }
   return configuration;

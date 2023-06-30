@@ -16,6 +16,13 @@ RUN yarn run build
 #
 FROM node:18.16-alpine as production
 USER node
+
+ARG VERSION
+ARG BUILD_NUMBER
+
+ENV APPLICATION_VERSION=${VERSION} \
+    APPLICATION_BUILD_NUMBER=${BUILD_NUMBER}
+
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 CMD [ "node", "dist/main.js" ]
