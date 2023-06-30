@@ -5,10 +5,7 @@ import { omit } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
@@ -25,10 +22,12 @@ import { EstimationsModule } from './estimations.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -49,6 +48,7 @@ describe('Estimations Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -64,7 +64,7 @@ describe('Estimations Controller (Unit)', () => {
       const safe = safeBuilder().build();
       const estimation = estimationBuilder().build();
       const lastTransaction = multisigTransactionBuilder().build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
         const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -84,7 +84,7 @@ describe('Estimations Controller (Unit)', () => {
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      mockNetworkService.post.mockImplementation((url) => {
+      networkService.post.mockImplementation((url) => {
         const estimationsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/estimations/`;
         return url === estimationsUrl
           ? Promise.resolve({ data: estimation })
@@ -138,7 +138,7 @@ describe('Estimations Controller (Unit)', () => {
     const lastTransaction = multisigTransactionBuilder()
       .with('nonce', faker.number.int({ min: 51 }))
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
@@ -158,7 +158,7 @@ describe('Estimations Controller (Unit)', () => {
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })
@@ -190,7 +190,7 @@ describe('Estimations Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().with('nonce', faker.number.int()).build();
     const estimation = estimationBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
@@ -207,7 +207,7 @@ describe('Estimations Controller (Unit)', () => {
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })
@@ -242,7 +242,7 @@ describe('Estimations Controller (Unit)', () => {
     const lastTransaction = multisigTransactionBuilder()
       .with('nonce', faker.number.int({ max: safe.nonce }))
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
@@ -262,7 +262,7 @@ describe('Estimations Controller (Unit)', () => {
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation })

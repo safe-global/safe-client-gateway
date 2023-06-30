@@ -4,10 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
@@ -27,10 +24,12 @@ import { TransactionsModule } from '../../transactions.module';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -51,6 +50,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -82,7 +82,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
     const contractResponse = contractBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -97,7 +97,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse });
@@ -147,7 +147,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -162,7 +162,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse });
@@ -211,7 +211,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -226,7 +226,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.reject({ error: 'Data cannot be decoded' });
@@ -290,7 +290,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const contractResponse = contractBuilder()
       .with('trustedForDelegateCall', true)
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -305,7 +305,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse });

@@ -1,10 +1,7 @@
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DomainModule } from '../../domain.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { INestApplication } from '@nestjs/common';
 import { CollectiblesModule } from './collectibles.module';
 import * as request from 'supertest';
@@ -27,10 +24,12 @@ import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -51,6 +50,7 @@ describe('Collectibles Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -76,7 +76,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -119,7 +119,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -136,7 +136,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
           limit: 10,
           offset: 20,
@@ -163,7 +163,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -180,7 +180,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,
@@ -197,7 +197,7 @@ describe('Collectibles Controller (Unit)', () => {
       const transactionServiceError = new NetworkResponseError(400, {
         message: 'some collectibles error',
       });
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -222,7 +222,7 @@ describe('Collectibles Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkRequestError({});
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });

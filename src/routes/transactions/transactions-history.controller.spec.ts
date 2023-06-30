@@ -7,10 +7,7 @@ import { ConfigurationModule } from '../../config/configuration.module';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import configuration from '../../config/entities/__tests__/configuration';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  TestNetworkModule,
-  mockNetworkService,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import {
@@ -46,10 +43,12 @@ import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ValidationModule } from '../../validation/validation.module';
 import { TransactionsModule } from './transactions.module';
 import { Transfer } from '../../domain/safe/entities/transfer.entity';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -70,6 +69,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -82,7 +82,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       if (url === getChainUrl) {
         return Promise.reject({ status: 500 });
@@ -103,7 +103,7 @@ describe('Transactions History Controller (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       if (url === getChainUrl) {
@@ -136,7 +136,7 @@ describe('Transactions History Controller (Unit)', () => {
       results: [],
     };
     const creationTransaction = creationTransactionBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -218,7 +218,7 @@ describe('Transactions History Controller (Unit)', () => {
       previous: null,
       results: [moduleTransaction, multisigTransaction, incomingTransaction],
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -273,7 +273,7 @@ describe('Transactions History Controller (Unit)', () => {
       previous: null,
       results: [moduleTransaction],
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -366,7 +366,7 @@ describe('Transactions History Controller (Unit)', () => {
       .with('type', TokenType.Erc20)
       .with('address', multisigTransaction.to)
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -513,7 +513,7 @@ describe('Transactions History Controller (Unit)', () => {
     const creationTransaction = creationTransactionBuilder()
       .with('created', new Date(moduleTransaction.executionDate))
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -586,7 +586,7 @@ describe('Transactions History Controller (Unit)', () => {
       previous: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=6&queued=true&trusted=true`,
       results: [moduleTransaction],
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -612,11 +612,11 @@ describe('Transactions History Controller (Unit)', () => {
         expect(body.previous).toContain(clientPreviousCursor);
       });
 
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledWith(
       `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`,
       {
         params: {
