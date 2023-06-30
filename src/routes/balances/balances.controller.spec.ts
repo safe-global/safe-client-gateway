@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
@@ -20,11 +17,13 @@ import { faker } from '@faker-js/faker';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
   let exchangeUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -46,6 +45,7 @@ describe('Balances Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     exchangeUrl = configurationService.get('exchange.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -65,7 +65,7 @@ describe('Balances Controller (Unit)', () => {
         .with('rates', { USD: 2.0 })
         .build();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
         } else if (
@@ -106,19 +106,17 @@ describe('Balances Controller (Unit)', () => {
         });
 
       // 3 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API
-      expect(mockNetworkService.get.mock.calls.length).toBe(3);
-      expect(mockNetworkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls.length).toBe(3);
+      expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(mockNetworkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0]).toBe(
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
       );
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: { trusted: undefined, exclude_spam: undefined },
       });
-      expect(mockNetworkService.get.mock.calls[2][0]).toBe(
-        `${exchangeUrl}/latest`,
-      );
+      expect(networkService.get.mock.calls[2][0]).toBe(`${exchangeUrl}/latest`);
     });
 
     it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
@@ -130,7 +128,7 @@ describe('Balances Controller (Unit)', () => {
       const excludeSpam = true;
       const trusted = true;
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse });
         } else if (
@@ -154,7 +152,7 @@ describe('Balances Controller (Unit)', () => {
         .expect(200);
 
       // trusted and exclude_spam params are passed
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
           trusted: trusted.toString(),
           exclude_spam: excludeSpam.toString(),
@@ -172,7 +170,7 @@ describe('Balances Controller (Unit)', () => {
         .with('rates', { USD: 2.0 })
         .build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: chain });
         } else if (
@@ -217,7 +215,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = '0x0000000000000000000000000000000000000001';
-        mockNetworkService.get.mockImplementation(() =>
+        networkService.get.mockImplementation(() =>
           Promise.reject({ status: 500 }),
         );
 
@@ -229,7 +227,7 @@ describe('Balances Controller (Unit)', () => {
             code: 500,
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls.length).toBe(1);
       });
     });
 
@@ -239,7 +237,7 @@ describe('Balances Controller (Unit)', () => {
         const safeAddress = '0x0000000000000000000000000000000000000001';
         const transactionApiBalancesResponse = [balanceBuilder().build()];
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -264,7 +262,7 @@ describe('Balances Controller (Unit)', () => {
             code: 503,
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
 
       it(`No rates returned`, async () => {
@@ -273,7 +271,7 @@ describe('Balances Controller (Unit)', () => {
         const transactionApiBalancesResponse = [balanceBuilder().build()];
         const exchangeApiResponse = { success: true, base: 'USD' }; // no rates
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -299,7 +297,7 @@ describe('Balances Controller (Unit)', () => {
             arguments: [],
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
 
       it(`from-rate missing`, async () => {
@@ -311,7 +309,7 @@ describe('Balances Controller (Unit)', () => {
           .with('rates', { XYZ: 2 })
           .build(); // Returns different rate than USD
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -337,7 +335,7 @@ describe('Balances Controller (Unit)', () => {
             error: 'Internal Server Error',
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
 
       it(`from-rate is 0`, async () => {
@@ -349,7 +347,7 @@ describe('Balances Controller (Unit)', () => {
           .with('rates', { USD: 0 }) // rate is zero
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -375,7 +373,7 @@ describe('Balances Controller (Unit)', () => {
             error: 'Internal Server Error',
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
 
       it(`to-rate missing`, async () => {
@@ -388,7 +386,7 @@ describe('Balances Controller (Unit)', () => {
           .with('rates', { USD: 2 }) // Returns different rate than XYZ
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -414,7 +412,7 @@ describe('Balances Controller (Unit)', () => {
             error: 'Internal Server Error',
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
     });
 
@@ -427,7 +425,7 @@ describe('Balances Controller (Unit)', () => {
           .with('rates', { USD: 2.0 })
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -450,7 +448,7 @@ describe('Balances Controller (Unit)', () => {
             code: 500,
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(2);
+        expect(networkService.get.mock.calls.length).toBe(2);
       });
 
       it(`500 error if validation fails`, async () => {
@@ -461,7 +459,7 @@ describe('Balances Controller (Unit)', () => {
           .with('rates', { USD: 2.0 })
           .build();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
-        mockNetworkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse });
           } else if (
@@ -485,7 +483,7 @@ describe('Balances Controller (Unit)', () => {
             arguments: [],
           });
 
-        expect(mockNetworkService.get.mock.calls.length).toBe(2);
+        expect(networkService.get.mock.calls.length).toBe(2);
       });
     });
   });
@@ -502,7 +500,7 @@ describe('Balances Controller (Unit)', () => {
           ALL: 'Albanian Lek',
         })
         .build();
-      mockNetworkService.get.mockResolvedValueOnce({ data: fiatCodes });
+      networkService.get.mockResolvedValueOnce({ data: fiatCodes });
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
@@ -511,7 +509,7 @@ describe('Balances Controller (Unit)', () => {
     });
 
     it('Failure getting fiat currencies data', async () => {
-      mockNetworkService.get.mockRejectedValueOnce(new Error());
+      networkService.get.mockRejectedValueOnce(new Error());
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')

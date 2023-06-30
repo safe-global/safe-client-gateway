@@ -7,10 +7,7 @@ import { ConfigurationModule } from '../../../../config/configuration.module';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
@@ -32,10 +29,12 @@ import { TokenType } from '../../../../domain/tokens/entities/token.entity';
 import { TestLoggingModule } from '../../../../logging/__tests__/test.logging.module';
 import { ValidationModule } from '../../../../validation/validation.module';
 import { TransactionsModule } from '../../transactions.module';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('List incoming transfers by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -56,6 +55,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -68,7 +68,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    mockNetworkService.get.mockRejectedValueOnce({
+    networkService.get.mockRejectedValueOnce({
       status: 500,
     });
 
@@ -80,8 +80,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(1);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(1);
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -93,8 +93,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     const limit = faker.number.int({ min: 0, max: 100 });
     const offset = faker.number.int({ min: 0, max: 100 });
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockRejectedValueOnce({
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockRejectedValueOnce({
       status: 500,
     });
 
@@ -108,12 +108,12 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(2);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(2);
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledWith(
       `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`,
       expect.objectContaining({
         params: expect.objectContaining({ offset, limit }),
@@ -125,8 +125,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockResolvedValueOnce({
       data: { results: ['invalidData'] },
     });
 
@@ -154,7 +154,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('type', TokenType.Erc20)
       .with('address', erc20Transfer.tokenAddress)
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -233,7 +233,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('type', TokenType.Erc721)
       .with('address', erc721Transfer.tokenAddress)
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -306,7 +306,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('value', faker.number.int({ min: 1 }).toString())
       .with('transferId', 'e1015fc690')
       .build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;

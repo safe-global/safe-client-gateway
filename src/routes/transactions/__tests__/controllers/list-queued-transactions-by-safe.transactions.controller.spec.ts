@@ -4,10 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
@@ -24,10 +21,12 @@ import { TransactionsModule } from '../../transactions.module';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -48,6 +47,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -130,7 +130,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       ) as MultisigTransaction,
     ];
 
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
@@ -323,7 +323,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .build(),
       ) as MultisigTransaction,
     ];
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;

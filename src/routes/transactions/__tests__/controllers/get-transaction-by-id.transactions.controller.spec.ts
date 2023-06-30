@@ -4,10 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
@@ -35,10 +32,12 @@ import { TransactionsModule } from '../../transactions.module';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -59,6 +58,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -71,7 +71,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const id = `module_${faker.string.uuid()}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       if (url === getChainUrl) {
         return Promise.reject({ status: 500 });
       }
@@ -86,8 +86,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(2);
-    expect(mockNetworkService.get).toBeCalledWith(getChainUrl, undefined);
+    expect(networkService.get).toBeCalledTimes(2);
+    expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
   });
 
   it('Failure: Transaction API fails', async () => {
@@ -96,7 +96,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const moduleTransactionId = faker.string.uuid();
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -117,9 +117,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(4);
-    expect(mockNetworkService.get).toBeCalledWith(getChainUrl, undefined);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(4);
+    expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
+    expect(networkService.get).toBeCalledWith(
       getModuleTransactionUrl,
       undefined,
     );
@@ -133,7 +133,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -177,7 +177,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
     const getContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.to}`;
     const getModuleContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.module}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -244,7 +244,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -283,7 +283,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${transferId}`;
     const getFromContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.from}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.to}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -339,7 +339,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${txHash}/`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -415,7 +415,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -582,7 +582,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });
@@ -749,7 +749,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain });

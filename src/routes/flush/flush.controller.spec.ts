@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
@@ -22,12 +19,14 @@ import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { FakeCacheService } from '../../datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '../../datasources/cache/cache.service.interface';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Flush Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
   let authToken;
   let fakeCacheService: FakeCacheService;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -53,6 +52,7 @@ describe('Flush Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     authToken = configurationService.get('auth.token');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -79,7 +79,7 @@ describe('Flush Controller (Unit)', () => {
       chainBuilder().with('chainId', '1').build(),
       chainBuilder().with('chainId', '2').build(),
     ];
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains`:
           return Promise.resolve({

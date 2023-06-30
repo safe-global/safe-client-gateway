@@ -4,10 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
@@ -26,10 +23,12 @@ import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -50,6 +49,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -81,7 +81,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();
     const gasToken = tokenBuilder().build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -111,7 +111,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       switch (url) {
         case proposeTransactionUrl:

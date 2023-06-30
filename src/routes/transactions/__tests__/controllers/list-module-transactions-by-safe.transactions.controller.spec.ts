@@ -4,10 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '../../../../app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import {
@@ -21,10 +18,12 @@ import { TransactionsModule } from '../../transactions.module';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('List module transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -45,6 +44,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -57,7 +57,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    mockNetworkService.get.mockRejectedValueOnce({
+    networkService.get.mockRejectedValueOnce({
       status: 500,
     });
 
@@ -69,8 +69,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(1);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(1);
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -80,8 +80,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockRejectedValueOnce({
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockRejectedValueOnce({
       status: 500,
     });
 
@@ -93,8 +93,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 500,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(2);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(2);
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -104,9 +104,9 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({ data: { results: [] } });
-    mockNetworkService.get.mockRejectedValueOnce({
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockResolvedValueOnce({ data: { results: [] } });
+    networkService.get.mockRejectedValueOnce({
       status: 404,
     });
 
@@ -118,8 +118,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 404,
       });
 
-    expect(mockNetworkService.get).toBeCalledTimes(3);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(networkService.get).toBeCalledTimes(3);
+    expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -140,9 +140,9 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     };
 
     const safe = safeBuilder().build();
-    mockNetworkService.get.mockResolvedValueOnce({ data: chainResponse });
-    mockNetworkService.get.mockResolvedValueOnce({ data: moduleTransaction });
-    mockNetworkService.get.mockResolvedValueOnce({ data: safe });
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockResolvedValueOnce({ data: moduleTransaction });
+    networkService.get.mockResolvedValueOnce({ data: safe });
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
