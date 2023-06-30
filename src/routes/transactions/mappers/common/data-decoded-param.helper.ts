@@ -73,7 +73,7 @@ export class DataDecodedParamHelper {
     return dataDecoded.parameters.some(
       (param) =>
         isArray(param.valueDecoded) &&
-        param.valueDecoded.some(
+        param.valueDecoded?.some(
           (innerParam) => innerParam?.operation === DELEGATE_OPERATION,
         ),
     );
