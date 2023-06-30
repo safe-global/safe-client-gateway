@@ -91,5 +91,5 @@
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",
-  "packageManager": "yarn@3.4.1"
+  "packageManager": "yarn@3.5.0"
 }
