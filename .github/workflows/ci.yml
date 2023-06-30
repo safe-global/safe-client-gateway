@@ -111,7 +111,7 @@ jobs:
           cache-to: type=inline
 
   tag-publish:
-    # if: (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/'))
+    if: (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/'))
     needs: [ prettier, es-lint, tests-finish ]
     runs-on: ubuntu-latest
     env:
@@ -143,7 +143,7 @@ jobs:
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
             VERSION=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-to: type=inline
 
   autodeploy:
