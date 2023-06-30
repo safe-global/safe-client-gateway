@@ -5,15 +5,16 @@ import * as request from 'supertest';
 import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { OwnersModule } from './owners.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { NetworkService } from '../../datasources/network/network.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -24,18 +25,17 @@ describe('Owners Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        OwnersModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');

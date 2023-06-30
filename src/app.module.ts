@@ -35,6 +35,9 @@ import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logge
 import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
 import configuration from './config/entities/configuration';
 
+// See https://github.com/nestjs/nest/issues/11967
+export const configurationModule = ConfigurationModule.register(configuration);
+
 @Module({
   imports: [
     // features
@@ -65,7 +68,7 @@ import configuration from './config/entities/configuration';
         idGenerator: () => uuidv4(),
       },
     }),
-    ConfigurationModule.register(configuration),
+    configurationModule,
     DomainModule,
     NetworkModule,
     RequestScopedLoggingModule,

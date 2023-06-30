@@ -7,16 +7,17 @@ import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { registerDeviceDtoBuilder } from './entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from './entities/__tests__/safe-registration.builder';
-import { NotificationsModule } from './notifications.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
 import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Notifications Controller (Unit)', () => {
@@ -28,18 +29,17 @@ describe('Notifications Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        NotificationsModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
