@@ -115,13 +115,14 @@ jobs:
     needs: [ prettier, es-lint, tests-finish ]
     runs-on: ubuntu-latest
     env:
+      IMAGE_CACHE_SOURCE: staging
       IMAGE_REGISTRY: safeglobal
       IMAGE_NAME: safe-client-gateway-nest
     steps:
       - uses: actions/checkout@v3
       - name: Extract commit metadata
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
       - run: |
@@ -143,7 +144,7 @@ jobs:
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
             VERSION=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_CACHE_SOURCE }}
           cache-to: type=inline
 
   autodeploy:
