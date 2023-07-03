@@ -111,7 +111,7 @@ jobs:
           cache-to: type=inline
 
   docker-publish-release:
-    if: (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/'))
+    if: (github.event_name == 'release' && github.event.action == 'released')
     needs: [ prettier, es-lint, tests-finish ]
     runs-on: ubuntu-latest
     env:
