@@ -3,6 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/5afe/safe-client-gateway-nest/badge.svg?branch=main)](https://coveralls.io/github/5afe/safe-client-gateway-nest?branch=main)
 
 ## Requirements
+
 - Node 18.16.0 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
@@ -44,4 +45,16 @@ yarn run test:e2e
 
 # test coverage
 yarn run test:cov
+```
+
+## Linter and Style Guide
+
+We use [ESLint](https://eslint.org/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
+You can run `yarn run lint` to execute ESLint and `yarn run format` to execute Prettier.
+
+These checks can be automatically executed using Git hooks. If you wish to install the provided git hooks:
+
+```shell
+yarn install
+yarn husky install
 ```
