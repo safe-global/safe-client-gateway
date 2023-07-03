@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../../../app.provider';
+import { TestAppProvider } from '../../../../__tests__/test-app.provider';
 import { ConfigurationModule } from '../../../../config/configuration.module';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 import configuration from '../../../../config/entities/__tests__/configuration';

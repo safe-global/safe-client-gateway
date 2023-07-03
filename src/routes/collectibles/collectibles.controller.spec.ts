@@ -18,7 +18,7 @@ import {
   pageBuilder,
 } from '../../domain/entities/__tests__/page.builder';
 import { PaginationData } from '../common/pagination/pagination.data';
-import { TestAppProvider } from '../../app.provider';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '../../config/configuration.module';

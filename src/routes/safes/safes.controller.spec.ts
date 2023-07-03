@@ -27,7 +27,7 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
-import { TestAppProvider } from '../../app.provider';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '../../config/configuration.module';

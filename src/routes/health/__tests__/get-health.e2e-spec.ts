@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
-import { TestAppProvider } from '../../../app.provider';
+import { TestAppProvider } from '../../../__tests__/test-app.provider';
 
 describe('Get health e2e test', () => {
   let app: INestApplication;

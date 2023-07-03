@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../app.provider';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../domain.module';
