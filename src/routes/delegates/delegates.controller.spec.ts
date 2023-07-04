@@ -3,49 +3,49 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { omit } from 'lodash';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../app.provider';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '../../domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { DelegatesModule } from './delegates.module';
 import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';
 import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate.dto.builder';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { NetworkService } from '../../datasources/network/network.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        DelegatesModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -64,7 +64,7 @@ describe('Delegates controller', () => {
           delegateBuilder().with('safe', safe).build(),
         ])
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: chain });
         }
@@ -92,7 +92,7 @@ describe('Delegates controller', () => {
           { ...delegateBuilder().with('safe', safe).build(), label: true },
         ])
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: chain });
         }
@@ -121,7 +121,7 @@ describe('Delegates controller', () => {
         .with('previous', null)
         .with('results', [])
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: chain });
         }
@@ -151,12 +151,12 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url === `${chain.transactionService}/api/v1/delegates/`
           ? Promise.resolve({ status: 201 })
           : Promise.reject(`No matching rule for url: ${url}`),
@@ -182,12 +182,12 @@ describe('Delegates controller', () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       createDelegateDto.safe = undefined;
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url === `${chain.transactionService}/api/v1/delegates/`
           ? Promise.resolve({ status: 201 })
           : Promise.reject(`No matching rule for url: ${url}`),
@@ -202,12 +202,12 @@ describe('Delegates controller', () => {
     it('Should return the tx-service error message', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url === `${chain.transactionService}/api/v1/delegates/`
           ? Promise.reject({
               data: { message: 'Malformed body', status: 400 },
@@ -229,12 +229,12 @@ describe('Delegates controller', () => {
     it('Should fail with An error occurred', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url === `${chain.transactionService}/api/v1/delegates/`
           ? Promise.reject({ status: 503 })
           : Promise.reject(`No matching rule for url: ${url}`),
@@ -255,12 +255,12 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`
           ? Promise.resolve({ data: {}, status: 204 })
@@ -278,12 +278,12 @@ describe('Delegates controller', () => {
     it('Should return the tx-service error message', async () => {
       const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`
           ? Promise.reject({
@@ -308,12 +308,12 @@ describe('Delegates controller', () => {
     it('Should fail with An error occurred', async () => {
       const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`
           ? Promise.reject({ status: 503 })
@@ -350,12 +350,12 @@ describe('Delegates controller', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
       const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`
           ? Promise.resolve({ data: {}, status: 204 })
@@ -373,12 +373,12 @@ describe('Delegates controller', () => {
     it('Should return errors from provider', async () => {
       const chain = chainBuilder().build();
       const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`
           ? Promise.reject({

@@ -1,12 +1,7 @@
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DomainModule } from '../../domain.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { INestApplication } from '@nestjs/common';
-import { CollectiblesModule } from './collectibles.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
@@ -21,36 +16,41 @@ import {
   pageBuilder,
 } from '../../domain/entities/__tests__/page.builder';
 import { PaginationData } from '../common/pagination/pagination.data';
-import { TestAppProvider } from '../../app.provider';
-import { ValidationModule } from '../../validation/validation.module';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        CollectiblesModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -76,7 +76,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -119,7 +119,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -136,7 +136,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
           limit: 10,
           offset: 20,
@@ -163,7 +163,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -180,7 +180,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(mockNetworkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,
@@ -197,7 +197,7 @@ describe('Collectibles Controller (Unit)', () => {
       const transactionServiceError = new NetworkResponseError(400, {
         message: 'some collectibles error',
       });
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });
@@ -222,7 +222,7 @@ describe('Collectibles Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceError = new NetworkRequestError({});
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse });

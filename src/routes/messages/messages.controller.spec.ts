@@ -3,13 +3,9 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { random, range } from 'lodash';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../app.provider';
+import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
 import { messageConfirmationBuilder } from '../../domain/messages/entities/__tests__/message-confirmation.builder';
@@ -19,39 +15,43 @@ import {
 } from '../../domain/messages/entities/__tests__/message.builder';
 import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
 import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { MessageStatus } from './entities/message.entity';
 import { createMessageDtoBuilder } from './entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from './entities/__tests__/update-message-signature.dto.builder';
-import { MessagesModule } from './messages.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Messages controller', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        MessagesModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -73,7 +73,7 @@ describe('Messages controller', () => {
           faker.number.int({ max: messageConfirmations.length }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -134,7 +134,7 @@ describe('Messages controller', () => {
           faker.number.int({ max: messageConfirmations.length }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -194,7 +194,7 @@ describe('Messages controller', () => {
           faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -255,7 +255,7 @@ describe('Messages controller', () => {
           faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -315,7 +315,7 @@ describe('Messages controller', () => {
           faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -375,7 +375,7 @@ describe('Messages controller', () => {
           faker.number.int({ min: messageConfirmations.length + 1 }),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -442,7 +442,7 @@ describe('Messages controller', () => {
         .with('count', 1)
         .with('results', [messageToJson(message)])
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -526,7 +526,7 @@ describe('Messages controller', () => {
           messages.map((m) => messageToJson(m)),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -625,7 +625,7 @@ describe('Messages controller', () => {
           messages.map((m) => messageToJson(m)),
         )
         .build();
-      mockNetworkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
@@ -688,12 +688,12 @@ describe('Messages controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const message = messageBuilder().build();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
           ? Promise.resolve({ data: messageToJson(message) })
@@ -711,12 +711,12 @@ describe('Messages controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const errorMessage = faker.word.words();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
           ? Promise.reject({
@@ -764,12 +764,12 @@ describe('Messages controller', () => {
       const expectedResponse = {
         data: { signature: faker.string.hexadecimal() },
       };
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
           ? Promise.resolve(expectedResponse)
@@ -792,12 +792,12 @@ describe('Messages controller', () => {
         .with('created', faker.date.recent())
         .build();
       const errorMessage = faker.word.words();
-      mockNetworkService.get.mockImplementation((url) =>
+      networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      mockNetworkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
           ? Promise.reject({

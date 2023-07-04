@@ -2,12 +2,9 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../../../app.provider';
+import { TestAppProvider } from '../../../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
 import { DomainModule } from '../../../../domain.module';
 import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
@@ -27,10 +24,12 @@ import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
+import { NetworkService } from '../../../../datasources/network/network.service.interface';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -51,6 +50,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -88,7 +88,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         .build(),
     ];
     const replacementTxsPage = pageBuilder().with('results', []).build();
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -120,7 +120,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    mockNetworkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation((url) => {
       const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       switch (url) {
         case postConfirmationUrl:

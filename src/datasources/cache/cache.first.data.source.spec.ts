@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { ILoggingService } from '../../logging/logging.interface';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
-import { mockNetworkService } from '../network/__tests__/test.network.module';
 import { CacheFirstDataSource } from './cache.first.data.source';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
 import { FakeCacheService } from './__tests__/fake.cache.service';
 import { fakeJson } from '../../__tests__/faker';
+import { INetworkService } from '../network/network.service.interface';
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -14,6 +14,12 @@ const mockLoggingService = {
   error: jest.fn(),
   warn: jest.fn(),
 } as unknown as ILoggingService;
+
+const networkService = {
+  get: jest.fn(),
+} as unknown as INetworkService;
+
+const mockNetworkService = jest.mocked(networkService);
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;

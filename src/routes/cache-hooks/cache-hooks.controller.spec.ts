@@ -3,50 +3,50 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import {
-  mockNetworkService,
-  TestNetworkModule,
-} from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
+import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { CacheHooksModule } from './cache-hooks.module';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { CacheDir } from '../../datasources/cache/entities/cache-dir.entity';
 import { FakeCacheService } from '../../datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '../../datasources/cache/cache.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
+import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
   let authToken;
   let safeConfigUrl;
   let fakeCacheService: FakeCacheService;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        CacheHooksModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
     app = moduleFixture.createNestApplication();
 
     fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
     const configurationService = moduleFixture.get(IConfigurationService);
     authToken = configurationService.get('auth.token');
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    networkService = moduleFixture.get(NetworkService);
 
     await app.init();
   });
@@ -109,7 +109,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -132,7 +132,7 @@ describe('Post Hook Events (Unit)', () => {
       type: 'SOME_TEST_TYPE_THAT_WE_DO_NOT_SUPPORT',
       safeTxHash: 'some-safe-tx-hash',
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/1`:
           return Promise.resolve({
@@ -184,7 +184,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -232,7 +232,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -280,7 +280,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -319,7 +319,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -368,7 +368,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -417,7 +417,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -461,7 +461,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -500,7 +500,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -564,7 +564,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    mockNetworkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
