@@ -19,7 +19,7 @@ class TestController {
   }
 
   @Get('non-http-exception')
-  async bar() {
+  async nonHttpException() {
     throw new Error('Some random error');
   }
 }
