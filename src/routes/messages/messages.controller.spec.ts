@@ -420,6 +420,31 @@ describe('Messages controller', () => {
   });
 
   describe('Get messages by Safe address', () => {
+    it('Failure: data page validation fails', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const page = pageBuilder().with('results', []).build();
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: { ...page, previous: faker.number.int() },
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(500)
+        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+    });
+
     it('should get a message with a date label', async () => {
       const chain = chainBuilder().build();
       const messageConfirmations = range(random(2, 5)).map(() =>

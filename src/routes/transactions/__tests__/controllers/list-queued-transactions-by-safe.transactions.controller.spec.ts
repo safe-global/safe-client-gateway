@@ -22,6 +22,7 @@ import { ConfigurationModule } from '../../../../config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 import { NetworkService } from '../../../../datasources/network/network.service.interface';
+import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -55,6 +56,39 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   afterAll(async () => {
     await app.close();
+  });
+
+  it('Failure: data page validation fails', async () => {
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const page = pageBuilder().build();
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chain });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: { ...page, count: faker.word.words() },
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safe.address}/transactions/queued`)
+      .expect(500)
+      .expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
   });
 
   it('should get a transactions queue with labels and conflict headers', async () => {

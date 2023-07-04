@@ -63,9 +63,7 @@ export class SafeRepository implements ISafeRepository {
       limit,
       offset,
     );
-    page.results.map((transfer) => this.transferValidator.validate(transfer));
-
-    return page;
+    return this.transferValidator.validatePage(page);
   }
 
   async clearCollectibleTransfers(
@@ -101,9 +99,7 @@ export class SafeRepository implements ISafeRepository {
       limit,
       offset,
     );
-    page.results.map((transfer) => this.transferValidator.validate(transfer));
-
-    return page;
+    return this.transferValidator.validatePage(page);
   }
 
   async clearIncomingTransfers(
@@ -159,11 +155,7 @@ export class SafeRepository implements ISafeRepository {
       limit,
       offset,
     );
-    page.results.map((moduleTransaction) =>
-      this.moduleTransactionValidator.validate(moduleTransaction),
-    );
-
-    return page;
+    return this.moduleTransactionValidator.validatePage(page);
   }
 
   async clearModuleTransactions(
@@ -224,12 +216,7 @@ export class SafeRepository implements ISafeRepository {
         limit,
         offset,
       );
-
-    page.results.map((multisigTransaction) =>
-      this.multisigTransactionValidator.validate(multisigTransaction),
-    );
-
-    return page;
+    return this.multisigTransactionValidator.validatePage(page);
   }
 
   async getCreationTransaction(
@@ -291,12 +278,7 @@ export class SafeRepository implements ISafeRepository {
       limit,
       offset,
     );
-
-    page.results.map((transaction) =>
-      this.transactionTypeValidator.validate(transaction),
-    );
-
-    return page;
+    return this.transactionTypeValidator.validatePage(page);
   }
 
   async clearAllExecutedTransactions(
@@ -370,11 +352,7 @@ export class SafeRepository implements ISafeRepository {
       offset,
     );
 
-    page.results.map((multiSigTransaction) =>
-      this.multisigTransactionValidator.validate(multiSigTransaction),
-    );
-
-    return page;
+    return this.multisigTransactionValidator.validatePage(page);
   }
 
   async getTransfer(chainId: string, transferId: string): Promise<Transfer> {
