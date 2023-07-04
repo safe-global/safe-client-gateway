@@ -6,7 +6,6 @@ import { TestAppProvider } from '../../__tests__/test-app.provider';
 import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
 import { NetworkResponseError } from '../../datasources/network/entities/network.error.entity';
 import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../domain.module';
 import { Backbone } from '../../domain/backbone/entities/backbone.entity';
 import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
 import { Chain } from '../../domain/chains/entities/chain.entity';
@@ -14,14 +13,16 @@ import { MasterCopy as DomainMasterCopy } from '../../domain/chains/entities/mas
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { masterCopyBuilder } from '../../domain/chains/entities/__tests__/master-copy.builder';
 import { Page } from '../../domain/entities/page.entity';
-import { ValidationModule } from '../../validation/validation.module';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { PaginationData } from '../common/pagination/pagination.data';
-import { ChainsModule } from './chains.module';
 import { MasterCopy } from './entities/master-copy.entity';
 import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { AppModule, configurationModule } from '../../app.module';
+import { CacheModule } from '../../datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '../../logging/logging.module';
+import { NetworkModule } from '../../datasources/network/network.module';
 import { NetworkService } from '../../datasources/network/network.service.interface';
 
 describe('Chains Controller (Unit)', () => {
@@ -47,18 +48,17 @@ describe('Chains Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        ChainsModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule],
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
