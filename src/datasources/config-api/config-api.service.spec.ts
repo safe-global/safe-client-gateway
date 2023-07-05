@@ -173,4 +173,12 @@ describe('ConfigApi', () => {
     expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
     expect(mockCacheService.deleteByKeyPattern).toBeCalledTimes(1);
   });
+
+  it('clear safe apps should trigger delete on cache service', async () => {
+    await service.clearSafeApps();
+
+    expect(mockCacheService.deleteByKeyPattern).toBeCalledWith('*_safe_apps$');
+    expect(mockCacheService.deleteByKeyPattern).toBeCalledTimes(1);
+    expect(mockCacheService.deleteByKey).toBeCalledTimes(0);
+  });
 });
