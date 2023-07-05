@@ -19,7 +19,11 @@ function configureSwagger(app: INestApplication) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('', app, document);
+  SwaggerModule.setup('', app, document, {
+    customfavIcon: '/favicon.png',
+    customSiteTitle: 'Safe Client Gateway',
+    customCss: `.topbar-wrapper img { content:url(\'logo.svg\'); }`,
+  });
 }
 
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
