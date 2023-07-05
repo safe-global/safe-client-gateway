@@ -1,4 +1,5 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
 export const confirmationSchema: Schema = {
   $id: 'https://safe-client.safe.global/schemas/safe/confirmation.json',
@@ -83,3 +84,8 @@ export const multisigTransactionSchema: Schema = {
     'trusted',
   ],
 };
+
+export const multisigTransactionPageSchema: Schema = buildPageSchema(
+  'https://safe-client.safe.global/schemas/safe/multisig-transaction-page.json',
+  multisigTransactionSchema,
+);

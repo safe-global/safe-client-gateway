@@ -36,8 +36,8 @@ export class MessagesRepository implements IMessagesRepository {
       limit,
       offset,
     );
-    page.results.map((message) => this.messageValidator.validate(message));
-    return page;
+
+    return this.messageValidator.validatePage(page);
   }
 
   async createMessage(

@@ -6,15 +6,21 @@ import {
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
+import { Page } from '../entities/page.entity';
+import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
-import { moduleTransactionSchema } from './entities/schemas/module-transaction.schema';
+import {
+  moduleTransactionPageSchema,
+  moduleTransactionSchema,
+} from './entities/schemas/module-transaction.schema';
 
 @Injectable()
 export class ModuleTransactionValidator
-  implements IValidator<ModuleTransaction>
+  implements IValidator<ModuleTransaction>, IPageValidator<ModuleTransaction>
 {
   private readonly isValidModuleTransaction: ValidateFunction<ModuleTransaction>;
+  private readonly isValidPage: ValidateFunction<Page<ModuleTransaction>>;
 
   constructor(
     private readonly genericValidator: GenericValidator,
@@ -34,9 +40,18 @@ export class ModuleTransactionValidator
       'https://safe-client.safe.global/schemas/safe/module-transaction.json',
       moduleTransactionSchema,
     );
+
+    this.isValidPage = this.jsonSchemaService.getSchema(
+      'https://safe-client.safe.global/schemas/safe/module-transaction-page.json',
+      moduleTransactionPageSchema,
+    );
   }
 
   validate(data: unknown): ModuleTransaction {
     return this.genericValidator.validate(this.isValidModuleTransaction, data);
+  }
+
+  validatePage(data: unknown): Page<ModuleTransaction> {
+    return this.genericValidator.validate(this.isValidPage, data);
   }
 }

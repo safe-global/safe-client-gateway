@@ -1,4 +1,5 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
 export const transferSchema: Schema = {
   $id: 'https://safe-client.safe.global/schemas/safe/transfer.json',
@@ -24,3 +25,8 @@ export const transferSchema: Schema = {
     },
   ],
 };
+
+export const transferPageSchema: Schema = buildPageSchema(
+  'https://safe-client.safe.global/schemas/safe/transfer-page.json',
+  transferSchema,
+);

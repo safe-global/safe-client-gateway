@@ -1,4 +1,5 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
 export const messageConfirmationSchema: Schema = {
   $id: 'https://safe-client.safe.global/schemas/messages/message-confirmation.json',
@@ -40,3 +41,8 @@ export const messageSchema: Schema = {
     'confirmations',
   ],
 };
+
+export const messagePageSchema: Schema = buildPageSchema(
+  'https://safe-client.safe.global/schemas/messages/message-page.json',
+  messageSchema,
+);

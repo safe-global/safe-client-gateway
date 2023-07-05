@@ -140,6 +140,26 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       });
   });
 
+  it('Failure: data page validation fails', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const page = pageBuilder().build();
+    networkService.get.mockResolvedValueOnce({ data: chain });
+    networkService.get.mockResolvedValueOnce({
+      data: { ...page, next: faker.datatype.boolean() },
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
+      )
+      .expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
+  });
+
   it('Should get a ERC20 incoming transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();

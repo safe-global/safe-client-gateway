@@ -1,4 +1,5 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
 export const moduleTransactionSchema: Schema = {
   $id: 'https://safe-client.safe.global/schemas/safe/module-transaction.json',
@@ -38,3 +39,8 @@ export const moduleTransactionSchema: Schema = {
     'moduleTransactionId',
   ],
 };
+
+export const moduleTransactionPageSchema: Schema = buildPageSchema(
+  'https://safe-client.safe.global/schemas/safe/module-transaction-page.json',
+  moduleTransactionSchema,
+);

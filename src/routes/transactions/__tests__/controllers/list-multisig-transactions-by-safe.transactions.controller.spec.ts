@@ -139,6 +139,26 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       });
   });
 
+  it('Failure: data page validation fails', async () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainResponse = chainBuilder().with('chainId', chainId).build();
+    const page = pageBuilder().build();
+    networkService.get.mockResolvedValueOnce({ data: chainResponse });
+    networkService.get.mockResolvedValueOnce({
+      data: { ...page, count: null },
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
+      .expect(500)
+      .expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
+  });
+
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
