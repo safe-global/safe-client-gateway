@@ -4,7 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,6 +34,8 @@ import { RequestScopedLoggingModule } from './logging/logging.module';
 import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
 import configuration from './config/entities/configuration';
+import { GlobalErrorFilter } from './routes/common/filters/global-error.filter';
+import { DataSourceErrorFilter } from './routes/common/filters/data-source-error.filter';
 
 // See https://github.com/nestjs/nest/issues/11967
 export const configurationModule = ConfigurationModule.register(configuration);
@@ -78,6 +80,14 @@ export const configurationModule = ConfigurationModule.register(configuration);
     {
       provide: APP_INTERCEPTOR,
       useClass: RouteLoggerInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalErrorFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DataSourceErrorFilter,
     },
   ],
 })

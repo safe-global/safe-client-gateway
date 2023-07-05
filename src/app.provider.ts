@@ -1,5 +1,4 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
-import { DataSourceErrorFilter } from './routes/common/filters/data-source-error.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 
@@ -11,10 +10,6 @@ function configureVersioning(app: INestApplication) {
 
 export function configureShutdownHooks(app: INestApplication) {
   app.enableShutdownHooks();
-}
-
-function configureFilters(app: INestApplication) {
-  app.useGlobalFilters(new DataSourceErrorFilter());
 }
 
 function configureSwagger(app: INestApplication) {
@@ -30,7 +25,6 @@ function configureSwagger(app: INestApplication) {
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
   configureVersioning,
   configureShutdownHooks,
-  configureFilters,
   configureSwagger,
 ];
 
