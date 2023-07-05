@@ -18,7 +18,7 @@ export class FlushRepository implements IFlushRepository {
   async execute(pattern: InvalidationPatternDto): Promise<void> {
     switch (pattern.invalidate) {
       case InvalidationTarget[InvalidationTarget.Chains]:
-        await Promise.allSettled([
+        await Promise.all([
           this.configApi.clearChains(),
           this.configApi.clearSafeApps(),
         ]);
