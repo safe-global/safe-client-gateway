@@ -90,4 +90,9 @@ export class ConfigApi implements IConfigApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async clearSafeApps(): Promise<void> {
+    const pattern = CacheRouter.getSafeAppsCachePattern();
+    await this.cacheService.deleteByKeyPattern(pattern);
+  }
 }

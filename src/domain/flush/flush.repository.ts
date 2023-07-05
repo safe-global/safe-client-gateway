@@ -18,7 +18,11 @@ export class FlushRepository implements IFlushRepository {
   async execute(pattern: InvalidationPatternDto): Promise<void> {
     switch (pattern.invalidate) {
       case InvalidationTarget[InvalidationTarget.Chains]:
-        return this.configApi.clearChains();
+        await Promise.all([
+          this.configApi.clearChains(),
+          this.configApi.clearSafeApps(),
+        ]);
+        break;
       default:
         this.loggingService.debug(
           `Unknown flush pattern ${pattern.invalidate}`,
