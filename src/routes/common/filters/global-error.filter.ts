@@ -29,11 +29,16 @@ export class GlobalErrorFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    this.loggingService.error({
+    const logMessage = {
       name: exception.name,
       message: exception.message,
       stacktrace: exception.stack,
-    });
+    };
+    if (httpStatus >= 500 && httpStatus < 600) {
+      this.loggingService.error(logMessage);
+    } else {
+      this.loggingService.info(logMessage);
+    }
 
     const responseBody =
       exception instanceof HttpException
