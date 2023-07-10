@@ -106,7 +106,7 @@ export class MultisigTransactionExecutionDetailsMapper {
       await this.safeRepository.getMultisigTransactions(
         chainId,
         safe.address,
-        undefined,
+        true,
         undefined,
         undefined,
         undefined,
