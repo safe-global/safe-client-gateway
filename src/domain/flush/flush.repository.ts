@@ -24,9 +24,7 @@ export class FlushRepository implements IFlushRepository {
         ]);
         break;
       default:
-        this.loggingService.debug(
-          `Unknown flush pattern ${pattern.invalidate}`,
-        );
+        this.loggingService.warn(`Unknown flush pattern ${pattern.invalidate}`);
     }
   }
 }
