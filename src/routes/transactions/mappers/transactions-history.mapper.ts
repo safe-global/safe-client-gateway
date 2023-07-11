@@ -143,11 +143,11 @@ export class TransactionsHistoryMapper {
    * Returns a day {@link Date } at 00:00:00 from the input timestamp.
    *
    * @param timestamp - date to convert
-   * @param timezoneOffset - Offset of time zone in seconds
+   * @param timezoneOffset - Offset of time zone in milliseconds
    */
   private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
     if (timezoneOffset != 0) {
-      timestamp.setUTCSeconds(timezoneOffset);
+      timestamp.setUTCSeconds(timezoneOffset / 1000);
     }
     return new Date(
       Date.UTC(
