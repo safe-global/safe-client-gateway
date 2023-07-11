@@ -101,7 +101,7 @@ export class MultisigTransactionExecutionDetailsMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-  ): Promise<AddressInfo[] | null> {
+  ): Promise<AddressInfo[]> {
     const replacementTxsPage =
       await this.safeRepository.getMultisigTransactions(
         chainId,
@@ -118,12 +118,12 @@ export class MultisigTransactionExecutionDetailsMapper {
       this.loggingService.debug(
         `Replacement transaction with nonce ${transaction.nonce} not found for cancelled transaction ${transaction.transactionHash}`,
       );
-      return null;
+      return [];
     }
 
     const replacementTx = replacementTxsPage.results[0];
     return replacementTx.confirmations
       ? replacementTx.confirmations.map((c) => new AddressInfo(c.owner))
-      : null;
+      : [];
   }
 }

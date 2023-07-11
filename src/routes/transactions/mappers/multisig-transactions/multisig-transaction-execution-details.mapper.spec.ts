@@ -80,7 +80,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         signers: safe.owners.map((owner) => new AddressInfo(owner)),
         confirmationsRequired: transaction.confirmationsRequired,
         confirmations: [],
-        rejectors: null,
+        rejectors: [],
         gasTokenInfo,
         trusted: transaction.trusted,
       }),
