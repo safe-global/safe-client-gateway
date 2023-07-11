@@ -47,8 +47,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   confirmationsRequired: number;
   @ApiProperty()
   confirmations: MultisigConfirmationDetails[];
-  @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
-  rejectors: AddressInfo[] | null;
+  @ApiProperty({ type: AddressInfo, isArray: true })
+  rejectors: AddressInfo[];
   @ApiPropertyOptional({ type: Token, nullable: true })
   gasTokenInfo: Token | null;
   @ApiProperty()
@@ -67,7 +67,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     signers: AddressInfo[],
     confirmationsRequired: number,
     confirmations: MultisigConfirmationDetails[],
-    rejectors: AddressInfo[] | null,
+    rejectors: AddressInfo[],
     gasTokenInfo: Token | null,
     trusted: boolean,
   ) {
