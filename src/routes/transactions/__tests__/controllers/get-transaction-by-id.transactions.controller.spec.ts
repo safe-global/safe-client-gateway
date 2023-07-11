@@ -391,12 +391,12 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
       .build();
-    const replacementTxConfirmations = [confirmationBuilder().build()];
-    const replacementTx = multisigTransactionBuilder()
-      .with('confirmations', replacementTxConfirmations)
+    const rejectionTxConfirmations = [confirmationBuilder().build()];
+    const rejectionTx = multisigTransactionBuilder()
+      .with('confirmations', rejectionTxConfirmations)
       .build();
-    const replacementTxsPage = pageBuilder()
-      .with('results', [multisigToJson(replacementTx)])
+    const rejectionTxsPage = pageBuilder()
+      .with('results', [multisigToJson(rejectionTx)])
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
@@ -422,7 +422,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: multisigToJson(tx) });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: replacementTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getGasTokenContractUrl:
@@ -510,7 +510,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             ],
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: replacementTxConfirmations[0].owner,
+                value: rejectionTxConfirmations[0].owner,
               }),
             ]),
             gasToken: tx.gasToken,
@@ -556,12 +556,12 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
       .build();
-    const replacementTxConfirmations = [confirmationBuilder().build()];
-    const replacementTx = multisigTransactionBuilder()
-      .with('confirmations', replacementTxConfirmations)
+    const rejectionTxConfirmations = [confirmationBuilder().build()];
+    const rejectionTx = multisigTransactionBuilder()
+      .with('confirmations', rejectionTxConfirmations)
       .build();
-    const replacementTxsPage = pageBuilder()
-      .with('results', [multisigToJson(replacementTx)])
+    const rejectionTxsPage = pageBuilder()
+      .with('results', [multisigToJson(rejectionTx)])
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
@@ -589,7 +589,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: multisigToJson(tx) });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: replacementTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getGasTokenContractUrl:
@@ -675,7 +675,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             ],
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: replacementTxConfirmations[0].owner,
+                value: rejectionTxConfirmations[0].owner,
               }),
             ]),
             gasToken: tx.gasToken,
@@ -724,15 +724,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
       .build();
-    const replacementTxConfirmations = [
+    const rejectionTxConfirmations = [
       confirmationBuilder().build(),
       confirmationBuilder().build(),
     ];
-    const replacementTx = multisigTransactionBuilder()
-      .with('confirmations', replacementTxConfirmations)
+    const rejectionTx = multisigTransactionBuilder()
+      .with('confirmations', rejectionTxConfirmations)
       .build();
-    const replacementTxsPage = pageBuilder()
-      .with('results', [multisigToJson(replacementTx)])
+    const rejectionTxsPage = pageBuilder()
+      .with('results', [multisigToJson(rejectionTx)])
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
@@ -756,7 +756,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: multisigToJson(tx) });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: replacementTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getGasTokenContractUrl:
@@ -841,10 +841,10 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             ]),
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: replacementTxConfirmations[0].owner,
+                value: rejectionTxConfirmations[0].owner,
               }),
               expect.objectContaining({
-                value: replacementTxConfirmations[1].owner,
+                value: rejectionTxConfirmations[1].owner,
               }),
             ]),
             gasToken: tx.gasToken,
