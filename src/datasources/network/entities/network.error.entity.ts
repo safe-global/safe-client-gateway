@@ -10,7 +10,10 @@ export type NetworkError =
  * {@link data} represents the payload which was received in the response
  */
 export class NetworkResponseError extends Error {
-  constructor(readonly status, readonly data?: any) {
+  constructor(
+    readonly status,
+    readonly data?: any,
+  ) {
     super();
   }
 }

@@ -8,7 +8,10 @@
  * can be exposed on the route level
  */
 export class DataSourceError extends Error {
-  constructor(readonly message: string, readonly code?: number) {
+  constructor(
+    readonly message: string,
+    readonly code?: number,
+  ) {
     super();
   }
 }
