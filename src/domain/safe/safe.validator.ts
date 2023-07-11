@@ -4,7 +4,7 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { Safe } from './entities/safe.entity';
-import { safeSchema } from './entities/schemas/safe.schema';
+import { SAFE_SCHEMA_ID, safeSchema } from './entities/schemas/safe.schema';
 
 @Injectable()
 export class SafeValidator implements IValidator<Safe> {
@@ -15,7 +15,7 @@ export class SafeValidator implements IValidator<Safe> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidSafe = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/safe.json',
+      SAFE_SCHEMA_ID,
       safeSchema,
     );
   }

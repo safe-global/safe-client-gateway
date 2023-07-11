@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const DATA_DECODED_PARAMTER_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json';
+
 export const dataDecodedParameterSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+  $id: DATA_DECODED_PARAMTER_SCHEMA_ID,
   type: 'object',
   properties: {
     name: { type: 'string' },
@@ -13,8 +16,11 @@ export const dataDecodedParameterSchema: Schema = {
   required: ['name', 'type', 'value'],
 };
 
+export const DATA_DECODED_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json';
+
 export const dataDecodedSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
+  $id: DATA_DECODED_SCHEMA_ID,
   type: 'object',
   properties: {
     method: { type: 'string' },

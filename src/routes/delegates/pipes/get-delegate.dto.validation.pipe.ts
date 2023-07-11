@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { GetDelegateDto } from '../entities/get-delegate.dto.entity';
-import { getDelegateDtoSchema } from '../entities/schemas/get-delegate.dto.schema';
+import {
+  GET_DELEGATE_DTO_SCHEMA_ID,
+  getDelegateDtoSchema,
+} from '../entities/schemas/get-delegate.dto.schema';
 
 @Injectable()
 export class GetDelegateDtoValidationPipe
@@ -16,7 +19,7 @@ export class GetDelegateDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/delegates/get-delegate.dto.json',
+      GET_DELEGATE_DTO_SCHEMA_ID,
       getDelegateDtoSchema,
     );
   }

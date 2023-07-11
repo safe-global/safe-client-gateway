@@ -1,8 +1,11 @@
 import { JSONSchemaType, Schema } from 'ajv';
 import { BalanceToken } from '../balance.token.entity';
 
+export const BALANCE_TOKEN_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/balances/balance-token.json';
+
 const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
-  $id: 'https://safe-client.safe.global/schemas/balances/balance-token.json',
+  $id: BALANCE_TOKEN_SCHEMA_ID,
   type: 'object',
   properties: {
     name: { type: 'string' },
@@ -13,8 +16,11 @@ const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
   required: ['name', 'symbol', 'decimals', 'logoUri'],
 };
 
+export const BALANCE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/balances/balance.json';
+
 const balanceSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/balances/balance.json',
+  $id: BALANCE_SCHEMA_ID,
   type: 'object',
   properties: {
     tokenAddress: { type: 'string', nullable: true, default: null },

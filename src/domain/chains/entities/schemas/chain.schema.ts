@@ -8,8 +8,11 @@ import { Theme } from '../theme.entity';
 import { GasPriceOracle } from '../gas-price-oracle.entity';
 import { GasPriceFixed } from '../gas-price-fixed.entity';
 
+export const NATIVE_CURRENCY_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/native-currency.json';
+
 export const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
-  $id: 'https://safe-client.safe.global/schemas/chains/native-currency.json',
+  $id: NATIVE_CURRENCY_SCHEMA_ID,
   type: 'object',
   properties: {
     name: { type: 'string' },
@@ -20,8 +23,11 @@ export const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
   required: ['name', 'symbol', 'decimals', 'logoUri'],
 };
 
+export const RPC_URI_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/rpc-uri.json';
+
 export const rpcUriSchema: JSONSchemaType<RpcUri> = {
-  $id: 'https://safe-client.safe.global/schemas/chains/rpc-uri.json',
+  $id: RPC_URI_SCHEMA_ID,
   type: 'object',
   properties: {
     authentication: {
@@ -34,9 +40,12 @@ export const rpcUriSchema: JSONSchemaType<RpcUri> = {
   required: ['authentication', 'value'],
 };
 
+export const BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/block-explorer-uri-template.json';
+
 export const blockExplorerUriTemplateSchema: JSONSchemaType<BlockExplorerUriTemplate> =
   {
-    $id: 'https://safe-client.safe.global/schemas/chains/block-explorer-uri-template.json',
+    $id: BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID,
     type: 'object',
     properties: {
       address: { type: 'string' },
@@ -46,8 +55,11 @@ export const blockExplorerUriTemplateSchema: JSONSchemaType<BlockExplorerUriTemp
     required: ['address', 'txHash', 'api'],
   };
 
+export const THEME_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/theme.json';
+
 export const themeSchema: JSONSchemaType<Theme> = {
-  $id: 'https://safe-client.safe.global/schemas/chains/theme.json',
+  $id: THEME_SCHEMA_ID,
   type: 'object',
   properties: {
     textColor: { type: 'string' },
@@ -56,10 +68,13 @@ export const themeSchema: JSONSchemaType<Theme> = {
   required: ['textColor', 'backgroundColor'],
 };
 
+export const GAS_PRICE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/gas-price.json';
+
 export const gasPriceSchema: JSONSchemaType<
   Array<GasPriceOracle | GasPriceFixed>
 > = {
-  $id: 'https://safe-client.safe.global/schemas/chains/gas-price.json',
+  $id: GAS_PRICE_SCHEMA_ID,
   type: 'array',
   items: {
     anyOf: [
@@ -85,9 +100,12 @@ export const gasPriceSchema: JSONSchemaType<
   },
 };
 
+export const CHAIN_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/chain.json';
+
 export const chainSchema: JSONSchemaType<Chain> = {
   type: 'object',
-  $id: 'https://safe-client.safe.global/schemas/chains/chain.json',
+  $id: CHAIN_SCHEMA_ID,
   properties: {
     chainId: { type: 'string' },
     chainName: { type: 'string' },

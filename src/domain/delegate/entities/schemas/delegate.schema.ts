@@ -1,8 +1,11 @@
 import { JSONSchemaType } from 'ajv';
 import { Delegate } from '../delegate.entity';
 
+export const DELEGATE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/delegates/delegate.json';
+
 export const delegateSchema: JSONSchemaType<Delegate> = {
-  $id: 'https://safe-client.safe.global/schemas/delegates/delegate.json',
+  $id: DELEGATE_SCHEMA_ID,
   type: 'object',
   properties: {
     safe: {

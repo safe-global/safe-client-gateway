@@ -4,7 +4,10 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { ValidationErrorFactory } from '../../validation/providers/validation-error-factory';
 import { IValidator } from '../interfaces/validator.interface';
 import { Delegate } from './entities/delegate.entity';
-import { delegateSchema } from './entities/schemas/delegate.schema';
+import {
+  DELEGATE_SCHEMA_ID,
+  delegateSchema,
+} from './entities/schemas/delegate.schema';
 
 @Injectable()
 export class DelegateValidator implements IValidator<Delegate> {
@@ -15,7 +18,7 @@ export class DelegateValidator implements IValidator<Delegate> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidDelegate = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/delegates/delegate.json',
+      DELEGATE_SCHEMA_ID,
       delegateSchema,
     );
   }

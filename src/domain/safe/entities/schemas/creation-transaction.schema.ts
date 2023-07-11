@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const CREATION_TRANSACTION_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/creation-transaction.json';
+
 export const creationTransactionSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/creation-transaction.json',
+  $id: CREATION_TRANSACTION_SCHEMA_ID,
   type: 'object',
   properties: {
     created: { type: 'string', isDate: true },

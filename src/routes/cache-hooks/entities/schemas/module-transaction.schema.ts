@@ -2,8 +2,11 @@ import { JSONSchemaType } from 'ajv';
 import { EventType } from '../event-payload.entity';
 import { ModuleTransaction } from '../module-transaction.entity';
 
+export const MODULE_TRANSACTION_EVENT_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/cache-hooks/module-transaction.json';
+
 export const moduleTransactionEventSchema: JSONSchemaType<ModuleTransaction> = {
-  $id: 'https://safe-client.safe.global/schemas/cache-hooks/module-transaction.json',
+  $id: MODULE_TRANSACTION_EVENT_SCHEMA_ID,
   type: 'object',
   properties: {
     address: { type: 'string' },

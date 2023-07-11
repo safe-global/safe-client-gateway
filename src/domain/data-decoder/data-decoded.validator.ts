@@ -5,6 +5,8 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { IValidator } from '../interfaces/validator.interface';
 import { DataDecoded } from './entities/data-decoded.entity';
 import {
+  DATA_DECODED_PARAMTER_SCHEMA_ID,
+  DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from './entities/schemas/data-decoded.schema';
@@ -18,11 +20,11 @@ export class DataDecodedValidator implements IValidator<DataDecoded> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      DATA_DECODED_PARAMTER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
     this.isValidDataDecoded = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
+      DATA_DECODED_SCHEMA_ID,
       dataDecodedSchema,
     );
   }

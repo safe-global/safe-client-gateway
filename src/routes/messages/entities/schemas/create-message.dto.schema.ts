@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const CREATE_MESSAGE_DTO_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/messages/create-message.dto.json';
+
 export const createMessageDtoSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/messages/create-message.dto.json',
+  $id: CREATE_MESSAGE_DTO_SCHEMA_ID,
   type: 'object',
   properties: {
     message: { type: ['object', 'string'] },

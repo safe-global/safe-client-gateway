@@ -3,23 +3,48 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
+  DATA_DECODED_PARAMTER_SCHEMA_ID,
+  DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
 import { Page } from '../entities/page.entity';
 import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
-import { erc20TransferSchema } from './entities/schemas/erc20-transfer.schema';
-import { erc721TransferSchema } from './entities/schemas/erc721-transfer.schema';
-import { ethereumTransactionTypeSchema } from './entities/schemas/ethereum-transaction-type.schema';
-import { moduleTransactionTypeSchema } from './entities/schemas/module-transaction-type.schema';
-import { multisigTransactionTypeSchema } from './entities/schemas/multisig-transaction-type.schema';
-import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
 import {
+  ERC20_TRANSFER_SCHEMA_ID,
+  erc20TransferSchema,
+} from './entities/schemas/erc20-transfer.schema';
+import {
+  ERC721_TRANSFER_SCHEMA_ID,
+  erc721TransferSchema,
+} from './entities/schemas/erc721-transfer.schema';
+import {
+  ETHEREUM_TRANSACTION_TYPE_SCHEMA_ID,
+  ethereumTransactionTypeSchema,
+} from './entities/schemas/ethereum-transaction-type.schema';
+import {
+  MODULE_TRANSACTION_TYPE_SCHEMA_ID,
+  moduleTransactionTypeSchema,
+} from './entities/schemas/module-transaction-type.schema';
+import {
+  MULTISIG_TRANSACTION_TYPE_SCHEMA_ID,
+  multisigTransactionTypeSchema,
+} from './entities/schemas/multisig-transaction-type.schema';
+import {
+  NATIVE_TOKEN_TRANSFER_SCHEMA_ID,
+  nativeTokenTransferSchema,
+} from './entities/schemas/native-token-transfer.schema';
+import {
+  TRANSACTION_TYPE_PAGE_SCHEMA_ID,
+  TRANSACTION_TYPE_SCHEMA_ID,
   transactionTypePageSchema,
   transactionTypeSchema,
 } from './entities/schemas/transaction-type.schema';
-import { transferSchema } from './entities/schemas/transfer.schema';
+import {
+  TRANSFER_SCHEMA_ID,
+  transferSchema,
+} from './entities/schemas/transfer.schema';
 import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
@@ -34,57 +59,51 @@ export class TransactionTypeValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/native-token-transfer.json',
+      NATIVE_TOKEN_TRANSFER_SCHEMA_ID,
       nativeTokenTransferSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/erc20-transfer.json',
+      ERC20_TRANSFER_SCHEMA_ID,
       erc20TransferSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/erc721-transfer.json',
+      ERC721_TRANSFER_SCHEMA_ID,
       erc721TransferSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/transfer.json',
-      transferSchema,
-    );
+    this.jsonSchemaService.getSchema(TRANSFER_SCHEMA_ID, transferSchema);
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/ethereum-transaction-type.json',
+      ETHEREUM_TRANSACTION_TYPE_SCHEMA_ID,
       ethereumTransactionTypeSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      DATA_DECODED_PARAMTER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
-      dataDecodedSchema,
-    );
+    this.jsonSchemaService.getSchema(DATA_DECODED_SCHEMA_ID, dataDecodedSchema);
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/module-transaction-type.json',
+      MODULE_TRANSACTION_TYPE_SCHEMA_ID,
       moduleTransactionTypeSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/multisig-transaction-type.json',
+      MULTISIG_TRANSACTION_TYPE_SCHEMA_ID,
       multisigTransactionTypeSchema,
     );
 
     this.isValidTransactionType = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/transaction-type.json',
+      TRANSACTION_TYPE_SCHEMA_ID,
       transactionTypeSchema,
     );
 
     this.isValidPage = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/transaction-type-page.json',
+      TRANSACTION_TYPE_PAGE_SCHEMA_ID,
       transactionTypePageSchema,
     );
   }

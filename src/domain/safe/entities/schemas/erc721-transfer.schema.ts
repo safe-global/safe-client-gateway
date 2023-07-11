@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const ERC721_TRANSFER_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/erc721-transfer.json';
+
 export const erc721TransferSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/erc721-transfer.json',
+  $id: ERC721_TRANSFER_SCHEMA_ID,
   type: 'object',
   properties: {
     type: {

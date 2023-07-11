@@ -1,9 +1,12 @@
 import { JSONSchemaType } from 'ajv';
 import { ProposeTransactionDto } from '../propose-transaction.dto.entity';
 
+export const PROPOSE_TRANSACTION_DTO_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/transactions/propose-transaction.dto.json';
+
 export const proposeTransactionDtoSchema: JSONSchemaType<ProposeTransactionDto> =
   {
-    $id: 'https://safe-client.safe.global/schemas/transactions/propose-transaction.dto.json',
+    $id: PROPOSE_TRANSACTION_DTO_SCHEMA_ID,
     type: 'object',
     properties: {
       to: { type: 'string' },

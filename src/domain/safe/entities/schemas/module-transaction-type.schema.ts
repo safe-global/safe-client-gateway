@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const MODULE_TRANSACTION_TYPE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/module-transaction-type.json';
+
 export const moduleTransactionTypeSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/module-transaction-type.json',
+  $id: MODULE_TRANSACTION_TYPE_SCHEMA_ID,
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'MODULE_TRANSACTION' },

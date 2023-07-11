@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { GetEstimationDto } from '../entities/get-estimation.dto.entity';
-import { getEstimationDtoSchema } from '../entities/schemas/get-estimation.dto.schema';
+import {
+  GET_ESTIMATION_DTO_SCHEMA_ID,
+  getEstimationDtoSchema,
+} from '../entities/schemas/get-estimation.dto.schema';
 
 @Injectable()
 export class GetEstimationDtoValidationPipe
@@ -16,7 +19,7 @@ export class GetEstimationDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/delegates/get-estimation.dto.json',
+      GET_ESTIMATION_DTO_SCHEMA_ID,
       getEstimationDtoSchema,
     );
   }

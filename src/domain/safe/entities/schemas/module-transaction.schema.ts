@@ -1,8 +1,11 @@
 import { Schema } from 'ajv';
 import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
+export const MODULE_TRANSACTION_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/module-transaction.json';
+
 export const moduleTransactionSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/module-transaction.json',
+  $id: MODULE_TRANSACTION_SCHEMA_ID,
   type: 'object',
   properties: {
     safe: { type: 'string' },
@@ -40,7 +43,10 @@ export const moduleTransactionSchema: Schema = {
   ],
 };
 
+export const MODULE_TRANSACTION_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/module-transaction-page.json';
+
 export const moduleTransactionPageSchema: Schema = buildPageSchema(
-  'https://safe-client.safe.global/schemas/safe/module-transaction-page.json',
+  MODULE_TRANSACTION_PAGE_SCHEMA_ID,
   moduleTransactionSchema,
 );

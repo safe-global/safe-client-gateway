@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const MULTISIG_TRANSACTION_TYPE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/multisig-transaction-type.json';
+
 export const multisigTransactionTypeSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/multisig-transaction-type.json',
+  $id: MULTISIG_TRANSACTION_TYPE_SCHEMA_ID,
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'MULTISIG_TRANSACTION' },
