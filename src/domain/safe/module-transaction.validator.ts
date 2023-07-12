@@ -3,6 +3,8 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
+  DATA_DECODED_PARAMETER_SCHEMA_ID,
+  DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
@@ -11,6 +13,8 @@ import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import {
+  MODULE_TRANSACTION_PAGE_SCHEMA_ID,
+  MODULE_TRANSACTION_SCHEMA_ID,
   moduleTransactionPageSchema,
   moduleTransactionSchema,
 } from './entities/schemas/module-transaction.schema';
@@ -27,22 +31,19 @@ export class ModuleTransactionValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      DATA_DECODED_PARAMETER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
-      dataDecodedSchema,
-    );
+    this.jsonSchemaService.getSchema(DATA_DECODED_SCHEMA_ID, dataDecodedSchema);
 
     this.isValidModuleTransaction = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/module-transaction.json',
+      MODULE_TRANSACTION_SCHEMA_ID,
       moduleTransactionSchema,
     );
 
     this.isValidPage = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/module-transaction-page.json',
+      MODULE_TRANSACTION_PAGE_SCHEMA_ID,
       moduleTransactionPageSchema,
     );
   }

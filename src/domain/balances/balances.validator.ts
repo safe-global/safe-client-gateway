@@ -5,6 +5,8 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { IValidator } from '../interfaces/validator.interface';
 import { Balance } from './entities/balance.entity';
 import {
+  BALANCE_SCHEMA_ID,
+  BALANCE_TOKEN_SCHEMA_ID,
   balanceSchema,
   balanceTokenSchema,
 } from './entities/schemas/balance.schema';
@@ -18,12 +20,12 @@ export class BalancesValidator implements IValidator<Balance> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/balances/balance-token.json',
+      BALANCE_TOKEN_SCHEMA_ID,
       balanceTokenSchema,
     );
 
     this.isValidBalance = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/balances/balance.json',
+      BALANCE_SCHEMA_ID,
       balanceSchema,
     );
   }

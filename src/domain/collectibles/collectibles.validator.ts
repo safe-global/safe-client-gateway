@@ -4,7 +4,10 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { Collectible } from './entities/collectible.entity';
-import { collectibleSchema } from './entities/schemas/collectible.schema';
+import {
+  COLLECTIBLE_SCHEMA_ID,
+  collectibleSchema,
+} from './entities/schemas/collectible.schema';
 
 @Injectable()
 export class CollectiblesValidator implements IValidator<Collectible> {
@@ -15,7 +18,7 @@ export class CollectiblesValidator implements IValidator<Collectible> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidCollectible = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/collectibles/collectible.json',
+      COLLECTIBLE_SCHEMA_ID,
       collectibleSchema,
     );
   }

@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { CreateMessageDto } from '../entities/create-message.dto.entity';
-import { createMessageDtoSchema } from '../entities/schemas/create-message.dto.schema';
+import {
+  CREATE_MESSAGE_DTO_SCHEMA_ID,
+  createMessageDtoSchema,
+} from '../entities/schemas/create-message.dto.schema';
 
 @Injectable()
 export class CreateMessageDtoValidationPipe
@@ -16,7 +19,7 @@ export class CreateMessageDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/messages/create-message.dto.json',
+      CREATE_MESSAGE_DTO_SCHEMA_ID,
       createMessageDtoSchema,
     );
   }

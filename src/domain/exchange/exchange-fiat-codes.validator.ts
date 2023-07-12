@@ -4,7 +4,10 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { ExchangeFiatCodes } from './entities/exchange-fiat-codes.entity';
-import { exchangeFiatCodesSchema } from './entities/schemas/exchange-fiat-codes.schema';
+import {
+  EXCHANGE_FIAT_CODES_SCHEMA_ID,
+  exchangeFiatCodesSchema,
+} from './entities/schemas/exchange-fiat-codes.schema';
 
 @Injectable()
 export class ExchangeFiatCodesValidator
@@ -17,7 +20,7 @@ export class ExchangeFiatCodesValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidExchangeFiatCodes = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/exchange/exchange-fiat-codes.json',
+      EXCHANGE_FIAT_CODES_SCHEMA_ID,
       exchangeFiatCodesSchema,
     );
   }

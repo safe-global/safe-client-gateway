@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { AddConfirmationDto } from '../entities/add-confirmation.dto';
-import { addConfirmationDtoSchema } from '../entities/schemas/add-confirmation.dto.schema';
+import {
+  ADD_CONFIRMATION_DTO_SCHEMA_ID,
+  addConfirmationDtoSchema,
+} from '../entities/schemas/add-confirmation.dto.schema';
 
 @Injectable()
 export class AddConfirmationDtoValidationPipe
@@ -16,7 +19,7 @@ export class AddConfirmationDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/transactions/add-confirmation.dto.json',
+      ADD_CONFIRMATION_DTO_SCHEMA_ID,
       addConfirmationDtoSchema,
     );
   }

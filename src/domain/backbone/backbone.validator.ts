@@ -4,7 +4,10 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { Backbone } from './entities/backbone.entity';
-import { backboneSchema } from './entities/schemas/backbone.schema';
+import {
+  BACKBONE_SCHEMA_ID,
+  backboneSchema,
+} from './entities/schemas/backbone.schema';
 
 @Injectable()
 export class BackboneValidator implements IValidator<Backbone> {
@@ -15,7 +18,7 @@ export class BackboneValidator implements IValidator<Backbone> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidBackbone = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/backbone/backbone.json',
+      BACKBONE_SCHEMA_ID,
       backboneSchema,
     );
   }

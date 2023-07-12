@@ -8,6 +8,9 @@ import { IncomingEther } from '../incoming-ether.entity';
 import { OutgoingEther } from '../outgoing-ether.entity';
 import { ModuleTransaction } from '../module-transaction.entity';
 
+export const WEB_HOOK_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json';
+
 export const webHookSchema: JSONSchemaType<
   | ExecutedTransaction
   | IncomingEther
@@ -18,7 +21,7 @@ export const webHookSchema: JSONSchemaType<
   | OutgoingEther
   | PendingTransaction
 > = {
-  $id: 'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json',
+  $id: WEB_HOOK_SCHEMA_ID,
   type: 'object',
   discriminator: { propertyName: 'type' },
   required: ['type', 'address', 'chainId'],

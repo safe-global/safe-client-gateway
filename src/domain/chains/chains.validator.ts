@@ -5,6 +5,12 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { IValidator } from '../interfaces/validator.interface';
 import { Chain } from './entities/chain.entity';
 import {
+  BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID,
+  CHAIN_SCHEMA_ID,
+  GAS_PRICE_SCHEMA_ID,
+  NATIVE_CURRENCY_SCHEMA_ID,
+  RPC_URI_SCHEMA_ID,
+  THEME_SCHEMA_ID,
   blockExplorerUriTemplateSchema,
   chainSchema,
   gasPriceSchema,
@@ -22,32 +28,23 @@ export class ChainsValidator implements IValidator<Chain> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/native-currency.json',
+      NATIVE_CURRENCY_SCHEMA_ID,
       nativeCurrencySchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/rpc-uri.json',
-      rpcUriSchema,
-    );
+    this.jsonSchemaService.getSchema(RPC_URI_SCHEMA_ID, rpcUriSchema);
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/block-explorer-uri-template.json',
+      BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID,
       blockExplorerUriTemplateSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/theme.json',
-      themeSchema,
-    );
+    this.jsonSchemaService.getSchema(THEME_SCHEMA_ID, themeSchema);
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/gas-price.json',
-      gasPriceSchema,
-    );
+    this.jsonSchemaService.getSchema(GAS_PRICE_SCHEMA_ID, gasPriceSchema);
 
     this.isValidChain = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/chain.json',
+      CHAIN_SCHEMA_ID,
       chainSchema,
     );
   }

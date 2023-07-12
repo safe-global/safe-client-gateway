@@ -5,7 +5,12 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { Page } from '../entities/page.entity';
 import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
-import { tokenPageSchema, tokenSchema } from './entities/schemas/token.schema';
+import {
+  TOKEN_PAGE_SCHEMA_ID,
+  TOKEN_SCHEMA_ID,
+  tokenPageSchema,
+  tokenSchema,
+} from './entities/schemas/token.schema';
 import { Token } from './entities/token.entity';
 
 @Injectable()
@@ -20,11 +25,11 @@ export class TokenValidator
     private readonly jsonSchemaValidator: JsonSchemaService,
   ) {
     this.isValidToken = this.jsonSchemaValidator.getSchema(
-      'https://safe-client.safe.global/schemas/tokens/token.json',
+      TOKEN_SCHEMA_ID,
       tokenSchema,
     );
     this.isValidPage = this.jsonSchemaValidator.getSchema(
-      'https://safe-client.safe.global/schemas/tokens/token-page.json',
+      TOKEN_PAGE_SCHEMA_ID,
       tokenPageSchema,
     );
   }

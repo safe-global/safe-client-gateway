@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const ETHEREUM_TRANSACTION_TYPE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/ethereum-transaction-type.json';
+
 export const ethereumTransactionTypeSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/ethereum-transaction-type.json',
+  $id: ETHEREUM_TRANSACTION_TYPE_SCHEMA_ID,
   type: 'object',
   properties: {
     txType: { type: 'string', const: 'ETHEREUM_TRANSACTION' },

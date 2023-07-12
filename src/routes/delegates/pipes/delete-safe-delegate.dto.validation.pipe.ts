@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { DeleteSafeDelegateDto } from '../entities/delete-safe-delegate.dto.entity';
-import { deleteSafeDelegateDtoSchema } from '../entities/schemas/delete-safe-delegate.dto.schema';
+import {
+  DELETE_SAFE_DELEGATE_DTO_SCHEMA_ID,
+  deleteSafeDelegateDtoSchema,
+} from '../entities/schemas/delete-safe-delegate.dto.schema';
 
 @Injectable()
 export class DeleteSafeDelegateDtoValidationPipe
@@ -16,7 +19,7 @@ export class DeleteSafeDelegateDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/delegates/delete-safe-delegate.dto.json',
+      DELETE_SAFE_DELEGATE_DTO_SCHEMA_ID,
       deleteSafeDelegateDtoSchema,
     );
   }

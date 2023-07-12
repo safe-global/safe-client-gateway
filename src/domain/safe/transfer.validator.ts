@@ -5,10 +5,21 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { Page } from '../entities/page.entity';
 import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
-import { erc20TransferSchema } from './entities/schemas/erc20-transfer.schema';
-import { erc721TransferSchema } from './entities/schemas/erc721-transfer.schema';
-import { nativeTokenTransferSchema } from './entities/schemas/native-token-transfer.schema';
 import {
+  ERC20_TRANSFER_SCHEMA_ID,
+  erc20TransferSchema,
+} from './entities/schemas/erc20-transfer.schema';
+import {
+  ERC721_TRANSFER_SCHEMA_ID,
+  erc721TransferSchema,
+} from './entities/schemas/erc721-transfer.schema';
+import {
+  NATIVE_TOKEN_TRANSFER_SCHEMA_ID,
+  nativeTokenTransferSchema,
+} from './entities/schemas/native-token-transfer.schema';
+import {
+  TRANSFER_PAGE_SCHEMA_ID,
+  TRANSFER_SCHEMA_ID,
   transferPageSchema,
   transferSchema,
 } from './entities/schemas/transfer.schema';
@@ -26,27 +37,27 @@ export class TransferValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/native-token-transfer.json',
+      NATIVE_TOKEN_TRANSFER_SCHEMA_ID,
       nativeTokenTransferSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/erc20-transfer.json',
+      ERC20_TRANSFER_SCHEMA_ID,
       erc20TransferSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/erc721-transfer.json',
+      ERC721_TRANSFER_SCHEMA_ID,
       erc721TransferSchema,
     );
 
     this.isValidTransfer = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/transfer.json',
+      TRANSFER_SCHEMA_ID,
       transferSchema,
     );
 
     this.isValidPage = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/transfer-page.json',
+      TRANSFER_PAGE_SCHEMA_ID,
       transferPageSchema,
     );
   }

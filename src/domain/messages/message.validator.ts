@@ -7,6 +7,9 @@ import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
 import { Message } from './entities/message.entity';
 import {
+  MESSAGE_CONFIRMATION_SCHEMA_ID,
+  MESSAGE_PAGE_SCHEMA_ID,
+  MESSAGE_SCHEMA_ID,
   messageConfirmationSchema,
   messagePageSchema,
   messageSchema,
@@ -24,15 +27,15 @@ export class MessageValidator
     private readonly jsonSchemaValidator: JsonSchemaService,
   ) {
     this.jsonSchemaValidator.getSchema(
-      'https://safe-client.safe.global/schemas/messages/message-confirmation.json',
+      MESSAGE_CONFIRMATION_SCHEMA_ID,
       messageConfirmationSchema,
     );
     this.isValidMessage = this.jsonSchemaValidator.getSchema(
-      'https://safe-client.safe.global/schemas/messages/message.json',
+      MESSAGE_SCHEMA_ID,
       messageSchema,
     );
     this.isValidPage = this.jsonSchemaValidator.getSchema(
-      'https://safe-client.safe.global/schemas/messages/message-page.json',
+      MESSAGE_PAGE_SCHEMA_ID,
       messagePageSchema,
     );
   }

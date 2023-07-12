@@ -6,8 +6,11 @@ import {
 import { SafeAppProvider } from '../safe-app-provider.entity';
 import { SafeAppSocialProfile } from '../safe-app-social-profile.entity';
 
+export const SAFE_APP_PROVIDER_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe-apps/safe-app-provider.json';
+
 export const safeAppProviderSchema: JSONSchemaType<SafeAppProvider> = {
-  $id: 'https://safe-client.safe.global/schemas/safe-apps/safe-app-provider.json',
+  $id: SAFE_APP_PROVIDER_SCHEMA_ID,
   type: 'object',
   properties: {
     url: { type: 'string' },
@@ -16,9 +19,12 @@ export const safeAppProviderSchema: JSONSchemaType<SafeAppProvider> = {
   required: ['url', 'name'],
 };
 
+export const SAFE_APP_ACCESS_CONTROL_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json';
+
 export const safeAppAccessControlSchema: JSONSchemaType<SafeAppAccessControl> =
   {
-    $id: 'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json',
+    $id: SAFE_APP_ACCESS_CONTROL_SCHEMA_ID,
     type: 'object',
     anyOf: [
       {
@@ -47,9 +53,12 @@ export const safeAppAccessControlSchema: JSONSchemaType<SafeAppAccessControl> =
     required: ['type'],
   };
 
+export const SAFE_APP_SOCIAL_PROFILE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe-apps/safe-app-social-profile.json';
+
 export const safeAppSocialProfileSchema: JSONSchemaType<SafeAppSocialProfile> =
   {
-    $id: 'https://safe-client.safe.global/schemas/safe-apps/safe-app-social-profile.json',
+    $id: SAFE_APP_SOCIAL_PROFILE_SCHEMA_ID,
     type: 'object',
     properties: {
       platform: { type: 'string' },
@@ -58,8 +67,11 @@ export const safeAppSocialProfileSchema: JSONSchemaType<SafeAppSocialProfile> =
     required: ['platform', 'url'],
   };
 
+export const SAFE_APP_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe-apps/safe-app.json';
+
 export const safeAppSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe-apps/safe-app.json',
+  $id: SAFE_APP_SCHEMA_ID,
   type: 'object',
   properties: {
     id: { type: 'number' },

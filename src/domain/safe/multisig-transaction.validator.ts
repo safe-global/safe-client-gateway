@@ -3,6 +3,8 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
+  DATA_DECODED_PARAMETER_SCHEMA_ID,
+  DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
@@ -11,6 +13,9 @@ import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
 import { MultisigTransaction } from './entities/multisig-transaction.entity';
 import {
+  CONFIRMATION_SCHEMA_ID,
+  MULTISIG_TRANSACTION_PAGE_SCHEMA_ID,
+  MULTISIG_TRANSACTION_SCHEMA_ID,
   confirmationSchema,
   multisigTransactionPageSchema,
   multisigTransactionSchema,
@@ -30,27 +35,24 @@ export class MultisigTransactionValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      DATA_DECODED_PARAMETER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
-      dataDecodedSchema,
-    );
+    this.jsonSchemaService.getSchema(DATA_DECODED_SCHEMA_ID, dataDecodedSchema);
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/confirmation.json',
+      CONFIRMATION_SCHEMA_ID,
       confirmationSchema,
     );
 
     this.isValidMultisigTransaction = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/multisig-transaction.json',
+      MULTISIG_TRANSACTION_SCHEMA_ID,
       multisigTransactionSchema,
     );
 
     this.isValidPage = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/multisig-transaction-page.json',
+      MULTISIG_TRANSACTION_PAGE_SCHEMA_ID,
       multisigTransactionPageSchema,
     );
   }
