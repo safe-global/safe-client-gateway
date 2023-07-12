@@ -88,8 +88,8 @@ export class MultisigTransactionExecutionDetailsMapper {
    * transaction for the {@link Transaction} passed in.
    *
    * When a transaction is cancelled, another transaction acts as rejection.
-   * The rejection transaction has the same nonce of the transaction being cancelled,
-   * its value is 0, and it destination is the address of the safe that owns the transaction.
+   * The rejection transaction has the same 'nonce' of the transaction being cancelled,
+   * its 'value' is 0, and its 'to' is the address of the safe that owns the transaction.
    *
    * This function retrieves that rejection transaction, and collects its confirmations as rejectors.
    *
@@ -114,6 +114,9 @@ export class MultisigTransactionExecutionDetailsMapper {
       transaction.nonce.toString(),
     );
 
+    // This only considers one page of nonce-sharing transactions, which
+    // would cover the vast majority of the cases. If needed, could be
+    // extended by requesting and iterating over multiple pages.
     const rejectionTx = rejectionTxsPage.results.find(
       (tx) => tx.safeTxHash != transaction.safeTxHash,
     );
