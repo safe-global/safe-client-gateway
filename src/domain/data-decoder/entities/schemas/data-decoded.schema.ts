@@ -1,10 +1,10 @@
 import { Schema } from 'ajv';
 
-export const DATA_DECODED_PARAMTER_SCHEMA_ID =
+export const DATA_DECODED_PARAMETER_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json';
 
 export const dataDecodedParameterSchema: Schema = {
-  $id: DATA_DECODED_PARAMTER_SCHEMA_ID,
+  $id: DATA_DECODED_PARAMETER_SCHEMA_ID,
   type: 'object',
   properties: {
     name: { type: 'string' },

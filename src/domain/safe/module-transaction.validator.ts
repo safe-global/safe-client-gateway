@@ -3,7 +3,7 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
-  DATA_DECODED_PARAMTER_SCHEMA_ID,
+  DATA_DECODED_PARAMETER_SCHEMA_ID,
   DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
@@ -31,7 +31,7 @@ export class ModuleTransactionValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      DATA_DECODED_PARAMTER_SCHEMA_ID,
+      DATA_DECODED_PARAMETER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
 
