@@ -24,7 +24,7 @@
     "test:all:cov": "jest --coverage --config ./test/jest-all.json --runInBand"
   },
   "dependencies": {
-    "@nestjs/cli": "^10.1.7",
+    "@nestjs/cli": "^10.1.8",
     "@nestjs/common": "^10.0.3",
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.5",
