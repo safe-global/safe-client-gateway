@@ -87,7 +87,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         .with('name', faker.word.words())
         .build(),
     ];
-    const replacementTxsPage = pageBuilder().with('results', []).build();
+    const rejectionTxsPage = pageBuilder().with('results', []).build();
     networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/`;
@@ -103,7 +103,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         case getMultisigTransactionUrl:
           return Promise.resolve({ data: transaction });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: replacementTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage });
         case getSafeUrl:
           return Promise.resolve({ data: safe });
         case getSafeAppsUrl:
