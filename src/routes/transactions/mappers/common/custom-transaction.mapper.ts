@@ -15,7 +15,6 @@ export class CustomTransactionMapper {
 
   async mapCustomTransaction(
     transaction: MultisigTransaction | ModuleTransaction,
-    value: number,
     dataSize: number,
     chainId: string,
   ): Promise<CustomTransactionInfo> {
@@ -28,7 +27,7 @@ export class CustomTransactionMapper {
     return new CustomTransactionInfo(
       toAddressInfo,
       dataSize.toString(),
-      value.toString(),
+      transaction.value,
       transaction?.dataDecoded?.method ?? null,
       this.getActionCount(transaction),
       this.isCancellation(transaction, dataSize),

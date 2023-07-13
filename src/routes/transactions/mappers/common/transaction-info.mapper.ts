@@ -60,7 +60,6 @@ export class MultisigTransactionInfoMapper {
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
         transaction,
-        value,
         dataSize,
         chainId,
       );
@@ -126,7 +125,6 @@ export class MultisigTransactionInfoMapper {
 
     return this.customTransactionMapper.mapCustomTransaction(
       transaction,
-      value,
       dataSize,
       chainId,
     );
