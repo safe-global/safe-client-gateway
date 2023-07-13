@@ -31,10 +31,8 @@ export class ExchangeApi implements IExchangeApi {
     try {
       return await this.dataSource.get<ExchangeFiatCodes>(
         CacheRouter.getExchangeFiatCodesCacheDir(),
-        `${this.baseUrl}/symbols`,
-        {
-          headers: { apikey: this.apiKey },
-        },
+        `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
+        {},
         this.cacheTtlSeconds,
       );
     } catch (error) {
@@ -46,10 +44,8 @@ export class ExchangeApi implements IExchangeApi {
     try {
       return await this.dataSource.get<ExchangeRates>(
         CacheRouter.getExchangeRatesCacheDir(),
-        `${this.baseUrl}/latest`,
-        {
-          headers: { apikey: this.apiKey },
-        },
+        `${this.baseUrl}/latest?access_key=${this.apiKey}`,
+        {},
         this.cacheTtlSeconds,
       );
     } catch (error) {
