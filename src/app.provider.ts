@@ -39,9 +39,9 @@ export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
  * the steps taken to configure the application
  */
 export abstract class AppProvider {
-  protected abstract readonly configuration: Array<
-    (app: INestApplication) => void
-  >;
+  protected abstract readonly configuration: ((
+    app: INestApplication,
+  ) => void)[];
 
   public async provide(module: any): Promise<INestApplication> {
     const app = await this.getApp(module);
@@ -59,7 +59,7 @@ export abstract class AppProvider {
  * service
  */
 export class DefaultAppProvider extends AppProvider {
-  protected readonly configuration: Array<(app: INestApplication) => void> =
+  protected readonly configuration: ((app: INestApplication) => void)[] =
     DEFAULT_CONFIGURATION;
 
   protected getApp(module: any): Promise<INestApplication> {
