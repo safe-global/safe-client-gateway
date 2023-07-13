@@ -25,6 +25,7 @@ describe('Balances Controller (Unit)', () => {
   let safeConfigUrl;
   let exchangeUrl;
   let networkService;
+  let exchangeApiKey;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -45,6 +46,7 @@ describe('Balances Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     exchangeUrl = configurationService.get('exchange.baseUri');
+    exchangeApiKey = configurationService.get('exchange.apiKey');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -75,7 +77,9 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == `${exchangeUrl}/latest`) {
+        } else if (
+          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+        ) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -116,7 +120,9 @@ describe('Balances Controller (Unit)', () => {
       expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: { trusted: undefined, exclude_spam: undefined },
       });
-      expect(networkService.get.mock.calls[2][0]).toBe(`${exchangeUrl}/latest`);
+      expect(networkService.get.mock.calls[2][0]).toBe(
+        `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
+      );
     });
 
     it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
@@ -138,7 +144,9 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == `${exchangeUrl}/latest`) {
+        } else if (
+          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+        ) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -180,7 +188,9 @@ describe('Balances Controller (Unit)', () => {
           return Promise.resolve({
             data: transactionApiBalancesResponse,
           });
-        } else if (url == `${exchangeUrl}/latest`) {
+        } else if (
+          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+        ) {
           return Promise.resolve({ data: exchangeApiResponse });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -281,7 +291,9 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == `${exchangeUrl}/latest`) {
+          } else if (
+            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+          ) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -319,7 +331,9 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == `${exchangeUrl}/latest`) {
+          } else if (
+            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+          ) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -357,7 +371,9 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == `${exchangeUrl}/latest`) {
+          } else if (
+            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+          ) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -396,7 +412,9 @@ describe('Balances Controller (Unit)', () => {
             return Promise.resolve({
               data: transactionApiBalancesResponse,
             });
-          } else if (url == `${exchangeUrl}/latest`) {
+          } else if (
+            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+          ) {
             return Promise.resolve({ data: exchangeApiResponse });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
