@@ -191,7 +191,6 @@ export class TransactionsHistoryMapper {
             await this.moduleTransactionMapper.mapTransaction(
               chainId,
               transaction as ModuleTransaction,
-              safe,
             ),
           );
         } else if (isEthereumTransaction(transaction)) {

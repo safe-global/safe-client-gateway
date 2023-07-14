@@ -86,7 +86,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(2);
+    expect(networkService.get).toBeCalledTimes(1);
     expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
   });
 
@@ -117,7 +117,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(4);
+    expect(networkService.get).toBeCalledTimes(2);
     expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
     expect(networkService.get).toBeCalledWith(
       getModuleTransactionUrl,

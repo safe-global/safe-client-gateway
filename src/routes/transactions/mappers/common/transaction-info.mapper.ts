@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '../../../../domain/safe/entities/operation.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenType } from '../../../balances/entities/token-type.entity';
@@ -47,7 +45,6 @@ export class MultisigTransactionInfoMapper {
   async mapTransactionInfo(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
-    safe: Safe,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataByteLength = transaction.data
@@ -57,19 +54,10 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
-      return await this.customTransactionMapper.mapCustomTransaction(
-        transaction,
-        dataSize,
-        chainId,
-      );
-    }
-
     if (this.isNativeCoinTransfer(value, dataSize)) {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
-        safe,
       );
     }
 
@@ -128,14 +116,6 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
     );
-  }
-
-  private isCustomTransaction(
-    value: number,
-    dataSize: number,
-    operation: Operation,
-  ): boolean {
-    return (value > 0 && dataSize > 0) || operation !== 0;
   }
 
   private isNativeCoinTransfer(value: number, dataSize: number): boolean {

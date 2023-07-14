@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import {
   MODULE_TRANSACTION_PREFIX,
@@ -26,19 +25,18 @@ export class ModuleTransactionDetailsMapper {
   async mapDetails(
     chainId: string,
     transaction: ModuleTransaction,
-    safe: Safe,
   ): Promise<TransactionDetails> {
     const [moduleAddress, txInfo, txData] = await Promise.all([
       this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
         'CONTRACT',
       ]),
-      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
       this.mapTransactionData(chainId, transaction),
     ]);
 
     return {
-      safeAddress: safe.address,
-      txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
+      safeAddress: transaction.safe,
+      txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime() ?? null,
       txStatus: this.statusMapper.mapTransactionStatus(transaction),
       txInfo,
