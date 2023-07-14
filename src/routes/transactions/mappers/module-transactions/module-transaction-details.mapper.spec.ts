@@ -61,7 +61,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -109,7 +109,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
       safeAddress: safe.address,

@@ -29,7 +29,6 @@ export class MultisigTransactionMapper {
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       transaction,
-      safe,
     );
     const executionInfo = this.executionInfoMapper.mapExecutionInfo(
       transaction,

@@ -53,7 +53,6 @@ export class TransactionPreviewMapper {
         data: previewTransactionDto.data,
         operation: previewTransactionDto.operation,
       },
-      safe,
     );
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,
