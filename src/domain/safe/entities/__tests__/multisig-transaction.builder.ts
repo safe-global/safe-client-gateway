@@ -49,7 +49,7 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('to', faker.finance.ethereumAddress())
     .with('transactionHash', faker.string.hexadecimal({ length: HASH_LENGTH }))
     .with('trusted', faker.datatype.boolean())
-    .with('value', faker.string.hexadecimal());
+    .with('value', faker.string.numeric());
 }
 
 export function toJson(multisigTransaction: MultisigTransaction): unknown {

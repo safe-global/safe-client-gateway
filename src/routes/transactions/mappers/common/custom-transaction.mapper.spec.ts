@@ -25,7 +25,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
   it('should build a CustomTransactionInfo with null actionCount', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
-    const value = faker.number.int();
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
@@ -34,7 +33,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
-      value,
       dataSize,
       chainId,
     );
@@ -43,7 +41,34 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
-      value: value.toString(),
+      value: transaction.value,
+      methodName: transaction.dataDecoded?.method,
+      actionCount: null,
+      isCancellation: false,
+    });
+  });
+
+  it('should build a CustomTransactionInfo without scientific notation', async () => {
+    const toAddress = new AddressInfo(faker.finance.ethereumAddress());
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
+    const dataSize = faker.number.int();
+    const chainId = faker.string.numeric();
+    const transaction = multisigTransactionBuilder()
+      .with('value', '1000000000000000000000000') // 1e+24
+      .with('dataDecoded', dataDecodedBuilder().build())
+      .build();
+
+    const customTransaction = await mapper.mapCustomTransaction(
+      transaction,
+      dataSize,
+      chainId,
+    );
+
+    expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
+    expect(customTransaction).toMatchObject({
+      to: toAddress,
+      dataSize: dataSize.toString(),
+      value: transaction.value,
       methodName: transaction.dataDecoded?.method,
       actionCount: null,
       isCancellation: false,
@@ -54,7 +79,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
-    const value = faker.number.int();
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
@@ -63,7 +87,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
-      value,
       dataSize,
       chainId,
     );
@@ -72,7 +95,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
-      value: value.toString(),
+      value: transaction.value,
       methodName: method,
       actionCount: null,
       isCancellation: false,
@@ -83,7 +106,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = 'multiSend';
-    const value = faker.number.int();
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
@@ -107,7 +129,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
-      value,
       dataSize,
       chainId,
     );
@@ -116,7 +137,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
-      value: value.toString(),
+      value: transaction.value,
       methodName: method,
       actionCount: 3,
       isCancellation: false,
@@ -127,13 +148,13 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const method = faker.word.sample();
-    const value = faker.number.int();
+    const value = '0';
     const dataSize = 0;
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
       .with('to', toAddress.value)
       .with('safe', toAddress.value)
-      .with('value', '0')
+      .with('value', value)
       .with('operation', 0)
       .with('baseGas', 0)
       .with('gasPrice', '0')
@@ -145,7 +166,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
-      value,
       dataSize,
       chainId,
     );
@@ -154,7 +174,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     expect(customTransaction).toMatchObject({
       to: toAddress,
       dataSize: dataSize.toString(),
-      value: value.toString(),
+      value,
       methodName: method,
       actionCount: null,
       isCancellation: true,
