@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '../../../../domain/safe/entities/operation.entity';
+import { Safe } from '../../../../domain/safe/entities/safe.entity';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenType } from '../../../balances/entities/token-type.entity';
@@ -46,6 +47,7 @@ export class MultisigTransactionInfoMapper {
   async mapTransactionInfo(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
+    safe: Safe,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataByteLength = transaction.data
@@ -67,6 +69,7 @@ export class MultisigTransactionInfoMapper {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
+        safe,
       );
     }
 
