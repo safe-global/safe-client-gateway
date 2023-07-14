@@ -7,14 +7,30 @@ export interface Transfer {
   transferId: string;
 }
 
+const hasTokenAddress = (
+  transfer: Transfer,
+): transfer is Transfer & {
+  tokenAddress: (ERC20Transfer | ERC721Transfer)['tokenAddress'];
+} => {
+  return 'tokenAddress' in transfer && transfer.tokenAddress != null;
+};
+
+const hasValue = (
+  transfer: Transfer,
+): transfer is Transfer & {
+  value: (ERC20Transfer | NativeTokenTransfer)['value'];
+} => {
+  return 'value' in transfer && transfer.value != null;
+};
+
 export interface ERC20Transfer extends Transfer {
   tokenAddress: string;
   value: string;
 }
 
 export function isERC20Transfer(transfer: Transfer): transfer is ERC20Transfer {
-  const erc20Transfer = transfer as ERC20Transfer;
-  return erc20Transfer.tokenAddress != null && erc20Transfer.value != null;
+  const hasValue = 'value' in transfer && transfer.value != null;
+  return hasTokenAddress(transfer) && hasValue;
 }
 
 export interface ERC721Transfer extends Transfer {
@@ -25,8 +41,8 @@ export interface ERC721Transfer extends Transfer {
 export function isERC721Transfer(
   transfer: Transfer,
 ): transfer is ERC721Transfer {
-  const erc721Transfer = transfer as ERC721Transfer;
-  return erc721Transfer.tokenAddress != null && erc721Transfer.tokenId != null;
+  const hasTokenId = 'tokenId' in transfer && transfer.tokenId != null;
+  return hasTokenAddress(transfer) && hasTokenId;
 }
 
 export interface NativeTokenTransfer extends Transfer {
@@ -36,8 +52,5 @@ export interface NativeTokenTransfer extends Transfer {
 export function isNativeTokenTransfer(
   transfer: Transfer,
 ): transfer is NativeTokenTransfer {
-  const nativeTokenTransfer = transfer as NativeTokenTransfer;
-  return (
-    (transfer as any).tokenAddress == null && nativeTokenTransfer.value != null
-  );
+  return !hasTokenAddress(transfer) && hasValue(transfer);
 }

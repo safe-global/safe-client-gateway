@@ -12,23 +12,23 @@ export type Transaction =
 export function isMultisigTransaction(
   transaction: Transaction,
 ): transaction is MultisigTransaction {
-  return (transaction as MultisigTransaction).safeTxHash !== undefined;
+  return 'safeTxHash' in transaction && transaction.safeTxHash !== undefined;
 }
 
 export function isEthereumTransaction(
   transaction: Transaction,
 ): transaction is EthereumTransaction {
-  return (transaction as EthereumTransaction).from !== undefined;
+  return 'from' in transaction && transaction.from !== undefined;
 }
 
 export function isModuleTransaction(
   transaction: Transaction,
 ): transaction is ModuleTransaction {
-  return (transaction as ModuleTransaction).module !== undefined;
+  return 'module' in transaction && transaction.module !== undefined;
 }
 
 export function isCreationTransaction(
   transaction: Transaction,
 ): transaction is CreationTransaction {
-  return (transaction as CreationTransaction).creator !== undefined;
+  return 'creator' in transaction && transaction.creator !== undefined;
 }

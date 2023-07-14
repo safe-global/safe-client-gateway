@@ -40,7 +40,7 @@ export class AddressInfoHelper {
   ): Promise<AddressInfo> {
     for (const source of sources) {
       try {
-        return await this._getFromSource(chainId, address, source as Source);
+        return await this._getFromSource(chainId, address, source);
       } catch (e) {
         this.loggingService.debug(
           `Could not get address info with source=${source} for ${address}`,
