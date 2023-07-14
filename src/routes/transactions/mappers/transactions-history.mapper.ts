@@ -174,7 +174,7 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private async mapGroupTransactions(
+  private mapGroupTransactions(
     transactionGroup: TransactionDomainGroup,
     chainId: string,
     safe: Safe,
