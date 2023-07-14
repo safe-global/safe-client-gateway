@@ -381,6 +381,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       confirmationBuilder().build(),
     ];
     const tx = multisigTransactionBuilder()
+      .with('safe', safe.address)
       .with('operation', 0)
       .with('data', faker.string.hexadecimal({ length: 32 }))
       .with('isExecuted', true)
@@ -713,6 +714,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       confirmationBuilder().build(),
     ];
     const tx = multisigTransactionBuilder()
+      .with('safe', safe.address)
       .with('operation', 0)
       .with('nonce', 4)
       .with('data', faker.string.hexadecimal({ length: 32 }))
