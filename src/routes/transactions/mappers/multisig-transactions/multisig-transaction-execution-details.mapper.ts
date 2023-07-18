@@ -61,7 +61,7 @@ export class MultisigTransactionExecutionDetailsMapper {
           transaction.refundReceiver ?? NULL_ADDRESS,
           ['CONTRACT'],
         ),
-        this._getRejectors(chainId, transaction, safe),
+        this._getRejectors(chainId, transaction),
       ]);
 
     return new MultisigExecutionDetails(
@@ -101,15 +101,14 @@ export class MultisigTransactionExecutionDetailsMapper {
   private async _getRejectors(
     chainId: string,
     transaction: MultisigTransaction,
-    safe: Safe,
   ): Promise<AddressInfo[]> {
     const rejectionTxsPage = await this.safeRepository.getMultisigTransactions(
       chainId,
-      safe.address,
+      transaction.safe,
       undefined,
       undefined,
       undefined,
-      safe.address,
+      transaction.safe,
       '0',
       transaction.nonce.toString(),
     );

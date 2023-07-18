@@ -126,7 +126,6 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     networkService.get.mockResolvedValueOnce({ data: chainResponse });
-    networkService.get.mockResolvedValueOnce({ data: { results: [] } });
     networkService.get.mockRejectedValueOnce({
       status: 404,
     });
@@ -139,7 +138,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 404,
       });
 
-    expect(networkService.get).toBeCalledTimes(3);
+    expect(networkService.get).toBeCalledTimes(2);
     expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
