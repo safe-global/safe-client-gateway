@@ -32,8 +32,5 @@ export class HttpErrorFactory {
 function isNetworkResponseError(
   error: NetworkError | Error,
 ): error is NetworkResponseError {
-  if ('status' in error) {
-    return error.status >= 400 && error.status < 600;
-  }
-  return false;
+  return 'status' in error && error.status >= 400 && error.status < 600;
 }
