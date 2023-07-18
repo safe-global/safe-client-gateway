@@ -8,6 +8,7 @@ import {
   TRANSACTIONS_PARAMETER_NAME,
 } from '../../constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
+import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
@@ -52,7 +53,7 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
   ): boolean {
-    if ('isExecuted' in transaction) {
+    if (isMultisigTransaction(transaction)) {
       const {
         to,
         safe,
@@ -63,7 +64,7 @@ export class CustomTransactionMapper {
         operation,
         refundReceiver,
         safeTxGas,
-      } = transaction as MultisigTransaction;
+      } = transaction;
 
       return (
         to === safe &&
