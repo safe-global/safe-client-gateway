@@ -38,6 +38,7 @@ describe('CacheFirstDataSource', () => {
   it('should return the data returned by the underlying network interface', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -48,7 +49,11 @@ describe('CacheFirstDataSource', () => {
       }
     });
 
-    const actual = await cacheFirstDataSource.get(cacheDir, targetUrl);
+    const actual = await cacheFirstDataSource.get(
+      cacheDir,
+      targetUrl,
+      notFoundExpireTimeSeconds,
+    );
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -56,6 +61,7 @@ describe('CacheFirstDataSource', () => {
 
   it('should return the cached data without calling the underlying network interface', async () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
     const rawJson = fakeJson();
     fakeCacheService.set(cacheDir, rawJson);
     mockNetworkService.get.mockImplementation((url) =>
@@ -65,6 +71,7 @@ describe('CacheFirstDataSource', () => {
     const actual = await cacheFirstDataSource.get(
       cacheDir,
       faker.internet.url({ appendSlash: false }),
+      notFoundExpireTimeSeconds,
     );
 
     expect(actual).toEqual(JSON.parse(rawJson));
@@ -75,6 +82,7 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
+    const notFoundExpireTimeSeconds = faker.number.int();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -85,7 +93,7 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl),
+      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
     ).rejects.toThrowError(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -95,6 +103,7 @@ describe('CacheFirstDataSource', () => {
   it('should return a 404 cached error without a second call to the underlying network interface', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
     const expectedError = new NetworkResponseError(404);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -106,11 +115,11 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl),
+      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
     ).rejects.toThrowError(expectedError);
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl),
+      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
     ).rejects.toThrowError(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -132,6 +141,7 @@ describe('CacheFirstDataSource', () => {
 
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
     const expectedError = new NetworkResponseError(404);
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {
@@ -144,10 +154,14 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl),
+      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
     ).rejects.toThrowError(expectedError);
 
-    expect(mockCache.set).toHaveBeenCalledWith(cacheDir, expect.anything(), 30);
+    expect(mockCache.set).toHaveBeenCalledWith(
+      cacheDir,
+      expect.anything(),
+      notFoundExpireTimeSeconds,
+    );
   });
 
   it('should cache not found errors with a specific TTL', async () => {
@@ -181,9 +195,9 @@ describe('CacheFirstDataSource', () => {
       cacheFirstDataSource.get(
         cacheDir,
         targetUrl,
+        notFoundExpireTimeSeconds,
         undefined,
         faker.number.int(),
-        notFoundExpireTimeSeconds,
       ),
     ).rejects.toThrowError(expectedError);
 

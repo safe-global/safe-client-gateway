@@ -28,6 +28,7 @@ const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 describe('ConfigApi', () => {
   const baseUri = faker.internet.url({ appendSlash: false });
   const expirationTimeInSeconds = faker.number.int();
+  const notFoundExpirationTimeInSeconds = faker.number.int();
   let fakeConfigurationService;
   let service: ConfigApi;
 
@@ -37,6 +38,10 @@ describe('ConfigApi', () => {
     fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       expirationTimeInSeconds,
+    );
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.notFound.default',
+      notFoundExpirationTimeInSeconds,
     );
   });
 
@@ -75,6 +80,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir('chains', 'undefined_undefined'),
       `${baseUri}/api/v1/chains`,
+      notFoundExpirationTimeInSeconds,
       { params: { limit: undefined, offset: undefined } },
       expirationTimeInSeconds,
     );
@@ -92,6 +98,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir(`${data.chainId}_chain`, ''),
       `${baseUri}/api/v1/chains/${data.chainId}`,
+      notFoundExpirationTimeInSeconds,
       undefined,
       expirationTimeInSeconds,
     );
@@ -110,6 +117,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir(`${chainId}_safe_apps`, 'undefined_undefined'),
       `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpirationTimeInSeconds,
       { params: { chainId, clientUrl: undefined, url: undefined } },
       expirationTimeInSeconds,
     );
@@ -129,6 +137,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir(`${chainId}_safe_apps`, `undefined_${url}`),
       `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpirationTimeInSeconds,
       { params: { chainId, clientUrl: undefined, url } },
       expirationTimeInSeconds,
     );
@@ -148,6 +157,7 @@ describe('ConfigApi', () => {
     expect(mockDataSource.get).toBeCalledWith(
       new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
       `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpirationTimeInSeconds,
       { params: { chainId, clientUrl, url: undefined } },
       expirationTimeInSeconds,
     );

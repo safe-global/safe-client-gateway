@@ -51,6 +51,9 @@ describe('TransactionApi', () => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
       }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return notFoundExpireTimeSeconds;
+      }
       if (key === 'expirationTimeInSeconds.notFound.contract') {
         return notFoundExpireTimeSeconds;
       }
@@ -145,6 +148,7 @@ describe('TransactionApi', () => {
       expect(mockDataSource.get).toBeCalledWith(
         new CacheDir(`${chainId}_safe_${safe.address}`, ''),
         `${baseUrl}/api/v1/safes/${safe.address}`,
+        notFoundExpireTimeSeconds,
         undefined,
         defaultExpirationTimeInSeconds,
       );

@@ -24,8 +24,6 @@ import {
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly defaultNotFoundExpireTimeSeconds = 30;
-
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -47,9 +45,9 @@ export class CacheFirstDataSource {
   async get<T>(
     cacheDir: CacheDir,
     url: string,
+    notFoundExpireTimeSeconds: number,
     networkRequest?: NetworkRequest,
     expireTimeSeconds?: number,
-    notFoundExpireTimeSeconds?: number,
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
@@ -96,10 +94,6 @@ export class CacheFirstDataSource {
     notFoundExpireTimeSeconds?: number,
   ): Promise<void> {
     const value = JSON.stringify({ status: error.status, data: error });
-    return this.cacheService.set(
-      cacheDir,
-      value,
-      notFoundExpireTimeSeconds ?? this.defaultNotFoundExpireTimeSeconds,
-    );
+    return this.cacheService.set(cacheDir, value, notFoundExpireTimeSeconds);
   }
 }

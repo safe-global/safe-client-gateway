@@ -30,8 +30,9 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
-  private readonly tokenNotFoundErrorTTLSeconds: number;
-  private readonly contractNotFoundErrorTTLSeconds: number;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly tokenNotFoundExpirationTimeSeconds: number;
+  private readonly contractNotFoundExpirationTimeSeconds: number;
 
   constructor(
     private readonly chainId: string,
@@ -46,11 +47,15 @@ export class TransactionApi implements ITransactionApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
-    this.tokenNotFoundErrorTTLSeconds =
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
+    this.tokenNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.token',
       );
-    this.contractNotFoundErrorTTLSeconds =
+    this.contractNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.contract',
       );
@@ -72,6 +77,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             trusted: trusted,
@@ -123,6 +129,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             limit: limit,
@@ -154,6 +161,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -171,6 +179,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -186,6 +195,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -213,9 +223,9 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.contractNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
-        this.contractNotFoundErrorTTLSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -241,16 +251,21 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
       const url = `${this.baseUrl}/api/v1/delegates/`;
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          safe: safeAddress,
-          delegate: delegate,
-          delegator: delegator,
-          label: label,
-          limit: limit,
-          offset: offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        this.defaultNotFoundExpirationTimeSeconds,
+        {
+          params: {
+            safe: safeAddress,
+            delegate: delegate,
+            delegator: delegator,
+            label: label,
+            limit: limit,
+            offset: offset,
+          },
         },
-      });
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -323,6 +338,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -351,6 +367,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             erc20: onlyErc20,
@@ -399,6 +416,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             execution_date__gte: executionDateGte,
@@ -456,6 +474,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -484,6 +503,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             to,
@@ -543,6 +563,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             safe: safeAddress,
@@ -588,6 +609,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -620,6 +642,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -650,6 +673,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             safe: safeAddress,
@@ -683,9 +707,9 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.tokenNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
-        this.tokenNotFoundErrorTTLSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -705,6 +729,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
             limit: limit,
@@ -730,6 +755,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -798,7 +824,11 @@ export class TransactionApi implements ITransactionApi {
         this.chainId,
         messageHash,
       );
-      return await this.dataSource.get(cacheDir, url);
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        this.defaultNotFoundExpirationTimeSeconds,
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -817,12 +847,17 @@ export class TransactionApi implements ITransactionApi {
         limit,
         offset,
       );
-      return await this.dataSource.get(cacheDir, url, {
-        params: {
-          limit: limit,
-          offset: offset,
+      return await this.dataSource.get(
+        cacheDir,
+        url,
+        this.defaultNotFoundExpirationTimeSeconds,
+        {
+          params: {
+            limit: limit,
+            offset: offset,
+          },
         },
-      });
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

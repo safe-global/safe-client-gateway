@@ -58,6 +58,8 @@ describe('Transaction API Manager Tests', () => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
       else if (key === 'expirationTimeInSeconds.default')
         return expirationTimeInSeconds;
+      else if (key === 'expirationTimeInSeconds.notFound.default')
+        return notFoundExpireTimeSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.contract')
         return notFoundExpireTimeSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.token')
@@ -80,6 +82,7 @@ describe('Transaction API Manager Tests', () => {
     expect(dataSourceMock.get).toBeCalledWith(
       expect.anything(),
       `${expectedUrl}/api/v1/about`,
+      notFoundExpireTimeSeconds,
       undefined,
       expirationTimeInSeconds,
     );
