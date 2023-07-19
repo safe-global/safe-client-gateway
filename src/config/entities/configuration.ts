@@ -31,6 +31,14 @@ export default () => ({
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  notFoundErrorTTLSeconds: {
+    contract: parseInt(
+      process.env.CONTRACT_NOT_FOUND_ERROR_TTL_SECONDS ?? `${60 * 60}`,
+    ),
+    token: parseInt(
+      process.env.TOKEN_NOT_FOUND_ERROR_TTL_SECONDS ?? `${60 * 60}`,
+    ),
+  },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',

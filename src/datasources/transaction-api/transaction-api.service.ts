@@ -30,6 +30,8 @@ import { IConfigurationService } from '../../config/configuration.service.interf
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
+  private readonly tokenNotFoundErrorTTLSeconds: number;
+  private readonly contractNotFoundErrorTTLSeconds: number;
 
   constructor(
     private readonly chainId: string,
@@ -43,6 +45,14 @@ export class TransactionApi implements ITransactionApi {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
+      );
+    this.tokenNotFoundErrorTTLSeconds =
+      this.configurationService.getOrThrow<number>(
+        'notFoundErrorTTLSeconds.token',
+      );
+    this.contractNotFoundErrorTTLSeconds =
+      this.configurationService.getOrThrow<number>(
+        'notFoundErrorTTLSeconds.contract',
       );
   }
 
@@ -205,6 +215,7 @@ export class TransactionApi implements ITransactionApi {
         url,
         undefined,
         this.defaultExpirationTimeInSeconds,
+        this.contractNotFoundErrorTTLSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -674,6 +685,7 @@ export class TransactionApi implements ITransactionApi {
         url,
         undefined,
         this.defaultExpirationTimeInSeconds,
+        this.tokenNotFoundErrorTTLSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);

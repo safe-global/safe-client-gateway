@@ -24,7 +24,7 @@ import {
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly ERROR_TTL_SECONDS = 30;
+  private readonly defaultNotFoundErrorTTLSeconds = 30;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -36,18 +36,20 @@ export class CacheFirstDataSource {
    * Gets the cached value behind the {@link CacheDir}.
    * If the value is not present, it tries to get the respective JSON
    * payload from {@link url}.
-   * 404 errors are cached with {@link ERROR_TTL_SECONDS} seconds expiration time.
+   * 404 errors are cached with {@link notFoundErrorTTLSeconds} seconds expiration time.
    *
    * @param cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
    * @param url - the HTTP endpoint to retrieve the JSON payload
    * @param networkRequest - the HTTP request to be used if there is a cache miss
    * @param expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
+   * @param notFoundErrorTTLSeconds - the time to live in seconds for the error when the item is not found
    */
   async get<T>(
     cacheDir: CacheDir,
     url: string,
     networkRequest?: NetworkRequest,
     expireTimeSeconds?: number,
+    notFoundErrorTTLSeconds?: number,
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
@@ -77,6 +79,7 @@ export class CacheFirstDataSource {
         await this.cacheNotFoundError(
           cacheDir,
           new NetworkResponseError(error.status, error),
+          notFoundErrorTTLSeconds,
         );
       }
       throw error;
@@ -84,14 +87,19 @@ export class CacheFirstDataSource {
   }
 
   /**
-   * Caches an error.
+   * Caches a not found error.
    * @param cacheDir - {@link CacheDir} where the error should be placed
    */
   private async cacheNotFoundError(
     cacheDir: CacheDir,
     error: NetworkResponseError,
+    notFoundErrorTTLSeconds?: number,
   ): Promise<void> {
     const value = JSON.stringify({ status: error.status, data: error });
-    return this.cacheService.set(cacheDir, value, this.ERROR_TTL_SECONDS);
+    return this.cacheService.set(
+      cacheDir,
+      value,
+      notFoundErrorTTLSeconds ?? this.defaultNotFoundErrorTTLSeconds,
+    );
   }
 }

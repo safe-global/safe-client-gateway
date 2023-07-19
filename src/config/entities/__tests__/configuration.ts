@@ -24,6 +24,10 @@ export default (): ReturnType<typeof configuration> => ({
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  notFoundErrorTTLSeconds: {
+    contract: faker.number.int(),
+    token: faker.number.int(),
+  },
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),

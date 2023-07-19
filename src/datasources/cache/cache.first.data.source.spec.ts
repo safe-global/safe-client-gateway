@@ -117,7 +117,7 @@ describe('CacheFirstDataSource', () => {
     expect(fakeCacheService.keyCount()).toBe(1);
   });
 
-  it('should cache errors with the expected TTL', async () => {
+  it('should cache not found errors with the default TTL', async () => {
     const mockCache = jest.mocked({
       get: jest.fn(),
       set: jest.fn(),
@@ -148,5 +148,49 @@ describe('CacheFirstDataSource', () => {
     ).rejects.toThrowError(expectedError);
 
     expect(mockCache.set).toHaveBeenCalledWith(cacheDir, expect.anything(), 30);
+  });
+
+  it('should cache not found errors with a specific TTL', async () => {
+    const mockCache = jest.mocked({
+      get: jest.fn(),
+      set: jest.fn(),
+      delete: jest.fn(),
+    } as unknown as ICacheService);
+
+    cacheFirstDataSource = new CacheFirstDataSource(
+      mockCache,
+      mockNetworkService,
+      mockLoggingService,
+    );
+
+    const targetUrl = faker.internet.url({ appendSlash: false });
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const expectedError = new NetworkResponseError(404);
+    const notFoundErrorTTLSeconds = faker.number.int();
+    mockCache.get.mockResolvedValue(undefined);
+    mockNetworkService.get.mockImplementation((url) => {
+      switch (url) {
+        case targetUrl:
+          return Promise.reject(expectedError);
+        default:
+          return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
+
+    await expect(
+      cacheFirstDataSource.get(
+        cacheDir,
+        targetUrl,
+        undefined,
+        faker.number.int(),
+        notFoundErrorTTLSeconds,
+      ),
+    ).rejects.toThrowError(expectedError);
+
+    expect(mockCache.set).toHaveBeenCalledWith(
+      cacheDir,
+      expect.anything(),
+      notFoundErrorTTLSeconds,
+    );
   });
 });
