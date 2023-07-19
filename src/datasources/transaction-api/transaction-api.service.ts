@@ -48,11 +48,11 @@ export class TransactionApi implements ITransactionApi {
       );
     this.tokenNotFoundErrorTTLSeconds =
       this.configurationService.getOrThrow<number>(
-        'notFoundErrorTTLSeconds.token',
+        'expirationTimeInSeconds.notFound.token',
       );
     this.contractNotFoundErrorTTLSeconds =
       this.configurationService.getOrThrow<number>(
-        'notFoundErrorTTLSeconds.contract',
+        'expirationTimeInSeconds.notFound.contract',
       );
   }
 

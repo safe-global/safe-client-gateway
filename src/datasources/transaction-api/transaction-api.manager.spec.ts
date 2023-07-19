@@ -53,15 +53,15 @@ describe('Transaction API Manager Tests', () => {
       .with('vpcTransactionService', vpcTxServiceUrl)
       .build();
     const expirationTimeInSeconds = faker.number.int();
-    const notFoundErrorTTLSeconds = faker.number.int();
+    const notFoundExpireTimeSeconds = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
       else if (key === 'expirationTimeInSeconds.default')
         return expirationTimeInSeconds;
-      else if (key === 'notFoundErrorTTLSeconds.contract')
-        return notFoundErrorTTLSeconds;
-      else if (key === 'notFoundErrorTTLSeconds.token')
-        return notFoundErrorTTLSeconds;
+      else if (key === 'expirationTimeInSeconds.notFound.contract')
+        return notFoundExpireTimeSeconds;
+      else if (key === 'expirationTimeInSeconds.notFound.token')
+        return notFoundExpireTimeSeconds;
       throw new Error(`Unexpected key: ${key}`);
     });
     configApiMock.getChain.mockResolvedValue(chain);

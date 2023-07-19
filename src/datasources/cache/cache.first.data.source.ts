@@ -24,7 +24,7 @@ import {
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly defaultNotFoundErrorTTLSeconds = 30;
+  private readonly defaultNotFoundExpireTimeSeconds = 30;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -36,20 +36,20 @@ export class CacheFirstDataSource {
    * Gets the cached value behind the {@link CacheDir}.
    * If the value is not present, it tries to get the respective JSON
    * payload from {@link url}.
-   * 404 errors are cached with {@link notFoundErrorTTLSeconds} seconds expiration time.
+   * 404 errors are cached with {@link notFoundExpireTimeSeconds} seconds expiration time.
    *
    * @param cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
    * @param url - the HTTP endpoint to retrieve the JSON payload
    * @param networkRequest - the HTTP request to be used if there is a cache miss
    * @param expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
-   * @param notFoundErrorTTLSeconds - the time to live in seconds for the error when the item is not found
+   * @param notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
    */
   async get<T>(
     cacheDir: CacheDir,
     url: string,
     networkRequest?: NetworkRequest,
     expireTimeSeconds?: number,
-    notFoundErrorTTLSeconds?: number,
+    notFoundExpireTimeSeconds?: number,
   ): Promise<T> {
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
@@ -79,7 +79,7 @@ export class CacheFirstDataSource {
         await this.cacheNotFoundError(
           cacheDir,
           new NetworkResponseError(error.status, error),
-          notFoundErrorTTLSeconds,
+          notFoundExpireTimeSeconds,
         );
       }
       throw error;
@@ -93,13 +93,13 @@ export class CacheFirstDataSource {
   private async cacheNotFoundError(
     cacheDir: CacheDir,
     error: NetworkResponseError,
-    notFoundErrorTTLSeconds?: number,
+    notFoundExpireTimeSeconds?: number,
   ): Promise<void> {
     const value = JSON.stringify({ status: error.status, data: error });
     return this.cacheService.set(
       cacheDir,
       value,
-      notFoundErrorTTLSeconds ?? this.defaultNotFoundErrorTTLSeconds,
+      notFoundExpireTimeSeconds ?? this.defaultNotFoundExpireTimeSeconds,
     );
   }
 }

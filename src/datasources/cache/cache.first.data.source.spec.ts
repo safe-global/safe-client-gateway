@@ -166,7 +166,7 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
-    const notFoundErrorTTLSeconds = faker.number.int();
+    const notFoundExpireTimeSeconds = faker.number.int();
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -183,14 +183,14 @@ describe('CacheFirstDataSource', () => {
         targetUrl,
         undefined,
         faker.number.int(),
-        notFoundErrorTTLSeconds,
+        notFoundExpireTimeSeconds,
       ),
     ).rejects.toThrowError(expectedError);
 
     expect(mockCache.set).toHaveBeenCalledWith(
       cacheDir,
       expect.anything(),
-      notFoundErrorTTLSeconds,
+      notFoundExpireTimeSeconds,
     );
   });
 });

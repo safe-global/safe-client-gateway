@@ -19,6 +19,14 @@ export default () => ({
   },
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
+    notFound: {
+      contract: parseInt(
+        process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
+      ),
+      token: parseInt(
+        process.env.TOKEN_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
+      ),
+    },
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -30,14 +38,6 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
-  },
-  notFoundErrorTTLSeconds: {
-    contract: parseInt(
-      process.env.CONTRACT_NOT_FOUND_ERROR_TTL_SECONDS ?? `${60 * 60}`,
-    ),
-    token: parseInt(
-      process.env.TOKEN_NOT_FOUND_ERROR_TTL_SECONDS ?? `${60 * 60}`,
-    ),
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

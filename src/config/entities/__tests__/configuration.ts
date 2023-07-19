@@ -18,15 +18,15 @@ export default (): ReturnType<typeof configuration> => ({
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
+    notFound: {
+      contract: faker.number.int(),
+      token: faker.number.int(),
+    },
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
-  },
-  notFoundErrorTTLSeconds: {
-    contract: faker.number.int(),
-    token: faker.number.int(),
   },
   redis: {
     host: faker.internet.domainName(),

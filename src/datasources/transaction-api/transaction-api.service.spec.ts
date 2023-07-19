@@ -40,22 +40,22 @@ describe('TransactionApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   let service: TransactionApi;
   let defaultExpirationTimeInSeconds: number;
-  let notFoundErrorTTLSeconds: number;
+  let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     defaultExpirationTimeInSeconds = faker.number.int();
-    notFoundErrorTTLSeconds = faker.number.int();
+    notFoundExpireTimeSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
       }
-      if (key === 'notFoundErrorTTLSeconds.contract') {
-        return notFoundErrorTTLSeconds;
+      if (key === 'expirationTimeInSeconds.notFound.contract') {
+        return notFoundExpireTimeSeconds;
       }
-      if (key === 'notFoundErrorTTLSeconds.token') {
-        return notFoundErrorTTLSeconds;
+      if (key === 'expirationTimeInSeconds.notFound.token') {
+        return notFoundExpireTimeSeconds;
       }
       throw Error(`Unexpected key: ${key}`);
     });
