@@ -7,6 +7,7 @@ import {
   ILoggingService,
   LoggingService,
 } from '../../logging/logging.interface';
+import { CacheReadiness } from '../../domain/interfaces/cache-readiness.interface';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 
@@ -35,7 +36,8 @@ async function redisClientFactory(
       inject: [IConfigurationService, LoggingService],
     },
     { provide: CacheService, useClass: RedisCacheService },
+    { provide: CacheReadiness, useExisting: CacheService },
   ],
-  exports: [CacheService],
+  exports: [CacheService, CacheReadiness],
 })
 export class CacheModule {}

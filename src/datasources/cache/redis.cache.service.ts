@@ -7,9 +7,12 @@ import {
 import { RedisClientType } from './cache.module';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
+import { ICacheReadiness } from '../../domain/interfaces/cache-readiness.interface';
 
 @Injectable()
-export class RedisCacheService implements ICacheService, OnModuleDestroy {
+export class RedisCacheService
+  implements ICacheService, ICacheReadiness, OnModuleDestroy
+{
   private readonly quitTimeoutInSeconds: number = 2;
 
   constructor(
@@ -18,6 +21,10 @@ export class RedisCacheService implements ICacheService, OnModuleDestroy {
     private readonly configuration: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
+
+  async ping(): Promise<unknown> {
+    return this.client.ping();
+  }
 
   async set(
     cacheDir: CacheDir,
