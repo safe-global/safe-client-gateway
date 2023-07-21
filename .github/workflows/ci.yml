@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: ['test:cov']
+        task: ['test:cov', 'test:e2e:cov']
     services:
       redis:
         image: redis
