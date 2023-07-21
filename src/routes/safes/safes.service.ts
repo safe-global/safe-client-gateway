@@ -137,6 +137,7 @@ export class SafesService {
       await this.safeRepository.getTransactionHistoryByExecutionDate(
         chainId,
         safeAddress,
+        1,
       )
     ).results[0];
 
