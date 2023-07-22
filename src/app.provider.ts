@@ -1,5 +1,4 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
-import { DataSourceErrorFilter } from './routes/common/filters/data-source-error.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 
@@ -13,10 +12,6 @@ export function configureShutdownHooks(app: INestApplication) {
   app.enableShutdownHooks();
 }
 
-function configureFilters(app: INestApplication) {
-  app.useGlobalFilters(new DataSourceErrorFilter());
-}
-
 function configureSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Safe Client Gateway')
@@ -24,13 +19,16 @@ function configureSwagger(app: INestApplication) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('', app, document);
+  SwaggerModule.setup('', app, document, {
+    customfavIcon: '/favicon.png',
+    customSiteTitle: 'Safe Client Gateway',
+    customCss: `.topbar-wrapper img { content:url(\'logo.svg\'); }`,
+  });
 }
 
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
   configureVersioning,
   configureShutdownHooks,
-  configureFilters,
   configureSwagger,
 ];
 
@@ -45,9 +43,9 @@ export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
  * the steps taken to configure the application
  */
 export abstract class AppProvider {
-  protected abstract readonly configuration: Array<
-    (app: INestApplication) => void
-  >;
+  protected abstract readonly configuration: ((
+    app: INestApplication,
+  ) => void)[];
 
   public async provide(module: any): Promise<INestApplication> {
     const app = await this.getApp(module);
@@ -65,7 +63,7 @@ export abstract class AppProvider {
  * service
  */
 export class DefaultAppProvider extends AppProvider {
-  protected readonly configuration: Array<(app: INestApplication) => void> =
+  protected readonly configuration: ((app: INestApplication) => void)[] =
     DEFAULT_CONFIGURATION;
 
   protected getApp(module: any): Promise<INestApplication> {

@@ -20,6 +20,7 @@ import { AppModule, configurationModule } from '../../../../app.module';
 import { CacheModule } from '../../../../datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '../../../../logging/logging.module';
 import { NetworkModule } from '../../../../datasources/network/network.module';
+import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
 
 describe('List module transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -100,12 +101,31 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     );
   });
 
+  it('Failure: data page validation fails', async () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+    const page = pageBuilder().build();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    networkService.get.mockResolvedValueOnce({ data: chain });
+    networkService.get.mockResolvedValueOnce({
+      data: { ...page, count: faker.word.words() },
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
+      .expect(500)
+      .expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
+  });
+
   it('Get module transaction should return 404', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     networkService.get.mockResolvedValueOnce({ data: chainResponse });
-    networkService.get.mockResolvedValueOnce({ data: { results: [] } });
     networkService.get.mockRejectedValueOnce({
       status: 404,
     });
@@ -118,7 +138,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 404,
       });
 
-    expect(networkService.get).toBeCalledTimes(3);
+    expect(networkService.get).toBeCalledTimes(2);
     expect(networkService.get).toBeCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,

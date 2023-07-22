@@ -13,6 +13,7 @@ import { CacheService, ICacheService } from '../cache/cache.service.interface';
 export class ConfigApi implements IConfigApi {
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
@@ -27,6 +28,10 @@ export class ConfigApi implements IConfigApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
@@ -37,6 +42,7 @@ export class ConfigApi implements IConfigApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         { params },
         this.defaultExpirationTimeInSeconds,
       );
@@ -63,6 +69,7 @@ export class ConfigApi implements IConfigApi {
       return await this.dataSource.get(
         cacheDir,
         url,
+        this.defaultNotFoundExpirationTimeSeconds,
         undefined,
         this.defaultExpirationTimeInSeconds,
       );
@@ -83,11 +90,17 @@ export class ConfigApi implements IConfigApi {
       return await this.dataSource.get(
         cacheDir,
         providerUrl,
+        this.defaultNotFoundExpirationTimeSeconds,
         { params },
         this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  async clearSafeApps(): Promise<void> {
+    const pattern = CacheRouter.getSafeAppsCachePattern();
+    await this.cacheService.deleteByKeyPattern(pattern);
   }
 }

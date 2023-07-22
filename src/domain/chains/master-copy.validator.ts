@@ -4,7 +4,10 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { MasterCopy } from './entities/master-copies.entity';
-import { masterCopySchema } from './entities/schemas/master-copy.schema';
+import {
+  MASTER_COPY_SCHEMA_ID,
+  masterCopySchema,
+} from './entities/schemas/master-copy.schema';
 
 @Injectable()
 export class MasterCopyValidator implements IValidator<MasterCopy> {
@@ -15,7 +18,7 @@ export class MasterCopyValidator implements IValidator<MasterCopy> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidMasterCopy = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/chains/master-copy.json',
+      MASTER_COPY_SCHEMA_ID,
       masterCopySchema,
     );
   }

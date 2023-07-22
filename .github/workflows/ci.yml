@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   release:
-    types: [ released ]
+    types: [released]
 
 jobs:
   prettier:
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [ 'test:cov', 'test:e2e:cov' ]
+        task: ['test:cov', 'test:e2e:cov']
     services:
       redis:
         image: redis
@@ -63,7 +63,7 @@ jobs:
           LOG_SILENT: true
       - name: Coveralls Parallel
         continue-on-error: true
-        uses: coverallsapp/github-action@v2.2.0
+        uses: coverallsapp/github-action@v2.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: run-${{ matrix.task }}
@@ -74,14 +74,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
-        uses: coverallsapp/github-action@v2.2.0
+        uses: coverallsapp/github-action@v2.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
 
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [ prettier, es-lint, tests-finish ]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -112,7 +112,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [ prettier, es-lint, tests-finish ]
+    needs: [prettier, es-lint, tests-finish]
     runs-on: ubuntu-latest
     env:
       IMAGE_CACHE_SOURCE: staging
@@ -146,7 +146,7 @@ jobs:
 
   autodeploy:
     runs-on: ubuntu-latest
-    needs: [ docker-publish-staging ]
+    needs: [docker-publish-staging]
     steps:
       - uses: actions/checkout@v3
       - name: Deploy Staging
@@ -154,4 +154,4 @@ jobs:
         env:
           AUTODEPLOY_URL: ${{ secrets.AUTODEPLOY_URL }}
           AUTODEPLOY_TOKEN: ${{ secrets.AUTODEPLOY_TOKEN }}
-          TARGET_ENV: "staging"
+          TARGET_ENV: 'staging'

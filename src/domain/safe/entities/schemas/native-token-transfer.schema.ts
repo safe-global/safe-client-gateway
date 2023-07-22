@@ -1,7 +1,10 @@
 import { Schema } from 'ajv';
 
+export const NATIVE_TOKEN_TRANSFER_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/native-token-transfer.json';
+
 export const nativeTokenTransferSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/native-token-transfer.json',
+  $id: NATIVE_TOKEN_TRANSFER_SCHEMA_ID,
   type: 'object',
   properties: {
     type: { type: 'string', const: 'ETHER_TRANSFER' },

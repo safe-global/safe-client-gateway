@@ -40,17 +40,27 @@ describe('TransactionApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   let service: TransactionApi;
   let defaultExpirationTimeInSeconds: number;
+  let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     defaultExpirationTimeInSeconds = faker.number.int();
+    notFoundExpireTimeSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
-      } else {
-        throw Error(`Unexpected key: ${key}`);
       }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return notFoundExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.contract') {
+        return notFoundExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.token') {
+        return notFoundExpireTimeSeconds;
+      }
+      throw Error(`Unexpected key: ${key}`);
     });
 
     service = new TransactionApi(
@@ -138,6 +148,7 @@ describe('TransactionApi', () => {
       expect(mockDataSource.get).toBeCalledWith(
         new CacheDir(`${chainId}_safe_${safe.address}`, ''),
         `${baseUrl}/api/v1/safes/${safe.address}`,
+        notFoundExpireTimeSeconds,
         undefined,
         defaultExpirationTimeInSeconds,
       );

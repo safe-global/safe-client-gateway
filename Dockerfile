@@ -8,6 +8,7 @@ COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node .yarn/plugins ./.yarn/plugins
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn workspaces focus --production
+COPY --chown=node:node assets ./assets
 COPY --chown=node:node src ./src
 RUN yarn run build
 
@@ -25,4 +26,5 @@ ENV APPLICATION_VERSION=${VERSION} \
 
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
+COPY --chown=node:node --from=base /app/assets ./assets
 CMD [ "node", "dist/main.js" ]

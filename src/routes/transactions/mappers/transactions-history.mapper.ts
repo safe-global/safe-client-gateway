@@ -73,10 +73,13 @@ export class TransactionsHistoryMapper {
         if (transactionGroup.timestamp != prevPageTimestamp) {
           transactions.push(new DateLabel(transactionGroup.timestamp));
         }
-        transactions.push(
-          ...(await this.mapGroupTransactions(transactionGroup, chainId, safe)),
-        );
-        return transactions.flat();
+        const groupTransactions = (
+          await this.mapGroupTransactions(transactionGroup, chainId, safe)
+        )
+          .filter(<T>(x: T | undefined): x is T => x != null)
+          .flat();
+        transactions.push(...groupTransactions);
+        return transactions;
       }),
     );
 
@@ -143,11 +146,11 @@ export class TransactionsHistoryMapper {
    * Returns a day {@link Date } at 00:00:00 from the input timestamp.
    *
    * @param timestamp - date to convert
-   * @param timezoneOffset - Offset of time zone in seconds
+   * @param timezoneOffset - Offset of time zone in milliseconds
    */
   private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
     if (timezoneOffset != 0) {
-      timestamp.setUTCSeconds(timezoneOffset);
+      timestamp.setUTCSeconds(timezoneOffset / 1000);
     }
     return new Date(
       Date.UTC(
@@ -172,17 +175,17 @@ export class TransactionsHistoryMapper {
   }
 
   private mapGroupTransactions(
-    transactionGroup,
-    chainId,
-    safe,
-  ): Promise<TransactionItem[]> {
+    transactionGroup: TransactionDomainGroup,
+    chainId: string,
+    safe: Safe,
+  ): Promise<(TransactionItem | TransactionItem[] | undefined)[]> {
     return Promise.all(
       transactionGroup.transactions.map(async (transaction) => {
         if (isMultisigTransaction(transaction)) {
           return new TransactionItem(
             await this.multisigTransactionMapper.mapTransaction(
               chainId,
-              transaction as MultisigTransaction,
+              transaction,
               safe,
             ),
           );
@@ -190,12 +193,11 @@ export class TransactionsHistoryMapper {
           return new TransactionItem(
             await this.moduleTransactionMapper.mapTransaction(
               chainId,
-              transaction as ModuleTransaction,
-              safe,
+              transaction,
             ),
           );
         } else if (isEthereumTransaction(transaction)) {
-          const transfers = (transaction as EthereumTransaction).transfers;
+          const transfers = transaction.transfers;
           if (transfers != null) {
             return await Promise.all(
               this.mapTransfer(transfers, chainId, safe),
@@ -205,7 +207,7 @@ export class TransactionsHistoryMapper {
           return new TransactionItem(
             await this.creationTransactionMapper.mapTransaction(
               chainId,
-              transaction as CreationTransaction,
+              transaction,
               safe,
             ),
           );

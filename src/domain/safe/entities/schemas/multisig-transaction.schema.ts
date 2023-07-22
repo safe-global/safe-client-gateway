@@ -1,7 +1,11 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+
+export const CONFIRMATION_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/confirmation.json';
 
 export const confirmationSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/confirmation.json',
+  $id: CONFIRMATION_SCHEMA_ID,
   type: 'object',
   properties: {
     owner: { type: 'string' },
@@ -13,8 +17,11 @@ export const confirmationSchema: Schema = {
   required: ['owner', 'submissionDate', 'signatureType'],
 };
 
+export const MULTISIG_TRANSACTION_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/multisig-transaction.json';
+
 export const multisigTransactionSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/multisig-transaction.json',
+  $id: MULTISIG_TRANSACTION_SCHEMA_ID,
   type: 'object',
   properties: {
     safe: { type: 'string' },
@@ -83,3 +90,11 @@ export const multisigTransactionSchema: Schema = {
     'trusted',
   ],
 };
+
+export const MULTISIG_TRANSACTION_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/multisig-transaction-page.json';
+
+export const multisigTransactionPageSchema: Schema = buildPageSchema(
+  MULTISIG_TRANSACTION_PAGE_SCHEMA_ID,
+  multisigTransactionSchema,
+);

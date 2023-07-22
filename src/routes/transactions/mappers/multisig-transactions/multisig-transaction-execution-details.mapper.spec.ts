@@ -80,7 +80,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         signers: safe.owners.map((owner) => new AddressInfo(owner)),
         confirmationsRequired: transaction.confirmationsRequired,
         confirmations: [],
-        rejectors: null,
+        rejectors: [],
         gasTokenInfo,
         trusted: transaction.trusted,
       }),
@@ -101,13 +101,76 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       .build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    const replacementTxConfirmation = confirmationBuilder().build();
-    const replacementTx = multisigTransactionBuilder()
-      .with('confirmations', [replacementTxConfirmation])
+    const rejectionTxConfirmation = confirmationBuilder().build();
+    const rejectionTx = multisigTransactionBuilder()
+      .with('confirmations', [rejectionTxConfirmation])
+      .build();
+    safeRepository.getMultisigTransactions.mockResolvedValue(
+      pageBuilder<MultisigTransaction>().with('results', [rejectionTx]).build(),
+    );
+    const expectedConfirmationsDetails = [
+      new MultisigConfirmationDetails(
+        new AddressInfo(transactionConfirmations[0].owner),
+        transactionConfirmations[0].signature,
+        transactionConfirmations[0].submissionDate.getTime(),
+      ),
+      new MultisigConfirmationDetails(
+        new AddressInfo(transactionConfirmations[1].owner),
+        transactionConfirmations[1].signature,
+        transactionConfirmations[1].submissionDate.getTime(),
+      ),
+    ];
+    const expectedRejectors = [new AddressInfo(rejectionTxConfirmation.owner)];
+
+    const actual = await mapper.mapMultisigExecutionDetails(
+      chainId,
+      transaction,
+      safe,
+    );
+
+    expect(actual).toEqual(
+      expect.objectContaining({
+        type: 'MULTISIG',
+        submittedAt: transaction.submissionDate.getTime(),
+        nonce: transaction.nonce,
+        safeTxGas: transaction.safeTxGas?.toString(),
+        baseGas: transaction.baseGas?.toString(),
+        gasPrice: transaction.gasPrice?.toString(),
+        gasToken: NULL_ADDRESS,
+        refundReceiver: addressInfo,
+        safeTxHash: transaction.safeTxHash,
+        executor: addressInfo,
+        signers: safe.owners.map((owner) => new AddressInfo(owner)),
+        confirmationsRequired: transaction.confirmationsRequired,
+        confirmations: expectedConfirmationsDetails,
+        rejectors: expectedRejectors,
+        gasTokenInfo: null,
+        trusted: transaction.trusted,
+      }),
+    );
+  });
+
+  it('should return a MultisigExecutionDetails object with rejectors from rejection transaction only', async () => {
+    const chainId = faker.string.numeric();
+    const transactionConfirmations = [
+      confirmationBuilder().build(),
+      confirmationBuilder().build(),
+    ];
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('gasToken', NULL_ADDRESS)
+      .with('confirmations', transactionConfirmations)
+      .build();
+    const addressInfo = addressInfoBuilder().build();
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    const rejectionTxConfirmation = confirmationBuilder().build();
+    const rejectionTx = multisigTransactionBuilder()
+      .with('confirmations', [rejectionTxConfirmation])
       .build();
     safeRepository.getMultisigTransactions.mockResolvedValue(
       pageBuilder<MultisigTransaction>()
-        .with('results', [replacementTx])
+        .with('results', [transaction, rejectionTx]) // returns both rejected and rejection txs
         .build(),
     );
     const expectedConfirmationsDetails = [
@@ -122,9 +185,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         transactionConfirmations[1].submissionDate.getTime(),
       ),
     ];
-    const expectedRejectors = [
-      new AddressInfo(replacementTxConfirmation.owner),
-    ];
+    const expectedRejectors = [new AddressInfo(rejectionTxConfirmation.owner)];
 
     const actual = await mapper.mapMultisigExecutionDetails(
       chainId,

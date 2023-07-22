@@ -5,6 +5,10 @@ import { JsonSchemaService } from '../../validation/providers/json-schema.servic
 import { IValidator } from '../interfaces/validator.interface';
 import { SafeApp } from './entities/safe-app.entity';
 import {
+  SAFE_APP_SCHEMA_ID,
+  SAFE_APP_ACCESS_CONTROL_SCHEMA_ID,
+  SAFE_APP_PROVIDER_SCHEMA_ID,
+  SAFE_APP_SOCIAL_PROFILE_SCHEMA_ID,
   safeAppAccessControlSchema,
   safeAppProviderSchema,
   safeAppSchema,
@@ -20,22 +24,22 @@ export class SafeAppsValidator implements IValidator<SafeApp> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe-apps/safe-app-provider.json',
+      SAFE_APP_PROVIDER_SCHEMA_ID,
       safeAppProviderSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe-apps/safe-app-access-control.json',
+      SAFE_APP_ACCESS_CONTROL_SCHEMA_ID,
       safeAppAccessControlSchema,
     );
 
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe-apps/safe-app-social-profile.json',
+      SAFE_APP_SOCIAL_PROFILE_SCHEMA_ID,
       safeAppSocialProfileSchema,
     );
 
     this.isValidSafeApp = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe-apps/safe-app.json',
+      SAFE_APP_SCHEMA_ID,
       safeAppSchema,
     );
   }

@@ -12,6 +12,7 @@ export class ExchangeApi implements IExchangeApi {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly cacheTtlSeconds: number;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -25,16 +26,19 @@ export class ExchangeApi implements IExchangeApi {
     this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
       'exchange.cacheTtlSeconds',
     );
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
   async getFiatCodes(): Promise<ExchangeFiatCodes> {
     try {
       return await this.dataSource.get<ExchangeFiatCodes>(
         CacheRouter.getExchangeFiatCodesCacheDir(),
-        `${this.baseUrl}/symbols`,
-        {
-          headers: { apikey: this.apiKey },
-        },
+        `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
+        this.defaultNotFoundExpirationTimeSeconds,
+        {},
         this.cacheTtlSeconds,
       );
     } catch (error) {
@@ -46,10 +50,9 @@ export class ExchangeApi implements IExchangeApi {
     try {
       return await this.dataSource.get<ExchangeRates>(
         CacheRouter.getExchangeRatesCacheDir(),
-        `${this.baseUrl}/latest`,
-        {
-          headers: { apikey: this.apiKey },
-        },
+        `${this.baseUrl}/latest?access_key=${this.apiKey}`,
+        this.defaultNotFoundExpirationTimeSeconds,
+        {},
         this.cacheTtlSeconds,
       );
     } catch (error) {

@@ -3,12 +3,17 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import {
+  DATA_DECODED_PARAMETER_SCHEMA_ID,
+  DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
 } from '../data-decoder/entities/schemas/data-decoded.schema';
 import { IValidator } from '../interfaces/validator.interface';
 import { CreationTransaction } from './entities/creation-transaction.entity';
-import { creationTransactionSchema } from './entities/schemas/creation-transaction.schema';
+import {
+  CREATION_TRANSACTION_SCHEMA_ID,
+  creationTransactionSchema,
+} from './entities/schemas/creation-transaction.schema';
 
 @Injectable()
 export class CreationTransactionValidator
@@ -21,17 +26,14 @@ export class CreationTransactionValidator
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json',
+      DATA_DECODED_PARAMETER_SCHEMA_ID,
       dataDecodedParameterSchema,
     );
 
-    this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/data-decoded/data-decoded.json',
-      dataDecodedSchema,
-    );
+    this.jsonSchemaService.getSchema(DATA_DECODED_SCHEMA_ID, dataDecodedSchema);
 
     this.isValidCreationTransaction = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/safe/creation-transaction.json',
+      CREATION_TRANSACTION_SCHEMA_ID,
       creationTransactionSchema,
     );
   }

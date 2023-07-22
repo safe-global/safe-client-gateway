@@ -4,7 +4,10 @@ import { GenericValidator } from '../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../validation/providers/json-schema.service';
 import { IValidator } from '../interfaces/validator.interface';
 import { Contract } from './entities/contract.entity';
-import { contractSchema } from './entities/schemas/contract.schema';
+import {
+  CONTRACT_SCHEMA_ID,
+  contractSchema,
+} from './entities/schemas/contract.schema';
 
 @Injectable()
 export class ContractsValidator implements IValidator<Contract> {
@@ -15,7 +18,7 @@ export class ContractsValidator implements IValidator<Contract> {
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValidContract = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/contracts/contract.json',
+      CONTRACT_SCHEMA_ID,
       contractSchema,
     );
   }

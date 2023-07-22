@@ -123,6 +123,36 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
+  it('Failure: data page validation fails', async () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const chain = chainBuilder().build();
+    const page = pageBuilder().build();
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chain });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({
+          data: { ...page, results: faker.word.words() },
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/history/`,
+      )
+      .expect(500)
+      .expect({
+        message: 'Validation failed',
+        code: 42,
+        arguments: [],
+      });
+  });
+
   it('Should return only creation transaction', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const timezoneOffset = 3600 * 2; //Offset of 2 hours
@@ -257,7 +287,7 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should change date label with time offset', async () => {
     const safeAddress = faker.finance.ethereumAddress();
-    const timezoneOffset = 3600 * 2; //Offset of 2 hours
+    const timezoneOffset = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
     const moduleTransaction = moduleTransactionToJson(

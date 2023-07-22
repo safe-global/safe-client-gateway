@@ -1,7 +1,11 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+
+export const MESSAGE_CONFIRMATION_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/messages/message-confirmation.json';
 
 export const messageConfirmationSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/messages/message-confirmation.json',
+  $id: MESSAGE_CONFIRMATION_SCHEMA_ID,
   type: 'object',
   properties: {
     created: { type: 'string', isDate: true },
@@ -13,8 +17,11 @@ export const messageConfirmationSchema: Schema = {
   required: ['created', 'modified', 'owner', 'signature', 'signatureType'],
 };
 
+export const MESSAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/messages/message.json';
+
 export const messageSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/messages/message.json',
+  $id: MESSAGE_SCHEMA_ID,
   type: 'object',
   properties: {
     created: { type: 'string', isDate: true },
@@ -40,3 +47,11 @@ export const messageSchema: Schema = {
     'confirmations',
   ],
 };
+
+export const MESSAGE_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/messages/message-page.json';
+
+export const messagePageSchema: Schema = buildPageSchema(
+  MESSAGE_PAGE_SCHEMA_ID,
+  messageSchema,
+);

@@ -4,6 +4,8 @@ import { GenericValidator } from '../../../validation/providers/generic.validato
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { InvalidationPatternDto } from '../entities/invalidation-pattern.dto.entity';
 import {
+  INVALIDATION_PATTERN_DETAIL_SCHEMA_ID,
+  INVALIDATION_PATTERN_DTO_SCHEMA_ID,
   invalidationPatternDetailSchema,
   invalidationPatternDtoSchema,
 } from '../entities/schemas/invalidation-pattern.dto.schema';
@@ -19,11 +21,11 @@ export class InvalidationPatternDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/flush/invalidation-pattern-detail.json',
+      INVALIDATION_PATTERN_DETAIL_SCHEMA_ID,
       invalidationPatternDetailSchema,
     );
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/delegates/invalidation-pattern.dto.json',
+      INVALIDATION_PATTERN_DTO_SCHEMA_ID,
       invalidationPatternDtoSchema,
     );
   }

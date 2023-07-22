@@ -3,6 +3,8 @@ import { AxiosNetworkService } from './axios.network.service';
 import { NetworkService } from './network.service.interface';
 import axios, { Axios } from 'axios';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import * as http from 'http';
+import * as https from 'https';
 
 /**
  * Use this factory to add any default parameter to the
@@ -12,7 +14,11 @@ function axiosFactory(configurationService: IConfigurationService): Axios {
   const requestTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
-  return axios.create({ timeout: requestTimeout });
+  return axios.create({
+    timeout: requestTimeout,
+    httpAgent: new http.Agent({ keepAlive: true }),
+    httpsAgent: new https.Agent({ keepAlive: true }),
+  });
 }
 
 /**

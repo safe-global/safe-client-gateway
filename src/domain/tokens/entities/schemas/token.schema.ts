@@ -1,8 +1,12 @@
-import { JSONSchemaType } from 'ajv';
+import { JSONSchemaType, Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 import { Token, TokenType } from '../token.entity';
 
+export const TOKEN_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/tokens/token.json';
+
 export const tokenSchema: JSONSchemaType<Token> = {
-  $id: 'https://safe-client.safe.global/schemas/tokens/token.json',
+  $id: TOKEN_SCHEMA_ID,
   type: 'object',
   properties: {
     address: { type: 'string' },
@@ -14,3 +18,11 @@ export const tokenSchema: JSONSchemaType<Token> = {
   },
   required: ['address', 'decimals', 'logoUri', 'name', 'symbol', 'type'],
 };
+
+export const TOKEN_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/tokens/token-page.json';
+
+export const tokenPageSchema: Schema = buildPageSchema(
+  TOKEN_PAGE_SCHEMA_ID,
+  tokenSchema,
+);

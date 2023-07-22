@@ -3,7 +3,10 @@ import { ValidateFunction } from 'ajv';
 import { GenericValidator } from '../../../validation/providers/generic.validator';
 import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
 import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entity';
-import { previewTransactionDtoSchema } from '../entities/schemas/preview-transaction.dto.schema';
+import {
+  PREVIEW_TRANSACTION_DTO_SCHEMA_ID,
+  previewTransactionDtoSchema,
+} from '../entities/schemas/preview-transaction.dto.schema';
 
 @Injectable()
 export class PreviewTransactionDtoValidationPipe
@@ -16,7 +19,7 @@ export class PreviewTransactionDtoValidationPipe
     private readonly jsonSchemaService: JsonSchemaService,
   ) {
     this.isValid = this.jsonSchemaService.getSchema(
-      'https://safe-client.safe.global/schemas/transactions/preview-transaction.dto.json',
+      PREVIEW_TRANSACTION_DTO_SCHEMA_ID,
       previewTransactionDtoSchema,
     );
   }

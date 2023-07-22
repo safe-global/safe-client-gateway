@@ -346,6 +346,10 @@ export class CacheRouter {
     );
   }
 
+  static getSafeAppsCachePattern(): string {
+    return `*_${CacheRouter.SAFE_APPS_KEY}$`;
+  }
+
   static getExchangeFiatCodesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.EXCHANGE_FIAT_CODES_KEY, '');
   }

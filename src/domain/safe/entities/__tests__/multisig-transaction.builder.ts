@@ -9,6 +9,8 @@ import {
 } from './multisig-transaction-confirmation.builder';
 import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/data-decoded.builder';
 
+const HASH_LENGTH = 10;
+
 export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
   return Builder.new<MultisigTransaction>()
     .with('baseGas', faker.number.int())
@@ -41,13 +43,13 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('refundReceiver', faker.finance.ethereumAddress())
     .with('safe', faker.finance.ethereumAddress())
     .with('safeTxGas', faker.number.int())
-    .with('safeTxHash', faker.string.hexadecimal())
+    .with('safeTxHash', faker.string.hexadecimal({ length: HASH_LENGTH }))
     .with('signatures', faker.string.hexadecimal())
     .with('submissionDate', faker.date.recent())
     .with('to', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.string.hexadecimal())
+    .with('transactionHash', faker.string.hexadecimal({ length: HASH_LENGTH }))
     .with('trusted', faker.datatype.boolean())
-    .with('value', faker.string.hexadecimal());
+    .with('value', faker.string.numeric());
 }
 
 export function toJson(multisigTransaction: MultisigTransaction): unknown {

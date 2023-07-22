@@ -1,8 +1,11 @@
 import { JSONSchemaType } from 'ajv';
 import { Backbone } from '../backbone.entity';
 
+export const BACKBONE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/backbone/backbone.json';
+
 export const backboneSchema: JSONSchemaType<Backbone> = {
-  $id: 'https://safe-client.safe.global/schemas/backbone/backbone.json',
+  $id: BACKBONE_SCHEMA_ID,
   type: 'object',
   properties: {
     name: { type: 'string' },

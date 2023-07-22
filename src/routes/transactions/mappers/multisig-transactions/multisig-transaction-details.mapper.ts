@@ -52,7 +52,7 @@ export class MultisigTransactionDetailsMapper {
         transaction.dataDecoded,
       ),
       this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
-      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction, safe),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
       this.multisigTransactionExecutionDetailsMapper.mapMultisigExecutionDetails(
         chainId,
         transaction,

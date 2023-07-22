@@ -1,7 +1,11 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+
+export const TRANSACTION_TYPE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/transaction-type.json';
 
 export const transactionTypeSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/transaction-type.json',
+  $id: TRANSACTION_TYPE_SCHEMA_ID,
   type: 'object',
   discriminator: { propertyName: 'txType' },
   required: ['txType'],
@@ -17,3 +21,11 @@ export const transactionTypeSchema: Schema = {
     },
   ],
 };
+
+export const TRANSACTION_TYPE_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/transaction-type-page.json';
+
+export const transactionTypePageSchema: Schema = buildPageSchema(
+  TRANSACTION_TYPE_PAGE_SCHEMA_ID,
+  transactionTypeSchema,
+);

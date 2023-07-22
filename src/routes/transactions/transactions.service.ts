@@ -57,15 +57,10 @@ export class TransactionsService {
 
     switch (txType) {
       case MODULE_TRANSACTION_PREFIX: {
-        const [tx, safe] = await Promise.all([
+        const [tx] = await Promise.all([
           this.safeRepository.getModuleTransaction(chainId, id),
-          this.safeRepository.getSafe(chainId, safeAddress),
         ]);
-        return this.moduleTransactionDetailsMapper.mapDetails(
-          chainId,
-          tx,
-          safe,
-        );
+        return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx);
       }
 
       case TRANSFER_PREFIX: {
@@ -201,8 +196,6 @@ export class TransactionsService {
       paginationData?.offset,
     );
 
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-
     const results = await Promise.all(
       domainTransactions.results.map(
         async (domainTransaction) =>
@@ -210,7 +203,6 @@ export class TransactionsService {
             await this.moduleTransactionMapper.mapTransaction(
               chainId,
               domainTransaction,
-              safeInfo,
             ),
           ),
       ),

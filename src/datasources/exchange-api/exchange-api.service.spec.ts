@@ -16,6 +16,7 @@ describe('ExchangeApi', () => {
   const exchangeBaseUri = faker.internet.url({ appendSlash: false });
   const exchangeApiKey = faker.string.alphanumeric();
   const exchangeCacheTtlSeconds = faker.number.int();
+  const notFoundExpirationTimeInSeconds = faker.number.int();
 
   beforeAll(async () => {
     fakeConfigurationService = new FakeConfigurationService();
@@ -24,6 +25,10 @@ describe('ExchangeApi', () => {
     fakeConfigurationService.set(
       'exchange.cacheTtlSeconds',
       exchangeCacheTtlSeconds,
+    );
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.notFound.default',
+      notFoundExpirationTimeInSeconds,
     );
   });
 
@@ -63,7 +68,12 @@ describe('ExchangeApi', () => {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('exchange.baseUri', exchangeBaseUri);
     fakeConfigurationService.set('exchange.apiKey', exchangeApiKey);
+    fakeConfigurationService.set('exchange.apiKey', exchangeApiKey);
     fakeConfigurationService.set('exchange.cacheTtlSeconds', ttl);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.notFound.default',
+      notFoundExpirationTimeInSeconds,
+    );
     const expectedFiatCodes = exchangeFiatCodesBuilder().build();
     mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
     const target = new ExchangeApi(
@@ -75,8 +85,9 @@ describe('ExchangeApi', () => {
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith(
       new CacheDir('exchange_fiat_codes', ''),
-      `${exchangeBaseUri}/symbols`,
-      { headers: { apikey: exchangeApiKey } },
+      `${exchangeBaseUri}/symbols?access_key=${exchangeApiKey}`,
+      notFoundExpirationTimeInSeconds,
+      {},
       ttl, // 60 seconds
     );
   });
@@ -102,6 +113,10 @@ describe('ExchangeApi', () => {
     fakeConfigurationService.set('exchange.baseUri', exchangeBaseUri);
     fakeConfigurationService.set('exchange.apiKey', exchangeApiKey);
     fakeConfigurationService.set('exchange.cacheTtlSeconds', ttl);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.notFound.default',
+      notFoundExpirationTimeInSeconds,
+    );
     const expectedFiatCodes = exchangeFiatCodesBuilder().build();
     mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
     const target = new ExchangeApi(
@@ -113,8 +128,9 @@ describe('ExchangeApi', () => {
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith(
       new CacheDir('exchange_rates', ''),
-      `${exchangeBaseUri}/latest`,
-      { headers: { apikey: exchangeApiKey } },
+      `${exchangeBaseUri}/latest?access_key=${exchangeApiKey}`,
+      notFoundExpirationTimeInSeconds,
+      {},
       ttl, // 60 seconds
     );
   });

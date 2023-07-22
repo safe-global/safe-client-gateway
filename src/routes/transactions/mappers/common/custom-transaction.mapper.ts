@@ -8,6 +8,7 @@ import {
   TRANSACTIONS_PARAMETER_NAME,
 } from '../../constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
+import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
@@ -15,7 +16,6 @@ export class CustomTransactionMapper {
 
   async mapCustomTransaction(
     transaction: MultisigTransaction | ModuleTransaction,
-    value: number,
     dataSize: number,
     chainId: string,
   ): Promise<CustomTransactionInfo> {
@@ -28,7 +28,7 @@ export class CustomTransactionMapper {
     return new CustomTransactionInfo(
       toAddressInfo,
       dataSize.toString(),
-      value.toString(),
+      transaction.value,
       transaction?.dataDecoded?.method ?? null,
       this.getActionCount(transaction),
       this.isCancellation(transaction, dataSize),
@@ -53,7 +53,7 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
   ): boolean {
-    if ('isExecuted' in transaction) {
+    if (isMultisigTransaction(transaction)) {
       const {
         to,
         safe,
@@ -64,7 +64,7 @@ export class CustomTransactionMapper {
         operation,
         refundReceiver,
         safeTxGas,
-      } = transaction as MultisigTransaction;
+      } = transaction;
 
       return (
         to === safe &&

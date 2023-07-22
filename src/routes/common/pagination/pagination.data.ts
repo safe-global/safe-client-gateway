@@ -15,7 +15,10 @@ export class PaginationData {
   public static readonly DEFAULT_LIMIT = 20;
   public static readonly DEFAULT_OFFSET = 0;
 
-  constructor(readonly limit: number, readonly offset: number) {
+  constructor(
+    readonly limit: number,
+    readonly offset: number,
+  ) {
     this.limit = isNaN(limit) ? PaginationData.DEFAULT_LIMIT : limit;
     this.offset = isNaN(offset) ? PaginationData.DEFAULT_OFFSET : offset;
   }

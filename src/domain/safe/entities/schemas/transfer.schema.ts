@@ -1,7 +1,11 @@
 import { Schema } from 'ajv';
+import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+
+export const TRANSFER_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/transfer.json';
 
 export const transferSchema: Schema = {
-  $id: 'https://safe-client.safe.global/schemas/safe/transfer.json',
+  $id: TRANSFER_SCHEMA_ID,
   type: 'object',
   discriminator: { propertyName: 'type' },
   required: [
@@ -24,3 +28,11 @@ export const transferSchema: Schema = {
     },
   ],
 };
+
+export const TRANSFER_PAGE_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/safe/transfer-page.json';
+
+export const transferPageSchema: Schema = buildPageSchema(
+  TRANSFER_PAGE_SCHEMA_ID,
+  transferSchema,
+);
