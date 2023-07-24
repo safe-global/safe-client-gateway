@@ -7,6 +7,7 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { faker } from '@faker-js/faker';
+import { PromiseRegistry } from '../promise/promise-registry';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -74,6 +75,7 @@ describe('Transaction API Manager Tests', () => {
       cacheService,
       httpErrorFactory,
       networkService,
+      new PromiseRegistry<string>({}),
     );
 
     const transactionApi = await target.getTransactionApi(chain.chainId);

@@ -10,6 +10,7 @@ import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbo
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
 import { IConfigurationService } from '../../config/configuration.service.interface';
+import { PromiseRegistry } from '../promise/promise-registry';
 
 const dataSource = {
   get: jest.fn(),
@@ -71,6 +72,7 @@ describe('TransactionApi', () => {
       mockConfigurationService,
       mockHttpErrorFactory,
       networkService,
+      new PromiseRegistry<string>({}),
     );
   });
 
