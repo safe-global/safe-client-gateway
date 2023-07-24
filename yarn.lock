@@ -1601,10 +1601,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.4.1":
-  version: 20.4.1
-  resolution: "@types/node@npm:20.4.1"
-  checksum: 22cbcc792f2eb636fe4188778ed0f32658ab872aa7fcb9847b3fa289a42b14b9f5e30c6faec50ef3c7adbc6c2a246926e5858136bb8b10c035a3fcaa6afbeed2
+"@types/node@npm:^20.4.4":
+  version: 20.4.4
+  resolution: "@types/node@npm:20.4.4"
+  checksum: 43f3c4a8acc38ae753e15a0e79bae0447d255b3742fa87f8e065d7b9d20ecb0e03d6c5b46c00d5d26f4552160381a00255f49205595a8ee48c2423e00263c930
   languageName: node
   linkType: hard
 
@@ -6532,7 +6532,7 @@ __metadata:
     "@types/express": ^4.17.17
     "@types/jest": 29.5.2
     "@types/lodash": ^4.14.195
-    "@types/node": ^20.4.1
+    "@types/node": ^20.4.4
     "@types/semver": ^7.5.0
     "@types/supertest": ^2.0.11
     "@typescript-eslint/eslint-plugin": ^6.1.0
