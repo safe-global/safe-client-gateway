@@ -12,15 +12,15 @@ describe('Promise Registry tests', () => {
   it('registration is successful', () => {
     const promise = Promise.resolve();
 
-    promiseRegistry.register('foo', () => promise);
+    promiseRegistry.register({ key: 'foo', field: 'bar' }, () => promise);
 
-    expect(Object.keys(registry)).toEqual(['foo']);
+    expect(Object.keys(registry)).toEqual(['foobar']);
   });
 
   it('promise is deleted upon successful completion', async () => {
     const promise = Promise.resolve();
 
-    await promiseRegistry.register('foo', () => promise);
+    await promiseRegistry.register({ key: 'foo', field: 'bar' }, () => promise);
 
     expect(Object.keys(registry)).toEqual([]);
   });
@@ -28,16 +28,22 @@ describe('Promise Registry tests', () => {
   it('promise is deleted upon error completion', async () => {
     const promise = Promise.reject('random error');
 
-    await promiseRegistry.register('foo', () => promise).catch(() => {});
+    await promiseRegistry
+      .register({ key: 'foo', field: 'bar' }, () => promise)
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      .catch(() => {});
 
     expect(Object.keys(registry)).toEqual([]);
   });
 
   it('ongoing promise with same key is returned', async () => {
-    registry['foo'] = Promise.resolve('ongoing');
+    registry['foobar'] = Promise.resolve('ongoing');
     const promise = Promise.resolve('new');
 
-    const actual = await promiseRegistry.register('foo', () => promise);
+    const actual = await promiseRegistry.register(
+      { key: 'foo', field: 'bar' },
+      () => promise,
+    );
 
     expect(actual).toBe('ongoing');
   });
