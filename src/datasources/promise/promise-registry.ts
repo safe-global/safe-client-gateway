@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CacheDir } from '../cache/entities/cache-dir.entity';
 
 @Injectable()
 export class PromiseRegistry<K extends keyof any> {
@@ -15,12 +14,10 @@ export class PromiseRegistry<K extends keyof any> {
    *
    * Once the promise is settled, it is removed from the registry.
    *
-   * @param cacheDir - the CacheDir used to register the provided promise
+   * @param key - the key used to register the provided promise
    * @param fn - the function to be executed
    */
-  async register<V>(cacheDir: CacheDir, fn: () => V): Promise<V> {
-    const key = cacheDir.key + cacheDir.field;
-
+  async register<V>(key: string, fn: () => V): Promise<V> {
     const activePromise = this.registry[key];
     if (activePromise) return activePromise;
 

@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { PromiseRegistry } from './promise-registry';
 
 describe('Promise Registry tests', () => {
@@ -10,26 +11,32 @@ describe('Promise Registry tests', () => {
   });
 
   it('registration is successful', () => {
+    const key = faker.string.sample();
+
     const promise = Promise.resolve();
 
-    promiseRegistry.register({ key: 'foo', field: 'bar' }, () => promise);
+    promiseRegistry.register(key, () => promise);
 
-    expect(Object.keys(registry)).toEqual(['foobar']);
+    expect(Object.keys(registry)).toEqual([key]);
   });
 
   it('promise is deleted upon successful completion', async () => {
+    const key = faker.string.sample();
+
     const promise = Promise.resolve();
 
-    await promiseRegistry.register({ key: 'foo', field: 'bar' }, () => promise);
+    await promiseRegistry.register(key, () => promise);
 
     expect(Object.keys(registry)).toEqual([]);
   });
 
   it('promise is deleted upon error completion', async () => {
+    const key = faker.string.sample();
+
     const promise = Promise.reject('random error');
 
     await promiseRegistry
-      .register({ key: 'foo', field: 'bar' }, () => promise)
+      .register(key, () => promise)
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       .catch(() => {});
 
@@ -37,13 +44,12 @@ describe('Promise Registry tests', () => {
   });
 
   it('ongoing promise with same key is returned', async () => {
-    registry['foobar'] = Promise.resolve('ongoing');
+    const key = faker.string.sample();
+
+    registry[key] = Promise.resolve('ongoing');
     const promise = Promise.resolve('new');
 
-    const actual = await promiseRegistry.register(
-      { key: 'foo', field: 'bar' },
-      () => promise,
-    );
+    const actual = await promiseRegistry.register(key, () => promise);
 
     expect(actual).toBe('ongoing');
   });

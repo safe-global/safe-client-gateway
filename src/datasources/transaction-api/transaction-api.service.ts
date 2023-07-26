@@ -28,6 +28,7 @@ import { HttpErrorFactory } from '../errors/http-error-factory';
 import { INetworkService } from '../network/network.service.interface';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { PromiseRegistry } from '../promise/promise-registry';
+import { CacheDir } from '../cache/entities/cache-dir.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -63,6 +64,10 @@ export class TransactionApi implements ITransactionApi {
       );
   }
 
+  private getPromiseRegistryKey(cacheDir: CacheDir): string {
+    return cacheDir.key + cacheDir.field;
+  }
+
   async getBalances(
     safeAddress: string,
     trusted?: boolean,
@@ -77,19 +82,21 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Balance[]>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              trusted: trusted,
-              exclude_spam: excludeSpam,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Balance[]>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                trusted: trusted,
+                exclude_spam: excludeSpam,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -132,21 +139,23 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v2/safes/${safeAddress}/collectibles/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Collectible>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              limit: limit,
-              offset: offset,
-              trusted: trusted,
-              exclude_spam: excludeSpam,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Collectible>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                limit: limit,
+                offset: offset,
+                trusted: trusted,
+                exclude_spam: excludeSpam,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -167,14 +176,16 @@ export class TransactionApi implements ITransactionApi {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Backbone>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Backbone>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -188,14 +199,16 @@ export class TransactionApi implements ITransactionApi {
       const cacheDir = CacheRouter.getMasterCopiesCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/master-copies/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<MasterCopy[]>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<MasterCopy[]>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -207,14 +220,16 @@ export class TransactionApi implements ITransactionApi {
       const cacheDir = CacheRouter.getSafeCacheDir(this.chainId, safeAddress);
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Safe>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Safe>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -238,14 +253,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Contract>(
-          cacheDir,
-          url,
-          this.contractNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Contract>(
+            cacheDir,
+            url,
+            this.contractNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -272,22 +289,24 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/delegates/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Delegate>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              safe: safeAddress,
-              delegate: delegate,
-              delegator: delegator,
-              label: label,
-              limit: limit,
-              offset: offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Delegate>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                safe: safeAddress,
+                delegate: delegate,
+                delegator: delegator,
+                label: label,
+                limit: limit,
+                offset: offset,
+              },
             },
-          },
-        ),
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -359,14 +378,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Transfer>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Transfer>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -391,21 +412,23 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Transfer>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              erc20: onlyErc20,
-              erc721: onlyErc721,
-              limit: limit,
-              offset: offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Transfer>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                erc20: onlyErc20,
+                erc721: onlyErc721,
+                limit: limit,
+                offset: offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -443,24 +466,26 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Transfer>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              execution_date__gte: executionDateGte,
-              execution_date__lte: executionDateLte,
-              to,
-              value,
-              tokenAddress,
-              limit,
-              offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Transfer>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                execution_date__gte: executionDateGte,
+                execution_date__lte: executionDateLte,
+                to,
+                value,
+                tokenAddress,
+                limit,
+                offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -504,14 +529,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<ModuleTransaction>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<ModuleTransaction>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -536,21 +563,23 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/module-transactions/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<ModuleTransaction>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              to,
-              module,
-              limit,
-              offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<ModuleTransaction>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                to,
+                module,
+                limit,
+                offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -599,29 +628,31 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<MultisigTransaction>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              safe: safeAddress,
-              ordering,
-              executed,
-              trusted,
-              execution_date__gte: executionDateGte,
-              execution_date__lte: executionDateLte,
-              to,
-              value,
-              nonce,
-              nonce__gte: nonceGte,
-              limit,
-              offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<MultisigTransaction>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                safe: safeAddress,
+                ordering,
+                executed,
+                trusted,
+                execution_date__gte: executionDateGte,
+                execution_date__lte: executionDateLte,
+                to,
+                value,
+                nonce,
+                nonce__gte: nonceGte,
+                limit,
+                offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -648,14 +679,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<MultisigTransaction>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<MultisigTransaction>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -684,14 +717,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<CreationTransaction>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<CreationTransaction>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -718,23 +753,25 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Transaction>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              safe: safeAddress,
-              ordering: ordering,
-              executed: executed,
-              queued: queued,
-              limit: limit,
-              offset: offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Transaction>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                safe: safeAddress,
+                ordering: ordering,
+                executed: executed,
+                queued: queued,
+                limit: limit,
+                offset: offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -755,14 +792,16 @@ export class TransactionApi implements ITransactionApi {
       const cacheDir = CacheRouter.getTokenCacheDir(this.chainId, address);
       const url = `${this.baseUrl}/api/v1/tokens/${address}`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Token>(
-          cacheDir,
-          url,
-          this.tokenNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Token>(
+            cacheDir,
+            url,
+            this.tokenNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -780,19 +819,21 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/tokens/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Token>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              limit: limit,
-              offset: offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Token>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                limit: limit,
+                offset: offset,
+              },
             },
-          },
-          this.defaultExpirationTimeInSeconds,
-        ),
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -809,14 +850,16 @@ export class TransactionApi implements ITransactionApi {
       );
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<SafeList>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          undefined,
-          this.defaultExpirationTimeInSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<SafeList>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            undefined,
+            this.defaultExpirationTimeInSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -884,12 +927,14 @@ export class TransactionApi implements ITransactionApi {
         messageHash,
       );
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Message>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-        ),
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Message>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -910,18 +955,20 @@ export class TransactionApi implements ITransactionApi {
         offset,
       );
 
-      return await this.promiseRegistry.register(cacheDir, () =>
-        this.dataSource.get<Page<Message>>(
-          cacheDir,
-          url,
-          this.defaultNotFoundExpirationTimeSeconds,
-          {
-            params: {
-              limit: limit,
-              offset: offset,
+      return await this.promiseRegistry.register(
+        this.getPromiseRegistryKey(cacheDir),
+        () =>
+          this.dataSource.get<Page<Message>>(
+            cacheDir,
+            url,
+            this.defaultNotFoundExpirationTimeSeconds,
+            {
+              params: {
+                limit: limit,
+                offset: offset,
+              },
             },
-          },
-        ),
+          ),
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
