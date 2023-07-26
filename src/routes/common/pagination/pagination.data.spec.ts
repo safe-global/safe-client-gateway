@@ -133,7 +133,7 @@ describe('PaginationData', () => {
       const expected = new URL(
         'https://base.url/?cursor=limit%3D10%26offset%3D2',
       );
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
 
     it('cursor is updated', async () => {
@@ -146,7 +146,7 @@ describe('PaginationData', () => {
       const expected = new URL(
         'https://base.url/?cursor=limit%3D10%26offset%3D2',
       );
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
 
     it('returns null when from is null', async () => {
@@ -174,7 +174,7 @@ describe('PaginationData', () => {
         faker.number.int({ min: PaginationData.DEFAULT_LIMIT + 1 }),
       );
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
 
     it('next url is the default if an invalid cursor is passed', async () => {
@@ -191,7 +191,7 @@ describe('PaginationData', () => {
         faker.number.int({ min: PaginationData.DEFAULT_LIMIT + 1 }),
       );
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
 
     it('next url is null if an invalid cursor is passed but there is no next page', async () => {
@@ -254,7 +254,7 @@ describe('PaginationData', () => {
 
       const actual = buildNextPageURL(currentUrl, itemsCount);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
   });
 
@@ -316,7 +316,7 @@ describe('PaginationData', () => {
 
       const actual = buildPreviousPageURL(currentUrl);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
 
     it('previous url contains a new offset and the same limit', async () => {
@@ -333,7 +333,7 @@ describe('PaginationData', () => {
 
       const actual = buildPreviousPageURL(currentUrl);
 
-      expect(actual).toStrictEqual(expected);
+      expect(actual?.href).toStrictEqual(expected.href);
     });
   });
 });

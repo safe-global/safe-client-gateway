@@ -1,9 +1,10 @@
 # Safe Client Gateway
 
 [![Coverage Status](https://coveralls.io/repos/github/safe-global/safe-client-gateway-nest/badge.svg?branch=main)](https://coveralls.io/github/safe-global/safe-client-gateway-nest?branch=main)
+
 ## Requirements
 
-- Node 18.16.0 – https://nodejs.org/en/
+- Node 18.17.0 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
