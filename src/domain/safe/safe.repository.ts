@@ -384,7 +384,7 @@ export class SafeRepository implements ISafeRepository {
         safeAddress,
         '-nonce',
         undefined,
-        undefined,
+        true,
         undefined,
         undefined,
         undefined,
