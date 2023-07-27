@@ -15,9 +15,9 @@ describe('Get health e2e test', () => {
     await app.init();
   });
 
-  it('GET /health', async () => {
+  it('GET /health/live', async () => {
     await request(app.getHttpServer())
-      .get(`/health`)
+      .get(`/health/live`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual({ status: 'OK' });

@@ -3,6 +3,15 @@ import { CacheDir } from '../entities/cache-dir.entity';
 
 export class FakeCacheService implements ICacheService {
   private cache: Record<string, Record<string, any>> = {};
+  private isReady: boolean = true;
+
+  ping(): Promise<unknown> {
+    return this.isReady ? Promise.resolve() : Promise.reject();
+  }
+
+  setReadyState(isReady: boolean) {
+    this.isReady = isReady;
+  }
 
   keyCount(): number {
     return Object.keys(this.cache).length;
