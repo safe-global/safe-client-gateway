@@ -11,7 +11,6 @@ import {
   NetworkService,
 } from '../network/network.service.interface';
 import { IConfigurationService } from '../../config/configuration.service.interface';
-import { PromiseRegistry } from '../promise/promise-registry';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
@@ -27,7 +26,6 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
-    private readonly promiseRegistry: PromiseRegistry<string>,
   ) {
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
@@ -47,7 +45,6 @@ export class TransactionApiManager implements ITransactionApiManager {
       this.configurationService,
       this.httpErrorFactory,
       this.networkService,
-      this.promiseRegistry,
     );
     return this.transactionApiMap[chainId];
   }
