@@ -22,7 +22,7 @@ export class HealthRepository implements IHealthRepository {
       await this.cacheService.ping();
       return HealthEntity.READY;
     } catch (error) {
-      this.loggingService.warn('Redis connection is not established');
+      this.loggingService.warn('Cache service connection is not established');
       return HealthEntity.NOT_READY;
     }
   }

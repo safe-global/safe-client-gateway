@@ -28,8 +28,8 @@ export class HealthService {
       case HealthEntity.NOT_READY:
         throw new ServiceUnavailableException(new Health(HealthStatus.KO));
       default:
-        this.loggingService.debug(`Readiness status ${readiness} not handled`);
-        return new Health(HealthStatus.OK);
+        this.loggingService.error(`Readiness status ${readiness} not handled`);
+        return new Health(HealthStatus.KO);
     }
   }
 }
