@@ -883,6 +883,7 @@ export class TransactionApi implements ITransactionApi {
         contractTransactionHash: proposeTransactionDto.safeTxHash,
         sender: proposeTransactionDto.sender,
         signature: proposeTransactionDto.signature,
+        origin: proposeTransactionDto.origin,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
