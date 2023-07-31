@@ -37,7 +37,10 @@ export class EstimationsService {
       address,
       getEstimationDto,
     );
-    const safe = await this.safeRepository.getSafe(chainId, address);
+    const safe = await this.safeRepository.getSafe({
+      chainId,
+      address: address,
+    });
     const recommendedNonce = await this.getEstimationRecommendedNonce(
       chainId,
       address,
@@ -65,10 +68,10 @@ export class EstimationsService {
     safeNonce: number,
   ): Promise<number> {
     const lastTransaction =
-      await this.safeRepository.getLastTransactionSortedByNonce(
+      await this.safeRepository.getLastTransactionSortedByNonce({
         chainId,
         safeAddress,
-      );
+      });
 
     return lastTransaction
       ? Math.max(safeNonce, lastTransaction.nonce + 1)

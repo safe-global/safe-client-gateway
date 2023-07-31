@@ -3,8 +3,8 @@ import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repos
 import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
 import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
 import {
-  LoggingService,
   ILoggingService,
+  LoggingService,
 } from '../../../../logging/logging.interface';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 
@@ -27,11 +27,10 @@ export class SafeAppInfoMapper {
     const originUrl = this.getOriginUrl(transaction);
     if (!originUrl) return null;
 
-    const [safeApp] = await this.safeAppsRepository.getSafeApps(
+    const [safeApp] = await this.safeAppsRepository.getSafeApps({
       chainId,
-      undefined,
-      originUrl,
-    );
+      clientUrl: originUrl,
+    });
     if (!safeApp) {
       this.loggingService.info(
         `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,

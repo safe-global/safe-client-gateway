@@ -17,13 +17,10 @@ export interface INotificationsRepository {
 
   /**
    * Un-registers a notification target, identified by its client {@link uuid}.
-   * @param chainId
-   * @param uuid
-   * @param safeAddress
    */
-  unregisterDevice(
-    chainId: string,
-    uuid: string,
-    safeAddress: string,
-  ): Promise<void>;
+  unregisterDevice(args: {
+    chainId: string;
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void>;
 }

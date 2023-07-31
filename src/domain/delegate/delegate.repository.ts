@@ -13,77 +13,76 @@ export class DelegateRepository implements IDelegateRepository {
     private readonly delegateValidator: DelegateValidator,
   ) {}
 
-  async getDelegates(
-    chainId: string,
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    label?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Delegate>> {
+  async getDelegates(args: {
+    chainId: string;
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const page = await transactionService.getDelegates(
-      safeAddress,
-      delegate,
-      delegator,
-      label,
-      limit,
-      offset,
-    );
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const page = await transactionService.getDelegates({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      label: args.label,
+      limit: args.limit,
+      offset: args.offset,
+    });
 
     page?.results.map((result) => this.delegateValidator.validate(result));
     return page;
   }
 
-  async postDelegate(
-    chainId: string,
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    signature?: string,
-    label?: string,
-  ): Promise<void> {
+  async postDelegate(args: {
+    chainId: string;
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    signature?: string;
+    label?: string;
+  }): Promise<void> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    await transactionService.postDelegate(
-      safeAddress,
-      delegate,
-      delegator,
-      signature,
-      label,
-    );
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    await transactionService.postDelegate({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      signature: args.signature,
+      label: args.label,
+    });
   }
 
-  async deleteDelegate(
-    chainId: string,
-    delegate: string,
-    delegator: string,
-    signature: string,
-  ): Promise<unknown> {
+  async deleteDelegate(args: {
+    chainId: string;
+    delegate: string;
+    delegator: string;
+    signature: string;
+  }): Promise<unknown> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const result = await transactionService.deleteDelegate(
-      delegate,
-      delegator,
-      signature,
-    );
-    return result;
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    return transactionService.deleteDelegate({
+      delegate: args.delegate,
+      delegator: args.delegator,
+      signature: args.signature,
+    });
   }
 
-  async deleteSafeDelegate(
-    chainId: string,
-    delegate: string,
-    safeAddress: string,
-    signature: string,
-  ): Promise<void> {
+  async deleteSafeDelegate(args: {
+    chainId: string;
+    delegate: string;
+    safeAddress: string;
+    signature: string;
+  }): Promise<void> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    await transactionService.deleteSafeDelegate(
-      delegate,
-      safeAddress,
-      signature,
-    );
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    return transactionService.deleteSafeDelegate({
+      delegate: args.delegate,
+      safeAddress: args.safeAddress,
+      signature: args.signature,
+    });
   }
 }

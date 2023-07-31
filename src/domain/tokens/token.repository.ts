@@ -13,21 +13,21 @@ export class TokenRepository implements ITokenRepository {
     private readonly tokenValidator: TokenValidator,
   ) {}
 
-  async getToken(chainId: string, address: string): Promise<Token> {
+  async getToken(args: { chainId: string; address: string }): Promise<Token> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const token = await transactionService.getToken(address);
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const token = await transactionService.getToken(args.address);
     return this.tokenValidator.validate(token);
   }
 
-  async getTokens(
-    chainId: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Token>> {
+  async getTokens(args: {
+    chainId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Token>> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const page = await transactionService.getTokens(limit, offset);
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const page = await transactionService.getTokens(args.limit, args.offset);
 
     return this.tokenValidator.validatePage(page);
   }

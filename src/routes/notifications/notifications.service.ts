@@ -90,11 +90,11 @@ export class NotificationsService {
     uuid: string,
     safeAddress: string,
   ): Promise<void> {
-    return this.notificationsRepository.unregisterDevice(
+    return this.notificationsRepository.unregisterDevice({
       chainId,
       uuid,
       safeAddress,
-    );
+    });
   }
 
   private isServerError(

@@ -61,27 +61,27 @@ export class TransactionApi implements ITransactionApi {
       );
   }
 
-  async getBalances(
-    safeAddress: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Balance[]> {
+  async getBalances(args: {
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance[]> {
     try {
       const cacheDir = CacheRouter.getBalanceCacheDir(
         this.chainId,
-        safeAddress,
-        trusted,
-        excludeSpam,
+        args.safeAddress,
+        args.trusted,
+        args.excludeSpam,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/balances/usd/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/usd/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            trusted: trusted,
-            exclude_spam: excludeSpam,
+            trusted: args.trusted,
+            exclude_spam: args.excludeSpam,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -96,12 +96,15 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.deleteByKey(cacheKey);
   }
 
-  async getDataDecoded(data: string, to?: string): Promise<DataDecoded> {
+  async getDataDecoded(args: {
+    data: string;
+    to?: string;
+  }): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
       const { data: dataDecoded } = await this.networkService.post(url, {
-        data,
-        to,
+        data: args.data,
+        to: args.to,
       });
       return dataDecoded;
     } catch (error) {
@@ -109,33 +112,33 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getCollectibles(
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Page<Collectible>> {
+  async getCollectibles(args: {
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Page<Collectible>> {
     try {
       const cacheDir = CacheRouter.getCollectiblesCacheDir(
         this.chainId,
-        safeAddress,
-        limit,
-        offset,
-        trusted,
-        excludeSpam,
+        args.safeAddress,
+        args.limit,
+        args.offset,
+        args.trusted,
+        args.excludeSpam,
       );
-      const url = `${this.baseUrl}/api/v2/safes/${safeAddress}/collectibles/`;
+      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/collectibles/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            limit: limit,
-            offset: offset,
-            trusted: trusted,
-            exclude_spam: excludeSpam,
+            limit: args.limit,
+            offset: args.offset,
+            trusted: args.trusted,
+            exclude_spam: args.excludeSpam,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -232,23 +235,23 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getDelegates(
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    label?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Delegate>> {
+  async getDelegates(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>> {
     try {
       const cacheDir = CacheRouter.getDelegatesCacheDir(
         this.chainId,
-        safeAddress,
-        delegate,
-        delegator,
-        label,
-        limit,
-        offset,
+        args.safeAddress,
+        args.delegate,
+        args.delegator,
+        args.label,
+        args.limit,
+        args.offset,
       );
       const url = `${this.baseUrl}/api/v1/delegates/`;
       return await this.dataSource.get(
@@ -257,12 +260,12 @@ export class TransactionApi implements ITransactionApi {
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            safe: safeAddress,
-            delegate: delegate,
-            delegator: delegator,
-            label: label,
-            limit: limit,
-            offset: offset,
+            safe: args.safeAddress,
+            delegate: args.delegate,
+            delegator: args.delegator,
+            label: args.label,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
       );
@@ -271,55 +274,55 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postDelegate(
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    signature?: string,
-    label?: string,
-  ): Promise<void> {
+  async postDelegate(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    signature?: string;
+    label?: string;
+  }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
       await this.networkService.post(url, {
-        safe: safeAddress ?? null, // TODO: this is a workaround while https://github.com/safe-global/safe-transaction-service/issues/1521 is not fixed.
-        delegate: delegate,
-        delegator: delegator,
-        signature: signature,
-        label: label,
+        safe: args.safeAddress ?? null, // TODO: this is a workaround while https://github.com/safe-global/safe-transaction-service/issues/1521 is not fixed.
+        delegate: args.delegate,
+        delegator: args.delegator,
+        signature: args.signature,
+        label: args.label,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
-  async deleteDelegate(
-    delegate: string,
-    delegator: string,
-    signature: string,
-  ): Promise<unknown> {
+  async deleteDelegate(args: {
+    delegate: string;
+    delegator: string;
+    signature: string;
+  }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/delegates/${delegate}`;
+      const url = `${this.baseUrl}/api/v1/delegates/${args.delegate}`;
       return await this.networkService.delete(url, {
-        delegate: delegate,
-        delegator: delegator,
-        signature: signature,
+        delegate: args.delegate,
+        delegator: args.delegator,
+        signature: args.signature,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
-  async deleteSafeDelegate(
-    delegate: string,
-    safeAddress: string,
-    signature: string,
-  ): Promise<void> {
+  async deleteSafeDelegate(args: {
+    delegate: string;
+    safeAddress: string;
+    signature: string;
+  }): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/delegates/${delegate}`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}`;
       return await this.networkService.delete(url, {
-        delegate: delegate,
-        safe: safeAddress,
-        signature: signature,
+        delegate: args.delegate,
+        safe: args.safeAddress,
+        signature: args.signature,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -347,33 +350,33 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getTransfers(
-    safeAddress: string,
-    onlyErc20: boolean,
-    onlyErc721: boolean,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>> {
+  async getTransfers(args: {
+    safeAddress: string;
+    onlyErc20: boolean;
+    onlyErc721: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>> {
     try {
       const cacheDir = CacheRouter.getTransfersCacheDir(
         this.chainId,
-        safeAddress,
-        onlyErc20,
-        onlyErc721,
-        limit,
-        offset,
+        args.safeAddress,
+        args.onlyErc20,
+        args.onlyErc721,
+        args.limit,
+        args.offset,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/transfers/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            erc20: onlyErc20,
-            erc721: onlyErc721,
-            limit: limit,
-            offset: offset,
+            erc20: args.onlyErc20,
+            erc721: args.onlyErc721,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -390,42 +393,42 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
-  async getIncomingTransfers(
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    tokenAddress?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>> {
+  async getIncomingTransfers(args: {
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    tokenAddress?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>> {
     try {
       const cacheDir = CacheRouter.getIncomingTransfersCacheDir(
         this.chainId,
-        safeAddress,
-        executionDateGte,
-        executionDateLte,
-        to,
-        value,
-        tokenAddress,
-        limit,
-        offset,
+        args.safeAddress,
+        args.executionDateGte,
+        args.executionDateLte,
+        args.to,
+        args.value,
+        args.tokenAddress,
+        args.limit,
+        args.offset,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/incoming-transfers/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            execution_date__gte: executionDateGte,
-            execution_date__lte: executionDateLte,
-            to,
-            value,
-            tokenAddress,
-            limit,
-            offset,
+            execution_date__gte: args.executionDateGte,
+            execution_date__lte: args.executionDateLte,
+            to: args.to,
+            value: args.value,
+            tokenAddress: args.tokenAddress,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -483,33 +486,33 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getModuleTransactions(
-    safeAddress: string,
-    to?: string,
-    module?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<ModuleTransaction>> {
+  async getModuleTransactions(args: {
+    safeAddress: string;
+    to?: string;
+    module?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<ModuleTransaction>> {
     try {
       const cacheDir = CacheRouter.getModuleTransactionsCacheDir(
         this.chainId,
-        safeAddress,
-        to,
-        module,
-        limit,
-        offset,
+        args.safeAddress,
+        args.to,
+        args.module,
+        args.limit,
+        args.offset,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/module-transactions/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/module-transactions/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            to,
-            module,
-            limit,
-            offset,
+            to: args.to,
+            module: args.module,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -529,55 +532,55 @@ export class TransactionApi implements ITransactionApi {
     });
   }
 
-  async getMultisigTransactions(
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    trusted?: boolean,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    nonce?: string,
-    nonceGte?: number,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>> {
+  async getMultisigTransactions(args: {
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    trusted?: boolean;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    nonce?: string;
+    nonceGte?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>> {
     try {
       const cacheDir = CacheRouter.getMultisigTransactionsCacheDir(
         this.chainId,
-        safeAddress,
-        ordering,
-        executed,
-        trusted,
-        executionDateGte,
-        executionDateLte,
-        to,
-        value,
-        nonce,
-        nonceGte,
-        limit,
-        offset,
+        args.safeAddress,
+        args.ordering,
+        args.executed,
+        args.trusted,
+        args.executionDateGte,
+        args.executionDateLte,
+        args.to,
+        args.value,
+        args.nonce,
+        args.nonceGte,
+        args.limit,
+        args.offset,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            safe: safeAddress,
-            ordering,
-            executed,
-            trusted,
-            execution_date__gte: executionDateGte,
-            execution_date__lte: executionDateLte,
-            to,
-            value,
-            nonce,
-            nonce__gte: nonceGte,
-            limit,
-            offset,
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            trusted: args.trusted,
+            execution_date__gte: args.executionDateGte,
+            execution_date__lte: args.executionDateLte,
+            to: args.to,
+            value: args.value,
+            nonce: args.nonce,
+            nonce__gte: args.nonceGte,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -651,37 +654,37 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getAllTransactions(
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    queued?: boolean,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transaction>> {
+  async getAllTransactions(args: {
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    queued?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transaction>> {
     try {
       const cacheDir = CacheRouter.getAllTransactionsCacheDir(
         this.chainId,
-        safeAddress,
-        ordering,
-        executed,
-        queued,
-        limit,
-        offset,
+        args.safeAddress,
+        args.ordering,
+        args.executed,
+        args.queued,
+        args.limit,
+        args.offset,
       );
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
       return await this.dataSource.get(
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            safe: safeAddress,
-            ordering: ordering,
-            executed: executed,
-            queued: queued,
-            limit: limit,
-            offset: offset,
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            queued: args.queued,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
         this.defaultExpirationTimeInSeconds,
@@ -787,12 +790,12 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async deleteDeviceRegistration(
-    uuid: string,
-    safeAddress: string,
-  ): Promise<void> {
+  async deleteDeviceRegistration(args: {
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
+      const url = `${this.baseUrl}/api/v1/notifications/devices/${args.uuid}/safes/${args.safeAddress}`;
       await this.networkService.delete(url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -834,18 +837,18 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getMessagesBySafe(
-    safeAddress: string,
-    limit?: number | undefined,
-    offset?: number | undefined,
-  ): Promise<Page<Message>> {
+  async getMessagesBySafe(args: {
+    safeAddress: string;
+    limit?: number | undefined;
+    offset?: number | undefined;
+  }): Promise<Page<Message>> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/messages/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
       const cacheDir = CacheRouter.getMessagesBySafeCacheDir(
         this.chainId,
-        safeAddress,
-        limit,
-        offset,
+        args.safeAddress,
+        args.limit,
+        args.offset,
       );
       return await this.dataSource.get(
         cacheDir,
@@ -853,8 +856,8 @@ export class TransactionApi implements ITransactionApi {
         this.defaultNotFoundExpirationTimeSeconds,
         {
           params: {
-            limit: limit,
-            offset: offset,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
       );
@@ -890,18 +893,18 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postMessage(
-    safeAddress: string,
-    message: unknown,
-    safeAppId: number | null,
-    signature: string,
-  ): Promise<Message> {
+  async postMessage(args: {
+    safeAddress: string;
+    message: unknown;
+    safeAppId: number | null;
+    signature: string;
+  }): Promise<Message> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/messages/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
       const { data } = await this.networkService.post(url, {
-        message,
-        safeAppId,
-        signature,
+        message: args.message,
+        safeAppId: args.safeAppId,
+        signature: args.signature,
       });
       return data;
     } catch (error) {
@@ -909,13 +912,15 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postMessageSignature(
-    messageHash: string,
-    signature: string,
-  ): Promise<unknown> {
+  async postMessageSignature(args: {
+    messageHash: string;
+    signature: string;
+  }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/messages/${messageHash}/signatures/`;
-      const { data } = await this.networkService.post(url, { signature });
+      const url = `${this.baseUrl}/api/v1/messages/${args.messageHash}/signatures/`;
+      const { data } = await this.networkService.post(url, {
+        signature: args.signature,
+      });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);

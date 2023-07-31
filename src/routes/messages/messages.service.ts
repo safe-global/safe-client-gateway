@@ -31,11 +31,14 @@ export class MessagesService {
     chainId: string,
     messageHash: string,
   ): Promise<Message> {
-    const message = await this.messagesRepository.getMessageByHash(
+    const message = await this.messagesRepository.getMessageByHash({
       chainId,
       messageHash,
-    );
-    const safe = await this.safeRepository.getSafe(chainId, message.safe);
+    });
+    const safe = await this.safeRepository.getSafe({
+      chainId,
+      address: message.safe,
+    });
     return this.messageMapper.mapMessage(chainId, message, safe);
   }
 
@@ -45,13 +48,16 @@ export class MessagesService {
     paginationData: PaginationData,
     routeUrl: Readonly<URL>,
   ): Promise<Page<DateLabel | MessageItem>> {
-    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
-    const page = await this.messagesRepository.getMessagesBySafe(
+    const safe = await this.safeRepository.getSafe({
+      chainId,
+      address: safeAddress,
+    });
+    const page = await this.messagesRepository.getMessagesBySafe({
       chainId,
       safeAddress,
-      paginationData.limit,
-      paginationData.offset,
-    );
+      limit: paginationData.limit,
+      offset: paginationData.offset,
+    });
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, page.next);
     const previousURL = cursorUrlFromLimitAndOffset(routeUrl, page.previous);
     const groups = this.getOrderedGroups(page.results);
@@ -118,13 +124,13 @@ export class MessagesService {
     safeAddress: string,
     createMessageDto: CreateMessageDto,
   ): Promise<unknown> {
-    return await this.messagesRepository.createMessage(
+    return await this.messagesRepository.createMessage({
       chainId,
       safeAddress,
-      createMessageDto.message,
-      createMessageDto.safeAppId,
-      createMessageDto.signature,
-    );
+      message: createMessageDto.message,
+      safeAppId: createMessageDto.safeAppId,
+      signature: createMessageDto.signature,
+    });
   }
 
   async updateMessageSignature(
@@ -132,10 +138,10 @@ export class MessagesService {
     messageHash: string,
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {
-    return await this.messagesRepository.updateMessageSignature(
+    return await this.messagesRepository.updateMessageSignature({
       chainId,
       messageHash,
-      updateMessageSignatureDto.signature,
-    );
+      signature: updateMessageSignatureDto.signature,
+    });
   }
 }

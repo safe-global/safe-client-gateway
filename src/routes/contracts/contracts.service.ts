@@ -14,6 +14,6 @@ export class ContractsService {
     chainId: string,
     contractAddress: string,
   ): Promise<Contract> {
-    return this.contractsRepository.getContract(chainId, contractAddress);
+    return this.contractsRepository.getContract({ chainId, contractAddress });
   }
 }

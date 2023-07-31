@@ -16,6 +16,6 @@ export class DataDecodedService {
     getDataDecodedDto: GetDataDecodedDto,
   ): Promise<DataDecoded> {
     const { data, to } = getDataDecodedDto;
-    return this.dataDecodedRepository.getDataDecoded(chainId, data, to);
+    return this.dataDecodedRepository.getDataDecoded({ chainId, data, to });
   }
 }

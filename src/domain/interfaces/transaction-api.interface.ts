@@ -22,23 +22,23 @@ import { ProposeTransactionDto } from '../transactions/entities/propose-transact
 import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
 
 export interface ITransactionApi {
-  getBalances(
-    safeAddress: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Balance[]>;
+  getBalances(args: {
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance[]>;
 
   clearLocalBalances(safeAddress: string): Promise<void>;
 
-  getDataDecoded(data: string, to?: string): Promise<DataDecoded>;
+  getDataDecoded(args: { data: string; to?: string }): Promise<DataDecoded>;
 
-  getCollectibles(
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Page<Collectible>>;
+  getCollectibles(args: {
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Page<Collectible>>;
 
   clearCollectibles(safeAddress: string): Promise<void>;
 
@@ -52,57 +52,57 @@ export interface ITransactionApi {
 
   getContract(contractAddress: string): Promise<Contract>;
 
-  getDelegates(
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    label?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Delegate>>;
+  getDelegates(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>>;
 
-  postDelegate(
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    signature?: string,
-    label?: string,
-  ): Promise<void>;
+  postDelegate(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    signature?: string;
+    label?: string;
+  }): Promise<void>;
 
-  deleteDelegate(
-    delegate: string,
-    delegator: string,
-    signature: string,
-  ): Promise<unknown>;
+  deleteDelegate(args: {
+    delegate: string;
+    delegator: string;
+    signature: string;
+  }): Promise<unknown>;
 
-  deleteSafeDelegate(
-    delegate: string,
-    safeAddress: string,
-    signature: string,
-  ): Promise<void>;
+  deleteSafeDelegate(args: {
+    delegate: string;
+    safeAddress: string;
+    signature: string;
+  }): Promise<void>;
 
   getTransfer(transferId: string): Promise<Transfer>;
 
-  getTransfers(
-    safeAddress: string,
-    onlyErc20?: boolean,
-    onlyErc721?: boolean,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>>;
+  getTransfers(args: {
+    safeAddress: string;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>>;
 
   clearTransfers(safeAddress: string): Promise<void>;
 
-  getIncomingTransfers(
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    tokenAddress?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>>;
+  getIncomingTransfers(args: {
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    tokenAddress?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>>;
 
   clearIncomingTransfers(safeAddress: string): Promise<void>;
 
@@ -113,13 +113,13 @@ export interface ITransactionApi {
 
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
-  getModuleTransactions(
-    safeAddress: string,
-    to?: string,
-    module?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<ModuleTransaction>>;
+  getModuleTransactions(args: {
+    safeAddress: string;
+    to?: string;
+    module?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<ModuleTransaction>>;
 
   clearModuleTransactions(safeAddress: string): Promise<void>;
 
@@ -129,33 +129,33 @@ export interface ITransactionApi {
 
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 
-  getMultisigTransactions(
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    trusted?: boolean,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    nonce?: string,
-    nonceGte?: number,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>>;
+  getMultisigTransactions(args: {
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    trusted?: boolean;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    nonce?: string;
+    nonceGte?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>>;
 
   clearMultisigTransactions(safeAddress): Promise<void>;
 
   getCreationTransaction(safeAddress: string): Promise<CreationTransaction>;
 
-  getAllTransactions(
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    queued?: boolean,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transaction>>;
+  getAllTransactions(args: {
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    queued?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transaction>>;
 
   clearAllTransactions(safeAddress: string): Promise<void>;
 
@@ -171,7 +171,10 @@ export interface ITransactionApi {
     signatures: string[],
   ): Promise<void>;
 
-  deleteDeviceRegistration(uuid: string, safeAddress: string): Promise<void>;
+  deleteDeviceRegistration(args: {
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void>;
 
   getEstimation(
     address: string,
@@ -180,26 +183,26 @@ export interface ITransactionApi {
 
   getMessageByHash(messageHash: string): Promise<Message>;
 
-  getMessagesBySafe(
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Message>>;
+  getMessagesBySafe(args: {
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Message>>;
 
   postMultisigTransaction(
     address: string,
     data: ProposeTransactionDto,
   ): Promise<unknown>;
 
-  postMessage(
-    safeAddress: string,
-    message: string | unknown,
-    safeAppId: number | null,
-    signature: string,
-  ): Promise<Message>;
+  postMessage(args: {
+    safeAddress: string;
+    message: string | unknown;
+    safeAppId: number | null;
+    signature: string;
+  }): Promise<Message>;
 
-  postMessageSignature(
-    messageHash: string,
-    signature: string,
-  ): Promise<unknown>;
+  postMessageSignature(args: {
+    messageHash: string;
+    signature: string;
+  }): Promise<unknown>;
 }

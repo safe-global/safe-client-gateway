@@ -14,6 +14,6 @@ export class OwnersService {
     chainId: string,
     ownerAddress: string,
   ): Promise<SafeList> {
-    return this.safeRepository.getSafesByOwner(chainId, ownerAddress);
+    return this.safeRepository.getSafesByOwner({ chainId, ownerAddress });
   }
 }

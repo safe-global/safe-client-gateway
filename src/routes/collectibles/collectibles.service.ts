@@ -22,14 +22,14 @@ export class CollectiblesService {
     trusted?: boolean,
     excludeSpam?: boolean,
   ): Promise<Page<Collectible>> {
-    const collectibles = await this.repository.getCollectibles(
+    const collectibles = await this.repository.getCollectibles({
       chainId,
       safeAddress,
-      paginationData.limit,
-      paginationData.offset,
+      limit: paginationData.limit,
+      offset: paginationData.offset,
       trusted,
       excludeSpam,
-    );
+    });
 
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, collectibles.next);
     const previousURL = cursorUrlFromLimitAndOffset(

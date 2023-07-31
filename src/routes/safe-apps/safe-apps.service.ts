@@ -18,11 +18,11 @@ export class SafeAppsService {
     clientUrl?: string,
     url?: string,
   ): Promise<SafeApp[]> {
-    const result = await this.safeAppsRepository.getSafeApps(
+    const result = await this.safeAppsRepository.getSafeApps({
       chainId,
       clientUrl,
       url,
-    );
+    });
 
     return result.map(
       (safeApp) =>

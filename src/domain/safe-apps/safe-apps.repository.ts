@@ -12,17 +12,17 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     private readonly validator: SafeAppsValidator,
   ) {}
 
-  async getSafeApps(
-    chainId?: string,
-    clientUrl?: string,
-    url?: string,
-  ): Promise<SafeApp[]> {
-    const safeApps = await this.configApi.getSafeApps(chainId, clientUrl, url);
+  async getSafeApps(args: {
+    chainId?: string;
+    clientUrl?: string;
+    url?: string;
+  }): Promise<SafeApp[]> {
+    const safeApps = await this.configApi.getSafeApps(args);
     return safeApps.map((safeApp) => this.validator.validate(safeApp));
   }
 
   async getSafeAppById(chainId: string, id: number): Promise<SafeApp | null> {
-    const safeApps = await this.configApi.getSafeApps(chainId);
+    const safeApps = await this.configApi.getSafeApps({ chainId });
     const safeApp = safeApps.find((safeApp) => safeApp.id === id);
     return safeApp ? this.validator.validate(safeApp) : null;
   }

@@ -49,7 +49,7 @@ export class MultisigTransactionExecutionDetailsMapper {
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
         gasToken != NULL_ADDRESS
-          ? this.tokenRepository.getToken(chainId, gasToken)
+          ? this.tokenRepository.getToken({ chainId, address: gasToken })
           : Promise.resolve(null),
         transaction.executor
           ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
@@ -102,16 +102,13 @@ export class MultisigTransactionExecutionDetailsMapper {
     chainId: string,
     transaction: MultisigTransaction,
   ): Promise<AddressInfo[]> {
-    const rejectionTxsPage = await this.safeRepository.getMultisigTransactions(
-      chainId,
-      transaction.safe,
-      undefined,
-      undefined,
-      undefined,
-      transaction.safe,
-      '0',
-      transaction.nonce.toString(),
-    );
+    const rejectionTxsPage = await this.safeRepository.getMultisigTransactions({
+      chainId: chainId,
+      safeAddress: transaction.safe,
+      to: transaction.safe,
+      value: '0',
+      nonce: transaction.nonce.toString(),
+    });
 
     // This only considers one page of nonce-sharing transactions, which
     // would cover the vast majority of the cases. If needed, could be

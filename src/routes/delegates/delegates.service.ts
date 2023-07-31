@@ -24,15 +24,15 @@ export class DelegatesService {
     getDelegateDto: GetDelegateDto,
     paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
-    const delegates = await this.repository.getDelegates(
+    const delegates = await this.repository.getDelegates({
       chainId,
-      getDelegateDto.safe,
-      getDelegateDto.delegate,
-      getDelegateDto.delegator,
-      getDelegateDto.label,
-      paginationData.limit,
-      paginationData.offset,
-    );
+      safeAddress: getDelegateDto.safe,
+      delegate: getDelegateDto.delegate,
+      delegator: getDelegateDto.delegator,
+      label: getDelegateDto.label,
+      limit: paginationData.limit,
+      offset: paginationData.offset,
+    });
 
     const nextURL = cursorUrlFromLimitAndOffset(routeUrl, delegates.next);
     const previousURL = cursorUrlFromLimitAndOffset(
@@ -52,14 +52,14 @@ export class DelegatesService {
     chainId: string,
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
-    await this.repository.postDelegate(
+    await this.repository.postDelegate({
       chainId,
-      createDelegateDto.safe,
-      createDelegateDto.delegate,
-      createDelegateDto.delegator,
-      createDelegateDto.signature,
-      createDelegateDto.label,
-    );
+      safeAddress: createDelegateDto.safe,
+      delegate: createDelegateDto.delegate,
+      delegator: createDelegateDto.delegator,
+      signature: createDelegateDto.signature,
+      label: createDelegateDto.label,
+    });
   }
 
   async deleteDelegate(
@@ -67,12 +67,12 @@ export class DelegatesService {
     delegateAddress: string,
     deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
-    return await this.repository.deleteDelegate(
+    return await this.repository.deleteDelegate({
       chainId,
-      delegateAddress,
-      deleteDelegateDto.delegator,
-      deleteDelegateDto.signature,
-    );
+      delegate: delegateAddress,
+      delegator: deleteDelegateDto.delegator,
+      signature: deleteDelegateDto.signature,
+    });
   }
 
   async deleteSafeDelegate(
@@ -80,11 +80,11 @@ export class DelegatesService {
     delegateAddress: string,
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
-    return await this.repository.deleteSafeDelegate(
+    return await this.repository.deleteSafeDelegate({
       chainId,
-      deleteSafeDelegateRequest.delegate,
-      deleteSafeDelegateRequest.safe,
-      deleteSafeDelegateRequest.signature,
-    );
+      delegate: deleteSafeDelegateRequest.delegate,
+      safeAddress: deleteSafeDelegateRequest.safe,
+      signature: deleteSafeDelegateRequest.signature,
+    });
   }
 }

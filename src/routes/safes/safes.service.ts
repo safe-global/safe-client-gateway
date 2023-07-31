@@ -31,7 +31,7 @@ export class SafesService {
   async getSafeInfo(chainId: string, safeAddress: string): Promise<SafeState> {
     const [safe, { recommendedMasterCopyVersion }, supportedMasterCopies] =
       await Promise.all([
-        this.safeRepository.getSafe(chainId, safeAddress),
+        this.safeRepository.getSafe({ chainId, address: safeAddress }),
         this.chainsRepository.getChain(chainId),
         this.chainsRepository.getMasterCopies(chainId),
       ]);
@@ -109,12 +109,12 @@ export class SafesService {
     safeAddress: string,
   ): Promise<Date | null> {
     const lastCollectibleTransfer =
-      await this.safeRepository.getCollectibleTransfers(
+      await this.safeRepository.getCollectibleTransfers({
         chainId,
         safeAddress,
-        1,
-        0,
-      );
+        limit: 1,
+        offset: 0,
+      });
 
     return lastCollectibleTransfer.results[0]?.executionDate ?? null;
   }
@@ -124,7 +124,11 @@ export class SafesService {
     safe: Safe,
   ): Promise<Date | null> {
     const lastQueuedTransaction =
-      await this.safeRepository.getTransactionQueueByModified(chainId, safe, 1);
+      await this.safeRepository.getTransactionQueueByModified({
+        chainId,
+        safe,
+        limit: 1,
+      });
 
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }
@@ -134,11 +138,11 @@ export class SafesService {
     safeAddress: string,
   ): Promise<Date | null> {
     const lastExecutedTransaction = (
-      await this.safeRepository.getTransactionHistoryByExecutionDate(
+      await this.safeRepository.getTransactionHistoryByExecutionDate({
         chainId,
         safeAddress,
-        1,
-      )
+        limit: 1,
+      })
     ).results[0];
 
     if (!lastExecutedTransaction) return null;
@@ -162,10 +166,10 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const messages = await this.messagesRepository.getMessagesBySafe(
+    const messages = await this.messagesRepository.getMessagesBySafe({
       chainId,
       safeAddress,
-    );
+    });
 
     if (messages.results.length === 0) {
       return null;

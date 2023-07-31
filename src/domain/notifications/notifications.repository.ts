@@ -25,12 +25,17 @@ export class NotificationsRepository implements INotificationsRepository {
     return safeRegistration;
   }
 
-  async unregisterDevice(
-    chainId: string,
-    uuid: string,
-    safeAddress: string,
-  ): Promise<void> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    return api.deleteDeviceRegistration(uuid, safeAddress);
+  async unregisterDevice(args: {
+    chainId: string;
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    return api.deleteDeviceRegistration({
+      uuid: args.uuid,
+      safeAddress: args.safeAddress,
+    });
   }
 }
