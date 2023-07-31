@@ -978,9 +978,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cli@npm:^10.1.10":
-  version: 10.1.10
-  resolution: "@nestjs/cli@npm:10.1.10"
+"@nestjs/cli@npm:^10.1.11":
+  version: 10.1.11
+  resolution: "@nestjs/cli@npm:10.1.11"
   dependencies:
     "@angular-devkit/core": 16.1.4
     "@angular-devkit/schematics": 16.1.4
@@ -1014,7 +1014,7 @@ __metadata:
       optional: true
   bin:
     nest: bin/nest.js
-  checksum: 83fefb62d32e2140289624e5440d590d12dd43d5144acb49eab6bd1fd2228330d3f01545d245d9255f8b4a3a803822e64bae7461849d0f844b63733cf3f967fc
+  checksum: 5126ee9de7e81e49e91adac845c3a868cdd84dfa4d6e790cf5df9acc093c6266e441f639bf8b303e9b2b2e42d8e4969cb8c66bb8ebf0a5d5c5adbb9c486ededa
   languageName: node
   linkType: hard
 
@@ -6519,7 +6519,7 @@ __metadata:
   resolution: "safe-client-gateway@workspace:."
   dependencies:
     "@faker-js/faker": ^8.0.2
-    "@nestjs/cli": ^10.1.10
+    "@nestjs/cli": ^10.1.11
     "@nestjs/common": ^10.1.0
     "@nestjs/config": ^3.0.0
     "@nestjs/core": ^10.1.0
