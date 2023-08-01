@@ -60,7 +60,6 @@ export class ConfigApi implements IConfigApi {
       this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey()),
       this.cacheService.deleteByKeyPattern(pattern),
     ]);
-    return;
   }
 
   async getChain(chainId: string): Promise<Chain> {
