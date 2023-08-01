@@ -80,21 +80,13 @@ export class NotificationsService {
    * Un-registers a device notification target.
    * The uuid is expected to be managed by the client. Its value should be equal
    * to the one provided when the client called {@link registerDevice}.
-   *
-   * @param chainId chain id to use.
-   * @param uuid the same uuid provided when the device was registered.
-   * @param safeAddress safe address of the un-registration target.
    */
-  async unregisterDevice(
-    chainId: string,
-    uuid: string,
-    safeAddress: string,
-  ): Promise<void> {
-    return this.notificationsRepository.unregisterDevice({
-      chainId,
-      uuid,
-      safeAddress,
-    });
+  async unregisterDevice(args: {
+    chainId: string;
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void> {
+    return this.notificationsRepository.unregisterDevice(args);
   }
 
   private isServerError(

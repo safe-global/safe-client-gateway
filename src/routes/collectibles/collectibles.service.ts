@@ -14,26 +14,26 @@ export class CollectiblesService {
     private readonly repository: ICollectiblesRepository,
   ) {}
 
-  async getCollectibles(
-    chainId: string,
-    safeAddress: string,
-    routeUrl: Readonly<URL>,
-    paginationData: PaginationData,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Page<Collectible>> {
+  async getCollectibles(args: {
+    chainId: string;
+    safeAddress: string;
+    routeUrl: Readonly<URL>;
+    paginationData: PaginationData;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Page<Collectible>> {
     const collectibles = await this.repository.getCollectibles({
-      chainId,
-      safeAddress,
-      limit: paginationData.limit,
-      offset: paginationData.offset,
-      trusted,
-      excludeSpam,
+      ...args,
+      limit: args.paginationData.limit,
+      offset: args.paginationData.offset,
     });
 
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, collectibles.next);
+    const nextURL = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      collectibles.next,
+    );
     const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       collectibles.previous,
     );
 

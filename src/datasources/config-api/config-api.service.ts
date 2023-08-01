@@ -41,7 +41,7 @@ export class ConfigApi implements IConfigApi {
     try {
       const url = `${this.baseUri}/api/v1/chains`;
       const params = { limit: args.limit, offset: args.offset };
-      const cacheDir = CacheRouter.getChainsCacheDir(args.limit, args.offset);
+      const cacheDir = CacheRouter.getChainsCacheDir(args);
       return await this.dataSource.get(
         cacheDir,
         url,
@@ -93,11 +93,7 @@ export class ConfigApi implements IConfigApi {
         clientUrl: args.clientUrl,
         url: args.url,
       };
-      const cacheDir = CacheRouter.getSafeAppsCacheDir(
-        args.chainId,
-        args.clientUrl,
-        args.url,
-      );
+      const cacheDir = CacheRouter.getSafeAppsCacheDir(args);
       return await this.dataSource.get(
         cacheDir,
         providerUrl,

@@ -106,10 +106,10 @@ export interface ITransactionApi {
 
   clearIncomingTransfers(safeAddress: string): Promise<void>;
 
-  postConfirmation(
-    safeTxHash: string,
-    addConfirmationDto: AddConfirmationDto,
-  ): Promise<unknown>;
+  postConfirmation(args: {
+    safeTxHash: string;
+    addConfirmationDto: AddConfirmationDto;
+  }): Promise<unknown>;
 
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
@@ -144,7 +144,7 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
-  clearMultisigTransactions(safeAddress): Promise<void>;
+  clearMultisigTransactions(safeAddress: string): Promise<void>;
 
   getCreationTransaction(safeAddress: string): Promise<CreationTransaction>;
 
@@ -161,25 +161,25 @@ export interface ITransactionApi {
 
   getToken(address: string): Promise<Token>;
 
-  getTokens(limit?: number, offset?: number): Promise<Page<Token>>;
+  getTokens(args: { limit?: number; offset?: number }): Promise<Page<Token>>;
 
   getSafesByOwner(ownerAddress: string): Promise<SafeList>;
 
-  postDeviceRegistration(
-    device: Device,
-    safes: string[],
-    signatures: string[],
-  ): Promise<void>;
+  postDeviceRegistration(args: {
+    device: Device;
+    safes: string[];
+    signatures: string[];
+  }): Promise<void>;
 
   deleteDeviceRegistration(args: {
     uuid: string;
     safeAddress: string;
   }): Promise<void>;
 
-  getEstimation(
-    address: string,
-    getEstimationDto: GetEstimationDto,
-  ): Promise<Estimation>;
+  getEstimation(args: {
+    address: string;
+    getEstimationDto: GetEstimationDto;
+  }): Promise<Estimation>;
 
   getMessageByHash(messageHash: string): Promise<Message>;
 
@@ -189,10 +189,10 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Page<Message>>;
 
-  postMultisigTransaction(
-    address: string,
-    data: ProposeTransactionDto,
-  ): Promise<unknown>;
+  postMultisigTransaction(args: {
+    address: string;
+    data: ProposeTransactionDto;
+  }): Promise<unknown>;
 
   postMessage(args: {
     safeAddress: string;

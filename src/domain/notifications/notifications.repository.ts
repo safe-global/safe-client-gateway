@@ -17,11 +17,11 @@ export class NotificationsRepository implements INotificationsRepository {
     const api = await this.transactionApiManager.getTransactionApi(
       safeRegistration.chainId,
     );
-    await api.postDeviceRegistration(
+    await api.postDeviceRegistration({
       device,
-      safeRegistration.safes,
-      safeRegistration.signatures,
-    );
+      safes: safeRegistration.safes,
+      signatures: safeRegistration.signatures,
+    });
     return safeRegistration;
   }
 

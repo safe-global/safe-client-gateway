@@ -23,26 +23,21 @@ export class BalancesService {
     private readonly exchangeRepository: IExchangeRepository,
   ) {}
 
-  async getBalances(
-    chainId: string,
-    safeAddress: string,
-    fiatCode: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Balances> {
-    const txServiceBalances = await this.balancesRepository.getBalances({
-      chainId,
-      safeAddress,
-      trusted,
-      excludeSpam,
-    });
+  async getBalances(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balances> {
+    const txServiceBalances = await this.balancesRepository.getBalances(args);
 
-    const usdToFiatRate: number = await this.exchangeRepository.convertRates(
-      fiatCode,
-      BalancesService.fromRateCurrencyCode,
-    );
+    const usdToFiatRate: number = await this.exchangeRepository.convertRates({
+      to: args.fiatCode,
+      from: BalancesService.fromRateCurrencyCode,
+    });
     const nativeCurrency: NativeCurrency = (
-      await this.chainsRepository.getChain(chainId)
+      await this.chainsRepository.getChain(args.chainId)
     ).nativeCurrency;
 
     // Map balances payload

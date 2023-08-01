@@ -17,6 +17,6 @@ export class OwnersController {
     @Param('chainId') chainId: string,
     @Param('ownerAddress') ownerAddress: string,
   ): Promise<SafeList> {
-    return this.ownersService.getSafesByOwner(chainId, ownerAddress);
+    return this.ownersService.getSafesByOwner({ chainId, ownerAddress });
   }
 }

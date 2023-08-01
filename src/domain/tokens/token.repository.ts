@@ -27,7 +27,7 @@ export class TokenRepository implements ITokenRepository {
   }): Promise<Page<Token>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    const page = await transactionService.getTokens(args.limit, args.offset);
+    const page = await transactionService.getTokens(args);
 
     return this.tokenValidator.validatePage(page);
   }

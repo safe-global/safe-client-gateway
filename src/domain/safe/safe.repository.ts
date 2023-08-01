@@ -57,10 +57,8 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
 
     const page = await transactionService.getTransfers({
-      safeAddress: args.safeAddress,
+      ...args,
       onlyErc721: true,
-      limit: args.limit,
-      offset: args.offset,
     });
     return this.transferValidator.validatePage(page);
   }
@@ -88,16 +86,7 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<Page<Transfer>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    const page = await transactionService.getIncomingTransfers({
-      safeAddress: args.safeAddress,
-      executionDateGte: args.executionDateGte,
-      executionDateLte: args.executionDateLte,
-      to: args.to,
-      value: args.value,
-      tokenAddress: args.tokenAddress,
-      limit: args.limit,
-      offset: args.offset,
-    });
+    const page = await transactionService.getIncomingTransfers(args);
     return this.transferValidator.validatePage(page);
   }
 
@@ -118,11 +107,9 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    return transactionService
-      .postConfirmation(args.safeTxHash, args.addConfirmationDto)
-      .then(() => {
-        return;
-      });
+    return transactionService.postConfirmation(args).then(() => {
+      return;
+    });
   }
 
   async getModuleTransaction(args: {
@@ -147,13 +134,7 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<Page<ModuleTransaction>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    const page = await transactionService.getModuleTransactions({
-      safeAddress: args.safeAddress,
-      to: args.to,
-      module: args.module,
-      limit: args.limit,
-      offset: args.offset,
-    });
+    const page = await transactionService.getModuleTransactions(args);
     return this.moduleTransactionValidator.validatePage(page);
   }
 
@@ -174,11 +155,8 @@ export class SafeRepository implements ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
     return this._getTransactionQueue({
-      chainId: args.chainId,
-      safe: args.safe,
+      ...args,
       ordering: 'nonce,submissionDate',
-      limit: args.limit,
-      offset: args.offset,
     });
   }
 
@@ -189,11 +167,8 @@ export class SafeRepository implements ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
     return this._getTransactionQueue({
-      chainId: args.chainId,
-      safe: args.safe,
+      ...args,
       ordering: '-modified',
-      limit: args.limit,
-      offset: args.offset,
     });
   }
 
@@ -208,13 +183,11 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page: Page<MultisigTransaction> =
       await transactionService.getMultisigTransactions({
+        ...args,
         safeAddress: args.safe.address,
-        ordering: args.ordering,
         executed: false,
         trusted: true,
         nonceGte: args.safe.nonce,
-        limit: args.limit,
-        offset: args.offset,
       });
     return this.multisigTransactionValidator.validatePage(page);
   }
@@ -238,11 +211,8 @@ export class SafeRepository implements ISafeRepository {
     offset?: number;
   }): Promise<Page<Transaction>> {
     return this.getAllExecutedTransactions({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
+      ...args,
       ordering: 'executionDate',
-      limit: args.limit,
-      offset: args.offset,
     });
   }
 
@@ -252,12 +222,7 @@ export class SafeRepository implements ISafeRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Transaction>> {
-    return this.getAllExecutedTransactions({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      limit: args.limit,
-      offset: args.offset,
-    });
+    return this.getAllExecutedTransactions(args);
   }
 
   private async getAllExecutedTransactions(args: {
@@ -271,12 +236,9 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page: Page<Transaction> = await transactionService.getAllTransactions(
       {
-        safeAddress: args.safeAddress,
-        ordering: args.ordering,
+        ...args,
         executed: true,
         queued: false,
-        limit: args.limit,
-        offset: args.offset,
       },
     );
     return this.transactionTypeValidator.validatePage(page);
@@ -341,18 +303,9 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getMultisigTransactions({
-      safeAddress: args.safeAddress,
+      ...args,
       ordering: '-nonce',
-      executed: args.executed,
       trusted: true,
-      executionDateGte: args.executionDateGte,
-      executionDateLte: args.executionDateLte,
-      to: args.to,
-      value: args.value,
-      nonce: args.nonce,
-      nonceGte: args.nonceGte,
-      limit: args.limit,
-      offset: args.offset,
     });
     return this.multisigTransactionValidator.validatePage(page);
   }
@@ -388,7 +341,7 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page: Page<Transaction> =
       await transactionService.getMultisigTransactions({
-        safeAddress: args.safeAddress,
+        ...args,
         ordering: '-nonce',
         trusted: true,
         limit: 1,
@@ -407,9 +360,9 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
 
-    return transactionService.postMultisigTransaction(
-      args.safeAddress,
-      args.proposeTransactionDto,
-    );
+    return transactionService.postMultisigTransaction({
+      address: args.safeAddress,
+      data: args.proposeTransactionDto,
+    });
   }
 }

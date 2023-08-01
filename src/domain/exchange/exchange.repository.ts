@@ -16,20 +16,20 @@ export class ExchangeRepository implements IExchangeRepository {
     private readonly exchangeFiatCodesValidator: ExchangeFiatCodesValidator,
   ) {}
 
-  async convertRates(to: string, from: string): Promise<number> {
+  async convertRates(args: { to: string; from: string }): Promise<number> {
     const exchangeRates = await this.exchangeApi.getRates();
     this.exchangeRatesValidator.validate(exchangeRates);
 
-    const fromExchangeRate = exchangeRates.rates[from.toUpperCase()];
+    const fromExchangeRate = exchangeRates.rates[args.from.toUpperCase()];
     if (fromExchangeRate === undefined || fromExchangeRate == 0)
       throw new InternalServerErrorException(
-        `Exchange rate for ${from} is not available`,
+        `Exchange rate for ${args.from} is not available`,
       );
 
-    const toExchangeRate = exchangeRates.rates[to.toUpperCase()];
+    const toExchangeRate = exchangeRates.rates[args.to.toUpperCase()];
     if (toExchangeRate === undefined)
       throw new InternalServerErrorException(
-        `Exchange rate for ${to} is not available`,
+        `Exchange rate for ${args.to} is not available`,
       );
 
     return toExchangeRate / fromExchangeRate;

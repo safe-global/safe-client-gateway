@@ -28,7 +28,7 @@ export class MessagesController {
     @Param('chainId') chainId: string,
     @Param('messageHash') messageHash: string,
   ): Promise<Message> {
-    return this.messagesService.getMessageByHash(chainId, messageHash);
+    return this.messagesService.getMessageByHash({ chainId, messageHash });
   }
 
   @ApiOkResponse({ type: MessagePage })
@@ -40,12 +40,12 @@ export class MessagesController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<DateLabel | MessageItem>> {
-    return this.messagesService.getMessagesBySafe(
+    return this.messagesService.getMessagesBySafe({
       chainId,
       safeAddress,
       paginationData,
       routeUrl,
-    );
+    });
   }
 
   @HttpCode(200)
@@ -55,11 +55,11 @@ export class MessagesController {
     @Param('safeAddress') safeAddress: string,
     @Body(CreateMessageDtoValidationPipe) createMessageDto: CreateMessageDto,
   ): Promise<unknown> {
-    return this.messagesService.createMessage(
+    return this.messagesService.createMessage({
       chainId,
       safeAddress,
       createMessageDto,
-    );
+    });
   }
 
   @HttpCode(200)
@@ -70,10 +70,10 @@ export class MessagesController {
     @Body(UpdateMessageSignatureDtoValidationPipe)
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {
-    return this.messagesService.updateMessageSignature(
+    return this.messagesService.updateMessageSignature({
       chainId,
       messageHash,
       updateMessageSignatureDto,
-    );
+    });
   }
 }
