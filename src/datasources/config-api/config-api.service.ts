@@ -54,15 +54,12 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  clearChains(): Promise<void> {
+  async clearChains(): Promise<void> {
     const pattern = CacheRouter.getChainsCachePattern();
-
-    return Promise.all([
+    await Promise.all([
       this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey()),
       this.cacheService.deleteByKeyPattern(pattern),
-    ]).then(() => {
-      return;
-    });
+    ]);
   }
 
   async getChain(chainId: string): Promise<Chain> {
