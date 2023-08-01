@@ -151,7 +151,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -215,7 +214,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -387,7 +385,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   async getIncomingTransfers(args: {
@@ -434,7 +431,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   async postConfirmation(args: {
@@ -512,7 +508,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   async getMultisigTransactions(args: {
@@ -568,7 +563,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   async getMultisigTransaction(
@@ -598,7 +592,6 @@ export class TransactionApi implements ITransactionApi {
       safeTransactionHash,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -665,7 +658,6 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
-    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
