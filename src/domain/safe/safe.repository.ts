@@ -107,9 +107,7 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    return transactionService.postConfirmation(args).then(() => {
-      return;
-    });
+    await transactionService.postConfirmation(args);
   }
 
   async getModuleTransaction(args: {

@@ -145,14 +145,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearCollectibles(safeAddress: string): Promise<void> {
+  async clearCollectibles(safeAddress: string): Promise<void> {
     const key = CacheRouter.getCollectiblesKey({
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -215,9 +214,8 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -383,14 +381,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearTransfers(safeAddress: string): Promise<void> {
+  async clearTransfers(safeAddress: string): Promise<void> {
     const key = CacheRouter.getTransfersCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   async getIncomingTransfers(args: {
@@ -431,15 +428,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearIncomingTransfers(safeAddress: string): Promise<void> {
+  async clearIncomingTransfers(safeAddress: string): Promise<void> {
     const key = CacheRouter.getIncomingTransfersCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   async postConfirmation(args: {
@@ -511,14 +506,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearModuleTransactions(safeAddress: string): Promise<void> {
+  async clearModuleTransactions(safeAddress: string): Promise<void> {
     const key = CacheRouter.getModuleTransactionsCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   async getMultisigTransactions(args: {
@@ -573,9 +567,8 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   async getMultisigTransaction(
@@ -599,14 +592,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearMultisigTransaction(safeTransactionHash: string): Promise<void> {
+  async clearMultisigTransaction(safeTransactionHash: string): Promise<void> {
     const key = CacheRouter.getMultisigTransactionCacheKey({
       chainId: this.chainId,
       safeTransactionHash,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -667,14 +659,13 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  clearAllTransactions(safeAddress: string): Promise<void> {
+  async clearAllTransactions(safeAddress: string): Promise<void> {
     const key = CacheRouter.getAllTransactionsKey({
       chainId: this.chainId,
       safeAddress,
     });
-    return this.cacheService.deleteByKey(key).then(() => {
-      return;
-    });
+    await this.cacheService.deleteByKey(key);
+    return;
   }
 
   // Important: there is no hook which invalidates this endpoint,
