@@ -66,12 +66,12 @@ export class DelegatesController {
     @Query(GetDelegateDtoValidationPipe) getDelegateDto: GetDelegateDto,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
-    return this.service.getDelegates(
+    return this.service.getDelegates({
       chainId,
       routeUrl,
       getDelegateDto,
       paginationData,
-    );
+    });
   }
 
   @HttpCode(200)
@@ -80,7 +80,7 @@ export class DelegatesController {
     @Param('chainId') chainId: string,
     @Body(CreateDelegateDtoValidationPipe) createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
-    await this.service.postDelegate(chainId, createDelegateDto);
+    await this.service.postDelegate({ chainId, createDelegateDto });
   }
 
   @Delete('chains/:chainId/delegates/:delegateAddress')
@@ -89,25 +89,22 @@ export class DelegatesController {
     @Param('delegateAddress') delegateAddress: string,
     @Body(DeleteDelegateDtoValidationPipe) deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
-    return this.service.deleteDelegate(
+    return this.service.deleteDelegate({
       chainId,
       delegateAddress,
       deleteDelegateDto,
-    );
+    });
   }
 
   @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
   async deleteSafeDelegate(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
-    @Param('delegateAddress') delegateAddress: string,
     @Body(DeleteSafeDelegateDtoValidationPipe)
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {
-    return this.service.deleteSafeDelegate(
+    return this.service.deleteSafeDelegate({
       chainId,
-      delegateAddress,
       deleteSafeDelegateRequest,
-    );
+    });
   }
 }

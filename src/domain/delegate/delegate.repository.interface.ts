@@ -4,36 +4,36 @@ import { Delegate } from './entities/delegate.entity';
 export const IDelegateRepository = Symbol('IDelegateRepository');
 
 export interface IDelegateRepository {
-  getDelegates(
-    chainId: string,
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    label?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Delegate>>;
+  getDelegates(args: {
+    chainId: string;
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>>;
 
-  postDelegate(
-    chainId: string,
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    signature?: string,
-    label?: string,
-  ): Promise<void>;
+  postDelegate(args: {
+    chainId: string;
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    signature?: string;
+    label?: string;
+  }): Promise<void>;
 
-  deleteDelegate(
-    chainId: string,
-    delegate: string,
-    delegator: string,
-    signature: string,
-  ): Promise<unknown>;
+  deleteDelegate(args: {
+    chainId: string;
+    delegate: string;
+    delegator: string;
+    signature: string;
+  }): Promise<unknown>;
 
-  deleteSafeDelegate(
-    chainId: string,
-    delegate: string,
-    safeAddress: string,
-    signature: string,
-  ): Promise<void>;
+  deleteSafeDelegate(args: {
+    chainId: string;
+    delegate: string;
+    safeAddress: string;
+    signature: string;
+  }): Promise<void>;
 }

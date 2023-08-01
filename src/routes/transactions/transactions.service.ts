@@ -52,32 +52,54 @@ export class TransactionsService {
     private readonly transferDetailsMapper: TransferDetailsMapper,
   ) {}
 
-  async getById(chainId: string, txId: string): Promise<TransactionDetails> {
-    const [txType, safeAddress, id] = txId.split(TRANSACTION_ID_SEPARATOR);
+  async getById(args: {
+    chainId: string;
+    txId: string;
+  }): Promise<TransactionDetails> {
+    const [txType, safeAddress, id] = args.txId.split(TRANSACTION_ID_SEPARATOR);
 
     switch (txType) {
       case MODULE_TRANSACTION_PREFIX: {
         const [tx] = await Promise.all([
-          this.safeRepository.getModuleTransaction(chainId, id),
+          this.safeRepository.getModuleTransaction({
+            chainId: args.chainId,
+            moduleTransactionId: id,
+          }),
         ]);
-        return this.moduleTransactionDetailsMapper.mapDetails(chainId, tx);
+        return this.moduleTransactionDetailsMapper.mapDetails(args.chainId, tx);
       }
 
       case TRANSFER_PREFIX: {
         const [transfer, safe] = await Promise.all([
-          this.safeRepository.getTransfer(chainId, id),
-          this.safeRepository.getSafe(chainId, safeAddress),
+          this.safeRepository.getTransfer({
+            chainId: args.chainId,
+            transferId: id,
+          }),
+          this.safeRepository.getSafe({
+            chainId: args.chainId,
+            address: safeAddress,
+          }),
         ]);
-        return this.transferDetailsMapper.mapDetails(chainId, transfer, safe);
+        return this.transferDetailsMapper.mapDetails(
+          args.chainId,
+          transfer,
+          safe,
+        );
       }
 
       case MULTISIG_TRANSACTION_PREFIX: {
         const [tx, safe] = await Promise.all([
-          this.safeRepository.getMultiSigTransaction(chainId, id),
-          this.safeRepository.getSafe(chainId, safeAddress),
+          this.safeRepository.getMultiSigTransaction({
+            chainId: args.chainId,
+            safeTransactionHash: id,
+          }),
+          this.safeRepository.getSafe({
+            chainId: args.chainId,
+            address: safeAddress,
+          }),
         ]);
         return this.multisigTransactionDetailsMapper.mapDetails(
-          chainId,
+          args.chainId,
           tx,
           safe,
         );
@@ -85,13 +107,16 @@ export class TransactionsService {
 
       // txId is safeTxHash
       default: {
-        const tx = await this.safeRepository.getMultiSigTransaction(
-          chainId,
-          txId,
-        );
-        const safe = await this.safeRepository.getSafe(chainId, tx.safe);
+        const tx = await this.safeRepository.getMultiSigTransaction({
+          chainId: args.chainId,
+          safeTransactionHash: args.txId,
+        });
+        const safe = await this.safeRepository.getSafe({
+          chainId: args.chainId,
+          address: tx.safe,
+        });
         return this.multisigTransactionDetailsMapper.mapDetails(
-          chainId,
+          args.chainId,
           tx,
           safe,
         );
@@ -99,40 +124,35 @@ export class TransactionsService {
     }
   }
 
-  async getMultisigTransactions(
-    chainId: string,
-    routeUrl: Readonly<URL>,
-    paginationData: PaginationData,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    nonce?: string,
-    executed?: boolean,
-  ): Promise<Partial<Page<MultisigTransaction>>> {
+  async getMultisigTransactions(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    paginationData: PaginationData;
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    nonce?: string;
+    executed?: boolean;
+  }): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
-      await this.safeRepository.getMultisigTransactions(
-        chainId,
-        safeAddress,
-        executed,
-        executionDateGte,
-        executionDateLte,
-        to,
-        value,
-        nonce,
-        undefined,
-        paginationData.limit,
-        paginationData.offset,
-      );
+      await this.safeRepository.getMultisigTransactions({
+        ...args,
+        limit: args.paginationData.limit,
+        offset: args.paginationData.offset,
+      });
 
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     const results = await Promise.all(
       domainTransactions.results.map(
         async (domainTransaction) =>
           new MultisigTransaction(
             await this.multisigTransactionMapper.mapTransaction(
-              chainId,
+              args.chainId,
               domainTransaction,
               safeInfo,
             ),
@@ -141,11 +161,11 @@ export class TransactionsService {
       ),
     );
     const nextURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       domainTransactions.next,
     );
     const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       domainTransactions.previous,
     );
 
@@ -156,105 +176,96 @@ export class TransactionsService {
     };
   }
 
-  async addConfirmation(
-    chainId: string,
-    safeTxHash: string,
-    addConfirmationDto: AddConfirmationDto,
-  ): Promise<TransactionDetails> {
-    await this.safeRepository.addConfirmation(
-      chainId,
-      safeTxHash,
-      addConfirmationDto,
-    );
-    const transaction = await this.safeRepository.getMultiSigTransaction(
-      chainId,
-      safeTxHash,
-    );
-    const safe = await this.safeRepository.getSafe(chainId, transaction.safe);
+  async addConfirmation(args: {
+    chainId: string;
+    safeTxHash: string;
+    addConfirmationDto: AddConfirmationDto;
+  }): Promise<TransactionDetails> {
+    await this.safeRepository.addConfirmation(args);
+    const transaction = await this.safeRepository.getMultiSigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: transaction.safe,
+    });
 
     return this.multisigTransactionDetailsMapper.mapDetails(
-      chainId,
+      args.chainId,
       transaction,
       safe,
     );
   }
 
-  async getModuleTransactions(
-    chainId: string,
-    routeUrl: Readonly<URL>,
-    safeAddress: string,
-    to?: string,
-    module?: string,
-    paginationData?: PaginationData,
-  ): Promise<Page<ModuleTransaction>> {
-    const domainTransactions = await this.safeRepository.getModuleTransactions(
-      chainId,
-      safeAddress,
-      to,
-      module,
-      paginationData?.limit,
-      paginationData?.offset,
-    );
+  async getModuleTransactions(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    safeAddress: string;
+    to?: string;
+    module?: string;
+    paginationData?: PaginationData;
+  }): Promise<Page<ModuleTransaction>> {
+    const domainTransactions = await this.safeRepository.getModuleTransactions({
+      ...args,
+      limit: args.paginationData?.limit,
+      offset: args.paginationData?.offset,
+    });
 
     const results = await Promise.all(
       domainTransactions.results.map(
         async (domainTransaction) =>
           new ModuleTransaction(
             await this.moduleTransactionMapper.mapTransaction(
-              chainId,
+              args.chainId,
               domainTransaction,
             ),
           ),
       ),
     );
     const nextURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       domainTransactions.next,
     );
     const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       domainTransactions.previous,
     );
 
-    const result = <Page<ModuleTransaction>>{
+    return <Page<ModuleTransaction>>{
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
       results,
     };
-
-    return result;
   }
 
-  async getIncomingTransfers(
-    chainId: string,
-    routeUrl: Readonly<URL>,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    tokenAddress?: string,
-    paginationData?: PaginationData,
-  ): Promise<Partial<Page<IncomingTransfer>>> {
-    const transfers = await this.safeRepository.getIncomingTransfers(
-      chainId,
-      safeAddress,
-      executionDateGte,
-      executionDateLte,
-      to,
-      value,
-      tokenAddress,
-      paginationData?.limit,
-      paginationData?.offset,
-    );
+  async getIncomingTransfers(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    tokenAddress?: string;
+    paginationData?: PaginationData;
+  }): Promise<Partial<Page<IncomingTransfer>>> {
+    const transfers = await this.safeRepository.getIncomingTransfers({
+      ...args,
+      limit: args.paginationData?.limit,
+      offset: args.paginationData?.offset,
+    });
 
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     const results = await Promise.all(
       transfers.results.map(
         async (transfer) =>
           new IncomingTransfer(
             await this.incomingTransferMapper.mapTransfer(
-              chainId,
+              args.chainId,
               transfer,
               safeInfo,
             ),
@@ -262,9 +273,9 @@ export class TransactionsService {
       ),
     );
 
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, transfers.next);
+    const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, transfers.next);
     const previousURL = cursorUrlFromLimitAndOffset(
-      routeUrl,
+      args.routeUrl,
       transfers.previous,
     );
 
@@ -275,41 +286,47 @@ export class TransactionsService {
     };
   }
 
-  async previewTransaction(
-    chainId: string,
-    safeAddress: string,
-    previewTransactionDto: PreviewTransactionDto,
-  ): Promise<TransactionPreview> {
-    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
+  async previewTransaction(args: {
+    chainId: string;
+    safeAddress: string;
+    previewTransactionDto: PreviewTransactionDto;
+  }): Promise<TransactionPreview> {
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     return this.transactionPreviewMapper.mapTransactionPreview(
-      chainId,
+      args.chainId,
       safe,
-      previewTransactionDto,
+      args.previewTransactionDto,
     );
   }
 
-  async getTransactionQueue(
-    chainId: string,
-    routeUrl: Readonly<URL>,
-    safeAddress: string,
-    paginationData: PaginationData,
-  ): Promise<Page<QueuedItem>> {
-    const pagination = this.getAdjustedPaginationForQueue(paginationData);
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
-    const transactions = await this.safeRepository.getTransactionQueue(
-      chainId,
-      safeInfo,
-      pagination.limit,
-      pagination.offset,
-    );
+  async getTransactionQueue(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    safeAddress: string;
+    paginationData: PaginationData;
+  }): Promise<Page<QueuedItem>> {
+    const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    const transactions = await this.safeRepository.getTransactionQueue({
+      chainId: args.chainId,
+      safe: safeInfo,
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
 
-    const nextURL = buildNextPageURL(routeUrl, transactions.count);
-    const previousURL = buildPreviousPageURL(routeUrl);
+    const nextURL = buildNextPageURL(args.routeUrl, transactions.count);
+    const previousURL = buildPreviousPageURL(args.routeUrl);
     const results = await this.queuedItemsMapper.getQueuedItems(
       this.adjustTransactionsPage(transactions),
       safeInfo,
-      chainId,
-      this.getPreviousPageLastNonce(transactions, paginationData),
+      args.chainId,
+      this.getPreviousPageLastNonce(transactions, args.paginationData),
       this.getNextPageFirstNonce(transactions),
     );
 
@@ -333,35 +350,42 @@ export class TransactionsService {
     return paginationData;
   }
 
-  async getTransactionHistory(
-    chainId: string,
-    routeUrl: Readonly<URL>,
-    safeAddress: string,
-    paginationData: PaginationData,
-    timezoneOffset: number,
-  ): Promise<TransactionItemPage> {
-    const paginationDataAdjusted =
-      this.getAdjustedPaginationForHistory(paginationData);
-    const domainTransactions = await this.safeRepository.getTransactionHistory(
-      chainId,
-      safeAddress,
-      paginationDataAdjusted.limit,
-      paginationDataAdjusted.offset,
+  async getTransactionHistory(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    safeAddress: string;
+    paginationData: PaginationData;
+    timezoneOffset: number;
+  }): Promise<TransactionItemPage> {
+    const paginationDataAdjusted = this.getAdjustedPaginationForHistory(
+      args.paginationData,
     );
-    const nextURL = buildNextPageURL(routeUrl, domainTransactions.count);
-    const previousURL = buildPreviousPageURL(routeUrl);
+    const domainTransactions = await this.safeRepository.getTransactionHistory({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      limit: paginationDataAdjusted.limit,
+      offset: paginationDataAdjusted.offset,
+    });
+    const nextURL = buildNextPageURL(args.routeUrl, domainTransactions.count);
+    const previousURL = buildPreviousPageURL(args.routeUrl);
     if (nextURL == null) {
       const creationTransaction =
-        await this.safeRepository.getCreationTransaction(chainId, safeAddress);
+        await this.safeRepository.getCreationTransaction({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        });
       domainTransactions.results.push(creationTransaction);
     }
-    const safeInfo = await this.safeRepository.getSafe(chainId, safeAddress);
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     const results = await this.transactionsHistoryMapper.mapTransactionsHistory(
-      chainId,
+      args.chainId,
       domainTransactions.results,
       safeInfo,
-      paginationData.offset,
-      timezoneOffset,
+      args.paginationData.offset,
+      args.timezoneOffset,
     );
 
     return {
@@ -372,25 +396,24 @@ export class TransactionsService {
     };
   }
 
-  async proposeTransaction(
-    chainId: string,
-    safeAddress: string,
-    proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<TransactionDetails> {
-    await this.safeRepository.proposeTransaction(
-      chainId,
-      safeAddress,
-      proposeTransactionDto,
-    );
+  async proposeTransaction(args: {
+    chainId: string;
+    safeAddress: string;
+    proposeTransactionDto: ProposeTransactionDto;
+  }): Promise<TransactionDetails> {
+    await this.safeRepository.proposeTransaction(args);
 
-    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
-    const domainTransaction = await this.safeRepository.getMultiSigTransaction(
-      chainId,
-      proposeTransactionDto.safeTxHash,
-    );
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    const domainTransaction = await this.safeRepository.getMultiSigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+    });
 
     return this.multisigTransactionDetailsMapper.mapDetails(
-      chainId,
+      args.chainId,
       domainTransaction,
       safe,
     );

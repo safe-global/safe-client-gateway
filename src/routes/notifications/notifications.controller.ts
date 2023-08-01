@@ -30,10 +30,10 @@ export class NotificationsController {
     @Param('uuid') uuid: string,
     @Param('safeAddress') safeAddress: string,
   ): Promise<void> {
-    return this.notificationsService.unregisterDevice(
+    return this.notificationsService.unregisterDevice({
       chainId,
       uuid,
       safeAddress,
-    );
+    });
   }
 }

@@ -12,12 +12,14 @@ export class ContractsRepository implements IContractsRepository {
     private readonly validator: ContractsValidator,
   ) {}
 
-  async getContract(
-    chainId: string,
-    contractAddress: string,
-  ): Promise<Contract> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const data = await api.getContract(contractAddress);
+  async getContract(args: {
+    chainId: string;
+    contractAddress: string;
+  }): Promise<Contract> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    const data = await api.getContract(args.contractAddress);
     return this.validator.validate(data);
   }
 }

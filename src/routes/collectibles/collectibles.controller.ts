@@ -41,13 +41,13 @@ export class CollectiblesController {
     @Query('trusted') trusted?: boolean,
     @Query('exclude_spam') excludeSpam?: boolean,
   ): Promise<Page<Collectible>> {
-    return this.service.getCollectibles(
+    return this.service.getCollectibles({
       chainId,
       safeAddress,
       routeUrl,
       paginationData,
       trusted,
       excludeSpam,
-    );
+    });
   }
 }

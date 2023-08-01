@@ -20,6 +20,9 @@ export class DataDecodedController {
     @Param('chainId') chainId: string,
     @Body(GetDataDecodedDtoValidationPipe) getDataDecodedDto: GetDataDecodedDto,
   ): Promise<DataDecoded> {
-    return this.dataDecodedService.getDataDecoded(chainId, getDataDecodedDto);
+    return this.dataDecodedService.getDataDecoded({
+      chainId,
+      getDataDecodedDto,
+    });
   }
 }

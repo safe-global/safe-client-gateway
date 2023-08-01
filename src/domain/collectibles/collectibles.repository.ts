@@ -13,34 +13,37 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     private readonly validator: CollectiblesValidator,
   ) {}
 
-  async getCollectibles(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Page<Collectible>> {
+  async getCollectibles(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Page<Collectible>> {
     const transactionApi = await this.transactionApiManager.getTransactionApi(
-      chainId,
+      args.chainId,
     );
-    const page = await transactionApi.getCollectibles(
-      safeAddress,
-      limit,
-      offset,
-      trusted,
-      excludeSpam,
-    );
+    const page = await transactionApi.getCollectibles({
+      safeAddress: args.safeAddress,
+      limit: args.limit,
+      offset: args.offset,
+      trusted: args.trusted,
+      excludeSpam: args.excludeSpam,
+    });
 
     page?.results.map((result) => this.validator.validate(result));
     return page;
   }
 
-  async clearCollectibles(chainId: string, safeAddress: string): Promise<void> {
+  async clearCollectibles(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
     const transactionApi = await this.transactionApiManager.getTransactionApi(
-      chainId,
+      args.chainId,
     );
 
-    return transactionApi.clearCollectibles(safeAddress);
+    return transactionApi.clearCollectibles(args.safeAddress);
   }
 }

@@ -21,10 +21,10 @@ export class EstimationsController {
     @Param('address') address: string,
     @Body(GetEstimationDtoValidationPipe) getEstimationDto: GetEstimationDto,
   ): Promise<EstimationResponse> {
-    return this.estimationsService.getEstimation(
+    return this.estimationsService.getEstimation({
       chainId,
       address,
       getEstimationDto,
-    );
+    });
   }
 }

@@ -10,10 +10,10 @@ export class OwnersService {
     private readonly safeRepository: SafeRepository,
   ) {}
 
-  async getSafesByOwner(
-    chainId: string,
-    ownerAddress: string,
-  ): Promise<SafeList> {
-    return this.safeRepository.getSafesByOwner(chainId, ownerAddress);
+  async getSafesByOwner(args: {
+    chainId: string;
+    ownerAddress: string;
+  }): Promise<SafeList> {
+    return this.safeRepository.getSafesByOwner(args);
   }
 }

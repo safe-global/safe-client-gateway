@@ -13,59 +13,62 @@ export class MessagesRepository implements IMessagesRepository {
     private readonly messageValidator: MessageValidator,
   ) {}
 
-  async getMessageByHash(
-    chainId: string,
-    messageHash: string,
-  ): Promise<Message> {
+  async getMessageByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<Message> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const message = await transactionService.getMessageByHash(messageHash);
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const message = await transactionService.getMessageByHash(args.messageHash);
     return this.messageValidator.validate(message);
   }
 
-  async getMessagesBySafe(
-    chainId: string,
-    safeAddress: string,
-    limit?: number | undefined,
-    offset?: number | undefined,
-  ): Promise<Page<Message>> {
+  async getMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number | undefined;
+    offset?: number | undefined;
+  }): Promise<Page<Message>> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
-    const page = await transactionService.getMessagesBySafe(
-      safeAddress,
-      limit,
-      offset,
-    );
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const page = await transactionService.getMessagesBySafe({
+      safeAddress: args.safeAddress,
+      limit: args.limit,
+      offset: args.offset,
+    });
 
     return this.messageValidator.validatePage(page);
   }
 
-  async createMessage(
-    chainId: string,
-    safeAddress: string,
-    message: unknown,
-    safeAppId: number | null,
-    signature: string,
-  ): Promise<unknown> {
+  async createMessage(args: {
+    chainId: string;
+    safeAddress: string;
+    message: unknown;
+    safeAppId: number | null;
+    signature: string;
+  }): Promise<unknown> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
+      await this.transactionApiManager.getTransactionApi(args.chainId);
 
-    return transactionService.postMessage(
-      safeAddress,
-      message,
-      safeAppId,
-      signature,
-    );
+    return transactionService.postMessage({
+      safeAddress: args.safeAddress,
+      message: args.message,
+      safeAppId: args.safeAppId,
+      signature: args.signature,
+    });
   }
 
-  async updateMessageSignature(
-    chainId: string,
-    messageHash: string,
-    signature: string,
-  ): Promise<unknown> {
+  async updateMessageSignature(args: {
+    chainId: string;
+    messageHash: string;
+    signature: string;
+  }): Promise<unknown> {
     const transactionService =
-      await this.transactionApiManager.getTransactionApi(chainId);
+      await this.transactionApiManager.getTransactionApi(args.chainId);
 
-    return transactionService.postMessageSignature(messageHash, signature);
+    return transactionService.postMessageSignature({
+      messageHash: args.messageHash,
+      signature: args.signature,
+    });
   }
 }
