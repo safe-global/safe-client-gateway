@@ -23,6 +23,13 @@ export class BalancesService {
     private readonly exchangeRepository: IExchangeRepository,
   ) {}
 
+  getNumberString(value: number): string {
+    // Prevent scientific notation
+    return value.toLocaleString('fullwide', {
+      useGrouping: false,
+    });
+  }
+
   async getBalances(
     chainId: string,
     safeAddress: string,
@@ -61,7 +68,7 @@ export class BalancesService {
     });
 
     return <Balances>{
-      fiatTotal: totalFiat.toString(),
+      fiatTotal: this.getNumberString(totalFiat),
       items: balances,
     };
   }
@@ -98,9 +105,9 @@ export class BalancesService {
         address: tokenAddress,
         ...tokenMetaData,
       },
-      balance: txBalance.balance.toString(),
-      fiatBalance: fiatBalance.toString(),
-      fiatConversion: fiatConversion.toString(),
+      balance: txBalance.balance,
+      fiatBalance: this.getNumberString(fiatBalance),
+      fiatConversion: this.getNumberString(fiatConversion),
     };
   }
 
