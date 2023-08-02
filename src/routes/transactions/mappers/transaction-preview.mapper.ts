@@ -31,11 +31,11 @@ export class TransactionPreviewMapper {
     let dataDecoded;
     try {
       if (previewTransactionDto.data !== null) {
-        dataDecoded = await this.dataDecodedRepository.getDataDecoded(
+        dataDecoded = await this.dataDecodedRepository.getDataDecoded({
           chainId,
-          previewTransactionDto.data,
-          previewTransactionDto.to,
-        );
+          data: previewTransactionDto.data,
+          to: previewTransactionDto.to,
+        });
       }
     } catch (error) {
       this.loggingService.info(

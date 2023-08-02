@@ -34,11 +34,14 @@ export class ConfigApi implements IConfigApi {
       );
   }
 
-  async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
+  async getChains(args: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Chain>> {
     try {
       const url = `${this.baseUri}/api/v1/chains`;
-      const params = { limit, offset };
-      const cacheDir = CacheRouter.getChainsCacheDir(limit, offset);
+      const params = { limit: args.limit, offset: args.offset };
+      const cacheDir = CacheRouter.getChainsCacheDir(args);
       return await this.dataSource.get(
         cacheDir,
         url,
@@ -51,15 +54,12 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  clearChains(): Promise<void> {
+  async clearChains(): Promise<void> {
     const pattern = CacheRouter.getChainsCachePattern();
-
-    return Promise.all([
+    await Promise.all([
       this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey()),
       this.cacheService.deleteByKeyPattern(pattern),
-    ]).then(() => {
-      return;
-    });
+    ]);
   }
 
   async getChain(chainId: string): Promise<Chain> {
@@ -78,15 +78,19 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  async getSafeApps(
-    chainId?: string,
-    clientUrl?: string,
-    url?: string,
-  ): Promise<SafeApp[]> {
+  async getSafeApps(args: {
+    chainId?: string;
+    clientUrl?: string;
+    url?: string;
+  }): Promise<SafeApp[]> {
     try {
       const providerUrl = `${this.baseUri}/api/v1/safe-apps/`;
-      const params = { chainId, clientUrl, url };
-      const cacheDir = CacheRouter.getSafeAppsCacheDir(chainId, clientUrl, url);
+      const params = {
+        chainId: args.chainId,
+        clientUrl: args.clientUrl,
+        url: args.url,
+      };
+      const cacheDir = CacheRouter.getSafeAppsCacheDir(args);
       return await this.dataSource.get(
         cacheDir,
         providerUrl,

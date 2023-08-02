@@ -18,6 +18,6 @@ export class ContractsController {
     @Param('chainId') chainId: string,
     @Param('contractAddress') contractAddress: string,
   ): Promise<Contract> {
-    return this.contractsService.getContract(chainId, contractAddress);
+    return this.contractsService.getContract({ chainId, contractAddress });
   }
 }

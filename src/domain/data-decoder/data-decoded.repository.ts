@@ -12,13 +12,18 @@ export class DataDecodedRepository implements IDataDecodedRepository {
     private readonly validator: DataDecodedValidator,
   ) {}
 
-  async getDataDecoded(
-    chainId: string,
-    data: string,
-    to?: string,
-  ): Promise<DataDecoded> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const dataDecoded = await api.getDataDecoded(data, to);
+  async getDataDecoded(args: {
+    chainId: string;
+    data: string;
+    to?: string;
+  }): Promise<DataDecoded> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    const dataDecoded = await api.getDataDecoded({
+      data: args.data,
+      to: args.to,
+    });
     return this.validator.validate(dataDecoded);
   }
 }

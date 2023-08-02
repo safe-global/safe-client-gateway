@@ -20,13 +20,13 @@ export class BalancesController {
     @Query('trusted') trusted?: boolean,
     @Query('exclude_spam') excludeSpam?: boolean,
   ): Promise<Balances> {
-    return this.balancesService.getBalances(
+    return this.balancesService.getBalances({
       chainId,
       safeAddress,
       fiatCode,
       trusted,
       excludeSpam,
-    );
+    });
   }
 
   @Get('balances/supported-fiat-codes')

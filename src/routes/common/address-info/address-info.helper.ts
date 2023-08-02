@@ -102,11 +102,11 @@ export class AddressInfoHelper {
     switch (source) {
       case 'CONTRACT':
         return this.contractsRepository
-          .getContract(chainId, address)
+          .getContract({ chainId, contractAddress: address })
           .then((c) => new AddressInfo(c.address, c.displayName, c.logoUri));
       case 'TOKEN':
         return this.tokenRepository
-          .getToken(chainId, address)
+          .getToken({ chainId, address })
           .then((t) => new AddressInfo(t.address, t.name, t.logoUri));
       default:
         return Promise.reject('Unknown source');

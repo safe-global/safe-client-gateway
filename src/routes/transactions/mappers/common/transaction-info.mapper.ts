@@ -101,7 +101,7 @@ export class MultisigTransactionInfoMapper {
 
     if (this.isValidTokenTransfer(transaction)) {
       const token = await this.tokenRepository
-        .getToken(chainId, transaction.to)
+        .getToken({ chainId, address: transaction.to })
         .catch(() => null);
 
       switch (token?.type) {

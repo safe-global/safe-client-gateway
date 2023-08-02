@@ -48,7 +48,7 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @Param('id') id: string,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.getById(chainId, id);
+    return this.transactionsService.getById({ chainId, txId: id });
   }
 
   @ApiOkResponse({ type: MultisigTransactionPage })
@@ -72,7 +72,7 @@ export class TransactionsController {
     @Query('nonce') nonce?: string,
     @Query('executed') executed?: boolean,
   ): Promise<Partial<Page<MultisigTransaction>>> {
-    return this.transactionsService.getMultisigTransactions(
+    return this.transactionsService.getMultisigTransactions({
       chainId,
       routeUrl,
       paginationData,
@@ -83,7 +83,7 @@ export class TransactionsController {
       value,
       nonce,
       executed,
-    );
+    });
   }
 
   @ApiOkResponse({ type: ModuleTransactionPage })
@@ -99,14 +99,14 @@ export class TransactionsController {
     @Query('to') to?: string,
     @Query('module') module?: string,
   ): Promise<Page<ModuleTransaction>> {
-    return this.transactionsService.getModuleTransactions(
+    return this.transactionsService.getModuleTransactions({
       chainId,
       routeUrl,
       safeAddress,
       to,
       module,
       paginationData,
-    );
+    });
   }
 
   @HttpCode(200)
@@ -118,11 +118,11 @@ export class TransactionsController {
     @Body(AddConfirmationDtoValidationPipe)
     addConfirmationDto: AddConfirmationDto,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.addConfirmation(
+    return this.transactionsService.addConfirmation({
       chainId,
       safeTxHash,
       addConfirmationDto,
-    );
+    });
   }
 
   @ApiOkResponse({ type: IncomingTransferPage })
@@ -144,7 +144,7 @@ export class TransactionsController {
     @Query('value') value?: string,
     @Query('token_address') tokenAddress?: string,
   ): Promise<Partial<Page<IncomingTransfer>>> {
-    return this.transactionsService.getIncomingTransfers(
+    return this.transactionsService.getIncomingTransfers({
       chainId,
       routeUrl,
       safeAddress,
@@ -154,7 +154,7 @@ export class TransactionsController {
       value,
       tokenAddress,
       paginationData,
-    );
+    });
   }
 
   @ApiOkResponse({ type: TransactionPreview })
@@ -166,11 +166,11 @@ export class TransactionsController {
     @Body(PreviewTransactionDtoValidationPipe)
     previewTransactionDto: PreviewTransactionDto,
   ): Promise<TransactionPreview> {
-    return this.transactionsService.previewTransaction(
+    return this.transactionsService.previewTransaction({
       chainId,
       safeAddress,
       previewTransactionDto,
-    );
+    });
   }
 
   @ApiOkResponse({ type: QueuedItemPage })
@@ -184,12 +184,12 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Partial<Page<QueuedItem>>> {
-    return this.transactionsService.getTransactionQueue(
+    return this.transactionsService.getTransactionQueue({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
-    );
+    });
   }
 
   @ApiOkResponse({ type: TransactionItemPage })
@@ -204,13 +204,13 @@ export class TransactionsController {
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
     timezoneOffset: number,
   ): Promise<Partial<TransactionItemPage>> {
-    return this.transactionsService.getTransactionHistory(
+    return this.transactionsService.getTransactionHistory({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
       timezoneOffset,
-    );
+    });
   }
 
   @HttpCode(200)
@@ -222,10 +222,10 @@ export class TransactionsController {
     @Body(ProposeTransactionDtoValidationPipe)
     proposeTransactionDto: ProposeTransactionDto,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.proposeTransaction(
+    return this.transactionsService.proposeTransaction({
       chainId,
       safeAddress,
       proposeTransactionDto,
-    );
+    });
   }
 }

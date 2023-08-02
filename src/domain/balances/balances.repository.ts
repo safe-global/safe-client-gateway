@@ -12,22 +12,30 @@ export class BalancesRepository implements IBalancesRepository {
     private readonly validator: BalancesValidator,
   ) {}
 
-  async getBalances(
-    chainId: string,
-    safeAddress: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): Promise<Balance[]> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const balances = await api.getBalances(safeAddress, trusted, excludeSpam);
+  async getBalances(args: {
+    chainId: string;
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance[]> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    const balances = await api.getBalances({
+      safeAddress: args.safeAddress,
+      trusted: args.trusted,
+      excludeSpam: args.excludeSpam,
+    });
     return balances.map((balance) => this.validator.validate(balance));
   }
 
-  async clearLocalBalances(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<void> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    await api.clearLocalBalances(safeAddress);
+  async clearLocalBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    await api.clearLocalBalances(args.safeAddress);
   }
 }

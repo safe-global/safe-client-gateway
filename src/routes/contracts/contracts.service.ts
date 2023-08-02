@@ -10,10 +10,10 @@ export class ContractsService {
     private readonly contractsRepository: ContractsRepository,
   ) {}
 
-  async getContract(
-    chainId: string,
-    contractAddress: string,
-  ): Promise<Contract> {
-    return this.contractsRepository.getContract(chainId, contractAddress);
+  async getContract(args: {
+    chainId: string;
+    contractAddress: string;
+  }): Promise<Contract> {
+    return this.contractsRepository.getContract(args);
   }
 }

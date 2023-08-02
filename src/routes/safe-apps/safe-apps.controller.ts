@@ -20,6 +20,6 @@ export class SafeAppsController {
     @Query('clientUrl') clientUrl?: string,
     @Query('url') url?: string,
   ): Promise<SafeApp[]> {
-    return this.safeAppsService.getSafeApps(chainId, clientUrl, url);
+    return this.safeAppsService.getSafeApps({ chainId, clientUrl, url });
   }
 }
