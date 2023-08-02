@@ -221,6 +221,84 @@ describe('Balances Controller (Unit)', () => {
         });
     });
 
+    it('returns large numbers as is (not in scientific notation)', async () => {
+      const chainId = '1';
+      const safeAddress = '0x0000000000000000000000000000000000000001';
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('balance', '266279793958307969327868')
+          // The Transaction Service can return scientific notation for large numbers
+          .with('fiatBalance', '6.25164198388829e+43')
+          .with('fiatConversion', '2.347771827128244e+38')
+          .build(),
+      ];
+      const exchangeApiResponse = exchangeRatesBuilder()
+        .with('success', true)
+        .with('rates', { USD: 1.0 })
+        .build();
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      networkService.get.mockImplementation((url) => {
+        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+          return Promise.resolve({ data: chainResponse });
+        } else if (
+          url ==
+          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
+        ) {
+          return Promise.resolve({
+            data: transactionApiBalancesResponse,
+          });
+        } else if (
+          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
+        ) {
+          return Promise.resolve({ data: exchangeApiResponse });
+        } else {
+          return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      const expectedFiatBalance =
+        '62516419838882900000000000000000000000000000';
+      const expectedFiatConversion = '234777182712824400000000000000000000000';
+      const expectedBalance = transactionApiBalancesResponse[0];
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+        .expect(200)
+        .expect({
+          fiatTotal: expectedFiatBalance,
+          items: [
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: expectedBalance.tokenAddress,
+                decimals: expectedBalance.token?.decimals,
+                symbol: expectedBalance.token?.symbol,
+                name: expectedBalance.token?.name,
+                logoUri: expectedBalance?.token?.logoUri,
+              },
+              balance: expectedBalance.balance,
+              fiatBalance: expectedFiatBalance,
+              fiatConversion: expectedFiatConversion,
+            },
+          ],
+        });
+
+      // 3 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API
+      expect(networkService.get.mock.calls.length).toBe(3);
+      expect(networkService.get.mock.calls[0][0]).toBe(
+        `${safeConfigUrl}/api/v1/chains/1`,
+      );
+      expect(networkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
+      );
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+        params: { trusted: undefined, exclude_spam: undefined },
+      });
+      expect(networkService.get.mock.calls[2][0]).toBe(
+        `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
+      );
+    });
+
     describe('Config API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
