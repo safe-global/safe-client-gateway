@@ -55,10 +55,18 @@ import { FlushRepository } from './domain/flush/flush.repository';
 import { IFlushRepository } from './domain/flush/flush.repository.interface';
 import { IHealthRepository } from './domain/health/health.repository.interface';
 import { HealthRepository } from './domain/health/health.repository';
+import { IPricesRepository } from './domain/prices/prices.repository.interface';
+import { PricesRepository } from './domain/prices/prices.repository';
+import { PricesApiModule } from './datasources/prices-api/prices-api.module';
 
 @Global()
 @Module({
-  imports: [ConfigApiModule, ExchangeApiModule, TransactionApiModule],
+  imports: [
+    ConfigApiModule,
+    ExchangeApiModule,
+    PricesApiModule,
+    TransactionApiModule,
+  ],
   providers: [
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
@@ -73,6 +81,7 @@ import { HealthRepository } from './domain/health/health.repository';
     { provide: IHealthRepository, useClass: HealthRepository },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
+    { provide: IPricesRepository, useClass: PricesRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
@@ -112,6 +121,7 @@ import { HealthRepository } from './domain/health/health.repository';
     IHealthRepository,
     IMessagesRepository,
     INotificationsRepository,
+    IPricesRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,

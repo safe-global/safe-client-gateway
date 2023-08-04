@@ -42,6 +42,11 @@ export default () => ({
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  prices: {
+    baseUri:
+      process.env.PRICES_PROVIDER_API_BASE_URI ||
+      'https://api.coingecko.com/api/v3',
+  },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',

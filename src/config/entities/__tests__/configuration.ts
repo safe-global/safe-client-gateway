@@ -29,6 +29,9 @@ export default (): ReturnType<typeof configuration> => ({
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  prices: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),

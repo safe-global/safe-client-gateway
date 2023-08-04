@@ -71,7 +71,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         ...args,
       });
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/usd/`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
       return await this.dataSource.get(
         cacheDir,
         url,
