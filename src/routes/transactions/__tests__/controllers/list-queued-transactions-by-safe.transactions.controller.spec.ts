@@ -468,4 +468,111 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         });
       });
   });
+
+  it('should get an "untrusted" queue', async () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainResponse = chainBuilder().build();
+    const contractResponse = contractBuilder().build();
+    const safeResponse = safeBuilder()
+      .with('address', safeAddress)
+      .with('nonce', 1)
+      .build();
+    const safeAppsResponse = [
+      safeAppBuilder()
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
+        .build(),
+    ];
+    const transactions: MultisigTransaction[] = [
+      multisigToJson(
+        multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('safeTxHash', faker.finance.ethereumAddress())
+          .with('nonce', 1)
+          .with('dataDecoded', null)
+          .build(),
+      ) as MultisigTransaction,
+      multisigToJson(
+        multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('safeTxHash', faker.finance.ethereumAddress())
+          .with('nonce', 2)
+          .with('dataDecoded', null)
+          .build(),
+      ) as MultisigTransaction,
+    ];
+    networkService.get.mockImplementation((url: string, query) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        expect(query.params.trusted).toBe(false);
+
+        return Promise.resolve({
+          data: {
+            count: 2,
+            next: null,
+            previous: null,
+            results: transactions,
+          },
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safeResponse });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: safeAppsResponse });
+      }
+      if (url.includes(getContractUrlPattern)) {
+        return Promise.resolve({ data: contractResponse });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?trusted=false`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toEqual({
+          count: 4,
+          next: null,
+          previous: null,
+          results: [
+            {
+              label: 'Next',
+              type: 'LABEL',
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: expect.objectContaining({
+                id: `multisig_${safeAddress}_${transactions[0].safeTxHash}`,
+              }),
+              conflictType: 'None',
+            },
+            {
+              label: 'Queued',
+              type: 'LABEL',
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: expect.objectContaining({
+                id: `multisig_${safeAddress}_${transactions[1].safeTxHash}`,
+              }),
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
+  });
 });
