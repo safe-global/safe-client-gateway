@@ -495,7 +495,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigTransactionBuilder()
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.finance.ethereumAddress())
           .with('nonce', 2)
           .with('dataDecoded', null)
           .build(),
