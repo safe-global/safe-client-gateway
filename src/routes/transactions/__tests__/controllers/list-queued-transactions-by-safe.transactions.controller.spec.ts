@@ -478,10 +478,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .with('address', safeAddress)
       .with('nonce', 1)
       .build();
-    const safeAppsResponse = [
-      safeAppBuilder()
-        .build(),
-    ];
+    const safeAppsResponse = [safeAppBuilder().build()];
     const transactions: MultisigTransaction[] = [
       multisigToJson(
         multisigTransactionBuilder()
