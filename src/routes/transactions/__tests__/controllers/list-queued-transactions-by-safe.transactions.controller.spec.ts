@@ -480,9 +480,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
-        .with('url', faker.internet.url({ appendSlash: false }))
-        .with('iconUrl', faker.internet.url({ appendSlash: false }))
-        .with('name', faker.word.words())
         .build(),
     ];
     const transactions: MultisigTransaction[] = [
