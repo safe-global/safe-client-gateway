@@ -27,39 +27,45 @@ export class MessagesService {
     private readonly messageMapper: MessageMapper,
   ) {}
 
-  async getMessageByHash(
-    chainId: string,
-    messageHash: string,
-  ): Promise<Message> {
-    const message = await this.messagesRepository.getMessageByHash(
-      chainId,
-      messageHash,
-    );
-    const safe = await this.safeRepository.getSafe(chainId, message.safe);
-    return this.messageMapper.mapMessage(chainId, message, safe);
+  async getMessageByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<Message> {
+    const message = await this.messagesRepository.getMessageByHash(args);
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: message.safe,
+    });
+    return this.messageMapper.mapMessage(args.chainId, message, safe);
   }
 
-  async getMessagesBySafe(
-    chainId: string,
-    safeAddress: string,
-    paginationData: PaginationData,
-    routeUrl: Readonly<URL>,
-  ): Promise<Page<DateLabel | MessageItem>> {
-    const safe = await this.safeRepository.getSafe(chainId, safeAddress);
-    const page = await this.messagesRepository.getMessagesBySafe(
-      chainId,
-      safeAddress,
-      paginationData.limit,
-      paginationData.offset,
+  async getMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: string;
+    paginationData: PaginationData;
+    routeUrl: Readonly<URL>;
+  }): Promise<Page<DateLabel | MessageItem>> {
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    const page = await this.messagesRepository.getMessagesBySafe({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      limit: args.paginationData.limit,
+      offset: args.paginationData.offset,
+    });
+    const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, page.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      page.previous,
     );
-    const nextURL = cursorUrlFromLimitAndOffset(routeUrl, page.next);
-    const previousURL = cursorUrlFromLimitAndOffset(routeUrl, page.previous);
     const groups = this.getOrderedGroups(page.results);
 
     const labelledGroups = await Promise.all(
       groups.map(async ([timestamp, messages]) => {
         const messageItems = await this.messageMapper.mapMessageItems(
-          chainId,
+          args.chainId,
           messages,
           safe,
         );
@@ -113,29 +119,29 @@ export class MessagesService {
     );
   }
 
-  async createMessage(
-    chainId: string,
-    safeAddress: string,
-    createMessageDto: CreateMessageDto,
-  ): Promise<unknown> {
-    return await this.messagesRepository.createMessage(
-      chainId,
-      safeAddress,
-      createMessageDto.message,
-      createMessageDto.safeAppId,
-      createMessageDto.signature,
-    );
+  async createMessage(args: {
+    chainId: string;
+    safeAddress: string;
+    createMessageDto: CreateMessageDto;
+  }): Promise<unknown> {
+    return await this.messagesRepository.createMessage({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      message: args.createMessageDto.message,
+      safeAppId: args.createMessageDto.safeAppId,
+      signature: args.createMessageDto.signature,
+    });
   }
 
-  async updateMessageSignature(
-    chainId: string,
-    messageHash: string,
-    updateMessageSignatureDto: UpdateMessageSignatureDto,
-  ): Promise<unknown> {
-    return await this.messagesRepository.updateMessageSignature(
-      chainId,
-      messageHash,
-      updateMessageSignatureDto.signature,
-    );
+  async updateMessageSignature(args: {
+    chainId: string;
+    messageHash: string;
+    updateMessageSignatureDto: UpdateMessageSignatureDto;
+  }): Promise<unknown> {
+    return await this.messagesRepository.updateMessageSignature({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+      signature: args.updateMessageSignatureDto.signature,
+    });
   }
 }

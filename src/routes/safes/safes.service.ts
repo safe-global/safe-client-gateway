@@ -28,12 +28,18 @@ export class SafesService {
     private readonly messagesRepository: MessagesRepository,
   ) {}
 
-  async getSafeInfo(chainId: string, safeAddress: string): Promise<SafeState> {
+  async getSafeInfo(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<SafeState> {
     const [safe, { recommendedMasterCopyVersion }, supportedMasterCopies] =
       await Promise.all([
-        this.safeRepository.getSafe(chainId, safeAddress),
-        this.chainsRepository.getChain(chainId),
-        this.chainsRepository.getMasterCopies(chainId),
+        this.safeRepository.getSafe({
+          chainId: args.chainId,
+          address: args.safeAddress,
+        }),
+        this.chainsRepository.getChain(args.chainId),
+        this.chainsRepository.getMasterCopies(args.chainId),
       ]);
 
     const versionState = this.computeVersionState(
@@ -51,29 +57,31 @@ export class SafesService {
       transactionHistoryTag,
       messagesTag,
     ] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(chainId, safe.masterCopy, [
+      this.addressInfoHelper.getOrDefault(args.chainId, safe.masterCopy, [
         'CONTRACT',
       ]),
       safe.fallbackHandler === NULL_ADDRESS
         ? Promise.resolve(null)
-        : this.addressInfoHelper.getOrDefault(chainId, safe.fallbackHandler, [
-            'CONTRACT',
-          ]),
+        : this.addressInfoHelper.getOrDefault(
+            args.chainId,
+            safe.fallbackHandler,
+            ['CONTRACT'],
+          ),
       safe.guard === NULL_ADDRESS
         ? Promise.resolve(null)
-        : this.addressInfoHelper.getOrDefault(chainId, safe.guard, [
+        : this.addressInfoHelper.getOrDefault(args.chainId, safe.guard, [
             'CONTRACT',
           ]),
-      this.getCollectiblesTag(chainId, safeAddress),
-      this.getQueuedTransactionTag(chainId, safe),
-      this.executedTransactionTag(chainId, safeAddress),
-      this.modifiedMessageTag(chainId, safeAddress),
+      this.getCollectiblesTag(args.chainId, args.safeAddress),
+      this.getQueuedTransactionTag(args.chainId, safe),
+      this.executedTransactionTag(args.chainId, args.safeAddress),
+      this.modifiedMessageTag(args.chainId, args.safeAddress),
     ]);
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
       const moduleInfoCollection: Array<AddressInfo> =
-        await this.addressInfoHelper.getCollection(chainId, safe.modules, [
+        await this.addressInfoHelper.getCollection(args.chainId, safe.modules, [
           'CONTRACT',
         ]);
       moduleAddressesInfo =
@@ -82,7 +90,7 @@ export class SafesService {
 
     return new SafeState(
       new AddressInfo(safe.address),
-      chainId,
+      args.chainId,
       safe.nonce,
       safe.threshold,
       safe.owners.map((ownerAddress) => new AddressInfo(ownerAddress)),
@@ -109,12 +117,12 @@ export class SafesService {
     safeAddress: string,
   ): Promise<Date | null> {
     const lastCollectibleTransfer =
-      await this.safeRepository.getCollectibleTransfers(
+      await this.safeRepository.getCollectibleTransfers({
         chainId,
         safeAddress,
-        1,
-        0,
-      );
+        limit: 1,
+        offset: 0,
+      });
 
     return lastCollectibleTransfer.results[0]?.executionDate ?? null;
   }
@@ -124,7 +132,11 @@ export class SafesService {
     safe: Safe,
   ): Promise<Date | null> {
     const lastQueuedTransaction =
-      await this.safeRepository.getTransactionQueueByModified(chainId, safe, 1);
+      await this.safeRepository.getTransactionQueueByModified({
+        chainId,
+        safe,
+        limit: 1,
+      });
 
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }
@@ -134,11 +146,11 @@ export class SafesService {
     safeAddress: string,
   ): Promise<Date | null> {
     const lastExecutedTransaction = (
-      await this.safeRepository.getTransactionHistoryByExecutionDate(
+      await this.safeRepository.getTransactionHistoryByExecutionDate({
         chainId,
         safeAddress,
-        1,
-      )
+        limit: 1,
+      })
     ).results[0];
 
     if (!lastExecutedTransaction) return null;
@@ -162,10 +174,10 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const messages = await this.messagesRepository.getMessagesBySafe(
+    const messages = await this.messagesRepository.getMessagesBySafe({
       chainId,
       safeAddress,
-    );
+    });
 
     if (messages.results.length === 0) {
       return null;

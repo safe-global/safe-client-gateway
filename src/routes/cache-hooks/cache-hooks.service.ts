@@ -41,14 +41,14 @@ export class CacheHooksService {
       // the pending transaction – clear multisig transaction
       case EventType.PENDING_MULTISIG_TRANSACTION:
         promises.push(
-          this.safeRepository.clearMultisigTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearMultisigTransaction(
-            event.chainId,
-            event.safeTxHash,
-          ),
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransaction({
+            chainId: event.chainId,
+            safeTransactionHash: event.safeTxHash,
+          }),
         );
         break;
       // An executed module transaction might affect:
@@ -56,14 +56,14 @@ export class CacheHooksService {
       // - the list of module transactions for the safe
       case EventType.MODULE_TRANSACTION:
         promises.push(
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearModuleTransactions(
-            event.chainId,
-            event.address,
-          ),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearModuleTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // A new executed multisig transaction affects:
@@ -75,27 +75,30 @@ export class CacheHooksService {
       // - the safe configuration - clear safe info
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
         promises.push(
-          this.collectiblesRepository.clearCollectibles(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearCollectibleTransfers(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearMultisigTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearMultisigTransaction(
-            event.chainId,
-            event.safeTxHash,
-          ),
-          this.safeRepository.clearSafe(event.chainId, event.address),
+          this.collectiblesRepository.clearCollectibles({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearCollectibleTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransaction({
+            chainId: event.chainId,
+            safeTransactionHash: event.safeTxHash,
+          }),
+          this.safeRepository.clearSafe({
+            chainId: event.chainId,
+            address: event.address,
+          }),
         );
         break;
       // A new confirmation for a pending transaction affects:
@@ -103,14 +106,14 @@ export class CacheHooksService {
       // - the pending transaction – clear multisig transaction
       case EventType.NEW_CONFIRMATION:
         promises.push(
-          this.safeRepository.clearMultisigTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearMultisigTransaction(
-            event.chainId,
-            event.safeTxHash,
-          ),
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransaction({
+            chainId: event.chainId,
+            safeTransactionHash: event.safeTxHash,
+          }),
         );
         break;
       // Incoming ether affects:
@@ -119,18 +122,18 @@ export class CacheHooksService {
       // - the incoming transfers for that safe
       case EventType.INCOMING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearIncomingTransfers(
-            event.chainId,
-            event.address,
-          ),
+          this.balancesRepository.clearLocalBalances({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearIncomingTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // Outgoing ether affects:
@@ -138,14 +141,14 @@ export class CacheHooksService {
       // - the list of all executed transactions (including transfers) for the safe
       case EventType.OUTGOING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
+          this.balancesRepository.clearLocalBalances({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // An incoming token affects:
@@ -156,26 +159,26 @@ export class CacheHooksService {
       // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances(
-            event.chainId,
-            event.address,
-          ),
-          this.collectiblesRepository.clearCollectibles(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearCollectibleTransfers(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearIncomingTransfers(
-            event.chainId,
-            event.address,
-          ),
+          this.balancesRepository.clearLocalBalances({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.collectiblesRepository.clearCollectibles({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearCollectibleTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearIncomingTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // An outgoing token affects:
@@ -185,22 +188,22 @@ export class CacheHooksService {
       // - the collectible transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances(
-            event.chainId,
-            event.address,
-          ),
-          this.collectiblesRepository.clearCollectibles(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearAllExecutedTransactions(
-            event.chainId,
-            event.address,
-          ),
-          this.safeRepository.clearCollectibleTransfers(
-            event.chainId,
-            event.address,
-          ),
+          this.balancesRepository.clearLocalBalances({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.collectiblesRepository.clearCollectibles({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearCollectibleTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
     }

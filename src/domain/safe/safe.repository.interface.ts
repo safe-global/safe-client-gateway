@@ -12,57 +12,63 @@ import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dt
 export const ISafeRepository = Symbol('ISafeRepository');
 
 export interface ISafeRepository {
-  getSafe(chainId: string, address: string): Promise<Safe>;
+  getSafe(args: { chainId: string; address: string }): Promise<Safe>;
 
-  clearSafe(chainId: string, address: string): Promise<void>;
+  clearSafe(args: { chainId: string; address: string }): Promise<void>;
 
-  getCollectibleTransfers(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>>;
+  getCollectibleTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>>;
 
-  clearCollectibleTransfers(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<void>;
+  clearCollectibleTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
 
-  getIncomingTransfers(
-    chainId: string,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    tokenAddress?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transfer>>;
+  getIncomingTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    tokenAddress?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transfer>>;
 
-  clearIncomingTransfers(chainId: string, safeAddress: string): Promise<void>;
+  clearIncomingTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
 
-  addConfirmation(
-    chainId: string,
-    safeTxHash: string,
-    addConfirmationDto: AddConfirmationDto,
-  ): Promise<unknown>;
+  addConfirmation(args: {
+    chainId: string;
+    safeTxHash: string;
+    addConfirmationDto: AddConfirmationDto;
+  }): Promise<unknown>;
 
-  getModuleTransaction(
-    chainId: string,
-    moduleTransactionId: string,
-  ): Promise<ModuleTransaction>;
+  getModuleTransaction(args: {
+    chainId: string;
+    moduleTransactionId: string;
+  }): Promise<ModuleTransaction>;
 
-  getModuleTransactions(
-    chainId: string,
-    safeAddress: string,
-    to?: string,
-    module?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<ModuleTransaction>>;
+  getModuleTransactions(args: {
+    chainId: string;
+    safeAddress: string;
+    to?: string;
+    module?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<ModuleTransaction>>;
 
-  clearModuleTransactions(chainId: string, safeAddress: string): Promise<void>;
+  clearModuleTransactions(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
 
   /**
    * Returns the Safe Transaction Queue in ascending order.
@@ -70,99 +76,92 @@ export interface ISafeRepository {
    * The ascending order is first considered for the nonce.
    * If multiple transactions have the same nonce, then they
    * will be sorted according to the submission date
-   *
-   * @param chainId - the chain id from where to retrieve the transactions from
-   * @param safe - the target safe from where to get the transaction from
-   * @param limit - the maximum number of transactions to be returned
-   * @param offset - the starting point from which to start the pagination
    */
-  getTransactionQueue(
-    chainId: string,
-    safe: Safe,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>>;
+  getTransactionQueue(args: {
+    chainId: string;
+    safe: Safe;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>>;
 
   /**
    * Returns the Safe Transaction Queue sorted by modified status.
    * (from most recently modified to last)
-   *
-   * @param chainId - the chain id from where to retrieve the transactions from
-   * @param safe - the target safe from where to get the transaction from
-   * @param limit - the maximum number of transactions to be returned
-   * @param offset - the starting point from which to start the pagination
    */
-  getTransactionQueueByModified(
-    chainId: string,
-    safe: Safe,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>>;
+  getTransactionQueueByModified(args: {
+    chainId: string;
+    safe: Safe;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>>;
 
-  getTransactionHistoryByExecutionDate(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transaction>>;
+  getTransactionHistoryByExecutionDate(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transaction>>;
 
-  getCreationTransaction(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<CreationTransaction>;
+  getCreationTransaction(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<CreationTransaction>;
 
-  getTransactionHistory(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<Transaction>>;
+  getTransactionHistory(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Transaction>>;
 
-  getMultiSigTransaction(
-    chainId: string,
-    safeTransactionHash: string,
-  ): Promise<MultisigTransaction>;
+  getMultiSigTransaction(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): Promise<MultisigTransaction>;
 
-  clearAllExecutedTransactions(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<void>;
+  clearAllExecutedTransactions(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
 
-  clearMultisigTransaction(
-    chainId: string,
-    safeTransactionHash: string,
-  ): Promise<void>;
+  clearMultisigTransaction(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): Promise<void>;
 
-  clearMultisigTransactions(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<void>;
+  clearMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
 
-  getMultisigTransactions(
-    chainId: string,
-    safeAddress: string,
-    executed?: boolean,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    nonce?: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Page<MultisigTransaction>>;
+  getMultisigTransactions(args: {
+    chainId: string;
+    safeAddress: string;
+    executed?: boolean;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    nonce?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>>;
 
-  getTransfer(chainId: string, transferId: string): Promise<Transfer>;
+  getTransfer(args: { chainId: string; transferId: string }): Promise<Transfer>;
 
-  getSafesByOwner(chainId: string, ownerAddress: string): Promise<SafeList>;
+  getSafesByOwner(args: {
+    chainId: string;
+    ownerAddress: string;
+  }): Promise<SafeList>;
 
-  getLastTransactionSortedByNonce(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<MultisigTransaction | null>;
+  getLastTransactionSortedByNonce(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<MultisigTransaction | null>;
 
-  proposeTransaction(
-    chainId: string,
-    safeAddress: string,
-    proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<unknown>;
+  proposeTransaction(args: {
+    chainId: string;
+    safeAddress: string;
+    proposeTransactionDto: ProposeTransactionDto;
+  }): Promise<unknown>;
 }

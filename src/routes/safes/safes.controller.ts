@@ -15,6 +15,6 @@ export class SafesController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
   ): Promise<SafeState> {
-    return this.service.getSafeInfo(chainId, safeAddress);
+    return this.service.getSafeInfo({ chainId, safeAddress });
   }
 }

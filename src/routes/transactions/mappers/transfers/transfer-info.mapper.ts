@@ -98,6 +98,6 @@ export class TransferInfoMapper {
     if (!tokenAddress) {
       throw Error('Invalid token address for transfer');
     }
-    return this.tokenRepository.getToken(chainId, tokenAddress);
+    return this.tokenRepository.getToken({ chainId, address: tokenAddress });
   }
 }

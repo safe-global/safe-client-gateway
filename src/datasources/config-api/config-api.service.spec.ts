@@ -73,7 +73,7 @@ describe('ConfigApi', () => {
     const data = [chainBuilder().build(), chainBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
-    const actual = await service.getChains();
+    const actual = await service.getChains({});
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
@@ -110,7 +110,7 @@ describe('ConfigApi', () => {
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
-    const actual = await service.getSafeApps(chainId);
+    const actual = await service.getSafeApps({ chainId });
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
@@ -130,7 +130,7 @@ describe('ConfigApi', () => {
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
-    const actual = await service.getSafeApps(chainId, undefined, url);
+    const actual = await service.getSafeApps({ chainId, url });
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
@@ -150,7 +150,7 @@ describe('ConfigApi', () => {
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
-    const actual = await service.getSafeApps(chainId, clientUrl);
+    const actual = await service.getSafeApps({ chainId, clientUrl });
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
@@ -169,7 +169,7 @@ describe('ConfigApi', () => {
     mockHttpErrorFactory.from.mockReturnValue(expected);
     mockDataSource.get.mockRejectedValueOnce(new Error('Some error'));
 
-    await expect(service.getChains()).rejects.toThrowError(expected);
+    await expect(service.getChains({})).rejects.toThrowError(expected);
 
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     expect(mockHttpErrorFactory.from).toBeCalledTimes(1);

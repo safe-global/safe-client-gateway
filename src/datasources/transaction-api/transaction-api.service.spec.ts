@@ -79,7 +79,11 @@ describe('TransactionApi', () => {
       const data = [balanceBuilder().build(), balanceBuilder().build()];
       mockDataSource.get.mockResolvedValue(data);
 
-      const actual = await service.getBalances('test', true, true);
+      const actual = await service.getBalances({
+        safeAddress: 'test',
+        trusted: true,
+        excludeSpam: true,
+      });
 
       expect(actual).toBe(data);
       expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
@@ -91,7 +95,11 @@ describe('TransactionApi', () => {
       mockHttpErrorFactory.from.mockReturnValue(expected);
 
       await expect(
-        service.getBalances('test', true, true),
+        service.getBalances({
+          safeAddress: 'test',
+          trusted: true,
+          excludeSpam: true,
+        }),
       ).rejects.toThrowError(expected);
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);

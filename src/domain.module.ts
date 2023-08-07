@@ -53,6 +53,8 @@ import { IMessagesRepository } from './domain/messages/messages.repository.inter
 import { MessageValidator } from './domain/messages/message.validator';
 import { FlushRepository } from './domain/flush/flush.repository';
 import { IFlushRepository } from './domain/flush/flush.repository.interface';
+import { IHealthRepository } from './domain/health/health.repository.interface';
+import { HealthRepository } from './domain/health/health.repository';
 
 @Global()
 @Module({
@@ -68,6 +70,7 @@ import { IFlushRepository } from './domain/flush/flush.repository.interface';
     { provide: IEstimationsRepository, useClass: EstimationsRepository },
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: IFlushRepository, useClass: FlushRepository },
+    { provide: IHealthRepository, useClass: HealthRepository },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
@@ -106,6 +109,7 @@ import { IFlushRepository } from './domain/flush/flush.repository.interface';
     IEstimationsRepository,
     IExchangeRepository,
     IFlushRepository,
+    IHealthRepository,
     IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,

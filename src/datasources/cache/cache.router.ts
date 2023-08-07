@@ -28,39 +28,48 @@ export class CacheRouter {
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
 
-  static getBalancesCacheKey(chainId: string, safeAddress: string): string {
-    return `${chainId}_${CacheRouter.BALANCES_KEY}_${safeAddress}`;
+  static getBalancesCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.BALANCES_KEY}_${args.safeAddress}`;
   }
 
-  static getBalanceCacheDir(
-    chainId: string,
-    safeAddress: string,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): CacheDir {
+  static getBalanceCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): CacheDir {
     return new CacheDir(
-      CacheRouter.getBalancesCacheKey(chainId, safeAddress),
-      `${trusted}_${excludeSpam}`,
+      CacheRouter.getBalancesCacheKey(args),
+      `${args.trusted}_${args.excludeSpam}`,
     );
   }
 
-  static getSafeCacheDir(chainId: string, safeAddress: string): CacheDir {
+  static getSafeCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.SAFE_KEY}_${safeAddress}`,
+      `${args.chainId}_${CacheRouter.SAFE_KEY}_${args.safeAddress}`,
       '',
     );
   }
 
-  static getSafeCacheKey(chainId: string, safeAddress: string): string {
-    return `${chainId}_${CacheRouter.SAFE_KEY}_${safeAddress}`;
+  static getSafeCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_KEY}_${args.safeAddress}`;
   }
 
-  static getContractCacheDir(
-    chainId: string,
-    contractAddress: string,
-  ): CacheDir {
+  static getContractCacheDir(args: {
+    chainId: string;
+    contractAddress: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.CONTRACT_KEY}_${contractAddress}`,
+      `${args.chainId}_${CacheRouter.CONTRACT_KEY}_${args.contractAddress}`,
       '',
     );
   }
@@ -77,209 +86,221 @@ export class CacheRouter {
     return new CacheDir(`${chainId}_${CacheRouter.MASTER_COPIES_KEY}`, '');
   }
 
-  static getCollectiblesCacheDir(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-    trusted?: boolean,
-    excludeSpam?: boolean,
-  ): CacheDir {
+  static getCollectiblesCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.COLLECTIBLES_KEY}_${safeAddress}`,
-      `${limit}_${offset}_${trusted}_${excludeSpam}`,
+      `${args.chainId}_${CacheRouter.COLLECTIBLES_KEY}_${args.safeAddress}`,
+      `${args.limit}_${args.offset}_${args.trusted}_${args.excludeSpam}`,
     );
   }
 
-  static getCollectiblesKey(chainId: string, safeAddress: string) {
-    return `${chainId}_${CacheRouter.COLLECTIBLES_KEY}_${safeAddress}`;
+  static getCollectiblesKey(args: { chainId: string; safeAddress: string }) {
+    return `${args.chainId}_${CacheRouter.COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
-  static getDelegatesCacheDir(
-    chainId: string,
-    safeAddress?: string,
-    delegate?: string,
-    delegator?: string,
-    label?: string,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getDelegatesCacheDir(args: {
+    chainId: string;
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.DELEGATES_KEY}_${safeAddress}`,
-      `${delegate}_${delegator}_${label}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.DELEGATES_KEY}_${args.safeAddress}`,
+      `${args.delegate}_${args.delegator}_${args.label}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getTransferCacheDir(chainId: string, transferId: string): CacheDir {
+  static getTransferCacheDir(args: {
+    chainId: string;
+    transferId: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.TRANSFER_KEY}_${transferId}`,
+      `${args.chainId}_${CacheRouter.TRANSFER_KEY}_${args.transferId}`,
       '',
     );
   }
 
-  static getTransfersCacheDir(
-    chainId: string,
-    safeAddress: string,
-    onlyErc20: boolean,
-    onlyErc721: boolean,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getTransfersCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyErc20: boolean;
+    onlyErc721: boolean;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.TRANSFERS_KEY}_${safeAddress}`,
-      `${onlyErc20}_${onlyErc721}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.TRANSFERS_KEY}_${args.safeAddress}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getTransfersCacheKey(chainId: string, safeAddress: string) {
-    return `${chainId}_${CacheRouter.TRANSFERS_KEY}_${safeAddress}`;
+  static getTransfersCacheKey(args: { chainId: string; safeAddress: string }) {
+    return `${args.chainId}_${CacheRouter.TRANSFERS_KEY}_${args.safeAddress}`;
   }
 
-  static getModuleTransactionCacheDir(
-    chainId: string,
-    moduleTransactionId: string,
-  ): CacheDir {
+  static getModuleTransactionCacheDir(args: {
+    chainId: string;
+    moduleTransactionId: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MODULE_TRANSACTION_KEY}_${moduleTransactionId}`,
+      `${args.chainId}_${CacheRouter.MODULE_TRANSACTION_KEY}_${args.moduleTransactionId}`,
       '',
     );
   }
 
-  static getModuleTransactionsCacheDir(
-    chainId: string,
-    safeAddress: string,
-    to?: string,
-    module?: string,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getModuleTransactionsCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    to?: string;
+    module?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${safeAddress}`,
-      `${to}_${module}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${args.safeAddress}`,
+      `${args.to}_${args.module}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getModuleTransactionsCacheKey(
-    chainId: string,
-    safeAddress: string,
-  ): string {
-    return `${chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${safeAddress}`;
+  static getModuleTransactionsCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
-  static getIncomingTransfersCacheDir(
-    chainId: string,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    tokenAddress?: string,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getIncomingTransfersCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    tokenAddress?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${safeAddress}`,
-      `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${args.safeAddress}`,
+      `${args.executionDateGte}_${args.executionDateLte}_${args.to}_${args.value}_${args.tokenAddress}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getIncomingTransfersCacheKey(
-    chainId: string,
-    safeAddress: string,
-  ): string {
-    return `${chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${safeAddress}`;
+  static getIncomingTransfersCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${args.safeAddress}`;
   }
 
-  static getMultisigTransactionsCacheDir(
-    chainId: string,
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    trusted?: boolean,
-    executionDateGte?: string,
-    executionDateLte?: string,
-    to?: string,
-    value?: string,
-    nonce?: string,
-    nonceGte?: number,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getMultisigTransactionsCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    trusted?: boolean;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: string;
+    value?: string;
+    nonce?: string;
+    nonceGte?: number;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${safeAddress}`,
-      `${ordering}_${executed}_${trusted}_${executionDateGte}_${executionDateLte}_${to}_${value}_${nonce}_${nonceGte}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`,
+      `${args.ordering}_${args.executed}_${args.trusted}_${args.executionDateGte}_${args.executionDateLte}_${args.to}_${args.value}_${args.nonce}_${args.nonceGte}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getMultisigTransactionsCacheKey(
-    chainId: string,
-    safeAddress: string,
-  ): string {
-    return `${chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${safeAddress}`;
+  static getMultisigTransactionsCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
-  static getMultisigTransactionCacheDir(
-    chainId: string,
-    safeTransactionHash: string,
-  ): CacheDir {
+  static getMultisigTransactionCacheDir(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${safeTransactionHash}`,
+      `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`,
       '',
     );
   }
 
-  static getMultisigTransactionCacheKey(
-    chainId: string,
-    safeTransactionHash: string,
-  ): string {
-    return `${chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${safeTransactionHash}`;
+  static getMultisigTransactionCacheKey(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`;
   }
 
-  static getCreationTransactionCacheDir(
-    chainId: string,
-    safeAddress: string,
-  ): CacheDir {
+  static getCreationTransactionCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.CREATION_TRANSACTION_KEY}_${safeAddress}`,
+      `${args.chainId}_${CacheRouter.CREATION_TRANSACTION_KEY}_${args.safeAddress}`,
       '',
     );
   }
 
-  static getAllTransactionsCacheDir(
-    chainId: string,
-    safeAddress: string,
-    ordering?: string,
-    executed?: boolean,
-    queued?: boolean,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getAllTransactionsCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    ordering?: string;
+    executed?: boolean;
+    queued?: boolean;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${safeAddress}`,
-      `${ordering}_${executed}_${queued}_${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${args.safeAddress}`,
+      `${args.ordering}_${args.executed}_${args.queued}_${args.limit}_${args.offset}`,
     );
   }
 
-  static getAllTransactionsKey(chainId: string, safeAddress: string): string {
-    return `${chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${safeAddress}`;
+  static getAllTransactionsKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
-  static getTokenCacheDir(chainId: string, address: string): CacheDir {
-    return new CacheDir(`${chainId}_${CacheRouter.TOKEN_KEY}_${address}`, '');
+  static getTokenCacheDir(args: {
+    chainId: string;
+    address: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.TOKEN_KEY}_${args.address}`,
+      '',
+    );
   }
 
   static getTokensCacheKey(chainId: string): string {
     return `${chainId}_${CacheRouter.TOKENS_KEY}`;
   }
 
-  static getTokensCacheDir(
-    chainId: string,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getTokensCacheDir(args: {
+    chainId: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      CacheRouter.getTokensCacheKey(chainId),
-      `${limit}_${offset}`,
+      CacheRouter.getTokensCacheKey(args.chainId),
+      `${args.limit}_${args.offset}`,
     );
   }
 
@@ -287,35 +308,35 @@ export class CacheRouter {
     return `${chainId}_${CacheRouter.TOKEN_KEY}_*`;
   }
 
-  static getSafesByOwnerCacheDir(
-    chainId: string,
-    ownerAddress: string,
-  ): CacheDir {
+  static getSafesByOwnerCacheDir(args: {
+    chainId: string;
+    ownerAddress: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${ownerAddress}`,
+      `${args.chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${args.ownerAddress}`,
       '',
     );
   }
 
-  static getMessageByHashCacheDir(
-    chainId: string,
-    messageHash: string,
-  ): CacheDir {
+  static getMessageByHashCacheDir(args: {
+    chainId: string;
+    messageHash: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MESSAGE_KEY}_${messageHash}`,
+      `${args.chainId}_${CacheRouter.MESSAGE_KEY}_${args.messageHash}`,
       '',
     );
   }
 
-  static getMessagesBySafeCacheDir(
-    chainId: string,
-    safeAddress: string,
-    limit?: number,
-    offset?: number,
-  ): CacheDir {
+  static getMessagesBySafeCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.MESSAGES_KEY}_${safeAddress}`,
-      `${limit}_${offset}`,
+      `${args.chainId}_${CacheRouter.MESSAGES_KEY}_${args.safeAddress}`,
+      `${args.limit}_${args.offset}`,
     );
   }
 
@@ -323,8 +344,14 @@ export class CacheRouter {
     return CacheRouter.CHAINS_KEY;
   }
 
-  static getChainsCacheDir(limit?: number, offset?: number): CacheDir {
-    return new CacheDir(CacheRouter.getChainsCacheKey(), `${limit}_${offset}`);
+  static getChainsCacheDir(args: {
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getChainsCacheKey(),
+      `${args.limit}_${args.offset}`,
+    );
   }
 
   static getChainCacheDir(chainId: string): CacheDir {
@@ -335,14 +362,14 @@ export class CacheRouter {
     return `*_${CacheRouter.CHAIN_KEY}$`;
   }
 
-  static getSafeAppsCacheDir(
-    chainId?: string,
-    clientUrl?: string,
-    url?: string,
-  ): CacheDir {
+  static getSafeAppsCacheDir(args: {
+    chainId?: string;
+    clientUrl?: string;
+    url?: string;
+  }): CacheDir {
     return new CacheDir(
-      `${chainId}_${CacheRouter.SAFE_APPS_KEY}`,
-      `${clientUrl}_${url}`,
+      `${args.chainId}_${CacheRouter.SAFE_APPS_KEY}`,
+      `${args.clientUrl}_${args.url}`,
     );
   }
 

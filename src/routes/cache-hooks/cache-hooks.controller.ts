@@ -10,11 +10,13 @@ import { OutgoingToken } from './entities/outgoing-token.entity';
 import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller({
   path: '',
   version: '1',
 })
+@ApiExcludeController()
 export class CacheHooksController {
   constructor(private readonly service: CacheHooksService) {}
 

@@ -13,13 +13,15 @@ export class EstimationsRepository implements IEstimationsRepository {
     private readonly validator: EstimationsValidator,
   ) {}
 
-  async getEstimation(
-    chainId: string,
-    address: string,
-    getEstimationDto: GetEstimationDto,
-  ): Promise<Estimation> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const data = await api.getEstimation(address, getEstimationDto);
+  async getEstimation(args: {
+    chainId: string;
+    address: string;
+    getEstimationDto: GetEstimationDto;
+  }): Promise<Estimation> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    const data = await api.getEstimation(args);
     return this.validator.validate(data);
   }
 }

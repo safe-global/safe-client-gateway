@@ -83,7 +83,10 @@ export class TransactionDataMapper {
 
     let contract: Contract;
     try {
-      contract = await this.contractRepository.getContract(chainId, to);
+      contract = await this.contractRepository.getContract({
+        chainId,
+        contractAddress: to,
+      });
     } catch (err) {
       return false;
     }

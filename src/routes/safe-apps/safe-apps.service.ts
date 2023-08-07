@@ -13,16 +13,12 @@ export class SafeAppsService {
     private readonly safeAppsRepository: SafeAppsRepository,
   ) {}
 
-  async getSafeApps(
-    chainId: string,
-    clientUrl?: string,
-    url?: string,
-  ): Promise<SafeApp[]> {
-    const result = await this.safeAppsRepository.getSafeApps(
-      chainId,
-      clientUrl,
-      url,
-    );
+  async getSafeApps(args: {
+    chainId: string;
+    clientUrl?: string;
+    url?: string;
+  }): Promise<SafeApp[]> {
+    const result = await this.safeAppsRepository.getSafeApps(args);
 
     return result.map(
       (safeApp) =>
