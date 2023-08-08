@@ -29,7 +29,7 @@ export class SafeAppInfoMapper {
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps({
       chainId,
-      clientUrl: originUrl,
+      url: originUrl,
     });
     if (!safeApp) {
       this.loggingService.info(
