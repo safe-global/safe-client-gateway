@@ -1,7 +1,6 @@
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CollectiblesService } from './collectibles.service';
-import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 import { CollectiblePage } from './entities/collectible.page.entity';
 import { Collectible } from './entities/collectible.entity';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
@@ -17,17 +16,17 @@ export class CollectiblesController {
   constructor(private readonly service: CollectiblesService) {}
 
   @ApiOkResponse({ type: CollectiblePage })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'trusted',
     required: false,
     type: Boolean,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'exclude_spam',
     required: false,
     type: Boolean,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,
