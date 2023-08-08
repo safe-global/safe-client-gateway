@@ -15,6 +15,7 @@ import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from './multisig-transaction-execution-details.mapper';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -25,6 +26,7 @@ export class MultisigTransactionDetailsMapper {
     private readonly transactionDataMapper: TransactionDataMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
     private readonly multisigTransactionExecutionDetailsMapper: MultisigTransactionExecutionDetailsMapper,
+    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
   ) {}
 
   async mapDetails(
@@ -40,6 +42,7 @@ export class MultisigTransactionDetailsMapper {
       txInfo,
       detailedExecutionInfo,
       recipientAddressInfo,
+      readableDescription,
     ] = await Promise.all([
       this.transactionDataMapper.isTrustedDelegateCall(
         chainId,
@@ -59,6 +62,11 @@ export class MultisigTransactionDetailsMapper {
         safe,
       ),
       this._getRecipientAddressInfo(chainId, transaction.to),
+      this.readableDescriptionsMapper.mapReadableDescription(
+        transaction.to,
+        transaction.data,
+        chainId,
+      ),
     ]);
 
     return {
@@ -75,6 +83,7 @@ export class MultisigTransactionDetailsMapper {
         transaction.operation,
         isTrustedDelegateCall,
         isEmpty(addressInfoIndex) ? null : addressInfoIndex,
+        readableDescription,
       ),
       txHash: transaction.transactionHash,
       detailedExecutionInfo,

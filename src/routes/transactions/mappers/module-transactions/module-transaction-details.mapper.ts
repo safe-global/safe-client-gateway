@@ -12,6 +12,7 @@ import { TransactionDetails } from '../../entities/transaction-details/transacti
 import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
+import { ReadableDescriptionsMapper } from 'src/routes/transactions/mappers/common/readable-descriptions.mapper';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {
@@ -20,6 +21,7 @@ export class ModuleTransactionDetailsMapper {
     private readonly statusMapper: ModuleTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly transactionDataMapper: TransactionDataMapper,
+    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
   ) {}
 
   async mapDetails(
@@ -51,23 +53,32 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionData> {
-    const [addressInfoIndex, trustedDelegateCallTarget, toAddress] =
-      await Promise.all([
-        this.transactionDataMapper.buildAddressInfoIndex(
-          chainId,
-          transaction.dataDecoded,
-        ),
-        this.transactionDataMapper.isTrustedDelegateCall(
-          chainId,
-          transaction.operation,
-          transaction.to,
-          transaction.dataDecoded,
-        ),
-        this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
-          'TOKEN',
-          'CONTRACT',
-        ]),
-      ]);
+    const [
+      addressInfoIndex,
+      trustedDelegateCallTarget,
+      toAddress,
+      readableDescription,
+    ] = await Promise.all([
+      this.transactionDataMapper.buildAddressInfoIndex(
+        chainId,
+        transaction.dataDecoded,
+      ),
+      this.transactionDataMapper.isTrustedDelegateCall(
+        chainId,
+        transaction.operation,
+        transaction.to,
+        transaction.dataDecoded,
+      ),
+      this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
+        'TOKEN',
+        'CONTRACT',
+      ]),
+      this.readableDescriptionsMapper.mapReadableDescription(
+        transaction.to,
+        transaction.data,
+        chainId,
+      ),
+    ]);
 
     return {
       to: toAddress,
@@ -77,6 +88,7 @@ export class ModuleTransactionDetailsMapper {
       operation: transaction.operation,
       addressInfoIndex: isEmpty(addressInfoIndex) ? null : addressInfoIndex,
       trustedDelegateCallTarget,
+      readableDescription,
     };
   }
 }

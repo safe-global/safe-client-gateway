@@ -58,6 +58,7 @@ export class TransactionPreviewMapper {
       chainId,
       previewTransactionDto,
       dataDecoded,
+      null, // TODO: Add readableDescriptions if possible
     );
     return Promise.resolve(new TransactionPreview(txInfo, txData));
   }

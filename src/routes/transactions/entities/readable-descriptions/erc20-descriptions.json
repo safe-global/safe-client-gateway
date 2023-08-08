@@ -1,0 +1,5 @@
+{
+  "function transfer(address, uint256)": "Send {{tokenValue 1}} to {{recipient 0}}",
+  "function approve(address, uint256)": "Approve {{tokenValue 1}} to {{recipient 0}}",
+  "function withdraw(uint256)": "Withdraw {{tokenValue 0}}"
+}

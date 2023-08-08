@@ -13,6 +13,8 @@ export class TransactionData {
   hexData: string | null;
   @ApiPropertyOptional({ type: DataDecoded, nullable: true })
   dataDecoded: DataDecoded | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  readableDescription: string | null;
   @ApiProperty()
   to: AddressInfo;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -32,6 +34,7 @@ export class TransactionData {
     operation: Operation,
     trustedDelegateCallTarget: boolean | null,
     addressInfoIndex: Record<string, AddressInfo> | null,
+    readableDescription: string | null,
   ) {
     this.hexData = hexData;
     this.dataDecoded = dataDecoded;
@@ -40,5 +43,6 @@ export class TransactionData {
     this.operation = operation;
     this.trustedDelegateCallTarget = trustedDelegateCallTarget;
     this.addressInfoIndex = addressInfoIndex;
+    this.readableDescription = readableDescription;
   }
 }
