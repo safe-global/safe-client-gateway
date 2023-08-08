@@ -1061,15 +1061,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:^10.1.0":
-  version: 10.1.0
-  resolution: "@nestjs/core@npm:10.1.0"
+"@nestjs/core@npm:^10.1.3":
+  version: 10.1.3
+  resolution: "@nestjs/core@npm:10.1.3"
   dependencies:
     "@nuxtjs/opencollective": 0.3.2
     fast-safe-stringify: 2.1.1
     iterare: 1.2.1
     path-to-regexp: 3.2.0
-    tslib: 2.6.0
+    tslib: 2.6.1
     uid: 2.0.2
   peerDependencies:
     "@nestjs/common": ^10.0.0
@@ -1085,7 +1085,7 @@ __metadata:
       optional: true
     "@nestjs/websockets":
       optional: true
-  checksum: 69a5f8471c52931ce0795c2797dc1351ebeda93e4292810269f588c92714bc9eab31f8280896407456d969b15f30376e1204df10b7c03cdb173c917dee83c939
+  checksum: 7d6194cfbe71ca9875c86f45977f6fd4c2afefdefb30e29bf419ee8e0c65dce73479f9059b31f08cfe1cd1686a3c6798978686c0107b293bb5944120e8ca1c61
   languageName: node
   linkType: hard
 
@@ -6548,7 +6548,7 @@ __metadata:
     "@nestjs/cli": ^10.1.11
     "@nestjs/common": ^10.1.0
     "@nestjs/config": ^3.0.0
-    "@nestjs/core": ^10.1.0
+    "@nestjs/core": ^10.1.3
     "@nestjs/platform-express": ^10.1.2
     "@nestjs/schematics": ^10.0.1
     "@nestjs/serve-static": ^4.0.0
