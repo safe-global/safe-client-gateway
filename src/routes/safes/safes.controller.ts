@@ -1,4 +1,4 @@
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Controller, Get, Param } from '@nestjs/common';
 import { SafesService } from './safes.service';
 import { SafeState } from './entities/safe-info.entity';
@@ -10,6 +10,7 @@ import { SafeState } from './entities/safe-info.entity';
 export class SafesController {
   constructor(private readonly service: SafesService) {}
 
+  @ApiOkResponse({ type: SafeState })
   @Get('chains/:chainId/safes/:safeAddress')
   async getSafe(
     @Param('chainId') chainId: string,
