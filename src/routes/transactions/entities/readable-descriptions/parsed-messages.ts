@@ -40,6 +40,7 @@ function parseMessages(messages: Expression): ContractMessages {
 
         while (match !== null) {
           const [fullMatch, valueType, valueIndex] = match;
+          match = TEMPLATE_REGEX.exec(template);
 
           if (!isValueType(valueType)) continue;
 
@@ -60,8 +61,6 @@ function parseMessages(messages: Expression): ContractMessages {
           );
 
           fragments.push(parsedExpression);
-
-          match = TEMPLATE_REGEX.exec(template);
         }
 
         return fragments;
