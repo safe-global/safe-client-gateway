@@ -3,20 +3,14 @@ import {
   ContractMessages,
   HumanReadableFragment,
   ValueType,
-} from 'src/routes/transactions/mappers/common/readable-descriptions.mapper';
+} from '../../mappers/common/readable-descriptions.mapper';
 
 type Expression = {
   [key: string]: string;
 };
 
 const isValueType = (type: unknown): type is ValueType => {
-  return (
-    type === ValueType.TokenValue ||
-    type === ValueType.Word ||
-    type === ValueType.Recipient ||
-    type === ValueType.Decimals ||
-    type === ValueType.Identifier
-  );
+  return Object.values(ValueType).includes(type as ValueType);
 };
 
 /** This matches 2 patterns:

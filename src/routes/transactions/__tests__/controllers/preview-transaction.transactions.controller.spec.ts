@@ -134,6 +134,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           operation: previewTransactionDto.operation,
           trustedDelegateCallTarget: null,
           addressInfoIndex: null,
+          readableDescription: null,
         },
       });
   });
@@ -199,6 +200,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           operation: previewTransactionDto.operation,
           trustedDelegateCallTarget: null,
           addressInfoIndex: null,
+          readableDescription: null,
         },
       });
   });
@@ -263,6 +265,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           operation: previewTransactionDto.operation,
           trustedDelegateCallTarget: null,
           addressInfoIndex: null,
+          readableDescription: null,
         },
       });
   });
@@ -342,6 +345,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           operation: previewTransactionDto.operation,
           trustedDelegateCallTarget: true,
           addressInfoIndex: null,
+          readableDescription: null,
         },
       });
   });

@@ -27,7 +27,7 @@ import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 import { MultisigTransactionExecutionDetailsMapper } from './mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
-import { ReadableDescriptionsMapper } from 'src/routes/transactions/mappers/common/readable-descriptions.mapper';
+import { ReadableDescriptionsMapper } from './mappers/common/readable-descriptions.mapper';
 
 @Module({
   controllers: [TransactionsController],

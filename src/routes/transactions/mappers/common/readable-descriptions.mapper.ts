@@ -7,10 +7,10 @@ import {
   formatUnits,
   isHex,
 } from 'viem';
-import { ITokenRepository } from 'src/domain/tokens/token.repository.interface';
-import { TokenRepository } from 'src/domain/tokens/token.repository';
-import { Token } from 'src/domain/tokens/entities/token.entity';
-import { MAX_UINT256 } from 'src/routes/transactions/constants';
+import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
+import { TokenRepository } from '../../../../domain/tokens/token.repository';
+import { Token } from '../../../../domain/tokens/entities/token.entity';
+import { MAX_UINT256 } from '../../../../routes/transactions/constants';
 
 export enum ValueType {
   Word = 'word',

@@ -12,7 +12,7 @@ import { TransactionDetails } from '../../entities/transaction-details/transacti
 import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
-import { ReadableDescriptionsMapper } from 'src/routes/transactions/mappers/common/readable-descriptions.mapper';
+import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {
