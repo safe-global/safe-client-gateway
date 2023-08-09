@@ -4,13 +4,13 @@ import {
   decodeFunctionData,
   getFunctionSelector,
   parseAbi,
-  Hex,
   formatUnits,
+  isHex,
 } from 'viem';
 import { ITokenRepository } from 'src/domain/tokens/token.repository.interface';
 import { TokenRepository } from 'src/domain/tokens/token.repository';
 import { Token } from 'src/domain/tokens/entities/token.entity';
-import { UNLIMITED_APPROVAL_AMOUNT } from 'src/routes/transactions/constants';
+import { MAX_UINT256 } from 'src/routes/transactions/constants';
 
 export enum ValueType {
   Word = 'word',
@@ -75,7 +75,7 @@ export class ReadableDescriptionsMapper {
     data: string | null,
     chainId: string,
   ): Promise<string | null> {
-    if (!data) return null;
+    if (!data || !isHex(data)) return null;
 
     for (const [callSignature, message] of Object.entries(MessagesParsed)) {
       const sigHash = getFunctionSelector(callSignature);
@@ -88,7 +88,7 @@ export class ReadableDescriptionsMapper {
           .catch(() => null);
 
         const abi = parseAbi([callSignature]);
-        const { args } = decodeFunctionData({ abi, data: data as Hex });
+        const { args } = decodeFunctionData({ abi, data });
 
         const messageBlocks = message.render(to, args);
 
@@ -109,8 +109,9 @@ export class ReadableDescriptionsMapper {
           case ValueType.TokenValue:
             if (!token?.decimals) return block.value.amount;
 
-            if (block.value.amount === UNLIMITED_APPROVAL_AMOUNT) {
-              return `Unlimited ${token.symbol}`;
+            // Unlimited approval
+            if (block.value.amount === MAX_UINT256) {
+              return `unlimited ${token.symbol}`;
             }
 
             return `${formatUnits(block.value.amount, token.decimals)} ${

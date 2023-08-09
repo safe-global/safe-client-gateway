@@ -9,6 +9,22 @@ type Expression = {
   [key: string]: string;
 };
 
+const isValueType = (type: unknown): type is ValueType => {
+  return (
+    type === ValueType.TokenValue ||
+    type === ValueType.Word ||
+    type === ValueType.Recipient ||
+    type === ValueType.Decimals ||
+    type === ValueType.Identifier
+  );
+};
+
+/** This matches 2 patterns:
+ *  1. Match double curly braces consisting of 2 groups separated by a space
+ *  2. Match any non-whitespace character i.e. simple words
+ */
+const TEMPLATE_REGEX = /{{(.*?)\s(.*?)}}|(\S+)/g;
+
 // TODO: Write tests for this parser
 /**
  * Go from a template string like this
@@ -26,16 +42,12 @@ function parseMessages(messages: Expression): ContractMessages {
       render: (to: string, params: unknown[]) => {
         const fragments: HumanReadableFragment[] = [];
 
-        /** This matches 2 patterns:
-         *  1. Match double curly braces consisting of 2 groups separated by a space
-         *  2. Match any non-whitespace character i.e. simple words
-         */
-        const regex = /{{(.*?)\s(.*?)}}|(\S+)/g;
+        let match = TEMPLATE_REGEX.exec(template);
 
-        let match: RegExpExecArray | null;
-
-        while ((match = regex.exec(template)) !== null) {
+        while (match !== null) {
           const [fullMatch, valueType, valueIndex] = match;
+
+          if (!isValueType(valueType)) continue;
 
           // Just a simple string
           if (fullMatch && !valueType && !valueIndex) {
@@ -47,13 +59,15 @@ function parseMessages(messages: Expression): ContractMessages {
           }
 
           const parsedExpression = parseExpression(
-            valueType as ValueType,
+            valueType,
             Number(valueIndex),
             to,
             params,
           );
 
           fragments.push(parsedExpression);
+
+          match = TEMPLATE_REGEX.exec(template);
         }
 
         return fragments;
@@ -83,7 +97,7 @@ function parseParams(
   valueIndex: number,
   to: string,
   params: unknown[],
-) {
+): HumanReadableFragment['value'] {
   switch (valueType) {
     case ValueType.TokenValue:
       const amount = params[valueIndex];
