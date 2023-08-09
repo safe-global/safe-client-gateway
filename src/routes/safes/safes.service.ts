@@ -6,15 +6,14 @@ import * as semver from 'semver';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../common/address-info/address-info.helper';
-import {
-  isEthereumTransaction,
-  isModuleTransaction,
-  isMultisigTransaction,
-} from '../../domain/safe/entities/transaction.entity';
 import { AddressInfo } from '../common/entities/address-info.entity';
 import { NULL_ADDRESS } from '../common/constants';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
+import { max } from 'lodash';
 
 @Injectable()
 export class SafesService {
@@ -145,29 +144,36 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const lastExecutedTransaction = (
-      await this.safeRepository.getTransactionHistoryByExecutionDate({
+    const lastExecutedMultisigTx =
+      await this.safeRepository.getMultisigTransactions({
         chainId,
         safeAddress,
         limit: 1,
-      })
-    ).results[0];
+        executed: true,
+      });
+    const lastModuleTx = await this.safeRepository.getModuleTransactions({
+      chainId,
+      safeAddress,
+      limit: 1,
+    });
+    const lastTransfer = await this.safeRepository.getTransfers({
+      chainId,
+      safeAddress,
+      limit: 1,
+    });
 
-    if (!lastExecutedTransaction) return null;
-
-    if (isMultisigTransaction(lastExecutedTransaction)) {
-      return (
-        lastExecutedTransaction.modified ??
-        lastExecutedTransaction.submissionDate
-      );
-    } else if (isEthereumTransaction(lastExecutedTransaction)) {
-      return lastExecutedTransaction.executionDate;
-    } else if (isModuleTransaction(lastExecutedTransaction)) {
-      return lastExecutedTransaction.executionDate;
-    } else {
-      // This should never happen as AJV would not allow an unknown transaction to get to this stage
-      throw Error('Unrecognized transaction type');
-    }
+    // TODO: refactor: compose the array directly in a Promise.all?
+    const allTxs: (MultisigTransaction | ModuleTransaction | Transfer)[] = [
+      ...lastExecutedMultisigTx.results,
+      ...lastModuleTx.results,
+      ...lastTransfer.results,
+    ];
+    const executionDates = allTxs.map((t) =>
+      'safeTxHash' in t && t.safeTxHash !== undefined
+        ? t.modified ?? t.submissionDate
+        : t.executionDate,
+    );
+    return max(executionDates) ?? null;
   }
 
   private async modifiedMessageTag(
