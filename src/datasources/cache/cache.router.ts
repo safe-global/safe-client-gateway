@@ -359,7 +359,7 @@ export class CacheRouter {
   }
 
   static getChainsCachePattern(): string {
-    return `*_${CacheRouter.CHAIN_KEY}$`;
+    return `*_${CacheRouter.CHAIN_KEY}`;
   }
 
   static getSafeAppsCacheDir(args: {
@@ -374,7 +374,7 @@ export class CacheRouter {
   }
 
   static getSafeAppsCachePattern(): string {
-    return `*_${CacheRouter.SAFE_APPS_KEY}$`;
+    return `*_${CacheRouter.SAFE_APPS_KEY}`;
   }
 
   static getExchangeFiatCodesCacheDir(): CacheDir {

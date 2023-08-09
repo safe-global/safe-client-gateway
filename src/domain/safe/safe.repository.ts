@@ -151,6 +151,7 @@ export class SafeRepository implements ISafeRepository {
     safe: Safe;
     limit?: number;
     offset?: number;
+    trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
     return this._getTransactionQueue({
       ...args,
@@ -176,6 +177,7 @@ export class SafeRepository implements ISafeRepository {
     ordering: string;
     limit?: number;
     offset?: number;
+    trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
@@ -184,7 +186,6 @@ export class SafeRepository implements ISafeRepository {
         ...args,
         safeAddress: args.safe.address,
         executed: false,
-        trusted: true,
         nonceGte: args.safe.nonce,
       });
     return this.multisigTransactionValidator.validatePage(page);

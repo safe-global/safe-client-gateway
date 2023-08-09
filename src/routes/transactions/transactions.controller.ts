@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Post,
   Query,
@@ -183,12 +184,15 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
+      trusted,
     });
   }
 
