@@ -196,7 +196,8 @@ export class SafesService {
     supportedMasterCopies: MasterCopy[],
   ): MasterCopyVersionState {
     // If the safe version or the recommended safe version is not valid we return UNKNOWN
-    if (!semver.valid(safe.version)) return MasterCopyVersionState.UNKNOWN;
+    if (safe.version === null || !semver.valid(safe.version))
+      return MasterCopyVersionState.UNKNOWN;
     if (!semver.valid(recommendedSafeVersion))
       return MasterCopyVersionState.UNKNOWN;
     // If the master copy of this safe is not part of the collection
