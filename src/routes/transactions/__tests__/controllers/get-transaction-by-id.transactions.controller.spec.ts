@@ -225,6 +225,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: CALL_OPERATION,
             addressInfoIndex: null,
             trustedDelegateCallTarget: null,
+            readableDescription: null,
           },
           detailedExecutionInfo: {
             type: 'MODULE',
