@@ -36,13 +36,12 @@ function parseMessages(messages: Expression): ContractMessages {
       render: (to: string, params: unknown[]) => {
         const fragments: HumanReadableFragment[] = [];
 
-        let match = TEMPLATE_REGEX.exec(template);
+        let match;
 
-        while (match !== null) {
+        while ((match = TEMPLATE_REGEX.exec(template)) !== null) {
           const [fullMatch, valueType, valueIndex] = match;
-          match = TEMPLATE_REGEX.exec(template);
 
-          if (!isValueType(valueType)) continue;
+          if (valueType && !isValueType(valueType)) continue;
 
           // Just a simple string
           if (fullMatch && !valueType && !valueIndex) {
