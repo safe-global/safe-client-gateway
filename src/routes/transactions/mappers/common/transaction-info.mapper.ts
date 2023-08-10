@@ -94,7 +94,11 @@ export class MultisigTransactionInfoMapper {
         ) ?? null;
 
       return new SettingsChangeTransaction(
-        new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
+        new DataDecoded(
+          transaction.dataDecoded.method,
+          dataDecodedParameters,
+          null,
+        ),
         settingsInfo,
       );
     }

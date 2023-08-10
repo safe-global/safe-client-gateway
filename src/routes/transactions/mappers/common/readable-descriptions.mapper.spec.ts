@@ -3,17 +3,28 @@ import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { ReadableDescriptionsMapper } from './readable-descriptions.mapper';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
+import { ILoggingService } from '../../../../logging/logging.interface';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
 } as unknown as TokenRepository);
+
+const mockLoggingService = {
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+} as unknown as ILoggingService;
 
 describe('Readable descriptions mapper (Unit)', () => {
   let mapper: ReadableDescriptionsMapper;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mapper = new ReadableDescriptionsMapper(tokenRepository);
+    mapper = new ReadableDescriptionsMapper(
+      tokenRepository,
+      mockLoggingService,
+    );
   });
 
   it('should return null if there is no data', async () => {

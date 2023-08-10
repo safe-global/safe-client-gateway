@@ -11,6 +11,10 @@ import { ITokenRepository } from '../../../../domain/tokens/token.repository.int
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { Token } from '../../../../domain/tokens/entities/token.entity';
 import { MAX_UINT256 } from '../../../../routes/transactions/constants';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../../../logging/logging.interface';
 
 export enum ValueType {
   Word = 'word',
@@ -68,14 +72,15 @@ export type ContractMessages = Record<string, Message>;
 export class ReadableDescriptionsMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async mapReadableDescription(
-    to: string,
+    to: string | undefined,
     data: string | null,
     chainId: string,
   ): Promise<string | null> {
-    if (!data || !isHex(data)) return null;
+    if (!data || !isHex(data) || !to) return null;
 
     for (const [callSignature, message] of Object.entries(MessagesParsed)) {
       const sigHash = getFunctionSelector(callSignature);
@@ -88,13 +93,16 @@ export class ReadableDescriptionsMapper {
           .catch(() => null);
 
         const abi = parseAbi([callSignature]);
+
         try {
           const { args } = decodeFunctionData({ abi, data });
           const messageBlocks = message.render(to, args);
 
           return this.createMessage(messageBlocks, token);
-        } catch (e) {
-          console.log(e);
+        } catch (error) {
+          this.loggingService.info(
+            `Error trying to decode the input data: ${error.message}`,
+          );
           return null;
         }
       }

@@ -8,4 +8,5 @@ export interface DataDecodedParameter {
 export interface DataDecoded {
   method: string;
   parameters: DataDecodedParameter[] | null;
+  readableDescription: string | null;
 }
