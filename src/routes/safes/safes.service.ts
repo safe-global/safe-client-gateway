@@ -10,9 +10,6 @@ import { AddressInfo } from '../common/entities/address-info.entity';
 import { NULL_ADDRESS } from '../common/constants';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
-import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
-import { Transfer } from '../../domain/safe/entities/transfer.entity';
 import { max } from 'lodash';
 
 @Injectable()
@@ -73,7 +70,7 @@ export class SafesService {
           ]),
       this.getCollectiblesTag(args.chainId, args.safeAddress),
       this.getQueuedTransactionTag(args.chainId, safe),
-      this.executedTransactionTag(args.chainId, args.safeAddress),
+      this.getTxHistoryTagDate(args.chainId, args.safeAddress),
       this.modifiedMessageTag(args.chainId, args.safeAddress),
     ]);
 
@@ -140,40 +137,48 @@ export class SafesService {
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }
 
-  private async executedTransactionTag(
+  /**
+   * Gets the txHistoryTag date, i.e. the modification/submission/execution date for
+   * the most recent transaction (multisig, module, transfer) associated to the {@link safeAddress}
+   *
+   * For multisig transactions, 'modified' (or 'submissionDate' if absent) is taken.
+   * For module transactions and transfers, 'executionDate' is taken.
+   *
+   * @param chainId - chain id to use
+   * @param safeAddress - the address of the target Safe
+   * @returns {@link Date} the modification/submission/execution date for the most recent transaction
+   */
+  private async getTxHistoryTagDate(
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const lastExecutedMultisigTx =
-      await this.safeRepository.getMultisigTransactions({
+    const txPages = await Promise.all([
+      this.safeRepository.getMultisigTransactions({
         chainId,
         safeAddress,
         limit: 1,
         executed: true,
-      });
-    const lastModuleTx = await this.safeRepository.getModuleTransactions({
-      chainId,
-      safeAddress,
-      limit: 1,
-    });
-    const lastTransfer = await this.safeRepository.getTransfers({
-      chainId,
-      safeAddress,
-      limit: 1,
-    });
+      }),
+      this.safeRepository.getModuleTransactions({
+        chainId,
+        safeAddress,
+        limit: 1,
+      }),
+      this.safeRepository.getTransfers({
+        chainId,
+        safeAddress,
+        limit: 1,
+      }),
+    ]);
 
-    // TODO: refactor: compose the array directly in a Promise.all?
-    const allTxs: (MultisigTransaction | ModuleTransaction | Transfer)[] = [
-      ...lastExecutedMultisigTx.results,
-      ...lastModuleTx.results,
-      ...lastTransfer.results,
-    ];
-    const executionDates = allTxs.map((t) =>
-      'safeTxHash' in t && t.safeTxHash !== undefined
-        ? t.modified ?? t.submissionDate
-        : t.executionDate,
-    );
-    return max(executionDates) ?? null;
+    const dates = txPages
+      .flatMap(({ results }) => [...results])
+      .map((tx) => {
+        const isMultisig = 'safeTxHash' in tx && tx.safeTxHash !== undefined;
+        return isMultisig ? tx.modified ?? tx.submissionDate : tx.executionDate;
+      });
+
+    return max(dates) ?? null;
   }
 
   private async modifiedMessageTag(

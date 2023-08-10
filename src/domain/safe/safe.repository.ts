@@ -63,7 +63,7 @@ export class SafeRepository implements ISafeRepository {
     return this.transferValidator.validatePage(page);
   }
 
-  async clearCollectibleTransfers(args: {
+  async clearTransfers(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<void> {

@@ -69,7 +69,7 @@ export class CacheHooksService {
       // A new executed multisig transaction affects:
       // - the collectibles that the safe has
       // - the list of all executed transactions for the safe
-      // - the collectible transfers for that safe
+      // - the transfers for that safe
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
       // - the safe configuration - clear safe info
@@ -83,7 +83,7 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -138,7 +138,8 @@ export class CacheHooksService {
         break;
       // Outgoing ether affects:
       // - the balance of the safe - clear safe balance
-      // - the list of all executed transactions (including transfers) for the safe
+      // - the list of all executed transactions for the safe
+      // - the transfers for that safe
       case EventType.OUTGOING_ETHER:
         promises.push(
           this.balancesRepository.clearLocalBalances({
@@ -149,13 +150,17 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.safeRepository.clearTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // An incoming token affects:
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
-      // - the collectible transfers for that safe
+      // - the transfers for that safe
       // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
         promises.push(
@@ -171,7 +176,7 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -185,7 +190,7 @@ export class CacheHooksService {
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
-      // - the collectible transfers for that safe
+      // - the transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearLocalBalances({
@@ -200,7 +205,7 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
           }),

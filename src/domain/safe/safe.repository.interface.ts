@@ -23,10 +23,7 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<Transfer>>;
 
-  clearCollectibleTransfers(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void>;
+  clearTransfers(args: { chainId: string; safeAddress: string }): Promise<void>;
 
   getIncomingTransfers(args: {
     chainId: string;
