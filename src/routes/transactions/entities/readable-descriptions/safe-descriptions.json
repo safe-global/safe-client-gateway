@@ -1,3 +1,10 @@
 {
-  "function changeThreshold(uint256)": "Change threshold to {{decimals 0}}"
+  "function changeThreshold(uint256)": "Change threshold to {{decimals 0}}",
+  "function addOwnerWithThreshold(address,uint256)": "Add new owner {{address 0}} with threshold {{decimals 1}}",
+  "function removeOwner(address,address,uint256)": "Remove owner {{address 1}} with threshold {{decimals 2}}",
+  "function swapOwner(address,address,address)": "Swap owner {{address 1}} with {{address 2}}",
+  "function setGuard(address)": "Set guard {{address 0}}",
+  "function enableModule(address)": "Enable module {{address 0}}",
+  "function setFallbackHandler(address)": "Set fallback handler {{address 0}}",
+  "function approveHash(bytes32)": "Approve hash {{identifier 0}}"
 }

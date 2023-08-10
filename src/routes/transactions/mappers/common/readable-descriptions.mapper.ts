@@ -16,7 +16,7 @@ export enum ValueType {
   Word = 'word',
   TokenValue = 'tokenValue',
   Identifier = 'identifier',
-  Recipient = 'recipient',
+  Address = 'address',
   Decimals = 'decimals',
 }
 
@@ -40,8 +40,8 @@ interface IdentifierFragment {
   value: unknown;
 }
 
-interface RecipientFragment {
-  type: ValueType.Recipient;
+interface AddressFragment {
+  type: ValueType.Address;
   value: string;
 }
 
@@ -54,7 +54,7 @@ export type HumanReadableFragment =
   | WordFragment
   | TokenValueFragment
   | IdentifierFragment
-  | RecipientFragment
+  | AddressFragment
   | DecimalsFragment;
 
 type Message = {
@@ -88,11 +88,15 @@ export class ReadableDescriptionsMapper {
           .catch(() => null);
 
         const abi = parseAbi([callSignature]);
-        const { args } = decodeFunctionData({ abi, data });
+        try {
+          const { args } = decodeFunctionData({ abi, data });
+          const messageBlocks = message.render(to, args);
 
-        const messageBlocks = message.render(to, args);
-
-        return this.createMessage(messageBlocks, token);
+          return this.createMessage(messageBlocks, token);
+        } catch (e) {
+          console.log(e);
+          return null;
+        }
       }
     }
 

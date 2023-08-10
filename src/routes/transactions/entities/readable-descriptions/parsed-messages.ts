@@ -99,7 +99,9 @@ function parseParams(
         amount,
         address,
       };
-    case ValueType.Recipient:
+    case ValueType.Address:
+    case ValueType.Decimals:
+    case ValueType.Identifier:
       return params[valueIndex];
     default:
       return to;
