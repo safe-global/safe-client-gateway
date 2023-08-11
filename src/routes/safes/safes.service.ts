@@ -11,6 +11,9 @@ import { NULL_ADDRESS } from '../common/constants';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
 import { max } from 'lodash';
+import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
 
 @Injectable()
 export class SafesService {
@@ -172,8 +175,9 @@ export class SafesService {
     ]);
 
     const dates = txPages
-      .flatMap(({ results }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
-        results
+      .flatMap(
+        ({ results }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
+          results,
       )
       .map((tx) => {
         const isMultisig = 'safeTxHash' in tx && tx.safeTxHash !== undefined;
