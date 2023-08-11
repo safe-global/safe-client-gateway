@@ -146,7 +146,6 @@ describe('Data decode e2e tests', () => {
           ],
         },
       ],
-      readableDescription: null,
     };
 
     await request(app.getHttpServer())

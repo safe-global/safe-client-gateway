@@ -79,8 +79,8 @@ export class ReadableDescriptionsMapper {
     to: string | undefined,
     data: string | null,
     chainId: string,
-  ): Promise<string | null> {
-    if (!data || !isHex(data) || !to) return null;
+  ): Promise<string | undefined> {
+    if (!data || !isHex(data) || !to) return;
 
     for (const [callSignature, message] of Object.entries(MessagesParsed)) {
       const sigHash = getFunctionSelector(callSignature);
@@ -103,12 +103,12 @@ export class ReadableDescriptionsMapper {
           this.loggingService.info(
             `Error trying to decode the input data: ${error.message}`,
           );
-          return null;
+          return;
         }
       }
     }
 
-    return null;
+    return;
   }
 
   createMessage(

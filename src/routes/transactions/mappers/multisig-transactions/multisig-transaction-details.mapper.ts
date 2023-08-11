@@ -74,7 +74,7 @@ export class MultisigTransactionDetailsMapper {
       txId: `${MULTISIG_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transaction.safeTxHash}`,
       executedAt: transaction.executionDate?.getTime() ?? null,
       txStatus,
-      txInfo,
+      txInfo: { ...txInfo, readableDescription },
       txData: new TransactionData(
         transaction.data,
         transaction.dataDecoded,
@@ -83,7 +83,6 @@ export class MultisigTransactionDetailsMapper {
         transaction.operation,
         isTrustedDelegateCall,
         isEmpty(addressInfoIndex) ? null : addressInfoIndex,
-        readableDescription,
       ),
       txHash: transaction.transactionHash,
       detailedExecutionInfo,

@@ -28,20 +28,26 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionDetails> {
-    const [moduleAddress, txInfo, txData] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
-        'CONTRACT',
-      ]),
-      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
-      this.mapTransactionData(chainId, transaction),
-    ]);
+    const [moduleAddress, txInfo, txData, readableDescription] =
+      await Promise.all([
+        this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
+          'CONTRACT',
+        ]),
+        this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
+        this.mapTransactionData(chainId, transaction),
+        this.readableDescriptionsMapper.mapReadableDescription(
+          transaction.to,
+          transaction.data,
+          chainId,
+        ),
+      ]);
 
     return {
       safeAddress: transaction.safe,
       txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime() ?? null,
       txStatus: this.statusMapper.mapTransactionStatus(transaction),
-      txInfo,
+      txInfo: { ...txInfo, readableDescription },
       txData,
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(moduleAddress),
@@ -53,32 +59,23 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionData> {
-    const [
-      addressInfoIndex,
-      trustedDelegateCallTarget,
-      toAddress,
-      readableDescription,
-    ] = await Promise.all([
-      this.transactionDataMapper.buildAddressInfoIndex(
-        chainId,
-        transaction.dataDecoded,
-      ),
-      this.transactionDataMapper.isTrustedDelegateCall(
-        chainId,
-        transaction.operation,
-        transaction.to,
-        transaction.dataDecoded,
-      ),
-      this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
-        'TOKEN',
-        'CONTRACT',
-      ]),
-      this.readableDescriptionsMapper.mapReadableDescription(
-        transaction.to,
-        transaction.data,
-        chainId,
-      ),
-    ]);
+    const [addressInfoIndex, trustedDelegateCallTarget, toAddress] =
+      await Promise.all([
+        this.transactionDataMapper.buildAddressInfoIndex(
+          chainId,
+          transaction.dataDecoded,
+        ),
+        this.transactionDataMapper.isTrustedDelegateCall(
+          chainId,
+          transaction.operation,
+          transaction.to,
+          transaction.dataDecoded,
+        ),
+        this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
+          'TOKEN',
+          'CONTRACT',
+        ]),
+      ]);
 
     return {
       to: toAddress,
@@ -88,7 +85,6 @@ export class ModuleTransactionDetailsMapper {
       operation: transaction.operation,
       addressInfoIndex: isEmpty(addressInfoIndex) ? null : addressInfoIndex,
       trustedDelegateCallTarget,
-      readableDescription,
     };
   }
 }

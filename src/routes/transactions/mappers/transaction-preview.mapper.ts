@@ -11,12 +11,14 @@ import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entit
 import { TransactionPreview } from '../entities/transaction-preview.entity';
 import { TransactionDataMapper } from './common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from './common/transaction-info.mapper';
+import { ReadableDescriptionsMapper } from './common/readable-descriptions.mapper';
 
 @Injectable()
 export class TransactionPreviewMapper {
   constructor(
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly transactionDataMapper: TransactionDataMapper,
+    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: DataDecodedRepository,
     @Inject(LoggingService)
@@ -43,6 +45,7 @@ export class TransactionPreviewMapper {
       );
       dataDecoded = previewTransactionDto.data;
     }
+
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       <MultisigTransaction>{
@@ -54,12 +57,22 @@ export class TransactionPreviewMapper {
         operation: previewTransactionDto.operation,
       },
     );
+
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,
       previewTransactionDto,
       dataDecoded,
-      null, // TODO: Add readableDescriptions if possible
     );
-    return Promise.resolve(new TransactionPreview(txInfo, txData));
+
+    const readableDescription =
+      await this.readableDescriptionsMapper.mapReadableDescription(
+        previewTransactionDto.to,
+        previewTransactionDto.data,
+        chainId,
+      );
+
+    return Promise.resolve(
+      new TransactionPreview({ ...txInfo, readableDescription }, txData),
+    );
   }
 }

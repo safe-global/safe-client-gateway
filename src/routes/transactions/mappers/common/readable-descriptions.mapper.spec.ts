@@ -27,7 +27,7 @@ describe('Readable descriptions mapper (Unit)', () => {
     );
   });
 
-  it('should return null if there is no data', async () => {
+  it('should return undefined if there is no data', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const data = faker.string.hexadecimal();
@@ -38,10 +38,10 @@ describe('Readable descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(readableDescription).toBeNull();
+    expect(readableDescription).toBeUndefined();
   });
 
-  it('should return null if data is not hex data', async () => {
+  it('should return undefined if data is not hex data', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const data = 'something that is not hex';
@@ -52,7 +52,7 @@ describe('Readable descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(readableDescription).toBeNull();
+    expect(readableDescription).toBeUndefined();
   });
 
   it('should return a readable description for erc20 transfers', async () => {
@@ -78,7 +78,7 @@ describe('Readable descriptions mapper (Unit)', () => {
     );
   });
 
-  it('should return null for corrupt data', async () => {
+  it('should return undefined for corrupt data', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const token = tokenBuilder()
@@ -96,6 +96,6 @@ describe('Readable descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(readableDescription).toBeNull();
+    expect(readableDescription).toBeUndefined();
   });
 });

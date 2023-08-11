@@ -33,7 +33,6 @@ export class TransactionDataMapper {
     chainId: string,
     previewTransactionDto: PreviewTransactionDto,
     dataDecoded: DataDecoded | null,
-    readableDescription: string | null,
   ): Promise<TransactionData> {
     const toAddress = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -59,7 +58,6 @@ export class TransactionDataMapper {
       previewTransactionDto.operation,
       isTrustedDelegateCall ?? null,
       isEmpty(addressInfoIndex) ? null : addressInfoIndex,
-      readableDescription,
     );
   }
 
