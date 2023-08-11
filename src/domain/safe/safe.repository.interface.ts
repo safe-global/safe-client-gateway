@@ -23,10 +23,7 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<Transfer>>;
 
-  clearCollectibleTransfers(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void>;
+  clearTransfers(args: { chainId: string; safeAddress: string }): Promise<void>;
 
   getIncomingTransfers(args: {
     chainId: string;
@@ -95,13 +92,6 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
-  getTransactionHistoryByExecutionDate(args: {
-    chainId: string;
-    safeAddress: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<Transaction>>;
-
   getCreationTransaction(args: {
     chainId: string;
     safeAddress: string;
@@ -148,6 +138,12 @@ export interface ISafeRepository {
   }): Promise<Page<MultisigTransaction>>;
 
   getTransfer(args: { chainId: string; transferId: string }): Promise<Transfer>;
+
+  getTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+  }): Promise<Page<Transfer>>;
 
   getSafesByOwner(args: {
     chainId: string;

@@ -63,7 +63,7 @@ export class SafeRepository implements ISafeRepository {
     return this.transferValidator.validatePage(page);
   }
 
-  async clearCollectibleTransfers(args: {
+  async clearTransfers(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<void> {
@@ -203,18 +203,6 @@ export class SafeRepository implements ISafeRepository {
     return this.creationTransactionValidator.validate(createTransaction);
   }
 
-  async getTransactionHistoryByExecutionDate(args: {
-    chainId: string;
-    safeAddress: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<Transaction>> {
-    return this.getAllExecutedTransactions({
-      ...args,
-      ordering: 'executionDate',
-    });
-  }
-
   async getTransactionHistory(args: {
     chainId: string;
     safeAddress: string;
@@ -317,6 +305,17 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const transfer = await transactionService.getTransfer(args.transferId);
     return this.transferValidator.validate(transfer);
+  }
+
+  async getTransfers(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number | undefined;
+  }): Promise<Page<Transfer>> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const page = await transactionService.getTransfers(args);
+    return this.transferValidator.validatePage(page);
   }
 
   async getSafesByOwner(args: {
