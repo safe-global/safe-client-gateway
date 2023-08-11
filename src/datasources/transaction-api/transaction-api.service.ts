@@ -281,7 +281,7 @@ export class TransactionApi implements ITransactionApi {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
       await this.networkService.post(url, {
-        safe: args.safeAddress ?? null, // TODO: this is a workaround while https://github.com/safe-global/safe-transaction-service/issues/1521 is not fixed.
+        safe: args.safeAddress,
         delegate: args.delegate,
         delegator: args.delegator,
         signature: args.signature,
