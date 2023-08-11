@@ -754,7 +754,16 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async deleteDeviceRegistration(args: {
+  async deleteDeviceRegistration(uuid: string): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}`;
+      await this.networkService.delete(url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async deleteSafeRegistration(args: {
     uuid: string;
     safeAddress: string;
   }): Promise<void> {

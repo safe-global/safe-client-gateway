@@ -233,6 +233,65 @@ describe('Notifications Controller (Unit)', () => {
     });
   });
 
+  describe('DELETE /chains/:chainId/notifications/devices/:uuid', () => {
+    it('Success', async () => {
+      const uuid = faker.string.uuid();
+      const chain = chainBuilder().build();
+      const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}`;
+      networkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : rejectForUrl(url),
+      );
+      networkService.delete.mockImplementation((url) =>
+        url === expectedProviderURL ? Promise.resolve() : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v1/chains/${chain.chainId}/notifications/devices/${uuid}`)
+        .expect(200)
+        .expect({});
+      expect(networkService.delete).toBeCalledTimes(1);
+      expect(networkService.delete).toBeCalledWith(expectedProviderURL);
+    });
+
+    it('Failure: Config API fails', async () => {
+      const uuid = faker.string.uuid();
+      const chainId = faker.string.numeric();
+      networkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chainId}`
+          ? Promise.reject(new Error())
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v1/chains/${chainId}/notifications/devices/${uuid}`)
+        .expect(503);
+      expect(networkService.delete).toBeCalledTimes(0);
+    });
+
+    it('Failure: Transaction API fails', async () => {
+      const uuid = faker.string.uuid();
+      const chain = chainBuilder().build();
+      networkService.get.mockImplementation((url) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain })
+          : rejectForUrl(url),
+      );
+      networkService.delete.mockImplementation((url) =>
+        url ===
+        `${chain.transactionService}/api/v1/notifications/devices/${uuid}`
+          ? Promise.reject(new Error())
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v1/chains/${chain.chainId}/notifications/devices/${uuid}`)
+        .expect(503);
+      expect(networkService.delete).toBeCalledTimes(1);
+    });
+  });
+
   describe('DELETE /chains/:chainId/notifications/devices/:uuid/safes/:safeAddress', () => {
     it('Success', async () => {
       const uuid = faker.string.uuid();
