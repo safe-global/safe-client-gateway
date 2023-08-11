@@ -14,7 +14,6 @@ import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper
 import { MultisigTransactionDetailsMapper } from './multisig-transaction-details.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from './multisig-transaction-execution-details.mapper';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
-import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -41,10 +40,6 @@ const multisigExecutionDetailsMapper = jest.mocked({
   mapMultisigExecutionDetails: jest.fn(),
 } as unknown as MultisigTransactionExecutionDetailsMapper);
 
-const readableDescriptionsMapper = jest.mocked({
-  mapReadableDescription: jest.fn(),
-} as unknown as ReadableDescriptionsMapper);
-
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
@@ -57,7 +52,6 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       transactionDataMapper,
       safeAppInfoMapper,
       multisigExecutionDetailsMapper,
-      readableDescriptionsMapper,
     );
   });
 

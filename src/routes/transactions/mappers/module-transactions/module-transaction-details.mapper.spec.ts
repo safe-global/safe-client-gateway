@@ -11,7 +11,6 @@ import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionDetailsMapper } from './module-transaction-details.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
-import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
@@ -33,10 +32,6 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     buildAddressInfoIndex: jest.fn(),
   } as unknown as TransactionDataMapper);
 
-  const readableDescriptionsMapper = jest.mocked({
-    mapReadableDescription: jest.fn(),
-  } as unknown as ReadableDescriptionsMapper);
-
   beforeEach(() => {
     jest.clearAllMocks();
     mapper = new ModuleTransactionDetailsMapper(
@@ -44,7 +39,6 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       statusMapper,
       transactionInfoMapper,
       transactionDataMapper,
-      readableDescriptionsMapper,
     );
   });
 

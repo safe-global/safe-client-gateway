@@ -18,6 +18,7 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
     chainId: string,
+    readableDescription?: string,
   ): Promise<CustomTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -32,6 +33,7 @@ export class CustomTransactionMapper {
       transaction?.dataDecoded?.method ?? null,
       this.getActionCount(transaction),
       this.isCancellation(transaction, dataSize),
+      readableDescription,
     );
   }
 

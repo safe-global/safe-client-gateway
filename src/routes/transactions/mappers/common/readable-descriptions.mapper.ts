@@ -15,6 +15,7 @@ import {
   ILoggingService,
   LoggingService,
 } from '../../../../logging/logging.interface';
+import { shortenAddress } from '../../../common/utils/utils';
 
 export enum ValueType {
   Word = 'word',
@@ -129,6 +130,8 @@ export class ReadableDescriptionsMapper {
             return `${formatUnits(block.value.amount, token.decimals)} ${
               token.symbol
             }`;
+          case ValueType.Address:
+            return shortenAddress(block.value);
           default:
             return block.value;
         }

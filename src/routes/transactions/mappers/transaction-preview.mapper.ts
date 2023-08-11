@@ -11,14 +11,12 @@ import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entit
 import { TransactionPreview } from '../entities/transaction-preview.entity';
 import { TransactionDataMapper } from './common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from './common/transaction-info.mapper';
-import { ReadableDescriptionsMapper } from './common/readable-descriptions.mapper';
 
 @Injectable()
 export class TransactionPreviewMapper {
   constructor(
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly transactionDataMapper: TransactionDataMapper,
-    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: DataDecodedRepository,
     @Inject(LoggingService)
@@ -64,15 +62,6 @@ export class TransactionPreviewMapper {
       dataDecoded,
     );
 
-    const readableDescription =
-      await this.readableDescriptionsMapper.mapReadableDescription(
-        previewTransactionDto.to,
-        previewTransactionDto.data,
-        chainId,
-      );
-
-    return Promise.resolve(
-      new TransactionPreview({ ...txInfo, readableDescription }, txData),
-    );
+    return Promise.resolve(new TransactionPreview(txInfo, txData));
   }
 }

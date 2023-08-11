@@ -12,7 +12,6 @@ import { TransactionDetails } from '../../entities/transaction-details/transacti
 import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
-import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {
@@ -21,33 +20,26 @@ export class ModuleTransactionDetailsMapper {
     private readonly statusMapper: ModuleTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly transactionDataMapper: TransactionDataMapper,
-    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
   ) {}
 
   async mapDetails(
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionDetails> {
-    const [moduleAddress, txInfo, txData, readableDescription] =
-      await Promise.all([
-        this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
-          'CONTRACT',
-        ]),
-        this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
-        this.mapTransactionData(chainId, transaction),
-        this.readableDescriptionsMapper.mapReadableDescription(
-          transaction.to,
-          transaction.data,
-          chainId,
-        ),
-      ]);
+    const [moduleAddress, txInfo, txData] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
+        'CONTRACT',
+      ]),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
+      this.mapTransactionData(chainId, transaction),
+    ]);
 
     return {
       safeAddress: transaction.safe,
       txId: `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime() ?? null,
       txStatus: this.statusMapper.mapTransactionStatus(transaction),
-      txInfo: { ...txInfo, readableDescription },
+      txInfo,
       txData,
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(moduleAddress),

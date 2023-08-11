@@ -73,9 +73,7 @@ describe('Readable descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(readableDescription).toBe(
-      'Send 21 TST to 0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2',
-    );
+    expect(readableDescription).toBe('Send 21 TST to 0x7a9a...86E2');
   });
 
   it('should return undefined for corrupt data', async () => {

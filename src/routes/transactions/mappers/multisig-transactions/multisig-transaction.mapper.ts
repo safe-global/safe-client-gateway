@@ -10,7 +10,6 @@ import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
 } from '../../constants';
-import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -19,7 +18,6 @@ export class MultisigTransactionMapper {
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
-    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
   ) {}
 
   async mapTransaction(
@@ -43,18 +41,11 @@ export class MultisigTransactionMapper {
     );
     const timestamp = transaction.executionDate ?? transaction.submissionDate;
 
-    const readableDescription =
-      await this.readableDescriptionsMapper.mapReadableDescription(
-        transaction.to,
-        transaction.data,
-        chainId,
-      );
-
     return new Transaction(
       `${MULTISIG_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.safeTxHash}`,
       timestamp?.getTime() ?? null,
       txStatus,
-      { ...txInfo, readableDescription },
+      txInfo,
       executionInfo,
       safeAppInfo,
     );

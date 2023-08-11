@@ -23,8 +23,9 @@ export class CustomTransactionInfo extends TransactionInfo {
     methodName: string | null,
     actionCount: number | null,
     isCancellation: boolean,
+    readableDescription?: string,
   ) {
-    super('Custom');
+    super('Custom', readableDescription);
     this.to = to;
     this.dataSize = dataSize;
     this.value = value;
