@@ -6,15 +6,14 @@ import * as semver from 'semver';
 import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
 import { Safe } from '../../domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../common/address-info/address-info.helper';
-import {
-  isEthereumTransaction,
-  isModuleTransaction,
-  isMultisigTransaction,
-} from '../../domain/safe/entities/transaction.entity';
 import { AddressInfo } from '../common/entities/address-info.entity';
 import { NULL_ADDRESS } from '../common/constants';
 import { MessagesRepository } from '../../domain/messages/messages.repository';
 import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { max } from 'lodash';
+import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
+import { Transfer } from '../../domain/safe/entities/transfer.entity';
 
 @Injectable()
 export class SafesService {
@@ -74,7 +73,7 @@ export class SafesService {
           ]),
       this.getCollectiblesTag(args.chainId, args.safeAddress),
       this.getQueuedTransactionTag(args.chainId, safe),
-      this.executedTransactionTag(args.chainId, args.safeAddress),
+      this.getTxHistoryTagDate(args.chainId, args.safeAddress),
       this.modifiedMessageTag(args.chainId, args.safeAddress),
     ]);
 
@@ -141,33 +140,51 @@ export class SafesService {
     return lastQueuedTransaction.results[0]?.modified ?? null;
   }
 
-  private async executedTransactionTag(
+  /**
+   * Gets the txHistoryTag date, i.e. the modification/submission/execution date for
+   * the most recent transaction (multisig, module, transfer) associated to the {@link safeAddress}
+   *
+   * For multisig transactions, 'modified' (or 'submissionDate' if absent) is taken.
+   * For module transactions and transfers, 'executionDate' is taken.
+   *
+   * @param chainId - chain id to use
+   * @param safeAddress - the address of the target Safe
+   * @returns {@link Date} the modification/submission/execution date for the most recent transaction
+   */
+  private async getTxHistoryTagDate(
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const lastExecutedTransaction = (
-      await this.safeRepository.getTransactionHistoryByExecutionDate({
+    const txPages = await Promise.all([
+      this.safeRepository.getMultisigTransactions({
         chainId,
         safeAddress,
         limit: 1,
-      })
-    ).results[0];
+        executed: true,
+      }),
+      this.safeRepository.getModuleTransactions({
+        chainId,
+        safeAddress,
+        limit: 1,
+      }),
+      this.safeRepository.getTransfers({
+        chainId,
+        safeAddress,
+        limit: 1,
+      }),
+    ]);
 
-    if (!lastExecutedTransaction) return null;
+    const dates = txPages
+      .flatMap(
+        ({ results }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
+          results,
+      )
+      .map((tx) => {
+        const isMultisig = 'safeTxHash' in tx && tx.safeTxHash !== undefined;
+        return isMultisig ? tx.modified ?? tx.submissionDate : tx.executionDate;
+      });
 
-    if (isMultisigTransaction(lastExecutedTransaction)) {
-      return (
-        lastExecutedTransaction.modified ??
-        lastExecutedTransaction.submissionDate
-      );
-    } else if (isEthereumTransaction(lastExecutedTransaction)) {
-      return lastExecutedTransaction.executionDate;
-    } else if (isModuleTransaction(lastExecutedTransaction)) {
-      return lastExecutedTransaction.executionDate;
-    } else {
-      // This should never happen as AJV would not allow an unknown transaction to get to this stage
-      throw Error('Unrecognized transaction type');
-    }
+    return max(dates) ?? null;
   }
 
   private async modifiedMessageTag(
