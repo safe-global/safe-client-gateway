@@ -59,7 +59,9 @@ export class Chain {
       ],
     },
   })
-  gasPrice: Array<ApiGasPriceOracle | ApiGasPriceFixed | ApiGasPriceFixedEIP1559>;
+  gasPrice: Array<
+    ApiGasPriceOracle | ApiGasPriceFixed | ApiGasPriceFixedEIP1559
+  >;
   @ApiProperty()
   publicRpcUri: ApiRpcUri;
   @ApiProperty()
