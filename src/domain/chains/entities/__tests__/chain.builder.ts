@@ -7,6 +7,7 @@ import { gasPriceFixedBuilder } from './gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from './gas-price-oracle.builder';
 import { Builder, IBuilder } from '../../../../__tests__/builder';
 import { rpcUriBuilder } from './rpc-uri.builder';
+import { gasPriceFixedEIP1559Builder } from './gas-price-fixed-eip-1559.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return Builder.new<Chain>()
@@ -25,6 +26,7 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('theme', themeBuilder().build())
     .with('gasPrice', [
       gasPriceFixedBuilder().build(),
+      gasPriceFixedEIP1559Builder().build(),
       gasPriceOracleBuilder().build(),
     ])
     .with('ensRegistryAddress', faker.finance.ethereumAddress())
