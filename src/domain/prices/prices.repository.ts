@@ -1,22 +1,31 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IPricesRepository } from './prices.repository.interface';
+import {
+  ILoggingService,
+  LoggingService,
+} from '../../logging/logging.interface';
 import { IPricesApi } from '../interfaces/prices-api.interface';
+import { IPricesRepository } from './prices.repository.interface';
 
 @Injectable()
 export class PricesRepository implements IPricesRepository {
-  constructor(@Inject(IPricesApi) private readonly pricesApi: IPricesApi) {}
+  constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IPricesApi) private readonly pricesApi: IPricesApi,
+  ) {}
 
   async getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
   }): Promise<number> {
-    const nativeCoinPrice = await this.pricesApi.getNativeCoinPrice(args);
-    // TODO: validate
-    return (
-      (nativeCoinPrice[args.nativeCoinId] &&
-        nativeCoinPrice[args.nativeCoinId][args.fiatCode]) ??
-      0
-    ); // TODO: don't failback to 0
+    const result = await this.pricesApi.getNativeCoinPrice(args);
+    const { nativeCoinId, fiatCode } = args;
+    const nativeCoinPrice = result?.[nativeCoinId]?.[fiatCode];
+
+    if (!nativeCoinPrice) {
+      this.loggingService.error(`Error getting ${nativeCoinId} price`);
+    }
+
+    return nativeCoinPrice ?? 0;
   }
 
   async getTokenPrice(args: {
@@ -24,8 +33,14 @@ export class PricesRepository implements IPricesRepository {
     tokenAddress: string;
     fiatCode: string;
   }): Promise<number> {
-    const tokenPrice = await this.pricesApi.getTokenPrice(args);
-    // TODO: validate
-    return (tokenPrice[0] && tokenPrice[0][0]) ?? 0; // TODO: don't failback to 0
+    const result = await this.pricesApi.getTokenPrice(args);
+    const { tokenAddress, fiatCode } = args;
+    const tokenPrice = result?.[tokenAddress.toLowerCase()]?.[fiatCode];
+
+    if (!tokenPrice) {
+      this.loggingService.warn(`Error getting ${tokenAddress} price`);
+    }
+
+    return tokenPrice ?? 0;
   }
 }

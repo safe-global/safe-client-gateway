@@ -11,6 +11,12 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
   },
+  chains: {
+    nativeCoins: {
+      1: 'ethereum',
+      137: 'matic-network',
+    },
+  },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),

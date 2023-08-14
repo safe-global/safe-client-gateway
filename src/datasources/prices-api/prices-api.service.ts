@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 import { IPricesApi } from '../../domain/interfaces/prices-api.interface';
 import { AssetPrice } from '../../domain/prices/entities/asset-price.entity';
-import { CacheDir } from '../cache/entities/cache-dir.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { IConfigurationService } from '../../config/configuration.service.interface';
+import { CacheRouter } from '../cache/cache.router';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 
 @Injectable()
@@ -35,11 +35,7 @@ export class PricesApi implements IPricesApi {
     fiatCode: string;
   }): Promise<AssetPrice> {
     try {
-      // TODO: move to CacheRouter
-      const cacheDir = new CacheDir(
-        `${args.nativeCoinId}_price`,
-        `native_${args.fiatCode}`,
-      );
+      const cacheDir = CacheRouter.getPriceCacheDir(args);
       const url = `${this.baseUrl}/simple/price?ids=${args.nativeCoinId}&vs_currencies=${args.fiatCode}`;
       return await this.dataSource.get(
         cacheDir,
@@ -58,11 +54,7 @@ export class PricesApi implements IPricesApi {
     fiatCode: string;
   }): Promise<AssetPrice> {
     try {
-      // TODO: move to CacheRouter
-      const cacheDir = new CacheDir(
-        `${args.nativeCoinId}_price`,
-        `${args.tokenAddress}_${args.fiatCode}`,
-      );
+      const cacheDir = CacheRouter.getPriceCacheDir(args);
       const url = `${this.baseUrl}/simple/token_price/${args.nativeCoinId}?contract_addresses=${args.tokenAddress}&vs_currencies=${args.fiatCode}`;
       const result: AssetPrice = await this.dataSource.get(
         cacheDir,

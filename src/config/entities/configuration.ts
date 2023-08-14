@@ -8,6 +8,12 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
+  chains: {
+    nativeCoins: {
+      1: 'ethereum',
+      137: 'matic-network',
+    },
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI ||

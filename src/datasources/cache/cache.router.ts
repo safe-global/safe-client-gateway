@@ -21,6 +21,7 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly PRICE_KEY = 'price';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
   private static readonly TOKEN_KEY = 'token';
@@ -383,5 +384,16 @@ export class CacheRouter {
 
   static getExchangeRatesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.EXCHANGE_RATES_KEY, '');
+  }
+
+  static getPriceCacheDir(args: {
+    nativeCoinId: string;
+    fiatCode: string;
+    tokenAddress?: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.nativeCoinId}_${CacheRouter.PRICE_KEY}`,
+      `${args.tokenAddress ?? 'native'}_${args.fiatCode}`,
+    );
   }
 }

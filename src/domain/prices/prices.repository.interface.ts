@@ -1,7 +1,6 @@
 export const IPricesRepository = Symbol('IPricesRepository');
 
 export interface IPricesRepository {
-  // TODO: doc
   getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;

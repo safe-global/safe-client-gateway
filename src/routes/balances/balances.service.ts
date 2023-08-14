@@ -10,12 +10,16 @@ import { IExchangeRepository } from '../../domain/exchange/exchange.repository.i
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 import { NULL_ADDRESS } from '../common/constants';
 import { IPricesRepository } from '../../domain/prices/prices.repository.interface';
+import { sortBy, sumBy } from 'lodash';
+import { IConfigurationService } from '../../config/configuration.service.interface';
 
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
 
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
     @Inject(IChainsRepository)
@@ -40,36 +44,24 @@ export class BalancesService {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balances> {
+    const { chainId, fiatCode } = args;
     const txServiceBalances = await this.balancesRepository.getBalances(args);
-
-    const nativeCoinId = 'ethereum'; // TODO:
-
-    const nativeCurrency: NativeCurrency = (
-      await this.chainsRepository.getChain(args.chainId)
-    ).nativeCurrency;
-    // Map balances payload
-    const balances: Balance[] = await Promise.all(
-      txServiceBalances.map(
-        async (
-          balance, // TODO: allSettled?
-        ) =>
-          this.mapBalance(balance, nativeCoinId, args.fiatCode, nativeCurrency),
-      ),
+    // TODO: this could be moved to Safe Config Service
+    const nativeCoinId = this.configurationService.getOrThrow<string>(
+      `chains.nativeCoins.${chainId}`,
     );
 
-    // Get total fiat from [balances]
-    const totalFiat: number = balances.reduce((acc, b) => {
-      return acc + Number(b.fiatBalance);
-    }, 0);
-
-    // Sort balances in place
-    balances.sort((b1, b2) => {
-      return Number(b2.fiatBalance) - Number(b1.fiatBalance);
-    });
+    const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
+    const balances: Balance[] = await Promise.all(
+      txServiceBalances.map(async (balance) =>
+        this.mapBalance(balance, nativeCoinId, fiatCode, nativeCurrency),
+      ),
+    );
+    const totalFiat = sumBy(balances, 'fiatBalance');
 
     return <Balances>{
       fiatTotal: this.getNumberString(totalFiat),
-      items: balances,
+      items: sortBy(balances, 'fiatCode'),
     };
   }
 
@@ -133,44 +125,6 @@ export class BalancesService {
         : '0', // TODO: avoid fallback
     };
   }
-  // private mapBalance(
-  //   txBalance: TransactionApiBalance,
-  //   nativeCoinId: string,
-  // ): Balance {
-  //   // const fiatConversion = Number(txBalance.fiatConversion) * usdToFiatRate;
-  //   // const fiatBalance = Number(txBalance.fiatBalance) * usdToFiatRate;
-  //   const fiatConversion = 1 * usdToFiatRate; // TODO:
-  //   const fiatBalance = 1 * usdToFiatRate; // TODO:
-  //   const tokenAddress = txBalance.tokenAddress ?? NULL_ADDRESS;
-  //   const tokenType =
-  //     tokenAddress === NULL_ADDRESS ? TokenType.NativeToken : TokenType.Erc20;
-
-  //   const tokenMetaData =
-  //     tokenType === TokenType.NativeToken
-  //       ? {
-  //           decimals: nativeCurrency.decimals,
-  //           symbol: nativeCurrency.symbol,
-  //           name: nativeCurrency.name,
-  //           logoUri: nativeCurrency.logoUri,
-  //         }
-  //       : {
-  //           decimals: txBalance.token?.decimals,
-  //           symbol: txBalance.token?.symbol,
-  //           name: txBalance.token?.name,
-  //           logoUri: txBalance.token?.logoUri,
-  //         };
-
-  //   return <Balance>{
-  //     tokenInfo: <Token>{
-  //       type: tokenType,
-  //       address: tokenAddress,
-  //       ...tokenMetaData,
-  //     },
-  //     balance: txBalance.balance,
-  //     fiatBalance: this.getNumberString(fiatBalance),
-  //     fiatConversion: this.getNumberString(fiatConversion),
-  //   };
-  // }
 
   async getSupportedFiatCodes(): Promise<string[]> {
     const fiatCodes: string[] = await this.exchangeRepository.getFiatCodes();
