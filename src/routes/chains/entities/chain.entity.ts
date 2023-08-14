@@ -20,6 +20,10 @@ import {
   GasPriceFixed,
   GasPriceFixed as ApiGasPriceFixed,
 } from './gas-price-fixed.entity';
+import {
+  GasPriceFixedEIP1559,
+  GasPriceFixedEIP1559 as ApiGasPriceFixedEIP1559,
+} from './gas-price-fixed-eip-1559.entity';
 import { RpcUri, RpcUri as ApiRpcUri } from './rpc-uri.entity';
 import { Theme, Theme as ApiTheme } from './theme.entity';
 
@@ -51,10 +55,11 @@ export class Chain {
       oneOf: [
         { $ref: getSchemaPath(ApiGasPriceOracle) },
         { $ref: getSchemaPath(ApiGasPriceFixed) },
+        { $ref: getSchemaPath(ApiGasPriceFixedEIP1559) },
       ],
     },
   })
-  gasPrice: Array<ApiGasPriceOracle | ApiGasPriceFixed>;
+  gasPrice: Array<ApiGasPriceOracle | ApiGasPriceFixed | ApiGasPriceFixedEIP1559>;
   @ApiProperty()
   publicRpcUri: ApiRpcUri;
   @ApiProperty()
@@ -76,7 +81,7 @@ export class Chain {
     blockExplorerUriTemplate: BlockExplorerUriTemplate,
     disabledWallets: string[],
     features: string[],
-    gasPrice: Array<GasPriceOracle | GasPriceFixed>,
+    gasPrice: Array<GasPriceOracle | GasPriceFixed | GasPriceFixedEIP1559>,
     publicRpcUri: RpcUri,
     rpcUri: RpcUri,
     safeAppsRpcUri: RpcUri,
