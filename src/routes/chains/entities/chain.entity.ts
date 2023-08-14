@@ -27,7 +27,7 @@ import {
 import { RpcUri, RpcUri as ApiRpcUri } from './rpc-uri.entity';
 import { Theme, Theme as ApiTheme } from './theme.entity';
 
-@ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed)
+@ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {
   @ApiProperty()
   chainId: string;
