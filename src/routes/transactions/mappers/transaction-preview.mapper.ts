@@ -43,7 +43,6 @@ export class TransactionPreviewMapper {
       );
       dataDecoded = previewTransactionDto.data;
     }
-
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       <MultisigTransaction>{
@@ -55,13 +54,11 @@ export class TransactionPreviewMapper {
         operation: previewTransactionDto.operation,
       },
     );
-
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,
       previewTransactionDto,
       dataDecoded,
     );
-
     return Promise.resolve(new TransactionPreview(txInfo, txData));
   }
 }

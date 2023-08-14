@@ -4,10 +4,10 @@ export class TransactionInfo {
   @ApiProperty()
   type: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  readableDescription?: string;
+  humanDescription?: string;
 
-  protected constructor(type: string, readableDescription?: string) {
+  protected constructor(type: string, humanDescription?: string) {
     this.type = type;
-    this.readableDescription = readableDescription;
+    this.humanDescription = humanDescription;
   }
 }

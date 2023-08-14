@@ -3,7 +3,7 @@ import {
   ContractMessages,
   HumanReadableFragment,
   ValueType,
-} from '../../mappers/common/readable-descriptions.mapper';
+} from '../../mappers/common/human-descriptions.mapper';
 
 type Expression = {
   [key: string]: string;

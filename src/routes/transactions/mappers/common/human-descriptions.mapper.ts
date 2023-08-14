@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MessagesParsed } from '../../entities/readable-descriptions/parsed-messages';
+import { MessagesParsed } from '../../entities/human-descriptions/parsed-messages';
 import {
   decodeFunctionData,
   getFunctionSelector,
@@ -70,13 +70,13 @@ export type ContractMessages = Record<string, Message>;
 
 // TODO: Write tests for this mapper
 @Injectable()
-export class ReadableDescriptionsMapper {
+export class HumanDescriptionsMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  async mapReadableDescription(
+  async mapHumanDescription(
     to: string | undefined,
     data: string | null,
     chainId: string,

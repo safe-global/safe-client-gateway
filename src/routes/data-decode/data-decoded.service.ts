@@ -3,34 +3,34 @@ import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.re
 import { IDataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from './entities/data-decoded.entity';
 import { GetDataDecodedDto } from './entities/get-data-decoded.dto.entity';
-import { ReadableDescriptionsMapper } from '../transactions/mappers/common/readable-descriptions.mapper';
+import { HumanDescriptionsMapper } from '../transactions/mappers/common/human-descriptions.mapper';
 
 @Injectable()
 export class DataDecodedService {
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: DataDecodedRepository,
-    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
+    private readonly humanDescriptionsMapper: HumanDescriptionsMapper,
   ) {}
 
   async getDataDecoded(args: {
     chainId: string;
     getDataDecodedDto: GetDataDecodedDto;
   }): Promise<DataDecoded> {
-    const [dataDecoded, readableDescription] = await Promise.all([
+    const [dataDecoded, humanDescription] = await Promise.all([
       this.dataDecodedRepository.getDataDecoded({
         chainId: args.chainId,
         data: args.getDataDecodedDto.data,
         to: args.getDataDecodedDto.to,
       }),
 
-      this.readableDescriptionsMapper.mapReadableDescription(
+      this.humanDescriptionsMapper.mapHumanDescription(
         args.getDataDecodedDto.to,
         args.getDataDecodedDto.data,
         args.chainId,
       ),
     ]);
 
-    return { ...dataDecoded, readableDescription };
+    return { ...dataDecoded, humanDescription };
   }
 }

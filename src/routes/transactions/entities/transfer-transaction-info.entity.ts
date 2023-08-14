@@ -24,9 +24,9 @@ export class TransferTransactionInfo extends TransactionInfo {
     recipient: AddressInfo,
     direction: string,
     transferInfo: Transfer,
-    readableDescription?: string,
+    humanDescription?: string,
   ) {
-    super('Transfer', readableDescription);
+    super('Transfer', humanDescription);
     this.sender = sender;
     this.recipient = recipient;
     this.direction = direction;

@@ -15,7 +15,7 @@ import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
-import { ReadableDescriptionsMapper } from '../common/readable-descriptions.mapper';
+import { HumanDescriptionsMapper } from '../common/human-descriptions.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -42,7 +42,7 @@ export class MultisigTransactionInfoMapper {
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
-    private readonly readableDescriptionsMapper: ReadableDescriptionsMapper,
+    private readonly humanDescriptionsMapper: HumanDescriptionsMapper,
   ) {}
 
   async mapTransactionInfo(
@@ -57,8 +57,8 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const readableDescription =
-      await this.readableDescriptionsMapper.mapReadableDescription(
+    const humanDescription =
+      await this.humanDescriptionsMapper.mapHumanDescription(
         transaction.to,
         transaction.data,
         chainId,
@@ -69,7 +69,7 @@ export class MultisigTransactionInfoMapper {
         transaction,
         dataSize,
         chainId,
-        readableDescription,
+        humanDescription,
       );
     }
 
@@ -77,7 +77,7 @@ export class MultisigTransactionInfoMapper {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
-        readableDescription,
+        humanDescription,
       );
     }
 
@@ -107,7 +107,7 @@ export class MultisigTransactionInfoMapper {
       return new SettingsChangeTransaction(
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
-        readableDescription,
+        humanDescription,
       );
     }
 
@@ -122,14 +122,14 @@ export class MultisigTransactionInfoMapper {
             token,
             chainId,
             transaction,
-            readableDescription,
+            humanDescription,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
             chainId,
             transaction,
-            readableDescription,
+            humanDescription,
           );
       }
     }
@@ -138,7 +138,7 @@ export class MultisigTransactionInfoMapper {
       transaction,
       dataSize,
       chainId,
-      readableDescription,
+      humanDescription,
     );
   }
 

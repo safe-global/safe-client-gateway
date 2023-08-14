@@ -7,15 +7,15 @@ export class DataDecoded {
   @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
   parameters: DataDecodedParameter[] | null;
   @ApiPropertyOptional({ type: String, nullable: true })
-  readableDescription?: string;
+  humanDescription?: string;
 
   constructor(
     method: string,
     parameters: DataDecodedParameter[] | null,
-    readableDescription?: string,
+    humanDescription?: string,
   ) {
     this.method = method;
     this.parameters = parameters;
-    this.readableDescription = readableDescription;
+    this.humanDescription = humanDescription;
   }
 }

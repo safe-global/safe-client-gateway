@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { ReadableDescriptionsMapper } from './readable-descriptions.mapper';
+import { HumanDescriptionsMapper } from './human-descriptions.mapper';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 import { ILoggingService } from '../../../../logging/logging.interface';
@@ -16,15 +16,12 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as unknown as ILoggingService;
 
-describe('Readable descriptions mapper (Unit)', () => {
-  let mapper: ReadableDescriptionsMapper;
+describe('Human descriptions mapper (Unit)', () => {
+  let mapper: HumanDescriptionsMapper;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mapper = new ReadableDescriptionsMapper(
-      tokenRepository,
-      mockLoggingService,
-    );
+    mapper = new HumanDescriptionsMapper(tokenRepository, mockLoggingService);
   });
 
   it('should return undefined if there is no data', async () => {
@@ -32,13 +29,13 @@ describe('Readable descriptions mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const data = faker.string.hexadecimal();
 
-    const readableDescription = await mapper.mapReadableDescription(
+    const humanDescription = await mapper.mapHumanDescription(
       toAddress.value,
       data,
       chainId,
     );
 
-    expect(readableDescription).toBeUndefined();
+    expect(humanDescription).toBeUndefined();
   });
 
   it('should return undefined if data is not hex data', async () => {
@@ -46,16 +43,16 @@ describe('Readable descriptions mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const data = 'something that is not hex';
 
-    const readableDescription = await mapper.mapReadableDescription(
+    const humanDescription = await mapper.mapHumanDescription(
       toAddress.value,
       data,
       chainId,
     );
 
-    expect(readableDescription).toBeUndefined();
+    expect(humanDescription).toBeUndefined();
   });
 
-  it('should return a readable description for erc20 transfers', async () => {
+  it('should return a human-readable description for erc20 transfers', async () => {
     const toAddress = new AddressInfo(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const token = tokenBuilder()
@@ -67,13 +64,13 @@ describe('Readable descriptions mapper (Unit)', () => {
     const data =
       '0xa9059cbb0000000000000000000000007a9af6ef9197041a5841e84cb27873bebd3486e2000000000000000000000000000000000000000000000001236efcbcbb340000';
 
-    const readableDescription = await mapper.mapReadableDescription(
+    const humanDescription = await mapper.mapHumanDescription(
       toAddress.value,
       data,
       chainId,
     );
 
-    expect(readableDescription).toBe('Send 21 TST to 0x7a9a...86E2');
+    expect(humanDescription).toBe('Send 21 TST to 0x7a9a...86E2');
   });
 
   it('should return undefined for corrupt data', async () => {
@@ -88,12 +85,12 @@ describe('Readable descriptions mapper (Unit)', () => {
     const data =
       '0xa9059cbb0000000000000000000000007a9af6ef9197041a5841e84cb27873bebd3486e2000000000000000000000000000000000000000000000001236efcbcb';
 
-    const readableDescription = await mapper.mapReadableDescription(
+    const humanDescription = await mapper.mapHumanDescription(
       toAddress.value,
       data,
       chainId,
     );
 
-    expect(readableDescription).toBeUndefined();
+    expect(humanDescription).toBeUndefined();
   });
 });

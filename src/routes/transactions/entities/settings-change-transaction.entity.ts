@@ -12,9 +12,9 @@ export class SettingsChangeTransaction extends TransactionInfo {
   constructor(
     dataDecoded: DataDecoded,
     settingsInfo: SettingsChange | null,
-    readableDescription?: string,
+    humanDescription?: string,
   ) {
-    super('SettingsChange', readableDescription);
+    super('SettingsChange', humanDescription);
     this.dataDecoded = dataDecoded;
     this.settingsInfo = settingsInfo;
   }
