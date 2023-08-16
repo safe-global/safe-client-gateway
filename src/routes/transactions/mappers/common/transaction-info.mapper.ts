@@ -16,6 +16,8 @@ import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
 import { HumanDescriptionsMapper } from '../common/human-descriptions.mapper';
+import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
+import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -43,6 +45,7 @@ export class MultisigTransactionInfoMapper {
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionsMapper: HumanDescriptionsMapper,
+    private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
   async mapTransactionInfo(
@@ -57,11 +60,16 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
+    const safeAppInfo = isMultisigTransaction(transaction)
+      ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
+      : null;
+
     const humanDescription =
       await this.humanDescriptionsMapper.mapHumanDescription(
         transaction.to,
         transaction.data,
         chainId,
+        safeAppInfo,
       );
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {

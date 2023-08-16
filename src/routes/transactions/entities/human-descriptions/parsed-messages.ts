@@ -1,6 +1,6 @@
 import * as Messages from './index';
 import {
-  ContractMessages,
+  MessageTemplates,
   HumanReadableFragment,
   ValueType,
 } from '../../mappers/common/human-descriptions.mapper';
@@ -26,22 +26,22 @@ const TEMPLATE_REGEX = /{{(.*?)\s(.*?)}}|(\S+)/g;
  * to an array of HumanReadableFragment objects
  * @param messages
  */
-function parseMessages(messages: Expression): ContractMessages {
-  const contractMessages: ContractMessages = {};
+function parseMessages(messages: Expression): MessageTemplates {
+  const messageTemplates: MessageTemplates = {};
 
   for (const callSignature in messages) {
     const template = messages[callSignature];
 
-    contractMessages[callSignature] = {
-      render: (to: string, params: unknown[]) => {
+    messageTemplates[callSignature] = {
+      process: (to: string, params: unknown[]) => {
         const fragments: HumanReadableFragment[] = [];
 
-        let match;
+        let match: RegExpExecArray | null;
 
         while ((match = TEMPLATE_REGEX.exec(template)) !== null) {
           const [fullMatch, valueType, valueIndex] = match;
 
-          if (valueType && !isValueType(valueType)) continue;
+          if (valueType !== undefined && !isValueType(valueType)) continue;
 
           // Just a simple string
           if (fullMatch && !valueType && !valueIndex) {
@@ -67,7 +67,7 @@ function parseMessages(messages: Expression): ContractMessages {
     };
   }
 
-  return contractMessages;
+  return messageTemplates;
 }
 
 function parseExpression(

@@ -33,6 +33,7 @@ describe('Human descriptions mapper (Unit)', () => {
       toAddress.value,
       data,
       chainId,
+      null,
     );
 
     expect(humanDescription).toBeUndefined();
@@ -47,6 +48,7 @@ describe('Human descriptions mapper (Unit)', () => {
       toAddress.value,
       data,
       chainId,
+      null,
     );
 
     expect(humanDescription).toBeUndefined();
@@ -68,6 +70,7 @@ describe('Human descriptions mapper (Unit)', () => {
       toAddress.value,
       data,
       chainId,
+      null,
     );
 
     expect(humanDescription).toBe('Send 21 TST to 0x7a9a...86E2');
@@ -89,6 +92,7 @@ describe('Human descriptions mapper (Unit)', () => {
       toAddress.value,
       data,
       chainId,
+      null,
     );
 
     expect(humanDescription).toBeUndefined();

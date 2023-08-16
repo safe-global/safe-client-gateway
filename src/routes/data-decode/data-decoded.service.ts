@@ -28,6 +28,7 @@ export class DataDecodedService {
         args.getDataDecodedDto.to,
         args.getDataDecodedDto.data,
         args.chainId,
+        null,
       ),
     ]);
 

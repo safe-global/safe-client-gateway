@@ -16,6 +16,7 @@ import {
   LoggingService,
 } from '../../../../logging/logging.interface';
 import { shortenAddress } from '../../../common/utils/utils';
+import { SafeAppInfo } from '../../../transactions/entities/safe-app-info.entity';
 
 export enum ValueType {
   Word = 'word',
@@ -62,11 +63,11 @@ export type HumanReadableFragment =
   | AddressFragment
   | DecimalsFragment;
 
-type Message = {
-  render: (to: string, params: readonly unknown[]) => HumanReadableFragment[];
+type MessageTemplate = {
+  process: (to: string, params: readonly unknown[]) => HumanReadableFragment[];
 };
 
-export type ContractMessages = Record<string, Message>;
+export type MessageTemplates = Record<string, MessageTemplate>;
 
 // TODO: Write tests for this mapper
 @Injectable()
@@ -80,10 +81,11 @@ export class HumanDescriptionsMapper {
     to: string | undefined,
     data: string | null,
     chainId: string,
+    safeAppInfo: SafeAppInfo | null,
   ): Promise<string | undefined> {
     if (!data || !isHex(data) || !to) return;
 
-    for (const [callSignature, message] of Object.entries(MessagesParsed)) {
+    for (const [callSignature, template] of Object.entries(MessagesParsed)) {
       const sigHash = getFunctionSelector(callSignature);
 
       const isHumanReadable = data.startsWith(sigHash);
@@ -97,9 +99,13 @@ export class HumanDescriptionsMapper {
 
         try {
           const { args } = decodeFunctionData({ abi, data });
-          const messageBlocks = message.render(to, args);
+          const messageFragments = template.process(to, args);
 
-          return this.createMessage(messageBlocks, token);
+          const message = this.createMessage(messageFragments, token);
+
+          return safeAppInfo
+            ? message.concat(' via ', safeAppInfo.name)
+            : message;
         } catch (error) {
           this.loggingService.info(
             `Error trying to decode the input data: ${error.message}`,
