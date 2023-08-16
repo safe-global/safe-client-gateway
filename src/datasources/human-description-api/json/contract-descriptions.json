@@ -1,4 +1,7 @@
 {
+  "function transfer(address, uint256)": "Send {{tokenValue 1}} to {{address 0}}",
+  "function approve(address, uint256)": "Approve {{tokenValue 1}} to {{address 0}}",
+  "function withdraw(uint256)": "Withdraw {{tokenValue 0}}",
   "function changeThreshold(uint256)": "Change threshold to {{decimals 0}}",
   "function addOwnerWithThreshold(address,uint256)": "Add new owner {{address 0}} with threshold {{decimals 1}}",
   "function removeOwner(address,address,uint256)": "Remove owner {{address 1}} with threshold {{decimals 2}}",

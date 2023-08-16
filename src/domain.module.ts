@@ -55,10 +55,16 @@ import { FlushRepository } from './domain/flush/flush.repository';
 import { IFlushRepository } from './domain/flush/flush.repository.interface';
 import { IHealthRepository } from './domain/health/health.repository.interface';
 import { HealthRepository } from './domain/health/health.repository';
+import { HumanDescriptionApiModule } from './datasources/human-description-api/human-description-api.module';
 
 @Global()
 @Module({
-  imports: [ConfigApiModule, ExchangeApiModule, TransactionApiModule],
+  imports: [
+    ConfigApiModule,
+    ExchangeApiModule,
+    TransactionApiModule,
+    HumanDescriptionApiModule,
+  ],
   providers: [
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },

@@ -5,6 +5,9 @@ import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 import { ILoggingService } from '../../../../logging/logging.interface';
 
+import Messages from '../../../../datasources/human-description-api/json';
+import { HumanDescriptionApi } from '../../../../datasources/human-description-api/human-description-api.service';
+
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
 } as unknown as TokenRepository);
@@ -16,12 +19,19 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as unknown as ILoggingService;
 
+const humanDescriptionAPI = new HumanDescriptionApi(Messages);
+
 describe('Human descriptions mapper (Unit)', () => {
   let mapper: HumanDescriptionsMapper;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mapper = new HumanDescriptionsMapper(tokenRepository, mockLoggingService);
+
+    mapper = new HumanDescriptionsMapper(
+      tokenRepository,
+      mockLoggingService,
+      humanDescriptionAPI,
+    );
   });
 
   it('should return undefined if there is no data', async () => {

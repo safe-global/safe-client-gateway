@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MessagesParsed } from '../../entities/human-descriptions/parsed-messages';
 import {
   decodeFunctionData,
   getFunctionSelector,
@@ -17,57 +16,11 @@ import {
 } from '../../../../logging/logging.interface';
 import { shortenAddress } from '../../../common/utils/utils';
 import { SafeAppInfo } from '../../../transactions/entities/safe-app-info.entity';
-
-export enum ValueType {
-  Word = 'word',
-  TokenValue = 'tokenValue',
-  Identifier = 'identifier',
-  Address = 'address',
-  Decimals = 'decimals',
-}
-
-export type TokenValueType = {
-  amount: bigint;
-  address: string;
-};
-
-interface TokenValueFragment {
-  type: ValueType.TokenValue;
-  value: TokenValueType;
-}
-
-interface WordFragment {
-  type: ValueType.Word;
-  value: string;
-}
-
-interface IdentifierFragment {
-  type: ValueType.Identifier;
-  value: unknown;
-}
-
-interface AddressFragment {
-  type: ValueType.Address;
-  value: string;
-}
-
-interface DecimalsFragment {
-  type: ValueType.Decimals;
-  value: unknown;
-}
-
-export type HumanReadableFragment =
-  | WordFragment
-  | TokenValueFragment
-  | IdentifierFragment
-  | AddressFragment
-  | DecimalsFragment;
-
-type MessageTemplate = {
-  process: (to: string, params: readonly unknown[]) => HumanReadableFragment[];
-};
-
-export type MessageTemplates = Record<string, MessageTemplate>;
+import { IHumanDescriptionApi } from '../../../../domain/interfaces/human-description-api.interface';
+import {
+  HumanReadableFragment,
+  ValueType,
+} from '../../../../datasources/human-description-api/entities/human-description.entity';
 
 // TODO: Write tests for this mapper
 @Injectable()
@@ -75,6 +28,8 @@ export class HumanDescriptionsMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IHumanDescriptionApi)
+    private readonly humanDescriptionApiService: IHumanDescriptionApi,
   ) {}
 
   async mapHumanDescription(
@@ -85,7 +40,11 @@ export class HumanDescriptionsMapper {
   ): Promise<string | undefined> {
     if (!data || !isHex(data) || !to) return;
 
-    for (const [callSignature, template] of Object.entries(MessagesParsed)) {
+    const parsedMessages = Object.entries(
+      this.humanDescriptionApiService.getParsedMessages(),
+    );
+
+    for (const [callSignature, template] of parsedMessages) {
       const sigHash = getFunctionSelector(callSignature);
 
       const isHumanReadable = data.startsWith(sigHash);
