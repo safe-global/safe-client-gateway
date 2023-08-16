@@ -84,9 +84,21 @@ export class NotificationsService {
   async unregisterDevice(args: {
     chainId: string;
     uuid: string;
-    safeAddress: string;
   }): Promise<void> {
     return this.notificationsRepository.unregisterDevice(args);
+  }
+
+  /**
+   * Un-registers a Safe notification target.
+   * The uuid is expected to be managed by the client. Its value should be equal
+   * to the one provided when the client called {@link unregisterSafe}.
+   */
+  async unregisterSafe(args: {
+    chainId: string;
+    uuid: string;
+    safeAddress: string;
+  }): Promise<void> {
+    return this.notificationsRepository.unregisterSafe(args);
   }
 
   private isServerError(
