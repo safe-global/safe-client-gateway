@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DataDecodedController } from './data-decoded.controller';
 import { DataDecodedService } from './data-decoded.service';
-import { HumanDescriptionsMapper } from '../../routes/transactions/mappers/common/human-descriptions.mapper';
+import { HumanDescriptionMapper } from '../../routes/transactions/mappers/common/human-description.mapper';
 
 @Module({
   controllers: [DataDecodedController],
-  providers: [DataDecodedService, HumanDescriptionsMapper],
+  providers: [DataDecodedService, HumanDescriptionMapper],
 })
 export class DataDecodedModule {}

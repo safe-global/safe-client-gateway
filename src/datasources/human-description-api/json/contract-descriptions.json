@@ -10,6 +10,5 @@
   "function enableModule(address)": "Enable module {{address $0}}",
   "function setFallbackHandler(address)": "Set fallback handler {{address $0}}",
   "function setDelegate(bytes32, address)": "Set delegate {{address $1}}",
-  "function multiSend(bytes)": "Interaction with MultiSend",
   "function setAllowance(address,address,uint96,uint16,uint32)": "Set allowance for {{address $0}}"
 }

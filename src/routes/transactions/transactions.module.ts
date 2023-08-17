@@ -27,7 +27,7 @@ import { IncomingTransferMapper } from './mappers/transfers/transfer.mapper';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 import { MultisigTransactionExecutionDetailsMapper } from './mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
-import { HumanDescriptionsMapper } from './mappers/common/human-descriptions.mapper';
+import { HumanDescriptionMapper } from './mappers/common/human-description.mapper';
 
 @Module({
   controllers: [TransactionsController],
@@ -58,7 +58,7 @@ import { HumanDescriptionsMapper } from './mappers/common/human-descriptions.map
     TransactionsService,
     TransferDetailsMapper,
     TransferInfoMapper,
-    HumanDescriptionsMapper,
+    HumanDescriptionMapper,
   ],
 })
 export class TransactionsModule {}

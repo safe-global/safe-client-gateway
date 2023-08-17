@@ -22,9 +22,8 @@ import {
   ValueType,
 } from '../../../../datasources/human-description-api/entities/human-description.entity';
 
-// TODO: Write tests for this mapper
 @Injectable()
-export class HumanDescriptionsMapper {
+export class HumanDescriptionMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -50,9 +49,14 @@ export class HumanDescriptionsMapper {
       const isHumanReadable = data.startsWith(sigHash);
 
       if (isHumanReadable) {
-        const token = await this.tokenRepository
-          .getToken({ chainId, address: to })
-          .catch(() => null);
+        let token: Token | null = null;
+        try {
+          token = await this.tokenRepository.getToken({ chainId, address: to });
+        } catch (error) {
+          this.loggingService.info(
+            `Error trying to get token: ${error.message}`,
+          );
+        }
 
         const abi = parseAbi([callSignature]);
 
@@ -62,9 +66,7 @@ export class HumanDescriptionsMapper {
 
           const message = this.createMessage(messageFragments, token);
 
-          return safeAppInfo
-            ? message.concat(' via ', safeAppInfo.name)
-            : message;
+          return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
         } catch (error) {
           this.loggingService.info(
             `Error trying to decode the input data: ${error.message}`,

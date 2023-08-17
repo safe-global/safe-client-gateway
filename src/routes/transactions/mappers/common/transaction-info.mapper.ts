@@ -15,7 +15,7 @@ import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
-import { HumanDescriptionsMapper } from '../common/human-descriptions.mapper';
+import { HumanDescriptionMapper } from '../common/human-description.mapper';
 import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
 import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
 
@@ -44,7 +44,7 @@ export class MultisigTransactionInfoMapper {
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
-    private readonly humanDescriptionsMapper: HumanDescriptionsMapper,
+    private readonly humanDescriptionMapper: HumanDescriptionMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
@@ -65,7 +65,7 @@ export class MultisigTransactionInfoMapper {
       : null;
 
     const humanDescription =
-      await this.humanDescriptionsMapper.mapHumanDescription(
+      await this.humanDescriptionMapper.mapHumanDescription(
         transaction.to,
         transaction.data,
         chainId,

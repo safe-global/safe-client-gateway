@@ -20,7 +20,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
    *  1. Double curly braces consisting of 2 groups separated by a space
    *  2. Any non-whitespace character i.e. simple words
    */
-  private readonly templateRegex = /{{(.*?)\s(\$.*?)}}|(\S+)/g;
+  private readonly TEMPLATE_REGEX = /{{(.*?)\s(\$.*?)}}|(\S+)/g;
 
   constructor(
     @Inject('ContractDescriptions')
@@ -45,12 +45,12 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
 
           let match: RegExpExecArray | null;
 
-          while ((match = this.templateRegex.exec(template)) !== null) {
+          while ((match = this.TEMPLATE_REGEX.exec(template)) !== null) {
             const [fullMatch, valueType, valueIndexPrefixed] = match;
 
             if (valueType !== undefined && !isValueType(valueType)) continue;
 
-            // Just a simple string
+            // Matched a simple string
             if (fullMatch && !valueType && !valueIndexPrefixed) {
               fragments.push({
                 type: ValueType.Word,
@@ -59,7 +59,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
               continue;
             }
 
-            // We slice the first character of the valueIndex since it has the structure of $<index>
+            // Slice the first character of the valueIndex to remove $ prefix
             const valueIndex = valueIndexPrefixed.slice(1);
 
             const parsedExpression = this.parseExpression(
@@ -86,15 +86,15 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
     to: string,
     params: unknown[],
   ): HumanReadableFragment {
-    const parsedParams = this.parseParams(valueType, valueIndex, to, params);
+    const parsedParam = this.parseParam(valueType, valueIndex, to, params);
 
     return <HumanReadableFragment>{
       type: valueType,
-      value: parsedParams,
+      value: parsedParam,
     };
   }
 
-  parseParams(
+  parseParam(
     valueType: ValueType,
     valueIndex: number,
     to: string,
@@ -112,9 +112,10 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
       case ValueType.Address:
       case ValueType.Decimals:
       case ValueType.Identifier:
+      case ValueType.Word:
         return params[valueIndex];
       default:
-        return to;
+        throw Error(`${valueType} not allowed as ValueType`);
     }
   }
 }

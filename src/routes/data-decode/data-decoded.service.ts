@@ -3,14 +3,14 @@ import { DataDecodedRepository } from '../../domain/data-decoder/data-decoded.re
 import { IDataDecodedRepository } from '../../domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from './entities/data-decoded.entity';
 import { GetDataDecodedDto } from './entities/get-data-decoded.dto.entity';
-import { HumanDescriptionsMapper } from '../transactions/mappers/common/human-descriptions.mapper';
+import { HumanDescriptionMapper } from '../transactions/mappers/common/human-description.mapper';
 
 @Injectable()
 export class DataDecodedService {
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: DataDecodedRepository,
-    private readonly humanDescriptionsMapper: HumanDescriptionsMapper,
+    private readonly humanDescriptionMapper: HumanDescriptionMapper,
   ) {}
 
   async getDataDecoded(args: {
@@ -24,7 +24,7 @@ export class DataDecodedService {
         to: args.getDataDecodedDto.to,
       }),
 
-      this.humanDescriptionsMapper.mapHumanDescription(
+      this.humanDescriptionMapper.mapHumanDescription(
         args.getDataDecodedDto.to,
         args.getDataDecodedDto.data,
         args.chainId,

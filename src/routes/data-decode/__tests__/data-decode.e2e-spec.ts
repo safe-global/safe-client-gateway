@@ -37,7 +37,6 @@ describe('Data decode e2e tests', () => {
       .with('to', '0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761')
       .build();
     const expectedResponse: DataDecoded = {
-      humanDescription: 'Interaction with MultiSend',
       method: 'multiSend',
       parameters: [
         {
