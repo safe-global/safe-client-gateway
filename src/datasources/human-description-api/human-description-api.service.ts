@@ -20,7 +20,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
    *  1. Double curly braces consisting of 2 groups separated by a space
    *  2. Any non-whitespace character i.e. simple words
    */
-  private readonly templateRegex = /{{(.*?)\s(.*?)}}|(\S+)/g;
+  private readonly templateRegex = /{{(.*?)\s(\$.*?)}}|(\S+)/g;
 
   constructor(
     @Inject('ContractDescriptions')
@@ -46,18 +46,21 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
           let match: RegExpExecArray | null;
 
           while ((match = this.templateRegex.exec(template)) !== null) {
-            const [fullMatch, valueType, valueIndex] = match;
+            const [fullMatch, valueType, valueIndexPrefixed] = match;
 
             if (valueType !== undefined && !isValueType(valueType)) continue;
 
             // Just a simple string
-            if (fullMatch && !valueType && !valueIndex) {
+            if (fullMatch && !valueType && !valueIndexPrefixed) {
               fragments.push({
                 type: ValueType.Word,
                 value: fullMatch,
               });
               continue;
             }
+
+            // We slice the first character of the valueIndex since it has the structure of $<index>
+            const valueIndex = valueIndexPrefixed.slice(1);
 
             const parsedExpression = this.parseExpression(
               valueType,
