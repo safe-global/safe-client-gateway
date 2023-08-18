@@ -7,5 +7,11 @@ export const shortenAddress = (address: string, length = 4): string => {
     return '';
   }
 
+  const visibleCharactersLength = length + 2 * 2;
+
+  if (address.length < visibleCharactersLength) {
+    return address;
+  }
+
   return `${address.slice(0, length + 2)}...${address.slice(-length)}`;
 };

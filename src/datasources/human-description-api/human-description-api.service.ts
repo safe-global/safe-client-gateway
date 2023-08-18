@@ -108,12 +108,9 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
   ): HumanReadableFragment['value'] {
     switch (valueType) {
       case ValueType.TokenValue:
-        const amount = params[valueIndex];
-        const address = to;
-
         return {
-          amount,
-          address,
+          amount: params[valueIndex],
+          address: to,
         };
       case ValueType.Address:
       case ValueType.Decimals:
