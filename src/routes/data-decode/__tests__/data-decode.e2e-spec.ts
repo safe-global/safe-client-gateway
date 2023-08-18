@@ -8,6 +8,7 @@ import { TestAppProvider } from '../../../__tests__/test-app.provider';
 import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
 import { redisClientFactory } from '../../../__tests__/redis-client.factory';
 import { getDataDecodedDtoBuilder } from '../entities/__tests__/get-data-decoded.dto.builder';
+import { encodeFunctionData, formatUnits, parseAbi } from 'viem';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
@@ -144,6 +145,49 @@ describe('Data decode e2e tests', () => {
               dataDecoded: null,
             },
           ],
+        },
+      ],
+    };
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/data-decoder`)
+      .send(getDataDecodedDto)
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toEqual(expectedResponse);
+      });
+  });
+
+  it('POST /data-decoder should include humanDescription', async () => {
+    const abi = parseAbi(['function transfer(address, uint256)']);
+    const mockAmount = faker.number.bigInt();
+    const mockTransferData = encodeFunctionData({
+      abi,
+      functionName: 'transfer',
+      args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', mockAmount],
+    });
+
+    const getDataDecodedDto = getDataDecodedDtoBuilder()
+      .with('data', mockTransferData)
+      .with('to', '0x61fD3b6d656F39395e32f46E2050953376c3f5Ff')
+      .build();
+
+    const expectedResponse: DataDecoded = {
+      humanDescription: `Send ${formatUnits(
+        mockAmount,
+        18,
+      )} SAFE to 0x7a9a...86E2`,
+      method: 'transfer',
+      parameters: [
+        {
+          name: 'to',
+          type: 'address',
+          value: '0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2',
+        },
+        {
+          name: 'amount',
+          type: 'uint256',
+          value: Number(mockAmount).toString(),
         },
       ],
     };

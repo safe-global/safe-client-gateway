@@ -15,7 +15,7 @@ export interface IHumanDescriptionApi {
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment;
+  ): HumanReadableFragment | null;
   parseParam(
     valueType: ValueType,
     valueIndex: number,

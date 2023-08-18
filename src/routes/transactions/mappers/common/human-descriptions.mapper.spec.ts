@@ -1,4 +1,4 @@
-import { encodeFunctionData, parseAbi } from 'viem';
+import { encodeFunctionData, formatUnits, parseAbi } from 'viem';
 import { faker } from '@faker-js/faker';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { HumanDescriptionMapper } from './human-description.mapper';
@@ -31,13 +31,11 @@ const token = tokenBuilder()
   .with('symbol', 'TST')
   .build();
 const abi = parseAbi(['function transfer(address, uint256)']);
+const mockAmount = faker.number.bigInt();
 const mockTransferData = encodeFunctionData({
   abi,
   functionName: 'transfer',
-  args: [
-    '0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2',
-    BigInt('21000000000000000000'),
-  ],
+  args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', mockAmount],
 });
 
 describe('Human descriptions mapper (Unit)', () => {
@@ -87,7 +85,9 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBe('Send 21 TST to 0x7a9a...86E2');
+    expect(humanDescription).toBe(
+      `Send ${formatUnits(mockAmount, token.decimals!)} TST to 0x7a9a...86E2`,
+    );
   });
 
   it('should return undefined for corrupt data', async () => {
@@ -117,7 +117,7 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBe('Send 21000000000000000000 to 0x7a9a...86E2');
+    expect(humanDescription).toBe(`Send ${mockAmount} to 0x7a9a...86E2`);
   });
 
   it('should return a description for unlimited token approvals', async () => {
@@ -136,7 +136,7 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBe('Approve unlimited TST to 0x7a9a...86E2');
+    expect(humanDescription).toBe('Approve unlimited TST');
   });
 
   it('should append the safe app name to the description if it exists', async () => {
@@ -156,7 +156,10 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     expect(humanDescription).toBe(
-      'Send 21 TST to 0x7a9a...86E2 via CSV Airdrop',
+      `Send ${formatUnits(
+        mockAmount,
+        token.decimals!,
+      )} TST to 0x7a9a...86E2 via CSV Airdrop`,
     );
   });
 });

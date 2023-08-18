@@ -69,7 +69,9 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
               params,
             );
 
-            fragments.push(parsedExpression);
+            if (parsedExpression) {
+              fragments.push(parsedExpression);
+            }
           }
 
           return fragments;
@@ -85,13 +87,17 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment {
-    const parsedParam = this.parseParam(valueType, valueIndex, to, params);
+  ): HumanReadableFragment | null {
+    try {
+      const parsedParam = this.parseParam(valueType, valueIndex, to, params);
 
-    return <HumanReadableFragment>{
-      type: valueType,
-      value: parsedParam,
-    };
+      return <HumanReadableFragment>{
+        type: valueType,
+        value: parsedParam,
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   parseParam(
@@ -115,7 +121,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
       case ValueType.Word:
         return params[valueIndex];
       default:
-        throw Error(`${valueType} not allowed as ValueType`);
+        throw Error(`${valueType} is not allowed as ValueType`);
     }
   }
 }
