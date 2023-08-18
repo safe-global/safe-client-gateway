@@ -45,7 +45,7 @@ export class PricesApi implements IPricesApi {
       );
     } catch (error) {
       throw new DataSourceError(
-        `Error getting ${args.nativeCoinId} price from provider`,
+        `Error getting ${args.nativeCoinId} price from provider: ${error?.status}`,
       );
     }
   }
@@ -67,7 +67,7 @@ export class PricesApi implements IPricesApi {
       return result;
     } catch (error) {
       throw new DataSourceError(
-        `Error getting ${args.tokenAddress} price from provider`,
+        `Error getting ${args.tokenAddress} price from provider: ${error?.status}`,
       );
     }
   }

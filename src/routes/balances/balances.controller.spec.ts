@@ -370,7 +370,7 @@ describe('Balances Controller (Unit)', () => {
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
             case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
-              return Promise.reject({ status: 500 });
+              return Promise.reject({ status: 429 });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -382,7 +382,7 @@ describe('Balances Controller (Unit)', () => {
           )
           .expect(503)
           .expect({
-            message: `Error getting ${tokenAddress} price from provider`,
+            message: `Error getting ${tokenAddress} price from provider: 429`,
             code: 503,
           });
 
