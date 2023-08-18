@@ -18,6 +18,7 @@ import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded
 import { HumanDescriptionMapper } from '../common/human-description.mapper';
 import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
 import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
+import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -38,6 +39,8 @@ export class MultisigTransactionInfoMapper {
 
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
@@ -64,13 +67,16 @@ export class MultisigTransactionInfoMapper {
       ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
       : null;
 
-    const humanDescription =
-      await this.humanDescriptionMapper.mapHumanDescription(
-        transaction.to,
-        transaction.data,
-        chainId,
-        safeAppInfo,
-      );
+    const humanDescription = this.configurationService.get(
+      'features.humanDescription',
+    )
+      ? await this.humanDescriptionMapper.mapHumanDescription(
+          transaction.to,
+          transaction.data,
+          chainId,
+          safeAppInfo,
+        )
+      : undefined;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
