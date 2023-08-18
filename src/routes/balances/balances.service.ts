@@ -10,7 +10,7 @@ import { IExchangeRepository } from '../../domain/exchange/exchange.repository.i
 import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
 import { NULL_ADDRESS } from '../common/constants';
 import { IPricesRepository } from '../../domain/prices/prices.repository.interface';
-import { sortBy, sumBy } from 'lodash';
+import { sortBy } from 'lodash';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 
 @Injectable()
@@ -57,7 +57,9 @@ export class BalancesService {
         this.mapBalance(balance, nativeCoinId, fiatCode, nativeCurrency),
       ),
     );
-    const totalFiat = sumBy(balances, 'fiatBalance');
+    const totalFiat = balances.reduce((acc, b) => {
+      return acc + Number(b.fiatBalance);
+    }, 0);
 
     return <Balances>{
       fiatTotal: this.getNumberString(totalFiat),

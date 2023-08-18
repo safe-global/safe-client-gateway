@@ -24,6 +24,7 @@ describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
   let exchangeUrl;
+  let priceProviderUrl;
   let networkService;
   let exchangeApiKey;
 
@@ -46,6 +47,7 @@ describe('Balances Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     exchangeUrl = configurationService.get('exchange.baseUri');
+    priceProviderUrl = configurationService.get('prices.baseUri');
     exchangeApiKey = configurationService.get('exchange.apiKey');
     networkService = moduleFixture.get(NetworkService);
 
@@ -57,22 +59,21 @@ describe('Balances Controller (Unit)', () => {
     await app.close();
   });
 
-  // TODO: un-skip tests
+  // TODO: unskip
   describe.skip('GET /balances', () => {
     it(`maps native coin + ERC20 token balance correctly`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
+      const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder().with('tokenAddress', null).with('token', null).build(),
-        balanceBuilder().build(),
+        balanceBuilder().with('tokenAddress', tokenAddress).build(),
       ];
       const nativeCoinId = 'ethereum';
       const currency = 'eur';
-      const priceProviderUrl = 'https://api.coingecko.com/api/v3';
       const nativeCoinPriceProviderResponse = {
         [nativeCoinId]: { [currency]: faker.number.float({ precision: 0.01 }) },
       };
-      const tokenAddress = faker.finance.ethereumAddress();
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency]: faker.number.float({ precision: 0.01 }) },
       };
@@ -104,26 +105,28 @@ describe('Balances Controller (Unit)', () => {
 
       const expectedBalance = transactionApiBalancesResponse[0];
       await request(app.getHttpServer())
-        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/eur`)
         .expect(200)
-        .expect({
-          fiatTotal: 1, // TODO:
-          items: [
-            {
-              tokenInfo: {
-                type: 'ERC20',
-                address: expectedBalance.tokenAddress,
-                decimals: expectedBalance.token?.decimals,
-                symbol: expectedBalance.token?.symbol,
-                name: expectedBalance.token?.name,
-                logoUri: expectedBalance?.token?.logoUri,
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            fiatTotal: 1, // TODO:
+            items: [
+              {
+                tokenInfo: {
+                  type: 'ERC20',
+                  address: expectedBalance.tokenAddress,
+                  decimals: expectedBalance.token?.decimals,
+                  symbol: expectedBalance.token?.symbol,
+                  name: expectedBalance.token?.name,
+                  logoUri: expectedBalance?.token?.logoUri,
+                },
+                balance: expectedBalance.balance.toString(),
+                fiatBalance: 1, // TODO:
+                fiatConversion: 1, // TODO:
               },
-              balance: expectedBalance.balance.toString(),
-              fiatBalance: 1, // TODO:
-              fiatConversion: 1, // TODO:
-            },
-          ],
-        });
+            ],
+          }),
+        );
 
       // 3 Network calls are expected
       // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko token)
