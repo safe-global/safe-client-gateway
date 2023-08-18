@@ -27,10 +27,6 @@ import { ConfigurationModule } from '../../config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { NULL_ADDRESS } from '../common/constants';
-import {
-  messageBuilder,
-  toJson as messageToJson,
-} from '../../domain/messages/entities/__tests__/message.builder';
 import { AppModule, configurationModule } from '../../app.module';
 import { CacheModule } from '../../datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '../../logging/logging.module';
@@ -98,16 +94,6 @@ describe('Safes Controller (Unit)', () => {
       ])
       .build();
 
-    const messages = pageBuilder()
-      .with('results', [
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-03-12T12:29:06Z'))
-            .build(),
-        ),
-      ])
-      .build();
-
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -148,8 +134,6 @@ describe('Safes Controller (Unit)', () => {
           });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({ data: moduleTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
-          return Promise.resolve({ data: messages });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -157,45 +141,47 @@ describe('Safes Controller (Unit)', () => {
     await request(app.getHttpServer())
       .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
       .expect(200)
-      .expect({
-        address: {
-          value: safeInfo.address,
-          name: null,
-          logoUri: null,
-        },
-        chainId: chain.chainId,
-        nonce: safeInfo.nonce,
-        threshold: safeInfo.threshold,
-        owners: [
-          {
-            value: owner,
+      .expect(({ body }) =>
+        expect(body).toEqual({
+          address: {
+            value: safeInfo.address,
             name: null,
             logoUri: null,
           },
-        ],
-        implementation: {
-          value: masterCopyInfo.address,
-          name: masterCopyInfo.displayName,
-          logoUri: masterCopyInfo.logoUri,
-        },
-        implementationVersionState: 'UP_TO_DATE',
-        collectiblesTag: '1474253704',
-        txQueuedTag: '2495629387',
-        txHistoryTag: '3256547346',
-        messagesTag: '1678624146',
-        modules: null,
-        fallbackHandler: {
-          value: fallbackHandlerInfo.address,
-          name: fallbackHandlerInfo.displayName,
-          logoUri: fallbackHandlerInfo.logoUri,
-        },
-        guard: {
-          value: guardInfo.address,
-          name: guardInfo.displayName,
-          logoUri: guardInfo.logoUri,
-        },
-        version: safeInfo.version,
-      });
+          chainId: chain.chainId,
+          nonce: safeInfo.nonce,
+          threshold: safeInfo.threshold,
+          owners: [
+            {
+              value: owner,
+              name: null,
+              logoUri: null,
+            },
+          ],
+          implementation: {
+            value: masterCopyInfo.address,
+            name: masterCopyInfo.displayName,
+            logoUri: masterCopyInfo.logoUri,
+          },
+          implementationVersionState: 'UP_TO_DATE',
+          collectiblesTag: '1474253704',
+          txQueuedTag: '2495629387',
+          txHistoryTag: '3256547346',
+          messagesTag: expect.any(String),
+          modules: null,
+          fallbackHandler: {
+            value: fallbackHandlerInfo.address,
+            name: fallbackHandlerInfo.displayName,
+            logoUri: fallbackHandlerInfo.logoUri,
+          },
+          guard: {
+            value: guardInfo.address,
+            name: guardInfo.displayName,
+            logoUri: guardInfo.logoUri,
+          },
+          version: safeInfo.version,
+        }),
+      );
   });
 
   it('Version State is UNKNOWN when safe has an invalid safe version', async () => {
@@ -702,77 +688,6 @@ describe('Safes Controller (Unit)', () => {
       .expect((response) =>
         expect(response.body).toMatchObject({
           txHistoryTag: '1600314722',
-        }),
-      );
-  });
-
-  it('messagesTag is the latest modified timestamp', async () => {
-    const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
-    const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
-      .build();
-    const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
-      .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
-    const collectibleTransfers = pageBuilder().build();
-    const queuedTransactions = pageBuilder().build();
-    const moduleTransactions = pageBuilder().build();
-
-    const messages = pageBuilder()
-      .with('results', [
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-03-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-07-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-02-12T12:29:06Z'))
-            .build(),
-        ),
-      ])
-      .build();
-
-    networkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
-          return Promise.resolve({ data: fallbackHandlerInfo });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: guardInfo });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
-          return Promise.resolve({ data: collectibleTransfers });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
-          return Promise.resolve({ data: moduleTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
-          return Promise.resolve({ data: messages });
-      }
-      return Promise.reject(`No matching rule for url: ${url}`);
-    });
-
-    await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
-      .expect(200)
-      .expect((response) =>
-        expect(response.body).toMatchObject({
-          messagesTag: '1689164946',
         }),
       );
   });

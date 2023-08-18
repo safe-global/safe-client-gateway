@@ -54,7 +54,6 @@ export class SafesService {
       collectiblesTag,
       queuedTransactionTag,
       transactionHistoryTag,
-      messagesTag,
     ] = await Promise.all([
       this.addressInfoHelper.getOrDefault(args.chainId, safe.masterCopy, [
         'CONTRACT',
@@ -74,7 +73,6 @@ export class SafesService {
       this.getCollectiblesTag(args.chainId, args.safeAddress),
       this.getQueuedTransactionTag(args.chainId, safe),
       this.getTxHistoryTagDate(args.chainId, args.safeAddress),
-      this.modifiedMessageTag(args.chainId, args.safeAddress),
     ]);
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
@@ -98,7 +96,7 @@ export class SafesService {
       this.toUnixTimestampInSecondsOrNow(collectiblesTag).toString(),
       this.toUnixTimestampInSecondsOrNow(queuedTransactionTag).toString(),
       this.toUnixTimestampInSecondsOrNow(transactionHistoryTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(messagesTag).toString(),
+      this.toUnixTimestampInSecondsOrNow(null).toString(),
       moduleAddressesInfo,
       fallbackHandlerInfo,
       guardInfo,
@@ -185,26 +183,6 @@ export class SafesService {
       });
 
     return max(dates) ?? null;
-  }
-
-  private async modifiedMessageTag(
-    chainId: string,
-    safeAddress: string,
-  ): Promise<Date | null> {
-    const messages = await this.messagesRepository.getMessagesBySafe({
-      chainId,
-      safeAddress,
-    });
-
-    if (messages.results.length === 0) {
-      return null;
-    }
-
-    const sortedMessages = messages.results.sort((m1, m2) => {
-      return m2.modified.getTime() - m1.modified.getTime();
-    });
-
-    return sortedMessages[0].modified;
   }
 
   private computeVersionState(
