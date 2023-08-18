@@ -16,7 +16,7 @@ export class PricesRepository implements IPricesRepository {
   async getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
-  }): Promise<number> {
+  }): Promise<number | null> {
     const result = await this.pricesApi.getNativeCoinPrice(args);
     const { nativeCoinId, fiatCode } = args;
     const nativeCoinPrice = result?.[nativeCoinId]?.[fiatCode];
@@ -25,14 +25,14 @@ export class PricesRepository implements IPricesRepository {
       this.loggingService.error(`Error getting ${nativeCoinId} price`);
     }
 
-    return nativeCoinPrice ?? 0;
+    return nativeCoinPrice ?? null;
   }
 
   async getTokenPrice(args: {
     nativeCoinId: string;
     tokenAddress: string;
     fiatCode: string;
-  }): Promise<number> {
+  }): Promise<number | null> {
     const result = await this.pricesApi.getTokenPrice(args);
     const { tokenAddress, fiatCode } = args;
     const tokenPrice = result?.[tokenAddress.toLowerCase()]?.[fiatCode];
@@ -41,6 +41,6 @@ export class PricesRepository implements IPricesRepository {
       this.loggingService.warn(`Error getting ${tokenAddress} price`);
     }
 
-    return tokenPrice ?? 0;
+    return tokenPrice ?? null;
   }
 }

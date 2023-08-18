@@ -7,7 +7,6 @@ import { TestNetworkModule } from '../../datasources/network/__tests__/test.netw
 import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
 import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
 import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
-import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
 import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
 import { NULL_ADDRESS } from '../common/constants';
 import { faker } from '@faker-js/faker';
@@ -19,14 +18,13 @@ import { AppModule, configurationModule } from '../../app.module';
 import { CacheModule } from '../../datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '../../logging/logging.module';
 import { NetworkModule } from '../../datasources/network/network.module';
+import { balanceTokenBuilder } from '../../domain/balances/entities/__tests__/balance.token.builder';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
-  let exchangeUrl;
   let priceProviderUrl;
   let networkService;
-  let exchangeApiKey;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -46,9 +44,7 @@ describe('Balances Controller (Unit)', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
-    exchangeUrl = configurationService.get('exchange.baseUri');
     priceProviderUrl = configurationService.get('prices.baseUri');
-    exchangeApiKey = configurationService.get('exchange.apiKey');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -59,123 +55,141 @@ describe('Balances Controller (Unit)', () => {
     await app.close();
   });
 
-  // TODO: unskip
-  describe.skip('GET /balances', () => {
+  describe('GET /balances', () => {
     it(`maps native coin + ERC20 token balance correctly`, async () => {
-      const chainId = '1';
-      const safeAddress = '0x0000000000000000000000000000000000000001';
+      const chain = chainBuilder().with('chainId', '1').build();
+      const safeAddress = faker.finance.ethereumAddress();
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        balanceBuilder().with('tokenAddress', null).with('token', null).build(),
-        balanceBuilder().with('tokenAddress', tokenAddress).build(),
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
       ];
-      const nativeCoinId = 'ethereum';
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
       const currency = 'eur';
       const nativeCoinPriceProviderResponse = {
-        [nativeCoinId]: { [currency]: faker.number.float({ precision: 0.01 }) },
+        [nativeCoinId]: { [currency]: 1536.75 },
       };
       const tokenPriceProviderResponse = {
-        [tokenAddress]: { [currency]: faker.number.float({ precision: 0.01 }) },
+        [tokenAddress]: { [currency]: 2.5 },
       };
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
       networkService.get.mockImplementation((url) => {
-        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-          return Promise.resolve({ data: chainResponse });
-        } else if (
-          url ==
-          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
-        ) {
-          return Promise.resolve({
-            data: transactionApiBalancesResponse,
-          });
-        } else if (
-          url ==
-          `${priceProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`
-        ) {
-          return Promise.resolve({ data: nativeCoinPriceProviderResponse });
-        } else if (
-          url ==
-          `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`
-        ) {
-          return Promise.resolve({ data: tokenPriceProviderResponse });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      const expectedBalance = transactionApiBalancesResponse[0];
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/eur`)
-        .expect(200)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            fiatTotal: 1, // TODO:
-            items: [
-              {
-                tokenInfo: {
-                  type: 'ERC20',
-                  address: expectedBalance.tokenAddress,
-                  decimals: expectedBalance.token?.decimals,
-                  symbol: expectedBalance.token?.symbol,
-                  name: expectedBalance.token?.name,
-                  logoUri: expectedBalance?.token?.logoUri,
-                },
-                balance: expectedBalance.balance.toString(),
-                fiatBalance: 1, // TODO:
-                fiatConversion: 1, // TODO:
-              },
-            ],
-          }),
-        );
-
-      // 3 Network calls are expected
-      // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko token)
-      expect(networkService.get.mock.calls.length).toBe(3);
-      expect(networkService.get.mock.calls[0][0]).toBe(
-        `${safeConfigUrl}/api/v1/chains/1`,
-      );
-      expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/`,
-      );
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-        params: { trusted: undefined, exclude_spam: undefined },
-      });
-      expect(networkService.get.mock.calls[2][0]).toBe(
-        `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
-      );
-    });
-
-    it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
-      const chainId = '1';
-      const safeAddress = '0x0000000000000000000000000000000000000001';
-      const transactionApiBalancesResponse = [balanceBuilder().build()];
-      const exchangeApiResponse = exchangeRatesBuilder().build();
-      const chainResponse = chainBuilder().build();
-      const excludeSpam = true;
-      const trusted = true;
-
-      networkService.get.mockImplementation((url) => {
-        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-          return Promise.resolve({ data: chainResponse });
-        } else if (
-          url ==
-          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-        ) {
-          return Promise.resolve({
-            data: transactionApiBalancesResponse,
-          });
-        } else if (
-          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-        ) {
-          return Promise.resolve({ data: exchangeApiResponse });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${priceProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`:
+            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+          case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
         }
       });
 
       await request(app.getHttpServer())
         .get(
-          `/v1/chains/${chainId}/safes/${safeAddress}/balances/usd/?trusted=${trusted}&exclude_spam=${excludeSpam}`,
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '4710.25',
+          items: [
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '4610.25',
+              fiatConversion: '1536.75',
+            },
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[1].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[1].token?.symbol,
+                name: transactionApiBalancesResponse[1].token?.name,
+                logoUri: transactionApiBalancesResponse[1].token?.logoUri,
+              },
+              balance: '4000000000000000000',
+              fiatBalance: '100',
+              fiatConversion: '2.5',
+            },
+          ],
+        });
+
+      // 4 Network calls are expected
+      // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko token)
+      expect(networkService.get.mock.calls.length).toBe(4);
+      expect(networkService.get.mock.calls[0][0]).toBe(
+        `${safeConfigUrl}/api/v1/chains/1`,
+      );
+      expect(networkService.get.mock.calls[1][0]).toBe(
+        `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
+      );
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+        params: { trusted: undefined, exclude_spam: undefined },
+      });
+      expect(networkService.get.mock.calls[2][0]).toBe(
+        `${priceProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`,
+      );
+      expect(networkService.get.mock.calls[3][0]).toBe(
+        `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`,
+      );
+    });
+
+    it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
+      const chain = chainBuilder().with('chainId', '1').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const tokenAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const excludeSpam = true;
+      const trusted = true;
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
+      const currency = 'eur';
+      const tokenPriceProviderResponse = {
+        [tokenAddress]: { [currency]: 2.5 },
+      };
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}/?trusted=${trusted}&exclude_spam=${excludeSpam}`,
         )
         .expect(200);
 
@@ -189,40 +203,40 @@ describe('Balances Controller (Unit)', () => {
     });
 
     it(`maps native token correctly`, async () => {
+      const chain = chainBuilder().with('chainId', '1').build();
       const safeAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        balanceBuilder().with('tokenAddress', null).build(),
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
       ];
-      const exchangeApiResponse = exchangeRatesBuilder()
-        .with('success', true)
-        .with('rates', { USD: 2.0 })
-        .build();
-      const chain = chainBuilder().build();
+      const currency = 'usd';
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId]: { [currency]: 1536.75 },
+      };
       networkService.get.mockImplementation((url) => {
-        if (url == `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain });
-        } else if (
-          url ==
-          `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-        ) {
-          return Promise.resolve({
-            data: transactionApiBalancesResponse,
-          });
-        } else if (
-          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-        ) {
-          return Promise.resolve({ data: exchangeApiResponse });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${priceProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`:
+            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
         }
       });
 
-      const expectedBalance = transactionApiBalancesResponse[0];
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
         .expect(200)
         .expect({
-          fiatTotal: 1, // TODO:
+          fiatTotal: '4610.25',
           items: [
             {
               tokenInfo: {
@@ -233,83 +247,83 @@ describe('Balances Controller (Unit)', () => {
                 name: chain.nativeCurrency.name,
                 logoUri: chain.nativeCurrency.logoUri,
               },
-              balance: expectedBalance.balance.toString(),
-              fiatBalance: 1, // TODO:
-              fiatConversion: 1, // TODO:
+              balance: '3000000000000000000',
+              fiatBalance: '4610.25',
+              fiatConversion: '1536.75',
             },
           ],
         });
     });
 
     it('returns large numbers as is (not in scientific notation)', async () => {
-      const chainId = '1';
-      const safeAddress = '0x0000000000000000000000000000000000000001';
+      const chain = chainBuilder().with('chainId', '1').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        balanceBuilder().with('balance', '266279793958307969327868').build(),
+        balanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '40000000000000000000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
       ];
-      const exchangeApiResponse = exchangeRatesBuilder()
-        .with('success', true)
-        .with('rates', { USD: 1.0 })
-        .build();
-      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
+      const currency = 'eur';
+      const tokenPriceProviderResponse = {
+        [tokenAddress]: { [currency]: 2.5 },
+      };
       networkService.get.mockImplementation((url) => {
-        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-          return Promise.resolve({ data: chainResponse });
-        } else if (
-          url ==
-          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-        ) {
-          return Promise.resolve({
-            data: transactionApiBalancesResponse,
-          });
-        } else if (
-          url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-        ) {
-          return Promise.resolve({ data: exchangeApiResponse });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
         }
       });
 
-      const expectedFiatBalance = 1; // TODO:
-      const expectedFiatConversion = 1; // TODO:
-      const expectedBalance = transactionApiBalancesResponse[0];
-
       await request(app.getHttpServer())
-        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+        )
         .expect(200)
         .expect({
-          fiatTotal: expectedFiatBalance,
+          fiatTotal: '1000000000000000000',
           items: [
             {
               tokenInfo: {
                 type: 'ERC20',
-                address: expectedBalance.tokenAddress,
-                decimals: expectedBalance.token?.decimals,
-                symbol: expectedBalance.token?.symbol,
-                name: expectedBalance.token?.name,
-                logoUri: expectedBalance?.token?.logoUri,
+                address: transactionApiBalancesResponse[0].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[0].token?.symbol,
+                name: transactionApiBalancesResponse[0].token?.name,
+                logoUri: transactionApiBalancesResponse[0].token?.logoUri,
               },
-              balance: expectedBalance.balance,
-              fiatBalance: expectedFiatBalance,
-              fiatConversion: expectedFiatConversion,
+              balance: '40000000000000000000000000000000000',
+              fiatBalance: '1000000000000000000',
+              fiatConversion: '2.5',
             },
           ],
         });
 
-      // 3 Network calls are expected (1. Chain data, 2. Balances, 3. Exchange API
+      // 3 Network calls are expected
+      // (1. Chain data, 2. Balances, 3. Coingecko token)
       expect(networkService.get.mock.calls.length).toBe(3);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
+        `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
       expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: { trusted: undefined, exclude_spam: undefined },
       });
       expect(networkService.get.mock.calls[2][0]).toBe(
-        `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
+        `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`,
       );
     });
 
@@ -333,193 +347,101 @@ describe('Balances Controller (Unit)', () => {
       });
     });
 
-    describe('Exchange API Error', () => {
+    describe('Prices provider API Error', () => {
       it(`500 error response`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = [balanceBuilder().build()];
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder().with('chainId', '1').build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const tokenAddress = faker.finance.ethereumAddress();
+        const currency = 'eur';
+        const transactionApiBalancesResponse = [
+          balanceBuilder()
+            .with('tokenAddress', tokenAddress)
+            .with('balance', '40000000000000000000000000000000000')
+            .with('token', balanceTokenBuilder().with('decimals', 17).build())
+            .build(),
+        ];
+        const nativeCoinId = app
+          .get(IConfigurationService)
+          .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
         networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({
-              data: transactionApiBalancesResponse,
-            });
-          } else if (url == `${exchangeUrl}/latest`) {
-            return Promise.reject({ status: 500 });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+              return Promise.resolve({ data: transactionApiBalancesResponse });
+            case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+              return Promise.reject({ status: 500 });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
           }
         });
 
         await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+          )
           .expect(503)
           .expect({
-            message: 'Error getting exchange data',
+            message: `Error getting ${tokenAddress} price from provider`,
             code: 503,
           });
 
         expect(networkService.get.mock.calls.length).toBe(3);
       });
 
-      it(`No rates returned`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = [balanceBuilder().build()];
-        const exchangeApiResponse = { success: true, base: 'USD' }; // no rates
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
+      it(`No price returned`, async () => {
+        const chain = chainBuilder().with('chainId', '1').build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const tokenAddress = faker.finance.ethereumAddress();
+        const currency = 'eur';
+        const transactionApiBalancesResponse = [
+          balanceBuilder()
+            .with('tokenAddress', tokenAddress)
+            .with('balance', '40000000000000000000000000000000000')
+            .with('token', balanceTokenBuilder().with('decimals', 17).build())
+            .build(),
+        ];
+        const nativeCoinId = app
+          .get(IConfigurationService)
+          .getOrThrow(`chains.nativeCoins.${chain.chainId}`);
+        const tokenPriceProviderResponse = {};
         networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({
-              data: transactionApiBalancesResponse,
-            });
-          } else if (
-            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-          ) {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+              return Promise.resolve({ data: transactionApiBalancesResponse });
+            case `${priceProviderUrl}/simple/token_price/${nativeCoinId}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+              return Promise.resolve({ data: tokenPriceProviderResponse });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
           }
         });
 
         await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
-          .expect({
-            message: 'Validation failed',
-            code: 42,
-            arguments: [],
-          });
-
-        expect(networkService.get.mock.calls.length).toBe(3);
-      });
-
-      it(`from-rate missing`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = [balanceBuilder().build()];
-        const exchangeApiResponse = exchangeRatesBuilder()
-          .with('success', true)
-          .with('rates', { XYZ: 2 })
-          .build(); // Returns different rate than USD
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
-        networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({
-              data: transactionApiBalancesResponse,
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toEqual({
+              fiatTotal: '0',
+              items: [
+                {
+                  tokenInfo: {
+                    type: 'ERC20',
+                    address: transactionApiBalancesResponse[0].tokenAddress,
+                    decimals: 17,
+                    symbol: transactionApiBalancesResponse[0].token?.symbol,
+                    name: transactionApiBalancesResponse[0].token?.name,
+                    logoUri: transactionApiBalancesResponse[0].token?.logoUri,
+                  },
+                  balance: '40000000000000000000000000000000000',
+                  fiatBalance: null,
+                  fiatConversion: null,
+                },
+              ],
             });
-          } else if (
-            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-          ) {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
-          .expect({
-            statusCode: 500,
-            message: 'Exchange rate for USD is not available',
-            error: 'Internal Server Error',
-          });
-
-        expect(networkService.get.mock.calls.length).toBe(3);
-      });
-
-      it(`from-rate is 0`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = [balanceBuilder().build()];
-        const exchangeApiResponse = exchangeRatesBuilder()
-          .with('success', true)
-          .with('rates', { USD: 0 }) // rate is zero
-          .build();
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
-        networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({
-              data: transactionApiBalancesResponse,
-            });
-          } else if (
-            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-          ) {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
-          .expect({
-            statusCode: 500,
-            message: 'Exchange rate for USD is not available',
-            error: 'Internal Server Error',
-          });
-
-        expect(networkService.get.mock.calls.length).toBe(3);
-      });
-
-      it(`to-rate missing`, async () => {
-        const chainId = '1';
-        const toRate = 'XYZ';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const transactionApiBalancesResponse = [balanceBuilder().build()];
-        const exchangeApiResponse = exchangeRatesBuilder()
-          .with('success', true)
-          .with('rates', { USD: 2 }) // Returns different rate than XYZ
-          .build();
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
-        networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({
-              data: transactionApiBalancesResponse,
-            });
-          } else if (
-            url == `${exchangeUrl}/latest?access_key=${exchangeApiKey}`
-          ) {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/${toRate}`)
-          .expect(500)
-          .expect({
-            statusCode: 500,
-            message: 'Exchange rate for XYZ is not available',
-            error: 'Internal Server Error',
           });
 
         expect(networkService.get.mock.calls.length).toBe(3);
@@ -528,30 +450,21 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Transaction API Error', () => {
       it(`500 error response`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const exchangeApiResponse = exchangeRatesBuilder()
-          .with('success', true)
-          .with('rates', { USD: 2.0 })
-          .build();
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder().build();
+        const safeAddress = faker.finance.ethereumAddress();
         networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.reject({ status: 500 });
-          } else if (url == '${exchangeUrl}') {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+              return Promise.reject({ status: 500 });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
           }
         });
 
         await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'An error occurred',
@@ -562,30 +475,21 @@ describe('Balances Controller (Unit)', () => {
       });
 
       it(`500 error if validation fails`, async () => {
-        const chainId = '1';
-        const safeAddress = '0x0000000000000000000000000000000000000001';
-        const exchangeApiResponse = exchangeRatesBuilder()
-          .with('success', true)
-          .with('rates', { USD: 2.0 })
-          .build();
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder().build();
+        const safeAddress = faker.finance.ethereumAddress();
         networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/usd/`
-          ) {
-            return Promise.resolve({ data: [{ invalid: 'data' }] });
-          } else if (url == '${exchangeUrl}') {
-            return Promise.resolve({ data: exchangeApiResponse });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+              return Promise.resolve({ data: [{ invalid: 'data' }] });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
           }
         });
 
         await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
           .expect(500)
           .expect({
             message: 'Validation failed',

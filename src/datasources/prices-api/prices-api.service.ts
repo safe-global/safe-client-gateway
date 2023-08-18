@@ -4,7 +4,7 @@ import { IPricesApi } from '../../domain/interfaces/prices-api.interface';
 import { AssetPrice } from '../../domain/prices/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { DataSourceError } from '../../domain/errors/data-source.error';
 
 @Injectable()
 export class PricesApi implements IPricesApi {
@@ -16,7 +16,6 @@ export class PricesApi implements IPricesApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly dataSource: CacheFirstDataSource,
-    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUrl =
       this.configurationService.getOrThrow<string>('prices.baseUri');
@@ -45,7 +44,9 @@ export class PricesApi implements IPricesApi {
         this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw new DataSourceError(
+        `Error getting ${args.nativeCoinId} price from provider`,
+      );
     }
   }
   async getTokenPrice(args: {
@@ -65,7 +66,9 @@ export class PricesApi implements IPricesApi {
       );
       return result;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw new DataSourceError(
+        `Error getting ${args.tokenAddress} price from provider`,
+      );
     }
   }
 }

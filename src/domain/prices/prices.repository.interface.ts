@@ -4,11 +4,11 @@ export interface IPricesRepository {
   getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
-  }): Promise<number>;
+  }): Promise<number | null>;
 
   getTokenPrice(args: {
     nativeCoinId: string;
     tokenAddress: string;
     fiatCode: string;
-  }): Promise<number>;
+  }): Promise<number | null>;
 }

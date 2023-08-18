@@ -50,19 +50,18 @@ export class BalancesService {
     const nativeCoinId = this.configurationService.getOrThrow<string>(
       `chains.nativeCoins.${chainId}`,
     );
-
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
     const balances: Balance[] = await Promise.all(
       txServiceBalances.map(async (balance) =>
         this.mapBalance(balance, nativeCoinId, fiatCode, nativeCurrency),
       ),
     );
-    const totalFiat = balances.reduce((acc, b) => {
-      return acc + Number(b.fiatBalance);
-    }, 0);
+    const fiatTotal = balances
+      .filter((b) => b.fiatBalance !== null)
+      .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
 
     return <Balances>{
-      fiatTotal: this.getNumberString(totalFiat),
+      fiatTotal: this.getNumberString(fiatTotal),
       items: sortBy(balances, 'fiatCode'),
     };
   }
@@ -74,7 +73,6 @@ export class BalancesService {
     nativeCurrency: NativeCurrency,
   ): Promise<Balance> {
     const tokenAddress = txBalance.tokenAddress;
-    let fiatConversion, fiatBalance;
     const tokenType =
       tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
 
@@ -93,26 +91,11 @@ export class BalancesService {
             logoUri: txBalance.token?.logoUri,
           };
 
-    if (tokenAddress === null) {
-      // Native coin
-      fiatConversion = await this.pricesRepository.getNativeCoinPrice({
-        nativeCoinId,
-        fiatCode,
-      });
-      fiatBalance =
-        (fiatConversion * Number(txBalance.balance)) /
-        10 ** (txBalance.token?.decimals ?? 18); // TODO: review decimals
-    } else {
-      // ERC20 token
-      fiatConversion = await this.pricesRepository.getTokenPrice({
-        nativeCoinId,
-        tokenAddress,
-        fiatCode,
-      });
-      fiatBalance =
-        (fiatConversion * Number(txBalance.balance)) /
-        10 ** (txBalance.token?.decimals ?? 18);
-    }
+    const fiatConversion = await this.getFiatConversion(
+      nativeCoinId,
+      fiatCode,
+      tokenAddress,
+    );
 
     return <Balance>{
       tokenInfo: <Token>{
@@ -121,11 +104,41 @@ export class BalancesService {
         ...tokenMetaData,
       },
       balance: txBalance.balance,
-      fiatBalance: fiatBalance ? this.getNumberString(fiatBalance) : '0', // TODO: avoid fallback
+      fiatBalance: this.getFiatBalance(fiatConversion, txBalance),
       fiatConversion: fiatConversion
         ? this.getNumberString(fiatConversion)
-        : '0', // TODO: avoid fallback
+        : null,
     };
+  }
+
+  async getFiatConversion(
+    nativeCoinId: string,
+    fiatCode: string,
+    tokenAddress: string | null,
+  ): Promise<number | null> {
+    return tokenAddress === null
+      ? await this.pricesRepository.getNativeCoinPrice({
+          nativeCoinId,
+          fiatCode,
+        })
+      : await this.pricesRepository.getTokenPrice({
+          nativeCoinId,
+          tokenAddress,
+          fiatCode,
+        });
+  }
+
+  getFiatBalance(
+    fiatConversion: number | null,
+    txBalance: TransactionApiBalance,
+  ): string | null {
+    if (fiatConversion === null) return null;
+
+    const fiatBalance =
+      (fiatConversion * Number(txBalance.balance)) /
+      10 ** (txBalance.token?.decimals ?? 18);
+
+    return this.getNumberString(fiatBalance);
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
