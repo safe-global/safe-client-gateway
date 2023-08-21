@@ -36,8 +36,8 @@ export class HumanDescriptionMapper {
     data: string | null,
     chainId: string,
     safeAppInfo: SafeAppInfo | null,
-  ): Promise<string | undefined> {
-    if (!data || !isHex(data) || !to) return;
+  ): Promise<string | null> {
+    if (!data || !isHex(data) || !to) return null;
 
     const parsedMessages = Object.entries(
       this.humanDescriptionApiService.getParsedDescriptions(),
@@ -71,11 +71,11 @@ export class HumanDescriptionMapper {
         this.loggingService.debug(
           `Error trying to decode the input data: ${error.message}`,
         );
-        return;
+        return null;
       }
     }
 
-    return;
+    return null;
   }
 
   createMessage(

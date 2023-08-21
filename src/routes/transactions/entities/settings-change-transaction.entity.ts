@@ -12,7 +12,7 @@ export class SettingsChangeTransaction extends TransactionInfo {
   constructor(
     dataDecoded: DataDecoded,
     settingsInfo: SettingsChange | null,
-    humanDescription?: string,
+    humanDescription: string | null,
   ) {
     super('SettingsChange', humanDescription);
     this.dataDecoded = dataDecoded;

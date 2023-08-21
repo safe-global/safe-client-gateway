@@ -35,6 +35,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -62,6 +63,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -89,6 +91,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -131,6 +134,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -168,6 +172,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);

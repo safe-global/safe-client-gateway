@@ -23,7 +23,7 @@ export class CustomTransactionInfo extends TransactionInfo {
     methodName: string | null,
     actionCount: number | null,
     isCancellation: boolean,
-    humanDescription?: string,
+    humanDescription: string | null,
   ) {
     super('Custom', humanDescription);
     this.to = to;

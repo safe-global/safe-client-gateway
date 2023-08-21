@@ -34,7 +34,7 @@ export class DataDecodedService {
             args.chainId,
             null,
           )
-        : undefined,
+        : null,
     ]);
 
     return { ...dataDecoded, humanDescription };

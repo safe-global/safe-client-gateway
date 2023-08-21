@@ -51,7 +51,7 @@ describe('Human descriptions mapper (Unit)', () => {
     );
   });
 
-  it('should return undefined if there is no data', async () => {
+  it('should return null if there is no data', async () => {
     const humanDescription = await mapper.mapHumanDescription(
       toAddress.value,
       null,
@@ -59,10 +59,10 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBeUndefined();
+    expect(humanDescription).toBeNull();
   });
 
-  it('should return undefined if data is not hex data', async () => {
+  it('should return null if data is not hex data', async () => {
     const data = 'something that is not hex';
 
     const humanDescription = await mapper.mapHumanDescription(
@@ -72,7 +72,7 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBeUndefined();
+    expect(humanDescription).toBeNull();
   });
 
   it('should return a human-readable description for erc20 transfers', async () => {
@@ -90,7 +90,7 @@ describe('Human descriptions mapper (Unit)', () => {
     );
   });
 
-  it('should return undefined for corrupt data', async () => {
+  it('should return null for corrupt data', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
     const corruptedData = mockTransferData.slice(0, -7);
@@ -102,7 +102,7 @@ describe('Human descriptions mapper (Unit)', () => {
       null,
     );
 
-    expect(humanDescription).toBeUndefined();
+    expect(humanDescription).toBeNull();
   });
 
   it('should return raw amount if token info cannot be fetched', async () => {

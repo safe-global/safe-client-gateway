@@ -20,7 +20,7 @@ export class Erc721TransferMapper {
     token: Token,
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
-    humanDescription?: string,
+    humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(

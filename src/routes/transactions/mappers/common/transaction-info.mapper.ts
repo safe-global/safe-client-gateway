@@ -79,7 +79,7 @@ export class MultisigTransactionInfoMapper {
           chainId,
           safeAppInfo,
         )
-      : undefined;
+      : null;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
@@ -122,7 +122,11 @@ export class MultisigTransactionInfoMapper {
         ) ?? null;
 
       return new SettingsChangeTransaction(
-        new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
+        new DataDecoded(
+          transaction.dataDecoded.method,
+          dataDecodedParameters,
+          null,
+        ),
         settingsInfo,
         humanDescription,
       );
