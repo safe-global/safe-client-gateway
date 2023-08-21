@@ -62,7 +62,7 @@ export class BalancesService {
 
     return <Balances>{
       fiatTotal: this.getNumberString(fiatTotal),
-      items: sortBy(balances, 'fiatCode'),
+      items: sortBy(balances, 'fiatBalance'),
     };
   }
 
