@@ -107,19 +107,6 @@ describe('Balances Controller (Unit)', () => {
           items: [
             {
               tokenInfo: {
-                type: 'NATIVE_TOKEN',
-                address: NULL_ADDRESS,
-                decimals: chain.nativeCurrency.decimals,
-                symbol: chain.nativeCurrency.symbol,
-                name: chain.nativeCurrency.name,
-                logoUri: chain.nativeCurrency.logoUri,
-              },
-              balance: '3000000000000000000',
-              fiatBalance: '4610.25',
-              fiatConversion: '1536.75',
-            },
-            {
-              tokenInfo: {
                 type: 'ERC20',
                 address: transactionApiBalancesResponse[1].tokenAddress,
                 decimals: 17,
@@ -130,6 +117,19 @@ describe('Balances Controller (Unit)', () => {
               balance: '4000000000000000000',
               fiatBalance: '100',
               fiatConversion: '2.5',
+            },
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '4610.25',
+              fiatConversion: '1536.75',
             },
           ],
         });
