@@ -1,3 +1,4 @@
+import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   decodeFunctionData,
@@ -14,11 +15,10 @@ import {
   ILoggingService,
   LoggingService,
 } from '../../../../logging/logging.interface';
-import { shortenAddress } from '../../../common/utils/utils';
 import { SafeAppInfo } from '../../../transactions/entities/safe-app-info.entity';
 import { IHumanDescriptionApi } from '../../../../domain/interfaces/human-description-api.interface';
 import {
-  HumanReadableFragment,
+  HumanDescriptionFragment,
   ValueType,
 } from '../../../../datasources/human-description-api/entities/human-description.entity';
 
@@ -40,39 +40,38 @@ export class HumanDescriptionMapper {
     if (!data || !isHex(data) || !to) return;
 
     const parsedMessages = Object.entries(
-      this.humanDescriptionApiService.getParsedMessages(),
+      this.humanDescriptionApiService.getParsedDescriptions(),
     );
 
     for (const [callSignature, template] of parsedMessages) {
       const sigHash = getFunctionSelector(callSignature);
 
       const isHumanReadable = data.startsWith(sigHash);
+      if (!isHumanReadable) continue;
 
-      if (isHumanReadable) {
-        let token: Token | null = null;
-        try {
-          token = await this.tokenRepository.getToken({ chainId, address: to });
-        } catch (error) {
-          this.loggingService.info(
-            `Error trying to get token: ${error.message}`,
-          );
-        }
+      let token: Token | null = null;
+      try {
+        token = await this.tokenRepository.getToken({ chainId, address: to });
+      } catch (error) {
+        this.loggingService.debug(
+          `Error trying to get token: ${error.message}`,
+        );
+      }
 
-        const abi = parseAbi([callSignature]);
+      const abi = parseAbi([callSignature]);
 
-        try {
-          const { args } = decodeFunctionData({ abi, data });
-          const messageFragments = template.process(to, args);
+      try {
+        const { args } = decodeFunctionData({ abi, data });
+        const messageFragments = template.process(to, args);
 
-          const message = this.createMessage(messageFragments, token);
+        const message = this.createMessage(messageFragments, token);
 
-          return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
-        } catch (error) {
-          this.loggingService.info(
-            `Error trying to decode the input data: ${error.message}`,
-          );
-          return;
-        }
+        return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
+      } catch (error) {
+        this.loggingService.debug(
+          `Error trying to decode the input data: ${error.message}`,
+        );
+        return;
       }
     }
 
@@ -80,10 +79,10 @@ export class HumanDescriptionMapper {
   }
 
   createMessage(
-    messageBlocks: HumanReadableFragment[],
+    descriptionFragments: HumanDescriptionFragment[],
     token: Token | null,
   ): string {
-    return messageBlocks
+    return descriptionFragments
       .map((block) => {
         switch (block.type) {
           case ValueType.TokenValue:
@@ -98,11 +97,25 @@ export class HumanDescriptionMapper {
               token.symbol
             }`;
           case ValueType.Address:
-            return shortenAddress(block.value);
+            return this.shortenAddress(block.value);
           default:
             return block.value;
         }
       })
       .join(' ');
+  }
+
+  private shortenAddress(address: Hex, length = 4): string {
+    if (address.length !== 42) {
+      throw Error('Invalid address');
+    }
+
+    const visibleCharactersLength = length * 2 + 2;
+
+    if (address.length < visibleCharactersLength) {
+      return address;
+    }
+
+    return `${address.slice(0, length + 2)}...${address.slice(-length)}`;
   }
 }

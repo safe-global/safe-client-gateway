@@ -11,7 +11,7 @@ describe('HumanDescriptionAPI', () => {
   it('should return parsed messages from json', () => {
     const humanDescriptionApi = new HumanDescriptionApi(contractDescriptions);
 
-    const parsedMessages = humanDescriptionApi.getParsedMessages();
+    const parsedMessages = humanDescriptionApi.getParsedDescriptions();
 
     expect(parsedMessages['function transfer(address, uint256)']).toEqual({
       process: expect.any(Function),

@@ -28,7 +28,7 @@ interface IdentifierFragment {
 
 interface AddressFragment {
   type: ValueType.Address;
-  value: string;
+  value: `0x${string}`;
 }
 
 interface DecimalsFragment {
@@ -36,19 +36,23 @@ interface DecimalsFragment {
   value: unknown;
 }
 
-export type HumanReadableFragment =
+export type HumanDescriptionFragment =
   | WordFragment
   | TokenValueFragment
   | IdentifierFragment
   | AddressFragment
   | DecimalsFragment;
 
-type MessageTemplate = {
-  process: (to: string, params: readonly unknown[]) => HumanReadableFragment[];
+type HumanDescriptionTemplate = {
+  process: (
+    to: string,
+    params: readonly unknown[],
+  ) => HumanDescriptionFragment[];
 };
 
-export type MessageTemplates = Record<string, MessageTemplate>;
+export type HumanDescriptionTemplates = Record<
+  string,
+  HumanDescriptionTemplate
+>;
 
-export type Expression = {
-  [key: string]: string;
-};
+export type Expression = Record<string, string>;

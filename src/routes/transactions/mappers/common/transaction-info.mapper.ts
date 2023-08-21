@@ -25,6 +25,7 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
+  private readonly HUMAN_DESCRIPTION_ENABLED: boolean | undefined;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -49,7 +50,11 @@ export class MultisigTransactionInfoMapper {
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
-  ) {}
+  ) {
+    this.HUMAN_DESCRIPTION_ENABLED = this.configurationService.get(
+      'features.humanDescription',
+    );
+  }
 
   async mapTransactionInfo(
     chainId: string,
@@ -67,9 +72,7 @@ export class MultisigTransactionInfoMapper {
       ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
       : null;
 
-    const humanDescription = this.configurationService.get(
-      'features.humanDescription',
-    )
+    const humanDescription = this.HUMAN_DESCRIPTION_ENABLED
       ? await this.humanDescriptionMapper.mapHumanDescription(
           transaction.to,
           transaction.data,

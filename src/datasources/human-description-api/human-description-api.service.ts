@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IHumanDescriptionApi } from '../../domain/interfaces/human-description-api.interface';
 import {
-  MessageTemplates,
-  HumanReadableFragment,
+  HumanDescriptionTemplates,
+  HumanDescriptionFragment,
   ValueType,
   Expression,
 } from './entities/human-description.entity';
@@ -13,39 +13,41 @@ const isValueType = (type: unknown): type is ValueType => {
 
 @Injectable()
 export class HumanDescriptionApi implements IHumanDescriptionApi {
-  private readonly parsedMessages: MessageTemplates;
+  private readonly parsedDescriptions: HumanDescriptionTemplates;
 
   /**
    *  Regex Template that matches two patterns
    *  1. Double curly braces consisting of 2 groups separated by a space
    *  2. Any non-whitespace character i.e. simple words
    */
-  private readonly TEMPLATE_REGEX = /{{(.*?)\s(\$.*?)}}|(\S+)/g;
+  private static readonly TEMPLATE_REGEX = /{{(.*?)\s(\$.*?)}}|(\S+)/g;
 
   constructor(
     @Inject('ContractDescriptions')
     private readonly contractDescriptions: Expression,
   ) {
-    this.parsedMessages = this.parseMessages(this.contractDescriptions);
+    this.parsedDescriptions = this.parseDescriptions(this.contractDescriptions);
   }
 
-  getParsedMessages(): MessageTemplates {
-    return this.parsedMessages;
+  getParsedDescriptions(): HumanDescriptionTemplates {
+    return this.parsedDescriptions;
   }
 
-  parseMessages(messages: Expression): MessageTemplates {
-    const messageTemplates: MessageTemplates = {};
+  parseDescriptions(descriptions: Expression): HumanDescriptionTemplates {
+    const templates: HumanDescriptionTemplates = {};
 
-    for (const callSignature in messages) {
-      const template = messages[callSignature];
+    for (const callSignature in descriptions) {
+      const template = descriptions[callSignature];
 
-      messageTemplates[callSignature] = {
+      templates[callSignature] = {
         process: (to: string, params: unknown[]) => {
-          const fragments: HumanReadableFragment[] = [];
+          const fragments: HumanDescriptionFragment[] = [];
 
           let match: RegExpExecArray | null;
 
-          while ((match = this.TEMPLATE_REGEX.exec(template)) !== null) {
+          while (
+            (match = HumanDescriptionApi.TEMPLATE_REGEX.exec(template)) !== null
+          ) {
             const [fullMatch, valueType, valueIndexPrefixed] = match;
 
             if (valueType !== undefined && !isValueType(valueType)) continue;
@@ -79,7 +81,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
       };
     }
 
-    return messageTemplates;
+    return templates;
   }
 
   parseExpression(
@@ -87,11 +89,11 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment | null {
+  ): HumanDescriptionFragment | null {
     try {
       const parsedParam = this.parseParam(valueType, valueIndex, to, params);
 
-      return <HumanReadableFragment>{
+      return <HumanDescriptionFragment>{
         type: valueType,
         value: parsedParam,
       };
@@ -105,7 +107,7 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment['value'] {
+  ): HumanDescriptionFragment['value'] {
     switch (valueType) {
       case ValueType.TokenValue:
         return {

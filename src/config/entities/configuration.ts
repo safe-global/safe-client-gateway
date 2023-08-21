@@ -54,6 +54,7 @@ export default () => ({
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
   features: {
-    humanDescription: process.env.FF_HUMAN_DESCRIPTION === 'true',
+    humanDescription:
+      process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
   },
 });

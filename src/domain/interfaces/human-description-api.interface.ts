@@ -1,25 +1,25 @@
 import {
   Expression,
-  HumanReadableFragment,
-  MessageTemplates,
+  HumanDescriptionFragment,
+  HumanDescriptionTemplates,
   ValueType,
 } from '../../datasources/human-description-api/entities/human-description.entity';
 
 export const IHumanDescriptionApi = Symbol('IHumanDescriptionApi');
 
 export interface IHumanDescriptionApi {
-  getParsedMessages(): MessageTemplates;
-  parseMessages(messages: Expression): MessageTemplates;
+  getParsedDescriptions(): HumanDescriptionTemplates;
+  parseDescriptions(descriptions: Expression): HumanDescriptionTemplates;
   parseExpression(
     valueType: ValueType,
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment | null;
+  ): HumanDescriptionFragment | null;
   parseParam(
     valueType: ValueType,
     valueIndex: number,
     to: string,
     params: unknown[],
-  ): HumanReadableFragment['value'];
+  ): HumanDescriptionFragment['value'];
 }
