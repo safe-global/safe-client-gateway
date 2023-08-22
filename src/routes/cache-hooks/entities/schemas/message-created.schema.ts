@@ -3,7 +3,7 @@ import { MessageCreated } from '../message-created.entity';
 import { EventType } from '../event-payload.entity';
 
 export const MESSAGE_CREATED_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/executed-transaction.json';
+  'https://safe-client.safe.global/schemas/cache-hooks/message-created.json';
 
 export const messageCreatedEventSchema: JSONSchemaType<MessageCreated> = {
   $id: MESSAGE_CREATED_EVENT_SCHEMA_ID,
