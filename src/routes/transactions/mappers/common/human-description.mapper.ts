@@ -1,12 +1,6 @@
 import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  decodeFunctionData,
-  getFunctionSelector,
-  parseAbi,
-  formatUnits,
-  isHex,
-} from 'viem';
+import { decodeFunctionData, formatUnits, isHex } from 'viem';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { Token } from '../../../../domain/tokens/entities/token.entity';
@@ -16,19 +10,20 @@ import {
   LoggingService,
 } from '../../../../logging/logging.interface';
 import { SafeAppInfo } from '../../../transactions/entities/safe-app-info.entity';
-import { IHumanDescriptionApi } from '../../../../domain/interfaces/human-description-api.interface';
+import { IHumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository.interface';
+import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
 import {
   HumanDescriptionFragment,
   ValueType,
-} from '../../../../datasources/human-description-api/entities/human-description.entity';
+} from '../../../../domain/human-description/entities/human-description.entity';
 
 @Injectable()
 export class HumanDescriptionMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IHumanDescriptionApi)
-    private readonly humanDescriptionApiService: IHumanDescriptionApi,
+    @Inject(IHumanDescriptionRepository)
+    private readonly humanDescriptionRepository: HumanDescriptionRepository,
   ) {}
 
   async mapHumanDescription(
@@ -39,43 +34,42 @@ export class HumanDescriptionMapper {
   ): Promise<string | null> {
     if (!data || !isHex(data) || !to) return null;
 
-    const parsedMessages = Object.entries(
-      this.humanDescriptionApiService.getParsedDescriptions(),
-    );
+    const parsedDescriptions =
+      this.humanDescriptionRepository.getDescriptions();
 
-    for (const [callSignature, template] of parsedMessages) {
-      const sigHash = getFunctionSelector(callSignature);
+    const dataStart = data.slice(0, 10);
+    const sigHash = isHex(dataStart) ? dataStart : null;
 
-      const isHumanReadable = data.startsWith(sigHash);
-      if (!isHumanReadable) continue;
+    if (!sigHash) return null;
 
-      let token: Token | null = null;
-      try {
-        token = await this.tokenRepository.getToken({ chainId, address: to });
-      } catch (error) {
-        this.loggingService.debug(
-          `Error trying to get token: ${error.message}`,
-        );
-      }
+    const template = parsedDescriptions[sigHash];
+    const isHumanReadable = !!template;
 
-      const abi = parseAbi([callSignature]);
+    if (!isHumanReadable) return null;
 
-      try {
-        const { args } = decodeFunctionData({ abi, data });
-        const messageFragments = template.process(to, args);
-
-        const message = this.createHumanDescription(messageFragments, token);
-
-        return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
-      } catch (error) {
-        this.loggingService.debug(
-          `Error trying to decode the input data: ${error.message}`,
-        );
-        return null;
-      }
+    let token: Token | null = null;
+    try {
+      token = await this.tokenRepository.getToken({ chainId, address: to });
+    } catch (error) {
+      this.loggingService.debug(`Error trying to get token: ${error.message}`);
     }
 
-    return null;
+    try {
+      const { abi, process } = template;
+
+      const { args = [] } = decodeFunctionData({ abi, data });
+
+      const messageFragments = process(to, args);
+
+      const message = this.createHumanDescription(messageFragments, token);
+
+      return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
+    } catch (error) {
+      this.loggingService.debug(
+        `Error trying to decode the input data: ${error.message}`,
+      );
+      return null;
+    }
   }
 
   createHumanDescription(

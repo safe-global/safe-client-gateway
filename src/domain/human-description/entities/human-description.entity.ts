@@ -1,3 +1,6 @@
+import { Abi } from 'viem';
+import { Hex } from 'viem/src/types/misc';
+
 export enum ValueType {
   Word = 'word',
   TokenValue = 'tokenValue',
@@ -43,7 +46,12 @@ export type HumanDescriptionFragment =
   | AddressFragment
   | DecimalsFragment;
 
+type SignatureHash = Hex;
+type FunctionSignature = string;
+type HumanDescription = string;
+
 type HumanDescriptionTemplate = {
+  abi: Abi;
   process: (
     to: string,
     params: readonly unknown[],
@@ -51,8 +59,8 @@ type HumanDescriptionTemplate = {
 };
 
 export type HumanDescriptionTemplates = Record<
-  string,
+  SignatureHash,
   HumanDescriptionTemplate
 >;
 
-export type Expression = Record<string, string>;
+export type HumanDescriptions = Record<FunctionSignature, HumanDescription>;

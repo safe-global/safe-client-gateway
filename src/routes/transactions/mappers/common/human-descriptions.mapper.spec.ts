@@ -6,10 +6,10 @@ import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
 import { ILoggingService } from '../../../../logging/logging.interface';
 
-import Messages from '../../../../datasources/human-description-api/json';
 import { HumanDescriptionApi } from '../../../../datasources/human-description-api/human-description-api.service';
 import { MAX_UINT256 } from '../../constants';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
+import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -22,7 +22,10 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as unknown as ILoggingService;
 
-const humanDescriptionAPI = new HumanDescriptionApi(Messages);
+const humanDescriptionAPI = new HumanDescriptionApi();
+const humanDescriptionRepository = new HumanDescriptionRepository(
+  humanDescriptionAPI,
+);
 const toAddress = new AddressInfo(faker.finance.ethereumAddress());
 const chainId = faker.string.numeric();
 const token = tokenBuilder()
@@ -47,7 +50,7 @@ describe('Human descriptions mapper (Unit)', () => {
     mapper = new HumanDescriptionMapper(
       tokenRepository,
       mockLoggingService,
-      humanDescriptionAPI,
+      humanDescriptionRepository,
     );
   });
 

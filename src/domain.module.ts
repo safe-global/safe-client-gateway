@@ -56,6 +56,8 @@ import { IFlushRepository } from './domain/flush/flush.repository.interface';
 import { IHealthRepository } from './domain/health/health.repository.interface';
 import { HealthRepository } from './domain/health/health.repository';
 import { HumanDescriptionApiModule } from './datasources/human-description-api/human-description-api.module';
+import { IHumanDescriptionRepository } from './domain/human-description/human-description.repository.interface';
+import { HumanDescriptionRepository } from './domain/human-description/human-description.repository';
 
 @Global()
 @Module({
@@ -82,6 +84,10 @@ import { HumanDescriptionApiModule } from './datasources/human-description-api/h
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
+    {
+      provide: IHumanDescriptionRepository,
+      useClass: HumanDescriptionRepository,
+    },
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
@@ -121,6 +127,7 @@ import { HumanDescriptionApiModule } from './datasources/human-description-api/h
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,
+    IHumanDescriptionRepository,
   ],
 })
 export class DomainModule {}
