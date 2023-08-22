@@ -318,14 +318,25 @@ export class CacheRouter {
     );
   }
 
+  static getMessageByHashCacheKey(args: {
+    chainId: string;
+    messageHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MESSAGE_KEY}_${args.messageHash}`;
+  }
+
   static getMessageByHashCacheDir(args: {
     chainId: string;
     messageHash: string;
   }): CacheDir {
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.MESSAGE_KEY}_${args.messageHash}`,
-      '',
-    );
+    return new CacheDir(this.getMessageByHashCacheKey(args), '');
+  }
+
+  static getMessagesBySafeCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MESSAGES_KEY}_${args.safeAddress}`;
   }
 
   static getMessagesBySafeCacheDir(args: {
@@ -335,7 +346,7 @@ export class CacheRouter {
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${CacheRouter.MESSAGES_KEY}_${args.safeAddress}`,
+      this.getMessagesBySafeCacheKey(args),
       `${args.limit}_${args.offset}`,
     );
   }

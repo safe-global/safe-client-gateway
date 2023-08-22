@@ -12,6 +12,7 @@ import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MessageCreated } from './entities/message-created.entity';
+import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
 
 @Injectable()
 export class CacheHooksService {
@@ -20,6 +21,8 @@ export class CacheHooksService {
     private readonly balancesRepository: IBalancesRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
+    @Inject(IMessagesRepository)
+    private readonly messagesRepository: IMessagesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
@@ -239,8 +242,16 @@ export class CacheHooksService {
       // A message created affects:
       // - the messages associated to the Safe
       case EventType.MESSAGE_CREATED:
-        // TODO:
-        promises.push();
+        promises.push(
+          this.messagesRepository.clearMessagesBySafe({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.messagesRepository.clearMessagesByHash({
+            chainId: event.chainId,
+            messageHash: event.messageHash,
+          }),
+        );
         break;
     }
     return Promise.all(promises);

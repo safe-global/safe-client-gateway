@@ -898,4 +898,20 @@ export class TransactionApi implements ITransactionApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async clearMessagesBySafe(args: { safeAddress: string }): Promise<void> {
+    const key = CacheRouter.getMessagesBySafeCacheKey({
+      chainId: this.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearMessagesByHash(args: { messageHash: string }) {
+    const key = CacheRouter.getMessageByHashCacheKey({
+      chainId: this.chainId,
+      messageHash: args.messageHash,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
 }
