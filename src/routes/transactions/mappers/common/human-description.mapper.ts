@@ -64,7 +64,7 @@ export class HumanDescriptionMapper {
         const { args } = decodeFunctionData({ abi, data });
         const messageFragments = template.process(to, args);
 
-        const message = this.createMessage(messageFragments, token);
+        const message = this.createHumanDescription(messageFragments, token);
 
         return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
       } catch (error) {
@@ -78,7 +78,7 @@ export class HumanDescriptionMapper {
     return null;
   }
 
-  createMessage(
+  createHumanDescription(
     descriptionFragments: HumanDescriptionFragment[],
     token: Token | null,
   ): string {
