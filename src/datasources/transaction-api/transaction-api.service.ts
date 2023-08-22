@@ -831,6 +831,7 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
+        this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);

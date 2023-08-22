@@ -45,6 +45,11 @@ import {
   MODULE_TRANSACTION_EVENT_SCHEMA_ID,
   moduleTransactionEventSchema,
 } from '../entities/schemas/module-transaction.schema';
+import { MessageCreated } from '../entities/message-created.entity';
+import {
+  MESSAGE_CREATED_EVENT_SCHEMA_ID,
+  messageCreatedEventSchema,
+} from '../entities/schemas/message-created.schema';
 
 @Injectable()
 export class EventValidationPipe
@@ -54,6 +59,7 @@ export class EventValidationPipe
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
+      | MessageCreated
       | ModuleTransaction
       | NewConfirmation
       | OutgoingToken
@@ -65,6 +71,7 @@ export class EventValidationPipe
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
+    | MessageCreated
     | ModuleTransaction
     | NewConfirmation
     | OutgoingToken
@@ -84,6 +91,10 @@ export class EventValidationPipe
     jsonSchemaService.getSchema(
       INCOMING_TOKEN_EVENT_SCHEMA_ID,
       incomingTokenEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      MESSAGE_CREATED_EVENT_SCHEMA_ID,
+      messageCreatedEventSchema,
     );
     jsonSchemaService.getSchema(
       MODULE_TRANSACTION_EVENT_SCHEMA_ID,
@@ -117,6 +128,7 @@ export class EventValidationPipe
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
+    | MessageCreated
     | ModuleTransaction
     | NewConfirmation
     | OutgoingToken
