@@ -1408,6 +1408,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openzeppelin/contracts@npm:^4.9.3":
+  version: 4.9.3
+  resolution: "@openzeppelin/contracts@npm:4.9.3"
+  checksum: 4932063e733b35fa7669b9fe2053f69b062366c5c208b0c6cfa1ac451712100c78acff98120c3a4b88d94154c802be05d160d71f37e7d74cadbe150964458838
+  languageName: node
+  linkType: hard
+
 "@pkgjs/parseargs@npm:^0.11.0":
   version: 0.11.0
   resolution: "@pkgjs/parseargs@npm:0.11.0"
@@ -1468,6 +1475,15 @@ __metadata:
   peerDependencies:
     "@redis/client": ^1.0.0
   checksum: 6bbdb0b793dcbd13518aa60a09a980f953554e4c745bfacc1611baa8098f360e0378e8ee6b7faf600a67f1de83f4b68bbec6f95a0740faee6164c14be3a30752
+  languageName: node
+  linkType: hard
+
+"@safe-global/safe-deployments@npm:^1.26.0":
+  version: 1.26.0
+  resolution: "@safe-global/safe-deployments@npm:1.26.0"
+  dependencies:
+    semver: ^7.3.7
+  checksum: ea36c04c42f33f679248b4be9477a608b3ad2b4ac87da7c943bac2720ad556fc4d1f87b9ba43b0737fc0a9217bfc232c27042c3720a02cbf7cd90af286d5cb62
   languageName: node
   linkType: hard
 
@@ -6888,6 +6904,8 @@ __metadata:
     "@nestjs/swagger": ^7.1.7
     "@nestjs/testing": ^10.2.5
     "@node-redis/json": ^1.0.2
+    "@openzeppelin/contracts": ^4.9.3
+    "@safe-global/safe-deployments": ^1.26.0
     "@types/express": ^4.17.17
     "@types/jest": 29.5.4
     "@types/lodash": ^4.14.197
@@ -6979,6 +6997,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"semver@npm:^7.3.7, semver@npm:^7.5.3, semver@npm:^7.5.4":
+  version: 7.5.4
+  resolution: "semver@npm:7.5.4"
+  dependencies:
+    lru-cache: ^6.0.0
+  bin:
+    semver: bin/semver.js
+  checksum: 12d8ad952fa353b0995bf180cdac205a4068b759a140e5d3c608317098b3575ac2f1e09182206bf2eb26120e1c0ed8fb92c48c592f6099680de56bb071423ca3
+  languageName: node
+  linkType: hard
+
 "semver@npm:^7.3.8":
   version: 7.5.2
   resolution: "semver@npm:7.5.2"
@@ -6987,17 +7016,6 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: 3fdf5d1e6f170fe8bcc41669e31787649af91af7f54f05c71d0865bb7aa27e8b92f68b3e6b582483e2c1c648008bc84249d2cd86301771fe5cbf7621d1fe5375
-  languageName: node
-  linkType: hard
-
-"semver@npm:^7.5.3, semver@npm:^7.5.4":
-  version: 7.5.4
-  resolution: "semver@npm:7.5.4"
-  dependencies:
-    lru-cache: ^6.0.0
-  bin:
-    semver: bin/semver.js
-  checksum: 12d8ad952fa353b0995bf180cdac205a4068b759a140e5d3c608317098b3575ac2f1e09182206bf2eb26120e1c0ed8fb92c48c592f6099680de56bb071423ca3
   languageName: node
   linkType: hard
 
