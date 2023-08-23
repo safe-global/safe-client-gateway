@@ -804,6 +804,8 @@ export class TransactionApi implements ITransactionApi {
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
+        undefined,
+        this.defaultExpirationTimeInSeconds,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
