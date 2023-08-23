@@ -24,7 +24,6 @@ describe('DataDecoded param helper (Unit)', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
         parameters: [],
-        humanDescription: null,
       };
 
       const fromParam = helper.getFromParam(dataDecoded, 'fallback');
@@ -129,7 +128,6 @@ describe('DataDecoded param helper (Unit)', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
         parameters: [],
-        humanDescription: null,
       };
 
       const fromParam = helper.getToParam(dataDecoded, 'fallback');
@@ -267,7 +265,6 @@ describe('DataDecoded param helper (Unit)', () => {
       const dataDecoded = <DataDecoded>{
         method: 'transferFrom',
         parameters: [],
-        humanDescription: null,
       };
 
       const fromParam = helper.getValueParam(dataDecoded, 'fallback');
@@ -436,7 +433,6 @@ describe('DataDecoded param helper (Unit)', () => {
             ],
           },
         ],
-        humanDescription: null,
       };
 
       expect(helper.hasNestedDelegate(dataDecoded)).toBe(false);
@@ -492,7 +488,6 @@ describe('DataDecoded param helper (Unit)', () => {
             ],
           },
         ],
-        humanDescription: null,
       };
 
       expect(helper.hasNestedDelegate(dataDecoded)).toBe(false);
@@ -537,7 +532,6 @@ describe('DataDecoded param helper (Unit)', () => {
             ],
           },
         ],
-        humanDescription: null,
       };
 
       expect(helper.hasNestedDelegate(dataDecoded)).toBe(true);
@@ -593,7 +587,6 @@ describe('DataDecoded param helper (Unit)', () => {
             ],
           },
         ],
-        humanDescription: null,
       };
 
       expect(helper.hasNestedDelegate(dataDecoded)).toBe(true);
@@ -621,7 +614,6 @@ describe('DataDecoded param helper (Unit)', () => {
             ],
           },
         ],
-        humanDescription: null,
       };
 
       expect(helper.hasNestedDelegate(dataDecoded)).toBe(true);

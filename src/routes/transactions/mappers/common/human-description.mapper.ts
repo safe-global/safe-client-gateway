@@ -59,11 +59,16 @@ export class HumanDescriptionMapper {
 
       const { args = [] } = decodeFunctionData({ abi, data });
 
-      const messageFragments = process(to, args);
+      const descriptionFragments = process(to, args);
 
-      const message = this.createHumanDescription(messageFragments, token);
+      const description = this.createHumanDescription(
+        descriptionFragments,
+        token,
+      );
 
-      return safeAppInfo ? `${message} via ${safeAppInfo.name}` : message;
+      return safeAppInfo
+        ? `${description} via ${safeAppInfo.name}`
+        : description;
     } catch (error) {
       this.loggingService.debug(
         `Error trying to decode the input data: ${error.message}`,
@@ -77,23 +82,26 @@ export class HumanDescriptionMapper {
     token: Token | null,
   ): string {
     return descriptionFragments
-      .map((block) => {
-        switch (block.type) {
+      .map((fragment) => {
+        switch (fragment.type) {
           case ValueType.TokenValue:
-            if (!token?.decimals) return block.value.amount;
+            if (!token?.decimals) {
+              console.log(token);
+              return fragment.value.amount;
+            }
 
             // Unlimited approval
-            if (block.value.amount === MAX_UINT256) {
+            if (fragment.value.amount === MAX_UINT256) {
               return `unlimited ${token.symbol}`;
             }
 
-            return `${formatUnits(block.value.amount, token.decimals)} ${
+            return `${formatUnits(fragment.value.amount, token.decimals)} ${
               token.symbol
             }`;
           case ValueType.Address:
-            return this.shortenAddress(block.value);
+            return this.shortenAddress(fragment.value);
           default:
-            return block.value;
+            return fragment.value;
         }
       })
       .join(' ');

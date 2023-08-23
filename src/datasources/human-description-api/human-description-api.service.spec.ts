@@ -1,7 +1,7 @@
 import { HumanDescriptionApi } from './human-description-api.service';
 
 describe('HumanDescriptionAPI', () => {
-  it('should return parsed messages from json', () => {
+  it('should return descriptions from json', () => {
     const humanDescriptionApi = new HumanDescriptionApi();
 
     const descriptions = humanDescriptionApi.getDescriptions();
