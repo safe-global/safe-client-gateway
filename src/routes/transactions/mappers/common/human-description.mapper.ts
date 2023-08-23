@@ -9,13 +9,16 @@ import {
   ILoggingService,
   LoggingService,
 } from '../../../../logging/logging.interface';
-import { SafeAppInfo } from '../../../transactions/entities/safe-app-info.entity';
 import { IHumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
 import {
   HumanDescriptionFragment,
   ValueType,
 } from '../../../../domain/human-description/entities/human-description.entity';
+import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
+import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
 @Injectable()
 export class HumanDescriptionMapper {
@@ -24,20 +27,21 @@ export class HumanDescriptionMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IHumanDescriptionRepository)
     private readonly humanDescriptionRepository: HumanDescriptionRepository,
+    private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
   async mapHumanDescription(
-    to: string | undefined,
-    data: string | null,
+    transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-    safeAppInfo: SafeAppInfo | null,
   ): Promise<string | null> {
-    if (!data || !isHex(data) || !to) return null;
+    if (!transaction.data || !isHex(transaction.data) || !transaction.to) {
+      return null;
+    }
 
     const parsedDescriptions =
       this.humanDescriptionRepository.getDescriptions();
 
-    const dataStart = data.slice(0, 10);
+    const dataStart = transaction.data.slice(0, 10);
     const sigHash = isHex(dataStart) ? dataStart : null;
 
     if (!sigHash) return null;
@@ -49,7 +53,10 @@ export class HumanDescriptionMapper {
 
     let token: Token | null = null;
     try {
-      token = await this.tokenRepository.getToken({ chainId, address: to });
+      token = await this.tokenRepository.getToken({
+        chainId,
+        address: transaction.to,
+      });
     } catch (error) {
       this.loggingService.debug(`Error trying to get token: ${error.message}`);
     }
@@ -57,14 +64,18 @@ export class HumanDescriptionMapper {
     try {
       const { abi, process } = template;
 
-      const { args = [] } = decodeFunctionData({ abi, data });
+      const { args = [] } = decodeFunctionData({ abi, data: transaction.data });
 
-      const descriptionFragments = process(to, args);
+      const descriptionFragments = process(transaction.to, args);
 
       const description = this.createHumanDescription(
         descriptionFragments,
         token,
       );
+
+      const safeAppInfo = isMultisigTransaction(transaction)
+        ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
+        : null;
 
       return safeAppInfo
         ? `${description} via ${safeAppInfo.name}`

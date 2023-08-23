@@ -10,6 +10,8 @@ import { HumanDescriptionApi } from '../../../../datasources/human-description-a
 import { MAX_UINT256 } from '../../constants';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
+import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -21,6 +23,10 @@ const mockLoggingService = {
   error: jest.fn(),
   warn: jest.fn(),
 } as unknown as ILoggingService;
+
+const safeAppInfoMapper = jest.mocked({
+  mapSafeAppInfo: jest.fn(),
+} as unknown as SafeAppInfoMapper);
 
 const humanDescriptionAPI = new HumanDescriptionApi();
 const humanDescriptionRepository = new HumanDescriptionRepository(
@@ -41,6 +47,11 @@ const mockTransferData = encodeFunctionData({
   args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', mockAmount],
 });
 
+const transaction = multisigTransactionBuilder()
+  .with('to', toAddress.value)
+  .with('data', mockTransferData)
+  .build();
+
 describe('Human descriptions mapper (Unit)', () => {
   let mapper: HumanDescriptionMapper;
 
@@ -51,15 +62,16 @@ describe('Human descriptions mapper (Unit)', () => {
       tokenRepository,
       mockLoggingService,
       humanDescriptionRepository,
+      safeAppInfoMapper,
     );
   });
 
   it('should return null if there is no data', async () => {
+    const transaction = multisigTransactionBuilder().with('data', null).build();
+
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      null,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBeNull();
@@ -68,11 +80,11 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if data is not hex data', async () => {
     const data = 'something that is not hex';
 
+    const transaction = multisigTransactionBuilder().with('data', data).build();
+
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      data,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBeNull();
@@ -82,10 +94,8 @@ describe('Human descriptions mapper (Unit)', () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      mockTransferData,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBe(
@@ -98,11 +108,13 @@ describe('Human descriptions mapper (Unit)', () => {
 
     const corruptedData = mockTransferData.slice(0, -7);
 
+    const transaction = multisigTransactionBuilder()
+      .with('data', corruptedData)
+      .build();
+
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      corruptedData,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBeNull();
@@ -114,10 +126,8 @@ describe('Human descriptions mapper (Unit)', () => {
     });
 
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      mockTransferData,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBe(`Send ${mockAmount} to 0x7a9a...86E2`);
@@ -132,11 +142,13 @@ describe('Human descriptions mapper (Unit)', () => {
       args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', MAX_UINT256],
     });
 
+    const transaction = multisigTransactionBuilder()
+      .with('data', mockApprovalData)
+      .build();
+
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      mockApprovalData,
+      transaction,
       chainId,
-      null,
     );
 
     expect(humanDescription).toBe('Approve unlimited TST');
@@ -144,18 +156,18 @@ describe('Human descriptions mapper (Unit)', () => {
 
   it('should append the safe app name to the description if it exists', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
-
     const mockSafeAppInfo = new SafeAppInfo(
       'CSV Airdrop',
       faker.internet.url(),
       faker.internet.avatar(),
     );
+    safeAppInfoMapper.mapSafeAppInfo.mockImplementation(() =>
+      Promise.resolve(mockSafeAppInfo),
+    );
 
     const humanDescription = await mapper.mapHumanDescription(
-      toAddress.value,
-      mockTransferData,
+      transaction,
       chainId,
-      mockSafeAppInfo,
     );
 
     expect(humanDescription).toBe(
