@@ -56,10 +56,7 @@ export class HumanDescriptionTemplate {
           type: ValueType.Word,
           value: match.groups.wordToken,
         });
-        continue;
-      }
-
-      if (
+      } else if (
         'typeToken' in match.groups &&
         'paramIndex' in match.groups &&
         match.groups.typeToken !== undefined &&
@@ -71,11 +68,9 @@ export class HumanDescriptionTemplate {
         fragments.push(
           this._mapTokenType(to, tokenType, Number(paramIndex), args),
         );
-
-        continue;
+      } else {
+        throw Error(`Error parsing template ${this.template}`);
       }
-
-      throw Error(`Error parsing template ${this.template}`);
     }
 
     return fragments;
