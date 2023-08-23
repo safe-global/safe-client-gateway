@@ -1,10 +1,10 @@
 import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
-import { decodeFunctionData, formatUnits, isAddress, isHex } from 'viem';
+import { formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { Token } from '../../../../domain/tokens/entities/token.entity';
-import { MAX_UINT256 } from '../../../../routes/transactions/constants';
+import { MAX_UINT256 } from '../../constants';
 import {
   ILoggingService,
   LoggingService,
@@ -40,21 +40,12 @@ export class HumanDescriptionMapper {
       return null;
     }
 
-    const parsedDescriptions =
-      this.humanDescriptionRepository.getDescriptions();
-
     const dataStart = transaction.data.slice(
       0,
       HumanDescriptionMapper.SIG_HASH_INDEX,
     );
     const sigHash = isHex(dataStart) ? dataStart : null;
-
     if (!sigHash) return null;
-
-    const template = parsedDescriptions[sigHash];
-    const isHumanReadable = !!template;
-
-    if (!isHumanReadable) return null;
 
     let token: Token | null = null;
     try {
@@ -67,11 +58,12 @@ export class HumanDescriptionMapper {
     }
 
     try {
-      const { abi, process } = template;
-
-      const { args = [] } = decodeFunctionData({ abi, data: transaction.data });
-
-      const descriptionFragments = process(transaction.to, args);
+      const descriptionFragments =
+        this.humanDescriptionRepository.getHumanDescription({
+          functionSignature: sigHash,
+          to: transaction.to,
+          data: transaction.data,
+        });
 
       const description = this.createHumanDescription(
         descriptionFragments,
