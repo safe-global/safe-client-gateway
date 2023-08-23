@@ -1,8 +1,6 @@
 import {
-  HumanDescriptions,
+  FunctionSignature,
   HumanDescriptionFragment,
-  HumanDescriptionTemplates,
-  ValueType,
 } from './entities/human-description.entity';
 
 export const IHumanDescriptionRepository = Symbol(
@@ -10,20 +8,14 @@ export const IHumanDescriptionRepository = Symbol(
 );
 
 export interface IHumanDescriptionRepository {
-  getDescriptions(): HumanDescriptionTemplates;
-  parseDescriptions(descriptions: HumanDescriptions): HumanDescriptionTemplates;
-
-  parseExpression(
-    valueType: ValueType,
-    valueIndex: number,
-    to: string,
-    params: unknown[],
-  ): HumanDescriptionFragment | null;
-
-  parseParam(
-    valueType: ValueType,
-    valueIndex: number,
-    to: string,
-    params: unknown[],
-  ): HumanDescriptionFragment['value'];
+  /**
+   * Returns a human description for the provided data.
+   *
+   * The human description is tied to the provided {@link FunctionSignature}
+   */
+  getHumanDescription(args: {
+    functionSignature: FunctionSignature;
+    to: string;
+    data: string;
+  }): HumanDescriptionFragment[];
 }

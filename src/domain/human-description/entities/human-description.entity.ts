@@ -1,40 +1,29 @@
-import { Abi } from 'viem';
-import { Hex } from 'viem/src/types/misc';
-
 export enum ValueType {
   Word = 'word',
   TokenValue = 'tokenValue',
-  Identifier = 'identifier',
   Address = 'address',
   Decimals = 'decimals',
 }
 
-type TokenValueType = {
-  amount: bigint;
-  address: string;
-};
-
-interface TokenValueFragment {
+export interface TokenValueFragment {
   type: ValueType.TokenValue;
-  value: TokenValueType;
+  value: {
+    amount: bigint;
+    address: string;
+  };
 }
 
-interface WordFragment {
+export interface WordFragment {
   type: ValueType.Word;
   value: string;
 }
 
-interface IdentifierFragment {
-  type: ValueType.Identifier;
-  value: unknown;
-}
-
-interface AddressFragment {
+export interface AddressFragment {
   type: ValueType.Address;
   value: `0x${string}`;
 }
 
-interface DecimalsFragment {
+export interface DecimalsFragment {
   type: ValueType.Decimals;
   value: unknown;
 }
@@ -42,25 +31,7 @@ interface DecimalsFragment {
 export type HumanDescriptionFragment =
   | WordFragment
   | TokenValueFragment
-  | IdentifierFragment
   | AddressFragment
   | DecimalsFragment;
 
-type SignatureHash = Hex;
-type FunctionSignature = string;
-type HumanDescription = string;
-
-type HumanDescriptionTemplate = {
-  abi: Abi;
-  process: (
-    to: string,
-    params: readonly unknown[],
-  ) => HumanDescriptionFragment[];
-};
-
-export type HumanDescriptionTemplates = Record<
-  SignatureHash,
-  HumanDescriptionTemplate
->;
-
-export type HumanDescriptions = Record<FunctionSignature, HumanDescription>;
+export type FunctionSignature = string;
