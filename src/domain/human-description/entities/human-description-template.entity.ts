@@ -46,25 +46,38 @@ export class HumanDescriptionTemplate {
     });
 
     const fragments: HumanDescriptionFragment[] = [];
-    for (const match of this.template.matchAll(
-      HumanDescriptionTemplate.REGEX,
-    )) {
+    const matches = this.template.matchAll(HumanDescriptionTemplate.REGEX);
+
+    for (const match of matches) {
       if (!match.groups) throw Error(`Error parsing template ${this.template}`);
-      if ('wordToken' in match.groups) {
+
+      if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
         fragments.push(<WordFragment>{
           type: ValueType.Word,
           value: match.groups.wordToken,
         });
-      } else if ('typeToken' in match.groups && 'paramIndex' in match.groups) {
-        const tokenType = match.groups.tokenType;
+        continue;
+      }
+
+      if (
+        'typeToken' in match.groups &&
+        'paramIndex' in match.groups &&
+        match.groups.typeToken !== undefined &&
+        match.groups.paramIndex !== undefined
+      ) {
+        const tokenType = match.groups.typeToken;
         const paramIndex = match.groups.paramIndex;
+
         fragments.push(
           this._mapTokenType(to, tokenType, Number(paramIndex), args),
         );
-      } else {
-        throw Error(`Error parsing template ${this.template}`);
+
+        continue;
       }
+
+      throw Error(`Error parsing template ${this.template}`);
     }
+
     return fragments;
   }
 
@@ -83,7 +96,7 @@ export class HumanDescriptionTemplate {
       case ValueType.Address:
         return <AddressFragment>{
           type: ValueType.Address,
-          value: `0x${args[index]}}`,
+          value: args[index],
         };
       case ValueType.Decimals:
         return <DecimalsFragment>{
