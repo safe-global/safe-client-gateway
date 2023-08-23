@@ -7,6 +7,8 @@ import { OutgoingToken } from '../outgoing-token.entity';
 import { IncomingEther } from '../incoming-ether.entity';
 import { OutgoingEther } from '../outgoing-ether.entity';
 import { ModuleTransaction } from '../module-transaction.entity';
+import { MessageCreated } from '../message-created.entity';
+import { NewMessageConfirmation } from '../new-message-confirmation.entity';
 
 export const WEB_HOOK_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json';
@@ -15,8 +17,10 @@ export const webHookSchema: JSONSchemaType<
   | ExecutedTransaction
   | IncomingEther
   | IncomingToken
+  | MessageCreated
   | ModuleTransaction
   | NewConfirmation
+  | NewMessageConfirmation
   | OutgoingToken
   | OutgoingEther
   | PendingTransaction
@@ -36,10 +40,16 @@ export const webHookSchema: JSONSchemaType<
       $ref: 'incoming-token.json',
     },
     {
+      $ref: 'message-created.json',
+    },
+    {
       $ref: 'module-transaction.json',
     },
     {
       $ref: 'new-confirmation.json',
+    },
+    {
+      $ref: 'new-message-confirmation.json',
     },
     {
       $ref: 'outgoing-ether.json',
