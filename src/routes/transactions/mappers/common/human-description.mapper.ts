@@ -1,6 +1,6 @@
 import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
-import { decodeFunctionData, formatUnits, isHex } from 'viem';
+import { decodeFunctionData, formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
 import { TokenRepository } from '../../../../domain/tokens/token.repository';
 import { Token } from '../../../../domain/tokens/entities/token.entity';
@@ -22,6 +22,8 @@ import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
 @Injectable()
 export class HumanDescriptionMapper {
+  private static SIG_HASH_INDEX = 10;
+
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -41,7 +43,10 @@ export class HumanDescriptionMapper {
     const parsedDescriptions =
       this.humanDescriptionRepository.getDescriptions();
 
-    const dataStart = transaction.data.slice(0, 10);
+    const dataStart = transaction.data.slice(
+      0,
+      HumanDescriptionMapper.SIG_HASH_INDEX,
+    );
     const sigHash = isHex(dataStart) ? dataStart : null;
 
     if (!sigHash) return null;
@@ -96,10 +101,7 @@ export class HumanDescriptionMapper {
       .map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
-            if (!token?.decimals) {
-              console.log(token);
-              return fragment.value.amount;
-            }
+            if (!token?.decimals) return fragment.value.amount;
 
             // Unlimited approval
             if (fragment.value.amount === MAX_UINT256) {
@@ -118,8 +120,8 @@ export class HumanDescriptionMapper {
       .join(' ');
   }
 
-  private shortenAddress(address: Hex, length = 4): string {
-    if (address.length !== 42) {
+  shortenAddress(address: Hex, length = 4): string {
+    if (!isAddress(address)) {
       throw Error('Invalid address');
     }
 

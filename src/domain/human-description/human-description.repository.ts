@@ -103,7 +103,7 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
         type: valueType,
         value: parsedParam,
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }

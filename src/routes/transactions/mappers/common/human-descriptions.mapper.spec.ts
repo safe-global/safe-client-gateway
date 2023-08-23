@@ -1,4 +1,4 @@
-import { encodeFunctionData, formatUnits, parseAbi } from 'viem';
+import { encodeFunctionData, formatUnits, getAddress, parseAbi } from 'viem';
 import { faker } from '@faker-js/faker';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { HumanDescriptionMapper } from './human-description.mapper';
@@ -12,6 +12,9 @@ import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
 import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
+import { Hex } from 'viem/src/types/misc';
+import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { Token } from '../../../../domain/tokens/entities/token.entity';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -32,31 +35,38 @@ const humanDescriptionAPI = new HumanDescriptionApi();
 const humanDescriptionRepository = new HumanDescriptionRepository(
   humanDescriptionAPI,
 );
-const toAddress = new AddressInfo(faker.finance.ethereumAddress());
-const chainId = faker.string.numeric();
-const token = tokenBuilder()
-  .with('decimals', 18)
-  .with('name', 'Test Token')
-  .with('symbol', 'TST')
-  .build();
 const abi = parseAbi(['function transfer(address, uint256)']);
-const mockAmount = faker.number.bigInt();
-const mockTransferData = encodeFunctionData({
-  abi,
-  functionName: 'transfer',
-  args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', mockAmount],
-});
-
-const transaction = multisigTransactionBuilder()
-  .with('to', toAddress.value)
-  .with('data', mockTransferData)
-  .build();
 
 describe('Human descriptions mapper (Unit)', () => {
   let mapper: HumanDescriptionMapper;
+  let mockAmount: bigint;
+  let mockAddress: Hex;
+  let mockTransferData: Hex;
+  let toAddress: AddressInfo;
+  let chainId: string;
+  let token: Token;
+  let transaction: MultisigTransaction;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    toAddress = new AddressInfo(faker.finance.ethereumAddress());
+    chainId = faker.string.numeric();
+    token = tokenBuilder()
+      .with('decimals', faker.number.int({ max: 18 }))
+      .build();
+    mockAmount = faker.number.bigInt();
+    mockAddress = getAddress(faker.finance.ethereumAddress());
+    mockTransferData = encodeFunctionData({
+      abi,
+      functionName: 'transfer',
+      args: [mockAddress, mockAmount],
+    });
+
+    transaction = multisigTransactionBuilder()
+      .with('to', toAddress.value)
+      .with('data', mockTransferData)
+      .build();
 
     mapper = new HumanDescriptionMapper(
       tokenRepository,
@@ -98,8 +108,12 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
+    const shortAddress = mapper.shortenAddress(mockAddress);
+
     expect(humanDescription).toBe(
-      `Send ${formatUnits(mockAmount, token.decimals!)} TST to 0x7a9a...86E2`,
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${
+        token.symbol
+      } to ${shortAddress}`,
     );
   });
 
@@ -130,16 +144,20 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(humanDescription).toBe(`Send ${mockAmount} to 0x7a9a...86E2`);
+    const shortAddress = mapper.shortenAddress(mockAddress);
+
+    expect(humanDescription).toBe(`Send ${mockAmount} to ${shortAddress}`);
   });
 
   it('should return a description for unlimited token approvals', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
+    const mockAddress = getAddress(faker.finance.ethereumAddress());
+
     const mockApprovalData = encodeFunctionData({
       abi: parseAbi(['function approve(address, uint256)']),
       functionName: 'approve',
-      args: ['0x7a9af6Ef9197041A5841e84cB27873bEBd3486E2', MAX_UINT256],
+      args: [mockAddress, MAX_UINT256],
     });
 
     const transaction = multisigTransactionBuilder()
@@ -151,13 +169,14 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(humanDescription).toBe('Approve unlimited TST');
+    expect(humanDescription).toBe(`Approve unlimited ${token.symbol}`);
   });
 
   it('should append the safe app name to the description if it exists', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
+    const mockSafeAppName = faker.word.noun();
     const mockSafeAppInfo = new SafeAppInfo(
-      'CSV Airdrop',
+      mockSafeAppName,
       faker.internet.url(),
       faker.internet.avatar(),
     );
@@ -170,11 +189,12 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
+    const shortAddress = mapper.shortenAddress(mockAddress);
+
     expect(humanDescription).toBe(
-      `Send ${formatUnits(
-        mockAmount,
-        token.decimals!,
-      )} TST to 0x7a9a...86E2 via CSV Airdrop`,
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${
+        token.symbol
+      } to ${shortAddress} via ${mockSafeAppName}`,
     );
   });
 });
