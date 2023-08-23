@@ -47,12 +47,11 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
         process: (to: string, params: unknown[]) => {
           const fragments: HumanDescriptionFragment[] = [];
 
-          let match: RegExpExecArray | null;
+          const matches = [
+            ...template.matchAll(HumanDescriptionRepository.TEMPLATE_REGEX),
+          ];
 
-          while (
-            (match =
-              HumanDescriptionRepository.TEMPLATE_REGEX.exec(template)) !== null
-          ) {
+          for (const match of matches) {
             const [fullMatch, valueType, valueIndexPrefixed] = match;
 
             if (valueType !== undefined && !this.isValueType(valueType))
