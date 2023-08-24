@@ -33,6 +33,7 @@ export class TransactionApi implements ITransactionApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
+  private readonly isMessagesCacheEnabled: boolean;
 
   constructor(
     private readonly chainId: string,
@@ -59,6 +60,9 @@ export class TransactionApi implements ITransactionApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.contract',
       );
+    this.isMessagesCacheEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.messagesCache',
+    );
   }
 
   async getBalances(args: {
@@ -805,7 +809,9 @@ export class TransactionApi implements ITransactionApi {
         url,
         this.defaultNotFoundExpirationTimeSeconds,
         undefined,
-        this.defaultExpirationTimeInSeconds,
+        this.isMessagesCacheEnabled
+          ? this.defaultExpirationTimeInSeconds
+          : undefined,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -833,7 +839,9 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
+        this.isMessagesCacheEnabled
+          ? this.defaultExpirationTimeInSeconds
+          : undefined,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
