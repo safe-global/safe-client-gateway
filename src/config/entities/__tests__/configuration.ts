@@ -39,4 +39,7 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
   },
+  features: {
+    humanDescription: true,
+  },
 });

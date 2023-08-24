@@ -216,6 +216,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
               type: 'NATIVE_COIN',
               value: moduleTransaction.value,
             },
+            humanDescription: null,
           },
           txData: {
             to: expect.objectContaining({ value: contract.address }),

@@ -18,7 +18,7 @@ export class CreationTransactionInfo extends TransactionInfo {
     implementation: AddressInfo | null,
     factory: AddressInfo | null,
   ) {
-    super('Creation');
+    super('Creation', null);
     this.creator = creator;
     this.transactionHash = transactionHash;
     this.implementation = implementation;

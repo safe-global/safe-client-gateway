@@ -15,12 +15,15 @@ import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
+import { HumanDescriptionMapper } from './human-description.mapper';
+import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
+  private readonly isHumanDescriptionEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -35,13 +38,20 @@ export class MultisigTransactionInfoMapper {
 
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
-  ) {}
+    private readonly humanDescriptionMapper: HumanDescriptionMapper,
+  ) {
+    this.isHumanDescriptionEnabled = this.configurationService.getOrThrow(
+      'features.humanDescription',
+    );
+  }
 
   async mapTransactionInfo(
     chainId: string,
@@ -55,11 +65,19 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
+    const humanDescription = this.isHumanDescriptionEnabled
+      ? await this.humanDescriptionMapper.mapHumanDescription(
+          transaction,
+          chainId,
+        )
+      : null;
+
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
         transaction,
         dataSize,
         chainId,
+        humanDescription,
       );
     }
 
@@ -67,6 +85,7 @@ export class MultisigTransactionInfoMapper {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
+        humanDescription,
       );
     }
 
@@ -96,6 +115,7 @@ export class MultisigTransactionInfoMapper {
       return new SettingsChangeTransaction(
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
+        humanDescription,
       );
     }
 
@@ -110,12 +130,14 @@ export class MultisigTransactionInfoMapper {
             token,
             chainId,
             transaction,
+            humanDescription,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
             chainId,
             transaction,
+            humanDescription,
           );
       }
     }
@@ -124,6 +146,7 @@ export class MultisigTransactionInfoMapper {
       transaction,
       dataSize,
       chainId,
+      humanDescription,
     );
   }
 

@@ -55,10 +55,18 @@ import { FlushRepository } from './domain/flush/flush.repository';
 import { IFlushRepository } from './domain/flush/flush.repository.interface';
 import { IHealthRepository } from './domain/health/health.repository.interface';
 import { HealthRepository } from './domain/health/health.repository';
+import { HumanDescriptionApiModule } from './datasources/human-description-api/human-description-api.module';
+import { IHumanDescriptionRepository } from './domain/human-description/human-description.repository.interface';
+import { HumanDescriptionRepository } from './domain/human-description/human-description.repository';
 
 @Global()
 @Module({
-  imports: [ConfigApiModule, ExchangeApiModule, TransactionApiModule],
+  imports: [
+    ConfigApiModule,
+    ExchangeApiModule,
+    HumanDescriptionApiModule,
+    TransactionApiModule,
+  ],
   providers: [
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
@@ -71,6 +79,10 @@ import { HealthRepository } from './domain/health/health.repository';
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: IFlushRepository, useClass: FlushRepository },
     { provide: IHealthRepository, useClass: HealthRepository },
+    {
+      provide: IHumanDescriptionRepository,
+      useClass: HumanDescriptionRepository,
+    },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
@@ -110,6 +122,7 @@ import { HealthRepository } from './domain/health/health.repository';
     IExchangeRepository,
     IFlushRepository,
     IHealthRepository,
+    IHumanDescriptionRepository,
     IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,
