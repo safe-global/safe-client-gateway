@@ -5,9 +5,6 @@ import { DefaultAppProvider } from './app.provider';
 async function bootstrap() {
   const app = await new DefaultAppProvider().provide(AppModule);
 
-  // TODO: Remove this before merging PR
-  app.enableCors();
-
   const configurationService: IConfigurationService =
     app.get<IConfigurationService>(IConfigurationService);
   const applicationPort: string =
