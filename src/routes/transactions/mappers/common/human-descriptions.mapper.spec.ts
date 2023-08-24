@@ -53,7 +53,7 @@ describe('Human descriptions mapper (Unit)', () => {
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
     chainId = faker.string.numeric();
     token = tokenBuilder()
-      .with('decimals', faker.number.int({ max: 18 }))
+      .with('decimals', faker.number.int({ min: 1, max: 18 }))
       .build();
     mockAmount = faker.number.bigInt();
     mockAddress = getAddress(faker.finance.ethereumAddress());

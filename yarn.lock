@@ -1212,7 +1212,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/curves@npm:1.0.0, @noble/curves@npm:~1.0.0":
+"@noble/curves@npm:1.1.0":
+  version: 1.1.0
+  resolution: "@noble/curves@npm:1.1.0"
+  dependencies:
+    "@noble/hashes": 1.3.1
+  checksum: 2658cdd3f84f71079b4e3516c47559d22cf4b55c23ac8ee9d2b1f8e5b72916d9689e59820e0f9d9cb4a46a8423af5b56dc6bb7782405c88be06a015180508db5
+  languageName: node
+  linkType: hard
+
+"@noble/curves@npm:~1.0.0":
   version: 1.0.0
   resolution: "@noble/curves@npm:1.0.0"
   dependencies:
@@ -1228,7 +1237,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:~1.3.0":
+"@noble/hashes@npm:1.3.1, @noble/hashes@npm:~1.3.0":
   version: 1.3.1
   resolution: "@noble/hashes@npm:1.3.1"
   checksum: 7fdefc0f7a0c1ec27acc6ff88841793e3f93ec4ce6b8a6a12bfc0dd70ae6b7c4c82fe305fdfeda1735d5ad4a9eebe761e6693b3d355689c559e91242f4bc95b1
@@ -1947,15 +1956,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@wagmi/chains@npm:1.6.0":
-  version: 1.6.0
-  resolution: "@wagmi/chains@npm:1.6.0"
+"@wagmi/chains@npm:1.7.0":
+  version: 1.7.0
+  resolution: "@wagmi/chains@npm:1.7.0"
   peerDependencies:
     typescript: ">=5.0.4"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 6c3d477936622f763b9e44c4a66c080020f1119165c8f6b840c51f5822880fedd5031036461d4b28df5cf1ae19cb12e139e4a4b3c129b475f0363fd9c4c8bb0d
+  checksum: 24e930d2432def5d7cbba1d390622d2cb02f002c45d3806e5a95a814af058eb483a234cc1ad5eef650bc926641b6f31e795fb3941b25de585b58dd31407a4980
   languageName: node
   linkType: hard
 
@@ -6688,7 +6697,7 @@ __metadata:
     ts-node: ^10.0.0
     tsconfig-paths: 4.2.0
     typescript: ^5.1.6
-    viem: ^1.5.3
+    viem: ^1.7.0
     winston: ^3.10.0
   languageName: unknown
   linkType: soft
@@ -7652,17 +7661,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^1.5.3":
-  version: 1.5.4
-  resolution: "viem@npm:1.5.4"
+"viem@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "viem@npm:1.7.0"
   dependencies:
     "@adraffy/ens-normalize": 1.9.0
-    "@noble/curves": 1.0.0
+    "@noble/curves": 1.1.0
     "@noble/hashes": 1.3.0
     "@scure/bip32": 1.3.0
     "@scure/bip39": 1.2.0
     "@types/ws": ^8.5.4
-    "@wagmi/chains": 1.6.0
+    "@wagmi/chains": 1.7.0
     abitype: 0.9.3
     isomorphic-ws: 5.0.0
     ws: 8.12.0
@@ -7671,7 +7680,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: c49517b74cbea11e951bebfe1143b4d526c3567491062a5153d9bc8ca131557a129807fa02c077ed8b5dc974e31d51143f35937877322dbc17d58f7b4e567e91
+  checksum: d56d6317be7e07204c601eca3e90661122767ef883dc1f4aa615bc725c2bd65eb99ebbfb2180459147f327a38293f9c70bd8bdf7be64c4b9222b9d40fcb7fc69
   languageName: node
   linkType: hard
 

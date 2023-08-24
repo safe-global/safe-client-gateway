@@ -15,7 +15,7 @@ import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
 import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
-import { HumanDescriptionMapper } from '../common/human-description.mapper';
+import { HumanDescriptionMapper } from './human-description.mapper';
 import { IConfigurationService } from '../../../../config/configuration.service.interface';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
-  private readonly HUMAN_DESCRIPTION_ENABLED: boolean | undefined;
+  private readonly isHumanDescriptionEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -48,7 +48,7 @@ export class MultisigTransactionInfoMapper {
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
   ) {
-    this.HUMAN_DESCRIPTION_ENABLED = this.configurationService.get(
+    this.isHumanDescriptionEnabled = this.configurationService.getOrThrow(
       'features.humanDescription',
     );
   }
@@ -65,7 +65,7 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const humanDescription = this.HUMAN_DESCRIPTION_ENABLED
+    const humanDescription = this.isHumanDescriptionEnabled
       ? await this.humanDescriptionMapper.mapHumanDescription(
           transaction,
           chainId,

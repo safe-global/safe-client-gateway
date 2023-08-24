@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IHumanDescriptionRepository } from './human-description.repository.interface';
 import {
-  FunctionSignature,
+  FunctionSignatureHash,
   HumanDescriptionFragment,
 } from './entities/human-description.entity';
 import { IHumanDescriptionApi } from '../interfaces/human-description-api.interface';
@@ -11,7 +11,7 @@ import { HumanDescriptionTemplate } from './entities/human-description-template.
 @Injectable()
 export class HumanDescriptionRepository implements IHumanDescriptionRepository {
   private readonly templates: Record<
-    FunctionSignature,
+    FunctionSignatureHash,
     HumanDescriptionTemplate
   > = {};
 
@@ -31,16 +31,16 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
   }
 
   getHumanDescription(args: {
-    functionSignature: FunctionSignature;
+    functionSignatureHash: FunctionSignatureHash;
     to: string;
     data: `0x${string}`;
   }): HumanDescriptionFragment[] {
-    const template = this._getTemplate(args.functionSignature);
+    const template = this._getTemplate(args.functionSignatureHash);
     return template.parse(args.to, args.data);
   }
 
   private _getTemplate(
-    functionSignature: FunctionSignature,
+    functionSignature: FunctionSignatureHash,
   ): HumanDescriptionTemplate {
     const template = this.templates[functionSignature];
     if (!template)

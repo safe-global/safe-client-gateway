@@ -60,7 +60,7 @@ export class HumanDescriptionMapper {
     try {
       const descriptionFragments =
         this.humanDescriptionRepository.getHumanDescription({
-          functionSignature: sigHash,
+          functionSignatureHash: sigHash,
           to: transaction.to,
           data: transaction.data,
         });
@@ -93,6 +93,7 @@ export class HumanDescriptionMapper {
       .map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
+            console.log(token);
             if (!token?.decimals) return fragment.value.amount;
 
             // Unlimited approval

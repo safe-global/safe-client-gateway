@@ -1,3 +1,5 @@
+import { Hex } from 'viem/src/types/misc';
+
 export enum ValueType {
   Word = 'word',
   TokenValue = 'tokenValue',
@@ -35,3 +37,4 @@ export type HumanDescriptionFragment =
   | NumberFragment;
 
 export type FunctionSignature = string;
+export type FunctionSignatureHash = Hex;

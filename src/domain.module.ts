@@ -64,8 +64,8 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
   imports: [
     ConfigApiModule,
     ExchangeApiModule,
-    TransactionApiModule,
     HumanDescriptionApiModule,
+    TransactionApiModule,
   ],
   providers: [
     { provide: IBackboneRepository, useClass: BackboneRepository },
@@ -79,15 +79,15 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
     { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: IFlushRepository, useClass: FlushRepository },
     { provide: IHealthRepository, useClass: HealthRepository },
+    {
+      provide: IHumanDescriptionRepository,
+      useClass: HumanDescriptionRepository,
+    },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    {
-      provide: IHumanDescriptionRepository,
-      useClass: HumanDescriptionRepository,
-    },
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
@@ -122,12 +122,12 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
     IExchangeRepository,
     IFlushRepository,
     IHealthRepository,
+    IHumanDescriptionRepository,
     IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,
-    IHumanDescriptionRepository,
   ],
 })
 export class DomainModule {}

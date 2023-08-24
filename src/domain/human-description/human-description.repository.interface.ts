@@ -1,5 +1,5 @@
 import {
-  FunctionSignature,
+  FunctionSignatureHash,
   HumanDescriptionFragment,
 } from './entities/human-description.entity';
 
@@ -11,10 +11,10 @@ export interface IHumanDescriptionRepository {
   /**
    * Returns a human description for the provided data.
    *
-   * The human description is tied to the provided {@link FunctionSignature}
+   * The human description is tied to the provided {@link FunctionSignatureHash}
    */
   getHumanDescription(args: {
-    functionSignature: FunctionSignature;
+    functionSignatureHash: FunctionSignatureHash;
     to: string;
     data: string;
   }): HumanDescriptionFragment[];
