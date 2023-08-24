@@ -909,7 +909,7 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async clearMessagesByHash(args: { messageHash: string }) {
+  async clearMessagesByHash(args: { messageHash: string }): Promise<void> {
     const key = CacheRouter.getMessageByHashCacheKey({
       chainId: this.chainId,
       messageHash: args.messageHash,

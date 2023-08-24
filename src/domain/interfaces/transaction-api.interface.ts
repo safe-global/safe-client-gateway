@@ -208,7 +208,7 @@ export interface ITransactionApi {
     signature: string;
   }): Promise<unknown>;
 
-  clearMessagesBySafe(args: { safeAddress: string });
+  clearMessagesBySafe(args: { safeAddress: string }): Promise<void>;
 
-  clearMessagesByHash(args: { messageHash: string });
+  clearMessagesByHash(args: { messageHash: string }): Promise<void>;
 }
