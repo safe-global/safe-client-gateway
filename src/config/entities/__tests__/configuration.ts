@@ -24,6 +24,9 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
+  features: {
+    messagesCache: false,
+  },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
     level: 'debug',
