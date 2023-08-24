@@ -1,7 +1,7 @@
 import { decodeFunctionData, parseAbi } from 'viem';
 import {
   AddressFragment,
-  DecimalsFragment,
+  NumberFragment,
   HumanDescriptionFragment,
   TokenValueFragment,
   ValueType,
@@ -93,9 +93,9 @@ export class HumanDescriptionTemplate {
           type: ValueType.Address,
           value: args[index],
         };
-      case ValueType.Decimals:
-        return <DecimalsFragment>{
-          type: ValueType.Decimals,
+      case ValueType.Number:
+        return <NumberFragment>{
+          type: ValueType.Number,
           value: args[index],
         };
       default:

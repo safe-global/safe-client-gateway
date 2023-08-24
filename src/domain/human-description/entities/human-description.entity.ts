@@ -2,7 +2,7 @@ export enum ValueType {
   Word = 'word',
   TokenValue = 'tokenValue',
   Address = 'address',
-  Decimals = 'decimals',
+  Number = 'number',
 }
 
 export interface TokenValueFragment {
@@ -23,15 +23,15 @@ export interface AddressFragment {
   value: `0x${string}`;
 }
 
-export interface DecimalsFragment {
-  type: ValueType.Decimals;
-  value: unknown;
+export interface NumberFragment {
+  type: ValueType.Number;
+  value: bigint;
 }
 
 export type HumanDescriptionFragment =
   | WordFragment
   | TokenValueFragment
   | AddressFragment
-  | DecimalsFragment;
+  | NumberFragment;
 
 export type FunctionSignature = string;
