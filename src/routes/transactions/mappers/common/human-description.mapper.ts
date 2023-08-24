@@ -40,11 +40,8 @@ export class HumanDescriptionMapper {
       return null;
     }
 
-    const dataStart = transaction.data.slice(
-      0,
-      HumanDescriptionMapper.SIG_HASH_INDEX,
-    );
-    const sigHash = isHex(dataStart) ? dataStart : null;
+    const sigHash = this.getSigHash(transaction.data);
+
     if (!sigHash) return null;
 
     let token: Token | null = null;
@@ -93,7 +90,6 @@ export class HumanDescriptionMapper {
       .map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
-            console.log(token);
             if (!token?.decimals) return fragment.value.amount;
 
             // Unlimited approval
@@ -125,5 +121,11 @@ export class HumanDescriptionMapper {
     }
 
     return `${address.slice(0, length + 2)}...${address.slice(-length)}`;
+  }
+
+  private getSigHash(data: Hex): Hex | null {
+    const dataStart = data.slice(0, HumanDescriptionMapper.SIG_HASH_INDEX);
+
+    return isHex(dataStart) ? dataStart : null;
   }
 }
