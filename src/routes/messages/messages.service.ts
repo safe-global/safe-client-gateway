@@ -45,16 +45,18 @@ export class MessagesService {
     paginationData: PaginationData;
     routeUrl: Readonly<URL>;
   }): Promise<Page<DateLabel | MessageItem>> {
-    const safe = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
-    const page = await this.messagesRepository.getMessagesBySafe({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      limit: args.paginationData.limit,
-      offset: args.paginationData.offset,
-    });
+    const [safe, page] = await Promise.all([
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.messagesRepository.getMessagesBySafe({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        limit: args.paginationData.limit,
+        offset: args.paginationData.offset,
+      }),
+    ]);
     const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, page.next);
     const previousURL = cursorUrlFromLimitAndOffset(
       args.routeUrl,

@@ -31,6 +31,11 @@ export default () => ({
       ),
     },
   },
+  features: {
+    humanDescription:
+      process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
+    messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
+  },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
     // A value of 0 disables the timeout.
@@ -52,9 +57,5 @@ export default () => ({
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
-  },
-  features: {
-    humanDescription:
-      process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
   },
 });

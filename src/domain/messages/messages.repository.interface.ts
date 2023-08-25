@@ -29,4 +29,14 @@ export interface IMessagesRepository {
     messageHash: string;
     signature: string;
   }): Promise<unknown>;
+
+  clearMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void>;
+
+  clearMessagesByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<void>;
 }

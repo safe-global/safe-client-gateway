@@ -102,6 +102,14 @@ describe('Post Hook Events (Unit)', () => {
       module: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
+    {
+      type: 'MESSAGE_CREATED',
+      messageHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'MESSAGE_CONFIRMATION',
+      messageHash: faker.string.hexadecimal({ length: 32 }),
+    },
   ])('accepts $type', async (payload) => {
     const chainId = faker.string.numeric();
     const data = {
@@ -556,6 +564,48 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
       `${chainId}_all_transactions_${safeAddress}`,
+      faker.string.alpha(),
+    );
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'MESSAGE_CREATED',
+      messageHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'MESSAGE_CONFIRMATION',
+      messageHash: faker.string.hexadecimal({ length: 32 }),
+    },
+  ])('$type clears messages', async (payload) => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainId = faker.string.numeric();
+    const cacheDir = new CacheDir(
+      `${chainId}_messages_${safeAddress}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(cacheDir, faker.string.alpha());

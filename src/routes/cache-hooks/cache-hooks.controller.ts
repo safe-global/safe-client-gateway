@@ -11,6 +11,8 @@ import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { MessageCreated } from './entities/message-created.entity';
+import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
 
 @Controller({
   path: '',
@@ -29,8 +31,10 @@ export class CacheHooksController {
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
+      | MessageCreated
       | ModuleTransaction
       | NewConfirmation
+      | NewMessageConfirmation
       | OutgoingToken
       | OutgoingEther
       | PendingTransaction,

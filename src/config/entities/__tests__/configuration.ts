@@ -24,6 +24,10 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
+  features: {
+    humanDescription: true,
+    messagesCache: true,
+  },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
     level: 'debug',
@@ -38,8 +42,5 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeTransaction: {
     useVpcUrl: false,
-  },
-  features: {
-    humanDescription: true,
   },
 });

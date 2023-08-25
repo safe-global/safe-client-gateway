@@ -45,6 +45,16 @@ import {
   MODULE_TRANSACTION_EVENT_SCHEMA_ID,
   moduleTransactionEventSchema,
 } from '../entities/schemas/module-transaction.schema';
+import { MessageCreated } from '../entities/message-created.entity';
+import {
+  MESSAGE_CREATED_EVENT_SCHEMA_ID,
+  messageCreatedEventSchema,
+} from '../entities/schemas/message-created.schema';
+import { NewMessageConfirmation } from '../entities/new-message-confirmation.entity';
+import {
+  NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
+  newMessageConfirmationEventSchema,
+} from '../entities/schemas/new-message-confirmation.schema';
 
 @Injectable()
 export class EventValidationPipe
@@ -54,8 +64,10 @@ export class EventValidationPipe
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
+      | MessageCreated
       | ModuleTransaction
       | NewConfirmation
+      | NewMessageConfirmation
       | OutgoingToken
       | OutgoingEther
       | PendingTransaction
@@ -65,8 +77,10 @@ export class EventValidationPipe
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
+    | MessageCreated
     | ModuleTransaction
     | NewConfirmation
+    | NewMessageConfirmation
     | OutgoingToken
     | OutgoingEther
     | PendingTransaction
@@ -86,12 +100,20 @@ export class EventValidationPipe
       incomingTokenEventSchema,
     );
     jsonSchemaService.getSchema(
+      MESSAGE_CREATED_EVENT_SCHEMA_ID,
+      messageCreatedEventSchema,
+    );
+    jsonSchemaService.getSchema(
       MODULE_TRANSACTION_EVENT_SCHEMA_ID,
       moduleTransactionEventSchema,
     );
     jsonSchemaService.getSchema(
       NEW_CONFIRMATION_EVENT_SCHEMA_ID,
       newConfirmationEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
+      newMessageConfirmationEventSchema,
     );
     jsonSchemaService.getSchema(
       OUTGOING_ETHER_EVENT_SCHEMA_ID,
@@ -117,8 +139,10 @@ export class EventValidationPipe
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
+    | MessageCreated
     | ModuleTransaction
     | NewConfirmation
+    | NewMessageConfirmation
     | OutgoingToken
     | OutgoingEther
     | PendingTransaction {

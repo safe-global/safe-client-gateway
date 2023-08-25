@@ -11,6 +11,9 @@ import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
+import { MessageCreated } from './entities/message-created.entity';
+import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
 
 @Injectable()
 export class CacheHooksService {
@@ -19,6 +22,8 @@ export class CacheHooksService {
     private readonly balancesRepository: IBalancesRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
+    @Inject(IMessagesRepository)
+    private readonly messagesRepository: IMessagesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
@@ -28,7 +33,9 @@ export class CacheHooksService {
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
+      | MessageCreated
       | ModuleTransaction
+      | NewMessageConfirmation
       | NewConfirmation
       | OutgoingToken
       | OutgoingEther
@@ -229,6 +236,31 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
           this.safeRepository.clearTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+        );
+        break;
+      // A message created affects:
+      // - the messages associated to the Safe
+      case EventType.MESSAGE_CREATED:
+        promises.push(
+          this.messagesRepository.clearMessagesBySafe({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+        );
+        break;
+      // A new message confirmation affects:
+      // - the message itself
+      // - the messages associated to the Safe
+      case EventType.MESSAGE_CONFIRMATION:
+        promises.push(
+          this.messagesRepository.clearMessagesByHash({
+            chainId: event.chainId,
+            messageHash: event.messageHash,
+          }),
+          this.messagesRepository.clearMessagesBySafe({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
