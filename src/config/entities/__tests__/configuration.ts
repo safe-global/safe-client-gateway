@@ -26,7 +26,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   features: {
     humanDescription: true,
-    messagesCache: false,
+    messagesCache: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
