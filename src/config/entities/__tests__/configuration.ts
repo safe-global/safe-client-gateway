@@ -14,8 +14,16 @@ export default (): ReturnType<typeof configuration> => ({
   chains: {
     knownImplementations: [
       { chainId: '1', implementationName: 'ethereum' },
-      { chainId: '137', implementationName: 'matic-network' },
-    ], // TODO: extend list
+      { chainId: '42161', implementationName: 'arbitrum' },
+      { chainId: '1313161554', implementationName: 'aurora' },
+      { chainId: '43114', implementationName: 'avalanche' },
+      { chainId: '8453', implementationName: 'base' },
+      { chainId: '56', implementationName: 'binance-smart-chain' },
+      { chainId: '10', implementationName: 'optimism' },
+      { chainId: '137', implementationName: 'polygon' },
+      { chainId: '100', implementationName: 'xdai' },
+      { chainId: '324', implementationName: 'zksync-era' },
+    ],
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
