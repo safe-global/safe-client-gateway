@@ -9,8 +9,12 @@ export class SettingsChangeTransaction extends TransactionInfo {
   @ApiPropertyOptional()
   settingsInfo: SettingsChange | null;
 
-  constructor(dataDecoded: DataDecoded, settingsInfo: SettingsChange | null) {
-    super('SettingsChange');
+  constructor(
+    dataDecoded: DataDecoded,
+    settingsInfo: SettingsChange | null,
+    humanDescription: string | null,
+  ) {
+    super('SettingsChange', humanDescription);
     this.dataDecoded = dataDecoded;
     this.settingsInfo = settingsInfo;
   }

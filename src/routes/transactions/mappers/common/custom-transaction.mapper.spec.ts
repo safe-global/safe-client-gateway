@@ -35,6 +35,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -62,6 +63,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -89,6 +91,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -131,6 +134,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -168,6 +172,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -179,5 +184,28 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       actionCount: null,
       isCancellation: true,
     });
+  });
+
+  it('should build a CustomTransactionInfo with humanDescription', async () => {
+    const toAddress = new AddressInfo(faker.finance.ethereumAddress());
+    addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
+    const dataSize = 0;
+    const chainId = faker.string.numeric();
+    const transaction = multisigTransactionBuilder().build();
+    const humanDescription = faker.word.words();
+
+    const customTransaction = await mapper.mapCustomTransaction(
+      transaction,
+      dataSize,
+      chainId,
+      humanDescription,
+    );
+
+    expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
+    expect(customTransaction).toEqual(
+      expect.objectContaining({
+        humanDescription,
+      }),
+    );
   });
 });

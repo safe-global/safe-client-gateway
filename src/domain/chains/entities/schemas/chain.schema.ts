@@ -7,6 +7,7 @@ import { BlockExplorerUriTemplate } from '../block-explorer-uri-template.entity'
 import { Theme } from '../theme.entity';
 import { GasPriceOracle } from '../gas-price-oracle.entity';
 import { GasPriceFixed } from '../gas-price-fixed.entity';
+import { GasPriceFixedEIP1559 } from '../gas-price-fixed-eip-1559.entity';
 
 export const NATIVE_CURRENCY_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/chains/native-currency.json';
@@ -72,7 +73,7 @@ export const GAS_PRICE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/chains/gas-price.json';
 
 export const gasPriceSchema: JSONSchemaType<
-  Array<GasPriceOracle | GasPriceFixed>
+  Array<GasPriceOracle | GasPriceFixed | GasPriceFixedEIP1559>
 > = {
   $id: GAS_PRICE_SCHEMA_ID,
   type: 'array',
@@ -85,6 +86,15 @@ export const gasPriceSchema: JSONSchemaType<
           weiValue: { type: 'string' },
         },
         required: ['type', 'weiValue'],
+      },
+      {
+        type: 'object',
+        properties: {
+          type: { const: 'fixed1559', type: 'string' },
+          maxFeePerGas: { type: 'string' },
+          maxPriorityFeePerGas: { type: 'string' },
+        },
+        required: ['type', 'maxFeePerGas', 'maxPriorityFeePerGas'],
       },
       {
         type: 'object',

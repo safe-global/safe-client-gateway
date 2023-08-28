@@ -31,6 +31,11 @@ export default () => ({
       ),
     },
   },
+  features: {
+    humanDescription:
+      process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
+    messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
+  },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
     // A value of 0 disables the timeout.

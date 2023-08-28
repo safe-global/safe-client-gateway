@@ -12,10 +12,6 @@ import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import {
-  ethereumTransactionBuilder,
-  toJson as ethereumTransactionToJson,
-} from '../../domain/safe/entities/__tests__/ethereum-transaction.builder';
 import { faker } from '@faker-js/faker';
 import {
   erc721TransferBuilder,
@@ -92,30 +88,10 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
 
-    const collectibleTransfers = pageBuilder()
+    const moduleTransactions = pageBuilder()
       .with('results', [
-        erc721TransferToJson(
-          erc721TransferBuilder()
-            .with('executionDate', new Date('2016-09-19T02:55:04+0000'))
-            .build(),
-        ),
-      ])
-      .build();
-
-    const queuedTransactions = pageBuilder()
-      .with('results', [
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2049-01-30T14:23:07Z'))
-            .build(),
-        ),
-      ])
-      .build();
-
-    const allTransactions = pageBuilder()
-      .with('results', [
-        ethereumTransactionToJson(
-          ethereumTransactionBuilder()
+        moduleTransactionToJson(
+          moduleTransactionBuilder()
             .with('executionDate', new Date('2073-03-12T12:29:06Z'))
             .build(),
         ),
@@ -147,11 +123,31 @@ describe('Safes Controller (Unit)', () => {
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
           return Promise.resolve({ data: guardInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
-          return Promise.resolve({ data: collectibleTransfers });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                erc721TransferToJson(
+                  erc721TransferBuilder()
+                    .with('executionDate', new Date('2016-09-19T02:55:04+0000'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2049-01-30T14:23:07Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -216,7 +212,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -237,8 +233,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -270,7 +266,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -291,8 +287,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -325,7 +321,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -346,8 +342,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -383,7 +379,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -404,8 +400,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -434,26 +430,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
-    const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder()
-      .with('results', [
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-18T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-16T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-14T03:52:02Z'))
-            .build(),
-        ),
-      ])
-      .build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -473,9 +450,29 @@ describe('Safes Controller (Unit)', () => {
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-18T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-16T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-14T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -504,29 +501,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
-    const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder()
-      .with('results', [
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', null)
-            .with('submissionDate', new Date('2020-09-17T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-16T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-14T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
-            .build(),
-        ),
-      ])
-      .build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -546,9 +521,32 @@ describe('Safes Controller (Unit)', () => {
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', null)
+                    .with('submissionDate', new Date('2020-09-17T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-16T03:52:02Z'))
+                    .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-14T03:52:02Z'))
+                    .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -576,29 +574,7 @@ describe('Safes Controller (Unit)', () => {
       .with('address', safeInfo.fallbackHandler)
       .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
-    const collectibleTransfers = pageBuilder().build();
-    const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder()
-      .with('results', [
-        ethereumTransactionToJson(
-          ethereumTransactionBuilder()
-            .with('executionDate', new Date('2020-09-17T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-16T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-14T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
-            .build(),
-        ),
-      ])
-      .build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -616,11 +592,32 @@ describe('Safes Controller (Unit)', () => {
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
           return Promise.resolve({ data: guardInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
-          return Promise.resolve({ data: collectibleTransfers });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                erc721TransferToJson(
+                  erc721TransferBuilder()
+                    .with('executionDate', new Date('2020-09-17T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-16T03:52:02Z'))
+                    .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -648,29 +645,6 @@ describe('Safes Controller (Unit)', () => {
       .with('address', safeInfo.fallbackHandler)
       .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
-    const collectibleTransfers = pageBuilder().build();
-    const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder()
-      .with('results', [
-        moduleTransactionToJson(
-          moduleTransactionBuilder()
-            .with('executionDate', new Date('2020-09-17T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-16T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
-            .build(),
-        ),
-        multisigTransactionToJson(
-          multisigTransactionBuilder()
-            .with('modified', new Date('2020-09-14T03:52:02Z'))
-            .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
-            .build(),
-        ),
-      ])
-      .build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -688,11 +662,34 @@ describe('Safes Controller (Unit)', () => {
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
           return Promise.resolve({ data: guardInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
-          return Promise.resolve({ data: collectibleTransfers });
+          return Promise.resolve({
+            data: pageBuilder().build(),
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-16T03:52:02Z'))
+                    .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                moduleTransactionToJson(
+                  moduleTransactionBuilder()
+                    .with('executionDate', new Date('2020-09-17T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -722,7 +719,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
 
     const messages = pageBuilder()
       .with('results', [
@@ -762,8 +759,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -800,7 +797,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -827,8 +824,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -875,7 +872,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -896,8 +893,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -927,7 +924,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -948,8 +945,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -974,7 +971,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -996,8 +993,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -1027,7 +1024,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -1048,8 +1045,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }
@@ -1075,7 +1072,7 @@ describe('Safes Controller (Unit)', () => {
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
-    const allTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation((url) => {
@@ -1097,8 +1094,8 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: collectibleTransfers });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({ data: queuedTransactions });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/all-transactions/`:
-          return Promise.resolve({ data: allTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
           return Promise.resolve({ data: messages });
       }

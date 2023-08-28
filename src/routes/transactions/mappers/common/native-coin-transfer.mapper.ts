@@ -16,6 +16,7 @@ export class NativeCoinTransferMapper {
   async mapNativeCoinTransfer(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
+    humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const recipient = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -28,6 +29,7 @@ export class NativeCoinTransferMapper {
       recipient,
       TransferDirection.Outgoing,
       new NativeCoinTransfer(transaction.value),
+      humanDescription,
     );
   }
 }

@@ -171,7 +171,9 @@ export interface ITransactionApi {
     signatures: string[];
   }): Promise<void>;
 
-  deleteDeviceRegistration(args: {
+  deleteDeviceRegistration(uuid: string): Promise<void>;
+
+  deleteSafeRegistration(args: {
     uuid: string;
     safeAddress: string;
   }): Promise<void>;
@@ -205,4 +207,8 @@ export interface ITransactionApi {
     messageHash: string;
     signature: string;
   }): Promise<unknown>;
+
+  clearMessagesBySafe(args: { safeAddress: string }): Promise<void>;
+
+  clearMessagesByHash(args: { messageHash: string }): Promise<void>;
 }

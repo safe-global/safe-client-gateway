@@ -3,11 +3,10 @@ import { ChainsService } from './chains.service';
 import { PaginationData } from '../common/pagination/pagination.data';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Backbone as ApiBackbone, Backbone } from './entities/backbone.entity';
 import { ChainPage } from './entities/chain-page.entity';
 import { MasterCopy } from './entities/master-copy.entity';
-import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 import { Page } from '../common/entities/page.entity';
 import { Chain } from './entities/chain.entity';
 import { AboutChain } from './entities/about-chain.entity';
@@ -20,7 +19,7 @@ import { AboutChain } from './entities/about-chain.entity';
 export class ChainsController {
   constructor(private readonly chainsService: ChainsService) {}
 
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,

@@ -16,9 +16,15 @@ export interface INotificationsRepository {
   ): Promise<SafeRegistration>;
 
   /**
-   * Un-registers a notification target, identified by its client {@link uuid}.
+   * Un-registers a device notification target, identified by its client {@link uuid}.
    */
-  unregisterDevice(args: {
+  unregisterDevice(args: { chainId: string; uuid: string }): Promise<void>;
+
+  /**
+   * Un-registers a Safe notification target, identified by its client {@link uuid} and
+   * Safe {@link safeAddress}.
+   */
+  unregisterSafe(args: {
     chainId: string;
     uuid: string;
     safeAddress: string;

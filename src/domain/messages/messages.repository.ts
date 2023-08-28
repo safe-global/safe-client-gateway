@@ -71,4 +71,24 @@ export class MessagesRepository implements IMessagesRepository {
       signature: args.signature,
     });
   }
+
+  async clearMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    await api.clearMessagesBySafe(args);
+  }
+
+  async clearMessagesByHash(args: {
+    chainId: string;
+    messageHash: string;
+  }): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    await api.clearMessagesByHash(args);
+  }
 }

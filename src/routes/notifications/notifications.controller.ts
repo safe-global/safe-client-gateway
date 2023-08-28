@@ -24,13 +24,21 @@ export class NotificationsController {
     return this.notificationsService.registerDevice(registerDeviceDto);
   }
 
-  @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
+  @Delete('chains/:chainId/notifications/devices/:uuid')
   async unregisterDevice(
+    @Param('chainId') chainId: string,
+    @Param('uuid') uuid: string,
+  ): Promise<void> {
+    return this.notificationsService.unregisterDevice({ chainId, uuid });
+  }
+
+  @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
+  async unregisterSafe(
     @Param('chainId') chainId: string,
     @Param('uuid') uuid: string,
     @Param('safeAddress') safeAddress: string,
   ): Promise<void> {
-    return this.notificationsService.unregisterDevice({
+    return this.notificationsService.unregisterSafe({
       chainId,
       uuid,
       safeAddress,

@@ -33,6 +33,7 @@ export class TransactionApi implements ITransactionApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
+  private readonly isMessagesCacheEnabled: boolean;
 
   constructor(
     private readonly chainId: string,
@@ -59,6 +60,9 @@ export class TransactionApi implements ITransactionApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.contract',
       );
+    this.isMessagesCacheEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.messagesCache',
+    );
   }
 
   async getBalances(args: {
@@ -281,7 +285,7 @@ export class TransactionApi implements ITransactionApi {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
       await this.networkService.post(url, {
-        safe: args.safeAddress ?? null, // TODO: this is a workaround while https://github.com/safe-global/safe-transaction-service/issues/1521 is not fixed.
+        safe: args.safeAddress,
         delegate: args.delegate,
         delegator: args.delegator,
         signature: args.signature,
@@ -754,7 +758,16 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async deleteDeviceRegistration(args: {
+  async deleteDeviceRegistration(uuid: string): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}`;
+      await this.networkService.delete(url);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async deleteSafeRegistration(args: {
     uuid: string;
     safeAddress: string;
   }): Promise<void> {
@@ -795,6 +808,10 @@ export class TransactionApi implements ITransactionApi {
         cacheDir,
         url,
         this.defaultNotFoundExpirationTimeSeconds,
+        undefined,
+        this.isMessagesCacheEnabled
+          ? this.defaultExpirationTimeInSeconds
+          : undefined,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -822,6 +839,9 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
+        this.isMessagesCacheEnabled
+          ? this.defaultExpirationTimeInSeconds
+          : undefined,
       );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -887,5 +907,21 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  async clearMessagesBySafe(args: { safeAddress: string }): Promise<void> {
+    const key = CacheRouter.getMessagesBySafeCacheKey({
+      chainId: this.chainId,
+      safeAddress: args.safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearMessagesByHash(args: { messageHash: string }): Promise<void> {
+    const key = CacheRouter.getMessageByHashCacheKey({
+      chainId: this.chainId,
+      messageHash: args.messageHash,
+    });
+    await this.cacheService.deleteByKey(key);
   }
 }

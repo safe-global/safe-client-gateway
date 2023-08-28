@@ -8,8 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
+import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
 import { Page } from '../common/entities/page.entity';
@@ -34,27 +33,27 @@ export class DelegatesController {
   constructor(private readonly service: DelegatesService) {}
 
   @ApiOkResponse({ type: DelegatePage })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'safe',
     required: false,
     type: String,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'delegate',
     required: false,
     type: String,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'delegator',
     required: false,
     type: String,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'label',
     required: false,
     type: String,
   })
-  @ApiImplicitQuery({
+  @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,

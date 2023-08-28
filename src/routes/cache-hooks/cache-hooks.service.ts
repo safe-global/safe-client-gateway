@@ -11,6 +11,9 @@ import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
 import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
+import { MessageCreated } from './entities/message-created.entity';
+import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
 
 @Injectable()
 export class CacheHooksService {
@@ -19,6 +22,8 @@ export class CacheHooksService {
     private readonly balancesRepository: IBalancesRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
+    @Inject(IMessagesRepository)
+    private readonly messagesRepository: IMessagesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
@@ -28,7 +33,9 @@ export class CacheHooksService {
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
+      | MessageCreated
       | ModuleTransaction
+      | NewMessageConfirmation
       | NewConfirmation
       | OutgoingToken
       | OutgoingEther
@@ -69,7 +76,7 @@ export class CacheHooksService {
       // A new executed multisig transaction affects:
       // - the collectibles that the safe has
       // - the list of all executed transactions for the safe
-      // - the collectible transfers for that safe
+      // - the transfers for that safe
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
       // - the safe configuration - clear safe info
@@ -83,7 +90,7 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -130,6 +137,14 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
           this.safeRepository.clearIncomingTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
@@ -138,7 +153,9 @@ export class CacheHooksService {
         break;
       // Outgoing ether affects:
       // - the balance of the safe - clear safe balance
-      // - the list of all executed transactions (including transfers) for the safe
+      // - the list of all executed transactions for the safe
+      // - queued transactions and history – clear multisig transactions
+      // - the transfers for that safe
       case EventType.OUTGOING_ETHER:
         promises.push(
           this.balancesRepository.clearLocalBalances({
@@ -149,13 +166,22 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // An incoming token affects:
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
-      // - the collectible transfers for that safe
+      // - queued transactions and history – clear multisig transactions
+      // - the transfers for that safe
       // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
         promises.push(
@@ -171,7 +197,11 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearTransfers({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -185,7 +215,8 @@ export class CacheHooksService {
       // - the balance of the safe - clear safe balance
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
-      // - the collectible transfers for that safe
+      // - queued transactions and history – clear multisig transactions
+      // - the transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearLocalBalances({
@@ -200,7 +231,36 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
-          this.safeRepository.clearCollectibleTransfers({
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearTransfers({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+        );
+        break;
+      // A message created affects:
+      // - the messages associated to the Safe
+      case EventType.MESSAGE_CREATED:
+        promises.push(
+          this.messagesRepository.clearMessagesBySafe({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+        );
+        break;
+      // A new message confirmation affects:
+      // - the message itself
+      // - the messages associated to the Safe
+      case EventType.MESSAGE_CONFIRMATION:
+        promises.push(
+          this.messagesRepository.clearMessagesByHash({
+            chainId: event.chainId,
+            messageHash: event.messageHash,
+          }),
+          this.messagesRepository.clearMessagesBySafe({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
