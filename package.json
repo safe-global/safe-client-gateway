@@ -43,7 +43,7 @@
     "rimraf": "^5.0.1",
     "rxjs": "^7.8.1",
     "semver": "^7.5.4",
-    "viem": "^1.7.0",
+    "viem": "^1.8.1",
     "winston": "^3.10.0"
   },
   "devDependencies": {
