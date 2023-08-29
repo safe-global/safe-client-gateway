@@ -1375,14 +1375,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@redis/client@npm:1.5.8":
-  version: 1.5.8
-  resolution: "@redis/client@npm:1.5.8"
+"@redis/client@npm:1.5.9":
+  version: 1.5.9
+  resolution: "@redis/client@npm:1.5.9"
   dependencies:
     cluster-key-slot: 1.1.2
     generic-pool: 3.9.0
     yallist: 4.0.0
-  checksum: ff4a6cbf4f132baad7e481cd4a60af7031a3528e290a646695a9a3be704ed5818f50e9676070c8bad5e4b18d99369b46fcdc052ef6c023fa2391be8696808ff1
+  checksum: 63ff34faca3ac076c76234901a47897a39bc971ab988508087d1513903b533620c54ee09a28f11b3d7b07464e239b6e756d76cc50694ed5b59418c514d2bf923
   languageName: node
   linkType: hard
 
@@ -1413,12 +1413,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@redis/time-series@npm:1.0.4":
-  version: 1.0.4
-  resolution: "@redis/time-series@npm:1.0.4"
+"@redis/time-series@npm:1.0.5":
+  version: 1.0.5
+  resolution: "@redis/time-series@npm:1.0.5"
   peerDependencies:
     "@redis/client": ^1.0.0
-  checksum: a5fca079deb04a2f204a7f9a375a6ff698a119d5dd53f7581fa8fd9e3bacacf1ecb0253b97fada484a012fea7a98014bc0f4f79707d4e92ff61c00318f2bfe04
+  checksum: 6bbdb0b793dcbd13518aa60a09a980f953554e4c745bfacc1611baa8098f360e0378e8ee6b7faf600a67f1de83f4b68bbec6f95a0740faee6164c14be3a30752
   languageName: node
   linkType: hard
 
@@ -6504,17 +6504,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redis@npm:^4.6.7":
-  version: 4.6.7
-  resolution: "redis@npm:4.6.7"
+"redis@npm:^4.6.8":
+  version: 4.6.8
+  resolution: "redis@npm:4.6.8"
   dependencies:
     "@redis/bloom": 1.2.0
-    "@redis/client": 1.5.8
+    "@redis/client": 1.5.9
     "@redis/graph": 1.1.0
     "@redis/json": 1.0.4
     "@redis/search": 1.1.3
-    "@redis/time-series": 1.0.4
-  checksum: d48ff22269d9f22962b40ecd7623c10ad18a26aaffea0987cf80d9ba4f5d72708c6d2782062e6fc1f4255e6aa111b3356e48f636ef26aa0cc75864470d1e60f8
+    "@redis/time-series": 1.0.5
+  checksum: 1626d0d739e5f2047824b77b472967af5938fba488a039bd0a5ad90814eb81cb29b7939e16adf0bc39b133165ec1bf147e4f944d0c54a2f9c32c8f004b015940
   languageName: node
   linkType: hard
 
@@ -6740,7 +6740,7 @@ __metadata:
     lodash: ^4.17.21
     nestjs-cls: ^3.5.0
     prettier: ^3.0.1
-    redis: ^4.6.7
+    redis: ^4.6.8
     reflect-metadata: ^0.1.13
     rimraf: ^5.0.1
     rxjs: ^7.8.1
