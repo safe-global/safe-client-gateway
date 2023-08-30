@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeRepository } from '../../domain/safe/safe.repository';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { SafeRepository } from '@/domain/safe/safe.repository';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeList } from './entities/safe-list.entity';
 
 @Injectable()

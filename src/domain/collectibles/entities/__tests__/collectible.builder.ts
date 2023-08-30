@@ -1,6 +1,6 @@
 import { Collectible } from '../collectible.entity';
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function collectibleBuilder(): IBuilder<Collectible> {
   return Builder.new<Collectible>()

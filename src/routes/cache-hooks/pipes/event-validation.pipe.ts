@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import {
   EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
   executedTransactionEventSchema,

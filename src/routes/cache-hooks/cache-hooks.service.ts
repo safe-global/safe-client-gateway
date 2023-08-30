@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EventType } from './entities/event-payload.entity';
-import { IBalancesRepository } from '../../domain/balances/balances.repository.interface';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { ExecutedTransaction } from './entities/executed-transaction.entity';
 import { NewConfirmation } from './entities/new-confirmation.entity';
 import { PendingTransaction } from './entities/pending-transaction.entity';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { IncomingToken } from './entities/incoming-token.entity';
 import { OutgoingToken } from './entities/outgoing-token.entity';
 import { IncomingEther } from './entities/incoming-ether.entity';
 import { OutgoingEther } from './entities/outgoing-ether.entity';
-import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
+import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
 import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MessageCreated } from './entities/message-created.entity';
-import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
 
 @Injectable()

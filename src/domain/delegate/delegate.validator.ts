@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { JsonSchemaService } from '../../validation/providers/json-schema.service';
-import { ValidationErrorFactory } from '../../validation/providers/validation-error-factory';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
+import { ValidationErrorFactory } from '@/validation/providers/validation-error-factory';
 import { IValidator } from '../interfaces/validator.interface';
 import { Delegate } from './entities/delegate.entity';
 import {

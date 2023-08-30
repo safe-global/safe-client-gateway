@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { SafeAppSocialProfile } from '../safe-app-social-profile.entity';
 
 export function safeAppSocialProfileBuilder(): IBuilder<SafeAppSocialProfile> {

@@ -1,17 +1,17 @@
 import { faker } from '@faker-js/faker';
-import { ContractsRepository } from '../../../../domain/contracts/contracts.repository';
-import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
+import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '../../../../domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MULTI_SEND_METHOD_NAME } from '../../constants';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { TransactionDataMapper } from './transaction-data.mapper';
-import { DELEGATE_OPERATION } from '../../../../domain/safe/entities/operation.entity';
+import { DELEGATE_OPERATION } from '@/domain/safe/entities/operation.entity';
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),

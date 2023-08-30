@@ -1,5 +1,5 @@
 import { ExchangeRates } from '../exchange-rates.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function exchangeRatesBuilder(): IBuilder<ExchangeRates> {
   return Builder.new<ExchangeRates>()

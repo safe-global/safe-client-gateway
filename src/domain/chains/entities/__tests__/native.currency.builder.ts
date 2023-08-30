@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { NativeCurrency } from '../native.currency.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function nativeCurrencyBuilder(): IBuilder<NativeCurrency> {
   return Builder.new<NativeCurrency>()

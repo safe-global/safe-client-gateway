@@ -1,8 +1,8 @@
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('Multisig Transaction status mapper (Unit)', () => {
   let mapper: MultisigTransactionStatusMapper;

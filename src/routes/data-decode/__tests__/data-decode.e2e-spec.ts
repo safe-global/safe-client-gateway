@@ -3,10 +3,10 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
 import * as request from 'supertest';
-import { AppModule } from '../../../app.module';
-import { TestAppProvider } from '../../../__tests__/test-app.provider';
-import { DataDecoded } from '../../../domain/data-decoder/entities/data-decoded.entity';
-import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { AppModule } from '@/app.module';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { getDataDecodedDtoBuilder } from '../entities/__tests__/get-data-decoded.dto.builder';
 
 describe('Data decode e2e tests', () => {

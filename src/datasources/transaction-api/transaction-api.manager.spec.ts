@@ -1,11 +1,11 @@
 import { TransactionApiManager } from './transaction-api.manager';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import { IConfigApi } from '../../domain/interfaces/config-api.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ICacheService } from '../cache/cache.service.interface';
 import { INetworkService } from '../network/network.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { faker } from '@faker-js/faker';
 
 const configurationService = {

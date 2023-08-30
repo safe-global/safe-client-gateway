@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { ClsService } from 'nestjs-cls';
 import * as winston from 'winston';
 import { RequestScopedLoggingService } from './logging.service';
-import { IConfigurationService } from '../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const mockClsService = jest.mocked({
   getId: jest.fn(),

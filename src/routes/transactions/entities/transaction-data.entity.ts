@@ -3,7 +3,7 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
-import { Operation } from '../../../domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressInfo } from '../../common/entities/address-info.entity';
 import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
 

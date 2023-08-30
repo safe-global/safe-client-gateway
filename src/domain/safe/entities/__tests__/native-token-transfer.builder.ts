@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { NativeTokenTransfer } from '../transfer.entity';
 
 export function nativeTokenTransferBuilder(): IBuilder<NativeTokenTransfer> {

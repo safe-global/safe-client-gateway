@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Operation } from '../../../domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import { ProposeTransactionDto as DomainProposeTransactionDto } from '../../../domain/transactions/entities/propose-transaction.dto.entity';
 
 export class ProposeTransactionDto implements DomainProposeTransactionDto {

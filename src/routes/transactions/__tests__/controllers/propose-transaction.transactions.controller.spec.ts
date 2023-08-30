@@ -2,28 +2,28 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../../../__tests__/test-app.provider';
-import { TestCacheModule } from '../../../../datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '../../../../datasources/network/__tests__/test.network.module';
-import { DomainModule } from '../../../../domain.module';
-import { chainBuilder } from '../../../../domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '../../../../domain/contracts/entities/__tests__/contract.builder';
-import { safeAppBuilder } from '../../../../domain/safe-apps/entities/__tests__/safe-app.builder';
-import { pageBuilder } from '../../../../domain/entities/__tests__/page.builder';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { DomainModule } from '@/domain.module';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
 } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
-import { TestLoggingModule } from '../../../../logging/__tests__/test.logging.module';
-import { ValidationModule } from '../../../../validation/validation.module';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { ValidationModule } from '@/validation/validation.module';
 import { proposeTransactionDtoBuilder } from '../../entities/__tests__/propose-transaction.dto.builder';
 import { TransactionsModule } from '../../transactions.module';
-import { ConfigurationModule } from '../../../../config/configuration.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '../../../../config/entities/__tests__/configuration';
-import { IConfigurationService } from '../../../../config/configuration.service.interface';
-import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
-import { NetworkService } from '../../../../datasources/network/network.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;

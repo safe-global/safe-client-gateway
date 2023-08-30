@@ -2,19 +2,19 @@ import { encodeFunctionData, formatUnits, getAddress, parseAbi } from 'viem';
 import { faker } from '@faker-js/faker';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { HumanDescriptionMapper } from './human-description.mapper';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
-import { ILoggingService } from '../../../../logging/logging.interface';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { ILoggingService } from '@/logging/logging.interface';
 
-import { HumanDescriptionApi } from '../../../../datasources/human-description-api/human-description-api.service';
+import { HumanDescriptionApi } from '@/datasources/human-description-api/human-description-api.service';
 import { MAX_UINT256 } from '../../constants';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
-import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import { Hex } from 'viem/src/types/misc';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),

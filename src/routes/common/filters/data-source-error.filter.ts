@@ -4,7 +4,7 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { DataSourceError } from '../../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { Response } from 'express';
 
 /**

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';

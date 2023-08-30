@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Token, TokenType } from '../entities/token.entity';
-import { Builder, IBuilder } from '../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function tokenBuilder(): IBuilder<Token> {
   return Builder.new<Token>()

@@ -1,6 +1,6 @@
 import { Balance } from '../balance.entity';
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { balanceTokenBuilder } from './balance.token.builder';
 
 export function balanceBuilder(): IBuilder<Balance> {

@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ContractsService } from './contracts.service';
-import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { Contract as ApiContract } from './entities/contract.entity';
 
 @ApiTags('contracts')

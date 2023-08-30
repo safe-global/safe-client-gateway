@@ -1,31 +1,31 @@
-import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '../../datasources/network/entities/network.error.entity';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { collectibleBuilder } from '../../domain/collectibles/entities/__tests__/collectible.builder';
+} from '@/datasources/network/entities/network.error.entity';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
-} from '../../domain/entities/__tests__/page.builder';
+} from '@/domain/entities/__tests__/page.builder';
 import { PaginationData } from '../common/pagination/pagination.data';
-import { TestAppProvider } from '../../__tests__/test-app.provider';
-import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { ConfigurationModule } from '../../config/configuration.module';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import { AppModule, configurationModule } from '../../app.module';
-import { CacheModule } from '../../datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '../../logging/logging.module';
-import { NetworkModule } from '../../datasources/network/network.module';
-import { NetworkService } from '../../datasources/network/network.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AppModule, configurationModule } from '@/app.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;

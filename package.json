@@ -89,7 +89,10 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s"
     ],
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/../src/$1"
+    }
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",

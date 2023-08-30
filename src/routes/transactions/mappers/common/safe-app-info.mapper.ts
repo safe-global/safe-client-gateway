@@ -1,11 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
-import { ISafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository.interface';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../../../logging/logging.interface';
+import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 
 @Injectable()

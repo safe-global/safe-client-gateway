@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import {
   MessageConfirmation,
   SignatureType,

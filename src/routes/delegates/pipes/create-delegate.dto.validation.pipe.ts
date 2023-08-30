@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '../../../validation/providers/generic.validator';
-import { JsonSchemaService } from '../../../validation/providers/json-schema.service';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import { CreateDelegateDto } from '../entities/create-delegate.dto.entity';
 import {
   CREATE_DELEGATE_DTO_SCHEMA_ID,

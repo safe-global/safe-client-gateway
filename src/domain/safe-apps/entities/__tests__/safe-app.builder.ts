@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { random, range } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { SafeApp } from '../safe-app.entity';
 import { safeAppAccessControlBuilder } from './safe-app-access-control.builder';
 import { safeAppProviderBuilder } from './safe-app-provider.builder';

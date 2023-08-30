@@ -5,7 +5,7 @@ import { blockExplorerUriTemplateBuilder } from './block-explorer-uri-template.b
 import { themeBuilder } from './theme.builder';
 import { gasPriceFixedBuilder } from './gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from './gas-price-oracle.builder';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { rpcUriBuilder } from './rpc-uri.builder';
 import { gasPriceFixedEIP1559Builder } from './gas-price-fixed-eip-1559.builder';
 

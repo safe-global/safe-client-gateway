@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { safeAppInfoBuilder } from '../../entities/__tests__/safe-app-info.builder';

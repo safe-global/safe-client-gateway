@@ -8,10 +8,7 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from './entities/network.error.entity';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 /**
  * A {@link INetworkService} which uses Axios as the main HTTP client

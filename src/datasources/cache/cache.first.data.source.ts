@@ -8,10 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CacheDir } from './entities/cache-dir.entity';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
 import { get } from 'lodash';
-import {
-  LoggingService,
-  ILoggingService,
-} from '../../logging/logging.interface';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 /**
  * A data source which tries to retrieve values from cache using
