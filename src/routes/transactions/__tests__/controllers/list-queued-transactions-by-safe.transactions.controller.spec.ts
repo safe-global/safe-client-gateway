@@ -606,7 +606,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       },
     );
     networkService.get.mockImplementation((url: string) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -638,7 +638,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?timezone_offset=${timezoneOffset}`,
+        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued/?timezone_offset=${timezoneOffset}`,
       )
       .expect(200)
       .then(({ body }) => {
