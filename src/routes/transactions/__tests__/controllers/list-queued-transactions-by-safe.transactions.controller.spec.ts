@@ -569,7 +569,8 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('should get a transaction queue with timezone offset', async () => {
-    const timezoneOffset = 2 * 60 * 60 * 1000 + 1; // 2 hours in milliseconds + 1 millisecond to test precision of offsetting    const chainId = faker.string.numeric();
+    const timezoneOffset = 2 * 60 * 60 * 1000 + 1; // 2 hours in milliseconds + 1 millisecond to test precision of offsetting
+    const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const contractResponse = contractBuilder().build();
@@ -606,7 +607,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       },
     );
     networkService.get.mockImplementation((url: string) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -638,7 +639,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued/?timezone_offset=${timezoneOffset}`,
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?timezone_offset=${timezoneOffset}`,
       )
       .expect(200)
       .then(({ body }) => {
