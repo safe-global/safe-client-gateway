@@ -308,6 +308,7 @@ export class TransactionsService {
     safeAddress: string;
     paginationData: PaginationData;
     trusted?: boolean;
+    timezoneOffset: number;
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -330,6 +331,7 @@ export class TransactionsService {
       args.chainId,
       this.getPreviousPageLastNonce(transactions, args.paginationData),
       this.getNextPageFirstNonce(transactions),
+      args.timezoneOffset,
     );
 
     return {

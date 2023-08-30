@@ -28,8 +28,11 @@ export class QueuedItemsMapper {
     chainId: string,
     previousPageLastNonce: number | null,
     nextPageFirstNonce: number | null,
+    timezoneOffset: number,
   ): Promise<QueuedItem[]> {
-    const transactionGroups = this.groupByNonce(transactions.results);
+    const transactionGroups = this.groupByNonce(
+      this.getTimezoneOffsetTransactions(transactions.results, timezoneOffset),
+    );
     let lastProcessedNonce = previousPageLastNonce ?? -1;
 
     return flatten(
@@ -131,5 +134,24 @@ export class QueuedItemsMapper {
           transactions: transactions,
         },
     );
+  }
+
+  /**
+   * Adjusts the timestamps of transactions array by given offset
+   * @param timestamp transactions to offset the timestamp of
+   * @param timezoneOffset UTC timezone offset in milliseconds
+   */
+  private getTimezoneOffsetTransactions(
+    transactions: MultisigTransaction[],
+    timezoneOffset: number,
+  ): MultisigTransaction[] {
+    if (timezoneOffset === 0) {
+      return transactions;
+    }
+
+    return transactions.map((transaction) => {
+      transaction.submissionDate.setUTCMilliseconds(timezoneOffset);
+      return transaction;
+    });
   }
 }
