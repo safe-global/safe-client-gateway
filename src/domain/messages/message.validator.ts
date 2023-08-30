@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { Page } from '../../routes/common/entities/page.entity';
-import { GenericValidator } from '../../validation/providers/generic.validator';
-import { JsonSchemaService } from '../../validation/providers/json-schema.service';
+import { Page } from '@/routes/common/entities/page.entity';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import { IPageValidator } from '../interfaces/page-validator.interface';
 import { IValidator } from '../interfaces/validator.interface';
 import { Message } from './entities/message.entity';

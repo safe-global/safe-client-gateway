@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Contract } from '../contract.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
-import { fakeJson } from '../../../../__tests__/faker';
+import { Builder, IBuilder } from '@/__tests__/builder';
+import { fakeJson } from '@/__tests__/faker';
 
 export function contractBuilder(): IBuilder<Contract> {
   return Builder.new<Contract>()

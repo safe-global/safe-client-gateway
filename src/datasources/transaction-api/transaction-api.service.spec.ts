@@ -3,13 +3,13 @@ import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { ICacheService } from '../cache/cache.service.interface';
 import { faker } from '@faker-js/faker';
 import { HttpErrorFactory } from '../errors/http-error-factory';
-import { DataSourceError } from '../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { AxiosNetworkService } from '../network/axios.network.service';
-import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { backboneBuilder } from '../../domain/backbone/entities/__tests__/backbone.builder';
-import { balanceBuilder } from '../../domain/balances/entities/__tests__/balance.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
+import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
-import { IConfigurationService } from '../../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const dataSource = {
   get: jest.fn(),

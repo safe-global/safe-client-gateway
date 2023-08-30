@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IDelegateRepository } from '../../domain/delegate/delegate.repository.interface';
+import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
 import { Page } from '../common/entities/page.entity';
 import {
   cursorUrlFromLimitAndOffset,

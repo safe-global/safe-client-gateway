@@ -3,12 +3,12 @@ import { AddressInfoHelper } from '../../../common/address-info/address-info.hel
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 import { CustomTransactionMapper } from './custom-transaction.mapper';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { NULL_ADDRESS } from '../../../common/constants';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '../../../../domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

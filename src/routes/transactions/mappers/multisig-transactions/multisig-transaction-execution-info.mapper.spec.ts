@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { confirmationBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
 import { TransactionStatus } from '../../entities/transaction-status.entity';

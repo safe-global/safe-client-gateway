@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { random, range, sample } from 'lodash';
-import { DeviceType } from '../../../../domain/notifications/entities/device.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { DeviceType } from '@/domain/notifications/entities/device.entity';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { RegisterDeviceDto } from '../register-device.dto.entity';
 import { safeRegistrationBuilder } from './safe-registration.builder';
 

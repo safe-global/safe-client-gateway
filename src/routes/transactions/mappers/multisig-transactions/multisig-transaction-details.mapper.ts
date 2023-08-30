@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import {

@@ -1,6 +1,6 @@
 import { GasPriceOracle } from '../gas-price-oracle.entity';
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function gasPriceOracleBuilder(): IBuilder<GasPriceOracle> {
   return Builder.new<GasPriceOracle>()

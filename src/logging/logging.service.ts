@@ -3,7 +3,7 @@ import { ClsService } from 'nestjs-cls';
 import { ILoggingService } from './logging.interface';
 import { Inject } from '@nestjs/common/decorators';
 import winston from 'winston';
-import { IConfigurationService } from '../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.

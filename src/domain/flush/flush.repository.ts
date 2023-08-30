@@ -3,10 +3,7 @@ import { IConfigApi } from '../interfaces/config-api.interface';
 import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
 import { InvalidationTarget } from './entities/invalidation-target.entity';
 import { IFlushRepository } from './flush.repository.interface';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class FlushRepository implements IFlushRepository {

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { isArray, isEmpty } from 'lodash';
-import { ContractsRepository } from '../../../../domain/contracts/contracts.repository';
-import { IContractsRepository } from '../../../../domain/contracts/contracts.repository.interface';
+import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import {
   DELEGATE_OPERATION,
   Operation,
-} from '../../../../domain/safe/entities/operation.entity';
+} from '@/domain/safe/entities/operation.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';

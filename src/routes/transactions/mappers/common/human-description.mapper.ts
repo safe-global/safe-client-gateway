@@ -1,23 +1,20 @@
 import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
-import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { Token } from '@/domain/tokens/entities/token.entity';
 import { MAX_UINT256 } from '../../constants';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../../../logging/logging.interface';
-import { IHumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository.interface';
-import { HumanDescriptionRepository } from '../../../../domain/human-description/human-description.repository';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
+import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
 import {
   HumanDescriptionFragment,
   ValueType,
-} from '../../../../domain/human-description/entities/human-description.entity';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { isMultisigTransaction } from '../../../../domain/safe/entities/transaction.entity';
+} from '@/domain/human-description/entities/human-description.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
 @Injectable()

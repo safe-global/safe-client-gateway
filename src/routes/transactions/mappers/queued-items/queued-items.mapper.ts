@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { flatten, groupBy } from 'lodash';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Page } from '../../../common/entities/page.entity';
 import { ConflictType } from '../../entities/conflict-type.entity';
 import { QueuedItem } from '../../entities/queued-item.entity';

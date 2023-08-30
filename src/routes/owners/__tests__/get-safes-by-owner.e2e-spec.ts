@@ -2,8 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
 import * as request from 'supertest';
-import { AppModule } from '../../../app.module';
-import { redisClientFactory } from '../../../__tests__/redis-client.factory';
+import { AppModule } from '@/app.module';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
 describe('Get safes by owner e2e test', () => {
   let app: INestApplication;

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { validate } from './configuration.validator';
-import { fakeJson } from '../__tests__/faker';
+import { fakeJson } from '@/__tests__/faker';
 
 describe('Configuration validator', () => {
   it('should bypass this validation on tests', () => {

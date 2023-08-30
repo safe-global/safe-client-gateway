@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { random } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { CreateMessageDto } from '../create-message.dto.entity';
 
 export function createMessageDtoBuilder(): IBuilder<CreateMessageDto> {

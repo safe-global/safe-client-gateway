@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { DataSourceError } from '../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import {
   NetworkError,
   NetworkResponseError,

@@ -1,6 +1,6 @@
 import { sample } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
-import { erc20TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc20-transfer.builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
+import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
 import {
   TransferDirection,

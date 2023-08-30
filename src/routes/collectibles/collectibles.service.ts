@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ICollectiblesRepository } from '../../domain/collectibles/collectibles.repository.interface';
+import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
 import { Collectible } from './entities/collectible.entity';
 import { Page } from '../common/entities/page.entity';
 import {

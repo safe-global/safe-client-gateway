@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule, configurationModule } from '../../app.module';
-import { CacheModule } from '../../datasources/cache/cache.module';
-import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import { ConfigurationModule } from '../../config/configuration.module';
+import { AppModule, configurationModule } from '@/app.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
-import { RequestScopedLoggingModule } from '../../logging/logging.module';
-import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { NetworkModule } from '../../datasources/network/network.module';
-import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { TestAppProvider } from '../../__tests__/test-app.provider';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { INestApplication } from '@nestjs/common';
-import { CacheService } from '../../datasources/cache/cache.service.interface';
-import { FakeCacheService } from '../../datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import * as request from 'supertest';
 
 describe('Health Controller tests', () => {

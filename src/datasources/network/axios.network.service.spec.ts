@@ -8,7 +8,7 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from './entities/network.error.entity';
-import { ILoggingService } from '../../logging/logging.interface';
+import { ILoggingService } from '@/logging/logging.interface';
 
 const axios = {
   get: jest.fn(),

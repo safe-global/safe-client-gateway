@@ -6,10 +6,7 @@ import {
   HttpStatus,
   Inject,
 } from '@nestjs/common';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { HttpAdapterHost } from '@nestjs/core';
 
 @Catch()

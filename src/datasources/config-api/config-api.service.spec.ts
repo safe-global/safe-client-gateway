@@ -1,11 +1,11 @@
 import { ConfigApi } from './config-api.service';
-import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
-import { DataSourceError } from '../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
 import { ICacheService } from '../cache/cache.service.interface';
 

@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { GetEstimationDto } from '../../domain/estimations/entities/get-estimation.dto.entity';
-import { EstimationsRepository } from '../../domain/estimations/estimations.repository';
-import { IEstimationsRepository } from '../../domain/estimations/estimations.repository.interface';
-import { SafeRepository } from '../../domain/safe/safe.repository';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
+import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
+import { SafeRepository } from '@/domain/safe/safe.repository';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { EstimationResponse } from './entities/estimation-response.entity';
 
 @Injectable()

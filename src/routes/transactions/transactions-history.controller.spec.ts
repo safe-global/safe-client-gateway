@@ -2,18 +2,18 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../__tests__/test-app.provider';
-import { ConfigurationModule } from '../../config/configuration.module';
-import { IConfigurationService } from '../../config/configuration.service.interface';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { ConfigurationModule } from '@/config/configuration.module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '../../config/entities/__tests__/configuration';
-import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '../../domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
+} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
@@ -26,7 +26,7 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '../../domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '../../domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -35,16 +35,16 @@ import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
 } from '../../domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '../../domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '../../domain/tokens/__tests__/token.builder';
-import { TokenType } from '../../domain/tokens/entities/token.entity';
-import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
-import { Transfer } from '../../domain/safe/entities/transfer.entity';
-import { NetworkService } from '../../datasources/network/network.service.interface';
-import { AppModule, configurationModule } from '../../app.module';
-import { CacheModule } from '../../datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '../../logging/logging.module';
-import { NetworkModule } from '../../datasources/network/network.module';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { TokenType } from '@/domain/tokens/entities/token.entity';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { AppModule, configurationModule } from '@/app.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NetworkModule } from '@/datasources/network/network.module';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;

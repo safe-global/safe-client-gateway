@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ContractsRepository } from '../../domain/contracts/contracts.repository';
-import { IContractsRepository } from '../../domain/contracts/contracts.repository.interface';
-import { Contract } from '../../domain/contracts/entities/contract.entity';
+import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
 
 @Injectable()
 export class ContractsService {

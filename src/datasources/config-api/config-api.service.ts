@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import { Chain } from '../../domain/chains/entities/chain.entity';
-import { Page } from '../../domain/entities/page.entity';
-import { IConfigApi } from '../../domain/interfaces/config-api.interface';
-import { SafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Chain } from '@/domain/chains/entities/chain.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { HttpErrorFactory } from '../errors/http-error-factory';

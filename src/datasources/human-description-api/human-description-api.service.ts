@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { IHumanDescriptionApi } from '../../domain/interfaces/human-description-api.interface';
-import { FunctionSignature } from '../../domain/human-description/entities/human-description.entity';
+import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
+import { FunctionSignature } from '@/domain/human-description/entities/human-description.entity';
 import ContractDescriptions from './json';
 
 @Injectable()

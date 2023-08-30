@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { random, range, sampleSize } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
-import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
 import {
   MultisigConfirmationDetails,

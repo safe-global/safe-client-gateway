@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
@@ -15,7 +15,7 @@ import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
 import { SettingsChange } from '../../entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
-import { DataDecoded } from '../../../../domain/data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { DisableModule } from '../../entities/settings-changes/disable-module.entity';
 
 @Injectable()

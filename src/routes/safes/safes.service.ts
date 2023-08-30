@@ -1,19 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MasterCopyVersionState, SafeState } from './entities/safe-info.entity';
-import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import * as semver from 'semver';
-import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import { Safe } from '../../domain/safe/entities/safe.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '../common/address-info/address-info.helper';
 import { AddressInfo } from '../common/entities/address-info.entity';
 import { NULL_ADDRESS } from '../common/constants';
-import { MessagesRepository } from '../../domain/messages/messages.repository';
-import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
+import { MessagesRepository } from '@/domain/messages/messages.repository';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { max } from 'lodash';
-import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
-import { Transfer } from '../../domain/safe/entities/transfer.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
 
 @Injectable()
 export class SafesService {
