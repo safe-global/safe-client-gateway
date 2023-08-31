@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { AddressInfo } from '../../common/entities/address-info.entity';
 import { TransactionInfo } from './transaction-info.entity';
 import { Transfer } from './transfers/transfer.entity';
+import { RichHumanDescriptionFragment } from '@/routes/transactions/entities/human-description.entity';
 
 export enum TransferDirection {
   Incoming = 'INCOMING',
@@ -24,7 +25,7 @@ export class TransferTransactionInfo extends TransactionInfo {
     recipient: AddressInfo,
     direction: string,
     transferInfo: Transfer,
-    humanDescription: string | null,
+    humanDescription: RichHumanDescriptionFragment[] | null,
   ) {
     super('Transfer', humanDescription);
     this.sender = sender;

@@ -192,7 +192,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const dataSize = 0;
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
-    const humanDescription = faker.word.words();
+    const humanDescription = [];
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,

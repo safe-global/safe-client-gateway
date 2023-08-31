@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '../../common/entities/address-info.entity';
 import { TransactionInfo } from './transaction-info.entity';
+import { RichHumanDescriptionFragment } from '@/routes/transactions/entities/human-description.entity';
 
 export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty()
@@ -23,7 +24,7 @@ export class CustomTransactionInfo extends TransactionInfo {
     methodName: string | null,
     actionCount: number | null,
     isCancellation: boolean,
-    humanDescription: string | null,
+    humanDescription: RichHumanDescriptionFragment[] | null,
   ) {
     super('Custom', humanDescription);
     this.to = to;

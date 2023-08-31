@@ -8,6 +8,7 @@ import {
   TransferTransactionInfo,
 } from '../../entities/transfer-transaction-info.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
+import { RichHumanDescriptionFragment } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
 export class NativeCoinTransferMapper {
@@ -16,7 +17,7 @@ export class NativeCoinTransferMapper {
   async mapNativeCoinTransfer(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
-    humanDescription: string | null,
+    humanDescription: RichHumanDescriptionFragment[] | null,
   ): Promise<TransferTransactionInfo> {
     const recipient = await this.addressInfoHelper.getOrDefault(
       chainId,

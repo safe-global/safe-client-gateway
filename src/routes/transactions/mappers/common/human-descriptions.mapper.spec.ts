@@ -108,13 +108,20 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'word', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: {
+          amount: formatUnits(mockAmount, token.decimals!),
+          token,
+        },
+      },
+      { type: 'word', value: 'to' },
+      { type: 'address', value: mockAddress },
+    ];
 
-    expect(humanDescription).toBe(
-      `Send ${formatUnits(mockAmount, token.decimals!)} ${
-        token.symbol
-      } to ${shortAddress}`,
-    );
+    expect(humanDescription).toEqual(expectedResult);
   });
 
   it('should return null for corrupt data', async () => {
@@ -144,9 +151,20 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'word', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: {
+          amount: mockAmount.toString(),
+          token: null,
+        },
+      },
+      { type: 'word', value: 'to' },
+      { type: 'address', value: mockAddress },
+    ];
 
-    expect(humanDescription).toBe(`Send ${mockAmount} to ${shortAddress}`);
+    expect(humanDescription).toEqual(expectedResult);
   });
 
   it('should return a description for unlimited token approvals', async () => {
@@ -169,7 +187,18 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    expect(humanDescription).toBe(`Approve unlimited ${token.symbol}`);
+    const expectedResult = [
+      { type: 'word', value: 'Approve' },
+      {
+        type: 'tokenValue',
+        value: {
+          amount: 'unlimited',
+          token,
+        },
+      },
+    ];
+
+    expect(humanDescription).toEqual(expectedResult);
   });
 
   it('should append the safe app name to the description if it exists', async () => {
@@ -189,12 +218,20 @@ describe('Human descriptions mapper (Unit)', () => {
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'word', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: {
+          amount: formatUnits(mockAmount, token.decimals!),
+          token,
+        },
+      },
+      { type: 'word', value: 'to' },
+      { type: 'address', value: mockAddress },
+      { type: 'word', value: `via ${mockSafeAppName}` },
+    ];
 
-    expect(humanDescription).toBe(
-      `Send ${formatUnits(mockAmount, token.decimals!)} ${
-        token.symbol
-      } to ${shortAddress} via ${mockSafeAppName}`,
-    );
+    expect(humanDescription).toEqual(expectedResult);
   });
 });

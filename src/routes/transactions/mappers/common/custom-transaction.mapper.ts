@@ -9,6 +9,7 @@ import {
 } from '../../constants';
 import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
+import { RichHumanDescriptionFragment } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
@@ -18,7 +19,7 @@ export class CustomTransactionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
     chainId: string,
-    humanDescription: string | null,
+    humanDescription: RichHumanDescriptionFragment[] | null,
   ): Promise<CustomTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,

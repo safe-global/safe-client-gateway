@@ -65,7 +65,7 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const humanDescription = this.isHumanDescriptionEnabled
+    const humanDescriptionViewComponents = this.isHumanDescriptionEnabled
       ? await this.humanDescriptionMapper.mapHumanDescription(
           transaction,
           chainId,
@@ -77,7 +77,7 @@ export class MultisigTransactionInfoMapper {
         transaction,
         dataSize,
         chainId,
-        humanDescription,
+        humanDescriptionViewComponents,
       );
     }
 
@@ -85,7 +85,7 @@ export class MultisigTransactionInfoMapper {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
-        humanDescription,
+        humanDescriptionViewComponents,
       );
     }
 
@@ -115,7 +115,7 @@ export class MultisigTransactionInfoMapper {
       return new SettingsChangeTransaction(
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
-        humanDescription,
+        humanDescriptionViewComponents,
       );
     }
 
@@ -130,14 +130,14 @@ export class MultisigTransactionInfoMapper {
             token,
             chainId,
             transaction,
-            humanDescription,
+            humanDescriptionViewComponents,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
             chainId,
             transaction,
-            humanDescription,
+            humanDescriptionViewComponents,
           );
       }
     }
@@ -146,7 +146,7 @@ export class MultisigTransactionInfoMapper {
       transaction,
       dataSize,
       chainId,
-      humanDescription,
+      humanDescriptionViewComponents,
     );
   }
 
