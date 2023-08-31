@@ -23,11 +23,20 @@ export class HumanDescriptionTemplate {
   private static readonly REGEX =
     /{{(?<typeToken>\w+) \$(?<paramIndex>\d+)}}|(?<wordToken>\w+)/g;
 
+  /**
+   * Store the regex matches as an array instead of an iterable so that it can be restarted
+   * @private
+   */
+  private readonly templateMatches: RegExpMatchArray[];
+
   constructor(
     functionSignature: string,
     private readonly template: string,
   ) {
     this.functionAbi = parseAbi([functionSignature]);
+    this.templateMatches = Array.from(
+      template.matchAll(HumanDescriptionTemplate.REGEX),
+    );
   }
 
   /**
@@ -46,9 +55,8 @@ export class HumanDescriptionTemplate {
     });
 
     const fragments: HumanDescriptionFragment[] = [];
-    const matches = this.template.matchAll(HumanDescriptionTemplate.REGEX);
 
-    for (const match of matches) {
+    for (const match of this.templateMatches) {
       if (!match.groups) throw Error(`Error parsing template ${this.template}`);
 
       if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
