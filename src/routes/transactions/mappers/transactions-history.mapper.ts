@@ -150,7 +150,7 @@ export class TransactionsHistoryMapper {
    */
   private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
     if (timezoneOffset != 0) {
-      timestamp.setUTCSeconds(timezoneOffset / 1000);
+      timestamp.setUTCMilliseconds(timezoneOffset);
     }
     return new Date(
       Date.UTC(

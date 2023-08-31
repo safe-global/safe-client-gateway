@@ -287,7 +287,7 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should change date label with time offset', async () => {
     const safeAddress = faker.finance.ethereumAddress();
-    const timezoneOffset = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    const timezoneOffset = 2 * 60 * 60 * 1000 + 1; // 2 hours in milliseconds + 1 millisecond to test precision of offsetting
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
     const moduleTransaction = moduleTransactionToJson(
