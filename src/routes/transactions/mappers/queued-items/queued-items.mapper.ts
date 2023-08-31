@@ -138,7 +138,7 @@ export class QueuedItemsMapper {
 
   /**
    * Adjusts the timestamps of transactions array by given offset
-   * @param timestamp transactions to offset the timestamp of
+   * @param transactions transactions to offset the timestamp of
    * @param timezoneOffset UTC timezone offset in milliseconds
    */
   private getTimezoneOffsetTransactions(
@@ -149,8 +149,12 @@ export class QueuedItemsMapper {
       return transactions;
     }
 
-    return transactions.map((transaction) => {
+    // We clone so as to not modify the original dates
+    return structuredClone(transactions).map((transaction) => {
+      // No need to set the `executionDate` as it will not exist in the queue
+      transaction.modified?.setMilliseconds(timezoneOffset);
       transaction.submissionDate.setUTCMilliseconds(timezoneOffset);
+
       return transaction;
     });
   }
