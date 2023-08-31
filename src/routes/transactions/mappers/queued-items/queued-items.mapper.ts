@@ -152,7 +152,7 @@ export class QueuedItemsMapper {
     // We clone so as to not modify the original dates
     return structuredClone(transactions).map((transaction) => {
       // No need to set the `executionDate` as it will not exist in the queue
-      transaction.modified?.setMilliseconds(timezoneOffset);
+      transaction.modified?.setUTCMilliseconds(timezoneOffset);
       transaction.submissionDate.setUTCMilliseconds(timezoneOffset);
 
       return transaction;
