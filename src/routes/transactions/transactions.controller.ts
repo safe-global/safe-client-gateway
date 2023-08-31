@@ -184,6 +184,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffset: number,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
@@ -193,6 +195,7 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       trusted,
+      timezoneOffset,
     });
   }
 
