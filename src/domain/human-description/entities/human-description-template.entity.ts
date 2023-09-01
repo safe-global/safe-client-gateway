@@ -8,6 +8,14 @@ import {
   WordFragment,
 } from './human-description.entity';
 
+type SafeRegExpMatchArray = RegExpMatchArray & {
+  groups: NonNullable<RegExpMatchArray['groups']>;
+};
+
+function hasGroups(match: RegExpMatchArray): match is SafeRegExpMatchArray {
+  return !!match.groups;
+}
+
 /**
  * A {@link HumanDescriptionTemplate} represents a human-readable template
  *
@@ -27,16 +35,25 @@ export class HumanDescriptionTemplate {
    * Store the regex matches as an array instead of an iterable so that it can be restarted
    * @private
    */
-  private readonly templateMatches: RegExpMatchArray[];
+  private readonly templateMatches: SafeRegExpMatchArray[];
 
   constructor(
     functionSignature: string,
     private readonly template: string,
   ) {
     this.functionAbi = parseAbi([functionSignature]);
+
     this.templateMatches = Array.from(
       template.matchAll(HumanDescriptionTemplate.REGEX),
-    );
+    )
+      .map((match) => {
+        if (!match.groups) {
+          throw Error(`Error parsing template ${this.template}`);
+        }
+
+        return match;
+      })
+      .filter(hasGroups);
   }
 
   /**
@@ -57,8 +74,6 @@ export class HumanDescriptionTemplate {
     const fragments: HumanDescriptionFragment[] = [];
 
     for (const match of this.templateMatches) {
-      if (!match.groups) throw Error(`Error parsing template ${this.template}`);
-
       if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
         fragments.push(<WordFragment>{
           type: ValueType.Word,
