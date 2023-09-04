@@ -1,37 +1,44 @@
 import { Hex } from 'viem/src/types/misc';
 
 export enum ValueType {
-  Word = 'word',
+  Text = 'text',
   TokenValue = 'tokenValue',
   Address = 'address',
   Number = 'number',
 }
 
-export interface TokenValueFragment {
-  type: ValueType.TokenValue;
-  value: {
-    amount: bigint;
-    address: string;
-  };
+export interface InfoFragment {
+  type: ValueType;
+  value: string | bigint | `0x${string}` | TokenValue;
 }
 
-export interface WordFragment {
-  type: ValueType.Word;
+type TokenValue = {
+  amount: bigint;
+  address: string;
+};
+
+export interface TokenValueFragment extends InfoFragment {
+  type: ValueType.TokenValue;
+  value: TokenValue;
+}
+
+export interface TextFragment extends InfoFragment {
+  type: ValueType.Text;
   value: string;
 }
 
-export interface AddressFragment {
+export interface AddressFragment extends InfoFragment {
   type: ValueType.Address;
   value: `0x${string}`;
 }
 
-export interface NumberFragment {
+export interface NumberFragment extends InfoFragment {
   type: ValueType.Number;
   value: bigint;
 }
 
 export type HumanDescriptionFragment =
-  | WordFragment
+  | TextFragment
   | TokenValueFragment
   | AddressFragment
   | NumberFragment;

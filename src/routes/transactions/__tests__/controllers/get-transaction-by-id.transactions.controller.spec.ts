@@ -217,6 +217,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
               value: moduleTransaction.value,
             },
             humanDescription: null,
+            richInfo: null,
           },
           txData: {
             to: expect.objectContaining({ value: contract.address }),

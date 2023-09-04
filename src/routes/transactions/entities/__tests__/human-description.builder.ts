@@ -4,7 +4,7 @@ import {
   RichHumanDescriptionFragment,
   RichNumberFragment,
   RichTokenValueFragment,
-  RichWordFragment,
+  RichTextFragment,
 } from '@/routes/transactions/entities/human-description.entity';
 import { ValueType } from '@/domain/human-description/entities/human-description.entity';
 import { faker } from '@faker-js/faker';
@@ -13,13 +13,15 @@ function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {
   return Builder.new<RichTokenValueFragment>()
     .with('type', ValueType.TokenValue)
     .with('value', faker.word.noun())
-    .with('symbol', faker.word.noun())
-    .with('logoUri', faker.internet.avatar());
+    .with('richData', {
+      symbol: faker.word.noun(),
+      logoUri: faker.internet.avatar(),
+    });
 }
 
-function richWordFragmentBuilder(): IBuilder<RichWordFragment> {
-  return Builder.new<RichWordFragment>()
-    .with('type', ValueType.Word)
+function richWordFragmentBuilder(): IBuilder<RichTextFragment> {
+  return Builder.new<RichTextFragment>()
+    .with('type', ValueType.Text)
     .with('value', faker.word.adverb());
 }
 
@@ -37,7 +39,7 @@ function richNumberFragmentBuilder(): IBuilder<RichNumberFragment> {
 
 const humanDescriptionBuilders: Array<
   | (() => IBuilder<RichTokenValueFragment>)
-  | (() => IBuilder<RichWordFragment>)
+  | (() => IBuilder<RichTextFragment>)
   | (() => IBuilder<RichAddressFragment>)
   | (() => IBuilder<RichNumberFragment>)
 > = [

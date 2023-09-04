@@ -15,6 +15,7 @@ import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import { Hex } from 'viem/src/types/misc';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
+import { ValueType } from '@/domain/human-description/entities/human-description.entity';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -79,10 +80,7 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if there is no data', async () => {
     const transaction = multisigTransactionBuilder().with('data', null).build();
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     expect(humanDescription).toBeNull();
   });
@@ -92,10 +90,7 @@ describe('Human descriptions mapper (Unit)', () => {
 
     const transaction = multisigTransactionBuilder().with('data', data).build();
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     expect(humanDescription).toBeNull();
   });
@@ -103,25 +98,23 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return a human-readable description for erc20 transfers', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: 'word', value: 'Send' },
+      { type: ValueType.Text, value: 'Send', richData: null },
       {
-        type: 'tokenValue',
-        value: {
-          amount: formatUnits(mockAmount, token.decimals!),
-          token,
+        type: ValueType.TokenValue,
+        value: formatUnits(mockAmount, token.decimals!),
+        richData: {
+          symbol: token.symbol,
+          logoUri: token.logoUri,
         },
       },
-      { type: 'word', value: 'to' },
-      { type: 'address', value: mockAddress },
+      { type: ValueType.Text, value: 'to', richData: null },
+      { type: ValueType.Address, value: mockAddress, richData: null },
     ];
 
-    expect(humanDescription).toEqual(expectedResult);
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should return null for corrupt data', async () => {
@@ -133,10 +126,7 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', corruptedData)
       .build();
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     expect(humanDescription).toBeNull();
   });
@@ -146,25 +136,23 @@ describe('Human descriptions mapper (Unit)', () => {
       throw Error('No token info');
     });
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: 'word', value: 'Send' },
+      { type: ValueType.Text, value: 'Send', richData: null },
       {
-        type: 'tokenValue',
-        value: {
-          amount: mockAmount.toString(),
-          token: null,
+        type: ValueType.TokenValue,
+        value: mockAmount.toString(),
+        richData: {
+          symbol: null,
+          logoUri: null,
         },
       },
-      { type: 'word', value: 'to' },
-      { type: 'address', value: mockAddress },
+      { type: ValueType.Text, value: 'to', richData: null },
+      { type: ValueType.Address, value: mockAddress, richData: null },
     ];
 
-    expect(humanDescription).toEqual(expectedResult);
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should return a description for unlimited token approvals', async () => {
@@ -182,23 +170,21 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', mockApprovalData)
       .build();
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: 'word', value: 'Approve' },
+      { type: ValueType.Text, value: 'Approve', richData: null },
       {
-        type: 'tokenValue',
-        value: {
-          amount: 'unlimited',
-          token,
+        type: ValueType.TokenValue,
+        value: 'unlimited',
+        richData: {
+          symbol: token.symbol,
+          logoUri: token.logoUri,
         },
       },
     ];
 
-    expect(humanDescription).toEqual(expectedResult);
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should append the safe app name to the description if it exists', async () => {
@@ -213,25 +199,23 @@ describe('Human descriptions mapper (Unit)', () => {
       Promise.resolve(mockSafeAppInfo),
     );
 
-    const humanDescription = await mapper.mapHumanDescription(
-      transaction,
-      chainId,
-    );
+    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: 'word', value: 'Send' },
+      { type: ValueType.Text, value: 'Send', richData: null },
       {
-        type: 'tokenValue',
-        value: {
-          amount: formatUnits(mockAmount, token.decimals!),
-          token,
+        type: ValueType.TokenValue,
+        value: formatUnits(mockAmount, token.decimals!),
+        richData: {
+          symbol: token.symbol,
+          logoUri: token.logoUri,
         },
       },
-      { type: 'word', value: 'to' },
-      { type: 'address', value: mockAddress },
-      { type: 'word', value: `via ${mockSafeAppName}` },
+      { type: ValueType.Text, value: 'to', richData: null },
+      { type: ValueType.Address, value: mockAddress, richData: null },
+      { type: ValueType.Text, value: `via ${mockSafeAppName}`, richData: null },
     ];
 
-    expect(humanDescription).toEqual(expectedResult);
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 });

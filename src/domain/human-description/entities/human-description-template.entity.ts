@@ -5,7 +5,7 @@ import {
   HumanDescriptionFragment,
   TokenValueFragment,
   ValueType,
-  WordFragment,
+  TextFragment,
 } from './human-description.entity';
 
 type SafeRegExpMatchArray = RegExpMatchArray & {
@@ -75,8 +75,8 @@ export class HumanDescriptionTemplate {
 
     for (const match of this.templateMatches) {
       if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
-        fragments.push(<WordFragment>{
-          type: ValueType.Word,
+        fragments.push(<TextFragment>{
+          type: ValueType.Text,
           value: match.groups.wordToken,
         });
       } else if (

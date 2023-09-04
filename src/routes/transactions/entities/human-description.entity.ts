@@ -1,25 +1,31 @@
-import { Token } from '@/domain/tokens/entities/token.entity';
 import {
-  AddressFragment,
-  NumberFragment,
+  InfoFragment,
   ValueType,
-  WordFragment,
 } from '@/domain/human-description/entities/human-description.entity';
 
-export interface RichTokenValueFragment {
+interface RichInfoFragment extends InfoFragment {
+  richData: Record<string, unknown> | null;
+}
+
+export interface RichTokenValueFragment extends RichInfoFragment {
   type: ValueType.TokenValue;
-  value: {
-    amount: string;
-    token: Token | null;
+  value: string;
+  richData: {
+    symbol: string | null;
+    logoUri: string | null;
   };
 }
 
-export interface RichWordFragment extends WordFragment {}
-export interface RichAddressFragment extends AddressFragment {}
-export interface RichNumberFragment extends NumberFragment {}
+export interface RichTextFragment extends RichInfoFragment {}
+export interface RichAddressFragment extends RichInfoFragment {}
+export interface RichNumberFragment extends RichInfoFragment {}
 
 export type RichHumanDescriptionFragment =
-  | RichWordFragment
   | RichTokenValueFragment
+  | RichTextFragment
   | RichAddressFragment
   | RichNumberFragment;
+
+export type RichInfo = {
+  fragments: RichHumanDescriptionFragment[];
+};

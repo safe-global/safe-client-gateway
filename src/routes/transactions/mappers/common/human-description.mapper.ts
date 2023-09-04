@@ -17,9 +17,10 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import {
+  RichInfo,
   RichHumanDescriptionFragment,
   RichTokenValueFragment,
-  RichWordFragment,
+  RichTextFragment,
 } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
@@ -34,10 +35,10 @@ export class HumanDescriptionMapper {
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
-  async mapHumanDescription(
+  async mapRichInfo(
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichHumanDescriptionFragment[] | null> {
+  ): Promise<RichInfo | null> {
     if (!transaction.data || !isHex(transaction.data) || !transaction.to) {
       return null;
     }
@@ -54,23 +55,41 @@ export class HumanDescriptionMapper {
           data: transaction.data,
         });
 
-      const humanDescriptionComponents = await this.enrichFragments(
+      const richHumanDescriptionFragments = await this.enrichFragments(
         humanDescriptionFragments,
         transaction,
         chainId,
       );
 
-      return this.enrichSafeAppInfo(
-        humanDescriptionComponents,
+      const richHumanDescription = await this.enrichSafeAppInfo(
+        richHumanDescriptionFragments,
         transaction,
         chainId,
       );
+
+      return {
+        fragments: richHumanDescription,
+      };
     } catch (error) {
       this.loggingService.debug(
         `Error trying to decode the input data: ${error.message}`,
       );
       return null;
     }
+  }
+
+  mapHumanDescription(richInfo: RichInfo | null): string | null {
+    if (!richInfo?.fragments) return null;
+
+    return richInfo.fragments
+      .map((fragment) => {
+        if (fragment.type === ValueType.TokenValue) {
+          return `${fragment.value} ${fragment.richData?.symbol}`;
+        }
+
+        return fragment.value;
+      })
+      .join(' ');
   }
 
   async enrichFragments(
@@ -85,7 +104,7 @@ export class HumanDescriptionMapper {
             return this.enrichTokenValue(fragment, transaction, chainId);
           case ValueType.Address:
           default:
-            return fragment;
+            return { ...fragment, richData: null };
         }
       }),
     );
@@ -102,31 +121,37 @@ export class HumanDescriptionMapper {
         address: transaction.to,
       });
 
+      let amount: string;
+      if (fragment.value.amount === MAX_UINT256) {
+        amount = 'unlimited';
+      } else if (token && token.decimals) {
+        amount = formatUnits(fragment.value.amount, token.decimals);
+      } else {
+        amount = fragment.value.amount.toString();
+      }
+
       return <RichTokenValueFragment>{
         type: ValueType.TokenValue,
-        value: {
-          token,
-          amount:
-            fragment.value.amount === MAX_UINT256
-              ? 'unlimited'
-              : token.decimals
-              ? formatUnits(fragment.value.amount, token.decimals)
-              : fragment.value.amount.toString(),
+        value: amount,
+        richData: {
+          symbol: token.symbol,
+          logoUri: token.logoUri,
         },
       };
     } catch (error) {
       return {
         type: ValueType.TokenValue,
-        value: {
-          amount: fragment.value.amount.toString(),
-          token: null,
+        value: fragment.value.amount.toString(),
+        richData: {
+          symbol: null,
+          logoUri: null,
         },
       };
     }
   }
 
   async enrichSafeAppInfo(
-    components: RichHumanDescriptionFragment[],
+    fragments: RichHumanDescriptionFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
   ): Promise<RichHumanDescriptionFragment[]> {
@@ -135,13 +160,14 @@ export class HumanDescriptionMapper {
       : null;
 
     if (safeAppInfo) {
-      components.push(<RichWordFragment>{
-        type: ValueType.Word,
+      fragments.push(<RichTextFragment>{
+        type: ValueType.Text,
         value: `via ${safeAppInfo.name}`,
+        richData: null,
       });
     }
 
-    return components;
+    return fragments;
   }
 
   private getSigHash(data: Hex): Hex | null {

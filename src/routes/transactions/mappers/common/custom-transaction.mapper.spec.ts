@@ -9,6 +9,7 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -35,6 +36,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
       null,
     );
 
@@ -64,6 +66,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -91,6 +94,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
+      null,
       null,
     );
 
@@ -135,6 +139,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -173,6 +178,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
+      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -192,13 +198,17 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const dataSize = 0;
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
-    const humanDescription = [];
+    const humanDescription = 'Send 10 ETH to vitalik.eth';
+    const richInfo = {
+      fragments: buildHumanDescription(),
+    };
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
       dataSize,
       chainId,
       humanDescription,
+      richInfo,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -207,5 +217,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
         humanDescription,
       }),
     );
+    expect(customTransaction).toEqual(expect.objectContaining({ richInfo }));
   });
 });

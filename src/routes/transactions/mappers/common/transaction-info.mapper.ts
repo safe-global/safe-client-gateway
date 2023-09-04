@@ -65,11 +65,12 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const humanDescriptionViewComponents = this.isHumanDescriptionEnabled
-      ? await this.humanDescriptionMapper.mapHumanDescription(
-          transaction,
-          chainId,
-        )
+    const richInfo = this.isHumanDescriptionEnabled
+      ? await this.humanDescriptionMapper.mapRichInfo(transaction, chainId)
+      : null;
+
+    const humanDescription = this.isHumanDescriptionEnabled
+      ? this.humanDescriptionMapper.mapHumanDescription(richInfo)
       : null;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
@@ -77,7 +78,8 @@ export class MultisigTransactionInfoMapper {
         transaction,
         dataSize,
         chainId,
-        humanDescriptionViewComponents,
+        humanDescription,
+        richInfo,
       );
     }
 
@@ -85,7 +87,8 @@ export class MultisigTransactionInfoMapper {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
         chainId,
         transaction,
-        humanDescriptionViewComponents,
+        humanDescription,
+        richInfo,
       );
     }
 
@@ -115,7 +118,8 @@ export class MultisigTransactionInfoMapper {
       return new SettingsChangeTransaction(
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
-        humanDescriptionViewComponents,
+        humanDescription,
+        richInfo,
       );
     }
 
@@ -130,14 +134,16 @@ export class MultisigTransactionInfoMapper {
             token,
             chainId,
             transaction,
-            humanDescriptionViewComponents,
+            humanDescription,
+            richInfo,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
             chainId,
             transaction,
-            humanDescriptionViewComponents,
+            humanDescription,
+            richInfo,
           );
       }
     }
@@ -146,7 +152,8 @@ export class MultisigTransactionInfoMapper {
       transaction,
       dataSize,
       chainId,
-      humanDescriptionViewComponents,
+      humanDescription,
+      richInfo,
     );
   }
 
