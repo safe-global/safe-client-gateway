@@ -1,12 +1,11 @@
 import { Hex } from 'viem/src/types/misc';
 
 export enum ValueType {
-  Word = 'word',
+  Text = 'text',
   TokenValue = 'tokenValue',
   Address = 'address',
   Number = 'number',
 }
-
 export interface TokenValueFragment {
   type: ValueType.TokenValue;
   value: {
@@ -15,8 +14,8 @@ export interface TokenValueFragment {
   };
 }
 
-export interface WordFragment {
-  type: ValueType.Word;
+export interface TextFragment {
+  type: ValueType.Text;
   value: string;
 }
 
@@ -31,7 +30,7 @@ export interface NumberFragment {
 }
 
 export type HumanDescriptionFragment =
-  | WordFragment
+  | TextFragment
   | TokenValueFragment
   | AddressFragment
   | NumberFragment;

@@ -79,7 +79,7 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if there is no data', async () => {
     const transaction = multisigTransactionBuilder().with('data', null).build();
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
@@ -92,7 +92,7 @@ describe('Human descriptions mapper (Unit)', () => {
 
     const transaction = multisigTransactionBuilder().with('data', data).build();
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
@@ -103,18 +103,24 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return a human-readable description for erc20 transfers', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'text', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: formatUnits(mockAmount, token.decimals!),
+        symbol: token.symbol,
+        logoUri: token.logoUri,
+      },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
+    ];
 
-    expect(humanDescription).toBe(
-      `Send ${formatUnits(mockAmount, token.decimals!)} ${
-        token.symbol
-      } to ${shortAddress}`,
-    );
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should return null for corrupt data', async () => {
@@ -126,7 +132,7 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', corruptedData)
       .build();
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
@@ -135,18 +141,28 @@ describe('Human descriptions mapper (Unit)', () => {
   });
 
   it('should return raw amount if token info cannot be fetched', async () => {
-    tokenRepository.getToken.mockImplementation(() => {
-      throw Error('No token info');
+    tokenRepository.getToken.mockImplementationOnce(() => {
+      return Promise.reject();
     });
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'text', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: mockAmount.toString(),
+        symbol: null,
+        logoUri: null,
+      },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
+    ];
 
-    expect(humanDescription).toBe(`Send ${mockAmount} to ${shortAddress}`);
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should return a description for unlimited token approvals', async () => {
@@ -164,12 +180,22 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', mockApprovalData)
       .build();
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
 
-    expect(humanDescription).toBe(`Approve unlimited ${token.symbol}`);
+    const expectedResult = [
+      { type: 'text', value: 'Approve' },
+      {
+        type: 'tokenValue',
+        value: 'unlimited',
+        symbol: token.symbol,
+        logoUri: token.logoUri,
+      },
+    ];
+
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 
   it('should append the safe app name to the description if it exists', async () => {
@@ -184,17 +210,24 @@ describe('Human descriptions mapper (Unit)', () => {
       Promise.resolve(mockSafeAppInfo),
     );
 
-    const humanDescription = await mapper.mapHumanDescription(
+    const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
       chainId,
     );
 
-    const shortAddress = mapper.shortenAddress(mockAddress);
+    const expectedResult = [
+      { type: 'text', value: 'Send' },
+      {
+        type: 'tokenValue',
+        value: formatUnits(mockAmount, token.decimals!),
+        symbol: token.symbol,
+        logoUri: token.logoUri,
+      },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
+      { type: 'text', value: `via ${mockSafeAppName}` },
+    ];
 
-    expect(humanDescription).toBe(
-      `Send ${formatUnits(mockAmount, token.decimals!)} ${
-        token.symbol
-      } to ${shortAddress} via ${mockSafeAppName}`,
-    );
+    expect(humanDescription).toEqual({ fragments: expectedResult });
   });
 });

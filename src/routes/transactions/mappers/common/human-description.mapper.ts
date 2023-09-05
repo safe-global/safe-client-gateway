@@ -3,19 +3,27 @@ import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { Token } from '@/domain/tokens/entities/token.entity';
 import { MAX_UINT256 } from '../../constants';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
 import {
   HumanDescriptionFragment,
+  TokenValueFragment,
   ValueType,
 } from '@/domain/human-description/entities/human-description.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
+import {
+  RichAddressFragment,
+  RichDecodedInfo,
+  RichDecodedInfoFragment,
+  RichFragmentType,
+  RichTextFragment,
+  RichTokenValueFragment,
+} from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
 export class HumanDescriptionMapper {
@@ -29,10 +37,10 @@ export class HumanDescriptionMapper {
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
-  async mapHumanDescription(
+  async mapRichDecodedInfo(
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<string | null> {
+  ): Promise<RichDecodedInfo | null> {
     if (!transaction.data || !isHex(transaction.data) || !transaction.to) {
       return null;
     }
@@ -41,36 +49,27 @@ export class HumanDescriptionMapper {
 
     if (!sigHash) return null;
 
-    let token: Token | null = null;
     try {
-      token = await this.tokenRepository.getToken({
-        chainId,
-        address: transaction.to,
-      });
-    } catch (error) {
-      this.loggingService.debug(`Error trying to get token: ${error.message}`);
-    }
-
-    try {
-      const descriptionFragments =
+      const humanDescriptionFragments =
         this.humanDescriptionRepository.getHumanDescription({
           functionSignatureHash: sigHash,
           to: transaction.to,
           data: transaction.data,
         });
 
-      const description = this.createHumanDescription(
-        descriptionFragments,
-        token,
+      const richDecodedInfoFragments = await this.enrichFragments(
+        humanDescriptionFragments,
+        transaction,
+        chainId,
       );
 
-      const safeAppInfo = isMultisigTransaction(transaction)
-        ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
-        : null;
+      const richDecodedInfo = await this.enrichSafeAppInfo(
+        richDecodedInfoFragments,
+        transaction,
+        chainId,
+      );
 
-      return safeAppInfo
-        ? `${description} via ${safeAppInfo.name}`
-        : description;
+      return new RichDecodedInfo(richDecodedInfo);
     } catch (error) {
       this.loggingService.debug(
         `Error trying to decode the input data: ${error.message}`,
@@ -79,34 +78,95 @@ export class HumanDescriptionMapper {
     }
   }
 
-  createHumanDescription(
-    descriptionFragments: HumanDescriptionFragment[],
-    token: Token | null,
-  ): string {
-    return descriptionFragments
+  mapHumanDescription(richDecodedInfo: RichDecodedInfo | null): string | null {
+    if (!richDecodedInfo?.fragments) return null;
+
+    return richDecodedInfo.fragments
       .map((fragment) => {
-        switch (fragment.type) {
-          case ValueType.TokenValue:
-            if (!token?.decimals) return fragment.value.amount;
-
-            // Unlimited approval
-            if (fragment.value.amount === MAX_UINT256) {
-              return `unlimited ${token.symbol}`;
-            }
-
-            return `${formatUnits(fragment.value.amount, token.decimals)} ${
-              token.symbol
-            }`;
-          case ValueType.Address:
-            return this.shortenAddress(fragment.value);
-          default:
-            return fragment.value;
+        if (fragment instanceof RichTokenValueFragment) {
+          return fragment.symbol
+            ? `${fragment.value} ${fragment.symbol}`
+            : fragment.value;
         }
+
+        if (fragment instanceof RichAddressFragment) {
+          return this.shortenAddress(fragment.value);
+        }
+
+        return fragment.value;
       })
       .join(' ');
   }
 
-  shortenAddress(address: Hex, length = 4): string {
+  private async enrichFragments(
+    fragments: HumanDescriptionFragment[],
+    transaction: MultisigTransaction | ModuleTransaction,
+    chainId: string,
+  ): Promise<RichDecodedInfoFragment[]> {
+    return Promise.all(
+      fragments.map(async (fragment) => {
+        switch (fragment.type) {
+          case ValueType.TokenValue:
+            return this.enrichTokenValue(fragment, transaction, chainId);
+          case ValueType.Address:
+            return new RichAddressFragment(fragment.value);
+          case ValueType.Text:
+            return new RichTextFragment(fragment.value);
+          case ValueType.Number:
+            return new RichTextFragment(fragment.value.toString());
+        }
+      }),
+    );
+  }
+
+  private async enrichTokenValue(
+    fragment: TokenValueFragment,
+    transaction: MultisigTransaction | ModuleTransaction,
+    chainId: string,
+  ): Promise<RichTokenValueFragment> {
+    const token = await this.tokenRepository
+      .getToken({
+        chainId,
+        address: transaction.to,
+      })
+      .catch(() => null);
+
+    let amount: string;
+    if (fragment.value.amount === MAX_UINT256) {
+      amount = 'unlimited';
+    } else if (token && token.decimals) {
+      amount = formatUnits(fragment.value.amount, token.decimals);
+    } else {
+      amount = fragment.value.amount.toString();
+    }
+
+    return new RichTokenValueFragment(
+      amount,
+      token?.symbol ?? null,
+      token?.logoUri ?? null,
+    );
+  }
+
+  async enrichSafeAppInfo(
+    fragments: RichDecodedInfoFragment[],
+    transaction: MultisigTransaction | ModuleTransaction,
+    chainId: string,
+  ): Promise<RichDecodedInfoFragment[]> {
+    const safeAppInfo = isMultisigTransaction(transaction)
+      ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
+      : null;
+
+    if (safeAppInfo) {
+      fragments.push(<RichTextFragment>{
+        type: RichFragmentType.Text,
+        value: `via ${safeAppInfo.name}`,
+      });
+    }
+
+    return fragments;
+  }
+
+  private shortenAddress(address: string, length = 4): string {
     if (!isAddress(address)) {
       throw Error('Invalid address');
     }

@@ -52,6 +52,7 @@ export class TransferInfoMapper {
       direction,
       await this.getTransferByType(chainId, domainTransfer),
       null,
+      null,
     );
   }
 

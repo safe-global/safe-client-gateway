@@ -8,6 +8,7 @@ import { TransferTransactionInfo } from '../../entities/transfer-transaction-inf
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { getTransferDirection } from './transfer-direction.helper';
+import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
 export class Erc20TransferMapper {
@@ -21,6 +22,7 @@ export class Erc20TransferMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
     humanDescription: string | null,
+    richDecodedInfo: RichDecodedInfo | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(
@@ -57,6 +59,7 @@ export class Erc20TransferMapper {
         token.decimals,
       ),
       humanDescription,
+      richDecodedInfo,
     );
   }
 }
