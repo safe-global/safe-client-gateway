@@ -48,6 +48,7 @@ export class RichAddressFragment extends RichDecodedInfoFragment {
     super(RichFragmentType.Address, value);
   }
 }
+
 @ApiExtraModels(RichTokenValueFragment, RichTextFragment, RichAddressFragment)
 export class RichDecodedInfo {
   @ApiProperty({

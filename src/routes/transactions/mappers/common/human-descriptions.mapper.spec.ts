@@ -15,7 +15,6 @@ import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import { Hex } from 'viem/src/types/misc';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
-import { ValueType } from '@/domain/human-description/entities/human-description.entity';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -110,15 +109,15 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send' },
+      { type: 'text', value: 'Send' },
       {
-        type: ValueType.TokenValue,
+        type: 'tokenValue',
         value: formatUnits(mockAmount, token.decimals!),
         symbol: token.symbol,
         logoUri: token.logoUri,
       },
-      { type: ValueType.Text, value: 'to' },
-      { type: ValueType.Address, value: mockAddress },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });
@@ -152,15 +151,15 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send' },
+      { type: 'text', value: 'Send' },
       {
-        type: ValueType.TokenValue,
+        type: 'tokenValue',
         value: mockAmount.toString(),
         symbol: null,
         logoUri: null,
       },
-      { type: ValueType.Text, value: 'to' },
-      { type: ValueType.Address, value: mockAddress },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });
@@ -187,9 +186,9 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Approve' },
+      { type: 'text', value: 'Approve' },
       {
-        type: ValueType.TokenValue,
+        type: 'tokenValue',
         value: 'unlimited',
         symbol: token.symbol,
         logoUri: token.logoUri,
@@ -217,16 +216,16 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send' },
+      { type: 'text', value: 'Send' },
       {
-        type: ValueType.TokenValue,
+        type: 'tokenValue',
         value: formatUnits(mockAmount, token.decimals!),
         symbol: token.symbol,
         logoUri: token.logoUri,
       },
-      { type: ValueType.Text, value: 'to' },
-      { type: ValueType.Address, value: mockAddress },
-      { type: ValueType.Text, value: `via ${mockSafeAppName}` },
+      { type: 'text', value: 'to' },
+      { type: 'address', value: mockAddress },
+      { type: 'text', value: `via ${mockSafeAppName}` },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });

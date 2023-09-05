@@ -69,9 +69,7 @@ export class HumanDescriptionMapper {
         chainId,
       );
 
-      return {
-        fragments: richDecodedInfo,
-      };
+      return new RichDecodedInfo(richDecodedInfo);
     } catch (error) {
       this.loggingService.debug(
         `Error trying to decode the input data: ${error.message}`,

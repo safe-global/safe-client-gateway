@@ -11,27 +11,27 @@ import { faker } from '@faker-js/faker';
 function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {
   return Builder.new<RichTokenValueFragment>()
     .with('type', RichFragmentType.TokenValue)
-    .with('value', faker.number.int().toString())
+    .with('value', faker.string.numeric())
     .with('symbol', faker.finance.currencySymbol())
     .with('logoUri', faker.internet.avatar());
 }
 
-function richWordFragmentBuilder(): IBuilder<RichTextFragment> {
+function richTextFragmentBuilder(): IBuilder<RichTextFragment> {
   return Builder.new<RichTextFragment>()
     .with('type', RichFragmentType.Text)
-    .with('value', faker.word.adverb());
+    .with('value', faker.word.words());
 }
 
 function richAddressFragmentBuilder(): IBuilder<RichAddressFragment> {
   return Builder.new<RichAddressFragment>()
     .with('type', RichFragmentType.Address)
-    .with('value', faker.finance.ethereumAddress() as `0x${string}`);
+    .with('value', faker.finance.ethereumAddress());
 }
 
 const humanDescriptionBuilders: Array<() => IBuilder<RichDecodedInfoFragment>> =
   [
     richTokenValueFragmentBuilder,
-    richWordFragmentBuilder,
+    richTextFragmentBuilder,
     richAddressFragmentBuilder,
   ];
 
