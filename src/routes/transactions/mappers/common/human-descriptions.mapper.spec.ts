@@ -142,8 +142,8 @@ describe('Human descriptions mapper (Unit)', () => {
   });
 
   it('should return raw amount if token info cannot be fetched', async () => {
-    tokenRepository.getToken.mockImplementation(() => {
-      throw Error('No token info');
+    tokenRepository.getToken.mockImplementationOnce(() => {
+      return Promise.reject();
     });
 
     const humanDescription = await mapper.mapRichDecodedInfo(

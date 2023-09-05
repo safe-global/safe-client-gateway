@@ -6,7 +6,8 @@ export class TransactionInfo {
   type: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   humanDescription: string | null;
-  @ApiPropertyOptional({ type: Object, nullable: true })
+  // TODO: Remove nullable once the feature flag is removed, allow returning an empty array instead
+  @ApiPropertyOptional({ type: RichDecodedInfo, nullable: true })
   richDecodedInfo: RichDecodedInfo | null;
 
   protected constructor(

@@ -1,4 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 
 export enum RichFragmentType {
   Text = 'text',
@@ -43,7 +48,21 @@ export class RichAddressFragment extends RichDecodedInfoFragment {
     super(RichFragmentType.Address, value);
   }
 }
-
-export type RichDecodedInfo = {
+@ApiExtraModels(RichTokenValueFragment, RichTextFragment, RichAddressFragment)
+export class RichDecodedInfo {
+  @ApiProperty({
+    type: 'array',
+    items: {
+      oneOf: [
+        { $ref: getSchemaPath(RichTokenValueFragment) },
+        { $ref: getSchemaPath(RichTextFragment) },
+        { $ref: getSchemaPath(RichAddressFragment) },
+      ],
+    },
+  })
   fragments: RichDecodedInfoFragment[];
-};
+
+  constructor(fragments: RichDecodedInfoFragment[]) {
+    this.fragments = fragments;
+  }
+}

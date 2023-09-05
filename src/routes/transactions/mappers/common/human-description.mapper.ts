@@ -86,11 +86,15 @@ export class HumanDescriptionMapper {
     return richDecodedInfo.fragments
       .map((fragment) => {
         if (fragment instanceof RichTokenValueFragment) {
-          return `${fragment.value} ${fragment.symbol}`;
+          return fragment.symbol
+            ? `${fragment.value} ${fragment.symbol}`
+            : fragment.value;
         }
+
         if (fragment instanceof RichAddressFragment) {
           return this.shortenAddress(fragment.value);
         }
+
         return fragment.value;
       })
       .join(' ');
@@ -107,14 +111,11 @@ export class HumanDescriptionMapper {
           case ValueType.TokenValue:
             return this.enrichTokenValue(fragment, transaction, chainId);
           case ValueType.Address:
-            return { ...fragment, type: RichFragmentType.Address };
+            return new RichAddressFragment(fragment.value);
           case ValueType.Text:
-            return { ...fragment, type: RichFragmentType.Text };
+            return new RichTextFragment(fragment.value);
           case ValueType.Number:
-            return {
-              type: RichFragmentType.Text,
-              value: fragment.value.toString(),
-            };
+            return new RichTextFragment(fragment.value.toString());
         }
       }),
     );
@@ -125,35 +126,27 @@ export class HumanDescriptionMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
   ): Promise<RichTokenValueFragment> {
-    try {
-      const token = await this.tokenRepository.getToken({
+    const token = await this.tokenRepository
+      .getToken({
         chainId,
         address: transaction.to,
-      });
+      })
+      .catch(() => null);
 
-      let amount: string;
-      if (fragment.value.amount === MAX_UINT256) {
-        amount = 'unlimited';
-      } else if (token && token.decimals) {
-        amount = formatUnits(fragment.value.amount, token.decimals);
-      } else {
-        amount = fragment.value.amount.toString();
-      }
-
-      return <RichTokenValueFragment>{
-        type: RichFragmentType.TokenValue,
-        value: amount,
-        symbol: token.symbol,
-        logoUri: token.logoUri,
-      };
-    } catch (error) {
-      return {
-        type: RichFragmentType.TokenValue,
-        value: fragment.value.amount.toString(),
-        symbol: null,
-        logoUri: null,
-      };
+    let amount: string;
+    if (fragment.value.amount === MAX_UINT256) {
+      amount = 'unlimited';
+    } else if (token && token.decimals) {
+      amount = formatUnits(fragment.value.amount, token.decimals);
+    } else {
+      amount = fragment.value.amount.toString();
     }
+
+    return new RichTokenValueFragment(
+      amount,
+      token?.symbol ?? null,
+      token?.logoUri ?? null,
+    );
   }
 
   async enrichSafeAppInfo(
