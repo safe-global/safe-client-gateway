@@ -1,26 +1,48 @@
-import {
-  AddressFragment,
-  NumberFragment,
-  TextFragment,
-  ValueType,
-} from '@/domain/human-description/entities/human-description.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export interface RichTokenValueFragment {
-  type: ValueType.TokenValue;
-  value: string;
-  symbol: string | null;
-  logoUri: string | null;
+export enum RichFragmentType {
+  Text = 'text',
+  TokenValue = 'tokenValue',
+  Address = 'address',
 }
 
-export interface RichTextFragment extends TextFragment {}
-export interface RichAddressFragment extends AddressFragment {}
-export interface RichNumberFragment extends NumberFragment {}
+export abstract class RichDecodedInfoFragment {
+  @ApiProperty()
+  type: RichFragmentType;
+  @ApiProperty()
+  value: string;
 
-export type RichDecodedInfoFragment =
-  | RichTokenValueFragment
-  | RichTextFragment
-  | RichAddressFragment
-  | RichNumberFragment;
+  protected constructor(type: RichFragmentType, value: string) {
+    this.type = type;
+    this.value = value;
+  }
+}
+
+export class RichTokenValueFragment extends RichDecodedInfoFragment {
+  @ApiPropertyOptional({ type: String, nullable: true })
+  symbol: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  logoUri: string | null;
+
+  constructor(value: string, symbol: string | null, logoUri: string | null) {
+    super(RichFragmentType.TokenValue, value);
+    this.value = value;
+    this.symbol = symbol;
+    this.logoUri = logoUri;
+  }
+}
+
+export class RichTextFragment extends RichDecodedInfoFragment {
+  constructor(value: string) {
+    super(RichFragmentType.Text, value);
+  }
+}
+
+export class RichAddressFragment extends RichDecodedInfoFragment {
+  constructor(value: `0x${string}`) {
+    super(RichFragmentType.Address, value);
+  }
+}
 
 export type RichDecodedInfo = {
   fragments: RichDecodedInfoFragment[];

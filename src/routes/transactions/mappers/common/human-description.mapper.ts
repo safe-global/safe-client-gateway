@@ -17,8 +17,10 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import {
-  RichDecodedInfoFragment,
+  RichAddressFragment,
   RichDecodedInfo,
+  RichDecodedInfoFragment,
+  RichFragmentType,
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/routes/transactions/entities/human-description.entity';
@@ -83,19 +85,18 @@ export class HumanDescriptionMapper {
 
     return richDecodedInfo.fragments
       .map((fragment) => {
-        switch (fragment.type) {
-          case ValueType.TokenValue:
-            return `${fragment.value} ${fragment.symbol}`;
-          case ValueType.Address:
-            return this.shortenAddress(fragment.value);
+        if (fragment instanceof RichTokenValueFragment) {
+          return `${fragment.value} ${fragment.symbol}`;
         }
-
+        if (fragment instanceof RichAddressFragment) {
+          return this.shortenAddress(fragment.value);
+        }
         return fragment.value;
       })
       .join(' ');
   }
 
-  async enrichFragments(
+  private async enrichFragments(
     fragments: HumanDescriptionFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
@@ -106,14 +107,20 @@ export class HumanDescriptionMapper {
           case ValueType.TokenValue:
             return this.enrichTokenValue(fragment, transaction, chainId);
           case ValueType.Address:
-          default:
-            return fragment;
+            return { ...fragment, type: RichFragmentType.Address };
+          case ValueType.Text:
+            return { ...fragment, type: RichFragmentType.Text };
+          case ValueType.Number:
+            return {
+              type: RichFragmentType.Text,
+              value: fragment.value.toString(),
+            };
         }
       }),
     );
   }
 
-  async enrichTokenValue(
+  private async enrichTokenValue(
     fragment: TokenValueFragment,
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
@@ -134,14 +141,14 @@ export class HumanDescriptionMapper {
       }
 
       return <RichTokenValueFragment>{
-        type: ValueType.TokenValue,
+        type: RichFragmentType.TokenValue,
         value: amount,
         symbol: token.symbol,
         logoUri: token.logoUri,
       };
     } catch (error) {
       return {
-        type: ValueType.TokenValue,
+        type: RichFragmentType.TokenValue,
         value: fragment.value.amount.toString(),
         symbol: null,
         logoUri: null,
@@ -160,7 +167,7 @@ export class HumanDescriptionMapper {
 
     if (safeAppInfo) {
       fragments.push(<RichTextFragment>{
-        type: ValueType.Text,
+        type: RichFragmentType.Text,
         value: `via ${safeAppInfo.name}`,
       });
     }
@@ -168,7 +175,7 @@ export class HumanDescriptionMapper {
     return fragments;
   }
 
-  shortenAddress(address: string, length = 4): string {
+  private shortenAddress(address: string, length = 4): string {
     if (!isAddress(address)) {
       throw Error('Invalid address');
     }

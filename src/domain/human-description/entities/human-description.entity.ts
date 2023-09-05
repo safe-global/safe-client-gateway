@@ -6,15 +6,12 @@ export enum ValueType {
   Address = 'address',
   Number = 'number',
 }
-
-type TokenValue = {
-  amount: bigint;
-  address: string;
-};
-
 export interface TokenValueFragment {
   type: ValueType.TokenValue;
-  value: TokenValue;
+  value: {
+    amount: bigint;
+    address: string;
+  };
 }
 
 export interface TextFragment {

@@ -25,7 +25,7 @@ export class HumanDescriptionTemplate {
   private readonly functionAbi: never;
 
   private static readonly REGEX =
-    /{{(?<typeToken>\w+) \$(?<paramIndex>\d+)}}|(?<wordToken>\w+)/g;
+    /{{(?<typeToken>\w+) \$(?<paramIndex>\d+)}}|(?<textToken>\w+)/g;
 
   /**
    * Store the regex matches as an array instead of an iterable so that it can be restarted
@@ -64,10 +64,10 @@ export class HumanDescriptionTemplate {
     const fragments: HumanDescriptionFragment[] = [];
 
     for (const match of this.templateMatches) {
-      if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
+      if ('textToken' in match.groups && match.groups.textToken !== undefined) {
         fragments.push(<TextFragment>{
           type: ValueType.Text,
-          value: match.groups.wordToken,
+          value: match.groups.textToken,
         });
       } else if (
         'typeToken' in match.groups &&
