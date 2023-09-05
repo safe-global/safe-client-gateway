@@ -85,7 +85,7 @@ export class HumanDescriptionMapper {
       .map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
-            return `${fragment.value} ${fragment.richData?.symbol}`;
+            return `${fragment.value} ${fragment.symbol}`;
           case ValueType.Address:
             return this.shortenAddress(fragment.value);
         }
@@ -107,7 +107,7 @@ export class HumanDescriptionMapper {
             return this.enrichTokenValue(fragment, transaction, chainId);
           case ValueType.Address:
           default:
-            return { ...fragment, richData: null };
+            return fragment;
         }
       }),
     );
@@ -136,19 +136,15 @@ export class HumanDescriptionMapper {
       return <RichTokenValueFragment>{
         type: ValueType.TokenValue,
         value: amount,
-        richData: {
-          symbol: token.symbol,
-          logoUri: token.logoUri,
-        },
+        symbol: token.symbol,
+        logoUri: token.logoUri,
       };
     } catch (error) {
       return {
         type: ValueType.TokenValue,
         value: fragment.value.amount.toString(),
-        richData: {
-          symbol: null,
-          logoUri: null,
-        },
+        symbol: null,
+        logoUri: null,
       };
     }
   }
@@ -166,7 +162,6 @@ export class HumanDescriptionMapper {
       fragments.push(<RichTextFragment>{
         type: ValueType.Text,
         value: `via ${safeAppInfo.name}`,
-        richData: null,
       });
     }
 

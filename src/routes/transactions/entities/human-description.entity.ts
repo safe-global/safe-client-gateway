@@ -8,10 +8,8 @@ import {
 export interface RichTokenValueFragment {
   type: ValueType.TokenValue;
   value: string;
-  richData: {
-    symbol: string | null;
-    logoUri: string | null;
-  };
+  symbol: string | null;
+  logoUri: string | null;
 }
 
 export interface RichTextFragment extends TextFragment {}

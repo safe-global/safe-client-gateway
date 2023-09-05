@@ -13,10 +13,8 @@ function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {
   return Builder.new<RichTokenValueFragment>()
     .with('type', ValueType.TokenValue)
     .with('value', faker.number.int().toString())
-    .with('richData', {
-      symbol: faker.finance.currencySymbol(),
-      logoUri: faker.internet.avatar(),
-    });
+    .with('symbol', faker.finance.currencySymbol())
+    .with('logoUri', faker.internet.avatar());
 }
 
 function richWordFragmentBuilder(): IBuilder<RichTextFragment> {

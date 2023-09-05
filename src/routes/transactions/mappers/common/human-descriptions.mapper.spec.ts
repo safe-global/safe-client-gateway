@@ -101,17 +101,15 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send', richData: null },
+      { type: ValueType.Text, value: 'Send' },
       {
         type: ValueType.TokenValue,
         value: formatUnits(mockAmount, token.decimals!),
-        richData: {
-          symbol: token.symbol,
-          logoUri: token.logoUri,
-        },
+        symbol: token.symbol,
+        logoUri: token.logoUri,
       },
-      { type: ValueType.Text, value: 'to', richData: null },
-      { type: ValueType.Address, value: mockAddress, richData: null },
+      { type: ValueType.Text, value: 'to' },
+      { type: ValueType.Address, value: mockAddress },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });
@@ -139,17 +137,15 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send', richData: null },
+      { type: ValueType.Text, value: 'Send' },
       {
         type: ValueType.TokenValue,
         value: mockAmount.toString(),
-        richData: {
-          symbol: null,
-          logoUri: null,
-        },
+        symbol: null,
+        logoUri: null,
       },
-      { type: ValueType.Text, value: 'to', richData: null },
-      { type: ValueType.Address, value: mockAddress, richData: null },
+      { type: ValueType.Text, value: 'to' },
+      { type: ValueType.Address, value: mockAddress },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });
@@ -173,14 +169,12 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Approve', richData: null },
+      { type: ValueType.Text, value: 'Approve' },
       {
         type: ValueType.TokenValue,
         value: 'unlimited',
-        richData: {
-          symbol: token.symbol,
-          logoUri: token.logoUri,
-        },
+        symbol: token.symbol,
+        logoUri: token.logoUri,
       },
     ];
 
@@ -202,18 +196,16 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapRichInfo(transaction, chainId);
 
     const expectedResult = [
-      { type: ValueType.Text, value: 'Send', richData: null },
+      { type: ValueType.Text, value: 'Send' },
       {
         type: ValueType.TokenValue,
         value: formatUnits(mockAmount, token.decimals!),
-        richData: {
-          symbol: token.symbol,
-          logoUri: token.logoUri,
-        },
+        symbol: token.symbol,
+        logoUri: token.logoUri,
       },
-      { type: ValueType.Text, value: 'to', richData: null },
-      { type: ValueType.Address, value: mockAddress, richData: null },
-      { type: ValueType.Text, value: `via ${mockSafeAppName}`, richData: null },
+      { type: ValueType.Text, value: 'to' },
+      { type: ValueType.Address, value: mockAddress },
+      { type: ValueType.Text, value: `via ${mockSafeAppName}` },
     ];
 
     expect(humanDescription).toEqual({ fragments: expectedResult });
