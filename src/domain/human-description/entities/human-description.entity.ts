@@ -7,32 +7,27 @@ export enum ValueType {
   Number = 'number',
 }
 
-export interface InfoFragment {
-  type: ValueType;
-  value: string | bigint | TokenValue;
-}
-
 type TokenValue = {
   amount: bigint;
   address: string;
 };
 
-export interface TokenValueFragment extends InfoFragment {
+export interface TokenValueFragment {
   type: ValueType.TokenValue;
   value: TokenValue;
 }
 
-export interface TextFragment extends InfoFragment {
+export interface TextFragment {
   type: ValueType.Text;
   value: string;
 }
 
-export interface AddressFragment extends InfoFragment {
+export interface AddressFragment {
   type: ValueType.Address;
   value: `0x${string}`;
 }
 
-export interface NumberFragment extends InfoFragment {
+export interface NumberFragment {
   type: ValueType.Number;
   value: bigint;
 }

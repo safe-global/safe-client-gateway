@@ -12,10 +12,6 @@ type SafeRegExpMatchArray = RegExpMatchArray & {
   groups: NonNullable<RegExpMatchArray['groups']>;
 };
 
-function hasGroups(match: RegExpMatchArray): match is SafeRegExpMatchArray {
-  return match.groups !== undefined;
-}
-
 /**
  * A {@link HumanDescriptionTemplate} represents a human-readable template
  *
@@ -45,15 +41,9 @@ export class HumanDescriptionTemplate {
 
     this.templateMatches = Array.from(
       template.matchAll(HumanDescriptionTemplate.REGEX),
-    )
-      .map((match) => {
-        if (!match.groups) {
-          throw Error(`Error parsing template ${this.template}`);
-        }
-
-        return match;
-      })
-      .filter(hasGroups);
+    ).filter((match): match is SafeRegExpMatchArray => {
+      return match.groups !== undefined;
+    });
   }
 
   /**

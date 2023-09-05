@@ -1,6 +1,6 @@
 import { Hex } from 'viem/src/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
-import { formatUnits, isHex } from 'viem';
+import { formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { MAX_UINT256 } from '../../constants';
@@ -17,10 +17,10 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import {
+  RichHumanDescriptionFragment,
   RichInfo,
-  RichTokenValueFragment,
   RichTextFragment,
-  RichInfoFragment,
+  RichTokenValueFragment,
 } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
@@ -83,8 +83,11 @@ export class HumanDescriptionMapper {
 
     return richInfo.fragments
       .map((fragment) => {
-        if (fragment.type === ValueType.TokenValue) {
-          return `${fragment.value} ${fragment.richData?.symbol}`;
+        switch (fragment.type) {
+          case ValueType.TokenValue:
+            return `${fragment.value} ${fragment.richData?.symbol}`;
+          case ValueType.Address:
+            return this.shortenAddress(fragment.value);
         }
 
         return fragment.value;
@@ -96,7 +99,7 @@ export class HumanDescriptionMapper {
     fragments: HumanDescriptionFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichInfoFragment[]> {
+  ): Promise<RichHumanDescriptionFragment[]> {
     return Promise.all(
       fragments.map(async (fragment) => {
         switch (fragment.type) {
@@ -151,10 +154,10 @@ export class HumanDescriptionMapper {
   }
 
   async enrichSafeAppInfo(
-    fragments: RichInfoFragment[],
+    fragments: RichHumanDescriptionFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichInfoFragment[]> {
+  ): Promise<RichHumanDescriptionFragment[]> {
     const safeAppInfo = isMultisigTransaction(transaction)
       ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
       : null;
@@ -168,6 +171,20 @@ export class HumanDescriptionMapper {
     }
 
     return fragments;
+  }
+
+  shortenAddress(address: string, length = 4): string {
+    if (!isAddress(address)) {
+      throw Error('Invalid address');
+    }
+
+    const visibleCharactersLength = length * 2 + 2;
+
+    if (address.length < visibleCharactersLength) {
+      return address;
+    }
+
+    return `${address.slice(0, length + 2)}...${address.slice(-length)}`;
   }
 
   private getSigHash(data: Hex): Hex | null {
