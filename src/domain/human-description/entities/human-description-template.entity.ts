@@ -13,7 +13,7 @@ type SafeRegExpMatchArray = RegExpMatchArray & {
 };
 
 function hasGroups(match: RegExpMatchArray): match is SafeRegExpMatchArray {
-  return !!match.groups;
+  return match.groups !== undefined;
 }
 
 /**

@@ -12,9 +12,9 @@ import { faker } from '@faker-js/faker';
 function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {
   return Builder.new<RichTokenValueFragment>()
     .with('type', ValueType.TokenValue)
-    .with('value', faker.word.noun())
+    .with('value', faker.number.int().toString())
     .with('richData', {
-      symbol: faker.word.noun(),
+      symbol: faker.finance.currencySymbol(),
       logoUri: faker.internet.avatar(),
     });
 }
@@ -28,7 +28,7 @@ function richWordFragmentBuilder(): IBuilder<RichTextFragment> {
 function richAddressFragmentBuilder(): IBuilder<RichAddressFragment> {
   return Builder.new<RichAddressFragment>()
     .with('type', ValueType.Address)
-    .with('value', faker.finance.ethereumAddress() as `0x${string}`);
+    .with('value', faker.finance.ethereumAddress());
 }
 
 function richNumberFragmentBuilder(): IBuilder<RichNumberFragment> {

@@ -9,7 +9,7 @@ export enum ValueType {
 
 export interface InfoFragment {
   type: ValueType;
-  value: string | bigint | `0x${string}` | TokenValue;
+  value: string | bigint | TokenValue;
 }
 
 type TokenValue = {
