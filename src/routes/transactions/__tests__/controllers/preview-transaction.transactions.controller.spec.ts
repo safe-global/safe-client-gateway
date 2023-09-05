@@ -122,7 +122,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           actionCount: null,
           isCancellation: false,
           humanDescription: null,
-          richInfo: null,
+          richDecodedInfo: null,
         },
         txData: {
           hexData: previewTransactionDto.data,
@@ -189,7 +189,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           actionCount: null,
           isCancellation: false,
           humanDescription: null,
-          richInfo: null,
+          richDecodedInfo: null,
         },
         txData: {
           hexData: previewTransactionDto.data,
@@ -255,7 +255,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           actionCount: null,
           isCancellation: false,
           humanDescription: null,
-          richInfo: null,
+          richDecodedInfo: null,
         },
         txData: {
           hexData: previewTransactionDto.data,
@@ -336,7 +336,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           actionCount: null,
           isCancellation: false,
           humanDescription: null,
-          richInfo: null,
+          richDecodedInfo: null,
         },
         txData: {
           hexData: previewTransactionDto.data,

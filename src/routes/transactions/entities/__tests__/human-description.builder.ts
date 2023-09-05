@@ -4,7 +4,7 @@ import {
   RichNumberFragment,
   RichTokenValueFragment,
   RichTextFragment,
-  RichHumanDescriptionFragment,
+  RichDecodedInfoFragment,
 } from '@/routes/transactions/entities/human-description.entity';
 import { ValueType } from '@/domain/human-description/entities/human-description.entity';
 import { faker } from '@faker-js/faker';
@@ -35,16 +35,15 @@ function richNumberFragmentBuilder(): IBuilder<RichNumberFragment> {
     .with('value', faker.number.bigInt());
 }
 
-const humanDescriptionBuilders: Array<
-  () => IBuilder<RichHumanDescriptionFragment>
-> = [
-  richTokenValueFragmentBuilder,
-  richWordFragmentBuilder,
-  richAddressFragmentBuilder,
-  richNumberFragmentBuilder,
-];
+const humanDescriptionBuilders: Array<() => IBuilder<RichDecodedInfoFragment>> =
+  [
+    richTokenValueFragmentBuilder,
+    richWordFragmentBuilder,
+    richAddressFragmentBuilder,
+    richNumberFragmentBuilder,
+  ];
 
-export function buildHumanDescription(): RichHumanDescriptionFragment[] {
+export function buildHumanDescription(): RichDecodedInfoFragment[] {
   return Array.from({ length: faker.number.int({ min: 0, max: 6 }) }, () =>
     faker.helpers.arrayElement(humanDescriptionBuilders)().build(),
   );

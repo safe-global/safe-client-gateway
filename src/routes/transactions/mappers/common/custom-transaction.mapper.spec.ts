@@ -199,7 +199,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
     const humanDescription = 'Send 10 ETH to vitalik.eth';
-    const richInfo = {
+    const richDecodedInfo = {
       fragments: buildHumanDescription(),
     };
 
@@ -208,7 +208,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       humanDescription,
-      richInfo,
+      richDecodedInfo,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -217,6 +217,8 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
         humanDescription,
       }),
     );
-    expect(customTransaction).toEqual(expect.objectContaining({ richInfo }));
+    expect(customTransaction).toEqual(
+      expect.objectContaining({ richDecodedInfo }),
+    );
   });
 });

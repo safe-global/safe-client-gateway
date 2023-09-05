@@ -16,12 +16,12 @@ export interface RichTextFragment extends TextFragment {}
 export interface RichAddressFragment extends AddressFragment {}
 export interface RichNumberFragment extends NumberFragment {}
 
-export type RichHumanDescriptionFragment =
+export type RichDecodedInfoFragment =
   | RichTokenValueFragment
   | RichTextFragment
   | RichAddressFragment
   | RichNumberFragment;
 
-export type RichInfo = {
-  fragments: RichHumanDescriptionFragment[];
+export type RichDecodedInfo = {
+  fragments: RichDecodedInfoFragment[];
 };

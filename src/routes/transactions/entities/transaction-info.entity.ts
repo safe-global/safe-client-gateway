@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { RichInfo } from '@/routes/transactions/entities/human-description.entity';
+import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 
 export class TransactionInfo {
   @ApiProperty()
@@ -7,15 +7,15 @@ export class TransactionInfo {
   @ApiPropertyOptional({ type: String, nullable: true })
   humanDescription: string | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
-  richInfo: RichInfo | null;
+  richDecodedInfo: RichDecodedInfo | null;
 
   protected constructor(
     type: string,
     humanDescription: string | null,
-    richInfo: RichInfo | null,
+    richDecodedInfo: RichDecodedInfo | null,
   ) {
     this.type = type;
     this.humanDescription = humanDescription;
-    this.richInfo = richInfo;
+    this.richDecodedInfo = richDecodedInfo;
   }
 }

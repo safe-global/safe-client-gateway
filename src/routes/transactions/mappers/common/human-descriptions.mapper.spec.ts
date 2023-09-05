@@ -80,7 +80,10 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if there is no data', async () => {
     const transaction = multisigTransactionBuilder().with('data', null).build();
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     expect(humanDescription).toBeNull();
   });
@@ -90,7 +93,10 @@ describe('Human descriptions mapper (Unit)', () => {
 
     const transaction = multisigTransactionBuilder().with('data', data).build();
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     expect(humanDescription).toBeNull();
   });
@@ -98,7 +104,10 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return a human-readable description for erc20 transfers', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     const expectedResult = [
       { type: ValueType.Text, value: 'Send' },
@@ -124,7 +133,10 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', corruptedData)
       .build();
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     expect(humanDescription).toBeNull();
   });
@@ -134,7 +146,10 @@ describe('Human descriptions mapper (Unit)', () => {
       throw Error('No token info');
     });
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     const expectedResult = [
       { type: ValueType.Text, value: 'Send' },
@@ -166,7 +181,10 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', mockApprovalData)
       .build();
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     const expectedResult = [
       { type: ValueType.Text, value: 'Approve' },
@@ -193,7 +211,10 @@ describe('Human descriptions mapper (Unit)', () => {
       Promise.resolve(mockSafeAppInfo),
     );
 
-    const humanDescription = await mapper.mapRichInfo(transaction, chainId);
+    const humanDescription = await mapper.mapRichDecodedInfo(
+      transaction,
+      chainId,
+    );
 
     const expectedResult = [
       { type: ValueType.Text, value: 'Send' },

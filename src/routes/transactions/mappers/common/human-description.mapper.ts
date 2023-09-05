@@ -17,8 +17,8 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import {
-  RichHumanDescriptionFragment,
-  RichInfo,
+  RichDecodedInfoFragment,
+  RichDecodedInfo,
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/routes/transactions/entities/human-description.entity';
@@ -35,10 +35,10 @@ export class HumanDescriptionMapper {
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
   ) {}
 
-  async mapRichInfo(
+  async mapRichDecodedInfo(
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichInfo | null> {
+  ): Promise<RichDecodedInfo | null> {
     if (!transaction.data || !isHex(transaction.data) || !transaction.to) {
       return null;
     }
@@ -55,20 +55,20 @@ export class HumanDescriptionMapper {
           data: transaction.data,
         });
 
-      const richInfoFragments = await this.enrichFragments(
+      const richDecodedInfoFragments = await this.enrichFragments(
         humanDescriptionFragments,
         transaction,
         chainId,
       );
 
-      const richInfo = await this.enrichSafeAppInfo(
-        richInfoFragments,
+      const richDecodedInfo = await this.enrichSafeAppInfo(
+        richDecodedInfoFragments,
         transaction,
         chainId,
       );
 
       return {
-        fragments: richInfo,
+        fragments: richDecodedInfo,
       };
     } catch (error) {
       this.loggingService.debug(
@@ -78,10 +78,10 @@ export class HumanDescriptionMapper {
     }
   }
 
-  mapHumanDescription(richInfo: RichInfo | null): string | null {
-    if (!richInfo?.fragments) return null;
+  mapHumanDescription(richDecodedInfo: RichDecodedInfo | null): string | null {
+    if (!richDecodedInfo?.fragments) return null;
 
-    return richInfo.fragments
+    return richDecodedInfo.fragments
       .map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
@@ -99,7 +99,7 @@ export class HumanDescriptionMapper {
     fragments: HumanDescriptionFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichHumanDescriptionFragment[]> {
+  ): Promise<RichDecodedInfoFragment[]> {
     return Promise.all(
       fragments.map(async (fragment) => {
         switch (fragment.type) {
@@ -150,10 +150,10 @@ export class HumanDescriptionMapper {
   }
 
   async enrichSafeAppInfo(
-    fragments: RichHumanDescriptionFragment[],
+    fragments: RichDecodedInfoFragment[],
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
-  ): Promise<RichHumanDescriptionFragment[]> {
+  ): Promise<RichDecodedInfoFragment[]> {
     const safeAppInfo = isMultisigTransaction(transaction)
       ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
       : null;

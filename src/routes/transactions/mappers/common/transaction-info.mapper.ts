@@ -65,12 +65,15 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const richInfo = this.isHumanDescriptionEnabled
-      ? await this.humanDescriptionMapper.mapRichInfo(transaction, chainId)
+    const richDecodedInfo = this.isHumanDescriptionEnabled
+      ? await this.humanDescriptionMapper.mapRichDecodedInfo(
+          transaction,
+          chainId,
+        )
       : null;
 
     const humanDescription = this.isHumanDescriptionEnabled
-      ? this.humanDescriptionMapper.mapHumanDescription(richInfo)
+      ? this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo)
       : null;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
@@ -79,7 +82,7 @@ export class MultisigTransactionInfoMapper {
         dataSize,
         chainId,
         humanDescription,
-        richInfo,
+        richDecodedInfo,
       );
     }
 
@@ -88,7 +91,7 @@ export class MultisigTransactionInfoMapper {
         chainId,
         transaction,
         humanDescription,
-        richInfo,
+        richDecodedInfo,
       );
     }
 
@@ -119,7 +122,7 @@ export class MultisigTransactionInfoMapper {
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
         humanDescription,
-        richInfo,
+        richDecodedInfo,
       );
     }
 
@@ -135,7 +138,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richInfo,
+            richDecodedInfo,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
@@ -143,7 +146,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richInfo,
+            richDecodedInfo,
           );
       }
     }
@@ -153,7 +156,7 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
       humanDescription,
-      richInfo,
+      richDecodedInfo,
     );
   }
 
