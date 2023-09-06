@@ -1099,15 +1099,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:^10.2.0":
-  version: 10.2.0
-  resolution: "@nestjs/core@npm:10.2.0"
+"@nestjs/core@npm:^10.2.4":
+  version: 10.2.4
+  resolution: "@nestjs/core@npm:10.2.4"
   dependencies:
     "@nuxtjs/opencollective": 0.3.2
     fast-safe-stringify: 2.1.1
     iterare: 1.2.1
     path-to-regexp: 3.2.0
-    tslib: 2.6.1
+    tslib: 2.6.2
     uid: 2.0.2
   peerDependencies:
     "@nestjs/common": ^10.0.0
@@ -1123,7 +1123,7 @@ __metadata:
       optional: true
     "@nestjs/websockets":
       optional: true
-  checksum: 1cd646ae35294c055e1983af0bb5a6ad12886096d0a87aa0fd8954ee10cf537824170b516e764f26ae3757ca4f5b11b1a5a07e615d867c3188841181f98aab13
+  checksum: eb34108e284991b84c9a31ef0f1969f8d5b6a1d2ecae04b924ee585bd1e04de29776fbce26c5242edad349d932e49a1e4c4d6ac8d893735e12eddd299d8220d4
   languageName: node
   linkType: hard
 
@@ -6715,7 +6715,7 @@ __metadata:
     "@nestjs/cli": ^10.1.12
     "@nestjs/common": ^10.2.0
     "@nestjs/config": ^3.0.0
-    "@nestjs/core": ^10.2.0
+    "@nestjs/core": ^10.2.4
     "@nestjs/platform-express": ^10.1.3
     "@nestjs/schematics": ^10.0.2
     "@nestjs/serve-static": ^4.0.0
@@ -7520,6 +7520,13 @@ __metadata:
   version: 2.6.1
   resolution: "tslib@npm:2.6.1"
   checksum: b0d176d176487905b66ae4d5856647df50e37beea7571c53b8d10ba9222c074b81f1410fb91da13debaf2cbc970663609068bdebafa844ea9d69b146527c38fe
+  languageName: node
+  linkType: hard
+
+"tslib@npm:2.6.2":
+  version: 2.6.2
+  resolution: "tslib@npm:2.6.2"
+  checksum: 329ea56123005922f39642318e3d1f0f8265d1e7fcb92c633e0809521da75eeaca28d2cf96d7248229deb40e5c19adf408259f4b9640afd20d13aecc1430f3ad
   languageName: node
   linkType: hard
 
