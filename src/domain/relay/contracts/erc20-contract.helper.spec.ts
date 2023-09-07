@@ -5,15 +5,20 @@ import { concatHex, getAddress, pad, toHex } from 'viem';
 describe('ERC20 Contract Helper Tests', () => {
   let target: Erc20ContractHelper;
 
+  const transferFunctionSignature = `0xa9059cbb`;
+
   beforeEach(() => {
     target = new Erc20ContractHelper();
   });
 
   it('decodes a transfer correctly', () => {
-    const functionSignature = `0xa9059cbb`;
     const to = getAddress(faker.finance.ethereumAddress());
     const value = toHex(faker.number.bigInt());
-    const callData = concatHex([functionSignature, pad(to), pad(value)]);
+    const callData = concatHex([
+      transferFunctionSignature,
+      pad(to),
+      pad(value),
+    ]);
 
     const actual = target.decode(Erc20ContractHelper.TRANSFER, callData);
 
@@ -34,11 +39,10 @@ describe('ERC20 Contract Helper Tests', () => {
   });
 
   it('isCall returns true for a transfer call', () => {
-    const functionSignature = `0xa9059cbb`;
     const toAddress = getAddress(faker.finance.ethereumAddress());
     const toArg = pad(toAddress);
     const valueArg = pad(toHex(faker.number.hex()));
-    const callData = concatHex([functionSignature, toArg, valueArg]);
+    const callData = concatHex([transferFunctionSignature, toArg, valueArg]);
 
     const actual = target.isCall(callData);
 

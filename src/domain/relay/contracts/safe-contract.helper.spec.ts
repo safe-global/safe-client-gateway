@@ -2,74 +2,21 @@ import { faker } from '@faker-js/faker';
 import { concatHex, encodeFunctionData, getAddress, pad, toHex } from 'viem';
 import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { CALL_OPERATION } from '@/domain/safe/entities/operation.entity';
-
-const ABI_ITEM = {
-  inputs: [
-    {
-      internalType: 'address',
-      name: 'to',
-      type: 'address',
-    },
-    {
-      internalType: 'uint256',
-      name: 'value',
-      type: 'uint256',
-    },
-    {
-      internalType: 'bytes',
-      name: 'data',
-      type: 'bytes',
-    },
-    {
-      internalType: 'enum Enum.Operation',
-      name: 'operation',
-      type: 'uint8',
-    },
-    {
-      internalType: 'uint256',
-      name: 'safeTxGas',
-      type: 'uint256',
-    },
-    {
-      internalType: 'uint256',
-      name: 'baseGas',
-      type: 'uint256',
-    },
-    {
-      internalType: 'uint256',
-      name: 'gasPrice',
-      type: 'uint256',
-    },
-    {
-      internalType: 'address',
-      name: 'gasToken',
-      type: 'address',
-    },
-    {
-      internalType: 'address payable',
-      name: 'refundReceiver',
-      type: 'address',
-    },
-    {
-      internalType: 'bytes',
-      name: 'signatures',
-      type: 'bytes',
-    },
-  ],
-  name: 'execTransaction',
-  outputs: [
-    {
-      internalType: 'bool',
-      name: 'success',
-      type: 'bool',
-    },
-  ],
-  stateMutability: 'payable',
-  type: 'function',
-};
+import { getSafeSingletonDeployment } from '@safe-global/safe-deployments';
 
 describe('Safe Contract Helper Tests', () => {
   let target: SafeContractHelper;
+  let abi;
+
+  const supportedSafeVersion = '1.3.0';
+
+  beforeAll(() => {
+    const deployment = getSafeSingletonDeployment({
+      version: supportedSafeVersion,
+    });
+    if (!deployment) throw Error('Safe deployment is undefined');
+    abi = deployment.abi;
+  });
 
   beforeEach(() => {
     target = new SafeContractHelper();
@@ -118,37 +65,37 @@ describe('Safe Contract Helper Tests', () => {
 
     expect(actual).toBe(false);
   });
+
+  function getExecTransactionCallData(args?: {
+    to?: `0x${string}`;
+    value?: bigint;
+  }): `0x${string}` {
+    const to = args?.to ?? getAddress(faker.finance.ethereumAddress());
+    const value = args?.value ?? faker.number.bigInt();
+    const data = toHex(0);
+    const operation = CALL_OPERATION;
+    const safeTxGas = faker.number.bigInt();
+    const baseGas = faker.number.bigInt();
+    const gasPrice = faker.number.bigInt();
+    const gasToken = getAddress(faker.finance.ethereumAddress());
+    const refundReceiver = getAddress(faker.finance.ethereumAddress());
+    const signatures = faker.string.hexadecimal({ length: 64 * 2 });
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'execTransaction',
+      args: [
+        to,
+        value,
+        data,
+        operation,
+        safeTxGas,
+        baseGas,
+        gasPrice,
+        gasToken,
+        refundReceiver,
+        signatures,
+      ],
+    });
+  }
 });
-
-function getExecTransactionCallData(args?: {
-  to?: `0x${string}`;
-  value?: bigint;
-}): `0x${string}` {
-  const to = args?.to ?? getAddress(faker.finance.ethereumAddress());
-  const value = args?.value ?? faker.number.bigInt();
-  const data = toHex(0);
-  const operation = CALL_OPERATION;
-  const safeTxGas = faker.number.bigInt();
-  const baseGas = faker.number.bigInt();
-  const gasPrice = faker.number.bigInt();
-  const gasToken = getAddress(faker.finance.ethereumAddress());
-  const refundReceiver = getAddress(faker.finance.ethereumAddress());
-  const signatures = faker.string.hexadecimal({ length: 64 * 2 });
-
-  return encodeFunctionData({
-    abi: [ABI_ITEM],
-    functionName: 'execTransaction',
-    args: [
-      to,
-      value,
-      data,
-      operation,
-      safeTxGas,
-      baseGas,
-      gasPrice,
-      gasToken,
-      refundReceiver,
-      signatures,
-    ],
-  });
-}
