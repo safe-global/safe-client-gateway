@@ -52,9 +52,7 @@ export class LimitAddressesMapper {
       // If the ERC20 transfer targets 'self' (the Safe), we consider it to be invalid
       return erc20DecodedData.to !== to;
     } catch {
-      this.loggingService.debug(
-        'execTransaction data is not an ERC20 transfer',
-      );
+      // swallow exception if data is not an ERC20 transfer
     }
 
     // If a transaction does not target 'self' consider it valid
