@@ -62,7 +62,7 @@ export class LimitAddressesMapper {
 
     // Transaction targets 'self'
     // Block transactions targeting self with a value greater than 0
-    if (Number(execTransaction.value) > 0) {
+    if (execTransaction.value > BigInt(0)) {
       return false;
     }
 
