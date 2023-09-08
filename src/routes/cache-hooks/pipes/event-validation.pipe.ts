@@ -55,12 +55,22 @@ import {
   NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
   newMessageConfirmationEventSchema,
 } from '../entities/schemas/new-message-confirmation.schema';
+import {
+  CHAIN_UPDATE_EVENT_SCHEMA_ID,
+  chainUpdateEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/chain-update.schema';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
+import {
+  SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
+  safeAppsUpdateEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/safe-apps-update.schema';
 
 @Injectable()
 export class EventValidationPipe
   implements
     PipeTransform<
-      any,
+      | ChainUpdate
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -71,9 +81,11 @@ export class EventValidationPipe
       | OutgoingToken
       | OutgoingEther
       | PendingTransaction
+      | SafeAppsUpdate
     >
 {
   private readonly isWebHookEvent: ValidateFunction<
+    | ChainUpdate
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
@@ -84,9 +96,14 @@ export class EventValidationPipe
     | OutgoingToken
     | OutgoingEther
     | PendingTransaction
+    | SafeAppsUpdate
   >;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
+    jsonSchemaService.getSchema(
+      CHAIN_UPDATE_EVENT_SCHEMA_ID,
+      chainUpdateEventSchema,
+    );
     jsonSchemaService.getSchema(
       EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
       executedTransactionEventSchema,
@@ -127,6 +144,10 @@ export class EventValidationPipe
       PENDING_TRANSACTION_EVENT_SCHEMA_ID,
       pendingTransactionEventSchema,
     );
+    jsonSchemaService.getSchema(
+      SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
+      safeAppsUpdateEventSchema,
+    );
     this.isWebHookEvent = jsonSchemaService.getSchema(
       WEB_HOOK_SCHEMA_ID,
       webHookSchema,
@@ -136,6 +157,7 @@ export class EventValidationPipe
   transform(
     value: any,
   ):
+    | ChainUpdate
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
@@ -145,7 +167,8 @@ export class EventValidationPipe
     | NewMessageConfirmation
     | OutgoingToken
     | OutgoingEther
-    | PendingTransaction {
+    | PendingTransaction
+    | SafeAppsUpdate {
     if (this.isWebHookEvent(value)) {
       return value;
     }

@@ -9,11 +9,14 @@ import { OutgoingEther } from '../outgoing-ether.entity';
 import { ModuleTransaction } from '../module-transaction.entity';
 import { MessageCreated } from '../message-created.entity';
 import { NewMessageConfirmation } from '../new-message-confirmation.entity';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 
 export const WEB_HOOK_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json';
 
 export const webHookSchema: JSONSchemaType<
+  | ChainUpdate
   | ExecutedTransaction
   | IncomingEther
   | IncomingToken
@@ -24,12 +27,16 @@ export const webHookSchema: JSONSchemaType<
   | OutgoingToken
   | OutgoingEther
   | PendingTransaction
+  | SafeAppsUpdate
 > = {
   $id: WEB_HOOK_SCHEMA_ID,
   type: 'object',
   discriminator: { propertyName: 'type' },
-  required: ['type', 'address', 'chainId'],
+  required: ['type', 'chainId'],
   oneOf: [
+    {
+      $ref: 'chain-update.json',
+    },
     {
       $ref: 'executed-transaction.json',
     },
@@ -59,6 +66,9 @@ export const webHookSchema: JSONSchemaType<
     },
     {
       $ref: 'pending-transaction.json',
+    },
+    {
+      $ref: 'safe-apps-update.json',
     },
   ],
 };

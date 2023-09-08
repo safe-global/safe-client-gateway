@@ -13,6 +13,11 @@ export interface ISafeAppsRepository {
   }): Promise<SafeApp[]>;
 
   /**
+   * Triggers the removal of the safe apps data stored in the DataSource (e.g., cache)
+   */
+  clearSafeApps(chainId: string): Promise<void>;
+
+  /**
    * Gets the Safe App associated with the chainId and id. If no Safe App is found,
    * null is returned.
    *

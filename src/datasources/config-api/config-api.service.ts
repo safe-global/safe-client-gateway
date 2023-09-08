@@ -78,6 +78,13 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
+  async clearChain(chainId: string): Promise<void> {
+    await Promise.all([
+      this.cacheService.deleteByKey(CacheRouter.getChainCacheKey(chainId)),
+      this.cacheService.deleteByKey(CacheRouter.getChainsCacheKey()),
+    ]);
+  }
+
   async getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
@@ -103,8 +110,14 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  async clearSafeApps(): Promise<void> {
-    const pattern = CacheRouter.getSafeAppsCachePattern();
-    await this.cacheService.deleteByKeyPattern(pattern);
+  async clearSafeApps(chainId?: string): Promise<void> {
+    if (chainId) {
+      // if a chain id is provided, delete the safe apps data for that chain id
+      await this.cacheService.deleteByKey(CacheRouter.getSafeAppsKey(chainId));
+    } else {
+      // if a chain id is not provided, delete all the safe apps data
+      const pattern = CacheRouter.getSafeAppsCachePattern();
+      await this.cacheService.deleteByKeyPattern(pattern);
+    }
   }
 }

@@ -11,11 +11,13 @@ export interface IConfigApi {
 
   getChain(chainId: string): Promise<Chain>;
 
+  clearChain(chainId: string): Promise<void>;
+
   getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
     url?: string;
   }): Promise<SafeApp[]>;
 
-  clearSafeApps(): Promise<void>;
+  clearSafeApps(chainId?: string): Promise<void>;
 }

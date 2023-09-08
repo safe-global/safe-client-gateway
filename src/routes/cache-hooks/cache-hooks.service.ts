@@ -14,22 +14,31 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MessageCreated } from './entities/message-created.entity';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 
 @Injectable()
 export class CacheHooksService {
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    @Inject(ISafeAppsRepository)
+    private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
 
   async onEvent(
     event:
+      | ChainUpdate
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -39,7 +48,8 @@ export class CacheHooksService {
       | NewConfirmation
       | OutgoingToken
       | OutgoingEther
-      | PendingTransaction,
+      | PendingTransaction
+      | SafeAppsUpdate,
   ): Promise<void[]> {
     const promises: Promise<void>[] = [];
     switch (event.type) {
@@ -265,6 +275,12 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        break;
+      case EventType.CHAIN_UPDATE:
+        promises.push(this.chainsRepository.clearChain(event.chainId));
+        break;
+      case EventType.SAFE_APPS_UPDATE:
+        promises.push(this.safeAppsRepository.clearSafeApps(event.chainId));
         break;
     }
     return Promise.all(promises);
