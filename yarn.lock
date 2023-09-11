@@ -1239,9 +1239,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/testing@npm:^10.2.4":
-  version: 10.2.4
-  resolution: "@nestjs/testing@npm:10.2.4"
+"@nestjs/testing@npm:^10.2.5":
+  version: 10.2.5
+  resolution: "@nestjs/testing@npm:10.2.5"
   dependencies:
     tslib: 2.6.2
   peerDependencies:
@@ -1254,7 +1254,7 @@ __metadata:
       optional: true
     "@nestjs/platform-express":
       optional: true
-  checksum: 7b471ff6769a5551c80e95a50921378b241a3760eb4b66c7cb9e8c5b536f98ff8a6eb0b4f000c4880ebc03122f95d2a6c9ba140054ed354c38083568449ff468
+  checksum: 124e8368fd8864c9e7d7591b52b938126c6a29c922fe3aaca77fd0a4e6949a77403ae6e9b59af8a4621f83ccd551d2f91c031953230da397003cb326dd5b94a3
   languageName: node
   linkType: hard
 
@@ -6720,7 +6720,7 @@ __metadata:
     "@nestjs/schematics": ^10.0.2
     "@nestjs/serve-static": ^4.0.0
     "@nestjs/swagger": ^7.1.7
-    "@nestjs/testing": ^10.2.4
+    "@nestjs/testing": ^10.2.5
     "@node-redis/json": ^1.0.2
     "@types/express": ^4.17.17
     "@types/jest": 29.5.2
