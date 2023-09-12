@@ -66,6 +66,106 @@ describe('Safe Contract Helper Tests', () => {
     expect(actual).toBe(false);
   });
 
+  it.each([
+    {
+      functionName: 'addOwnerWithThreshold',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        toHex(faker.number.bigInt()),
+      ],
+    },
+    {
+      functionName: 'approveHash',
+      args: [pad(toHex(faker.number.bigInt()))],
+    },
+    {
+      functionName: 'approvedHashes',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        pad(toHex(faker.number.bigInt())),
+      ],
+    },
+    {
+      functionName: 'changeThreshold',
+      args: [pad(toHex(faker.number.bigInt()))],
+    },
+    {
+      functionName: 'checkNSignatures',
+      args: [
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+      ],
+    },
+    {
+      functionName: 'checkSignatures',
+      args: [
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+      ],
+    },
+    {
+      functionName: 'disableModule',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ],
+    },
+    {
+      functionName: 'enableModule',
+      args: [getAddress(faker.finance.ethereumAddress())],
+    },
+    {
+      functionName: 'execTransactionFromModule',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt())),
+        pad(toHex(faker.number.bigInt({ min: 0, max: 1 }))),
+      ],
+    },
+    {
+      functionName: 'isModuleEnabled',
+      args: [getAddress(faker.finance.ethereumAddress())],
+    },
+    {
+      functionName: 'isOwner',
+      args: [getAddress(faker.finance.ethereumAddress())],
+    },
+    {
+      functionName: 'removeOwner',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+        toHex(faker.number.bigInt()),
+      ],
+    },
+    {
+      functionName: 'setGuard',
+      args: [getAddress(faker.finance.ethereumAddress())],
+    },
+    {
+      functionName: 'swapOwner',
+      args: [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ],
+    },
+  ])('$functionName is valid call', ({ functionName, args }) => {
+    const callData = encodeFunctionData({
+      abi,
+      functionName,
+      args,
+    });
+
+    const actual = target.isCall(callData);
+
+    expect(actual).toBe(true);
+  });
+
   function getExecTransactionCallData(args?: {
     to?: `0x${string}`;
     value?: bigint;
