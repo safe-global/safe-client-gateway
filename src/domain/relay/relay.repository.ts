@@ -22,16 +22,12 @@ export class RelayRepository {
   // Number of relay requests per ttl
   private readonly limit: number;
 
-  @Inject(IConfigurationService)
-  private readonly configurationService: IConfigurationService;
-
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly limitAddressesMapper: LimitAddressesMapper,
     private readonly relayApi: RelayApi,
   ) {
-    this.configurationService = configurationService;
     this.limit = configurationService.getOrThrow('relay.limit');
   }
 
