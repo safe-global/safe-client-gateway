@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -156,9 +157,9 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${portfoliosProviderUrl}/wallets/${safeAddress}/positions?chain_id=ethereum&sort=value&currency=${currency}`:
-            return Promise.resolve({ data: positions });
+            return Promise.resolve({ data: { data: positions } });
           case `${portfoliosProviderUrl}/wallets/${safeAddress}/portfolio/?currency=${currency}`:
-            return Promise.resolve({ data: portfolio });
+            return Promise.resolve({ data: { data: portfolio } });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -302,9 +303,9 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${portfoliosProviderUrl}/wallets/${safeAddress}/positions?chain_id=ethereum&sort=value&currency=${currency}`:
-            return Promise.resolve({ data: positions });
+            return Promise.resolve({ data: { data: positions } });
           case `${portfoliosProviderUrl}/wallets/${safeAddress}/portfolio/?currency=${currency}`:
-            return Promise.resolve({ data: portfolio });
+            return Promise.resolve({ data: { data: portfolio } });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -423,11 +424,13 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${portfoliosProviderUrl}/wallets/${safeAddress}/positions?chain_id=ethereum&sort=value&currency=${currency}`:
               return Promise.resolve({
-                data: [
-                  positionBuilder().build(),
-                  positionBuilder().build(),
-                  positionBuilder().build(),
-                ],
+                data: {
+                  data: [
+                    positionBuilder().build(),
+                    positionBuilder().build(),
+                    positionBuilder().build(),
+                  ],
+                },
               });
             case `${portfoliosProviderUrl}/wallets/${safeAddress}/portfolio/?currency=${currency}`:
               return Promise.reject({ status: 500 });
@@ -492,14 +495,16 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${portfoliosProviderUrl}/wallets/${safeAddress}/positions?chain_id=ethereum&sort=value&currency=${currency}`:
               return Promise.resolve({
-                data: [
-                  positionBuilder().build(),
-                  positionBuilder().build(),
-                  positionBuilder().build(),
-                ],
+                data: {
+                  data: [
+                    positionBuilder().build(),
+                    positionBuilder().build(),
+                    positionBuilder().build(),
+                  ],
+                },
               });
             case `${portfoliosProviderUrl}/wallets/${safeAddress}/portfolio/?currency=${currency}`:
-              return Promise.resolve({ data: null });
+              return Promise.resolve({ data: { data: null } });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -526,27 +531,16 @@ describe('Balances Controller (Unit)', () => {
     });
   });
 
-  describe.skip('GET /balances/supported-fiat-codes', () => {
-    it('Success', async () => {
-      const fiatCodes = {};
-      networkService.get.mockResolvedValueOnce({ data: fiatCodes });
+  describe('GET /balances/supported-fiat-codes', () => {
+    it('Successfully returns configured currencies', async () => {
+      const currencies = app
+        .get(ConfigService)
+        .getOrThrow<string[]>('portfoliosProvider.currencies');
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
-    });
-
-    it('Failure getting fiat currencies data', async () => {
-      networkService.get.mockRejectedValueOnce(new Error());
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(503)
-        .expect({
-          code: 503,
-          message: 'Error getting Fiat Codes from exchange',
-        });
+        .expect(currencies);
     });
   });
 });

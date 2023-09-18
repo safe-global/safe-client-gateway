@@ -17,22 +17,22 @@ export class PortfoliosRepository implements IPortfoliosRepository {
     safeAddress: string;
     currency: string;
   }): Promise<Position[]> {
-    const positions = await this.portfoliosApi.getPositions(args);
-    if (!isArray(positions))
+    const { data } = await this.portfoliosApi.getPositions(args);
+    if (!isArray(data))
       throw new DataSourceError('Invalid positions coming from Portfolios API');
 
-    return positions;
+    return data;
   }
 
   async getPortfolio(args: {
     safeAddress: string;
     currency: string;
   }): Promise<Portfolio> {
-    const portfolio = await this.portfoliosApi.getPortfolio(args);
-    if (isEmpty(portfolio))
+    const { data } = await this.portfoliosApi.getPortfolio(args);
+    if (isEmpty(data))
       throw new DataSourceError('Invalid portfolio coming from Portfolios API');
 
-    return portfolio;
+    return data;
   }
 
   async clearPortfolio(args: { safeAddress: string }): Promise<void> {

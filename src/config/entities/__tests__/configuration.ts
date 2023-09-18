@@ -37,6 +37,11 @@ export default (): ReturnType<typeof configuration> => ({
   portfoliosProvider: {
     apiKey: 'notProvided',
     baseUri: faker.internet.url({ appendSlash: false }),
+    currencies: [
+      faker.finance.currencyCode(),
+      faker.finance.currencyCode(),
+      faker.finance.currencyCode(),
+    ],
   },
   redis: {
     host: faker.internet.domainName(),

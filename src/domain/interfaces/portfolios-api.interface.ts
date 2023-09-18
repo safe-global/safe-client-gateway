@@ -1,5 +1,5 @@
-import { Portfolio } from '../portfolios/entities/portfolio.entity';
-import { Position } from '../portfolios/entities/position.entity';
+import { PortfolioResponse } from '../portfolios/entities/portfolio.entity';
+import { PositionsResponse } from '../portfolios/entities/position.entity';
 
 export const IPortfoliosApi = Symbol('IPortfoliosApi');
 
@@ -8,12 +8,12 @@ export interface IPortfoliosApi {
     chainName: string;
     safeAddress: string;
     currency: string;
-  }): Promise<Position[]>;
+  }): Promise<PositionsResponse>;
 
   getPortfolio(args: {
     safeAddress: string;
     currency: string;
-  }): Promise<Portfolio>;
+  }): Promise<PortfolioResponse>;
 
   clearPortfolio(args: { safeAddress: string }): Promise<void>;
 }

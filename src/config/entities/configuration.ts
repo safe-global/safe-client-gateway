@@ -49,6 +49,24 @@ export default () => ({
     baseUri:
       process.env.PORTFOLIOS_PROVIDER_API_BASE_URI ||
       'https://api.zerion.io/v1',
+    currencies: [
+      'usd',
+      'eur',
+      'eth',
+      'aud',
+      'btc',
+      'cad',
+      'chf',
+      'cny',
+      'gbp',
+      'inr',
+      'jpy',
+      'krw',
+      'nzd',
+      'rub',
+      'try',
+      'zar',
+    ],
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

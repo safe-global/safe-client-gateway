@@ -3,7 +3,6 @@ import { Token } from './entities/token.entity';
 import { TokenType } from './entities/token-type.entity';
 import { Balances } from './entities/balances.entity';
 import { Balance } from './entities/balance.entity';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { NULL_ADDRESS } from '../common/constants';
 import { orderBy } from 'lodash';
 import { IConfigurationService } from '../../config/configuration.service.interface';
@@ -21,12 +20,10 @@ export class BalancesService {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IChainsRepository)
-    private readonly chainsRepository: IChainsRepository,
     @Inject(IPortfoliosRepository)
     private readonly portfoliosRepository: IPortfoliosRepository,
   ) {
-    this.knownImplementations = configurationService.getOrThrow(
+    this.knownImplementations = this.configurationService.getOrThrow(
       'chains.knownImplementations',
     );
   }
@@ -59,7 +56,9 @@ export class BalancesService {
     const balances = positions.map((p) => this.mapBalance(chainName, p));
 
     return <Balances>{
-      fiatTotal: this.getNumberString(portfolio.attributes.total.positions),
+      fiatTotal: this.getNumberString(
+        portfolio.attributes.total.positions ?? 0,
+      ),
       items: orderBy(balances, (b) => Number(b.fiatBalance), 'desc'),
     };
   }
@@ -89,13 +88,15 @@ export class BalancesService {
         ...tokenMetaData,
       },
       balance: quantity.int,
-      fiatBalance: this.getNumberString(attributes.value ?? 0), // TODO: review fallback
-      fiatConversion: this.getNumberString(attributes.price),
+      fiatBalance: this.getNumberString(attributes.value ?? 0),
+      fiatConversion: this.getNumberString(attributes.price ?? 0),
     };
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
-    throw new Error('Unimplemented');
+    return this.configurationService.getOrThrow<string[]>(
+      'portfoliosProvider.currencies',
+    );
   }
 
   private _getImplementationAddress(

@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '../../config/configuration.service.interface';
 import { DataSourceError } from '../../domain/errors/data-source.error';
 import { IPortfoliosApi } from '../../domain/interfaces/portfolios-api.interface';
-import { Portfolio } from '../../domain/portfolios/entities/portfolio.entity';
-import { Position } from '../../domain/portfolios/entities/position.entity';
+import { PortfolioResponse } from '../../domain/portfolios/entities/portfolio.entity';
+import { PositionsResponse } from '../../domain/portfolios/entities/position.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { CacheService, ICacheService } from '../cache/cache.service.interface';
@@ -46,7 +46,7 @@ export class PortfoliosApi implements IPortfoliosApi {
     chainName: string;
     safeAddress: string;
     currency: string;
-  }): Promise<Position[]> {
+  }): Promise<PositionsResponse> {
     try {
       const cacheDir = CacheRouter.getPositionsCacheDir(args);
       const { chainName, safeAddress, currency } = args;
@@ -68,7 +68,7 @@ export class PortfoliosApi implements IPortfoliosApi {
   async getPortfolio(args: {
     safeAddress: string;
     currency: string;
-  }): Promise<Portfolio> {
+  }): Promise<PortfolioResponse> {
     try {
       const cacheDir = CacheRouter.getPortfolioCacheDir(args);
       const { safeAddress, currency } = args;
