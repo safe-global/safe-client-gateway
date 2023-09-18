@@ -81,12 +81,11 @@ describe('Transaction API Manager Tests', () => {
     const transactionApi = await target.getTransactionApi(chain.chainId);
     await transactionApi.getBackbone();
 
-    expect(dataSourceMock.get).toBeCalledWith(
-      expect.anything(),
-      `${expectedUrl}/api/v1/about`,
-      notFoundExpireTimeSeconds,
-      undefined,
-      expirationTimeInSeconds,
-    );
+    expect(dataSourceMock.get).toBeCalledWith({
+      cacheDir: expect.anything(),
+      url: `${expectedUrl}/api/v1/about`,
+      notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
   });
 });

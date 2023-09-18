@@ -155,13 +155,12 @@ describe('TransactionApi', () => {
       const actual = await service.getSafe(safe.address);
 
       expect(actual).toBe(safe);
-      expect(mockDataSource.get).toBeCalledWith(
-        new CacheDir(`${chainId}_safe_${safe.address}`, ''),
-        `${baseUrl}/api/v1/safes/${safe.address}`,
-        notFoundExpireTimeSeconds,
-        undefined,
-        defaultExpirationTimeInSeconds,
-      );
+      expect(mockDataSource.get).toBeCalledWith({
+        cacheDir: new CacheDir(`${chainId}_safe_${safe.address}`, ''),
+        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+      });
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(0);
     });
 

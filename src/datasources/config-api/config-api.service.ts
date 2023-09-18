@@ -42,13 +42,13 @@ export class ConfigApi implements IConfigApi {
       const url = `${this.baseUri}/api/v1/chains`;
       const params = { limit: args.limit, offset: args.offset };
       const cacheDir = CacheRouter.getChainsCacheDir(args);
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        { params },
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { params },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -66,13 +66,13 @@ export class ConfigApi implements IConfigApi {
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDir(chainId);
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: undefined,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -91,13 +91,13 @@ export class ConfigApi implements IConfigApi {
         url: args.url,
       };
       const cacheDir = CacheRouter.getSafeAppsCacheDir(args);
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
-        providerUrl,
-        this.defaultNotFoundExpirationTimeSeconds,
-        { params },
-        this.defaultExpirationTimeInSeconds,
-      );
+        url: providerUrl,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { params },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

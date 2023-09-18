@@ -8,7 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CacheDir } from './entities/cache-dir.entity';
 import { NetworkResponseError } from '../network/entities/network.error.entity';
 import { get } from 'lodash';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -28,30 +28,30 @@ export class CacheFirstDataSource {
   ) {}
 
   /**
-   * Gets the cached value behind the {@link CacheDir}.
+   * Gets the cached value behind {@link CacheDir}.
    * If the value is not present, it tries to get the respective JSON
    * payload from {@link url}.
    * 404 errors are cached with {@link notFoundExpireTimeSeconds} seconds expiration time.
    *
-   * @param cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
-   * @param url - the HTTP endpoint to retrieve the JSON payload
-   * @param networkRequest - the HTTP request to be used if there is a cache miss
-   * @param expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
-   * @param notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
+   * @param args.cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
+   * @param args.url - the HTTP endpoint to retrieve the JSON payload
+   * @param args.networkRequest - the HTTP request to be used if there is a cache miss
+   * @param args.expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
+   * @param args.notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
    */
-  async get<T>(
-    cacheDir: CacheDir,
-    url: string,
-    notFoundExpireTimeSeconds: number,
-    networkRequest?: NetworkRequest,
-    expireTimeSeconds?: number,
-  ): Promise<T> {
-    const cached = await this.cacheService.get(cacheDir);
+  async get<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    notFoundExpireTimeSeconds: number;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+  }): Promise<T> {
+    const cached = await this.cacheService.get(args.cacheDir);
     if (cached != null) {
       this.loggingService.debug({
         type: 'cache_hit',
-        key: cacheDir.key,
-        field: cacheDir.field,
+        key: args.cacheDir.key,
+        field: args.cacheDir.field,
       });
       const cachedData = JSON.parse(cached);
       if (get(cachedData, 'status') === 404) {
@@ -62,19 +62,26 @@ export class CacheFirstDataSource {
     try {
       this.loggingService.debug({
         type: 'cache_miss',
-        key: cacheDir.key,
-        field: cacheDir.field,
+        key: args.cacheDir.key,
+        field: args.cacheDir.field,
       });
-      const { data } = await this.networkService.get(url, networkRequest);
+      const { data } = await this.networkService.get(
+        args.url,
+        args.networkRequest,
+      );
       const rawJson = JSON.stringify(data);
-      await this.cacheService.set(cacheDir, rawJson, expireTimeSeconds);
+      await this.cacheService.set(
+        args.cacheDir,
+        rawJson,
+        args.expireTimeSeconds,
+      );
       return data;
     } catch (error) {
       if (get(error, 'status') === 404) {
         await this.cacheNotFoundError(
-          cacheDir,
+          args.cacheDir,
           new NetworkResponseError(error.status, error),
-          notFoundExpireTimeSeconds,
+          args.notFoundExpireTimeSeconds,
         );
       }
       throw error;

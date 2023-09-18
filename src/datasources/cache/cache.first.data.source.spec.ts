@@ -49,11 +49,11 @@ describe('CacheFirstDataSource', () => {
       }
     });
 
-    const actual = await cacheFirstDataSource.get(
+    const actual = await cacheFirstDataSource.get({
       cacheDir,
-      targetUrl,
+      url: targetUrl,
       notFoundExpireTimeSeconds,
-    );
+    });
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -68,11 +68,11 @@ describe('CacheFirstDataSource', () => {
       Promise.reject(`Unexpected request to ${url}`),
     );
 
-    const actual = await cacheFirstDataSource.get(
+    const actual = await cacheFirstDataSource.get({
       cacheDir,
-      faker.internet.url({ appendSlash: false }),
+      url: faker.internet.url({ appendSlash: false }),
       notFoundExpireTimeSeconds,
-    );
+    });
 
     expect(actual).toEqual(JSON.parse(rawJson));
     expect(mockNetworkService.get).toHaveBeenCalledTimes(0);
@@ -93,7 +93,11 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
+      cacheFirstDataSource.get({
+        cacheDir,
+        url: targetUrl,
+        notFoundExpireTimeSeconds,
+      }),
     ).rejects.toThrowError(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -115,11 +119,19 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
+      cacheFirstDataSource.get({
+        cacheDir,
+        url: targetUrl,
+        notFoundExpireTimeSeconds,
+      }),
     ).rejects.toThrowError(expectedError);
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
+      cacheFirstDataSource.get({
+        cacheDir,
+        url: targetUrl,
+        notFoundExpireTimeSeconds,
+      }),
     ).rejects.toThrowError(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -154,7 +166,11 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(cacheDir, targetUrl, notFoundExpireTimeSeconds),
+      cacheFirstDataSource.get({
+        cacheDir,
+        url: targetUrl,
+        notFoundExpireTimeSeconds,
+      }),
     ).rejects.toThrowError(expectedError);
 
     expect(mockCache.set).toHaveBeenCalledWith(
@@ -192,13 +208,12 @@ describe('CacheFirstDataSource', () => {
     });
 
     await expect(
-      cacheFirstDataSource.get(
+      cacheFirstDataSource.get({
         cacheDir,
-        targetUrl,
+        url: targetUrl,
         notFoundExpireTimeSeconds,
-        undefined,
-        faker.number.int(),
-      ),
+        expireTimeSeconds: faker.number.int(),
+      }),
     ).rejects.toThrowError(expectedError);
 
     expect(mockCache.set).toHaveBeenCalledWith(

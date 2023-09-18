@@ -83,13 +83,12 @@ describe('ExchangeApi', () => {
 
     await target.getFiatCodes();
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_fiat_codes', ''),
-      `${exchangeBaseUri}/symbols?access_key=${exchangeApiKey}`,
-      notFoundExpirationTimeInSeconds,
-      {},
-      ttl, // 60 seconds
-    );
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('exchange_fiat_codes', ''),
+      url: `${exchangeBaseUri}/symbols?access_key=${exchangeApiKey}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: ttl, // 60 seconds
+    });
   });
 
   it('Should return the exchange rates', async () => {
@@ -126,12 +125,11 @@ describe('ExchangeApi', () => {
 
     await target.getRates();
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_rates', ''),
-      `${exchangeBaseUri}/latest?access_key=${exchangeApiKey}`,
-      notFoundExpirationTimeInSeconds,
-      {},
-      ttl, // 60 seconds
-    );
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('exchange_rates', ''),
+      url: `${exchangeBaseUri}/latest?access_key=${exchangeApiKey}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: ttl, // 60 seconds
+    });
   });
 });

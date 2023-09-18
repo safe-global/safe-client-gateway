@@ -34,13 +34,12 @@ export class ExchangeApi implements IExchangeApi {
 
   async getFiatCodes(): Promise<ExchangeFiatCodes> {
     try {
-      return await this.dataSource.get<ExchangeFiatCodes>(
-        CacheRouter.getExchangeFiatCodesCacheDir(),
-        `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {},
-        this.cacheTtlSeconds,
-      );
+      return await this.dataSource.get<ExchangeFiatCodes>({
+        cacheDir: CacheRouter.getExchangeFiatCodesCacheDir(),
+        url: `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.cacheTtlSeconds,
+      });
     } catch (error) {
       throw new DataSourceError('Error getting Fiat Codes from exchange');
     }
@@ -48,13 +47,12 @@ export class ExchangeApi implements IExchangeApi {
 
   async getRates(): Promise<ExchangeRates> {
     try {
-      return await this.dataSource.get<ExchangeRates>(
-        CacheRouter.getExchangeRatesCacheDir(),
-        `${this.baseUrl}/latest?access_key=${this.apiKey}`,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {},
-        this.cacheTtlSeconds,
-      );
+      return await this.dataSource.get<ExchangeRates>({
+        cacheDir: CacheRouter.getExchangeRatesCacheDir(),
+        url: `${this.baseUrl}/latest?access_key=${this.apiKey}`,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.cacheTtlSeconds,
+      });
     } catch (error) {
       throw new DataSourceError('Error getting exchange data');
     }
