@@ -11,10 +11,11 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
   },
-  exchange: {
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    cacheTtlSeconds: faker.number.int(),
+  chains: {
+    knownImplementations: [
+      { chainId: '1', implementationName: 'ethereum' },
+      { chainId: '137', implementationName: 'matic-network' },
+    ], // TODO: extend list
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
@@ -32,6 +33,10 @@ export default (): ReturnType<typeof configuration> => ({
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+  },
+  portfoliosProvider: {
+    apiKey: 'notProvided',
+    baseUri: faker.internet.url({ appendSlash: false }),
   },
   redis: {
     host: faker.internet.domainName(),

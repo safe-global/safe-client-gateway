@@ -1,13 +1,8 @@
 import { Global, Module } from '@nestjs/common';
-import { ExchangeApiModule } from './datasources/exchange-api/exchange-api.module';
 import { ConfigApiModule } from './datasources/config-api/config-api.module';
 import { TransactionApiModule } from './datasources/transaction-api/transaction-api.module';
-import { IBalancesRepository } from './domain/balances/balances.repository.interface';
-import { BalancesRepository } from './domain/balances/balances.repository';
 import { IChainsRepository } from './domain/chains/chains.repository.interface';
 import { ChainsRepository } from './domain/chains/chains.repository';
-import { IExchangeRepository } from './domain/exchange/exchange.repository.interface';
-import { ExchangeRepository } from './domain/exchange/exchange.repository';
 import { IBackboneRepository } from './domain/backbone/backbone.repository.interface';
 import { BackboneRepository } from './domain/backbone/backbone.repository';
 import { ICollectiblesRepository } from './domain/collectibles/collectibles.repository.interface';
@@ -15,7 +10,6 @@ import { CollectiblesRepository } from './domain/collectibles/collectibles.repos
 import { ISafeRepository } from './domain/safe/safe.repository.interface';
 import { SafeRepository } from './domain/safe/safe.repository';
 import { BackboneValidator } from './domain/backbone/backbone.validator';
-import { BalancesValidator } from './domain/balances/balances.validator';
 import { ChainsValidator } from './domain/chains/chains.validator';
 import { MasterCopyValidator } from './domain/chains/master-copy.validator';
 import { CollectiblesValidator } from './domain/collectibles/collectibles.validator';
@@ -24,8 +18,6 @@ import { SafeValidator } from './domain/safe/safe.validator';
 import { IContractsRepository } from './domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from './domain/contracts/contracts.repository';
 import { ContractsValidator } from './domain/contracts/contracts.validator';
-import { ExchangeRatesValidator } from './domain/exchange/exchange-rates.validator';
-import { ExchangeFiatCodesValidator } from './domain/exchange/exchange-fiat-codes.validator';
 import { DelegateValidator } from './domain/delegate/delegate.validator';
 import { IDelegateRepository } from './domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from './domain/delegate/delegate.repository';
@@ -58,25 +50,26 @@ import { HealthRepository } from './domain/health/health.repository';
 import { HumanDescriptionApiModule } from './datasources/human-description-api/human-description-api.module';
 import { IHumanDescriptionRepository } from './domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from './domain/human-description/human-description.repository';
+import { PortfoliosApiModule } from './datasources/portfolios-api/portfolios-api.module';
+import { PortfoliosRepository } from './domain/portfolios/portfolios.repository';
+import { IPortfoliosRepository } from './domain/portfolios/portfolios.repository.interface';
 
 @Global()
 @Module({
   imports: [
     ConfigApiModule,
-    ExchangeApiModule,
     HumanDescriptionApiModule,
+    PortfoliosApiModule,
     TransactionApiModule,
   ],
   providers: [
     { provide: IBackboneRepository, useClass: BackboneRepository },
-    { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
     { provide: ICollectiblesRepository, useClass: CollectiblesRepository },
     { provide: IContractsRepository, useClass: ContractsRepository },
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IEstimationsRepository, useClass: EstimationsRepository },
-    { provide: IExchangeRepository, useClass: ExchangeRepository },
     { provide: IFlushRepository, useClass: FlushRepository },
     { provide: IHealthRepository, useClass: HealthRepository },
     {
@@ -85,11 +78,11 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
     },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
+    { provide: IPortfoliosRepository, useClass: PortfoliosRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
     BackboneValidator,
-    BalancesValidator,
     ChainsValidator,
     CollectiblesValidator,
     ContractsValidator,
@@ -97,8 +90,6 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
     DataDecodedValidator,
     DelegateValidator,
     EstimationsValidator,
-    ExchangeFiatCodesValidator,
-    ExchangeRatesValidator,
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
@@ -112,19 +103,18 @@ import { HumanDescriptionRepository } from './domain/human-description/human-des
   ],
   exports: [
     IBackboneRepository,
-    IBalancesRepository,
     IChainsRepository,
     ICollectiblesRepository,
     IContractsRepository,
     IDataDecodedRepository,
     IDelegateRepository,
     IEstimationsRepository,
-    IExchangeRepository,
     IFlushRepository,
     IHealthRepository,
     IHumanDescriptionRepository,
     IMessagesRepository,
     INotificationsRepository,
+    IPortfoliosRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,

@@ -4,13 +4,13 @@ const configurationSchema: Schema = {
   type: 'object',
   properties: {
     AUTH_TOKEN: { type: 'string' },
-    EXCHANGE_API_KEY: { type: 'string' },
+    PORTFOLIOS_PROVIDER_API_KEY: { type: 'string' },
     LOG_LEVEL: {
       type: 'string',
       enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
     },
   },
-  required: ['AUTH_TOKEN', 'EXCHANGE_API_KEY'],
+  required: ['AUTH_TOKEN', 'PORTFOLIOS_PROVIDER_API_KEY'],
 };
 
 export function validate(

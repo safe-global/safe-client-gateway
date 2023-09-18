@@ -179,14 +179,19 @@ describe('Post Hook Events (Unit)', () => {
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
-  ])('$type clears balances', async (payload) => {
+  ])('$type clears portfolio', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(
-      `${chainId}_balances_${safeAddress}`,
+    const portfolioCacheDir = new CacheDir(
+      `portfolio_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const positionsCacheDir = new CacheDir(
+      `positions_${safeAddress}`,
+      faker.string.alpha(),
+    );
+    await fakeCacheService.set(portfolioCacheDir, faker.string.alpha());
+    await fakeCacheService.set(positionsCacheDir, faker.string.alpha());
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -209,7 +214,12 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(
+      fakeCacheService.get(portfolioCacheDir),
+    ).resolves.toBeUndefined();
+    await expect(
+      fakeCacheService.get(positionsCacheDir),
+    ).resolves.toBeUndefined();
   });
 
   it.each([

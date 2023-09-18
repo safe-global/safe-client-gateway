@@ -21,6 +21,9 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly PORTFOLIO_KEY = 'portfolio';
+  private static readonly POSITIONS_KEY = 'positions';
+  private static readonly PRICE_KEY = 'price';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
   private static readonly TOKEN_KEY = 'token';
@@ -394,5 +397,38 @@ export class CacheRouter {
 
   static getExchangeRatesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.EXCHANGE_RATES_KEY, '');
+  }
+
+  static getPriceCacheDir(args: {
+    nativeCoinId: string;
+    fiatCode: string;
+    tokenAddress?: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.nativeCoinId}_${CacheRouter.PRICE_KEY}`,
+      `${args.tokenAddress ?? 'native'}_${args.fiatCode}`,
+    );
+  }
+
+  static getPositionsCacheKey(args: { safeAddress: string }): string {
+    return `${CacheRouter.POSITIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getPositionsCacheDir(args: {
+    safeAddress: string;
+    currency: string;
+  }): CacheDir {
+    return new CacheDir(this.getPositionsCacheKey(args), args.currency);
+  }
+
+  static getPortfolioCacheKey(args: { safeAddress: string }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.safeAddress}`;
+  }
+
+  static getPortfolioCacheDir(args: {
+    safeAddress: string;
+    currency: string;
+  }): CacheDir {
+    return new CacheDir(this.getPortfolioCacheKey(args), args.currency);
   }
 }

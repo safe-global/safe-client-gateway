@@ -8,14 +8,11 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
-  exchange: {
-    baseUri:
-      process.env.EXCHANGE_API_BASE_URI ||
-      'https://api.apilayer.com/exchangerates_data',
-    apiKey: process.env.EXCHANGE_API_KEY,
-    cacheTtlSeconds: parseInt(
-      process.env.EXCHANGE_API_CACHE_TTL_SECONDS ?? `${60 * 60 * 12}`,
-    ),
+  chains: {
+    knownImplementations: [
+      { chainId: '1', implementationName: 'ethereum' },
+      { chainId: '137', implementationName: 'matic-network' },
+    ], // TODO: extend list
   },
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
@@ -46,6 +43,12 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+  },
+  portfoliosProvider: {
+    apiKey: process.env.PORTFOLIOS_PROVIDER_API_KEY,
+    baseUri:
+      process.env.PORTFOLIOS_PROVIDER_API_BASE_URI ||
+      'https://api.zerion.io/v1',
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

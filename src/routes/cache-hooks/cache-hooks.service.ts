@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EventType } from './entities/event-payload.entity';
-import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { ExecutedTransaction } from './entities/executed-transaction.entity';
 import { NewConfirmation } from './entities/new-confirmation.entity';
 import { PendingTransaction } from './entities/pending-transaction.entity';
@@ -14,12 +13,13 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { MessageCreated } from './entities/message-created.entity';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
+import { IPortfoliosRepository } from '@/domain/portfolios/portfolios.repository.interface';
 
 @Injectable()
 export class CacheHooksService {
   constructor(
-    @Inject(IBalancesRepository)
-    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IPortfoliosRepository)
+    private readonly portfoliosRepository: IPortfoliosRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
     @Inject(IMessagesRepository)
@@ -124,13 +124,12 @@ export class CacheHooksService {
         );
         break;
       // Incoming ether affects:
-      // - the balance of the safe - clear safe balance
+      // - the portfolio of the safe - clear safe portfolio
       // - the list of all executed transactions (including transfers) for the safe
       // - the incoming transfers for that safe
       case EventType.INCOMING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
-            chainId: event.chainId,
+          this.portfoliosRepository.clearPortfolio({
             safeAddress: event.address,
           }),
           this.safeRepository.clearAllExecutedTransactions({
@@ -152,14 +151,13 @@ export class CacheHooksService {
         );
         break;
       // Outgoing ether affects:
-      // - the balance of the safe - clear safe balance
+      // - the portfolio of the safe - clear safe portfolio
       // - the list of all executed transactions for the safe
       // - queued transactions and history – clear multisig transactions
       // - the transfers for that safe
       case EventType.OUTGOING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
-            chainId: event.chainId,
+          this.portfoliosRepository.clearPortfolio({
             safeAddress: event.address,
           }),
           this.safeRepository.clearAllExecutedTransactions({
@@ -177,7 +175,7 @@ export class CacheHooksService {
         );
         break;
       // An incoming token affects:
-      // - the balance of the safe - clear safe balance
+      // - the portfolio of the safe - clear safe portfolio
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
       // - queued transactions and history – clear multisig transactions
@@ -185,8 +183,7 @@ export class CacheHooksService {
       // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
-            chainId: event.chainId,
+          this.portfoliosRepository.clearPortfolio({
             safeAddress: event.address,
           }),
           this.collectiblesRepository.clearCollectibles({
@@ -212,15 +209,14 @@ export class CacheHooksService {
         );
         break;
       // An outgoing token affects:
-      // - the balance of the safe - clear safe balance
+      // - the portfolio of the safe - clear safe portfolio
       // - the collectibles that the safe has
       // - the list of all executed transactions (including transfers) for the safe
       // - queued transactions and history – clear multisig transactions
       // - the transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
-            chainId: event.chainId,
+          this.portfoliosRepository.clearPortfolio({
             safeAddress: event.address,
           }),
           this.collectiblesRepository.clearCollectibles({

@@ -13,7 +13,7 @@ describe('Configuration validator', () => {
   it('should detect missing mandatory configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
     expect(() => validate(JSON.parse(fakeJson()))).toThrow(
-      /must have required property 'AUTH_TOKEN'.*must have required property 'EXCHANGE_API_KEY'/,
+      /must have required property 'AUTH_TOKEN'.*must have required property 'PORTFOLIOS_PROVIDER_API_KEY'/,
     );
   });
 
@@ -22,7 +22,7 @@ describe('Configuration validator', () => {
       validate({
         ...JSON.parse(fakeJson()),
         AUTH_TOKEN: faker.string.uuid(),
-        EXCHANGE_API_KEY: faker.string.uuid(),
+        PORTFOLIOS_PROVIDER_API_KEY: faker.string.uuid(),
         LOG_LEVEL: faker.word.words(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
@@ -33,7 +33,7 @@ describe('Configuration validator', () => {
     const expected = {
       ...JSON.parse(fakeJson()),
       AUTH_TOKEN: faker.string.uuid(),
-      EXCHANGE_API_KEY: faker.string.uuid(),
+      PORTFOLIOS_PROVIDER_API_KEY: faker.string.uuid(),
     };
     const validated = validate(expected);
     expect(validated).toBe(expected);

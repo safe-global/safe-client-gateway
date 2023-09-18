@@ -7,7 +7,6 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { AxiosNetworkService } from '../network/axios.network.service';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
-import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -76,39 +75,6 @@ describe('TransactionApi', () => {
     );
   });
 
-  describe('Balances', () => {
-    it('should return the balances retrieved', async () => {
-      const data = [balanceBuilder().build(), balanceBuilder().build()];
-      mockDataSource.get.mockResolvedValue(data);
-
-      const actual = await service.getBalances({
-        safeAddress: 'test',
-        trusted: true,
-        excludeSpam: true,
-      });
-
-      expect(actual).toBe(data);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
-    });
-
-    it('should forward error', async () => {
-      const expected = new DataSourceError('something happened');
-      mockDataSource.get.mockRejectedValueOnce(new Error('Some error'));
-      mockHttpErrorFactory.from.mockReturnValue(expected);
-
-      await expect(
-        service.getBalances({
-          safeAddress: 'test',
-          trusted: true,
-          excludeSpam: true,
-        }),
-      ).rejects.toThrowError(expected);
-
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
-    });
-  });
-
   describe('Backbone', () => {
     it('should return the backbone retrieved', async () => {
       const data = backboneBuilder().build();
@@ -129,21 +95,6 @@ describe('TransactionApi', () => {
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
-    });
-  });
-
-  describe('Clear Local Balances', () => {
-    it('should call delete', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
-      mockCacheService.deleteByKey.mockResolvedValueOnce(1);
-
-      await service.clearLocalBalances(safeAddress);
-
-      expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
-      expect(mockCacheService.deleteByKey).toBeCalledWith(
-        `${chainId}_balances_${safeAddress}`,
-      );
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
     });
   });
 

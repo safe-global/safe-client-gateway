@@ -1,27 +1,35 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Balance as TransactionApiBalance } from '../../domain/balances/entities/balance.entity';
 import { Token } from './entities/token.entity';
 import { TokenType } from './entities/token-type.entity';
 import { Balances } from './entities/balances.entity';
-import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
 import { Balance } from './entities/balance.entity';
-import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { IExchangeRepository } from '@/domain/exchange/exchange.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { NULL_ADDRESS } from '../common/constants';
+import { orderBy } from 'lodash';
+import { IConfigurationService } from '../../config/configuration.service.interface';
+import { IPortfoliosRepository } from '../../domain/portfolios/portfolios.repository.interface';
+import {
+  Position,
+  PositionFungibleInfo,
+} from '../../domain/portfolios/entities/position.entity';
 
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
+  private knownImplementations: Record<string, string>[];
 
   constructor(
-    @Inject(IBalancesRepository)
-    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-    @Inject(IExchangeRepository)
-    private readonly exchangeRepository: IExchangeRepository,
-  ) {}
+    @Inject(IPortfoliosRepository)
+    private readonly portfoliosRepository: IPortfoliosRepository,
+  ) {
+    this.knownImplementations = configurationService.getOrThrow(
+      'chains.knownImplementations',
+    );
+  }
 
   getNumberString(value: number): string {
     // Prevent scientific notation
@@ -37,81 +45,77 @@ export class BalancesService {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balances> {
-    const txServiceBalances = await this.balancesRepository.getBalances(args);
-
-    const usdToFiatRate: number = await this.exchangeRepository.convertRates({
-      to: args.fiatCode,
-      from: BalancesService.fromRateCurrencyCode,
+    const { chainId, safeAddress, fiatCode: currency } = args;
+    const chainName = this._getChainName(chainId);
+    const positions = await this.portfoliosRepository.getPositions({
+      chainName,
+      safeAddress,
+      currency,
     });
-    const nativeCurrency: NativeCurrency = (
-      await this.chainsRepository.getChain(args.chainId)
-    ).nativeCurrency;
-
-    // Map balances payload
-    const balances: Balance[] = txServiceBalances.map((balance) =>
-      this.mapBalance(balance, usdToFiatRate, nativeCurrency),
-    );
-
-    // Get total fiat from [balances]
-    const totalFiat: number = balances.reduce((acc, b) => {
-      return acc + Number(b.fiatBalance);
-    }, 0);
-
-    // Sort balances in place
-    balances.sort((b1, b2) => {
-      return Number(b2.fiatBalance) - Number(b1.fiatBalance);
+    const portfolio = await this.portfoliosRepository.getPortfolio({
+      safeAddress,
+      currency,
     });
+    const balances = positions.map((p) => this.mapBalance(chainName, p));
 
     return <Balances>{
-      fiatTotal: this.getNumberString(totalFiat),
-      items: balances,
+      fiatTotal: this.getNumberString(portfolio.attributes.total.positions),
+      items: orderBy(balances, (b) => Number(b.fiatBalance), 'desc'),
     };
   }
 
-  private mapBalance(
-    txBalance: TransactionApiBalance,
-    usdToFiatRate: number,
-    nativeCurrency: NativeCurrency,
-  ): Balance {
-    const fiatConversion = Number(txBalance.fiatConversion) * usdToFiatRate;
-    const fiatBalance = Number(txBalance.fiatBalance) * usdToFiatRate;
-    const tokenAddress = txBalance.tokenAddress ?? NULL_ADDRESS;
-    const tokenType =
-      tokenAddress === NULL_ADDRESS ? TokenType.NativeToken : TokenType.Erc20;
+  private mapBalance(chainName: string, position: Position): Balance {
+    const { attributes } = position;
+    const { fungible_info: fungibleInfo, quantity } = attributes;
+    const tokenAddress = this._getImplementationAddress(
+      chainName,
+      fungibleInfo,
+    );
 
-    const tokenMetaData =
-      tokenType === TokenType.NativeToken
-        ? {
-            decimals: nativeCurrency.decimals,
-            symbol: nativeCurrency.symbol,
-            name: nativeCurrency.name,
-            logoUri: nativeCurrency.logoUri,
-          }
-        : {
-            decimals: txBalance.token?.decimals,
-            symbol: txBalance.token?.symbol,
-            name: txBalance.token?.name,
-            logoUri: txBalance.token?.logoUri,
-          };
+    const tokenType =
+      tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
+
+    const tokenMetaData = {
+      decimals: quantity.decimals,
+      symbol: fungibleInfo.symbol,
+      name: fungibleInfo.name,
+      logoUri: fungibleInfo.icon?.url,
+    };
 
     return <Balance>{
       tokenInfo: <Token>{
         type: tokenType,
-        address: tokenAddress,
+        address: tokenAddress ?? NULL_ADDRESS,
         ...tokenMetaData,
       },
-      balance: txBalance.balance,
-      fiatBalance: this.getNumberString(fiatBalance),
-      fiatConversion: this.getNumberString(fiatConversion),
+      balance: quantity.int,
+      fiatBalance: this.getNumberString(attributes.value ?? 0), // TODO: review fallback
+      fiatConversion: this.getNumberString(attributes.price),
     };
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
-    const fiatCodes: string[] = await this.exchangeRepository.getFiatCodes();
-    const mainCurrencies: string[] = ['USD', 'EUR'];
-    return [
-      ...mainCurrencies,
-      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
-    ];
+    throw new Error('Unimplemented');
+  }
+
+  private _getImplementationAddress(
+    chainName: string,
+    fungibleInfo: PositionFungibleInfo,
+  ): string | null {
+    const implementation = fungibleInfo?.implementations.find(
+      ({ chain_id }) => chain_id === chainName,
+    );
+    return implementation?.address ?? null;
+  }
+
+  private _getChainName(chainId: string): string {
+    const chainName = this.knownImplementations.find(
+      (i) => i.chainId === chainId,
+    )?.implementationName;
+
+    if (!chainName)
+      throw Error(`Chain ${chainId} is not configured: no implementationName`);
+
+    return chainName;
   }
 }
