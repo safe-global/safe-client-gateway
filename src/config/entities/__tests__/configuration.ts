@@ -37,6 +37,7 @@ export default (): ReturnType<typeof configuration> => ({
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),
   },
+  relay: { limit: faker.number.int({ min: 1 }) },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

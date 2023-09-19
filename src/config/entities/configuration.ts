@@ -51,6 +51,9 @@ export default () => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
   },
+  relay: {
+    limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
+  },
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
