@@ -51,13 +51,13 @@ export class PortfoliosApi implements IPortfoliosApi {
       const cacheDir = CacheRouter.getPositionsCacheDir(args);
       const { chainName, safeAddress, currency } = args;
       const url = `${this.baseUrl}/wallets/${safeAddress}/positions?chain_id=${chainName}&sort=value&currency=${currency}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        { headers: { authorization: `Basic ${this.apiKey}` } },
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { headers: { authorization: `Basic ${this.apiKey}` } },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (err) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} positions from provider: ${err?.status}`,
@@ -73,13 +73,13 @@ export class PortfoliosApi implements IPortfoliosApi {
       const cacheDir = CacheRouter.getPortfolioCacheDir(args);
       const { safeAddress, currency } = args;
       const url = `${this.baseUrl}/wallets/${safeAddress}/portfolio/?currency=${currency}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        { headers: { authorization: `Basic ${this.apiKey}` } },
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { headers: { authorization: `Basic ${this.apiKey}` } },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (err) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} portfolio from provider: ${err?.status}`,
