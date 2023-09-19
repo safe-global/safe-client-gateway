@@ -34,9 +34,8 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
-    const transactionApi = await this.transactionApiManager.getTransactionApi(
-      chainId,
-    );
+    const transactionApi =
+      await this.transactionApiManager.getTransactionApi(chainId);
     const masterCopies = await transactionApi.getMasterCopies();
     return masterCopies.map((masterCopy) =>
       this.masterCopyValidator.validate(masterCopy),
