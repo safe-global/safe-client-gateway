@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { safeAppBuilder } from '../../../../domain/safe-apps/entities/__tests__/safe-app.builder';
-import { SafeAppsRepository } from '../../../../domain/safe-apps/safe-apps.repository';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
-import { ILoggingService } from '../../../../logging/logging.interface';
+import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
+import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { ILoggingService } from '@/logging/logging.interface';
 import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 

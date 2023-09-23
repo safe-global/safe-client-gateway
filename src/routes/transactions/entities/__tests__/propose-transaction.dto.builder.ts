@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { Operation } from '../../../../domain/safe/entities/operation.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Operation } from '@/domain/safe/entities/operation.entity';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { ProposeTransactionDto } from '../propose-transaction.dto.entity';
 
 export function proposeTransactionDtoBuilder(): IBuilder<ProposeTransactionDto> {

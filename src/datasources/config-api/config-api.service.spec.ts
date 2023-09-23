@@ -1,11 +1,11 @@
 import { ConfigApi } from './config-api.service';
-import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { HttpErrorFactory } from '../errors/http-error-factory';
-import { DataSourceError } from '../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { safeAppBuilder } from '../../domain/safe-apps/entities/__tests__/safe-app.builder';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
 import { ICacheService } from '../cache/cache.service.interface';
 
@@ -77,13 +77,13 @@ describe('ConfigApi', () => {
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
-    expect(mockDataSource.get).toBeCalledWith(
-      new CacheDir('chains', 'undefined_undefined'),
-      `${baseUri}/api/v1/chains`,
-      notFoundExpirationTimeInSeconds,
-      { params: { limit: undefined, offset: undefined } },
-      expirationTimeInSeconds,
-    );
+    expect(mockDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('chains', 'undefined_undefined'),
+      url: `${baseUri}/api/v1/chains`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { limit: undefined, offset: undefined } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
@@ -95,13 +95,12 @@ describe('ConfigApi', () => {
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
-    expect(mockDataSource.get).toBeCalledWith(
-      new CacheDir(`${data.chainId}_chain`, ''),
-      `${baseUri}/api/v1/chains/${data.chainId}`,
-      notFoundExpirationTimeInSeconds,
-      undefined,
-      expirationTimeInSeconds,
-    );
+    expect(mockDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(`${data.chainId}_chain`, ''),
+      url: `${baseUri}/api/v1/chains/${data.chainId}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
@@ -114,13 +113,15 @@ describe('ConfigApi', () => {
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
-    expect(mockDataSource.get).toBeCalledWith(
-      new CacheDir(`${chainId}_safe_apps`, 'undefined_undefined'),
-      `${baseUri}/api/v1/safe-apps/`,
-      notFoundExpirationTimeInSeconds,
-      { params: { chainId, clientUrl: undefined, url: undefined } },
-      expirationTimeInSeconds,
-    );
+    expect(mockDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(`${chainId}_safe_apps`, 'undefined_undefined'),
+      url: `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: {
+        params: { chainId, clientUrl: undefined, url: undefined },
+      },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
@@ -134,13 +135,13 @@ describe('ConfigApi', () => {
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
-    expect(mockDataSource.get).toBeCalledWith(
-      new CacheDir(`${chainId}_safe_apps`, `undefined_${url}`),
-      `${baseUri}/api/v1/safe-apps/`,
-      notFoundExpirationTimeInSeconds,
-      { params: { chainId, clientUrl: undefined, url } },
-      expirationTimeInSeconds,
-    );
+    expect(mockDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(`${chainId}_safe_apps`, `undefined_${url}`),
+      url: `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { chainId, clientUrl: undefined, url } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 
@@ -154,13 +155,13 @@ describe('ConfigApi', () => {
 
     expect(actual).toBe(data);
     expect(mockDataSource.get).toBeCalledTimes(1);
-    expect(mockDataSource.get).toBeCalledWith(
-      new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
-      `${baseUri}/api/v1/safe-apps/`,
-      notFoundExpirationTimeInSeconds,
-      { params: { chainId, clientUrl, url: undefined } },
-      expirationTimeInSeconds,
-    );
+    expect(mockDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
+      url: `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { chainId, clientUrl, url: undefined } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
     expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
   });
 

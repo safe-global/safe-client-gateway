@@ -5,8 +5,12 @@ import {
   HumanDescriptionFragment,
   TokenValueFragment,
   ValueType,
-  WordFragment,
+  TextFragment,
 } from './human-description.entity';
+
+type SafeRegExpMatchArray = RegExpMatchArray & {
+  groups: NonNullable<RegExpMatchArray['groups']>;
+};
 
 /**
  * A {@link HumanDescriptionTemplate} represents a human-readable template
@@ -21,13 +25,25 @@ export class HumanDescriptionTemplate {
   private readonly functionAbi: never;
 
   private static readonly REGEX =
-    /{{(?<typeToken>\w+) \$(?<paramIndex>\d+)}}|(?<wordToken>\w+)/g;
+    /{{(?<typeToken>\w+) \$(?<paramIndex>\d+)}}|(?<textToken>\w+)/g;
+
+  /**
+   * Store the regex matches as an array instead of an iterable so that it can be restarted
+   * @private
+   */
+  private readonly templateMatches: SafeRegExpMatchArray[];
 
   constructor(
     functionSignature: string,
     private readonly template: string,
   ) {
     this.functionAbi = parseAbi([functionSignature]);
+
+    this.templateMatches = Array.from(
+      template.matchAll(HumanDescriptionTemplate.REGEX),
+    ).filter((match): match is SafeRegExpMatchArray => {
+      return match.groups !== undefined;
+    });
   }
 
   /**
@@ -46,15 +62,12 @@ export class HumanDescriptionTemplate {
     });
 
     const fragments: HumanDescriptionFragment[] = [];
-    const matches = this.template.matchAll(HumanDescriptionTemplate.REGEX);
 
-    for (const match of matches) {
-      if (!match.groups) throw Error(`Error parsing template ${this.template}`);
-
-      if ('wordToken' in match.groups && match.groups.wordToken !== undefined) {
-        fragments.push(<WordFragment>{
-          type: ValueType.Word,
-          value: match.groups.wordToken,
+    for (const match of this.templateMatches) {
+      if ('textToken' in match.groups && match.groups.textToken !== undefined) {
+        fragments.push(<TextFragment>{
+          type: ValueType.Text,
+          value: match.groups.textToken,
         });
       } else if (
         'typeToken' in match.groups &&

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { DeleteSafeDelegateDto } from '../delete-safe-delegate.dto.entity';
 
 export function deleteSafeDelegateDtoBuilder(): IBuilder<DeleteSafeDelegateDto> {

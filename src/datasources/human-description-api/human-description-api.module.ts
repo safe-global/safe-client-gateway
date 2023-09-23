@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { HumanDescriptionApi } from './human-description-api.service';
-import { IHumanDescriptionApi } from '../../domain/interfaces/human-description-api.interface';
+import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
 
 @Global()
 @Module({

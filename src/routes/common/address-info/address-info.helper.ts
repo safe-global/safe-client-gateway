@@ -1,13 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ContractsRepository } from '../../../domain/contracts/contracts.repository';
-import { IContractsRepository } from '../../../domain/contracts/contracts.repository.interface';
-import { TokenRepository } from '../../../domain/tokens/token.repository';
-import { ITokenRepository } from '../../../domain/tokens/token.repository.interface';
+import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { AddressInfo } from '../entities/address-info.entity';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 

@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import {
   isERC20Transfer,
   isERC721Transfer,
   isNativeTokenTransfer,
   Transfer as DomainTransfer,
 } from '../../../../domain/safe/entities/transfer.entity';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
+import { Token } from '@/domain/tokens/entities/token.entity';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { TransferTransactionInfo } from '../../entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
@@ -51,6 +51,7 @@ export class TransferInfoMapper {
       recipient,
       direction,
       await this.getTransferByType(chainId, domainTransfer),
+      null,
       null,
     );
   }

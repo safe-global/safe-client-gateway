@@ -13,11 +13,11 @@ import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
 import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { SettingsChangeMapper } from './settings-change.mapper';
-import { multisigTransactionBuilder } from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '../../../../domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

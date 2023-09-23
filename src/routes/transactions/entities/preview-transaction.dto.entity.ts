@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Operation } from '../../../domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 export class PreviewTransactionDto {
   @ApiProperty()

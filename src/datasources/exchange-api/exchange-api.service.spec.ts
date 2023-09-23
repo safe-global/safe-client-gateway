@@ -1,8 +1,8 @@
 import { ExchangeApi } from './exchange-api.service';
-import { FakeConfigurationService } from '../../config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { faker } from '@faker-js/faker';
-import { exchangeFiatCodesBuilder } from '../../domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
-import { exchangeRatesBuilder } from '../../domain/exchange/entities/__tests__/exchange-rates.builder';
+import { exchangeFiatCodesBuilder } from '@/domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
+import { exchangeRatesBuilder } from '@/domain/exchange/entities/__tests__/exchange-rates.builder';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheDir } from '../cache/entities/cache-dir.entity';
 
@@ -83,13 +83,12 @@ describe('ExchangeApi', () => {
 
     await target.getFiatCodes();
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_fiat_codes', ''),
-      `${exchangeBaseUri}/symbols?access_key=${exchangeApiKey}`,
-      notFoundExpirationTimeInSeconds,
-      {},
-      ttl, // 60 seconds
-    );
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('exchange_fiat_codes', ''),
+      url: `${exchangeBaseUri}/symbols?access_key=${exchangeApiKey}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: ttl, // 60 seconds
+    });
   });
 
   it('Should return the exchange rates', async () => {
@@ -126,12 +125,11 @@ describe('ExchangeApi', () => {
 
     await target.getRates();
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith(
-      new CacheDir('exchange_rates', ''),
-      `${exchangeBaseUri}/latest?access_key=${exchangeApiKey}`,
-      notFoundExpirationTimeInSeconds,
-      {},
-      ttl, // 60 seconds
-    );
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('exchange_rates', ''),
+      url: `${exchangeBaseUri}/latest?access_key=${exchangeApiKey}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: ttl, // 60 seconds
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { InvalidationPatternDetails } from '../invalidation-pattern.dto.entity';
 
 export function invalidationPatternDetailsBuilder(): IBuilder<InvalidationPatternDetails> {

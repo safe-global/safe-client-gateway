@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ExchangeRates } from '../../domain/exchange/entities/exchange-rates.entity';
-import { ExchangeFiatCodes } from '../../domain/exchange/entities/exchange-fiat-codes.entity';
-import { IExchangeApi } from '../../domain/interfaces/exchange-api.interface';
-import { DataSourceError } from '../../domain/errors/data-source.error';
-import { IConfigurationService } from '../../config/configuration.service.interface';
+import { ExchangeRates } from '@/domain/exchange/entities/exchange-rates.entity';
+import { ExchangeFiatCodes } from '@/domain/exchange/entities/exchange-fiat-codes.entity';
+import { IExchangeApi } from '@/domain/interfaces/exchange-api.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 
@@ -34,13 +34,12 @@ export class ExchangeApi implements IExchangeApi {
 
   async getFiatCodes(): Promise<ExchangeFiatCodes> {
     try {
-      return await this.dataSource.get<ExchangeFiatCodes>(
-        CacheRouter.getExchangeFiatCodesCacheDir(),
-        `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {},
-        this.cacheTtlSeconds,
-      );
+      return await this.dataSource.get<ExchangeFiatCodes>({
+        cacheDir: CacheRouter.getExchangeFiatCodesCacheDir(),
+        url: `${this.baseUrl}/symbols?access_key=${this.apiKey}`,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.cacheTtlSeconds,
+      });
     } catch (error) {
       throw new DataSourceError('Error getting Fiat Codes from exchange');
     }
@@ -48,13 +47,12 @@ export class ExchangeApi implements IExchangeApi {
 
   async getRates(): Promise<ExchangeRates> {
     try {
-      return await this.dataSource.get<ExchangeRates>(
-        CacheRouter.getExchangeRatesCacheDir(),
-        `${this.baseUrl}/latest?access_key=${this.apiKey}`,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {},
-        this.cacheTtlSeconds,
-      );
+      return await this.dataSource.get<ExchangeRates>({
+        cacheDir: CacheRouter.getExchangeRatesCacheDir(),
+        url: `${this.baseUrl}/latest?access_key=${this.apiKey}`,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.cacheTtlSeconds,
+      });
     } catch (error) {
       throw new DataSourceError('Error getting exchange data');
     }

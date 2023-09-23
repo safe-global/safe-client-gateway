@@ -1,8 +1,8 @@
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { Injectable } from '@nestjs/common';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '../../entities/transaction.entity';
-import { CreationTransaction } from '../../../../domain/safe/entities/creation-transaction.entity';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { CreationTransactionInfo } from '../../entities/creation-transaction-info.entity';
 

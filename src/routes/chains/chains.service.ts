@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import { IBackboneRepository } from '../../domain/backbone/backbone.repository.interface';
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { IChainsRepository } from '../../domain/chains/chains.repository.interface';
-import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import { Page } from '../../domain/entities/page.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IBackboneRepository } from '@/domain/backbone/backbone.repository.interface';
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Page } from '@/domain/entities/page.entity';
 import {
   cursorUrlFromLimitAndOffset,
   PaginationData,

@@ -3,7 +3,7 @@ import { LoggingService } from './logging.interface';
 import { RequestScopedLoggingService } from './logging.service';
 import * as winston from 'winston';
 import * as Transport from 'winston-transport';
-import { IConfigurationService } from '../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * Provides a new instance of a Winston logger using the provided {@link transports}

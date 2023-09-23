@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
-import { Transfer } from '../../../../domain/safe/entities/transfer.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { TRANSACTION_ID_SEPARATOR, TRANSFER_PREFIX } from '../../constants';
 import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { Transaction } from '../../entities/transaction.entity';

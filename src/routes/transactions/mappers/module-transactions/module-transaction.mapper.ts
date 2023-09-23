@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Transaction } from '../../entities/transaction.entity';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { ModuleExecutionInfo } from '../../entities/module-execution-info.entity';
 import {
   MODULE_TRANSACTION_PREFIX,

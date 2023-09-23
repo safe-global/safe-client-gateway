@@ -2,12 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { CacheService } from './cache.service.interface';
 import { RedisCacheService } from './redis.cache.service';
 import { createClient } from 'redis';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
-import { CacheReadiness } from '../../domain/interfaces/cache-readiness.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 

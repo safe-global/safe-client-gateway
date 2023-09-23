@@ -1,23 +1,23 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { TestAppProvider } from '../../__tests__/test-app.provider';
-import { TestCacheModule } from '../../datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '../../datasources/network/__tests__/test.network.module';
-import { chainBuilder } from '../../domain/chains/entities/__tests__/chain.builder';
-import { pageBuilder } from '../../domain/entities/__tests__/page.builder';
-import { TestLoggingModule } from '../../logging/__tests__/test.logging.module';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { invalidationPatternDtoBuilder } from './entities/__tests__/invalidation-pattern.dto.builder';
-import { ConfigurationModule } from '../../config/configuration.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '../../config/entities/__tests__/configuration';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import { FakeCacheService } from '../../datasources/cache/__tests__/fake.cache.service';
-import { CacheService } from '../../datasources/cache/cache.service.interface';
-import { AppModule, configurationModule } from '../../app.module';
-import { CacheModule } from '../../datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '../../logging/logging.module';
-import { NetworkModule } from '../../datasources/network/network.module';
-import { NetworkService } from '../../datasources/network/network.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { AppModule, configurationModule } from '@/app.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 
 describe('Flush Controller (Unit)', () => {
   let app: INestApplication;

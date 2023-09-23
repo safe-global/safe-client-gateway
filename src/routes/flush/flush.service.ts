@@ -3,8 +3,8 @@ import {
   InvalidationPatternDetails,
   InvalidationPatternDto as DomainInvalidationPatternDto,
 } from '../../domain/flush/entities/invalidation-pattern.dto.entity';
-import { FlushRepository } from '../../domain/flush/flush.repository';
-import { IFlushRepository } from '../../domain/flush/flush.repository.interface';
+import { FlushRepository } from '@/domain/flush/flush.repository';
+import { IFlushRepository } from '@/domain/flush/flush.repository.interface';
 import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
 
 @Injectable()

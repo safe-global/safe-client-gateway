@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '../../../../domain/safe/entities/operation.entity';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
-import { ITokenRepository } from '../../../../domain/tokens/token.repository.interface';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenType } from '../../../balances/entities/token-type.entity';
 import { SettingsChangeTransaction } from '../../entities/settings-change-transaction.entity';
 import { TransactionInfo } from '../../entities/transaction-info.entity';
@@ -16,7 +16,7 @@ import { SettingsChangeMapper } from './settings-change.mapper';
 import { DataDecoded } from '../../../data-decode/entities/data-decoded.entity';
 import { DataDecodedParameter } from '../../../data-decode/entities/data-decoded-parameter.entity';
 import { HumanDescriptionMapper } from './human-description.mapper';
-import { IConfigurationService } from '../../../../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -65,11 +65,15 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const humanDescription = this.isHumanDescriptionEnabled
-      ? await this.humanDescriptionMapper.mapHumanDescription(
+    const richDecodedInfo = this.isHumanDescriptionEnabled
+      ? await this.humanDescriptionMapper.mapRichDecodedInfo(
           transaction,
           chainId,
         )
+      : null;
+
+    const humanDescription = this.isHumanDescriptionEnabled
+      ? this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo)
       : null;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
@@ -78,6 +82,7 @@ export class MultisigTransactionInfoMapper {
         dataSize,
         chainId,
         humanDescription,
+        richDecodedInfo,
       );
     }
 
@@ -86,6 +91,7 @@ export class MultisigTransactionInfoMapper {
         chainId,
         transaction,
         humanDescription,
+        richDecodedInfo,
       );
     }
 
@@ -116,6 +122,7 @@ export class MultisigTransactionInfoMapper {
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
         humanDescription,
+        richDecodedInfo,
       );
     }
 
@@ -131,6 +138,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
+            richDecodedInfo,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
@@ -138,6 +146,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
+            richDecodedInfo,
           );
       }
     }
@@ -147,6 +156,7 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
       humanDescription,
+      richDecodedInfo,
     );
   }
 

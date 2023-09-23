@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { HealthEntity } from './entities/health.entity';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IHealthRepository } from './health.repository.interface';
 import {
   CacheReadiness,

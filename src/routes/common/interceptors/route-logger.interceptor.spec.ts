@@ -1,5 +1,5 @@
 import { RouteLoggerInterceptor } from './route-logger.interceptor';
-import { ILoggingService } from '../../../logging/logging.interface';
+import { ILoggingService } from '@/logging/logging.interface';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   Controller,
@@ -9,7 +9,7 @@ import {
   INestApplication,
 } from '@nestjs/common';
 import * as request from 'supertest';
-import { DataSourceError } from '../../../domain/errors/data-source.error';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 
 const mockLoggingService = {

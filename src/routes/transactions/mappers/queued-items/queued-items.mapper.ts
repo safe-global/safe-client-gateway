@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { flatten, groupBy } from 'lodash';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Safe } from '../../../../domain/safe/entities/safe.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Page } from '../../../common/entities/page.entity';
 import { ConflictType } from '../../entities/conflict-type.entity';
 import { QueuedItem } from '../../entities/queued-item.entity';
@@ -28,8 +28,11 @@ export class QueuedItemsMapper {
     chainId: string,
     previousPageLastNonce: number | null,
     nextPageFirstNonce: number | null,
+    timezoneOffset: number,
   ): Promise<QueuedItem[]> {
-    const transactionGroups = this.groupByNonce(transactions.results);
+    const transactionGroups = this.groupByNonce(
+      this.getTimezoneOffsetTransactions(transactions.results, timezoneOffset),
+    );
     let lastProcessedNonce = previousPageLastNonce ?? -1;
 
     return flatten(
@@ -131,5 +134,28 @@ export class QueuedItemsMapper {
           transactions: transactions,
         },
     );
+  }
+
+  /**
+   * Adjusts the timestamps of transactions array by given offset
+   * @param transactions transactions to offset the timestamp of
+   * @param timezoneOffset UTC timezone offset in milliseconds
+   */
+  private getTimezoneOffsetTransactions(
+    transactions: MultisigTransaction[],
+    timezoneOffset: number,
+  ): MultisigTransaction[] {
+    if (timezoneOffset === 0) {
+      return transactions;
+    }
+
+    // We clone so as to not modify the original dates
+    return structuredClone(transactions).map((transaction) => {
+      // No need to set the `executionDate` as it will not exist in the queue
+      transaction.modified?.setUTCMilliseconds(timezoneOffset);
+      transaction.submissionDate.setUTCMilliseconds(timezoneOffset);
+
+      return transaction;
+    });
   }
 }

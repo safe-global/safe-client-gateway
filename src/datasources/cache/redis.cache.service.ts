@@ -1,13 +1,10 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { IConfigurationService } from '../../config/configuration.service.interface';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { RedisClientType } from './cache.module';
 import { ICacheService } from './cache.service.interface';
 import { CacheDir } from './entities/cache-dir.entity';
-import { ICacheReadiness } from '../../domain/interfaces/cache-readiness.interface';
+import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
 @Injectable()
 export class RedisCacheService

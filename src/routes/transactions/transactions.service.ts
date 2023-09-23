@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { SafeRepository } from '../../domain/safe/safe.repository';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
-import { AddConfirmationDto } from '../../domain/transactions/entities/add-confirmation.dto.entity';
+import { SafeRepository } from '@/domain/safe/safe.repository';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { Page } from '../common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -308,6 +308,7 @@ export class TransactionsService {
     safeAddress: string;
     paginationData: PaginationData;
     trusted?: boolean;
+    timezoneOffset: number;
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -330,6 +331,7 @@ export class TransactionsService {
       args.chainId,
       this.getPreviousPageLastNonce(transactions, args.paginationData),
       this.getNextPageFirstNonce(transactions),
+      args.timezoneOffset,
     );
 
     return {

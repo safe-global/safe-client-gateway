@@ -1,5 +1,5 @@
 import { Schema } from 'ajv';
-import { InvalidationTarget } from '../../../../domain/flush/entities/invalidation-target.entity';
+import { InvalidationTarget } from '@/domain/flush/entities/invalidation-target.entity';
 
 export const INVALIDATION_PATTERN_DETAIL_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/flush/invalidation-pattern-detail.json';

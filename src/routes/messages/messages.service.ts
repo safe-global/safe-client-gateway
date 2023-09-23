@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import { Message as DomainMessage } from '../../domain/messages/entities/message.entity';
-import { MessagesRepository } from '../../domain/messages/messages.repository';
-import { IMessagesRepository } from '../../domain/messages/messages.repository.interface';
-import { SafeRepository } from '../../domain/safe/safe.repository';
-import { ISafeRepository } from '../../domain/safe/safe.repository.interface';
+import { MessagesRepository } from '@/domain/messages/messages.repository';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
+import { SafeRepository } from '@/domain/safe/safe.repository';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { DateLabel } from '../common/entities/date-label.entity';
 import { Page } from '../common/entities/page.entity';
 import {

@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { CacheService } from '../cache.service.interface';
 import { FakeCacheService } from './fake.cache.service';
-import { CacheReadiness } from '../../../domain/interfaces/cache-readiness.interface';
+import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
 /**
  * The {@link TestCacheModule} should be used whenever you want to

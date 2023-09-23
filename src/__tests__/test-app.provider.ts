@@ -4,7 +4,7 @@ import {
   AppProvider,
   DEFAULT_CONFIGURATION,
   configureShutdownHooks,
-} from '../app.provider';
+} from '@/app.provider';
 
 /**
  * A test {@link AppProvider}

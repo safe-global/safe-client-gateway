@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isArray } from 'lodash';
-import { DataDecoded } from '../../../../domain/data-decoder/entities/data-decoded.entity';
-import { DELEGATE_OPERATION } from '../../../../domain/safe/entities/operation.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DELEGATE_OPERATION } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()
 export class DataDecodedParamHelper {

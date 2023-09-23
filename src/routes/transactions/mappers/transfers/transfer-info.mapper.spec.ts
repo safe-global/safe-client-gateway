@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { TokenRepository } from '../../../../domain/tokens/token.repository';
+import { TokenRepository } from '@/domain/tokens/token.repository';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { AddressInfo } from '../../../common/entities/address-info.entity';
 import {
@@ -10,11 +10,11 @@ import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
 import { TransferInfoMapper } from './transfer-info.mapper';
-import { erc20TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferBuilder } from '../../../../domain/safe/entities/__tests__/erc721-transfer.builder';
-import { nativeTokenTransferBuilder } from '../../../../domain/safe/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '../../../../domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '../../../../domain/tokens/__tests__/token.builder';
+import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { AddressInfo } from '../../entities/address-info.entity';
 
 export function addressInfoBuilder(): IBuilder<AddressInfo> {

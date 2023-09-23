@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { random, range } from 'lodash';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { SafeRegistration } from '../safe-registration.entity';
 
 export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {

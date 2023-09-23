@@ -1,32 +1,32 @@
-import { Backbone } from '../../domain/backbone/entities/backbone.entity';
-import { Balance } from '../../domain/balances/entities/balance.entity';
-import { MasterCopy } from '../../domain/chains/entities/master-copies.entity';
-import { Collectible } from '../../domain/collectibles/entities/collectible.entity';
-import { Contract } from '../../domain/contracts/entities/contract.entity';
-import { DataDecoded } from '../../domain/data-decoder/entities/data-decoded.entity';
-import { Delegate } from '../../domain/delegate/entities/delegate.entity';
-import { Page } from '../../domain/entities/page.entity';
-import { Estimation } from '../../domain/estimations/entities/estimation.entity';
-import { GetEstimationDto } from '../../domain/estimations/entities/get-estimation.dto.entity';
-import { ITransactionApi } from '../../domain/interfaces/transaction-api.interface';
-import { Message } from '../../domain/messages/entities/message.entity';
-import { Device } from '../../domain/notifications/entities/device.entity';
-import { CreationTransaction } from '../../domain/safe/entities/creation-transaction.entity';
-import { ModuleTransaction } from '../../domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
-import { SafeList } from '../../domain/safe/entities/safe-list.entity';
-import { Safe } from '../../domain/safe/entities/safe.entity';
-import { Transaction } from '../../domain/safe/entities/transaction.entity';
-import { Transfer } from '../../domain/safe/entities/transfer.entity';
-import { Token } from '../../domain/tokens/entities/token.entity';
-import { ProposeTransactionDto } from '../../domain/transactions/entities/propose-transaction.dto.entity';
-import { AddConfirmationDto } from '../../domain/transactions/entities/add-confirmation.dto.entity';
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
+import { Balance } from '@/domain/balances/entities/balance.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { Estimation } from '@/domain/estimations/entities/estimation.entity';
+import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { Message } from '@/domain/messages/entities/message.entity';
+import { Device } from '@/domain/notifications/entities/device.entity';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { SafeList } from '@/domain/safe/entities/safe-list.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Transaction } from '@/domain/safe/entities/transaction.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { ICacheService } from '../cache/cache.service.interface';
 import { HttpErrorFactory } from '../errors/http-error-factory';
 import { INetworkService } from '../network/network.service.interface';
-import { IConfigurationService } from '../../config/configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -76,18 +76,18 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/usd/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             trusted: args.trusted,
             exclude_spam: args.excludeSpam,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -130,11 +130,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/collectibles/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             limit: args.limit,
             offset: args.offset,
@@ -142,8 +142,8 @@ export class TransactionApi implements ITransactionApi {
             exclude_spam: args.excludeSpam,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -163,13 +163,12 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -181,13 +180,12 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getMasterCopiesCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/master-copies/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -200,13 +198,12 @@ export class TransactionApi implements ITransactionApi {
         safeAddress,
       });
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -229,13 +226,12 @@ export class TransactionApi implements ITransactionApi {
         contractAddress,
       });
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.contractNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -255,11 +251,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/delegates/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             safe: args.safeAddress,
             delegate: args.delegate,
@@ -269,7 +265,7 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-      );
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -339,13 +335,12 @@ export class TransactionApi implements ITransactionApi {
         transferId,
       });
       const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -364,11 +359,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/transfers/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             erc20: args.onlyErc20,
             erc721: args.onlyErc721,
@@ -376,8 +371,8 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -407,11 +402,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/incoming-transfers/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             execution_date__gte: args.executionDateGte,
             execution_date__lte: args.executionDateLte,
@@ -422,8 +417,8 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -462,13 +457,12 @@ export class TransactionApi implements ITransactionApi {
         moduleTransactionId,
       });
       const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -487,11 +481,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/module-transactions/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             to: args.to,
             module: args.module,
@@ -499,8 +493,8 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -534,11 +528,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             safe: args.safeAddress,
             ordering: args.ordering,
@@ -554,8 +548,8 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -578,13 +572,12 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       });
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -609,13 +602,12 @@ export class TransactionApi implements ITransactionApi {
         safeAddress,
       });
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -635,11 +627,11 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             safe: args.safeAddress,
             ordering: args.ordering,
@@ -649,8 +641,8 @@ export class TransactionApi implements ITransactionApi {
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -673,13 +665,12 @@ export class TransactionApi implements ITransactionApi {
         address,
       });
       const url = `${this.baseUrl}/api/v1/tokens/${address}`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.tokenNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.tokenNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -697,18 +688,18 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/tokens/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             limit: args.limit,
             offset: args.offset,
           },
         },
-        this.defaultExpirationTimeInSeconds,
-      );
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -723,13 +714,12 @@ export class TransactionApi implements ITransactionApi {
         ownerAddress,
       });
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.defaultExpirationTimeInSeconds,
-      );
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -804,15 +794,14 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         messageHash,
       });
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        undefined,
-        this.isMessagesCacheEnabled
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.isMessagesCacheEnabled
           ? this.defaultExpirationTimeInSeconds
           : undefined,
-      );
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -829,20 +818,20 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         ...args,
       });
-      return await this.dataSource.get(
+      return await this.dataSource.get({
         cacheDir,
         url,
-        this.defaultNotFoundExpirationTimeSeconds,
-        {
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
           params: {
             limit: args.limit,
             offset: args.offset,
           },
         },
-        this.isMessagesCacheEnabled
+        expireTimeSeconds: this.isMessagesCacheEnabled
           ? this.defaultExpirationTimeInSeconds
           : undefined,
-      );
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

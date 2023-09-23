@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '../../validation/providers/generic.validator';
-import { JsonSchemaService } from '../../validation/providers/json-schema.service';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import {
   DATA_DECODED_PARAMETER_SCHEMA_ID,
   DATA_DECODED_SCHEMA_ID,

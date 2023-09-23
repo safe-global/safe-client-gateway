@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataDecoded, DataDecodedParameter } from '../data-decoded.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function dataDecodedBuilder(): IBuilder<DataDecoded> {
   return Builder.new<DataDecoded>()

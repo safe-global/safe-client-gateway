@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '../../../../domain/safe/entities/multisig-transaction.entity';
-import { Token } from '../../../../domain/tokens/entities/token.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '../../../common/constants';
 import { TransferTransactionInfo } from '../../entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
 import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { getTransferDirection } from './transfer-direction.helper';
+import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 
 @Injectable()
 export class Erc20TransferMapper {
@@ -21,6 +22,7 @@ export class Erc20TransferMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
     humanDescription: string | null,
+    richDecodedInfo: RichDecodedInfo | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(
@@ -57,6 +59,7 @@ export class Erc20TransferMapper {
         token.decimals,
       ),
       humanDescription,
+      richDecodedInfo,
     );
   }
 }

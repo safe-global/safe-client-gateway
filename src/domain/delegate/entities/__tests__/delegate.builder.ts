@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Delegate } from '../delegate.entity';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 
 export function delegateBuilder(): IBuilder<Delegate> {
   return Builder.new<Delegate>()

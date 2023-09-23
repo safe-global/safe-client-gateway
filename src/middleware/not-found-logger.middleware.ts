@@ -1,7 +1,7 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { ILoggingService, LoggingService } from '../logging/logging.interface';
-import { formatRouteLogMessage } from '../logging/utils';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { formatRouteLogMessage } from '@/logging/utils';
 
 /**
  * Middleware which logs requests that resulted in 404. Request side effects

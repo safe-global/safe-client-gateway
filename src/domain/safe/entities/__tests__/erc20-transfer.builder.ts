@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '../../../../__tests__/builder';
+import { Builder, IBuilder } from '@/__tests__/builder';
 import { ERC20Transfer } from '../transfer.entity';
 
 export function erc20TransferBuilder(): IBuilder<ERC20Transfer> {

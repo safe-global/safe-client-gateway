@@ -2,9 +2,9 @@ import * as request from 'supertest';
 import { RedisClientType } from 'redis';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { AppModule } from '../../../app.module';
-import { redisClientFactory } from '../../../__tests__/redis-client.factory';
-import { TestAppProvider } from '../../../__tests__/test-app.provider';
+import { AppModule } from '@/app.module';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication;

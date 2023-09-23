@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
-import { ModuleTransaction } from '../../../../domain/safe/entities/module-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import {
   MODULE_TRANSACTION_PREFIX,
