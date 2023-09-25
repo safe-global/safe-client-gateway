@@ -1133,18 +1133,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/config@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "@nestjs/config@npm:3.0.0"
+"@nestjs/config@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@nestjs/config@npm:3.1.1"
   dependencies:
-    dotenv: 16.1.4
+    dotenv: 16.3.1
     dotenv-expand: 10.0.0
     lodash: 4.17.21
     uuid: 9.0.0
   peerDependencies:
     "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0
     reflect-metadata: ^0.1.13
-  checksum: e886dc337cd0fa2018aff5088c5ec9f38331aaf47dbd065ff72e6429a14b213c83cb5a9782b5044c3625a89ef4d7bb426b173773b9d09140433820885731ffa0
+  checksum: 95446dd12678581582c15a1c7cc4d7b560466b646085cec2aab442e977def6699526f300c18f0bbbd795d7e7675b505ace382a453b3babc650d14d0c5af9502f
   languageName: node
   linkType: hard
 
@@ -3476,10 +3476,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:16.1.4":
-  version: 16.1.4
-  resolution: "dotenv@npm:16.1.4"
-  checksum: c1b2e13df4d374a6a29e134c56c7b040ba20500677fe8b9939ea654f3b3badb9aaa0b172e40e4dfa1233a4177dbb8fb79d84cc79a50ac9c9641fe2ad98c14876
+"dotenv@npm:16.3.1":
+  version: 16.3.1
+  resolution: "dotenv@npm:16.3.1"
+  checksum: 15d75e7279018f4bafd0ee9706593dd14455ddb71b3bcba9c52574460b7ccaf67d5cf8b2c08a5af1a9da6db36c956a04a1192b101ee102a3e0cf8817bbcf3dfd
   languageName: node
   linkType: hard
 
@@ -6891,7 +6891,7 @@ __metadata:
     "@faker-js/faker": ^8.0.2
     "@nestjs/cli": ^10.1.12
     "@nestjs/common": ^10.2.4
-    "@nestjs/config": ^3.0.0
+    "@nestjs/config": ^3.1.1
     "@nestjs/core": ^10.2.5
     "@nestjs/platform-express": ^10.1.3
     "@nestjs/schematics": ^10.0.2
