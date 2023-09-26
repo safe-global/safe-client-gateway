@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- Node 18.17.0 – https://nodejs.org/en/
+- Node 18.18.0 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
