@@ -1821,6 +1821,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/semver@npm:^7.5.3":
+  version: 7.5.3
+  resolution: "@types/semver@npm:7.5.3"
+  checksum: 349fdd1ab6c213bac5c991bac766bd07b8b12e63762462bb058740dcd2eb09c8193d068bb226f134661275f2022976214c0e727a4e5eb83ec1b131127c980d3e
+  languageName: node
+  linkType: hard
+
 "@types/send@npm:*":
   version: 0.17.1
   resolution: "@types/send@npm:0.17.1"
@@ -6904,7 +6911,7 @@ __metadata:
     "@types/jest": 29.5.5
     "@types/lodash": ^4.14.197
     "@types/node": ^20.6.0
-    "@types/semver": ^7.5.0
+    "@types/semver": ^7.5.3
     "@types/supertest": ^2.0.11
     "@typescript-eslint/eslint-plugin": ^6.7.0
     "@typescript-eslint/parser": ^6.6.0
