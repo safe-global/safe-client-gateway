@@ -1471,12 +1471,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:^1.26.0":
-  version: 1.26.0
-  resolution: "@safe-global/safe-deployments@npm:1.26.0"
+"@safe-global/safe-deployments@npm:^1.27.0":
+  version: 1.27.0
+  resolution: "@safe-global/safe-deployments@npm:1.27.0"
   dependencies:
     semver: ^7.3.7
-  checksum: ea36c04c42f33f679248b4be9477a608b3ad2b4ac87da7c943bac2720ad556fc4d1f87b9ba43b0737fc0a9217bfc232c27042c3720a02cbf7cd90af286d5cb62
+  checksum: 853d6c5f6502ca315379f7789fff0e038987b05139d5bf5aaad90b7d3d2f3ae4d72dc55213c04a6a52b367db17c396666309e468bda95770ae618c8592428ce4
   languageName: node
   linkType: hard
 
@@ -6906,7 +6906,7 @@ __metadata:
     "@nestjs/swagger": ^7.1.11
     "@nestjs/testing": ^10.2.6
     "@node-redis/json": ^1.0.2
-    "@safe-global/safe-deployments": ^1.26.0
+    "@safe-global/safe-deployments": ^1.27.0
     "@types/express": ^4.17.17
     "@types/jest": 29.5.5
     "@types/lodash": ^4.14.199
