@@ -4,6 +4,7 @@ import {
   DefaultValuePipe,
   Get,
   HttpCode,
+  Inject,
   Param,
   ParseBoolPipe,
   ParseIntPipe,
@@ -34,6 +35,7 @@ import { AddConfirmationDtoValidationPipe } from './pipes/add-confirmation.valid
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
 import { TransactionDetails } from './entities/transaction-details/transaction-details.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @ApiTags('transactions')
 @Controller({
@@ -41,7 +43,10 @@ import { TransactionDetails } from './entities/transaction-details/transaction-d
   version: '1',
 })
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {}
 
   @ApiOkResponse({ type: TransactionDetails })
   @Get(`chains/:chainId/transactions/:id`)
@@ -229,10 +234,19 @@ export class TransactionsController {
     @Body(ProposeTransactionDtoValidationPipe)
     proposeTransactionDto: ProposeTransactionDto,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.proposeTransaction({
-      chainId,
-      safeAddress,
-      proposeTransactionDto,
+    const transactionDetails =
+      await this.transactionsService.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+    this.loggingService.info({
+      type: 'propose-transaction-success',
+      safe_address: safeAddress,
+      safe_tx_hash: proposeTransactionDto.safeTxHash,
     });
+
+    return transactionDetails;
   }
 }

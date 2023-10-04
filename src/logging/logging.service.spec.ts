@@ -6,6 +6,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 const mockClsService = jest.mocked({
   getId: jest.fn(),
+  get: jest.fn(),
 } as unknown as ClsService);
 
 const mockLogger = {
