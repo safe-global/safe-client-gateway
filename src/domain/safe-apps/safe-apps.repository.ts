@@ -21,7 +21,7 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     return safeApps.map((safeApp) => this.validator.validate(safeApp));
   }
 
-  clearSafeApps(chainId: string): Promise<void> {
+  async clearSafeApps(chainId: string): Promise<void> {
     return this.configApi.clearSafeApps(chainId);
   }
 
