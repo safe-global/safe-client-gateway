@@ -365,12 +365,20 @@ export class CacheRouter {
     );
   }
 
+  static getChainCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.CHAIN_KEY}`;
+  }
+
   static getChainCacheDir(chainId: string): CacheDir {
-    return new CacheDir(`${chainId}_${CacheRouter.CHAIN_KEY}`, '');
+    return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
   static getChainsCachePattern(): string {
     return `*_${CacheRouter.CHAIN_KEY}`;
+  }
+
+  static getSafeAppsKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.SAFE_APPS_KEY}`;
   }
 
   static getSafeAppsCacheDir(args: {

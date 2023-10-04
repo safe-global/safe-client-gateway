@@ -23,14 +23,14 @@ export class ChainsRepository implements IChainsRepository {
     return this.chainValidator.validate(chain);
   }
 
+  async clearChain(chainId: string): Promise<void> {
+    return this.configApi.clearChain(chainId);
+  }
+
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     const page = await this.configApi.getChains({ limit, offset });
     page?.results.map((result) => this.chainValidator.validate(result));
     return page;
-  }
-
-  async clearChains(): Promise<void> {
-    return this.configApi.clearChains();
   }
 
   async getMasterCopies(chainId: string): Promise<MasterCopy[]> {

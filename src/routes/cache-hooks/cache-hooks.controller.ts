@@ -13,6 +13,8 @@ import { ModuleTransaction } from './entities/module-transaction.entity';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { MessageCreated } from './entities/message-created.entity';
 import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 
 @Controller({
   path: '',
@@ -28,6 +30,7 @@ export class CacheHooksController {
   async postEvent(
     @Body(EventValidationPipe)
     eventPayload:
+      | ChainUpdate
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -37,7 +40,8 @@ export class CacheHooksController {
       | NewMessageConfirmation
       | OutgoingToken
       | OutgoingEther
-      | PendingTransaction,
+      | PendingTransaction
+      | SafeAppsUpdate,
   ): Promise<void> {
     await this.service.onEvent(eventPayload);
   }
