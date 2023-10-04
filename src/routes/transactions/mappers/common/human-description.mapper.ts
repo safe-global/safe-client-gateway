@@ -1,4 +1,4 @@
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';

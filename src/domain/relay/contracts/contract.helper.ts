@@ -3,7 +3,7 @@ import {
   decode,
   isCall,
 } from '@/domain/relay/entities/contract-function.entity';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 import { Abi } from 'viem';
 
 /**

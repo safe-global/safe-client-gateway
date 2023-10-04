@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 import { ContractFunctionArgsMapper } from '@/domain/relay/entities/contract-function.entity';
 import { Abi, isHex } from 'viem';
 import { ContractHelper } from '@/domain/relay/contracts/contract.helper';
