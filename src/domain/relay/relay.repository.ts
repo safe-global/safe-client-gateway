@@ -3,7 +3,7 @@ import { RelayApi } from '../interfaces/relay-api.interface';
 import { LimitAddressesMapper, RelayPayload } from './limit-addresses.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 
 class RelayLimitReachedError extends Error {
   constructor(

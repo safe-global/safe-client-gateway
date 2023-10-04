@@ -12,7 +12,7 @@ import { SafeAppInfo } from '../../entities/safe-app-info.entity';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 

@@ -1,5 +1,5 @@
 import { Abi, decodeFunctionData } from 'viem';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 
 /**
  * Argument mapper representation for a contract function.
