@@ -17,7 +17,7 @@ services:
       - redis
 
   nginx:
-    image: nginx:1.23-alpine
+    image: nginx:1.25-alpine
     ports:
       - ${NGINX_HOST_PORT:-8080}:80
     volumes:
