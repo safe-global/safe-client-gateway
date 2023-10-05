@@ -412,7 +412,7 @@ export class TransactionApi implements ITransactionApi {
             execution_date__lte: args.executionDateLte,
             to: args.to,
             value: args.value,
-            tokenAddress: args.tokenAddress,
+            token_address: args.tokenAddress,
             limit: args.limit,
             offset: args.offset,
           },
