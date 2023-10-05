@@ -9,19 +9,32 @@ import { Balances } from '@/routes/balances/entities/balances.entity';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
 import { Token } from '@/routes/balances/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
+import { intersection, orderBy } from 'lodash';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
+import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity';
 
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
+  private readonly activeExternalPricesChainIds: string[];
 
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     @Inject(IExchangeRepository)
     private readonly exchangeRepository: IExchangeRepository,
-  ) {}
+    @Inject(IPricesRepository)
+    private readonly pricesRepository: IPricesRepository,
+  ) {
+    this.activeExternalPricesChainIds = this.configurationService.getOrThrow<
+      string[]
+    >('features.externalPricesChainIds');
+  }
 
   getNumberString(value: number): string {
     // Prevent scientific notation
@@ -37,6 +50,10 @@ export class BalancesService {
     trusted: boolean;
     excludeSpam: boolean;
   }): Promise<Balances> {
+    if (this.activeExternalPricesChainIds.includes(args.chainId)) {
+      return this._getFromSimpleBalances(args);
+    }
+
     const txServiceBalances = await this.balancesRepository.getBalances(args);
 
     const usdToFiatRate: number = await this.exchangeRepository.convertRates({
@@ -106,12 +123,127 @@ export class BalancesService {
     };
   }
 
+  private async _getFromSimpleBalances(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balances> {
+    const { chainId, fiatCode } = args;
+    const simpleBalances =
+      await this.balancesRepository.getSimpleBalances(args);
+    const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
+    const balances: Balance[] = await Promise.all(
+      simpleBalances.map(async (balance) =>
+        this.mapSimpleBalance(balance, chainId, fiatCode, nativeCurrency),
+      ),
+    );
+    const fiatTotal = balances
+      .filter((b) => b.fiatBalance !== null)
+      .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
+
+    return <Balances>{
+      fiatTotal: this.getNumberString(fiatTotal),
+      items: orderBy(balances, 'fiatBalance', 'desc'),
+    };
+  }
+
+  private async mapSimpleBalance(
+    txBalance: SimpleBalance,
+    chainId: string,
+    fiatCode: string,
+    nativeCurrency: NativeCurrency,
+  ): Promise<Balance> {
+    const tokenAddress = txBalance.tokenAddress;
+    const tokenType =
+      tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
+
+    const tokenMetaData =
+      tokenType === TokenType.NativeToken
+        ? {
+            decimals: nativeCurrency.decimals,
+            symbol: nativeCurrency.symbol,
+            name: nativeCurrency.name,
+            logoUri: nativeCurrency.logoUri,
+          }
+        : {
+            decimals: txBalance.token?.decimals,
+            symbol: txBalance.token?.symbol,
+            name: txBalance.token?.name,
+            logoUri: txBalance.token?.logoUri,
+          };
+
+    const fiatConversion = await this.getFiatConversion(
+      chainId,
+      fiatCode,
+      tokenAddress,
+    );
+
+    return <Balance>{
+      tokenInfo: <Token>{
+        type: tokenType,
+        address: tokenAddress ?? NULL_ADDRESS,
+        ...tokenMetaData,
+      },
+      balance: txBalance.balance,
+      fiatBalance: this.getFiatBalance(fiatConversion, txBalance),
+      fiatConversion: this.getNumberString(fiatConversion),
+    };
+  }
+
+  async getFiatConversion(
+    chainId: string,
+    fiatCode: string,
+    tokenAddress: string | null,
+  ): Promise<number> {
+    if (tokenAddress === null) {
+      const nativeCoinId = this.configurationService.getOrThrow<string>(
+        `prices.chains.${chainId}.nativeCoin`,
+      );
+      return this.pricesRepository.getNativeCoinPrice({
+        nativeCoinId,
+        fiatCode,
+      });
+    }
+    const chainName = this.configurationService.getOrThrow<string>(
+      `prices.chains.${chainId}.chainName`,
+    );
+    return this.pricesRepository.getTokenPrice({
+      chainName,
+      tokenAddress,
+      fiatCode,
+    });
+  }
+
+  getFiatBalance(fiatConversion: number, txBalance: SimpleBalance): string {
+    const fiatBalance =
+      (fiatConversion * Number(txBalance.balance)) /
+      10 ** (txBalance.token?.decimals ?? 18);
+
+    return this.getNumberString(fiatBalance);
+  }
+
+  /**
+   * Gets the list of supported fiat codes.
+   * USD and EUR fiat codes are fixed, and should be the first ones in the result list.
+   * @returns ordered list of uppercase strings representing the supported fiat codes.
+   *
+   * TODO: Note: during the prices retrieval migration, this will return the
+   * intersection between the exchange and the prices provider supported currencies.
+   * When it is finished, just the prices provider will be taken as source.
+   */
   async getSupportedFiatCodes(): Promise<string[]> {
-    const fiatCodes: string[] = await this.exchangeRepository.getFiatCodes();
-    const mainCurrencies: string[] = ['USD', 'EUR'];
-    return [
-      ...mainCurrencies,
-      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
-    ];
+    const [exchangeFiatCodes, pricesProviderFiatCodes] = await Promise.all([
+      this.exchangeRepository.getFiatCodes(),
+      this.pricesRepository.getFiatCodes(),
+    ]);
+
+    const fiatCodes = intersection(
+      exchangeFiatCodes.map((item) => item.toUpperCase()),
+      pricesProviderFiatCodes.map((item) => item.toUpperCase()),
+    ).sort();
+
+    return Array.from(new Set(['USD', 'EUR', ...fiatCodes]));
   }
 }

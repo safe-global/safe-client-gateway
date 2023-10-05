@@ -32,6 +32,8 @@ export default () => ({
     },
   },
   features: {
+    externalPricesChainIds:
+      process.env.FF_EXTERNAL_PRICES_CHAIN_IDS?.split(',') ?? [],
     humanDescription:
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
@@ -46,6 +48,27 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+  },
+  prices: {
+    baseUri:
+      process.env.PRICES_PROVIDER_API_BASE_URI ||
+      'https://api.coingecko.com/api/v3',
+    apiKey: process.env.PRICES_PROVIDER_API_KEY || '',
+    pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
+    chains: {
+      1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+      10: { nativeCoin: 'optimism', chainName: 'optimistic-ethereum' },
+      100: { nativeCoin: 'gnosis', chainName: 'xdai' },
+      1101: { nativeCoin: 'matic-network', chainName: 'polygon-zkevm' },
+      1313161554: { nativeCoin: 'aurora', chainName: 'aurora' },
+      137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
+      324: { nativeCoin: 'ethereum', chainName: 'zksync' },
+      42161: { nativeCoin: 'arbitrum', chainName: 'arbitrum-one' },
+      42220: { nativeCoin: 'celo', chainName: 'celo' },
+      43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
+      56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
+      8453: { nativeCoin: 'base', chainName: 'base' },
+    },
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

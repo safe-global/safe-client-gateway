@@ -3,6 +3,9 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 
+/**
+ * @deprecated to be removed after Coingecko prices retrieval is complete.
+ */
 export function balanceBuilder(): IBuilder<Balance> {
   return Builder.new<Balance>()
     .with('tokenAddress', faker.finance.ethereumAddress())

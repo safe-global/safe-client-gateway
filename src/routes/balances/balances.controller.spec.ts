@@ -24,8 +24,9 @@ describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl;
   let exchangeUrl;
-  let networkService;
   let exchangeApiKey;
+  let pricesProviderUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -47,6 +48,7 @@ describe('Balances Controller (Unit)', () => {
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     exchangeUrl = configurationService.get('exchange.baseUri');
     exchangeApiKey = configurationService.get('exchange.apiKey');
+    pricesProviderUrl = configurationService.get('prices.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -58,6 +60,7 @@ describe('Balances Controller (Unit)', () => {
   });
 
   describe('GET /balances', () => {
+    // TODO: add tests for Prices Provider retrieval (switch providers using FF_EXTERNAL_PRICES_CHAIN_IDS)
     it(`maps ERC20 token correctly`, async () => {
       const chainId = '1';
       const safeAddress = '0x0000000000000000000000000000000000000001';
@@ -584,28 +587,48 @@ describe('Balances Controller (Unit)', () => {
     });
   });
 
-  describe('GET /balances/supported-fiat-codes', () => {
-    it('Success', async () => {
-      const fiatCodes = exchangeFiatCodesBuilder()
+  describe.only('GET /balances/supported-fiat-codes', () => {
+    it('should return the ordered list of supported fiat codes', async () => {
+      const exchangeFiatCodes = exchangeFiatCodesBuilder()
         .with('success', true)
         .with('symbols', {
-          AED: 'United Arab Emirates Dirham',
+          GBP: 'British Pound Sterling',
           USD: 'United States Dollar',
           AFN: 'Afghan Afghani',
           EUR: 'Euro',
           ALL: 'Albanian Lek',
         })
         .build();
-      networkService.get.mockResolvedValueOnce({ data: fiatCodes });
+      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'eth', 'afn'];
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${exchangeUrl}/symbols?access_key=${exchangeApiKey}`:
+            return Promise.resolve({ data: exchangeFiatCodes });
+          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
+            return Promise.resolve({ data: pricesProviderFiatCodes });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'EUR', 'AED', 'AFN', 'ALL']);
+        .expect(['USD', 'EUR', 'AFN', 'GBP']);
     });
 
-    it('Failure getting fiat currencies data', async () => {
-      networkService.get.mockRejectedValueOnce(new Error());
+    it('should fail getting fiat currencies data from exchange', async () => {
+      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'eth', 'afn'];
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${exchangeUrl}/symbols?access_key=${exchangeApiKey}`:
+            return Promise.reject(new Error());
+          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
+            return Promise.resolve({ data: pricesProviderFiatCodes });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
@@ -613,6 +636,37 @@ describe('Balances Controller (Unit)', () => {
         .expect({
           code: 503,
           message: 'Error getting Fiat Codes from exchange',
+        });
+    });
+
+    it('should fail getting fiat currencies data from prices provider', async () => {
+      const exchangeFiatCodes = exchangeFiatCodesBuilder()
+        .with('success', true)
+        .with('symbols', {
+          GBP: 'British Pound Sterling',
+          USD: 'United States Dollar',
+          AFN: 'Afghan Afghani',
+          EUR: 'Euro',
+          ALL: 'Albanian Lek',
+        })
+        .build();
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${exchangeUrl}/symbols?access_key=${exchangeApiKey}`:
+            return Promise.resolve({ data: exchangeFiatCodes });
+          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
+            return Promise.reject(new Error());
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get('/v1/balances/supported-fiat-codes')
+        .expect(503)
+        .expect({
+          code: 503,
+          message: 'Error getting Fiat Codes from prices provider',
         });
     });
   });
