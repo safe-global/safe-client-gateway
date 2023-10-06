@@ -55,8 +55,6 @@ jobs:
       - run: yarn run build
       - run: yarn run ${{matrix.task}}
         env:
-          PRICES_PROVIDER_API_BASE_URI: https://api.coingecko.com/api/v3
-          PRICES_PROVIDER_API_KEY: ${{ secrets.PRICES_PROVIDER_API_KEY }}
           EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           REDIS_HOST: localhost

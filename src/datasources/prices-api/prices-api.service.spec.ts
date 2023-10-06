@@ -3,6 +3,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PricesApi } from '@/datasources/prices-api/prices-api.service';
 import { faker } from '@faker-js/faker';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import { AssetPrice } from '../../domain/prices/entities/asset-price.entity';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -53,7 +54,7 @@ describe('PricesApi', () => {
 
     expect(fiatCodes).toBe(expectedFiatCodes);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
-      cacheDir: new CacheDir('price_fiat_code', ''),
+      cacheDir: new CacheDir('fiat_codes', ''),
       url: `${pricesBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {
         headers: {
@@ -78,7 +79,7 @@ describe('PricesApi', () => {
 
     expect(fiatCodes).toBe(expectedFiatCodes);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
-      cacheDir: new CacheDir('price_fiat_code', ''),
+      cacheDir: new CacheDir('fiat_codes', ''),
       url: `${pricesBaseUri}/simple/supported_vs_currencies`,
       networkRequest: undefined,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
@@ -87,7 +88,7 @@ describe('PricesApi', () => {
   });
 
   it('should return the token price (using an API key)', async () => {
-    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
@@ -150,7 +151,7 @@ describe('PricesApi', () => {
   it('should return the native coin price (using an API key)', async () => {
     const nativeCoinId = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
-    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
 
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
@@ -171,7 +172,7 @@ describe('PricesApi', () => {
   it('should return the native coin price (with no API key)', async () => {
     const nativeCoinId = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
-    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     fakeConfigurationService.set('prices.apiKey', null);
     const service = new PricesApi(

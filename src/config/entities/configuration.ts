@@ -32,8 +32,8 @@ export default () => ({
     },
   },
   features: {
-    externalPricesChainIds:
-      process.env.FF_EXTERNAL_PRICES_CHAIN_IDS?.split(',') ?? [],
+    pricesProviderChainIds:
+      process.env.FF_PRICES_PROVIDER_CHAIN_IDS?.split(',') ?? [],
     humanDescription:
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',

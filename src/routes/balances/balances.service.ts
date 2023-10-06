@@ -17,7 +17,7 @@ import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity'
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
-  private readonly activeExternalPricesChainIds: string[];
+  private readonly pricesProviderChainIds: string[];
 
   constructor(
     @Inject(IConfigurationService)
@@ -31,9 +31,9 @@ export class BalancesService {
     @Inject(IPricesRepository)
     private readonly pricesRepository: IPricesRepository,
   ) {
-    this.activeExternalPricesChainIds = this.configurationService.getOrThrow<
+    this.pricesProviderChainIds = this.configurationService.getOrThrow<
       string[]
-    >('features.externalPricesChainIds');
+    >('features.pricesProviderChainIds');
   }
 
   getNumberString(value: number): string {
@@ -50,7 +50,7 @@ export class BalancesService {
     trusted: boolean;
     excludeSpam: boolean;
   }): Promise<Balances> {
-    if (this.activeExternalPricesChainIds.includes(args.chainId)) {
+    if (this.pricesProviderChainIds.includes(args.chainId)) {
       return this._getFromSimpleBalances(args);
     }
 

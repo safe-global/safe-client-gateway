@@ -12,6 +12,7 @@ export class CacheRouter {
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly EXCHANGE_FIAT_CODES_KEY = 'exchange_fiat_codes';
   private static readonly EXCHANGE_RATES_KEY = 'exchange_rates';
+  private static readonly FIAT_CODES_KEY = 'fiat_codes';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
@@ -22,7 +23,6 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
-  private static readonly PRICE_FIAT_CODE_KEY = 'price_fiat_code';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SIMPLE_BALANCES_KEY = 'simple_balances';
@@ -456,6 +456,6 @@ export class CacheRouter {
   }
 
   static getPriceFiatCodesCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.PRICE_FIAT_CODE_KEY, '');
+    return new CacheDir(CacheRouter.FIAT_CODES_KEY, '');
   }
 }

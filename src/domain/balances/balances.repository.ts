@@ -44,13 +44,13 @@ export class BalancesRepository implements IBalancesRepository {
     const api = await this.transactionApiManager.getTransactionApi(
       args.chainId,
     );
-    const balances = await api.getSimpleBalances({
+    const simpleBalances = await api.getSimpleBalances({
       safeAddress: args.safeAddress,
       trusted: args.trusted,
       excludeSpam: args.excludeSpam,
     });
-    return balances.map((balance) =>
-      this.simpleBalancesValidator.validate(balance),
+    return simpleBalances.map((simpleBalance) =>
+      this.simpleBalancesValidator.validate(simpleBalance),
     );
   }
 

@@ -25,7 +25,7 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   features: {
-    externalPricesChainIds: ['10'],
+    pricesProviderChainIds: ['10'],
     humanDescription: true,
     messagesCache: true,
   },
