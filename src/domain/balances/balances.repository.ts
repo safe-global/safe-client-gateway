@@ -54,7 +54,6 @@ export class BalancesRepository implements IBalancesRepository {
     );
   }
 
-  // TODO: clean simple_balances also
   async clearLocalBalances(args: {
     chainId: string;
     safeAddress: string;

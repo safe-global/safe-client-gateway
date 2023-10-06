@@ -85,6 +85,9 @@ export class BalancesService {
     };
   }
 
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
   private mapBalance(
     txBalance: TransactionApiBalance,
     usdToFiatRate: number,
@@ -136,7 +139,7 @@ export class BalancesService {
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
     const balances: Balance[] = await Promise.all(
       simpleBalances.map(async (balance) =>
-        this.mapSimpleBalance(balance, chainId, fiatCode, nativeCurrency),
+        this._mapSimpleBalance(balance, chainId, fiatCode, nativeCurrency),
       ),
     );
     const fiatTotal = balances
@@ -149,7 +152,7 @@ export class BalancesService {
     };
   }
 
-  private async mapSimpleBalance(
+  private async _mapSimpleBalance(
     txBalance: SimpleBalance,
     chainId: string,
     fiatCode: string,
@@ -174,7 +177,7 @@ export class BalancesService {
             logoUri: txBalance.token?.logoUri,
           };
 
-    const fiatConversion = await this.getFiatConversion(
+    const fiatConversion = await this._getFiatConversion(
       chainId,
       fiatCode,
       tokenAddress,
@@ -187,12 +190,12 @@ export class BalancesService {
         ...tokenMetaData,
       },
       balance: txBalance.balance,
-      fiatBalance: this.getFiatBalance(fiatConversion, txBalance),
+      fiatBalance: this._getFiatBalance(fiatConversion, txBalance),
       fiatConversion: this.getNumberString(fiatConversion),
     };
   }
 
-  async getFiatConversion(
+  private async _getFiatConversion(
     chainId: string,
     fiatCode: string,
     tokenAddress: string | null,
@@ -216,7 +219,10 @@ export class BalancesService {
     });
   }
 
-  getFiatBalance(fiatConversion: number, txBalance: SimpleBalance): string {
+  private _getFiatBalance(
+    fiatConversion: number,
+    txBalance: SimpleBalance,
+  ): string {
     const fiatBalance =
       (fiatConversion * Number(txBalance.balance)) /
       10 ** (txBalance.token?.decimals ?? 18);
