@@ -139,7 +139,7 @@ describe('TransactionApi', () => {
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toBeCalledTimes(2);
       expect(mockCacheService.deleteByKey).toBeCalledWith(
         `${chainId}_balances_${safeAddress}`,
       );

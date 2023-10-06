@@ -53,7 +53,7 @@ export default () => ({
     baseUri:
       process.env.PRICES_PROVIDER_API_BASE_URI ||
       'https://api.coingecko.com/api/v3',
-    apiKey: process.env.PRICES_PROVIDER_API_KEY || '',
+    apiKey: process.env.PRICES_PROVIDER_API_KEY,
     pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
     chains: {
       1: { nativeCoin: 'ethereum', chainName: 'ethereum' },

@@ -5,9 +5,12 @@ import { AssetPrice } from '../../domain/prices/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '../../domain/errors/data-source.error';
+import { NetworkRequest } from '../network/entities/network.request.entity';
 
 @Injectable()
 export class PricesApi implements IPricesApi {
+  private static readonly pricesProviderHeader: string = 'x-cg-pro-api-key';
+  private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly pricesTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -18,6 +21,7 @@ export class PricesApi implements IPricesApi {
     private readonly configurationService: IConfigurationService,
     private readonly dataSource: CacheFirstDataSource,
   ) {
+    this.apiKey = this.configurationService.get<string>('prices.apiKey');
     this.baseUrl =
       this.configurationService.getOrThrow<string>('prices.baseUri');
     this.defaultExpirationTimeInSeconds =
@@ -43,7 +47,7 @@ export class PricesApi implements IPricesApi {
       return await this.dataSource.get({
         cacheDir,
         url,
-        networkRequest: undefined,
+        networkRequest: this._buildNetworkRequest(),
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.pricesTtlSeconds,
       });
@@ -66,7 +70,7 @@ export class PricesApi implements IPricesApi {
       const result: AssetPrice = await this.dataSource.get({
         cacheDir,
         url,
-        networkRequest: undefined,
+        networkRequest: this._buildNetworkRequest(),
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.pricesTtlSeconds,
       });
@@ -87,7 +91,7 @@ export class PricesApi implements IPricesApi {
       const result: string[] = await this.dataSource.get({
         cacheDir,
         url,
-        networkRequest: undefined,
+        networkRequest: this._buildNetworkRequest(),
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
@@ -101,8 +105,14 @@ export class PricesApi implements IPricesApi {
     }
   }
 
-  _mapProviderError(error: any): string {
+  private _mapProviderError(error: any): string {
     const errorCode = error?.status?.error_code;
     return errorCode ? ` [status: ${errorCode}]` : '';
+  }
+
+  private _buildNetworkRequest(): NetworkRequest | undefined {
+    return this.apiKey
+      ? { headers: { [PricesApi.pricesProviderHeader]: this.apiKey } }
+      : undefined;
   }
 }

@@ -12,12 +12,13 @@ describe('PricesApi', () => {
   let service: PricesApi;
   let fakeConfigurationService: FakeConfigurationService;
   const pricesBaseUri = faker.internet.url({ appendSlash: false });
-  const pricesApiKey = faker.string.alphanumeric();
+  const pricesApiKey = faker.string.sample();
   const pricesCacheTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('prices.baseUri', pricesBaseUri);
     fakeConfigurationService.set('prices.apiKey', pricesApiKey);
@@ -33,10 +34,6 @@ describe('PricesApi', () => {
       'expirationTimeInSeconds.notFound.default',
       notFoundExpirationTimeInSeconds,
     );
-  });
-
-  beforeEach(async () => {
-    jest.clearAllMocks();
     service = new PricesApi(fakeConfigurationService, mockCacheFirstDataSource);
   });
 
@@ -48,75 +45,135 @@ describe('PricesApi', () => {
     ).toThrow();
   });
 
-  it('should return fiat codes', async () => {
+  it('should return fiat codes (using an API key)', async () => {
     const expectedFiatCodes = ['usd', 'eur', 'eth'];
     mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
 
     const fiatCodes = await service.getFiatCodes();
 
     expect(fiatCodes).toBe(expectedFiatCodes);
-  });
-
-  it('fiat codes use default cache TTL', async () => {
-    const expectedFiatCodes = ['usd', 'eur', 'eth'];
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
-    const service = new PricesApi(
-      fakeConfigurationService,
-      mockCacheFirstDataSource,
-    );
-
-    await service.getFiatCodes();
-
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir('price_fiat_code', ''),
       url: `${pricesBaseUri}/simple/supported_vs_currencies`,
+      networkRequest: {
+        headers: {
+          'x-cg-pro-api-key': pricesApiKey,
+        },
+      },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: defaultExpirationTimeInSeconds,
     });
   });
 
-  it('should return the token price', async () => {
-    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
-
-    const assetPrice = await service.getTokenPrice({
-      chainName: faker.string.sample(),
-      tokenAddress: faker.finance.ethereumAddress(),
-      fiatCode: faker.finance.currencyCode(),
-    });
-
-    expect(assetPrice).toBe(expectedAssetPrice);
-  });
-
-  it('token price retrieval uses prices cache TTL', async () => {
-    const chainName = faker.string.sample();
-    const tokenAddress = faker.finance.ethereumAddress();
-    const fiatCode = faker.finance.currencyCode();
-    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+  it('should return fiat codes (with no API key)', async () => {
+    const expectedFiatCodes = ['usd', 'eur', 'eth'];
+    mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
+    fakeConfigurationService.set('prices.apiKey', null);
     const service = new PricesApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
     );
 
-    await service.getTokenPrice({ chainName, tokenAddress, fiatCode });
+    const fiatCodes = await service.getFiatCodes();
 
+    expect(fiatCodes).toBe(expectedFiatCodes);
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir('price_fiat_code', ''),
+      url: `${pricesBaseUri}/simple/supported_vs_currencies`,
+      networkRequest: undefined,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: defaultExpirationTimeInSeconds,
+    });
+  });
+
+  it('should return the token price (using an API key)', async () => {
+    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    const chainName = faker.string.sample();
+    const tokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+
+    const assetPrice = await service.getTokenPrice({
+      chainName,
+      tokenAddress,
+      fiatCode,
+    });
+
+    expect(assetPrice).toBe(expectedAssetPrice);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(
         `${chainName}_token_price`,
         `${tokenAddress}_${fiatCode}`,
       ),
+      networkRequest: {
+        headers: {
+          'x-cg-pro-api-key': pricesApiKey,
+        },
+      },
       url: `${pricesBaseUri}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${fiatCode}`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
   });
 
-  it('native coin retrieval uses prices cache TTL', async () => {
+  it('should return the token price (with no API key)', async () => {
+    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    const chainName = faker.string.sample();
+    const tokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+    fakeConfigurationService.set('prices.apiKey', null);
+    const service = new PricesApi(
+      fakeConfigurationService,
+      mockCacheFirstDataSource,
+    );
+
+    const assetPrice = await service.getTokenPrice({
+      chainName,
+      tokenAddress,
+      fiatCode,
+    });
+
+    expect(assetPrice).toBe(expectedAssetPrice);
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(
+        `${chainName}_token_price`,
+        `${tokenAddress}_${fiatCode}`,
+      ),
+      networkRequest: undefined,
+      url: `${pricesBaseUri}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${fiatCode}`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: pricesCacheTtlSeconds,
+    });
+  });
+
+  it('should return the native coin price (using an API key)', async () => {
     const nativeCoinId = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
     const expectedAssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+
+    await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
+
+    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+      cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
+      url: `${pricesBaseUri}/simple/price?ids=${nativeCoinId}&vs_currencies=${fiatCode}`,
+      networkRequest: {
+        headers: {
+          'x-cg-pro-api-key': pricesApiKey,
+        },
+      },
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: pricesCacheTtlSeconds,
+    });
+  });
+
+  it('should return the native coin price (with no API key)', async () => {
+    const nativeCoinId = faker.string.sample();
+    const fiatCode = faker.finance.currencyCode();
+    const expectedAssetPrice = { gnosis: { eur: 98.86 } };
+    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    fakeConfigurationService.set('prices.apiKey', null);
     const service = new PricesApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
@@ -127,6 +184,7 @@ describe('PricesApi', () => {
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
       url: `${pricesBaseUri}/simple/price?ids=${nativeCoinId}&vs_currencies=${fiatCode}`,
+      networkRequest: undefined,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
