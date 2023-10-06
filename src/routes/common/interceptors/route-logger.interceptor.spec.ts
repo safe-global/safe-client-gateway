@@ -86,7 +86,6 @@ describe('RouteLoggerInterceptor tests', () => {
       path: '/test/server-error',
       response_time_ms: expect.any(Number),
       route: '/test/server-error',
-      safe_app_user_agent: null,
       status_code: 500,
     });
     expect(mockLoggingService.info).not.toBeCalled();
@@ -113,7 +112,6 @@ describe('RouteLoggerInterceptor tests', () => {
       path: '/test/server-data-source-error',
       response_time_ms: expect.any(Number),
       route: '/test/server-data-source-error',
-      safe_app_user_agent: null,
       status_code: 501,
     });
     expect(mockLoggingService.info).not.toBeCalled();
@@ -133,7 +131,6 @@ describe('RouteLoggerInterceptor tests', () => {
       path: '/test/client-error',
       response_time_ms: expect.any(Number),
       route: '/test/client-error',
-      safe_app_user_agent: null,
       status_code: 405,
     });
     expect(mockLoggingService.error).not.toBeCalled();
@@ -153,7 +150,6 @@ describe('RouteLoggerInterceptor tests', () => {
       path: '/test/success',
       response_time_ms: expect.any(Number),
       route: '/test/success',
-      safe_app_user_agent: null,
       status_code: 200,
     });
     expect(mockLoggingService.error).not.toBeCalled();
@@ -176,7 +172,6 @@ describe('RouteLoggerInterceptor tests', () => {
       path: `/test/success/${chainId}`,
       response_time_ms: expect.any(Number),
       route: '/test/success/:chainId',
-      safe_app_user_agent: null,
       status_code: 200,
     });
     expect(mockLoggingService.error).not.toBeCalled();
@@ -198,32 +193,10 @@ describe('RouteLoggerInterceptor tests', () => {
       path: '/test/server-error-non-http',
       response_time_ms: expect.any(Number),
       route: '/test/server-error-non-http',
-      safe_app_user_agent: null,
       status_code: 500,
     });
     expect(mockLoggingService.info).not.toBeCalled();
     expect(mockLoggingService.debug).not.toBeCalled();
     expect(mockLoggingService.warn).not.toBeCalled();
-  });
-
-  it('Logs Safe-App-User-Agent header', async () => {
-    const safeAppUserAgentHeader = faker.word.sample();
-
-    await request(app.getHttpServer())
-      .get('/test/success')
-      .set('Safe-App-User-Agent', safeAppUserAgentHeader)
-      .expect(200);
-
-    expect(mockLoggingService.info).toBeCalledWith({
-      chain_id: null,
-      client_ip: null,
-      detail: null,
-      method: 'GET',
-      path: '/test/success',
-      response_time_ms: expect.any(Number),
-      route: '/test/success',
-      safe_app_user_agent: safeAppUserAgentHeader,
-      status_code: 200,
-    });
   });
 });

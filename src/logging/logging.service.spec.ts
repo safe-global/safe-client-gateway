@@ -6,6 +6,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 const mockClsService = jest.mocked({
   getId: jest.fn(),
+  get: jest.fn(),
 } as unknown as ClsService);
 
 const mockLogger = {
@@ -50,7 +51,9 @@ describe('RequestScopedLoggingService', () => {
   it('info', () => {
     const message = faker.word.words();
     const requestId = faker.string.uuid();
+    const safeAppUserAgent = faker.word.sample();
     mockClsService.getId.mockReturnValue(requestId);
+    mockClsService.get.mockReturnValue(safeAppUserAgent);
 
     loggingService.info(message);
 
@@ -59,6 +62,7 @@ describe('RequestScopedLoggingService', () => {
       message,
       build_number: buildNumber,
       request_id: requestId,
+      safe_app_user_agent: safeAppUserAgent,
       timestamp: systemTime.toISOString(),
       version: version,
     });
@@ -67,7 +71,9 @@ describe('RequestScopedLoggingService', () => {
   it('error', () => {
     const message = faker.word.words();
     const requestId = faker.string.uuid();
+    const safeAppUserAgent = faker.word.sample();
     mockClsService.getId.mockReturnValue(requestId);
+    mockClsService.get.mockReturnValue(safeAppUserAgent);
 
     loggingService.error(message);
 
@@ -76,6 +82,7 @@ describe('RequestScopedLoggingService', () => {
       message,
       build_number: buildNumber,
       request_id: requestId,
+      safe_app_user_agent: safeAppUserAgent,
       timestamp: systemTime.toISOString(),
       version: version,
     });
@@ -84,7 +91,9 @@ describe('RequestScopedLoggingService', () => {
   it('warn', () => {
     const message = faker.word.words();
     const requestId = faker.string.uuid();
+    const safeAppUserAgent = faker.word.sample();
     mockClsService.getId.mockReturnValue(requestId);
+    mockClsService.get.mockReturnValue(safeAppUserAgent);
 
     loggingService.warn(message);
 
@@ -93,6 +102,7 @@ describe('RequestScopedLoggingService', () => {
       message,
       build_number: buildNumber,
       request_id: requestId,
+      safe_app_user_agent: safeAppUserAgent,
       timestamp: systemTime.toISOString(),
       version: version,
     });
@@ -101,7 +111,9 @@ describe('RequestScopedLoggingService', () => {
   it('debug', () => {
     const message = faker.word.words();
     const requestId = faker.string.uuid();
+    const safeAppUserAgent = faker.word.sample();
     mockClsService.getId.mockReturnValue(requestId);
+    mockClsService.get.mockReturnValue(safeAppUserAgent);
 
     loggingService.debug(message);
 
@@ -110,6 +122,7 @@ describe('RequestScopedLoggingService', () => {
       message,
       build_number: buildNumber,
       request_id: requestId,
+      safe_app_user_agent: safeAppUserAgent,
       timestamp: systemTime.toISOString(),
       version: version,
     });
