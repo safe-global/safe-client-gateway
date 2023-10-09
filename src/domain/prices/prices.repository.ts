@@ -2,32 +2,26 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IPricesApi } from '../interfaces/prices-api.interface';
 import { IPricesRepository } from './prices.repository.interface';
-import { isArray } from 'lodash';
+import { AssetPriceValidator } from './asset-price.validator';
+import { FiatCodesValidator } from './fiat-codes.validator';
 
 @Injectable()
 export class PricesRepository implements IPricesRepository {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
+    private readonly assetPriceValidator: AssetPriceValidator,
+    private readonly fiatCodesValidator: FiatCodesValidator,
   ) {}
 
   async getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
   }): Promise<number> {
-    try {
-      const result = await this.coingeckoApi.getNativeCoinPrice(args);
-      const { nativeCoinId, fiatCode } = args;
-      const nativeCoinPrice = result?.[nativeCoinId]?.[fiatCode];
-      if (!nativeCoinPrice) {
-        this.loggingService.error(`Got an invalid ${nativeCoinId} price`);
-        return 0;
-      }
-      return nativeCoinPrice;
-    } catch (err) {
-      this.loggingService.error(err.message);
-      return 0;
-    }
+    const result = await this.coingeckoApi.getNativeCoinPrice(args);
+    const assetPrice = await this.assetPriceValidator.validate(result);
+    const { nativeCoinId, fiatCode } = args;
+    return assetPrice?.[nativeCoinId]?.[fiatCode];
   }
 
   async getTokenPrice(args: {
@@ -35,26 +29,14 @@ export class PricesRepository implements IPricesRepository {
     tokenAddress: string;
     fiatCode: string;
   }): Promise<number> {
-    try {
-      const result = await this.coingeckoApi.getTokenPrice(args);
-      const { tokenAddress, fiatCode } = args;
-      const tokenPrice = result?.[tokenAddress.toLowerCase()]?.[fiatCode];
-      if (!tokenPrice) {
-        this.loggingService.warn(`Got an invalid ${tokenAddress} price`);
-        return 0;
-      }
-      return tokenPrice;
-    } catch (err) {
-      this.loggingService.error(err.message);
-      return 0;
-    }
+    const result = await this.coingeckoApi.getTokenPrice(args);
+    const assetPrice = await this.assetPriceValidator.validate(result);
+    const { tokenAddress, fiatCode } = args;
+    return assetPrice?.[tokenAddress.toLowerCase()]?.[fiatCode];
   }
 
   async getFiatCodes(): Promise<string[]> {
-    const fiatCodes = await this.coingeckoApi.getFiatCodes();
-    if (!isArray(fiatCodes)) {
-      this.loggingService.error(`Got invalid fiat codes: invalid format`);
-    }
-    return fiatCodes;
+    const result = await this.coingeckoApi.getFiatCodes();
+    return this.fiatCodesValidator.validate(result);
   }
 }

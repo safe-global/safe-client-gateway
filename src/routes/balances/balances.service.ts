@@ -12,7 +12,7 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import { intersection, orderBy } from 'lodash';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
-import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity';
+import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class BalancesService {
@@ -34,13 +34,6 @@ export class BalancesService {
     this.pricesProviderChainIds = this.configurationService.getOrThrow<
       string[]
     >('features.pricesProviderChainIds');
-  }
-
-  getNumberString(value: number): string {
-    // Prevent scientific notation
-    return value.toLocaleString('fullwide', {
-      useGrouping: false,
-    });
   }
 
   async getBalances(args: {
@@ -80,7 +73,7 @@ export class BalancesService {
     });
 
     return <Balances>{
-      fiatTotal: this.getNumberString(totalFiat),
+      fiatTotal: getNumberString(totalFiat),
       items: balances,
     };
   }
@@ -121,8 +114,8 @@ export class BalancesService {
         ...tokenMetaData,
       },
       balance: txBalance.balance,
-      fiatBalance: this.getNumberString(fiatBalance),
-      fiatConversion: this.getNumberString(fiatConversion),
+      fiatBalance: getNumberString(fiatBalance),
+      fiatConversion: getNumberString(fiatConversion),
     };
   }
 
@@ -133,13 +126,12 @@ export class BalancesService {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balances> {
-    const { chainId, fiatCode } = args;
-    const simpleBalances =
-      await this.balancesRepository.getSimpleBalances(args);
+    const { chainId } = args;
+    const simpleBalances = await this.balancesRepository.getBalances(args);
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
     const balances: Balance[] = await Promise.all(
       simpleBalances.map(async (balance) =>
-        this._mapSimpleBalance(balance, chainId, fiatCode, nativeCurrency),
+        this._mapSimpleBalance(balance, nativeCurrency),
       ),
     );
     const fiatTotal = balances
@@ -147,18 +139,16 @@ export class BalancesService {
       .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
 
     return <Balances>{
-      fiatTotal: this.getNumberString(fiatTotal),
+      fiatTotal: getNumberString(fiatTotal),
       items: orderBy(balances, 'fiatBalance', 'desc'),
     };
   }
 
   private async _mapSimpleBalance(
-    txBalance: SimpleBalance,
-    chainId: string,
-    fiatCode: string,
+    balance: TransactionApiBalance,
     nativeCurrency: NativeCurrency,
   ): Promise<Balance> {
-    const tokenAddress = txBalance.tokenAddress;
+    const tokenAddress = balance.tokenAddress;
     const tokenType =
       tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
 
@@ -171,17 +161,11 @@ export class BalancesService {
             logoUri: nativeCurrency.logoUri,
           }
         : {
-            decimals: txBalance.token?.decimals,
-            symbol: txBalance.token?.symbol,
-            name: txBalance.token?.name,
-            logoUri: txBalance.token?.logoUri,
+            decimals: balance.token?.decimals,
+            symbol: balance.token?.symbol,
+            name: balance.token?.name,
+            logoUri: balance.token?.logoUri,
           };
-
-    const fiatConversion = await this._getFiatConversion(
-      chainId,
-      fiatCode,
-      tokenAddress,
-    );
 
     return <Balance>{
       tokenInfo: <Token>{
@@ -189,45 +173,10 @@ export class BalancesService {
         address: tokenAddress ?? NULL_ADDRESS,
         ...tokenMetaData,
       },
-      balance: txBalance.balance,
-      fiatBalance: this._getFiatBalance(fiatConversion, txBalance),
-      fiatConversion: this.getNumberString(fiatConversion),
+      balance: balance.balance,
+      fiatBalance: balance.fiatBalance ?? '0',
+      fiatConversion: balance.fiatConversion ?? '0',
     };
-  }
-
-  private async _getFiatConversion(
-    chainId: string,
-    fiatCode: string,
-    tokenAddress: string | null,
-  ): Promise<number> {
-    if (tokenAddress === null) {
-      const nativeCoinId = this.configurationService.getOrThrow<string>(
-        `prices.chains.${chainId}.nativeCoin`,
-      );
-      return this.pricesRepository.getNativeCoinPrice({
-        nativeCoinId,
-        fiatCode,
-      });
-    }
-    const chainName = this.configurationService.getOrThrow<string>(
-      `prices.chains.${chainId}.chainName`,
-    );
-    return this.pricesRepository.getTokenPrice({
-      chainName,
-      tokenAddress,
-      fiatCode,
-    });
-  }
-
-  private _getFiatBalance(
-    fiatConversion: number,
-    txBalance: SimpleBalance,
-  ): string {
-    const fiatBalance =
-      (fiatConversion * Number(txBalance.balance)) /
-      10 ** (txBalance.token?.decimals ?? 18);
-
-    return this.getNumberString(fiatBalance);
   }
 
   /**

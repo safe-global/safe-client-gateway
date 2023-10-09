@@ -62,6 +62,8 @@ import { PricesApiModule } from '@/datasources/prices-api/prices-api.module';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { PricesRepository } from '@/domain/prices/prices.repository';
 import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
+import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
+import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
 
 @Global()
 @Module({
@@ -94,6 +96,7 @@ import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.valid
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
+    AssetPriceValidator,
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
@@ -105,6 +108,7 @@ import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.valid
     EstimationsValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
+    FiatCodesValidator,
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
