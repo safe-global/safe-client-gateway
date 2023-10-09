@@ -436,7 +436,6 @@ export class CacheRouter {
   static getNativeCoinPriceCacheDir(args: {
     nativeCoinId: string;
     fiatCode: string;
-    tokenAddress?: string;
   }): CacheDir {
     return new CacheDir(
       `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}`,
@@ -447,7 +446,7 @@ export class CacheRouter {
   static getTokenPriceCacheDir(args: {
     chainName: string;
     fiatCode: string;
-    tokenAddress?: string;
+    tokenAddress: string;
   }): CacheDir {
     return new CacheDir(
       `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}`,

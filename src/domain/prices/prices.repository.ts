@@ -1,8 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  ILoggingService,
-  LoggingService,
-} from '../../logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IPricesApi } from '../interfaces/prices-api.interface';
 import { IPricesRepository } from './prices.repository.interface';
 import { isArray } from 'lodash';
@@ -11,7 +8,7 @@ import { isArray } from 'lodash';
 export class PricesRepository implements IPricesRepository {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IPricesApi) private readonly pricesApi: IPricesApi,
+    @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
   ) {}
 
   async getNativeCoinPrice(args: {
@@ -19,7 +16,7 @@ export class PricesRepository implements IPricesRepository {
     fiatCode: string;
   }): Promise<number> {
     try {
-      const result = await this.pricesApi.getNativeCoinPrice(args);
+      const result = await this.coingeckoApi.getNativeCoinPrice(args);
       const { nativeCoinId, fiatCode } = args;
       const nativeCoinPrice = result?.[nativeCoinId]?.[fiatCode];
       if (!nativeCoinPrice) {
@@ -39,7 +36,7 @@ export class PricesRepository implements IPricesRepository {
     fiatCode: string;
   }): Promise<number> {
     try {
-      const result = await this.pricesApi.getTokenPrice(args);
+      const result = await this.coingeckoApi.getTokenPrice(args);
       const { tokenAddress, fiatCode } = args;
       const tokenPrice = result?.[tokenAddress.toLowerCase()]?.[fiatCode];
       if (!tokenPrice) {
@@ -54,7 +51,7 @@ export class PricesRepository implements IPricesRepository {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    const fiatCodes = await this.pricesApi.getFiatCodes();
+    const fiatCodes = await this.coingeckoApi.getFiatCodes();
     if (!isArray(fiatCodes)) {
       this.loggingService.error(`Got invalid fiat codes: invalid format`);
     }

@@ -1,19 +1,19 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { PricesApi } from '@/datasources/prices-api/prices-api.service';
+import { CoingeckoApi } from '@/datasources/prices-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { AssetPrice } from '../../domain/prices/entities/asset-price.entity';
+import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as unknown as CacheFirstDataSource);
 
-describe('PricesApi', () => {
-  let service: PricesApi;
+describe('CoingeckoAPI', () => {
+  let service: CoingeckoApi;
   let fakeConfigurationService: FakeConfigurationService;
-  const pricesBaseUri = faker.internet.url({ appendSlash: false });
-  const pricesApiKey = faker.string.sample();
+  const coingeckoBaseUri = faker.internet.url({ appendSlash: false });
+  const coingeckoApiKey = faker.string.sample();
   const pricesCacheTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
@@ -21,8 +21,8 @@ describe('PricesApi', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('prices.baseUri', pricesBaseUri);
-    fakeConfigurationService.set('prices.apiKey', pricesApiKey);
+    fakeConfigurationService.set('prices.baseUri', coingeckoBaseUri);
+    fakeConfigurationService.set('prices.apiKey', coingeckoApiKey);
     fakeConfigurationService.set(
       'prices.pricesTtlSeconds',
       pricesCacheTtlSeconds,
@@ -35,14 +35,18 @@ describe('PricesApi', () => {
       'expirationTimeInSeconds.notFound.default',
       notFoundExpirationTimeInSeconds,
     );
-    service = new PricesApi(fakeConfigurationService, mockCacheFirstDataSource);
+    service = new CoingeckoApi(
+      fakeConfigurationService,
+      mockCacheFirstDataSource,
+    );
   });
 
   it('should error if configuration is not defined', async () => {
     const fakeConfigurationService = new FakeConfigurationService();
 
     await expect(
-      () => new PricesApi(fakeConfigurationService, mockCacheFirstDataSource),
+      () =>
+        new CoingeckoApi(fakeConfigurationService, mockCacheFirstDataSource),
     ).toThrow();
   });
 
@@ -55,10 +59,10 @@ describe('PricesApi', () => {
     expect(fiatCodes).toBe(expectedFiatCodes);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
-      url: `${pricesBaseUri}/simple/supported_vs_currencies`,
+      url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {
         headers: {
-          'x-cg-pro-api-key': pricesApiKey,
+          'x-cg-pro-api-key': coingeckoApiKey,
         },
       },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
@@ -70,7 +74,7 @@ describe('PricesApi', () => {
     const expectedFiatCodes = ['usd', 'eur', 'eth'];
     mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
     fakeConfigurationService.set('prices.apiKey', null);
-    const service = new PricesApi(
+    const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
     );
@@ -80,8 +84,8 @@ describe('PricesApi', () => {
     expect(fiatCodes).toBe(expectedFiatCodes);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
-      url: `${pricesBaseUri}/simple/supported_vs_currencies`,
-      networkRequest: undefined,
+      url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
+      networkRequest: {},
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: defaultExpirationTimeInSeconds,
     });
@@ -108,10 +112,14 @@ describe('PricesApi', () => {
       ),
       networkRequest: {
         headers: {
-          'x-cg-pro-api-key': pricesApiKey,
+          'x-cg-pro-api-key': coingeckoApiKey,
+        },
+        params: {
+          contract_address: tokenAddress,
+          vs_currencies: fiatCode,
         },
       },
-      url: `${pricesBaseUri}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${fiatCode}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
@@ -124,7 +132,7 @@ describe('PricesApi', () => {
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
     fakeConfigurationService.set('prices.apiKey', null);
-    const service = new PricesApi(
+    const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
     );
@@ -141,8 +149,13 @@ describe('PricesApi', () => {
         `${chainName}_token_price`,
         `${tokenAddress}_${fiatCode}`,
       ),
-      networkRequest: undefined,
-      url: `${pricesBaseUri}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${fiatCode}`,
+      networkRequest: {
+        params: {
+          contract_address: tokenAddress,
+          vs_currencies: fiatCode,
+        },
+      },
+      url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
@@ -158,10 +171,14 @@ describe('PricesApi', () => {
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
-      url: `${pricesBaseUri}/simple/price?ids=${nativeCoinId}&vs_currencies=${fiatCode}`,
+      url: `${coingeckoBaseUri}/simple/price`,
       networkRequest: {
         headers: {
-          'x-cg-pro-api-key': pricesApiKey,
+          'x-cg-pro-api-key': coingeckoApiKey,
+        },
+        params: {
+          ids: nativeCoinId,
+          vs_currencies: fiatCode,
         },
       },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
@@ -175,7 +192,7 @@ describe('PricesApi', () => {
     const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     fakeConfigurationService.set('prices.apiKey', null);
-    const service = new PricesApi(
+    const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
     );
@@ -184,8 +201,13 @@ describe('PricesApi', () => {
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
-      url: `${pricesBaseUri}/simple/price?ids=${nativeCoinId}&vs_currencies=${fiatCode}`,
-      networkRequest: undefined,
+      url: `${coingeckoBaseUri}/simple/price`,
+      networkRequest: {
+        params: {
+          ids: nativeCoinId,
+          vs_currencies: fiatCode,
+        },
+      },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });

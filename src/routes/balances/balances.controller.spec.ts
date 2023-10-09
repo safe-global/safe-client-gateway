@@ -342,9 +342,9 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/price`:
               return Promise.resolve({ data: nativeCoinPriceProviderResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.resolve({ data: tokenPriceProviderResponse });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -401,10 +401,10 @@ describe('Balances Controller (Unit)', () => {
           params: { trusted: false, exclude_spam: true },
         });
         expect(networkService.get.mock.calls[2][0]).toBe(
-          `${pricesProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`,
+          `${pricesProviderUrl}/simple/price`,
         );
         expect(networkService.get.mock.calls[3][0]).toBe(
-          `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`,
+          `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
       });
 
@@ -434,7 +434,7 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.resolve({ data: tokenPriceProviderResponse });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -479,7 +479,7 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/price?ids=${nativeCoinId}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/price`:
               return Promise.resolve({ data: nativeCoinPriceProviderResponse });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -533,7 +533,7 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.resolve({ data: tokenPriceProviderResponse });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -577,7 +577,7 @@ describe('Balances Controller (Unit)', () => {
           params: { trusted: false, exclude_spam: true },
         });
         expect(networkService.get.mock.calls[2][0]).toBe(
-          `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`,
+          `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
       });
     });
@@ -624,7 +624,7 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.reject({ status: { error_code: 429 } });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -680,7 +680,7 @@ describe('Balances Controller (Unit)', () => {
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}?contract_addresses=${tokenAddress}&vs_currencies=${currency}`:
+            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.resolve({ data: tokenPriceProviderResponse });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));

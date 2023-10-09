@@ -17,7 +17,7 @@ export interface IBalancesRepository {
   }): Promise<Balance[]>;
 
   /**
-   * Gets the collection of {@link Balance} associated with {@link safeAddress}
+   * Gets the collection of {@link SimpleBalance} associated with {@link safeAddress}
    * on {@link chainId}
    */
   getSimpleBalances(args: {
