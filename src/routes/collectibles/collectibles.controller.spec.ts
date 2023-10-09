@@ -140,8 +140,8 @@ describe('Collectibles Controller (Unit)', () => {
         params: {
           limit: 10,
           offset: 20,
-          exclude_spam: undefined,
-          trusted: undefined,
+          exclude_spam: true,
+          trusted: false,
         },
       });
     });
