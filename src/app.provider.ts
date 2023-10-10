@@ -1,6 +1,7 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 function configureVersioning(app: INestApplication) {
   app.enableVersioning({
@@ -13,9 +14,13 @@ export function configureShutdownHooks(app: INestApplication) {
 }
 
 function configureSwagger(app: INestApplication) {
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+
   const config = new DocumentBuilder()
     .setTitle('Safe Client Gateway')
-    .setVersion(process.env.npm_package_version ?? '')
+    .setVersion(configurationService.get('about.version') ?? '')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
