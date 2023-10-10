@@ -19,8 +19,8 @@ export class CollectiblesService {
     safeAddress: string;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
-    trusted?: boolean;
-    excludeSpam?: boolean;
+    trusted: boolean;
+    excludeSpam: boolean;
   }): Promise<Page<Collectible>> {
     const collectibles = await this.repository.getCollectibles({
       ...args,

@@ -1,5 +1,11 @@
-import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { CollectiblesService } from './collectibles.service';
 import { CollectiblePage } from './entities/collectible.page.entity';
 import { Collectible } from './entities/collectible.entity';
@@ -37,8 +43,8 @@ export class CollectiblesController {
     @Param('safeAddress') safeAddress: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Query('trusted') trusted?: boolean,
-    @Query('exclude_spam') excludeSpam?: boolean,
+    @Query('trusted', new DefaultValuePipe(false)) trusted: boolean,
+    @Query('exclude_spam', new DefaultValuePipe(true)) excludeSpam: boolean,
   ): Promise<Page<Collectible>> {
     return this.service.getCollectibles({
       chainId,
