@@ -43,7 +43,6 @@ export class RequestScopedLoggingService implements ILoggingService {
 
   private formatMessage(message: string | unknown) {
     const requestId = this.cls.getId();
-    const safeAppUserAgent = this.cls.get('safeAppUserAgent');
     const timestamp = Date.now();
     const dateAsString = new Date(timestamp).toISOString();
 
@@ -51,7 +50,6 @@ export class RequestScopedLoggingService implements ILoggingService {
       message,
       build_number: this.buildNumber,
       request_id: requestId,
-      safe_app_user_agent: safeAppUserAgent,
       timestamp: dateAsString,
       version: this.version,
     };
