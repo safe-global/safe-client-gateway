@@ -34,8 +34,8 @@ export class BalancesService {
     chainId: string;
     safeAddress: string;
     fiatCode: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
+    trusted: boolean;
+    excludeSpam: boolean;
   }): Promise<Balances> {
     const txServiceBalances = await this.balancesRepository.getBalances(args);
 

@@ -118,7 +118,7 @@ describe('Balances Controller (Unit)', () => {
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
       );
       expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-        params: { trusted: undefined, exclude_spam: undefined },
+        params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0]).toBe(
         `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
@@ -292,7 +292,7 @@ describe('Balances Controller (Unit)', () => {
         `${chainResponse.transactionService}/api/v1/safes/0x0000000000000000000000000000000000000001/balances/usd/`,
       );
       expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-        params: { trusted: undefined, exclude_spam: undefined },
+        params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0]).toBe(
         `${exchangeUrl}/latest?access_key=${exchangeApiKey}`,
