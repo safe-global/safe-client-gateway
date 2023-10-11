@@ -11,9 +11,9 @@ import {
   messagePageSchema,
   messageSchema,
 } from '@/domain/messages/entities/schemas/message.schema';
-import { Page } from '@/routes/common/entities/page.entity';
 import { GenericValidator } from '@/validation/providers/generic.validator';
 import { JsonSchemaService } from '@/validation/providers/json-schema.service';
+import { Page } from '@/domain/entities/page.entity';
 
 @Injectable()
 export class MessageValidator

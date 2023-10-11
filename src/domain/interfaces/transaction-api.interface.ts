@@ -17,9 +17,9 @@ import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
-import { Token } from '@/routes/balances/entities/token.entity';
 
 export interface ITransactionApi {
   getBalances(args: {
