@@ -3,6 +3,7 @@ import {
   DefaultValuePipe,
   Get,
   Param,
+  ParseBoolPipe,
   Query,
 } from '@nestjs/common';
 import { BalancesService } from './balances.service';
@@ -23,8 +24,10 @@ export class BalancesController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Param('fiatCode') fiatCode: string,
-    @Query('trusted', new DefaultValuePipe(false)) trusted: boolean,
-    @Query('exclude_spam', new DefaultValuePipe(true)) excludeSpam: boolean,
+    @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
+    trusted: boolean,
+    @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
+    excludeSpam: boolean,
   ): Promise<Balances> {
     return this.balancesService.getBalances({
       chainId,
