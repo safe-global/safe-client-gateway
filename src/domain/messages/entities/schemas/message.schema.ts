@@ -1,5 +1,5 @@
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Schema } from 'ajv';
-import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
 
 export const MESSAGE_CONFIRMATION_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/messages/message-confirmation.json';

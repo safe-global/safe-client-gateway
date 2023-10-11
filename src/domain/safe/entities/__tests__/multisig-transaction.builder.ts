@@ -7,7 +7,7 @@ import {
   confirmationBuilder,
   toJson as confirmationToJson,
 } from './multisig-transaction-confirmation.builder';
-import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 
 const HASH_LENGTH = 10;
 

@@ -1,4 +1,4 @@
-import { DataDecoded } from '../../data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { Operation } from './operation.entity';
 
 export interface ModuleTransaction {
