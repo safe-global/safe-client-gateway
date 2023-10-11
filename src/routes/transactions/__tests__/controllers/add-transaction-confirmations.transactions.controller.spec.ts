@@ -13,14 +13,14 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
-} from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ValidationModule } from '@/validation/validation.module';
-import { TransactionsModule } from '../../transactions.module';
+import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { addConfirmationDtoBuilder } from '../entities/add-confirmation.dto.builder';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';

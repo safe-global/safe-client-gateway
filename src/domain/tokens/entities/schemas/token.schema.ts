@@ -1,5 +1,5 @@
 import { JSONSchemaType, Schema } from 'ajv';
-import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Token, TokenType } from '../token.entity';
 
 export const TOKEN_SCHEMA_ID =

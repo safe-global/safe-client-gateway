@@ -1,22 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '../../../common/constants';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { AddOwner } from '../../entities/settings-changes/add-owner.entity';
-import { ChangeMasterCopy } from '../../entities/settings-changes/change-master-copy.entity';
-import { ChangeThreshold } from '../../entities/settings-changes/change-threshold.entity';
-import { DeleteGuard } from '../../entities/settings-changes/delete-guard';
-import { EnableModule } from '../../entities/settings-changes/enable-module.entity';
-import { RemoveOwner } from '../../entities/settings-changes/remove-owner.entity';
-import { SetFallbackHandler } from '../../entities/settings-changes/set-fallback-handler.entity';
-import { SetGuard } from '../../entities/settings-changes/set-guard.entity';
-import { SettingsChange } from '../../entities/settings-changes/settings-change.entity';
-import { SwapOwner } from '../../entities/settings-changes/swap-owner.entity';
-import { DataDecodedParamHelper } from './data-decoded-param.helper';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { DisableModule } from '../../entities/settings-changes/disable-module.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddOwner } from '@/routes/transactions/entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '@/routes/transactions/entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '@/routes/transactions/entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '@/routes/transactions/entities/settings-changes/delete-guard';
+import { DisableModule } from '@/routes/transactions/entities/settings-changes/disable-module.entity';
+import { EnableModule } from '@/routes/transactions/entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '@/routes/transactions/entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '@/routes/transactions/entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '@/routes/transactions/entities/settings-changes/set-guard.entity';
+import { SettingsChange } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
+import { SwapOwner } from '@/routes/transactions/entities/settings-changes/swap-owner.entity';
+import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 
 @Injectable()
 export class SettingsChangeMapper {

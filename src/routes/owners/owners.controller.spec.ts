@@ -8,7 +8,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule, configurationModule } from '@/app.module';

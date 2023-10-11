@@ -2,15 +2,15 @@ import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
 import { moduleTransactionBuilder } from '@/domain/safe/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { transferTransactionInfoBuilder } from '../../entities/__tests__/transfer-transaction-info.builder';
-import { ModuleExecutionDetails } from '../../entities/transaction-details/module-execution-details.entity';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
 import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
 import { ModuleTransactionDetailsMapper } from './module-transaction-details.mapper';
 import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { transferTransactionInfoBuilder } from '@/routes/transactions/entities/__tests__/transfer-transaction-info.builder';
+import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;

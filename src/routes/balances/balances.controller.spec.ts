@@ -12,7 +12,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NULL_ADDRESS } from '../common/constants';
 import { faker } from '@faker-js/faker';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule, configurationModule } from '@/app.module';

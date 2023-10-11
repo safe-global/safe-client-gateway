@@ -6,7 +6,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { GlobalErrorFilter } from './global-error.filter';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 
 @Controller({})
 class TestController {

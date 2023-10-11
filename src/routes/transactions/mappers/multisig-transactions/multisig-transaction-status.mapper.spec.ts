@@ -1,4 +1,4 @@
-import { TransactionStatus } from '../../entities/transaction-status.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';

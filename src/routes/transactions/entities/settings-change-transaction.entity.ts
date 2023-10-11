@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
+import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChange } from './settings-changes/settings-change.entity';
 import { TransactionInfo } from './transaction-info.entity';
 import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';

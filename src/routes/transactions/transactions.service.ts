@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { head, last } from 'lodash';
-import { MultisigTransaction as DomainMultisigTransaction } from '../../domain/safe/entities/multisig-transaction.entity';
+import { MultisigTransaction as DomainMultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';

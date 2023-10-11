@@ -5,17 +5,17 @@ import {
   isERC721Transfer,
   isNativeTokenTransfer,
   Transfer as DomainTransfer,
-} from '../../../../domain/safe/entities/transfer.entity';
+} from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { TransferTransactionInfo } from '../../entities/transfer-transaction-info.entity';
-import { Erc20Transfer } from '../../entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '../../entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '../../entities/transfers/native-coin-transfer.entity';
-import { Transfer } from '../../entities/transfers/transfer.entity';
-import { getTransferDirection } from '../common/transfer-direction.helper';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
+import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
+import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 @Injectable()
 export class TransferInfoMapper {

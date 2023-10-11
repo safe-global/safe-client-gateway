@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressInfo } from '../../common/entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MessageConfirmation } from './message-confirmation.entity';
 
 export enum MessageStatus {

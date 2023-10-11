@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { SettingsChange } from './settings-change.entity';
 
 export class RemoveOwner extends SettingsChange {

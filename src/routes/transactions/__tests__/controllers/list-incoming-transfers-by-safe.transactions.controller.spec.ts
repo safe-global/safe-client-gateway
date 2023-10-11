@@ -5,7 +5,7 @@ import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '../../../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -13,15 +13,15 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
-} from '../../../../domain/safe/entities/__tests__/erc20-transfer.builder';
+} from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
-} from '../../../../domain/safe/entities/__tests__/erc721-transfer.builder';
+} from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
-} from '../../../../domain/safe/entities/__tests__/native-token-transfer.builder';
+} from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';

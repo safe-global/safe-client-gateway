@@ -3,7 +3,7 @@ import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.b
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { ILoggingService } from '@/logging/logging.interface';
-import { SafeAppInfo } from '../../entities/safe-app-info.entity';
+import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 import { SafeAppInfoMapper } from './safe-app-info.mapper';
 
 describe('SafeAppInfo mapper (Unit)', () => {

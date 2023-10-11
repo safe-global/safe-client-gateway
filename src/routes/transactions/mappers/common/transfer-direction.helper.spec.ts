@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { TransferDirection } from '../../entities/transfer-transaction-info.entity';
+import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { getTransferDirection } from './transfer-direction.helper';
 
 describe('Transfer direction helper (Unit)', () => {

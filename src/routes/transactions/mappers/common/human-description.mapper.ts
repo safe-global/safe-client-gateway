@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { formatUnits, isAddress, isHex } from 'viem';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { MAX_UINT256 } from '../../constants';
+import { MAX_UINT256 } from '@/routes/transactions/constants';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';

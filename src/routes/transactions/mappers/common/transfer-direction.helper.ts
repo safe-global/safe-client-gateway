@@ -1,4 +1,4 @@
-import { TransferDirection } from '../../entities/transfer-transaction-info.entity';
+import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
 export function getTransferDirection(
   safeAddress: string,

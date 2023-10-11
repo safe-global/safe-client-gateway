@@ -1,4 +1,4 @@
-import { NativeCurrency as DomainNativeCurrency } from '../../../domain/chains/entities/native.currency.entity';
+import { NativeCurrency as DomainNativeCurrency } from '@/domain/chains/entities/native.currency.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class NativeCurrency implements DomainNativeCurrency {

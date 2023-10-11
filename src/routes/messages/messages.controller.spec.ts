@@ -12,7 +12,7 @@ import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__
 import {
   messageBuilder,
   toJson as messageToJson,
-} from '../../domain/messages/entities/__tests__/message.builder';
+} from '@/domain/messages/entities/__tests__/message.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -20,7 +20,7 @@ import { MessageStatus } from './entities/message.entity';
 import { createMessageDtoBuilder } from './entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from './entities/__tests__/update-message-signature.dto.builder';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';

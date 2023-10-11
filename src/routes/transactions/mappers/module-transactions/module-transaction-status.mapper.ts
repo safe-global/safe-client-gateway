@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 
 @Injectable()
 export class ModuleTransactionStatusMapper {

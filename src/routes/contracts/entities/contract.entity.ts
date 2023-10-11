@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Contract as DomainContract } from '../../../domain/contracts/entities/contract.entity';
+import { Contract as DomainContract } from '@/domain/contracts/entities/contract.entity';
 
 export class Contract implements DomainContract {
   @ApiProperty()

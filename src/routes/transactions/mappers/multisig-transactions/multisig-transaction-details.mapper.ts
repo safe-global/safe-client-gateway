@@ -2,19 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
-} from '../../constants';
-import { TransactionData } from '../../entities/transaction-data.entity';
-import { TransactionDetails } from '../../entities/transaction-details/transaction-details.entity';
-import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
-import { TransactionDataMapper } from '../common/transaction-data.mapper';
-import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
-import { MultisigTransactionExecutionDetailsMapper } from './multisig-transaction-execution-details.mapper';
-import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+} from '@/routes/transactions/constants';
+import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
+import { TransactionDetails } from '@/routes/transactions/entities/transaction-details/transaction-details.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
+import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
+import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
