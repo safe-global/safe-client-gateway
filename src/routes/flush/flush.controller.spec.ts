@@ -7,7 +7,6 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { invalidationPatternDtoBuilder } from './entities/__tests__/invalidation-pattern.dto.builder';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -18,6 +17,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import { invalidationPatternDtoBuilder } from '@/routes/flush/entities/__tests__/invalidation-pattern.dto.builder';
 
 describe('Flush Controller (Unit)', () => {
   let app: INestApplication;

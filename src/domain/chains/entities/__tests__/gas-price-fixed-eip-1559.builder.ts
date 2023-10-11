@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { GasPriceFixedEIP1559 } from '../gas-price-fixed-eip-1559.entity';
+import { GasPriceFixedEIP1559 } from '@/domain/chains/entities/gas-price-fixed-eip-1559.entity';
 
 export function gasPriceFixedEIP1559Builder(): IBuilder<GasPriceFixedEIP1559> {
   return Builder.new<GasPriceFixedEIP1559>()

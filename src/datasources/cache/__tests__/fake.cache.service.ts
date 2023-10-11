@@ -1,5 +1,5 @@
-import { ICacheService } from '../cache.service.interface';
-import { CacheDir } from '../entities/cache-dir.entity';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class FakeCacheService implements ICacheService {
   private cache: Record<string, Record<string, any>> = {};

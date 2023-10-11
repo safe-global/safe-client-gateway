@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ConflictType } from './conflict-type.entity';
-import { Transaction } from './transaction.entity';
+import { ConflictType } from '@/routes/transactions/entities/conflict-type.entity';
+import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 export class MultisigTransaction {
   @ApiProperty()

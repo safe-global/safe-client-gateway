@@ -15,7 +15,6 @@ import {
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
-import { SafeAppInfoMapper } from './safe-app-info.mapper';
 import {
   RichAddressFragment,
   RichDecodedInfo,
@@ -24,6 +23,7 @@ import {
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/routes/transactions/entities/human-description.entity';
+import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
 
 @Injectable()
 export class HumanDescriptionMapper {

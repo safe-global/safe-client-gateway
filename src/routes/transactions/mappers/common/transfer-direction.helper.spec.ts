@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { getTransferDirection } from './transfer-direction.helper';
+import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 
 describe('Transfer direction helper (Unit)', () => {
   it('should return Outgoing direction when a Safe is in the from direction', () => {

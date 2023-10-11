@@ -1,10 +1,10 @@
-import { ExchangeApi } from './exchange-api.service';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { faker } from '@faker-js/faker';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { ExchangeApi } from '@/datasources/exchange-api/exchange-api.service';
 import { exchangeFiatCodesBuilder } from '@/domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { exchangeRatesBuilder } from '@/domain/exchange/entities/__tests__/exchange-rates.builder';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CacheDir } from '../cache/entities/cache-dir.entity';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),

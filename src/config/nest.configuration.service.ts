@@ -1,6 +1,6 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Injectable } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
-import { IConfigurationService } from './configuration.service.interface';
 
 @Injectable()
 export class NestConfigurationService implements IConfigurationService {

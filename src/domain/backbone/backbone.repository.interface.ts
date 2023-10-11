@@ -1,4 +1,4 @@
-import { Backbone } from './entities/backbone.entity';
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 
 export const IBackboneRepository = Symbol('IBackboneRepository');
 

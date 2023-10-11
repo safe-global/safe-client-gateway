@@ -9,7 +9,6 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { exchangeFiatCodesBuilder } from '@/domain/exchange/entities/__tests__/exchange-fiat-codes.builder';
 import { exchangeRatesBuilder } from '@/domain/exchange/entities/__tests__/exchange-rates.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { NULL_ADDRESS } from '../common/constants';
 import { faker } from '@faker-js/faker';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -19,6 +18,7 @@ import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;

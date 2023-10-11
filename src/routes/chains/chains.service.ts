@@ -5,12 +5,12 @@ import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 import { Page } from '@/domain/entities/page.entity';
+import { AboutChain } from '@/routes/chains/entities/about-chain.entity';
+import { Chain } from '@/routes/chains/entities/chain.entity';
 import {
-  cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '../common/pagination/pagination.data';
-import { AboutChain } from './entities/about-chain.entity';
-import { Chain } from './entities/chain.entity';
+  cursorUrlFromLimitAndOffset,
+} from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class ChainsService {

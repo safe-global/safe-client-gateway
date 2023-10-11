@@ -1,6 +1,6 @@
-import { Safe } from '../safe.entity';
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 
 export function safeBuilder(): IBuilder<Safe> {
   return Builder.new<Safe>()

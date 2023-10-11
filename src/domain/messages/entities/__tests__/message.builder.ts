@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { Message } from '../message.entity';
+import { Message } from '@/domain/messages/entities/message.entity';
 import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,
-} from './message-confirmation.builder';
+} from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 
 export function messageBuilder(): IBuilder<Message> {
   return Builder.new<Message>()

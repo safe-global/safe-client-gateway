@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import {
   DATA_DECODED_PARAMETER_SCHEMA_ID,
   DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
-} from '../data-decoder/entities/schemas/data-decoded.schema';
-import { Page } from '../entities/page.entity';
-import { IPageValidator } from '../interfaces/page-validator.interface';
-import { IValidator } from '../interfaces/validator.interface';
-import { ModuleTransaction } from './entities/module-transaction.entity';
+} from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { Page } from '@/domain/entities/page.entity';
+import { IPageValidator } from '@/domain/interfaces/page-validator.interface';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import {
   MODULE_TRANSACTION_PAGE_SCHEMA_ID,
   MODULE_TRANSACTION_SCHEMA_ID,
   moduleTransactionPageSchema,
   moduleTransactionSchema,
-} from './entities/schemas/module-transaction.schema';
+} from '@/domain/safe/entities/schemas/module-transaction.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ModuleTransactionValidator

@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { PaginationData } from '../pagination/pagination.data';
-import { getRouteUrl } from './utils';
+import { getRouteUrl } from '@/routes/common/decorators/utils';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 /**
  * Route decorator which parses {@link PaginationData} from a

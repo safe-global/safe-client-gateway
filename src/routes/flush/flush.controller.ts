@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiExcludeController, ApiOkResponse } from '@nestjs/swagger';
-import { BasicAuthGuard } from '../common/auth/basic-auth.guard';
-import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
-import { FlushService } from './flush.service';
-import { InvalidationPatternDtoValidationPipe } from './pipes/invalidation-pattern.dto.validation.pipe';
+import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
+import { InvalidationPatternDto } from '@/routes/flush/entities/invalidation-pattern.dto.entity';
+import { FlushService } from '@/routes/flush/flush.service';
+import { InvalidationPatternDtoValidationPipe } from '@/routes/flush/pipes/invalidation-pattern.dto.validation.pipe';
 
 @Controller({
   path: '',

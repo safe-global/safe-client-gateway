@@ -1,7 +1,7 @@
 import { ApiTags } from '@nestjs/swagger';
 import { Controller, Get, Param } from '@nestjs/common';
-import { SafesService } from './safes.service';
-import { SafeState } from './entities/safe-info.entity';
+import { SafeState } from '@/routes/safes/entities/safe-info.entity';
+import { SafesService } from '@/routes/safes/safes.service';
 
 @ApiTags('safes')
 @Controller({

@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Transaction } from '@/routes/transactions/entities/transaction.entity';
-import { MultisigTransactionExecutionInfoMapper } from './multisig-transaction-execution-info.mapper';
-import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
-import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
-import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
 } from '@/routes/transactions/constants';
+import { Transaction } from '@/routes/transactions/entities/transaction.entity';
+import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import { MultisigTransactionExecutionInfoMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
+import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 
 @Injectable()
 export class MultisigTransactionMapper {

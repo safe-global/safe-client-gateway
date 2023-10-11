@@ -1,4 +1,4 @@
-import { CacheDir } from './entities/cache-dir.entity';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';

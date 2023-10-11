@@ -5,7 +5,7 @@ import {
 } from '@/domain/flush/entities/invalidation-pattern.dto.entity';
 import { FlushRepository } from '@/domain/flush/flush.repository';
 import { IFlushRepository } from '@/domain/flush/flush.repository.interface';
-import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
+import { InvalidationPatternDto } from '@/routes/flush/entities/invalidation-pattern.dto.entity';
 
 @Injectable()
 export class FlushService {

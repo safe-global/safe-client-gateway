@@ -1,6 +1,6 @@
-import { Page } from '../entities/page.entity';
-import { Chain } from './entities/chain.entity';
-import { MasterCopy } from './entities/master-copies.entity';
+import { Chain } from '@/domain/chains/entities/chain.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 

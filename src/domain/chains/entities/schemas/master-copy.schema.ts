@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { MasterCopy } from '../master-copies.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 
 export const MASTER_COPY_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/chains/master-copy.json';

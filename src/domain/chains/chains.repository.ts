@@ -1,12 +1,12 @@
-import { IChainsRepository } from './chains.repository.interface';
-import { Chain } from './entities/chain.entity';
-import { Page } from '../entities/page.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigApi } from '../interfaces/config-api.interface';
-import { MasterCopy } from './entities/master-copies.entity';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { ChainsValidator } from './chains.validator';
-import { MasterCopyValidator } from './master-copy.validator';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { ChainsValidator } from '@/domain/chains/chains.validator';
+import { Chain } from '@/domain/chains/entities/chain.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { MasterCopyValidator } from '@/domain/chains/master-copy.validator';
+import { Page } from '@/domain/entities/page.entity';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigApi } from '../interfaces/config-api.interface';
-import { SafeApp } from './entities/safe-app.entity';
-import { ISafeAppsRepository } from './safe-apps.repository.interface';
-import { SafeAppsValidator } from './safe-apps.validator';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { SafeAppsValidator } from '@/domain/safe-apps/safe-apps.validator';
 
 @Injectable()
 export class SafeAppsRepository implements ISafeAppsRepository {

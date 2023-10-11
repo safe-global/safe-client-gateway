@@ -1,22 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { CustomTransactionMapper } from './custom-transaction.mapper';
-import { DataDecodedParamHelper } from './data-decoded-param.helper';
-import { Erc20TransferMapper } from './erc20-transfer.mapper';
-import { Erc721TransferMapper } from './erc721-transfer.mapper';
-import { NativeCoinTransferMapper } from './native-coin-transfer.mapper';
-import { SettingsChangeMapper } from './settings-change.mapper';
-import { HumanDescriptionMapper } from './human-description.mapper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
 import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
+import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
+import { Erc20TransferMapper } from '@/routes/transactions/mappers/common/erc20-transfer.mapper';
+import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc721-transfer.mapper';
+import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/human-description.mapper';
+import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
+import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {

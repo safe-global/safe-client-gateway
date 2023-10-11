@@ -1,14 +1,14 @@
-import { AxiosNetworkService } from './axios.network.service';
 import { Axios } from 'axios';
 import { faker } from '@faker-js/faker';
-import { NetworkRequest } from './entities/network.request.entity';
 import { jest } from '@jest/globals';
+import { ILoggingService } from '@/logging/logging.interface';
+import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
 import {
   NetworkOtherError,
-  NetworkRequestError,
   NetworkResponseError,
-} from './entities/network.error.entity';
-import { ILoggingService } from '@/logging/logging.interface';
+  NetworkRequestError,
+} from '@/datasources/network/entities/network.error.entity';
+import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 
 const axios = {
   get: jest.fn(),

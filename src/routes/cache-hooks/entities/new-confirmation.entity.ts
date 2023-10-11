@@ -1,4 +1,7 @@
-import { EventPayload, EventType } from './event-payload.entity';
+import {
+  EventPayload,
+  EventType,
+} from '@/routes/cache-hooks/entities/event-payload.entity';
 
 export interface NewConfirmation
   extends EventPayload<EventType.NEW_CONFIRMATION> {

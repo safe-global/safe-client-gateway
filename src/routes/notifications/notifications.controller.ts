@@ -7,8 +7,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { RegisterDeviceDto } from './entities/register-device.dto.entity';
-import { NotificationsService } from './notifications.service';
+import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
+import { NotificationsService } from '@/routes/notifications/notifications.service';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })

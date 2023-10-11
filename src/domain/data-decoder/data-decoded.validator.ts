@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { DataDecoded } from './entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import {
   DATA_DECODED_PARAMETER_SCHEMA_ID,
   DATA_DECODED_SCHEMA_ID,
   dataDecodedParameterSchema,
   dataDecodedSchema,
-} from './entities/schemas/data-decoded.schema';
+} from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class DataDecodedValidator implements IValidator<DataDecoded> {

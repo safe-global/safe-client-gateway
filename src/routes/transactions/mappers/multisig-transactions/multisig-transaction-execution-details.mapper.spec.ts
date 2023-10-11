@@ -8,12 +8,12 @@ import { SafeRepository } from '@/domain/safe/safe.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ILoggingService } from '@/logging/logging.interface';
-import { MultisigTransactionExecutionDetailsMapper } from './multisig-transaction-execution-details.mapper';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
+import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

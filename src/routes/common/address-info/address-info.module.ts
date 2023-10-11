@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AddressInfoHelper } from './address-info.helper';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Module({
   providers: [AddressInfoHelper],

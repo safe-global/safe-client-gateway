@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { BackboneValidator } from './backbone.validator';
-import { Backbone } from './entities/backbone.entity';
+import { BackboneValidator } from '@/domain/backbone/backbone.validator';
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class BackboneRepository {

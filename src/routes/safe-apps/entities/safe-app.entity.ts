@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SafeAppAccessControl } from './safe-app-access-control.entity';
-import { SafeAppProvider } from './safe-app-provider.entity';
-import { SafeAppSocialProfile } from './safe-app-social-profile.entity';
+import { SafeAppAccessControl } from '@/routes/safe-apps/entities/safe-app-access-control.entity';
+import { SafeAppProvider } from '@/routes/safe-apps/entities/safe-app-provider.entity';
+import { SafeAppSocialProfile } from '@/routes/safe-apps/entities/safe-app-social-profile.entity';
 
 export class SafeApp {
   @ApiProperty()

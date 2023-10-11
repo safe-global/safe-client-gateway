@@ -3,10 +3,10 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import { HealthEntity } from '@/domain/health/entities/health.entity';
-import { Health, HealthStatus } from './entities/health.entity';
+import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Health, HealthStatus } from '@/routes/health/entities/health.entity';
 
 @Injectable()
 export class HealthService {

@@ -1,4 +1,4 @@
-import { BalanceToken } from './balance.token.entity';
+import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
 
 export interface Balance {
   tokenAddress: string | null;

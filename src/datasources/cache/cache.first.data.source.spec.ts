@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
-import { ILoggingService } from '@/logging/logging.interface';
-import { NetworkResponseError } from '../network/entities/network.error.entity';
-import { CacheFirstDataSource } from './cache.first.data.source';
-import { ICacheService } from './cache.service.interface';
-import { CacheDir } from './entities/cache-dir.entity';
-import { FakeCacheService } from './__tests__/fake.cache.service';
 import { fakeJson } from '@/__tests__/faker';
-import { INetworkService } from '../network/network.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { INetworkService } from '@/datasources/network/network.service.interface';
+import { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   info: jest.fn(),

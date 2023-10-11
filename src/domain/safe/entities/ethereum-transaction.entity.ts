@@ -1,4 +1,4 @@
-import { Transfer } from './transfer.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
 
 export interface EthereumTransaction {
   blockNumber: number;

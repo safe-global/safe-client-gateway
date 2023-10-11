@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { DeleteDelegateDto } from '../delete-delegate.dto.entity';
+import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
 
 export function deleteDelegateDtoBuilder(): IBuilder<DeleteDelegateDto> {
   return Builder.new<DeleteDelegateDto>()

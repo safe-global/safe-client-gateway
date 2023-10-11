@@ -1,13 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CacheRouter } from '../cache/cache.router';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { CacheService, ICacheService } from '../cache/cache.service.interface';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {

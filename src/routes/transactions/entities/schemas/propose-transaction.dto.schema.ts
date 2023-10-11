@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { ProposeTransactionDto } from '../propose-transaction.dto.entity';
+import { ProposeTransactionDto } from '@/routes/transactions/entities/propose-transaction.dto.entity';
 
 export const PROPOSE_TRANSACTION_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/transactions/propose-transaction.dto.json';

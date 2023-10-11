@@ -10,9 +10,6 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { createDelegateDtoBuilder } from './entities/__tests__/create-delegate.dto.builder';
-import { deleteDelegateDtoBuilder } from './entities/__tests__/delete-delegate.dto.builder';
-import { deleteSafeDelegateDtoBuilder } from './entities/__tests__/delete-safe-delegate.dto.builder';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -21,6 +18,9 @@ import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { createDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/create-delegate.dto.builder';
+import { deleteDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/delete-delegate.dto.builder';
+import { deleteSafeDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/delete-safe-delegate.dto.builder';
 
 describe('Delegates controller', () => {
   let app: INestApplication;

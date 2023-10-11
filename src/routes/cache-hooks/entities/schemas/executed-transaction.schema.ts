@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { ExecutedTransaction } from '../executed-transaction.entity';
-import { EventType } from '../event-payload.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ExecutedTransaction } from '@/routes/cache-hooks/entities/executed-transaction.entity';
 
 export const EXECUTED_TRANSACTION_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/executed-transaction.json';

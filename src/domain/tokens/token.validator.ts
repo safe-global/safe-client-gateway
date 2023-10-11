@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { Page } from '../entities/page.entity';
-import { IPageValidator } from '../interfaces/page-validator.interface';
-import { IValidator } from '../interfaces/validator.interface';
+import { Page } from '@/domain/entities/page.entity';
+import { IPageValidator } from '@/domain/interfaces/page-validator.interface';
+import { IValidator } from '@/domain/interfaces/validator.interface';
 import {
   TOKEN_PAGE_SCHEMA_ID,
   TOKEN_SCHEMA_ID,
   tokenPageSchema,
   tokenSchema,
-} from './entities/schemas/token.schema';
-import { Token } from './entities/token.entity';
+} from '@/domain/tokens/entities/schemas/token.schema';
+import { Token } from '@/domain/tokens/entities/token.entity';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class TokenValidator

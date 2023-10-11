@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { ERC20Transfer } from '../transfer.entity';
+import { ERC20Transfer } from '@/domain/safe/entities/transfer.entity';
 
 export function erc20TransferBuilder(): IBuilder<ERC20Transfer> {
   return Builder.new<ERC20Transfer>()

@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
-import { OutgoingEther } from '../outgoing-ether.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { OutgoingEther } from '@/routes/cache-hooks/entities/outgoing-ether.entity';
 
 export const OUTGOING_ETHER_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/outgoing-ether.json';

@@ -3,9 +3,9 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import {
-  TransferDirection,
   TransferTransactionInfo,
-} from '../transfer-transaction-info.entity';
+  TransferDirection,
+} from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
 export function transferTransactionInfoBuilder(): IBuilder<TransferTransactionInfo> {
   return Builder.new<TransferTransactionInfo>()

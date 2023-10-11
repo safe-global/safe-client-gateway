@@ -1,13 +1,13 @@
-import { ConfigApi } from './config-api.service';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { faker } from '@faker-js/faker';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { ConfigApi } from '@/datasources/config-api/config-api.service';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { CacheDir } from '../cache/entities/cache-dir.entity';
-import { ICacheService } from '../cache/cache.service.interface';
+import { faker } from '@faker-js/faker';
 
 const dataSource = {
   get: jest.fn(),

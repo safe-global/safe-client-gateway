@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { ExchangeFiatCodes } from './entities/exchange-fiat-codes.entity';
+import { ExchangeFiatCodes } from '@/domain/exchange/entities/exchange-fiat-codes.entity';
 import {
   EXCHANGE_FIAT_CODES_SCHEMA_ID,
   exchangeFiatCodesSchema,
-} from './entities/schemas/exchange-fiat-codes.schema';
+} from '@/domain/exchange/entities/schemas/exchange-fiat-codes.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ExchangeFiatCodesValidator

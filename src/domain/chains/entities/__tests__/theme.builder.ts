@@ -1,6 +1,6 @@
-import { Theme } from '../theme.entity';
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { Theme } from '@/domain/chains/entities/theme.entity';
 
 export function themeBuilder(): IBuilder<Theme> {
   return Builder.new<Theme>()

@@ -1,7 +1,7 @@
-import { MultisigTransaction } from './multisig-transaction.entity';
-import { EthereumTransaction } from './ethereum-transaction.entity';
-import { ModuleTransaction } from './module-transaction.entity';
-import { CreationTransaction } from './creation-transaction.entity';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 
 export type Transaction =
   | MultisigTransaction

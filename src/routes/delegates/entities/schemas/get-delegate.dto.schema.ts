@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { GetDelegateDto } from '../get-delegate.dto.entity';
+import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
 
 export const GET_DELEGATE_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/delegates/get-delegate.dto.json';

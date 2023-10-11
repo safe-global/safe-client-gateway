@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { MessageConfirmation } from './message-confirmation.entity';
+import { MessageConfirmation } from '@/routes/messages/entities/message-confirmation.entity';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',

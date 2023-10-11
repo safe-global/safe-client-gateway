@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transaction } from './transaction.entity';
+import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 export class IncomingTransfer {
   @ApiProperty()

@@ -1,4 +1,4 @@
-import { GasPrice } from './gas-price.entity';
+import { GasPrice } from '@/domain/chains/entities/gas-price.entity';
 
 export interface GasPriceOracle extends GasPrice {
   type: 'oracle';

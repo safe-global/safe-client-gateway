@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { Collectible } from './entities/collectible.entity';
-import { Page } from '../entities/page.entity';
-import { ICollectiblesRepository } from './collectibles.repository.interface';
-import { CollectiblesValidator } from './collectibles.validator';
+import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
+import { CollectiblesValidator } from '@/domain/collectibles/collectibles.validator';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class CollectiblesRepository implements ICollectiblesRepository {

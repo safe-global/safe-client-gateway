@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { ExchangeRates } from '../exchange-rates.entity';
+import { ExchangeRates } from '@/domain/exchange/entities/exchange-rates.entity';
 
 export const EXCHANGE_RATES_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/exchange/exchange-rates.json';

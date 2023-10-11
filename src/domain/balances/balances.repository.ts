@@ -1,8 +1,8 @@
-import { IBalancesRepository } from './balances.repository.interface';
-import { Balance } from './entities/balance.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { BalancesValidator } from './balances.validator';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
+import { BalancesValidator } from '@/domain/balances/balances.validator';
+import { Balance } from '@/domain/balances/entities/balance.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {

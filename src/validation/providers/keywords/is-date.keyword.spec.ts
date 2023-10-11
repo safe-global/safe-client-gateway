@@ -1,6 +1,6 @@
 import Ajv, { Schema, ValidateFunction } from 'ajv';
-import { addIsDate } from './is-date.keyword';
 import { faker } from '@faker-js/faker';
+import { addIsDate } from '@/validation/providers/keywords/is-date.keyword';
 
 describe('AJV Keyword – isDate', () => {
   let ajv: Ajv;

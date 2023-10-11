@@ -11,13 +11,13 @@ import { RemoveOwner } from '@/routes/transactions/entities/settings-changes/rem
 import { SetFallbackHandler } from '@/routes/transactions/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/routes/transactions/entities/settings-changes/set-guard.entity';
 import { SwapOwner } from '@/routes/transactions/entities/settings-changes/swap-owner.entity';
-import { DataDecodedParamHelper } from './data-decoded-param.helper';
-import { SettingsChangeMapper } from './settings-change.mapper';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
+import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

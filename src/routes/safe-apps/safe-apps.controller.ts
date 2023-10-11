@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { SafeApp } from './entities/safe-app.entity';
-import { SafeAppsService } from './safe-apps.service';
+import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
+import { SafeAppsService } from '@/routes/safe-apps/safe-apps.service';
 
 @ApiTags('safe-apps')
 @Controller({

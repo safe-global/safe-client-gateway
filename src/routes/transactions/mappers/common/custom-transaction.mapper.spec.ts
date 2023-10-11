@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { CustomTransactionMapper } from './custom-transaction.mapper';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -10,6 +9,7 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

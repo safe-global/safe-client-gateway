@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
 import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
 
 export const CHAIN_UPDATE_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/chain-update.json';

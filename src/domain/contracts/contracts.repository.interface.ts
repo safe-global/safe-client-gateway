@@ -1,4 +1,4 @@
-import { Contract } from './entities/contract.entity';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
 
 export const IContractsRepository = Symbol('IContractsRepository');
 

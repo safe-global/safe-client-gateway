@@ -8,8 +8,8 @@ import { inRange } from 'lodash';
 import { Device } from '@/domain/notifications/entities/device.entity';
 import { SafeRegistration as DomainSafeRegistration } from '@/domain/notifications/entities/safe-registration.entity';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
-import { RegisterDeviceDto } from './entities/register-device.dto.entity';
-import { SafeRegistration } from './entities/safe-registration.entity';
+import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
+import { SafeRegistration } from '@/routes/notifications/entities/safe-registration.entity';
 
 @Injectable()
 export class NotificationsService {

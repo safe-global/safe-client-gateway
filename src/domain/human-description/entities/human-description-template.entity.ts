@@ -1,12 +1,12 @@
 import { decodeFunctionData, parseAbi } from 'viem';
 import {
   AddressFragment,
-  NumberFragment,
   HumanDescriptionFragment,
+  NumberFragment,
+  TextFragment,
   TokenValueFragment,
   ValueType,
-  TextFragment,
-} from './human-description.entity';
+} from '@/domain/human-description/entities/human-description.entity';
 
 type SafeRegExpMatchArray = RegExpMatchArray & {
   groups: NonNullable<RegExpMatchArray['groups']>;

@@ -1,12 +1,12 @@
-import { IExchangeRepository } from './exchange.repository.interface';
 import {
   Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { IExchangeApi } from '../interfaces/exchange-api.interface';
-import { ExchangeFiatCodesValidator } from './exchange-fiat-codes.validator';
-import { ExchangeRatesValidator } from './exchange-rates.validator';
+import { ExchangeFiatCodesValidator } from '@/domain/exchange/exchange-fiat-codes.validator';
+import { ExchangeRatesValidator } from '@/domain/exchange/exchange-rates.validator';
+import { IExchangeRepository } from '@/domain/exchange/exchange.repository.interface';
+import { IExchangeApi } from '@/domain/interfaces/exchange-api.interface';
 
 @Injectable()
 export class ExchangeRepository implements IExchangeRepository {

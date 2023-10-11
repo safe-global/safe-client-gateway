@@ -9,9 +9,9 @@ import {
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
 import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
 import { TransactionDetails } from '@/routes/transactions/entities/transaction-details/transaction-details.entity';
-import { TransactionDataMapper } from '../common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-status.mapper';
+import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {

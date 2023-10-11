@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { TransactionInfo } from './transaction-info.entity';
-import { Transfer } from './transfers/transfer.entity';
 import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export enum TransferDirection {
   Incoming = 'INCOMING',

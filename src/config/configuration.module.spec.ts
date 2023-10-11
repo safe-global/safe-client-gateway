@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigurationModule } from './configuration.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 
 describe('ConfigurationModule', () => {
   it(`ConfigurationModule is successfully created`, async () => {
