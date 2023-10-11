@@ -162,8 +162,8 @@ describe('Balances Controller (Unit)', () => {
       // trusted and exclude_spam params are passed
       expect(networkService.get.mock.calls[1][1]).toStrictEqual({
         params: {
-          trusted: trusted.toString(),
-          exclude_spam: excludeSpam.toString(),
+          trusted,
+          exclude_spam: excludeSpam,
         },
       });
     });

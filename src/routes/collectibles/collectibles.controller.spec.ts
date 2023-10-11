@@ -184,8 +184,8 @@ describe('Collectibles Controller (Unit)', () => {
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,
-          exclude_spam: excludeSpam.toString(),
-          trusted: trusted.toString(),
+          exclude_spam: excludeSpam,
+          trusted,
         },
       });
     });

@@ -4,6 +4,7 @@ import {
   DefaultValuePipe,
   Get,
   Param,
+  ParseBoolPipe,
   Query,
 } from '@nestjs/common';
 import { CollectiblesService } from './collectibles.service';
@@ -43,8 +44,10 @@ export class CollectiblesController {
     @Param('safeAddress') safeAddress: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Query('trusted', new DefaultValuePipe(false)) trusted: boolean,
-    @Query('exclude_spam', new DefaultValuePipe(true)) excludeSpam: boolean,
+    @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
+    trusted: boolean,
+    @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
+    excludeSpam: boolean,
   ): Promise<Page<Collectible>> {
     return this.service.getCollectibles({
       chainId,
