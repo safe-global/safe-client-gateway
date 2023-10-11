@@ -71,7 +71,8 @@ export class TransactionsController {
     @Query('to') to?: string,
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
-    @Query('executed') executed?: boolean,
+    @Query('executed', new ParseBoolPipe({ optional: true }))
+    executed?: boolean,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions({
       chainId,
