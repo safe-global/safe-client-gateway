@@ -24,11 +24,15 @@ function configureSwagger(app: INestApplication) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('', app, document, {
+
+  const options = {
     customfavIcon: '/favicon.png',
     customSiteTitle: 'Safe Client Gateway',
     customCss: `.topbar-wrapper img { content:url(\'logo.svg\'); }`,
-  });
+  };
+
+  SwaggerModule.setup('/index.html', app, document, options);
+  SwaggerModule.setup('', app, document, options);
 }
 
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
