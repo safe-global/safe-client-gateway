@@ -70,9 +70,6 @@ export const configurationModule = ConfigurationModule.register(configuration);
       middleware: {
         generateId: true,
         idGenerator: () => uuidv4(),
-        setup: (cls, req) => {
-          cls.set('safeAppUserAgent', req.headers['safe-app-user-agent']);
-        },
       },
     }),
     configurationModule,
