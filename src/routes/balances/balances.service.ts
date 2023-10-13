@@ -43,12 +43,33 @@ export class BalancesService {
     trusted: boolean;
     excludeSpam: boolean;
   }): Promise<Balances> {
+    /**
+     * Depending on whether chainId is included in the FF pricesProviderChainIds, the balances
+     * fiat amounts should be converted to the fiatCode. The function _getBalancesLegacy
+     * uses a 3rd party to do it, but _getBalancesNew don't, as the amounts in fiatCode are
+     * already provided by IPricesApi.
+     *
+     * After the FF pricesProviderChainIds is fully applied to all chains, functions
+     * _getBalancesLegacy and _mapBalanceLegacy can be removed as they are no longer needed.
+     */
     if (this.pricesProviderChainIds.includes(args.chainId)) {
-      return this._getFromSimpleBalances(args);
+      return this._getBalancesNew(args);
+    } else {
+      return this._getBalancesLegacy(args);
     }
+  }
 
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
+  private async _getBalancesLegacy(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted: boolean;
+    excludeSpam: boolean;
+  }): Promise<Balances> {
     const txServiceBalances = await this.balancesRepository.getBalances(args);
-
     const usdToFiatRate: number = await this.exchangeRepository.convertRates({
       to: args.fiatCode,
       from: BalancesService.fromRateCurrencyCode,
@@ -59,7 +80,7 @@ export class BalancesService {
 
     // Map balances payload
     const balances: Balance[] = txServiceBalances.map((balance) =>
-      this.mapBalance(balance, usdToFiatRate, nativeCurrency),
+      this._mapBalanceLegacy(balance, usdToFiatRate, nativeCurrency),
     );
 
     // Get total fiat from [balances]
@@ -81,7 +102,7 @@ export class BalancesService {
   /**
    * @deprecated to be removed after Coingecko prices retrieval is complete.
    */
-  private mapBalance(
+  private _mapBalanceLegacy(
     txBalance: TransactionApiBalance,
     usdToFiatRate: number,
     nativeCurrency: NativeCurrency,
@@ -119,7 +140,7 @@ export class BalancesService {
     };
   }
 
-  private async _getFromSimpleBalances(args: {
+  private async _getBalancesNew(args: {
     chainId: string;
     safeAddress: string;
     fiatCode: string;
@@ -131,7 +152,7 @@ export class BalancesService {
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
     const balances: Balance[] = await Promise.all(
       simpleBalances.map(async (balance) =>
-        this._mapSimpleBalance(balance, nativeCurrency),
+        this._mapBalanceNew(balance, nativeCurrency),
       ),
     );
     const fiatTotal = balances
@@ -144,7 +165,7 @@ export class BalancesService {
     };
   }
 
-  private async _mapSimpleBalance(
+  private async _mapBalanceNew(
     balance: TransactionApiBalance,
     nativeCurrency: NativeCurrency,
   ): Promise<Balance> {

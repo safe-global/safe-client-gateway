@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IPricesApi } from '../interfaces/prices-api.interface';
 import { IPricesRepository } from './prices.repository.interface';
 import { AssetPriceValidator } from './asset-price.validator';
@@ -8,7 +7,6 @@ import { FiatCodesValidator } from './fiat-codes.validator';
 @Injectable()
 export class PricesRepository implements IPricesRepository {
   constructor(
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
     private readonly assetPriceValidator: AssetPriceValidator,
     private readonly fiatCodesValidator: FiatCodesValidator,
