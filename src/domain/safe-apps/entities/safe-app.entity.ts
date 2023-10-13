@@ -1,6 +1,6 @@
-import { SafeAppAccessControl } from './safe-app-access-control.entity';
-import { SafeAppProvider } from './safe-app-provider.entity';
-import { SafeAppSocialProfile } from './safe-app-social-profile.entity';
+import { SafeAppAccessControl } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
+import { SafeAppProvider } from '@/domain/safe-apps/entities/safe-app-provider.entity';
+import { SafeAppSocialProfile } from '@/domain/safe-apps/entities/safe-app-social-profile.entity';
 
 export interface SafeApp {
   id: number;

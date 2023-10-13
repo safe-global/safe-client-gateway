@@ -1,6 +1,6 @@
 import { DefinedError } from 'ajv';
 import { faker } from '@faker-js/faker';
-import { ValidationErrorFactory } from './validation-error-factory';
+import { ValidationErrorFactory } from '@/validation/providers/validation-error-factory';
 import { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {

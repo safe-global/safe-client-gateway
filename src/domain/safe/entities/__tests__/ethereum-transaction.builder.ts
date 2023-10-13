@@ -1,6 +1,6 @@
-import { EthereumTransaction } from '../ethereum-transaction.entity';
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 
 export function ethereumTransactionBuilder(): IBuilder<EthereumTransaction> {
   return Builder.new<EthereumTransaction>()

@@ -13,21 +13,21 @@ import { CALL_OPERATION } from '@/domain/safe/entities/operation.entity';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '../../../../domain/safe/entities/__tests__/module-transaction.builder';
+} from '@/domain/safe/entities/__tests__/module-transaction.builder';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
-} from '../../../../domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
-} from '../../../../domain/safe/entities/__tests__/native-token-transfer.builder';
+} from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule, configurationModule } from '@/app.module';

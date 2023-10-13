@@ -1,24 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
-import { Safe } from './entities/safe.entity';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { ISafeRepository } from './safe.repository.interface';
-import { SafeValidator } from './safe.validator';
-import { Page } from '../entities/page.entity';
-import { Transfer } from './entities/transfer.entity';
-import { TransferValidator } from './transfer.validator';
-import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { MultisigTransactionValidator } from './multisig-transaction.validator';
-import { Transaction } from './entities/transaction.entity';
-import { TransactionTypeValidator } from './transaction-type.validator';
-import { ModuleTransaction } from './entities/module-transaction.entity';
-import { SafeList } from './entities/safe-list.entity';
-import { SafeListValidator } from './safe-list.validator';
-import { ModuleTransactionValidator } from './module-transaction.validator';
-import { CreationTransaction } from './entities/creation-transaction.entity';
-import { CreationTransactionValidator } from './creation-transaction.validator';
-import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
-import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { SafeList } from '@/domain/safe/entities/safe-list.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Transaction } from '@/domain/safe/entities/transaction.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
+import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
+import { SafeListValidator } from '@/domain/safe/safe-list.validator';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { SafeValidator } from '@/domain/safe/safe.validator';
+import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
+import { TransferValidator } from '@/domain/safe/transfer.validator';
+import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {

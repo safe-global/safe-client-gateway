@@ -1,4 +1,4 @@
-import { Operation } from '../../safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 export class GetEstimationDto {
   to: string;

@@ -1,5 +1,5 @@
-import { Page } from '../entities/page.entity';
-import { Token } from './entities/token.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
 
 export const ITokenRepository = Symbol('ITokenRepository');
 

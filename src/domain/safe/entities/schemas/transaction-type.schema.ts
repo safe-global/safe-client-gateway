@@ -1,5 +1,5 @@
 import { Schema } from 'ajv';
-import { buildPageSchema } from '../../../entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
 export const TRANSACTION_TYPE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/transaction-type.json';

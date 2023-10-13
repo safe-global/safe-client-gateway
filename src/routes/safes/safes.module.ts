@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { SafesController } from './safes.controller';
-import { SafesService } from './safes.service';
-import { AddressInfoModule } from '../common/address-info/address-info.module';
+import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
+import { SafesController } from '@/routes/safes/safes.controller';
+import { SafesService } from '@/routes/safes/safes.service';
 
 @Module({
   controllers: [SafesController],

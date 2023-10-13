@@ -1,4 +1,4 @@
-import { SafeApp } from './entities/safe-app.entity';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export const ISafeAppsRepository = Symbol('ISafeAppsRepository');
 

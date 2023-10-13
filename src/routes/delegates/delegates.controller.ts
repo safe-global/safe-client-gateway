@@ -8,22 +8,22 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
-import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
-import { Page } from '../common/entities/page.entity';
-import { PaginationData } from '../common/pagination/pagination.data';
-import { DelegatesService } from './delegates.service';
-import { CreateDelegateDto } from './entities/create-delegate.dto.entity';
-import { Delegate } from './entities/delegate.entity';
-import { DelegatePage } from './entities/delegate.page.entity';
-import { DeleteDelegateDto } from './entities/delete-delegate.dto.entity';
-import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
-import { GetDelegateDto } from './entities/get-delegate.dto.entity';
-import { CreateDelegateDtoValidationPipe } from './pipes/create-delegate.dto.validation.pipe';
-import { DeleteDelegateDtoValidationPipe } from './pipes/delete-delegate.dto.validation.pipe';
-import { DeleteSafeDelegateDtoValidationPipe } from './pipes/delete-safe-delegate.dto.validation.pipe';
-import { GetDelegateDtoValidationPipe } from './pipes/get-delegate.dto.validation.pipe';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import { Page } from '@/routes/common/entities/page.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { DelegatesService } from '@/routes/delegates/delegates.service';
+import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
+import { Delegate } from '@/routes/delegates/entities/delegate.entity';
+import { DelegatePage } from '@/routes/delegates/entities/delegate.page.entity';
+import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
+import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
+import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
+import { CreateDelegateDtoValidationPipe } from '@/routes/delegates/pipes/create-delegate.dto.validation.pipe';
+import { DeleteDelegateDtoValidationPipe } from '@/routes/delegates/pipes/delete-delegate.dto.validation.pipe';
+import { DeleteSafeDelegateDtoValidationPipe } from '@/routes/delegates/pipes/delete-safe-delegate.dto.validation.pipe';
+import { GetDelegateDtoValidationPipe } from '@/routes/delegates/pipes/get-delegate.dto.validation.pipe';
 
 @ApiTags('delegates')
 @Controller({

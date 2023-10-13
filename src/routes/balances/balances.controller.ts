@@ -6,9 +6,9 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { BalancesService } from './balances.service';
-import { Balances } from './entities/balances.entity';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { BalancesService } from '@/routes/balances/balances.service';
+import { Balances } from '@/routes/balances/entities/balances.entity';
 
 @ApiTags('balances')
 @Controller({

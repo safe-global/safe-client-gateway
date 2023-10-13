@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
-import { ModuleTransaction } from '../module-transaction.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ModuleTransaction } from '@/routes/cache-hooks/entities/module-transaction.entity';
 
 export const MODULE_TRANSACTION_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/module-transaction.json';

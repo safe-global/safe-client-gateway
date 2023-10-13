@@ -1,4 +1,3 @@
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   DefaultValuePipe,
@@ -7,13 +6,14 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { CollectiblesService } from './collectibles.service';
-import { CollectiblePage } from './entities/collectible.page.entity';
-import { Collectible } from './entities/collectible.entity';
-import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
-import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { PaginationData } from '../common/pagination/pagination.data';
-import { Page } from '../common/entities/page.entity';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CollectiblesService } from '@/routes/collectibles/collectibles.service';
+import { Collectible } from '@/routes/collectibles/entities/collectible.entity';
+import { CollectiblePage } from '@/routes/collectibles/entities/collectible.page.entity';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import { Page } from '@/routes/common/entities/page.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 @ApiTags('collectibles')
 @Controller({

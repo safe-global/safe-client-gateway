@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { CreateMessageDto } from '../entities/create-message.dto.entity';
+import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
 import {
   CREATE_MESSAGE_DTO_SCHEMA_ID,
   createMessageDtoSchema,
-} from '../entities/schemas/create-message.dto.schema';
+} from '@/routes/messages/entities/schemas/create-message.dto.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class CreateMessageDtoValidationPipe

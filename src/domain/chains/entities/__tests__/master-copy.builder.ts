@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { MasterCopy } from '../master-copies.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 
 export function masterCopyBuilder(): IBuilder<MasterCopy> {
   return Builder.new<MasterCopy>()

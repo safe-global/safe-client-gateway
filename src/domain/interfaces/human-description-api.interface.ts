@@ -1,4 +1,4 @@
-import { FunctionSignature } from '../human-description/entities/human-description.entity';
+import { FunctionSignature } from '@/domain/human-description/entities/human-description.entity';
 
 export const IHumanDescriptionApi = Symbol('IHumanDescriptionApi');
 

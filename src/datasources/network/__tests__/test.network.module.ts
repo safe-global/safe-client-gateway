@@ -1,5 +1,8 @@
 import { Global, Module } from '@nestjs/common';
-import { INetworkService, NetworkService } from '../network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 
 const networkService: INetworkService = {
   get: jest.fn(),

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { SafeList } from './entities/safe-list.entity';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import {
   SAFE_LIST_SCHEMA_ID,
   safeListSchema,
-} from './entities/schemas/safe-list.schema';
+} from '@/domain/safe/entities/schemas/safe-list.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class SafeListValidator implements IValidator<SafeList> {

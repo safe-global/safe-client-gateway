@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { DataDecodedService } from './data-decoded.service';
-import { DataDecoded } from './entities/data-decoded.entity';
-import { GetDataDecodedDto } from './entities/get-data-decoded.dto.entity';
-import { GetDataDecodedDtoValidationPipe } from './pipes/get-data-decoded.dto.validation.pipe';
+import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
+import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import { GetDataDecodedDto } from '@/routes/data-decode/entities/get-data-decoded.dto.entity';
+import { GetDataDecodedDtoValidationPipe } from '@/routes/data-decode/pipes/get-data-decoded.dto.validation.pipe';
 
 @ApiTags('data-decoded')
 @Controller({

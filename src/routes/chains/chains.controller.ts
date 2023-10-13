@@ -1,15 +1,18 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ChainsService } from './chains.service';
-import { PaginationData } from '../common/pagination/pagination.data';
-import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
-import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Backbone as ApiBackbone, Backbone } from './entities/backbone.entity';
-import { ChainPage } from './entities/chain-page.entity';
-import { MasterCopy } from './entities/master-copy.entity';
-import { Page } from '../common/entities/page.entity';
-import { Chain } from './entities/chain.entity';
-import { AboutChain } from './entities/about-chain.entity';
+import { ChainsService } from '@/routes/chains/chains.service';
+import { AboutChain } from '@/routes/chains/entities/about-chain.entity';
+import { ChainPage } from '@/routes/chains/entities/chain-page.entity';
+import { Chain } from '@/routes/chains/entities/chain.entity';
+import { MasterCopy } from '@/routes/chains/entities/master-copy.entity';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import { Page } from '@/routes/common/entities/page.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import {
+  Backbone as ApiBackbone,
+  Backbone,
+} from '@/routes/chains/entities/backbone.entity';
 
 @ApiTags('chains')
 @Controller({

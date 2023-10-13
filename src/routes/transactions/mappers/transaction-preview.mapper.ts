@@ -4,10 +4,10 @@ import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repos
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { PreviewTransactionDto } from '../entities/preview-transaction.dto.entity';
-import { TransactionPreview } from '../entities/transaction-preview.entity';
-import { TransactionDataMapper } from './common/transaction-data.mapper';
-import { MultisigTransactionInfoMapper } from './common/transaction-info.mapper';
+import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
+import { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
+import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 
 @Injectable()
 export class TransactionPreviewMapper {

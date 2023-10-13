@@ -2,9 +2,9 @@ import { JSONSchemaType, Schema } from 'ajv';
 import {
   SafeAppAccessControl,
   SafeAppAccessControlPolicies,
-} from '../safe-app-access-control.entity';
-import { SafeAppProvider } from '../safe-app-provider.entity';
-import { SafeAppSocialProfile } from '../safe-app-social-profile.entity';
+} from '@/domain/safe-apps/entities/safe-app-access-control.entity';
+import { SafeAppProvider } from '@/domain/safe-apps/entities/safe-app-provider.entity';
+import { SafeAppSocialProfile } from '@/domain/safe-apps/entities/safe-app-social-profile.entity';
 
 export const SAFE_APP_PROVIDER_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe-apps/safe-app-provider.json';

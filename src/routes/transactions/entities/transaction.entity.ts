@@ -4,15 +4,15 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { CreationTransactionInfo } from './creation-transaction-info.entity';
-import { CustomTransactionInfo } from './custom-transaction.entity';
-import { ExecutionInfo } from './execution-info.entity';
-import { ModuleExecutionInfo } from './module-execution-info.entity';
-import { MultisigExecutionInfo } from './multisig-execution-info.entity';
-import { SafeAppInfo } from './safe-app-info.entity';
-import { SettingsChangeTransaction } from './settings-change-transaction.entity';
-import { TransactionInfo } from './transaction-info.entity';
-import { TransferTransactionInfo } from './transfer-transaction-info.entity';
+import { CreationTransactionInfo } from '@/routes/transactions/entities/creation-transaction-info.entity';
+import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { ExecutionInfo } from '@/routes/transactions/entities/execution-info.entity';
+import { ModuleExecutionInfo } from '@/routes/transactions/entities/module-execution-info.entity';
+import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-execution-info.entity';
+import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
+import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,

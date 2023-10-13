@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { MessageCreated } from '../message-created.entity';
-import { EventType } from '../event-payload.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { MessageCreated } from '@/routes/cache-hooks/entities/message-created.entity';
 
 export const MESSAGE_CREATED_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/message-created.json';

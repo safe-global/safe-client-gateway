@@ -1,10 +1,10 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { CreationTransactionInfo } from './creation-transaction-info.entity';
-import { CustomTransactionInfo } from './custom-transaction.entity';
-import { SettingsChangeTransaction } from './settings-change-transaction.entity';
-import { TransactionData } from './transaction-data.entity';
-import { TransactionInfo } from './transaction-info.entity';
-import { TransferTransactionInfo } from './transfer-transaction-info.entity';
+import { CreationTransactionInfo } from '@/routes/transactions/entities/creation-transaction-info.entity';
+import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
+import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,

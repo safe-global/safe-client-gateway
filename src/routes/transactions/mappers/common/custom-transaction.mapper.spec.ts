@@ -1,15 +1,15 @@
 import { faker } from '@faker-js/faker';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { CustomTransactionInfo } from '../../entities/custom-transaction.entity';
-import { CustomTransactionMapper } from './custom-transaction.mapper';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { NULL_ADDRESS } from '../../../common/constants';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';
+import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

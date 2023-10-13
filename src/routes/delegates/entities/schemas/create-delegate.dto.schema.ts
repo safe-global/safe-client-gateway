@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { CreateDelegateDto } from '../create-delegate.dto.entity';
+import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
 
 export const CREATE_DELEGATE_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/delegates/create-delegate.dto.json';

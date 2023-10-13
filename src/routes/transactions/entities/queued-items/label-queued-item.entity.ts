@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { QueuedItem } from '../queued-item.entity';
+import { QueuedItem } from '@/routes/transactions/entities/queued-item.entity';
 
 export enum LabelItem {
   Next = 'Next',

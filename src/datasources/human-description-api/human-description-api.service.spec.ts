@@ -1,4 +1,4 @@
-import { HumanDescriptionApi } from './human-description-api.service';
+import { HumanDescriptionApi } from '@/datasources/human-description-api/human-description-api.service';
 
 describe('HumanDescriptionAPI', () => {
   it('should return descriptions from json', () => {

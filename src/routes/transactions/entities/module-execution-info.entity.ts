@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AddressInfo } from '../../common/entities/address-info.entity';
-import { ExecutionInfo } from './execution-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { ExecutionInfo } from '@/routes/transactions/entities/execution-info.entity';
 
 export class ModuleExecutionInfo extends ExecutionInfo {
   @ApiProperty()

@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { AboutService } from './about.service';
-import { About } from './entities/about.entity';
+import { AboutService } from '@/routes/about/about.service';
+import { About } from '@/routes/about/entities/about.entity';
 
 @ApiTags('about')
 @Controller({ path: 'about' })

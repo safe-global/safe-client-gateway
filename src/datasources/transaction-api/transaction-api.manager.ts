@@ -1,16 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Chain } from '@/domain/chains/entities/chain.entity';
-import { TransactionApi } from './transaction-api.service';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { CacheService, ICacheService } from '../cache/cache.service.interface';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   INetworkService,
   NetworkService,
-} from '../network/network.service.interface';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+} from '@/datasources/network/network.service.interface';
+import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
+import { Chain } from '@/domain/chains/entities/chain.entity';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {

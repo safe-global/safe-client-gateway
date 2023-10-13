@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { HttpException } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from './generic.validator';
-import { ValidationErrorFactory } from './validation-error-factory';
+import { ValidationErrorFactory } from '@/validation/providers/validation-error-factory';
+import { GenericValidator } from '@/validation/providers/generic.validator';
 
 const mockValidationErrorFactory = jest.mocked({
   from: jest.fn(),

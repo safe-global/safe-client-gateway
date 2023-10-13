@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Balance as TransactionApiBalance } from '../../domain/balances/entities/balance.entity';
-import { Token } from './entities/token.entity';
-import { TokenType } from './entities/token-type.entity';
-import { Balances } from './entities/balances.entity';
-import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
-import { Balance } from './entities/balance.entity';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { IExchangeRepository } from '@/domain/exchange/exchange.repository.interface';
+import { Balance as TransactionApiBalance } from '@/domain/balances/entities/balance.entity';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { NULL_ADDRESS } from '../common/constants';
+import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
+import { IExchangeRepository } from '@/domain/exchange/exchange.repository.interface';
+import { Balance } from '@/routes/balances/entities/balance.entity';
+import { Balances } from '@/routes/balances/entities/balances.entity';
+import { TokenType } from '@/routes/balances/entities/token-type.entity';
+import { Token } from '@/routes/balances/entities/token.entity';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 @Injectable()
 export class BalancesService {

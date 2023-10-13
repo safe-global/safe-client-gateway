@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
-import { Page } from '../common/entities/page.entity';
+import { Page } from '@/routes/common/entities/page.entity';
 import {
-  cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '../common/pagination/pagination.data';
-import { CreateDelegateDto } from './entities/create-delegate.dto.entity';
-import { Delegate } from './entities/delegate.entity';
-import { DeleteDelegateDto } from './entities/delete-delegate.dto.entity';
-import { DeleteSafeDelegateDto } from './entities/delete-safe-delegate.dto.entity';
-import { GetDelegateDto } from './entities/get-delegate.dto.entity';
+  cursorUrlFromLimitAndOffset,
+} from '@/routes/common/pagination/pagination.data';
+import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
+import { Delegate } from '@/routes/delegates/entities/delegate.entity';
+import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
+import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
+import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
 
 @Injectable()
 export class DelegatesService {

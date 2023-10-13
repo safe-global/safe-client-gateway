@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { ExchangeApi } from './exchange-api.service';
+import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { ExchangeApi } from '@/datasources/exchange-api/exchange-api.service';
 import { IExchangeApi } from '@/domain/interfaces/exchange-api.interface';
-import { CacheFirstDataSourceModule } from '../cache/cache.first.data.source.module';
 
 @Global()
 @Module({

@@ -4,7 +4,7 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import {
   SafeAppAccessControl,
   SafeAppAccessControlPolicies,
-} from '../safe-app-access-control.entity';
+} from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 
 export function safeAppAccessControlBuilder(): IBuilder<SafeAppAccessControl> {
   return Builder.new<SafeAppAccessControl>()

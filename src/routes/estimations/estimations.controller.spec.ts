@@ -13,11 +13,11 @@ import { estimationBuilder } from '@/domain/estimations/entities/__tests__/estim
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '../../domain/safe/entities/__tests__/multisig-transaction.builder';
+} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';

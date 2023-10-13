@@ -1,7 +1,7 @@
 import {
   FunctionSignatureHash,
   HumanDescriptionFragment,
-} from './entities/human-description.entity';
+} from '@/domain/human-description/entities/human-description.entity';
 
 export const IHumanDescriptionRepository = Symbol(
   'IHumanDescriptionRepository',

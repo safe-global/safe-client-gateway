@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { AddressInfo } from '../../entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export function addressInfoBuilder(): IBuilder<AddressInfo> {
   return Builder.new<AddressInfo>()

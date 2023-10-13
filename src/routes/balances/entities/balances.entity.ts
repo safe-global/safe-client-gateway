@@ -1,5 +1,5 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { Balance } from './balance.entity';
+import { Balance } from '@/routes/balances/entities/balance.entity';
 
 @ApiExtraModels(Balance)
 export class Balances {

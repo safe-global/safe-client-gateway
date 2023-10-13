@@ -1,13 +1,13 @@
 import { faker } from '@faker-js/faker';
-import { Chain } from '../chain.entity';
-import { nativeCurrencyBuilder } from './native.currency.builder';
-import { blockExplorerUriTemplateBuilder } from './block-explorer-uri-template.builder';
-import { themeBuilder } from './theme.builder';
-import { gasPriceFixedBuilder } from './gas-price-fixed.builder';
-import { gasPriceOracleBuilder } from './gas-price-oracle.builder';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { rpcUriBuilder } from './rpc-uri.builder';
-import { gasPriceFixedEIP1559Builder } from './gas-price-fixed-eip-1559.builder';
+import { blockExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/block-explorer-uri-template.builder';
+import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
+import { gasPriceFixedBuilder } from '@/domain/chains/entities/__tests__/gas-price-fixed.builder';
+import { gasPriceOracleBuilder } from '@/domain/chains/entities/__tests__/gas-price-oracle.builder';
+import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native.currency.builder';
+import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
+import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 export function chainBuilder(): IBuilder<Chain> {
   return Builder.new<Chain>()

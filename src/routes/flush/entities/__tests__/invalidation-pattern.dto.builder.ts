@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { InvalidationPatternDto } from '../invalidation-pattern.dto.entity';
-import { invalidationPatternDetailsBuilder } from './invalidation-pattern-details.dto.builder';
+import { invalidationPatternDetailsBuilder } from '@/routes/flush/entities/__tests__/invalidation-pattern-details.dto.builder';
+import { InvalidationPatternDto } from '@/routes/flush/entities/invalidation-pattern.dto.entity';
 
 export function invalidationPatternDtoBuilder(): IBuilder<InvalidationPatternDto> {
   return Builder.new<InvalidationPatternDto>()

@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { range } from 'lodash';
-import { CacheDir } from '../entities/cache-dir.entity';
-import { FakeCacheService } from './fake.cache.service';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 describe('FakeCacheService', () => {
   let target: FakeCacheService;

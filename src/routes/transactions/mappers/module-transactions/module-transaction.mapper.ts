@@ -1,14 +1,14 @@
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { Injectable } from '@nestjs/common';
-import { Transaction } from '../../entities/transaction.entity';
-import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
-import { ModuleTransactionStatusMapper } from './module-transaction-status.mapper';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { ModuleExecutionInfo } from '../../entities/module-execution-info.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
   MODULE_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
-} from '../../constants';
+} from '@/routes/transactions/constants';
+import { ModuleExecutionInfo } from '@/routes/transactions/entities/module-execution-info.entity';
+import { Transaction } from '@/routes/transactions/entities/transaction.entity';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import { ModuleTransactionStatusMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-status.mapper';
 
 @Injectable()
 export class ModuleTransactionMapper {

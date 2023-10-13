@@ -2,18 +2,18 @@ import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
-import { safeAppInfoBuilder } from '../../entities/__tests__/safe-app-info.builder';
-import { transferTransactionInfoBuilder } from '../../entities/__tests__/transfer-transaction-info.builder';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
-import { multisigExecutionDetailsBuilder } from '../__tests__/multisig-execution-details.builder';
-import { SafeAppInfoMapper } from '../common/safe-app-info.mapper';
-import { TransactionDataMapper } from '../common/transaction-data.mapper';
-import { MultisigTransactionInfoMapper } from '../common/transaction-info.mapper';
-import { MultisigTransactionDetailsMapper } from './multisig-transaction-details.mapper';
-import { MultisigTransactionExecutionDetailsMapper } from './multisig-transaction-execution-details.mapper';
-import { MultisigTransactionStatusMapper } from './multisig-transaction-status.mapper';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { safeAppInfoBuilder } from '@/routes/transactions/entities/__tests__/safe-app-info.builder';
+import { transferTransactionInfoBuilder } from '@/routes/transactions/entities/__tests__/transfer-transaction-info.builder';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
+import { multisigExecutionDetailsBuilder } from '@/routes/transactions/mappers/__tests__/multisig-execution-details.builder';
+import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
+import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import { MultisigTransactionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-details.mapper';
+import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
+import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

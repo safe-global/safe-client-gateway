@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { Collectible } from '../collectible.entity';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 
 export const COLLECTIBLE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/collectibles/collectible.json';

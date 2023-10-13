@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CacheFirstDataSource } from './cache.first.data.source';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 
 @Module({
   providers: [CacheFirstDataSource, HttpErrorFactory],

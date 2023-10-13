@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Backbone } from '../backbone.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { fakeJson } from '@/__tests__/faker';
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 
 export function backboneBuilder(): IBuilder<Backbone> {
   return Builder.new<Backbone>()

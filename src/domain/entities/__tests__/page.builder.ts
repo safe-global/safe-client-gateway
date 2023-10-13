@@ -1,6 +1,6 @@
-import { Page } from '../page.entity';
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { Page } from '@/domain/entities/page.entity';
 
 export function pageBuilder<T>(): IBuilder<Page<T>> {
   return Builder.new<Page<T>>()

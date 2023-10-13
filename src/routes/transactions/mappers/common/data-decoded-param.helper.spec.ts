@@ -3,7 +3,7 @@ import {
   DataDecoded,
   DataDecodedParameter,
 } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { DataDecodedParamHelper } from './data-decoded-param.helper';
+import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 
 describe('DataDecoded param helper (Unit)', () => {
   const helper = new DataDecodedParamHelper();

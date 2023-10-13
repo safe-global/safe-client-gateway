@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { MultisigExecutionInfo } from '../../entities/multisig-execution-info.entity';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-execution-info.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 
 @Injectable()
 export class MultisigTransactionExecutionInfoMapper {

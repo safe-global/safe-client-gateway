@@ -1,4 +1,4 @@
-import { Collectible as DomainCollectible } from '../../../domain/collectibles/entities/collectible.entity';
+import { Collectible as DomainCollectible } from '@/domain/collectibles/entities/collectible.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Collectible implements DomainCollectible {

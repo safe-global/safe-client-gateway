@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { CreationTransaction } from '../creation-transaction.entity';
-import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 
 export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
   return Builder.new<CreationTransaction>()

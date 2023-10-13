@@ -1,14 +1,14 @@
-import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
-import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { InvalidationPatternDto } from '../entities/invalidation-pattern.dto.entity';
+import { InvalidationPatternDto } from '@/routes/flush/entities/invalidation-pattern.dto.entity';
 import {
   INVALIDATION_PATTERN_DETAIL_SCHEMA_ID,
   INVALIDATION_PATTERN_DTO_SCHEMA_ID,
   invalidationPatternDetailSchema,
   invalidationPatternDtoSchema,
-} from '../entities/schemas/invalidation-pattern.dto.schema';
+} from '@/routes/flush/entities/schemas/invalidation-pattern.dto.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
+import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
+import { ValidateFunction } from 'ajv';
 
 @Injectable()
 export class InvalidationPatternDtoValidationPipe

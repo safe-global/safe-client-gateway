@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { DeleteSafeDelegateDto } from '../delete-safe-delegate.dto.entity';
+import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
 
 export const DELETE_SAFE_DELEGATE_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/delegates/delete-safe-delegate.dto.json';

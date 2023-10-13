@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DefinedError, ValidateFunction } from 'ajv';
-import { ValidationErrorFactory } from './validation-error-factory';
+import { ValidationErrorFactory } from '@/validation/providers/validation-error-factory';
 
 @Injectable()
 export class GenericValidator {

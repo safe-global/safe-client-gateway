@@ -1,3 +1,9 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
@@ -19,14 +25,8 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
-import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CacheRouter } from '../cache/cache.router';
-import { ICacheService } from '../cache/cache.service.interface';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { INetworkService } from '../network/network.service.interface';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;

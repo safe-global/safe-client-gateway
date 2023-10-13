@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { Safe } from '../safe.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 
 export const SAFE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/safe.json';

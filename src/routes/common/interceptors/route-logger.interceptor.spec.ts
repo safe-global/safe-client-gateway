@@ -1,4 +1,3 @@
-import { RouteLoggerInterceptor } from './route-logger.interceptor';
 import { ILoggingService } from '@/logging/logging.interface';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -11,6 +10,7 @@ import {
 import * as request from 'supertest';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
+import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 
 const mockLoggingService = {
   info: jest.fn(),

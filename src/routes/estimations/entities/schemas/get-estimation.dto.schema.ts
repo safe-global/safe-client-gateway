@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { GetEstimationDto } from '../get-estimation.dto.entity';
+import { GetEstimationDto } from '@/routes/estimations/entities/get-estimation.dto.entity';
 
 export const GET_ESTIMATION_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/estimations/get-estimation.dto.json';

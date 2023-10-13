@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Token } from '../../../balances/entities/token.entity';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { ExecutionDetails } from './execution-details.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { Token } from '@/routes/balances/entities/token.entity';
+import { ExecutionDetails } from '@/routes/transactions/entities/transaction-details/execution-details.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()

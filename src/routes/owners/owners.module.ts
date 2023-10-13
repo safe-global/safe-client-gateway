@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { OwnersController } from './owners.controller';
-import { OwnersService } from './owners.service';
+import { OwnersController } from '@/routes/owners/owners.controller';
+import { OwnersService } from '@/routes/owners/owners.service';
 
 @Module({
   controllers: [OwnersController],

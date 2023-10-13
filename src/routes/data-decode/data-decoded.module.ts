@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DataDecodedController } from './data-decoded.controller';
-import { DataDecodedService } from './data-decoded.service';
+import { DataDecodedController } from '@/routes/data-decode/data-decoded.controller';
+import { DataDecodedService } from '@/routes/data-decode/data-decoded.service';
 
 @Module({
   controllers: [DataDecodedController],

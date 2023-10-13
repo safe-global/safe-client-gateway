@@ -1,6 +1,6 @@
-import { BlockExplorerUriTemplate } from '../block-explorer-uri-template.entity';
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
+import { BlockExplorerUriTemplate } from '@/domain/chains/entities/block-explorer-uri-template.entity';
 
 export function blockExplorerUriTemplateBuilder(): IBuilder<BlockExplorerUriTemplate> {
   return Builder.new<BlockExplorerUriTemplate>()

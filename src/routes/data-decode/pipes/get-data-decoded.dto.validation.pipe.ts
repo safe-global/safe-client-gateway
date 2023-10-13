@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { GetDataDecodedDto } from '../entities/get-data-decoded.dto.entity';
+import { GetDataDecodedDto } from '@/routes/data-decode/entities/get-data-decoded.dto.entity';
 import {
   GET_DATA_DECODED_DTO_SCHEMA_ID,
   getDataDecodedDtoSchema,
-} from '../entities/schemas/get-data-decoded.dto.schema';
+} from '@/routes/data-decode/entities/schemas/get-data-decoded.dto.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class GetDataDecodedDtoValidationPipe

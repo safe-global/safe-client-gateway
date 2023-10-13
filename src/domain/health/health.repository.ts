@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { HealthEntity } from './entities/health.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IHealthRepository } from './health.repository.interface';
+import { HealthEntity } from '@/domain/health/entities/health.entity';
+import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import {
   CacheReadiness,
   ICacheReadiness,
-} from '../interfaces/cache-readiness.interface';
+} from '@/domain/interfaces/cache-readiness.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {

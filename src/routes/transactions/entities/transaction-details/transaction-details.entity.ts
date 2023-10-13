@@ -4,12 +4,12 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { SafeAppInfo } from '../safe-app-info.entity';
-import { TransactionData } from '../transaction-data.entity';
-import { TransactionInfo } from '../transaction-info.entity';
-import { TransactionStatus } from '../transaction-status.entity';
-import { ModuleExecutionDetails } from './module-execution-details.entity';
-import { MultisigExecutionDetails } from './multisig-execution-details.entity';
+import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
+import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
+import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
+import { MultisigExecutionDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 
 @ApiExtraModels(
   TransactionInfo,

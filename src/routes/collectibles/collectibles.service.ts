@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
-import { Collectible } from './entities/collectible.entity';
-import { Page } from '../common/entities/page.entity';
+import { Collectible } from '@/routes/collectibles/entities/collectible.entity';
+import { Page } from '@/routes/common/entities/page.entity';
 import {
-  cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '../common/pagination/pagination.data';
+  cursorUrlFromLimitAndOffset,
+} from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class CollectiblesService {

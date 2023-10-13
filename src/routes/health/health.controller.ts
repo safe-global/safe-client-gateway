@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiExcludeController, ApiOkResponse } from '@nestjs/swagger';
-import { Health, HealthStatus } from './entities/health.entity';
-import { HealthService } from './health.service';
+import { Health, HealthStatus } from '@/routes/health/entities/health.entity';
+import { HealthService } from '@/routes/health/health.service';
 
 @Controller({ path: 'health' })
 @ApiExcludeController()

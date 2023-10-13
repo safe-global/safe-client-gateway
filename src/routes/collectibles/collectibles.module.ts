@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CollectiblesController } from './collectibles.controller';
-import { CollectiblesService } from './collectibles.service';
+import { CollectiblesController } from '@/routes/collectibles/collectibles.controller';
+import { CollectiblesService } from '@/routes/collectibles/collectibles.service';
 
 @Module({
   controllers: [CollectiblesController],

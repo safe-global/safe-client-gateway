@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SettingsChange } from './settings-change.entity';
+import { SettingsChange } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class ChangeThreshold extends SettingsChange {
   @ApiProperty()

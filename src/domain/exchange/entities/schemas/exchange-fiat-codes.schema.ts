@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { ExchangeFiatCodes } from '../exchange-fiat-codes.entity';
+import { ExchangeFiatCodes } from '@/domain/exchange/entities/exchange-fiat-codes.entity';
 
 export const EXCHANGE_FIAT_CODES_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/exchange/exchange-fiat-codes.json';

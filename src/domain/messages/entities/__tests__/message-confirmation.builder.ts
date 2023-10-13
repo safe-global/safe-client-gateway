@@ -4,7 +4,7 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import {
   MessageConfirmation,
   SignatureType,
-} from '../message-confirmation.entity';
+} from '@/domain/messages/entities/message-confirmation.entity';
 
 export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
   return Builder.new<MessageConfirmation>()

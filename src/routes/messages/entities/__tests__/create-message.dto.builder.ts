@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { random } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { CreateMessageDto } from '../create-message.dto.entity';
+import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
 
 export function createMessageDtoBuilder(): IBuilder<CreateMessageDto> {
   return Builder.new<CreateMessageDto>()

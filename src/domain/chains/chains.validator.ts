@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { Chain } from './entities/chain.entity';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 import {
   BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID,
   CHAIN_SCHEMA_ID,
@@ -17,7 +14,10 @@ import {
   nativeCurrencySchema,
   rpcUriSchema,
   themeSchema,
-} from './entities/schemas/chain.schema';
+} from '@/domain/chains/entities/schemas/chain.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ChainsValidator implements IValidator<Chain> {

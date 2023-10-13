@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { SafeApp } from './entities/safe-app.entity';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 import {
-  SAFE_APP_SCHEMA_ID,
   SAFE_APP_ACCESS_CONTROL_SCHEMA_ID,
   SAFE_APP_PROVIDER_SCHEMA_ID,
+  SAFE_APP_SCHEMA_ID,
   SAFE_APP_SOCIAL_PROFILE_SCHEMA_ID,
   safeAppAccessControlSchema,
   safeAppProviderSchema,
   safeAppSchema,
   safeAppSocialProfileSchema,
-} from './entities/schemas/safe-app.schema';
+} from '@/domain/safe-apps/entities/schemas/safe-app.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class SafeAppsValidator implements IValidator<SafeApp> {

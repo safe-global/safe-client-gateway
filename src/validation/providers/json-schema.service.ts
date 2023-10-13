@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Ajv, { JSONSchemaType, Schema, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
-import { addIsDate } from './keywords/is-date.keyword';
+import { addIsDate } from '@/validation/providers/keywords/is-date.keyword';
 
 @Injectable()
 export class JsonSchemaService {

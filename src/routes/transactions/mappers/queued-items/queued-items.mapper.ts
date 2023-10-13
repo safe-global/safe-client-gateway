@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { flatten, groupBy } from 'lodash';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Page } from '../../../common/entities/page.entity';
-import { ConflictType } from '../../entities/conflict-type.entity';
-import { QueuedItem } from '../../entities/queued-item.entity';
-import { ConflictHeaderQueuedItem } from '../../entities/queued-items/conflict-header-queued-item.entity';
+import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
+import { Page } from '@/domain/entities/page.entity';
+import { ConflictType } from '@/routes/transactions/entities/conflict-type.entity';
+import { QueuedItem } from '@/routes/transactions/entities/queued-item.entity';
+import { ConflictHeaderQueuedItem } from '@/routes/transactions/entities/queued-items/conflict-header-queued-item.entity';
 import {
-  LabelItem,
   LabelQueuedItem,
-} from '../../entities/queued-items/label-queued-item.entity';
-import { TransactionQueuedItem } from '../../entities/queued-items/transaction-queued-item.entity';
-import { MultisigTransactionMapper } from '../multisig-transactions/multisig-transaction.mapper';
+  LabelItem,
+} from '@/routes/transactions/entities/queued-items/label-queued-item.entity';
+import { TransactionQueuedItem } from '@/routes/transactions/entities/queued-items/transaction-queued-item.entity';
 
 class TransactionGroup {
   nonce: number;

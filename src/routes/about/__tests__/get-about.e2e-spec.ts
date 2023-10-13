@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '@/app.module';
 import { expect } from '@jest/globals';
-import '../../../__tests__/matchers/to-be-string-or-null';
+import '@/__tests__/matchers/to-be-string-or-null';
 
 describe('Get about e2e test', () => {
   let app: INestApplication;

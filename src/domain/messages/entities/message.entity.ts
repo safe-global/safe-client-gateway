@@ -1,4 +1,4 @@
-import { MessageConfirmation } from './message-confirmation.entity';
+import { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
 
 export interface Message {
   created: Date;

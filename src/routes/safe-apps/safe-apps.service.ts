@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
-import { SafeApp as DomainSafeApp } from '../../domain/safe-apps/entities/safe-app.entity';
+import { SafeApp as DomainSafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { SafeAppAccessControl } from './entities/safe-app-access-control.entity';
-import { SafeApp } from './entities/safe-app.entity';
+import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
+import { SafeAppAccessControl } from '@/routes/safe-apps/entities/safe-app-access-control.entity';
 
 @Injectable()
 export class SafeAppsService {

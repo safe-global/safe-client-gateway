@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { About } from './entities/about.entity';
+import { About } from '@/routes/about/entities/about.entity';
 
 @Injectable()
 export class AboutService {

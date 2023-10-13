@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { Balance } from './entities/balance.entity';
+import { Injectable } from '@nestjs/common';
+import { Balance } from '@/domain/balances/entities/balance.entity';
 import {
   BALANCE_SCHEMA_ID,
   BALANCE_TOKEN_SCHEMA_ID,
   balanceSchema,
   balanceTokenSchema,
-} from './entities/schemas/balance.schema';
+} from '@/domain/balances/entities/schemas/balance.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class BalancesValidator implements IValidator<Balance> {

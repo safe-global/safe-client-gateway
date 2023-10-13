@@ -3,7 +3,7 @@ import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
