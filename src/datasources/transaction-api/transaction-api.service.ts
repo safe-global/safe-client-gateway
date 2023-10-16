@@ -27,6 +27,7 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { SimpleBalance } from '../../domain/balances/entities/simple-balance.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -93,12 +94,47 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getSimpleBalances(args: {
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<SimpleBalance[]> {
+    try {
+      const cacheDir = CacheRouter.getSimpleBalancesCacheDir({
+        chainId: this.chainId,
+        ...args,
+      });
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
+      return await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            trusted: args.trusted,
+            exclude_spam: args.excludeSpam,
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const cacheKey = CacheRouter.getBalancesCacheKey({
+    const balancesCacheKey = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(cacheKey);
+    const simpleBalancesCacheKey = CacheRouter.getSimpleBalancesCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await Promise.all([
+      this.cacheService.deleteByKey(balancesCacheKey),
+      this.cacheService.deleteByKey(simpleBalancesCacheKey),
+    ]);
   }
 
   async getDataDecoded(args: {

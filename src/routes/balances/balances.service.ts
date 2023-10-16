@@ -9,25 +9,31 @@ import { Balances } from '@/routes/balances/entities/balances.entity';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
 import { Token } from '@/routes/balances/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
+import { intersection, orderBy } from 'lodash';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class BalancesService {
   static readonly fromRateCurrencyCode: string = 'USD';
+  private readonly pricesProviderChainIds: string[];
 
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     @Inject(IExchangeRepository)
     private readonly exchangeRepository: IExchangeRepository,
-  ) {}
-
-  getNumberString(value: number): string {
-    // Prevent scientific notation
-    return value.toLocaleString('fullwide', {
-      useGrouping: false,
-    });
+    @Inject(IPricesRepository)
+    private readonly pricesRepository: IPricesRepository,
+  ) {
+    this.pricesProviderChainIds = this.configurationService.getOrThrow<
+      string[]
+    >('features.pricesProviderChainIds');
   }
 
   async getBalances(args: {
@@ -37,8 +43,33 @@ export class BalancesService {
     trusted: boolean;
     excludeSpam: boolean;
   }): Promise<Balances> {
-    const txServiceBalances = await this.balancesRepository.getBalances(args);
+    /**
+     * Depending on whether chainId is included in the FF pricesProviderChainIds, the balances
+     * fiat amounts should be converted to the fiatCode. The function _getBalancesLegacy
+     * uses a 3rd party to do it, but _getBalancesNew don't, as the amounts in fiatCode are
+     * already provided by IPricesApi.
+     *
+     * After the FF pricesProviderChainIds is fully applied to all chains, functions
+     * _getBalancesLegacy and _mapBalanceLegacy can be removed as they are no longer needed.
+     */
+    if (this.pricesProviderChainIds.includes(args.chainId)) {
+      return this._getBalancesNew(args);
+    } else {
+      return this._getBalancesLegacy(args);
+    }
+  }
 
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
+  private async _getBalancesLegacy(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted: boolean;
+    excludeSpam: boolean;
+  }): Promise<Balances> {
+    const txServiceBalances = await this.balancesRepository.getBalances(args);
     const usdToFiatRate: number = await this.exchangeRepository.convertRates({
       to: args.fiatCode,
       from: BalancesService.fromRateCurrencyCode,
@@ -49,7 +80,7 @@ export class BalancesService {
 
     // Map balances payload
     const balances: Balance[] = txServiceBalances.map((balance) =>
-      this.mapBalance(balance, usdToFiatRate, nativeCurrency),
+      this._mapBalanceLegacy(balance, usdToFiatRate, nativeCurrency),
     );
 
     // Get total fiat from [balances]
@@ -63,12 +94,15 @@ export class BalancesService {
     });
 
     return <Balances>{
-      fiatTotal: this.getNumberString(totalFiat),
+      fiatTotal: getNumberString(totalFiat),
       items: balances,
     };
   }
 
-  private mapBalance(
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
+  private _mapBalanceLegacy(
     txBalance: TransactionApiBalance,
     usdToFiatRate: number,
     nativeCurrency: NativeCurrency,
@@ -101,17 +135,91 @@ export class BalancesService {
         ...tokenMetaData,
       },
       balance: txBalance.balance,
-      fiatBalance: this.getNumberString(fiatBalance),
-      fiatConversion: this.getNumberString(fiatConversion),
+      fiatBalance: getNumberString(fiatBalance),
+      fiatConversion: getNumberString(fiatConversion),
     };
   }
 
+  private async _getBalancesNew(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balances> {
+    const { chainId } = args;
+    const simpleBalances = await this.balancesRepository.getBalances(args);
+    const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
+    const balances: Balance[] = await Promise.all(
+      simpleBalances.map(async (balance) =>
+        this._mapBalanceNew(balance, nativeCurrency),
+      ),
+    );
+    const fiatTotal = balances
+      .filter((b) => b.fiatBalance !== null)
+      .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
+
+    return <Balances>{
+      fiatTotal: getNumberString(fiatTotal),
+      items: orderBy(balances, 'fiatBalance', 'desc'),
+    };
+  }
+
+  private async _mapBalanceNew(
+    balance: TransactionApiBalance,
+    nativeCurrency: NativeCurrency,
+  ): Promise<Balance> {
+    const tokenAddress = balance.tokenAddress;
+    const tokenType =
+      tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
+
+    const tokenMetaData =
+      tokenType === TokenType.NativeToken
+        ? {
+            decimals: nativeCurrency.decimals,
+            symbol: nativeCurrency.symbol,
+            name: nativeCurrency.name,
+            logoUri: nativeCurrency.logoUri,
+          }
+        : {
+            decimals: balance.token?.decimals,
+            symbol: balance.token?.symbol,
+            name: balance.token?.name,
+            logoUri: balance.token?.logoUri,
+          };
+
+    return <Balance>{
+      tokenInfo: <Token>{
+        type: tokenType,
+        address: tokenAddress ?? NULL_ADDRESS,
+        ...tokenMetaData,
+      },
+      balance: balance.balance,
+      fiatBalance: balance.fiatBalance ?? '0',
+      fiatConversion: balance.fiatConversion ?? '0',
+    };
+  }
+
+  /**
+   * Gets the list of supported fiat codes.
+   * USD and EUR fiat codes are fixed, and should be the first ones in the result list.
+   * @returns ordered list of uppercase strings representing the supported fiat codes.
+   *
+   * TODO: Note: during the prices retrieval migration, this will return the
+   * intersection between the exchange and the prices provider supported currencies.
+   * When it is finished, just the prices provider will be taken as source.
+   */
   async getSupportedFiatCodes(): Promise<string[]> {
-    const fiatCodes: string[] = await this.exchangeRepository.getFiatCodes();
-    const mainCurrencies: string[] = ['USD', 'EUR'];
-    return [
-      ...mainCurrencies,
-      ...fiatCodes.filter((item) => !mainCurrencies.includes(item)).sort(),
-    ];
+    const [exchangeFiatCodes, pricesProviderFiatCodes] = await Promise.all([
+      this.exchangeRepository.getFiatCodes(),
+      this.pricesRepository.getFiatCodes(),
+    ]);
+
+    const fiatCodes = intersection(
+      exchangeFiatCodes.map((item) => item.toUpperCase()),
+      pricesProviderFiatCodes.map((item) => item.toUpperCase()),
+    ).sort();
+
+    return Array.from(new Set(['USD', 'EUR', ...fiatCodes]));
   }
 }

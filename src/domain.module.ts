@@ -58,12 +58,19 @@ import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
+import { PricesApiModule } from '@/datasources/prices-api/prices-api.module';
+import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
+import { PricesRepository } from '@/domain/prices/prices.repository';
+import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
+import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
+import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
 
 @Global()
 @Module({
   imports: [
     ConfigApiModule,
     ExchangeApiModule,
+    PricesApiModule,
     HumanDescriptionApiModule,
     TransactionApiModule,
   ],
@@ -85,9 +92,11 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
     },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
+    { provide: IPricesRepository, useClass: PricesRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
+    AssetPriceValidator,
     BackboneValidator,
     BalancesValidator,
     ChainsValidator,
@@ -99,6 +108,7 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
     EstimationsValidator,
     ExchangeFiatCodesValidator,
     ExchangeRatesValidator,
+    FiatCodesValidator,
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
@@ -106,6 +116,7 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
     SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
+    SimpleBalancesValidator,
     TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
@@ -125,6 +136,7 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
     IHumanDescriptionRepository,
     IMessagesRepository,
     INotificationsRepository,
+    IPricesRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,
