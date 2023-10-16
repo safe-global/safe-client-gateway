@@ -8,6 +8,15 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
+  db: {
+    postgres: {
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: process.env.POSTGRES_PORT || '5432',
+      database: process.env.POSTGRES_DB || 'safe-client-gateway',
+      username: process.env.POSTGRES_USER || 'postgres',
+      password: process.env.POSTGRES_PASSWORD || 'postgres',
+    },
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI ||

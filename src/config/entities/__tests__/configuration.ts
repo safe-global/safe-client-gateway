@@ -11,6 +11,15 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
   },
+  db: {
+    postgres: {
+      host: faker.internet.ip(),
+      port: faker.internet.port().toString(),
+      database: faker.word.sample(),
+      username: faker.internet.userName(),
+      password: faker.internet.password(),
+    },
+  },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),
