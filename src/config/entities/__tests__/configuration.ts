@@ -51,8 +51,9 @@ export default (): ReturnType<typeof configuration> => ({
       42161: { nativeCoin: 'arbitrum', chainName: 'arbitrum-one' },
       42220: { nativeCoin: 'celo', chainName: 'celo' },
       43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
+      5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
       56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
-      8453: { nativeCoin: 'base', chainName: 'base' },
+      8453: { nativeCoin: 'ethereum', chainName: 'base' },
     },
   },
   redis: {
