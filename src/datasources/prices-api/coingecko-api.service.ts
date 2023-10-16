@@ -86,7 +86,7 @@ export class CoingeckoApi implements IPricesApi {
         networkRequest: {
           params: {
             vs_currencies: args.fiatCode,
-            contract_address: args.tokenAddress,
+            contract_addresses: args.tokenAddress,
           },
           ...(this.apiKey && {
             headers: {
