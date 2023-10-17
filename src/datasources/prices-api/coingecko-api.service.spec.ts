@@ -115,7 +115,7 @@ describe('CoingeckoAPI', () => {
           'x-cg-pro-api-key': coingeckoApiKey,
         },
         params: {
-          contract_address: tokenAddress,
+          contract_addresses: tokenAddress,
           vs_currencies: fiatCode,
         },
       },
@@ -151,7 +151,7 @@ describe('CoingeckoAPI', () => {
       ),
       networkRequest: {
         params: {
-          contract_address: tokenAddress,
+          contract_addresses: tokenAddress,
           vs_currencies: fiatCode,
         },
       },
