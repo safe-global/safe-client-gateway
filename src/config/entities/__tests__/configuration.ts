@@ -54,6 +54,7 @@ export default (): ReturnType<typeof configuration> => ({
       10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
       100: { nativeCoin: 'gnosis', chainName: 'xdai' },
       1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
+      11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
       1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
       137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
       324: { nativeCoin: 'ethereum', chainName: 'zksync' },
