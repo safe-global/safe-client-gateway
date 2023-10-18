@@ -161,7 +161,7 @@ export class BalancesService {
 
     return <Balances>{
       fiatTotal: getNumberString(fiatTotal),
-      items: orderBy(balances, 'fiatBalance', 'desc'),
+      items: orderBy(balances, (b) => Number(b.fiatBalance), 'desc'),
     };
   }
 
