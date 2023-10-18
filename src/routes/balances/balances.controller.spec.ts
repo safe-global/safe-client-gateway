@@ -334,7 +334,7 @@ describe('Balances Controller (Unit)', () => {
           [nativeCoinId]: { [currency]: 1536.75 },
         };
         const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency]: 2.5 },
+          [tokenAddress]: { [currency]: 12.5 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -357,7 +357,7 @@ describe('Balances Controller (Unit)', () => {
           )
           .expect(200)
           .expect({
-            fiatTotal: '4710.25',
+            fiatTotal: '5110.25',
             items: [
               {
                 tokenInfo: {
@@ -382,8 +382,8 @@ describe('Balances Controller (Unit)', () => {
                   logoUri: transactionApiBalancesResponse[1].token?.logoUri,
                 },
                 balance: '4000000000000000000',
-                fiatBalance: '100',
-                fiatConversion: '2.5',
+                fiatBalance: '500',
+                fiatConversion: '12.5',
               },
             ],
           });
