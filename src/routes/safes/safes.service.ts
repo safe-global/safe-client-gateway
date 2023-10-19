@@ -215,6 +215,8 @@ export class SafesService {
     recommendedSafeVersion: string,
     supportedMasterCopies: MasterCopy[],
   ): MasterCopyVersionState {
+    // If the safe version is null we return UNKNOWN
+    if (safe.version === null) return MasterCopyVersionState.UNKNOWN;
     // If the safe version or the recommended safe version is not valid we return UNKNOWN
     if (!semver.valid(safe.version)) return MasterCopyVersionState.UNKNOWN;
     if (!semver.valid(recommendedSafeVersion))

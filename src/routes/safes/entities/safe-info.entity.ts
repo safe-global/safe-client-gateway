@@ -26,7 +26,7 @@ export class SafeState {
   readonly fallbackHandler: AddressInfo | null;
   @ApiPropertyOptional()
   readonly guard: AddressInfo | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   readonly version: string | null;
   @ApiProperty({ enum: Object.values(MasterCopyVersionState) })
   readonly implementationVersionState: MasterCopyVersionState;
