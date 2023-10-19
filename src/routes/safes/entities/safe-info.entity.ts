@@ -20,11 +20,11 @@ export class SafeState {
   readonly owners: AddressInfo[];
   @ApiProperty()
   readonly implementation: AddressInfo;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
   readonly modules: AddressInfo[] | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   readonly fallbackHandler: AddressInfo | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   readonly guard: AddressInfo | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   readonly version: string | null;
