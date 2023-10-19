@@ -21,7 +21,7 @@ export class PricesRepository implements IPricesRepository {
       nativeCoinId: args.nativeCoinId,
       fiatCode: lowerCaseFiatCode,
     });
-    const assetPrice = await this.assetPriceValidator.validate(result);
+    const assetPrice = this.assetPriceValidator.validate(result);
     return assetPrice?.[args.nativeCoinId]?.[lowerCaseFiatCode];
   }
 
@@ -37,7 +37,7 @@ export class PricesRepository implements IPricesRepository {
       tokenAddress: lowerCaseTokenAddress,
       fiatCode: lowerCaseFiatCode,
     });
-    const assetPrice = await this.assetPriceValidator.validate(result);
+    const assetPrice = this.assetPriceValidator.validate(result);
     return assetPrice?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
   }
 
