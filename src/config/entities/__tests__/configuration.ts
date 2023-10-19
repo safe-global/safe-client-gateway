@@ -44,26 +44,66 @@ export default (): ReturnType<typeof configuration> => ({
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
   prices: {
-    baseUri:
-      process.env.PRICES_PROVIDER_API_BASE_URI ||
-      'https://api.coingecko.com/api/v3',
-    apiKey: process.env.PRICES_PROVIDER_API_KEY,
-    pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+    pricesTtlSeconds: faker.number.int(),
     chains: {
-      1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-      10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
-      100: { nativeCoin: 'gnosis', chainName: 'xdai' },
-      1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
-      11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-      1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
-      137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
-      324: { nativeCoin: 'ethereum', chainName: 'zksync' },
-      42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
-      42220: { nativeCoin: 'celo', chainName: 'celo' },
-      43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
-      5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-      56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
-      8453: { nativeCoin: 'ethereum', chainName: 'base' },
+      1: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      10: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      100: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      1101: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      11155111: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      1313161554: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      137: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      324: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      42161: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      42220: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      43114: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      5: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      56: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
+      8453: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
     },
   },
   redis: {
