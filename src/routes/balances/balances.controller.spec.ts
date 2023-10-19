@@ -352,9 +352,7 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
-          )
+          .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/EUR`)
           .expect(200)
           .expect({
             fiatTotal: '5110.25',
@@ -403,9 +401,18 @@ describe('Balances Controller (Unit)', () => {
         expect(networkService.get.mock.calls[2][0]).toBe(
           `${pricesProviderUrl}/simple/price`,
         );
+        expect(networkService.get.mock.calls[2][1]).toStrictEqual({
+          params: { ids: 'ethereum', vs_currencies: 'eur' },
+        });
         expect(networkService.get.mock.calls[3][0]).toBe(
           `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
+        expect(networkService.get.mock.calls[3][1]).toStrictEqual({
+          params: {
+            vs_currencies: 'eur',
+            contract_addresses: tokenAddress.toLowerCase(),
+          },
+        });
       });
 
       it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
