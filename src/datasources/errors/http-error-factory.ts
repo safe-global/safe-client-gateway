@@ -1,9 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 import {
   NetworkError,
   NetworkResponseError,
-} from '../network/entities/network.error.entity';
+} from '@/datasources/network/entities/network.error.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}

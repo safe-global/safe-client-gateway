@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { dataDecodedBuilder } from '../../../data-decoder/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { ModuleTransaction } from '../module-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 
 export function moduleTransactionBuilder(): IBuilder<ModuleTransaction> {
   return Builder.new<ModuleTransaction>()

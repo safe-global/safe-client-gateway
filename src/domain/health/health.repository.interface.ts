@@ -1,4 +1,4 @@
-import { HealthEntity } from './entities/health.entity';
+import { HealthEntity } from '@/domain/health/entities/health.entity';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 

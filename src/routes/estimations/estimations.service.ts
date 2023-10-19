@@ -4,7 +4,7 @@ import { EstimationsRepository } from '@/domain/estimations/estimations.reposito
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { EstimationResponse } from './entities/estimation-response.entity';
+import { EstimationResponse } from '@/routes/estimations/entities/estimation-response.entity';
 
 @Injectable()
 export class EstimationsService {

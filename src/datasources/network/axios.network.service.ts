@@ -1,14 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { INetworkService } from './network.service.interface';
-import { NetworkResponse } from './entities/network.response.entity';
-import { NetworkRequest } from './entities/network.request.entity';
 import { Axios } from 'axios';
-import {
-  NetworkOtherError,
-  NetworkRequestError,
-  NetworkResponseError,
-} from './entities/network.error.entity';
+import { Inject, Injectable } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  NetworkResponseError,
+  NetworkRequestError,
+  NetworkOtherError,
+} from '@/datasources/network/entities/network.error.entity';
+import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 
 /**
  * A {@link INetworkService} which uses Axios as the main HTTP client

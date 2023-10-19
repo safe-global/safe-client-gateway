@@ -1,21 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
-import { Message as DomainMessage } from '../../domain/messages/entities/message.entity';
+import { Message as DomainMessage } from '@/domain/messages/entities/message.entity';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { DateLabel } from '../common/entities/date-label.entity';
-import { Page } from '../common/entities/page.entity';
+import { DateLabel } from '@/routes/common/entities/date-label.entity';
+import { Page } from '@/routes/common/entities/page.entity';
 import {
-  cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '../common/pagination/pagination.data';
-import { CreateMessageDto } from './entities/create-message.dto.entity';
-import { MessageItem } from './entities/message-item.entity';
-import { Message } from './entities/message.entity';
-import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
-import { MessageMapper } from './mappers/message-mapper';
+  cursorUrlFromLimitAndOffset,
+} from '@/routes/common/pagination/pagination.data';
+import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
+import { MessageItem } from '@/routes/messages/entities/message-item.entity';
+import { Message } from '@/routes/messages/entities/message.entity';
+import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
+import { MessageMapper } from '@/routes/messages/mappers/message-mapper';
 
 @Injectable()
 export class MessagesService {

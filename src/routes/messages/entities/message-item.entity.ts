@@ -1,5 +1,5 @@
+import { Message } from '@/routes/messages/entities/message.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Message } from './message.entity';
 
 export class MessageItem extends Message {
   @ApiProperty()

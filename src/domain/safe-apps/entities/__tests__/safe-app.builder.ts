@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { SafeApp } from '../safe-app.entity';
-import { safeAppAccessControlBuilder } from './safe-app-access-control.builder';
-import { safeAppProviderBuilder } from './safe-app-provider.builder';
-import { safeAppSocialProfileBuilder } from './safe-app-social-profile.builder';
+import { safeAppAccessControlBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
+import { safeAppProviderBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-provider.builder';
+import { safeAppSocialProfileBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-social-profile.builder';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export function safeAppBuilder(): IBuilder<SafeApp> {
   return Builder.new<SafeApp>()

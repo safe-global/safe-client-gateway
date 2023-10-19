@@ -1,10 +1,10 @@
 import { Global, Module } from '@nestjs/common';
-import { AxiosNetworkService } from './axios.network.service';
-import { NetworkService } from './network.service.interface';
 import axios, { Axios } from 'axios';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import * as http from 'http';
 import * as https from 'https';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 
 /**
  * Use this factory to add any default parameter to the

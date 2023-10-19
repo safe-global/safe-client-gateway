@@ -1,4 +1,4 @@
-import { IConfigurationService } from '../configuration.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 export class FakeConfigurationService implements IConfigurationService {
   private configuration: Record<string, any> = {};

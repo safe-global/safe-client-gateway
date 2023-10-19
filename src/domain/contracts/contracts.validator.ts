@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { Contract } from './entities/contract.entity';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
 import {
   CONTRACT_SCHEMA_ID,
   contractSchema,
-} from './entities/schemas/contract.schema';
+} from '@/domain/contracts/entities/schemas/contract.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ContractsValidator implements IValidator<Contract> {

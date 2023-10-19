@@ -1,13 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MessageConfirmation as DomainMessageConfirmation } from '../../../domain/messages/entities/message-confirmation.entity';
-import { Message as DomainMessage } from '../../../domain/messages/entities/message.entity';
+import { MessageConfirmation as DomainMessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
+import { Message as DomainMessage } from '@/domain/messages/entities/message.entity';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { AddressInfoHelper } from '../../common/address-info/address-info.helper';
-import { MessageConfirmation } from '../entities/message-confirmation.entity';
-import { MessageItem } from '../entities/message-item.entity';
-import { Message, MessageStatus } from '../entities/message.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { MessageConfirmation } from '@/routes/messages/entities/message-confirmation.entity';
+import { MessageItem } from '@/routes/messages/entities/message-item.entity';
+import {
+  MessageStatus,
+  Message,
+} from '@/routes/messages/entities/message.entity';
 
 @Injectable()
 export class MessageMapper {

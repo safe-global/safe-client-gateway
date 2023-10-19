@@ -1,5 +1,5 @@
 import { JSONSchemaType, Schema } from 'ajv';
-import { BalanceToken } from '../balance.token.entity';
+import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
 
 export const BALANCE_TOKEN_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/balances/balance-token.json';

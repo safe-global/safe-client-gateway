@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { EstimationResponse } from './entities/estimation-response.entity';
-import { GetEstimationDto } from './entities/get-estimation.dto.entity';
-import { EstimationsService } from './estimations.service';
-import { GetEstimationDtoValidationPipe } from './pipes/get-estimation.dto.validation.pipe';
+import { EstimationResponse } from '@/routes/estimations/entities/estimation-response.entity';
+import { GetEstimationDto } from '@/routes/estimations/entities/get-estimation.dto.entity';
+import { EstimationsService } from '@/routes/estimations/estimations.service';
+import { GetEstimationDtoValidationPipe } from '@/routes/estimations/pipes/get-estimation.dto.validation.pipe';
 
 @ApiTags('estimations')
 @Controller({

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { IContractsRepository } from './contracts.repository.interface';
-import { ContractsValidator } from './contracts.validator';
-import { Contract } from './entities/contract.entity';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { ContractsValidator } from '@/domain/contracts/contracts.validator';
+import { Contract } from '@/domain/contracts/entities/contract.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {

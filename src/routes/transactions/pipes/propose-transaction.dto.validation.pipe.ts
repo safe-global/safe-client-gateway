@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { ProposeTransactionDto } from '../entities/propose-transaction.dto.entity';
+import { ProposeTransactionDto } from '@/routes/transactions/entities/propose-transaction.dto.entity';
 import {
   PROPOSE_TRANSACTION_DTO_SCHEMA_ID,
   proposeTransactionDtoSchema,
-} from '../entities/schemas/propose-transaction.dto.schema';
+} from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ProposeTransactionDtoValidationPipe

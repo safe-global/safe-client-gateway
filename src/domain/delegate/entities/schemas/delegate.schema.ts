@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { Delegate } from '../delegate.entity';
+import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 
 export const DELEGATE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/delegates/delegate.json';

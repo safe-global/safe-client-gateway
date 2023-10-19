@@ -1,10 +1,10 @@
-import { AddressInfoHelper } from '../../../common/address-info/address-info.helper';
 import { Injectable } from '@nestjs/common';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Transaction } from '../../entities/transaction.entity';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
-import { TransactionStatus } from '../../entities/transaction-status.entity';
-import { CreationTransactionInfo } from '../../entities/creation-transaction-info.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { CreationTransactionInfo } from '@/routes/transactions/entities/creation-transaction-info.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
+import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 @Injectable()
 export class CreationTransactionMapper {

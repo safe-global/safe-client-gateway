@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { MasterCopy } from './entities/master-copies.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 import {
   MASTER_COPY_SCHEMA_ID,
   masterCopySchema,
-} from './entities/schemas/master-copy.schema';
+} from '@/domain/chains/entities/schemas/master-copy.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class MasterCopyValidator implements IValidator<MasterCopy> {

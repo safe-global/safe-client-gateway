@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { GetEstimationDto } from './entities/get-estimation.dto.entity';
-import { Estimation } from './entities/estimation.entity';
-import { IEstimationsRepository } from './estimations.repository.interface';
-import { EstimationsValidator } from './estimations.validator';
+import { Estimation } from '@/domain/estimations/entities/estimation.entity';
+import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
+import { EstimationsValidator } from '@/domain/estimations/estimations.validator';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class EstimationsRepository implements IEstimationsRepository {

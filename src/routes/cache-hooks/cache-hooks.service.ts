@@ -1,35 +1,44 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { EventType } from './entities/event-payload.entity';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { ExecutedTransaction } from './entities/executed-transaction.entity';
-import { NewConfirmation } from './entities/new-confirmation.entity';
-import { PendingTransaction } from './entities/pending-transaction.entity';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { IncomingToken } from './entities/incoming-token.entity';
-import { OutgoingToken } from './entities/outgoing-token.entity';
-import { IncomingEther } from './entities/incoming-ether.entity';
-import { OutgoingEther } from './entities/outgoing-ether.entity';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
-import { ModuleTransaction } from './entities/module-transaction.entity';
-import { MessageCreated } from './entities/message-created.entity';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
-import { NewMessageConfirmation } from './entities/new-message-confirmation.entity';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ExecutedTransaction } from '@/routes/cache-hooks/entities/executed-transaction.entity';
+import { IncomingEther } from '@/routes/cache-hooks/entities/incoming-ether.entity';
+import { IncomingToken } from '@/routes/cache-hooks/entities/incoming-token.entity';
+import { MessageCreated } from '@/routes/cache-hooks/entities/message-created.entity';
+import { NewConfirmation } from '@/routes/cache-hooks/entities/new-confirmation.entity';
+import { NewMessageConfirmation } from '@/routes/cache-hooks/entities/new-message-confirmation.entity';
+import { OutgoingEther } from '@/routes/cache-hooks/entities/outgoing-ether.entity';
+import { OutgoingToken } from '@/routes/cache-hooks/entities/outgoing-token.entity';
+import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
+import { ModuleTransaction } from '@/routes/cache-hooks/entities/module-transaction.entity';
 
 @Injectable()
 export class CacheHooksService {
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    @Inject(ISafeAppsRepository)
+    private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
   ) {}
 
   async onEvent(
     event:
+      | ChainUpdate
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -39,7 +48,8 @@ export class CacheHooksService {
       | NewConfirmation
       | OutgoingToken
       | OutgoingEther
-      | PendingTransaction,
+      | PendingTransaction
+      | SafeAppsUpdate,
   ): Promise<void[]> {
     const promises: Promise<void>[] = [];
     switch (event.type) {
@@ -265,6 +275,12 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        break;
+      case EventType.CHAIN_UPDATE:
+        promises.push(this.chainsRepository.clearChain(event.chainId));
+        break;
+      case EventType.SAFE_APPS_UPDATE:
+        promises.push(this.safeAppsRepository.clearSafeApps(event.chainId));
         break;
     }
     return Promise.all(promises);

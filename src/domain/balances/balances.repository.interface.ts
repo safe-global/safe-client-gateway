@@ -1,4 +1,4 @@
-import { Balance } from './entities/balance.entity';
+import { Balance } from '@/domain/balances/entities/balance.entity';
 
 export const IBalancesRepository = Symbol('IBalancesRepository');
 

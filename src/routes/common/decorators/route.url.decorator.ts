@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { getRouteUrl } from './utils';
+import { getRouteUrl } from '@/routes/common/decorators/utils';
 
 /**
  * Route decorator which extracts the resulting

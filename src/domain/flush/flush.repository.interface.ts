@@ -1,4 +1,4 @@
-import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
+import { InvalidationPatternDto } from '@/domain/flush/entities/invalidation-pattern.dto.entity';
 
 export const IFlushRepository = Symbol('IFlushRepository');
 

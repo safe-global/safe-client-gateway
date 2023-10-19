@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
-import { PendingTransaction } from '../pending-transaction.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
 
 export const PENDING_TRANSACTION_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/pending-transaction.json';

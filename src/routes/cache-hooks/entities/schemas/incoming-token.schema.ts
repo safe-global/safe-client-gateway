@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
-import { IncomingToken } from '../incoming-token.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { IncomingToken } from '@/routes/cache-hooks/entities/incoming-token.entity';
 
 export const INCOMING_TOKEN_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/incoming-token.json';

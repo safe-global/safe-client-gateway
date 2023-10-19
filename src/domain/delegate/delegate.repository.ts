@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { IDelegateRepository } from './delegate.repository.interface';
-import { Delegate } from './entities/delegate.entity';
-import { Page } from '../entities/page.entity';
-import { DelegateValidator } from './delegate.validator';
+import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
+import { DelegateValidator } from '@/domain/delegate/delegate.validator';
+import { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {

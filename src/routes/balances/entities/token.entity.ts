@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TokenType } from './token-type.entity';
+import { TokenType } from '@/routes/balances/entities/token-type.entity';
 
 export class Token {
   @ApiProperty()

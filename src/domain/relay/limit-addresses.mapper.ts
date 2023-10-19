@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SafeContractHelper } from './contracts/safe-contract.helper';
-import { Erc20ContractHelper } from './contracts/erc20-contract.helper';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
+import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
+import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 export interface RelayPayload {

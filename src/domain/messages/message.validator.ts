@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { Page } from '@/routes/common/entities/page.entity';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IPageValidator } from '../interfaces/page-validator.interface';
-import { IValidator } from '../interfaces/validator.interface';
-import { Message } from './entities/message.entity';
+import { IPageValidator } from '@/domain/interfaces/page-validator.interface';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { Message } from '@/domain/messages/entities/message.entity';
 import {
   MESSAGE_CONFIRMATION_SCHEMA_ID,
   MESSAGE_PAGE_SCHEMA_ID,
@@ -13,7 +10,10 @@ import {
   messageConfirmationSchema,
   messagePageSchema,
   messageSchema,
-} from './entities/schemas/message.schema';
+} from '@/domain/messages/entities/schemas/message.schema';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
+import { Page } from '@/domain/entities/page.entity';
 
 @Injectable()
 export class MessageValidator

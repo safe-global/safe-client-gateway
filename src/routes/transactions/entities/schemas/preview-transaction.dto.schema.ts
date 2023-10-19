@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import { PreviewTransactionDto } from '../preview-transaction.dto.entity';
+import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
 
 export const PREVIEW_TRANSACTION_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/transactions/preview-transaction.dto.json';

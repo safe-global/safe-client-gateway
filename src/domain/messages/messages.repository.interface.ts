@@ -1,5 +1,5 @@
-import { Page } from '../entities/page.entity';
-import { Message } from './entities/message.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { Message } from '@/domain/messages/entities/message.entity';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 

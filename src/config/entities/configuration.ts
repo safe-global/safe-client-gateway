@@ -8,6 +8,15 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
+  db: {
+    postgres: {
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: process.env.POSTGRES_PORT || '5432',
+      database: process.env.POSTGRES_DB || 'safe-client-gateway',
+      username: process.env.POSTGRES_USER || 'postgres',
+      password: process.env.POSTGRES_PASSWORD || 'postgres',
+    },
+  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI ||
@@ -32,6 +41,8 @@ export default () => ({
     },
   },
   features: {
+    pricesProviderChainIds:
+      process.env.FF_PRICES_PROVIDER_CHAIN_IDS?.split(',') ?? [],
     humanDescription:
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
@@ -46,6 +57,29 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+  },
+  prices: {
+    baseUri:
+      process.env.PRICES_PROVIDER_API_BASE_URI ||
+      'https://api.coingecko.com/api/v3',
+    apiKey: process.env.PRICES_PROVIDER_API_KEY,
+    pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
+    chains: {
+      1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+      10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
+      100: { nativeCoin: 'gnosis', chainName: 'xdai' },
+      1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
+      11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+      1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
+      137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
+      324: { nativeCoin: 'ethereum', chainName: 'zksync' },
+      42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
+      42220: { nativeCoin: 'celo', chainName: 'celo' },
+      43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
+      5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+      56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
+      8453: { nativeCoin: 'ethereum', chainName: 'base' },
+    },
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

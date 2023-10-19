@@ -1,5 +1,5 @@
-import { DataDecoded } from '../../data-decoder/entities/data-decoded.entity';
-import { Operation } from './operation.entity';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 export interface ModuleTransaction {
   blockNumber: number;

@@ -1,5 +1,5 @@
-import { GetEstimationDto } from './entities/get-estimation.dto.entity';
-import { Estimation } from './entities/estimation.entity';
+import { Estimation } from '@/domain/estimations/entities/estimation.entity';
+import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
 
 export const IEstimationsRepository = Symbol('IEstimationsRepository');
 

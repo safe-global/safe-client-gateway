@@ -1,6 +1,6 @@
-import { Page } from '../entities/page.entity';
-import { Chain } from './entities/chain.entity';
-import { MasterCopy } from './entities/master-copies.entity';
+import { Chain } from '@/domain/chains/entities/chain.entity';
+import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 
@@ -14,16 +14,16 @@ export interface IChainsRepository {
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
 
   /**
-   * Triggers the removal of chain data stored in the DataSource (e.g. cache)
-   */
-  clearChains(): Promise<void>;
-
-  /**
    * Gets the {@link Chain} associated with {@link chainId}
    *
    * @param chainId
    */
   getChain(chainId: string): Promise<Chain>;
+
+  /**
+   * Triggers the removal of the chain data stored in the DataSource (e.g. cache)
+   */
+  clearChain(chainId: string): Promise<void>;
 
   /**
    * Gets the supported {@link MasterCopy} associated with {@link chainId}

@@ -1,13 +1,16 @@
-import { NetworkRequest } from '../network/entities/network.request.entity';
-import { CacheService, ICacheService } from './cache.service.interface';
+import { Inject, Injectable } from '@nestjs/common';
+import { get } from 'lodash';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import {
   INetworkService,
   NetworkService,
-} from '../network/network.service.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import { CacheDir } from './entities/cache-dir.entity';
-import { NetworkResponseError } from '../network/entities/network.error.entity';
-import { get } from 'lodash';
+} from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 /**

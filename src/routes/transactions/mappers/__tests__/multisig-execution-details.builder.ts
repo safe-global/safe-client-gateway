@@ -2,11 +2,11 @@ import { faker } from '@faker-js/faker';
 import { random, range, sampleSize } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { addressInfoBuilder } from '../../../common/__tests__/entities/address-info.builder';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
-} from '../../entities/transaction-details/multisig-execution-details.entity';
+} from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 
 const MIN_SIGNERS = 2;
 const MAX_SIGNERS = 5;

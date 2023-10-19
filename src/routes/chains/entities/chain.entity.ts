@@ -7,25 +7,31 @@ import {
 import {
   NativeCurrency,
   NativeCurrency as ApiNativeCurrency,
-} from './native-currency.entity';
+} from '@/routes/chains/entities/native-currency.entity';
 import {
   BlockExplorerUriTemplate,
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
-} from './block-explorer-uri-template.entity';
+} from '@/routes/chains/entities/block-explorer-uri-template.entity';
 import {
   GasPriceOracle,
   GasPriceOracle as ApiGasPriceOracle,
-} from './gas-price-oracle.entity';
+} from '@/routes/chains/entities/gas-price-oracle.entity';
 import {
   GasPriceFixed,
   GasPriceFixed as ApiGasPriceFixed,
-} from './gas-price-fixed.entity';
+} from '@/routes/chains/entities/gas-price-fixed.entity';
 import {
   GasPriceFixedEIP1559,
   GasPriceFixedEIP1559 as ApiGasPriceFixedEIP1559,
-} from './gas-price-fixed-eip-1559.entity';
-import { RpcUri, RpcUri as ApiRpcUri } from './rpc-uri.entity';
-import { Theme, Theme as ApiTheme } from './theme.entity';
+} from '@/routes/chains/entities/gas-price-fixed-eip-1559.entity';
+import {
+  RpcUri,
+  RpcUri as ApiRpcUri,
+} from '@/routes/chains/entities/rpc-uri.entity';
+import {
+  Theme,
+  Theme as ApiTheme,
+} from '@/routes/chains/entities/theme.entity';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {

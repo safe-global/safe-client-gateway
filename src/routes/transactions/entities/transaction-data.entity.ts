@@ -4,8 +4,8 @@ import {
   ApiPropertyOptional,
 } from '@nestjs/swagger';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { AddressInfo } from '../../common/entities/address-info.entity';
-import { DataDecoded } from '../../data-decode/entities/data-decoded.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 
 @ApiExtraModels(AddressInfo, DataDecoded)
 export class TransactionData {

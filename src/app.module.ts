@@ -9,35 +9,36 @@ import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
 
-import { ChainsModule } from './routes/chains/chains.module';
-import { BalancesModule } from './routes/balances/balances.module';
-import { NetworkModule } from './datasources/network/network.module';
-import { ConfigurationModule } from './config/configuration.module';
-import { CacheModule } from './datasources/cache/cache.module';
-import { DomainModule } from './domain.module';
-import { CacheHooksModule } from './routes/cache-hooks/cache-hooks.module';
-import { CollectiblesModule } from './routes/collectibles/collectibles.module';
-import { ContractsModule } from './routes/contracts/contracts.module';
-import { DataDecodedModule } from './routes/data-decode/data-decoded.module';
-import { DelegatesModule } from './routes/delegates/delegates.module';
-import { SafeAppsModule } from './routes/safe-apps/safe-apps.module';
-import { HealthModule } from './routes/health/health.module';
-import { OwnersModule } from './routes/owners/owners.module';
-import { AboutModule } from './routes/about/about.module';
-import { TransactionsModule } from './routes/transactions/transactions.module';
-import { SafesModule } from './routes/safes/safes.module';
-import { NotificationsModule } from './routes/notifications/notifications.module';
-import { EstimationsModule } from './routes/estimations/estimations.module';
-import { MessagesModule } from './routes/messages/messages.module';
-import { ValidationModule } from './validation/validation.module';
-import { FlushModule } from './routes/flush/flush.module';
-import { RequestScopedLoggingModule } from './logging/logging.module';
-import { RouteLoggerInterceptor } from './routes/common/interceptors/route-logger.interceptor';
-import { NotFoundLoggerMiddleware } from './middleware/not-found-logger.middleware';
-import configuration from './config/entities/configuration';
-import { GlobalErrorFilter } from './routes/common/filters/global-error.filter';
-import { DataSourceErrorFilter } from './routes/common/filters/data-source-error.filter';
+import { ChainsModule } from '@/routes/chains/chains.module';
+import { BalancesModule } from '@/routes/balances/balances.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { ConfigurationModule } from '@/config/configuration.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { DomainModule } from '@/domain.module';
+import { CacheHooksModule } from '@/routes/cache-hooks/cache-hooks.module';
+import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
+import { ContractsModule } from '@/routes/contracts/contracts.module';
+import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
+import { DelegatesModule } from '@/routes/delegates/delegates.module';
+import { SafeAppsModule } from '@/routes/safe-apps/safe-apps.module';
+import { HealthModule } from '@/routes/health/health.module';
+import { OwnersModule } from '@/routes/owners/owners.module';
+import { AboutModule } from '@/routes/about/about.module';
+import { TransactionsModule } from '@/routes/transactions/transactions.module';
+import { SafesModule } from '@/routes/safes/safes.module';
+import { NotificationsModule } from '@/routes/notifications/notifications.module';
+import { EstimationsModule } from '@/routes/estimations/estimations.module';
+import { MessagesModule } from '@/routes/messages/messages.module';
+import { ValidationModule } from '@/validation/validation.module';
+import { FlushModule } from '@/routes/flush/flush.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
+import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
+import configuration from '@/config/entities/configuration';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { RootModule } from '@/routes/root/root.module';
 
 // See https://github.com/nestjs/nest/issues/11967
 export const configurationModule = ConfigurationModule.register(configuration);
@@ -59,6 +60,7 @@ export const configurationModule = ConfigurationModule.register(configuration);
     MessagesModule,
     NotificationsModule,
     OwnersModule,
+    RootModule,
     SafeAppsModule,
     SafesModule,
     TransactionsModule,

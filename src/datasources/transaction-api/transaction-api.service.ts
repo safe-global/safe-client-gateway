@@ -1,3 +1,9 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
@@ -19,14 +25,9 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
-import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CacheRouter } from '../cache/cache.router';
-import { ICacheService } from '../cache/cache.service.interface';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { INetworkService } from '../network/network.service.interface';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { SimpleBalance } from '../../domain/balances/entities/simple-balance.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -93,12 +94,47 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getSimpleBalances(args: {
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<SimpleBalance[]> {
+    try {
+      const cacheDir = CacheRouter.getSimpleBalancesCacheDir({
+        chainId: this.chainId,
+        ...args,
+      });
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
+      return await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            trusted: args.trusted,
+            exclude_spam: args.excludeSpam,
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const cacheKey = CacheRouter.getBalancesCacheKey({
+    const balancesCacheKey = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(cacheKey);
+    const simpleBalancesCacheKey = CacheRouter.getSimpleBalancesCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await Promise.all([
+      this.cacheService.deleteByKey(balancesCacheKey),
+      this.cacheService.deleteByKey(simpleBalancesCacheKey),
+    ]);
   }
 
   async getDataDecoded(args: {
@@ -412,7 +448,7 @@ export class TransactionApi implements ITransactionApi {
             execution_date__lte: args.executionDateLte,
             to: args.to,
             value: args.value,
-            tokenAddress: args.tokenAddress,
+            token_address: args.tokenAddress,
             limit: args.limit,
             offset: args.offset,
           },

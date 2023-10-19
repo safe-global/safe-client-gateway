@@ -1,10 +1,10 @@
-import { faker } from '@faker-js/faker';
-import { HttpErrorFactory } from './http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   NetworkOtherError,
   NetworkRequestError,
   NetworkResponseError,
-} from '../network/entities/network.error.entity';
+} from '@/datasources/network/entities/network.error.entity';
+import { faker } from '@faker-js/faker';
 
 describe('HttpErrorFactory', () => {
   const httpErrorFactory: HttpErrorFactory = new HttpErrorFactory();

@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
 import {
+  PaginationData,
   buildNextPageURL,
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
-  PaginationData,
-} from './pagination.data';
+} from '@/routes/common/pagination/pagination.data';
 
 describe('PaginationData', () => {
   describe('fromCursor', () => {

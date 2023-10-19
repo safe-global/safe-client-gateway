@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AddressInfo } from '../../../common/entities/address-info.entity';
-import { SettingsChange } from './settings-change.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { SettingsChange } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class AddOwner extends SettingsChange {
   @ApiProperty()

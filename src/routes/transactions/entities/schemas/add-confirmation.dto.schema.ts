@@ -1,5 +1,5 @@
+import { AddConfirmationDto } from '@/routes/transactions/entities/add-confirmation.dto';
 import { JSONSchemaType } from 'ajv';
-import { AddConfirmationDto } from '../add-confirmation.dto';
 
 export const ADD_CONFIRMATION_DTO_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/transactions/add-confirmation.dto.json';

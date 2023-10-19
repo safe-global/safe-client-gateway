@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { getSafeSingletonDeployment } from '@safe-global/safe-deployments';
 import { Abi, isHex } from 'viem';
-import { Hex } from 'viem/src/types/misc';
+import { Hex } from 'viem/types/misc';
 import { ContractFunctionArgsMapper } from '@/domain/relay/entities/contract-function.entity';
 import { ContractHelper } from '@/domain/relay/contracts/contract.helper';
 

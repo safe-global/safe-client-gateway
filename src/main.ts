@@ -1,6 +1,6 @@
-import { AppModule } from './app.module';
-import { IConfigurationService } from './config/configuration.service.interface';
-import { DefaultAppProvider } from './app.provider';
+import { AppModule } from '@/app.module';
+import { DefaultAppProvider } from '@/app.provider';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 async function bootstrap() {
   const app = await new DefaultAppProvider().provide(AppModule);

@@ -1,18 +1,18 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PaginationDataDecorator } from '../common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '../common/decorators/route.url.decorator';
-import { DateLabel } from '../common/entities/date-label.entity';
-import { Page } from '../common/entities/page.entity';
-import { PaginationData } from '../common/pagination/pagination.data';
-import { CreateMessageDto } from './entities/create-message.dto.entity';
-import { MessageItem } from './entities/message-item.entity';
-import { Message } from './entities/message.entity';
-import { MessagePage } from './entities/messages-page.entity';
-import { UpdateMessageSignatureDto } from './entities/update-message-signature.entity';
-import { MessagesService } from './messages.service';
-import { CreateMessageDtoValidationPipe } from './pipes/create-message.dto.validation.pipe';
-import { UpdateMessageSignatureDtoValidationPipe } from './pipes/update-message-signature.dto.validation.pipe';
+import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
+import { DateLabel } from '@/routes/common/entities/date-label.entity';
+import { Page } from '@/routes/common/entities/page.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
+import { MessageItem } from '@/routes/messages/entities/message-item.entity';
+import { Message } from '@/routes/messages/entities/message.entity';
+import { MessagePage } from '@/routes/messages/entities/messages-page.entity';
+import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
+import { MessagesService } from '@/routes/messages/messages.service';
+import { CreateMessageDtoValidationPipe } from '@/routes/messages/pipes/create-message.dto.validation.pipe';
+import { UpdateMessageSignatureDtoValidationPipe } from '@/routes/messages/pipes/update-message-signature.dto.validation.pipe';
 
 @ApiTags('messages')
 @Controller({

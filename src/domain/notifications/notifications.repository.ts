@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { Device } from './entities/device.entity';
-import { SafeRegistration } from './entities/safe-registration.entity';
-import { INotificationsRepository } from './notifications.repository.interface';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { Device } from '@/domain/notifications/entities/device.entity';
+import { SafeRegistration } from '@/domain/notifications/entities/safe-registration.entity';
+import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 
 export class NotificationsRepository implements INotificationsRepository {
   constructor(

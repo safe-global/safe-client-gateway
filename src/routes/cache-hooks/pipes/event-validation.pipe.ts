@@ -4,63 +4,73 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import {
   EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
   executedTransactionEventSchema,
-} from '../entities/schemas/executed-transaction.schema';
+} from '@/routes/cache-hooks/entities/schemas/executed-transaction.schema';
 import {
   NEW_CONFIRMATION_EVENT_SCHEMA_ID,
   newConfirmationEventSchema,
-} from '../entities/schemas/new-confirmation.schema';
+} from '@/routes/cache-hooks/entities/schemas/new-confirmation.schema';
 import {
   PENDING_TRANSACTION_EVENT_SCHEMA_ID,
   pendingTransactionEventSchema,
-} from '../entities/schemas/pending-transaction.schema';
+} from '@/routes/cache-hooks/entities/schemas/pending-transaction.schema';
 import {
   WEB_HOOK_SCHEMA_ID,
   webHookSchema,
-} from '../entities/schemas/web-hook.schema';
-import { ExecutedTransaction } from '../entities/executed-transaction.entity';
-import { NewConfirmation } from '../entities/new-confirmation.entity';
-import { PendingTransaction } from '../entities/pending-transaction.entity';
-import { IncomingEther } from '../entities/incoming-ether.entity';
+} from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
+import { ExecutedTransaction } from '@/routes/cache-hooks/entities/executed-transaction.entity';
+import { NewConfirmation } from '@/routes/cache-hooks/entities/new-confirmation.entity';
+import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
+import { IncomingEther } from '@/routes/cache-hooks/entities/incoming-ether.entity';
 import {
   INCOMING_ETHER_EVENT_SCHEMA_ID,
   incomingEtherEventSchema,
-} from '../entities/schemas/incoming-ether.schema';
+} from '@/routes/cache-hooks/entities/schemas/incoming-ether.schema';
 import {
   INCOMING_TOKEN_EVENT_SCHEMA_ID,
   incomingTokenEventSchema,
-} from '../entities/schemas/incoming-token.schema';
-import { IncomingToken } from '../entities/incoming-token.entity';
+} from '@/routes/cache-hooks/entities/schemas/incoming-token.schema';
+import { IncomingToken } from '@/routes/cache-hooks/entities/incoming-token.entity';
 import {
   OUTGOING_ETHER_EVENT_SCHEMA_ID,
   outgoingEtherEventSchema,
-} from '../entities/schemas/outgoing-ether.schema';
-import { OutgoingEther } from '../entities/outgoing-ether.entity';
+} from '@/routes/cache-hooks/entities/schemas/outgoing-ether.schema';
+import { OutgoingEther } from '@/routes/cache-hooks/entities/outgoing-ether.entity';
 import {
   OUTGOING_TOKEN_EVENT_SCHEMA_ID,
   outgoingTokenEventSchema,
-} from '../entities/schemas/outgoing-token.schema';
-import { OutgoingToken } from '../entities/outgoing-token.entity';
-import { ModuleTransaction } from '../entities/module-transaction.entity';
+} from '@/routes/cache-hooks/entities/schemas/outgoing-token.schema';
+import { OutgoingToken } from '@/routes/cache-hooks/entities/outgoing-token.entity';
+import { ModuleTransaction } from '@/routes/cache-hooks/entities/module-transaction.entity';
 import {
   MODULE_TRANSACTION_EVENT_SCHEMA_ID,
   moduleTransactionEventSchema,
-} from '../entities/schemas/module-transaction.schema';
-import { MessageCreated } from '../entities/message-created.entity';
+} from '@/routes/cache-hooks/entities/schemas/module-transaction.schema';
+import { MessageCreated } from '@/routes/cache-hooks/entities/message-created.entity';
 import {
   MESSAGE_CREATED_EVENT_SCHEMA_ID,
   messageCreatedEventSchema,
-} from '../entities/schemas/message-created.schema';
-import { NewMessageConfirmation } from '../entities/new-message-confirmation.entity';
+} from '@/routes/cache-hooks/entities/schemas/message-created.schema';
+import { NewMessageConfirmation } from '@/routes/cache-hooks/entities/new-message-confirmation.entity';
+import {
+  CHAIN_UPDATE_EVENT_SCHEMA_ID,
+  chainUpdateEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/chain-update.schema';
+import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
+import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
+import {
+  SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
+  safeAppsUpdateEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/safe-apps-update.schema';
 import {
   NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
   newMessageConfirmationEventSchema,
-} from '../entities/schemas/new-message-confirmation.schema';
+} from '@/routes/cache-hooks/entities/schemas/new-message-confirmation.schema';
 
 @Injectable()
 export class EventValidationPipe
   implements
     PipeTransform<
-      any,
+      | ChainUpdate
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -71,9 +81,11 @@ export class EventValidationPipe
       | OutgoingToken
       | OutgoingEther
       | PendingTransaction
+      | SafeAppsUpdate
     >
 {
   private readonly isWebHookEvent: ValidateFunction<
+    | ChainUpdate
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
@@ -84,9 +96,14 @@ export class EventValidationPipe
     | OutgoingToken
     | OutgoingEther
     | PendingTransaction
+    | SafeAppsUpdate
   >;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
+    jsonSchemaService.getSchema(
+      CHAIN_UPDATE_EVENT_SCHEMA_ID,
+      chainUpdateEventSchema,
+    );
     jsonSchemaService.getSchema(
       EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
       executedTransactionEventSchema,
@@ -127,6 +144,10 @@ export class EventValidationPipe
       PENDING_TRANSACTION_EVENT_SCHEMA_ID,
       pendingTransactionEventSchema,
     );
+    jsonSchemaService.getSchema(
+      SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
+      safeAppsUpdateEventSchema,
+    );
     this.isWebHookEvent = jsonSchemaService.getSchema(
       WEB_HOOK_SCHEMA_ID,
       webHookSchema,
@@ -136,6 +157,7 @@ export class EventValidationPipe
   transform(
     value: any,
   ):
+    | ChainUpdate
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
@@ -145,7 +167,8 @@ export class EventValidationPipe
     | NewMessageConfirmation
     | OutgoingToken
     | OutgoingEther
-    | PendingTransaction {
+    | PendingTransaction
+    | SafeAppsUpdate {
     if (this.isWebHookEvent(value)) {
       return value;
     }

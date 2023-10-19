@@ -1,4 +1,4 @@
-import { FakeConfigurationService } from './fake.configuration.service';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 
 describe('FakeConfigurationService', () => {
   let configurationService: FakeConfigurationService;

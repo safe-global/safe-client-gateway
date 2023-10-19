@@ -6,6 +6,13 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'monday'
+    groups:
+      nest-js-core:
+        patterns:
+          - '@nestjs/common'
+          - '@nestjs/core'
+          - '@nestjs/platform-express'
+          - '@nestjs/testing'
 
   - package-ecosystem: 'docker'
     directory: '/'

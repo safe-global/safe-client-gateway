@@ -1,4 +1,4 @@
-import { ITransactionApi } from './transaction-api.interface';
+import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 
 export const ITransactionApiManager = Symbol('ITransactionApiManager');
 

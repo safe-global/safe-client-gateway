@@ -2,8 +2,8 @@ import { faker } from '@faker-js/faker';
 import { random, range, sample } from 'lodash';
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { RegisterDeviceDto } from '../register-device.dto.entity';
-import { safeRegistrationBuilder } from './safe-registration.builder';
+import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
+import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests__/safe-registration.builder';
 
 export function registerDeviceDtoBuilder(): IBuilder<RegisterDeviceDto> {
   return Builder.new<RegisterDeviceDto>()

@@ -1,15 +1,15 @@
-import { TransactionApi } from './transaction-api.service';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { ICacheService } from '../cache/cache.service.interface';
 import { faker } from '@faker-js/faker';
-import { HttpErrorFactory } from '../errors/http-error-factory';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { AxiosNetworkService } from '../network/axios.network.service';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
+import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
-import { CacheDir } from '../cache/entities/cache-dir.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -139,7 +139,7 @@ describe('TransactionApi', () => {
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.deleteByKey).toBeCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toBeCalledTimes(2);
       expect(mockCacheService.deleteByKey).toBeCalledWith(
         `${chainId}_balances_${safeAddress}`,
       );

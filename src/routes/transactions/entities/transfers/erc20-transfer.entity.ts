@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transfer } from './transfer.entity';
+import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty()

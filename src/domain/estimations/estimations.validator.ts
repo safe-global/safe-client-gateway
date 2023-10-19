@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { Estimation } from './entities/estimation.entity';
+import { Estimation } from '@/domain/estimations/entities/estimation.entity';
 import {
   ESTIMATION_SCHEMA_ID,
   estimationSchema,
-} from './entities/schemas/estimation.schema';
+} from '@/domain/estimations/entities/schemas/estimation.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class EstimationsValidator implements IValidator<Estimation> {

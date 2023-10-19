@@ -1,4 +1,4 @@
-import { SafeApp } from './entities/safe-app.entity';
+import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export const ISafeAppsRepository = Symbol('ISafeAppsRepository');
 
@@ -11,6 +11,11 @@ export interface ISafeAppsRepository {
     clientUrl?: string;
     url?: string;
   }): Promise<SafeApp[]>;
+
+  /**
+   * Triggers the removal of the safe apps data stored in the DataSource (e.g., cache)
+   */
+  clearSafeApps(chainId: string): Promise<void>;
 
   /**
    * Gets the Safe App associated with the chainId and id. If no Safe App is found,

@@ -1,5 +1,5 @@
-import { Page } from '../entities/page.entity';
-import { Delegate } from './entities/delegate.entity';
+import { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 export const IDelegateRepository = Symbol('IDelegateRepository');
 

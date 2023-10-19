@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NetworkModule } from './network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { ClsModule } from 'nestjs-cls';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/configuration';
+import { NetworkModule } from '@/datasources/network/network.module';
 
 describe('NetworkModule', () => {
   it(`axios client is created with timeout`, async () => {

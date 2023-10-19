@@ -1,4 +1,4 @@
-import { CacheDir } from './entities/cache-dir.entity';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
@@ -12,6 +12,7 @@ export class CacheRouter {
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly EXCHANGE_FIAT_CODES_KEY = 'exchange_fiat_codes';
   private static readonly EXCHANGE_RATES_KEY = 'exchange_rates';
+  private static readonly FIAT_CODES_KEY = 'fiat_codes';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
@@ -20,14 +21,20 @@ export class CacheRouter {
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
+  private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
+  private static readonly SIMPLE_BALANCES_KEY = 'simple_balances';
   private static readonly TOKEN_KEY = 'token';
+  private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
 
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
   static getBalancesCacheKey(args: {
     chainId: string;
     safeAddress: string;
@@ -35,6 +42,9 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.BALANCES_KEY}_${args.safeAddress}`;
   }
 
+  /**
+   * @deprecated to be removed after Coingecko prices retrieval is complete.
+   */
   static getBalanceCacheDir(args: {
     chainId: string;
     safeAddress: string;
@@ -43,6 +53,25 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getBalancesCacheKey(args),
+      `${args.trusted}_${args.excludeSpam}`,
+    );
+  }
+
+  static getSimpleBalancesCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SIMPLE_BALANCES_KEY}_${args.safeAddress}`;
+  }
+
+  static getSimpleBalancesCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSimpleBalancesCacheKey(args),
       `${args.trusted}_${args.excludeSpam}`,
     );
   }
@@ -365,12 +394,20 @@ export class CacheRouter {
     );
   }
 
+  static getChainCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.CHAIN_KEY}`;
+  }
+
   static getChainCacheDir(chainId: string): CacheDir {
-    return new CacheDir(`${chainId}_${CacheRouter.CHAIN_KEY}`, '');
+    return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
   static getChainsCachePattern(): string {
     return `*_${CacheRouter.CHAIN_KEY}`;
+  }
+
+  static getSafeAppsKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.SAFE_APPS_KEY}`;
   }
 
   static getSafeAppsCacheDir(args: {
@@ -394,5 +431,30 @@ export class CacheRouter {
 
   static getExchangeRatesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.EXCHANGE_RATES_KEY, '');
+  }
+
+  static getNativeCoinPriceCacheDir(args: {
+    nativeCoinId: string;
+    fiatCode: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}`,
+      args.fiatCode,
+    );
+  }
+
+  static getTokenPriceCacheDir(args: {
+    chainName: string;
+    fiatCode: string;
+    tokenAddress: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}`,
+      `${args.tokenAddress}_${args.fiatCode}`,
+    );
+  }
+
+  static getPriceFiatCodesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.FIAT_CODES_KEY, '');
   }
 }

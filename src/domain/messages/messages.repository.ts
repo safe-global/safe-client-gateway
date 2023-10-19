@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '../entities/page.entity';
-import { ITransactionApiManager } from '../interfaces/transaction-api.manager.interface';
-import { Message } from './entities/message.entity';
-import { MessageValidator } from './message.validator';
-import { IMessagesRepository } from './messages.repository.interface';
+import { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { Message } from '@/domain/messages/entities/message.entity';
+import { MessageValidator } from '@/domain/messages/message.validator';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {

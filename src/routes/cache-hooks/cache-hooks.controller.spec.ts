@@ -7,7 +7,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '../../config/entities/__tests__/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -65,55 +65,70 @@ describe('Post Hook Events (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_ETHER',
+      address: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
       value: faker.string.numeric(),
     },
     {
       type: 'INCOMING_TOKEN',
+      address: faker.finance.ethereumAddress(),
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'OUTGOING_ETHER',
+      address: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
       value: faker.string.numeric(),
     },
     {
       type: 'OUTGOING_TOKEN',
+      address: faker.finance.ethereumAddress(),
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
+      address: faker.finance.ethereumAddress(),
       owner: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MODULE_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
       module: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MESSAGE_CREATED',
+      address: faker.finance.ethereumAddress(),
       messageHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MESSAGE_CONFIRMATION',
+      address: faker.finance.ethereumAddress(),
       messageHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'CHAIN_UPDATE',
+    },
+    {
+      type: 'SAFE_APPS_UPDATE',
     },
   ])('accepts $type', async (payload) => {
     const chainId = faker.string.numeric();
     const data = {
-      address: faker.finance.ethereumAddress(),
       chainId: chainId,
       ...payload,
     };
@@ -624,6 +639,72 @@ describe('Post Hook Events (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
+  ])('$type clears chain', async (payload) => {
+    const chainId = faker.string.numeric();
+    const cacheDir = new CacheDir(`${chainId}_chain`, '');
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const data = {
+      chainId: chainId,
+      ...payload,
+    };
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
+  ])('$type clears chains', async (payload) => {
+    const chainId = faker.string.numeric();
+    const cacheDir = new CacheDir(`chains`, '');
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const data = {
+      chainId: chainId,
+      ...payload,
+    };
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(200);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'SAFE_APPS_UPDATE',
+    },
+  ])('$type clears safe apps', async (payload) => {
+    const chainId = faker.string.numeric();
+    const cacheDir = new CacheDir(`${chainId}_safe_apps`, '');
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const data = {
+      chainId: chainId,
+      ...payload,
+    };
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)

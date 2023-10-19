@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ExchangeRates } from '@/domain/exchange/entities/exchange-rates.entity';
-import { ExchangeFiatCodes } from '@/domain/exchange/entities/exchange-fiat-codes.entity';
-import { IExchangeApi } from '@/domain/interfaces/exchange-api.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CacheRouter } from '../cache/cache.router';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { ExchangeFiatCodes } from '@/domain/exchange/entities/exchange-fiat-codes.entity';
+import { ExchangeRates } from '@/domain/exchange/entities/exchange-rates.entity';
+import { IExchangeApi } from '@/domain/interfaces/exchange-api.interface';
 
 @Injectable()
 export class ExchangeApi implements IExchangeApi {

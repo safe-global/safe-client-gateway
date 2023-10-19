@@ -5,19 +5,33 @@ services:
       - ${REDIS_PORT-6379}:${REDIS_PORT-6379}
       - 8001:8001
 
+  db:
+    image: postgres:14.8-alpine
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-safe-client-gateway}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+
   web:
     build: .
     tty: true
     environment:
       REDIS_HOST: redis
+      PRICES_PROVIDER_API_KEY: ${PRICES_PROVIDER_API_KEY-example_api_key}
       EXCHANGE_API_KEY: ${EXCHANGE_API_KEY-example_api_key}
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
       AUTH_TOKEN: ${AUTH_TOKEN-example_auth_token}
     depends_on:
       - redis
+      - db
 
   nginx:
-    image: nginx:1.23-alpine
+    image: nginx:1.25-alpine
     ports:
       - ${NGINX_HOST_PORT:-8080}:80
     volumes:

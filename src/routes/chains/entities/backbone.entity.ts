@@ -1,4 +1,4 @@
-import { Backbone as DomainBackbone } from '../../../domain/backbone/entities/backbone.entity';
+import { Backbone as DomainBackbone } from '@/domain/backbone/entities/backbone.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class Backbone implements DomainBackbone {

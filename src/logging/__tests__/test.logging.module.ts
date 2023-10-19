@@ -1,6 +1,6 @@
 import { Global, Inject, Module } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '../logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 class TestLoggingService implements ILoggingService {
   private readonly isSilent: boolean;

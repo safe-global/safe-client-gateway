@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigApi } from '../interfaces/config-api.interface';
-import { InvalidationPatternDto } from './entities/invalidation-pattern.dto.entity';
-import { InvalidationTarget } from './entities/invalidation-target.entity';
-import { IFlushRepository } from './flush.repository.interface';
+import { InvalidationPatternDto } from '@/domain/flush/entities/invalidation-pattern.dto.entity';
+import { InvalidationTarget } from '@/domain/flush/entities/invalidation-target.entity';
+import { IFlushRepository } from '@/domain/flush/flush.repository.interface';
+import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()

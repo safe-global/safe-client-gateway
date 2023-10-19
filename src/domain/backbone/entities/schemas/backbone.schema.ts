@@ -1,5 +1,5 @@
+import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { JSONSchemaType } from 'ajv';
-import { Backbone } from '../backbone.entity';
 
 export const BACKBONE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/backbone/backbone.json';

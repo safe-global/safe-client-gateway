@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
-import { GenericValidator } from '@/validation/providers/generic.validator';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
-import { IValidator } from '../interfaces/validator.interface';
-import { ExchangeRates } from './entities/exchange-rates.entity';
+import { ExchangeRates } from '@/domain/exchange/entities/exchange-rates.entity';
 import {
   EXCHANGE_RATES_SCHEMA_ID,
   exchangeRatesSchema,
-} from './entities/schemas/exchange-rates.schema';
+} from '@/domain/exchange/entities/schemas/exchange-rates.schema';
+import { IValidator } from '@/domain/interfaces/validator.interface';
+import { GenericValidator } from '@/validation/providers/generic.validator';
+import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class ExchangeRatesValidator implements IValidator<ExchangeRates> {

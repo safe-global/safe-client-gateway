@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv';
-import { EventType } from '../event-payload.entity';
-import { NewConfirmation } from '../new-confirmation.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { NewConfirmation } from '@/routes/cache-hooks/entities/new-confirmation.entity';
 
 export const NEW_CONFIRMATION_EVENT_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/new-confirmation.json';

@@ -1,13 +1,13 @@
-import { Safe } from './entities/safe.entity';
-import { Page } from '../entities/page.entity';
-import { Transfer } from './entities/transfer.entity';
-import { MultisigTransaction } from './entities/multisig-transaction.entity';
-import { Transaction } from './entities/transaction.entity';
-import { ModuleTransaction } from './entities/module-transaction.entity';
-import { SafeList } from './entities/safe-list.entity';
-import { CreationTransaction } from './entities/creation-transaction.entity';
-import { ProposeTransactionDto } from '../transactions/entities/propose-transaction.dto.entity';
-import { AddConfirmationDto } from '../transactions/entities/add-confirmation.dto.entity';
+import { Page } from '@/domain/entities/page.entity';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { SafeList } from '@/domain/safe/entities/safe-list.entity';
+import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Transaction } from '@/domain/safe/entities/transaction.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 

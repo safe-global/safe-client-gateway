@@ -1,5 +1,5 @@
-import { Page } from '../entities/page.entity';
-import { Collectible } from './entities/collectible.entity';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 

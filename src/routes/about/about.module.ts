@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AboutController } from './about.controller';
-import { AboutService } from './about.service';
+import { AboutController } from '@/routes/about/about.controller';
+import { AboutService } from '@/routes/about/about.service';
 
 @Module({
   controllers: [AboutController],

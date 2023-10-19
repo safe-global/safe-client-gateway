@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { PreviewTransactionDto } from '../preview-transaction.dto.entity';
+import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
 
 export function previewTransactionDtoBuilder(): IBuilder<PreviewTransactionDto> {
   return Builder.new<PreviewTransactionDto>()
