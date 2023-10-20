@@ -16,10 +16,13 @@ export class PricesRepository implements IPricesRepository {
     nativeCoinId: string;
     fiatCode: string;
   }): Promise<number> {
-    const result = await this.coingeckoApi.getNativeCoinPrice(args);
-    const assetPrice = await this.assetPriceValidator.validate(result);
-    const { nativeCoinId, fiatCode } = args;
-    return assetPrice?.[nativeCoinId]?.[fiatCode];
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+    const result = await this.coingeckoApi.getNativeCoinPrice({
+      nativeCoinId: args.nativeCoinId,
+      fiatCode: lowerCaseFiatCode,
+    });
+    const assetPrice = this.assetPriceValidator.validate(result);
+    return assetPrice?.[args.nativeCoinId]?.[lowerCaseFiatCode];
   }
 
   async getTokenPrice(args: {
@@ -27,10 +30,15 @@ export class PricesRepository implements IPricesRepository {
     tokenAddress: string;
     fiatCode: string;
   }): Promise<number> {
-    const result = await this.coingeckoApi.getTokenPrice(args);
-    const assetPrice = await this.assetPriceValidator.validate(result);
-    const { tokenAddress, fiatCode } = args;
-    return assetPrice?.[tokenAddress.toLowerCase()]?.[fiatCode];
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+    const lowerCaseTokenAddress = args.tokenAddress.toLowerCase();
+    const result = await this.coingeckoApi.getTokenPrice({
+      chainName: args.chainName,
+      tokenAddress: lowerCaseTokenAddress,
+      fiatCode: lowerCaseFiatCode,
+    });
+    const assetPrice = this.assetPriceValidator.validate(result);
+    return assetPrice?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
   }
 
   async getFiatCodes(): Promise<string[]> {

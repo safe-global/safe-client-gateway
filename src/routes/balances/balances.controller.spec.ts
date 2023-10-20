@@ -329,12 +329,12 @@ describe('Balances Controller (Unit)', () => {
         const chainName = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = 'eur';
+        const currency = faker.finance.currencyCode();
         const nativeCoinPriceProviderResponse = {
-          [nativeCoinId]: { [currency]: 1536.75 },
+          [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
         };
         const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency]: 12.5 },
+          [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -353,7 +353,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+            `/v1/chains/${
+              chain.chainId
+            }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
           )
           .expect(200)
           .expect({
@@ -403,9 +405,18 @@ describe('Balances Controller (Unit)', () => {
         expect(networkService.get.mock.calls[2][0]).toBe(
           `${pricesProviderUrl}/simple/price`,
         );
+        expect(networkService.get.mock.calls[2][1]).toStrictEqual({
+          params: { ids: 'ethereum', vs_currencies: currency.toLowerCase() },
+        });
         expect(networkService.get.mock.calls[3][0]).toBe(
           `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
+        expect(networkService.get.mock.calls[3][1]).toStrictEqual({
+          params: {
+            vs_currencies: currency.toLowerCase(),
+            contract_addresses: tokenAddress.toLowerCase(),
+          },
+        });
       });
 
       it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
@@ -424,9 +435,9 @@ describe('Balances Controller (Unit)', () => {
         const chainName = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = 'eur';
+        const currency = faker.finance.currencyCode();
         const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency]: 2.5 },
+          [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -466,12 +477,12 @@ describe('Balances Controller (Unit)', () => {
             .with('token', null)
             .build(),
         ];
-        const currency = 'usd';
+        const currency = faker.finance.currencyCode();
         const nativeCoinId = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
         const nativeCoinPriceProviderResponse = {
-          [nativeCoinId]: { [currency]: 1536.75 },
+          [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -487,7 +498,11 @@ describe('Balances Controller (Unit)', () => {
         });
 
         await request(app.getHttpServer())
-          .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
+          .get(
+            `/v1/chains/${
+              chain.chainId
+            }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+          )
           .expect(200)
           .expect({
             fiatTotal: '4610.25',
@@ -523,9 +538,9 @@ describe('Balances Controller (Unit)', () => {
         const chainName = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = 'eur';
+        const currency = faker.finance.currencyCode();
         const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency]: 2.5 },
+          [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -607,7 +622,6 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', '10').build();
         const safeAddress = faker.finance.ethereumAddress();
         const tokenAddress = faker.finance.ethereumAddress();
-        const currency = 'eur';
         const transactionApiBalancesResponse = [
           simpleBalanceBuilder()
             .with('tokenAddress', tokenAddress)
@@ -633,7 +647,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+            `/v1/chains/${
+              chain.chainId
+            }/safes/${safeAddress}/balances/${faker.finance.currencyCode()}`,
           )
           .expect(200)
           .expect({
@@ -662,7 +678,6 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', '10').build();
         const safeAddress = faker.finance.ethereumAddress();
         const tokenAddress = faker.finance.ethereumAddress();
-        const currency = 'eur';
         const transactionApiBalancesResponse = [
           simpleBalanceBuilder()
             .with('tokenAddress', tokenAddress)
@@ -689,7 +704,9 @@ describe('Balances Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+            `/v1/chains/${
+              chain.chainId
+            }/safes/${safeAddress}/balances/${faker.finance.currencyCode()}`,
           )
           .expect(200)
           .expect({
