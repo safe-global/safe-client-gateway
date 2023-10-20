@@ -17,12 +17,18 @@ export class IncomingTransferMapper {
     chainId: string,
     transfer: Transfer,
     safe: Safe,
+    resolveAddressInfo = true,
   ): Promise<Transaction> {
     return new Transaction(
       `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
       transfer.executionDate.getTime(),
       TransactionStatus.Success,
-      await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
+      await this.transferInfoMapper.mapTransferInfo(
+        chainId,
+        transfer,
+        safe,
+        resolveAddressInfo,
+      ),
       null,
       null,
     );

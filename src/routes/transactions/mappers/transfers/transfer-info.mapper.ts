@@ -16,6 +16,7 @@ import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-
 import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransferInfoMapper {
@@ -32,17 +33,22 @@ export class TransferInfoMapper {
     chainId: string,
     domainTransfer: DomainTransfer,
     safe: Safe,
+    resolveAddressInfo = true,
   ): Promise<TransferTransactionInfo> {
     const { from, to } = domainTransfer;
-    const sender = await this.addressInfoHelper.getOrDefault(chainId, from, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
+    const sender = resolveAddressInfo
+      ? await this.addressInfoHelper.getOrDefault(chainId, from, [
+          'TOKEN',
+          'CONTRACT',
+        ])
+      : new AddressInfo(from);
 
-    const recipient = await this.addressInfoHelper.getOrDefault(chainId, to, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
+    const recipient = resolveAddressInfo
+      ? await this.addressInfoHelper.getOrDefault(chainId, to, [
+          'TOKEN',
+          'CONTRACT',
+        ])
+      : new AddressInfo(to);
 
     const direction = getTransferDirection(safe.address, from, to);
 
@@ -50,7 +56,7 @@ export class TransferInfoMapper {
       sender,
       recipient,
       direction,
-      await this.getTransferByType(chainId, domainTransfer),
+      await this.getTransferByType(chainId, domainTransfer, resolveAddressInfo),
       null,
       null,
     );
@@ -59,13 +65,13 @@ export class TransferInfoMapper {
   private async getTransferByType(
     chainId: string,
     domainTransfer: DomainTransfer,
+    resolveAddressInfo = true,
   ): Promise<Transfer> {
     if (isERC20Transfer(domainTransfer)) {
       const { tokenAddress, value } = domainTransfer;
-      const token: Token | null = await this.getToken(
-        chainId,
-        tokenAddress,
-      ).catch(() => null);
+      const token = resolveAddressInfo
+        ? await this.getToken(chainId, tokenAddress).catch(() => null)
+        : null;
       return new Erc20Transfer(
         tokenAddress,
         value,
@@ -76,9 +82,9 @@ export class TransferInfoMapper {
       );
     } else if (isERC721Transfer(domainTransfer)) {
       const { tokenAddress, tokenId } = domainTransfer;
-      const token = await this.getToken(chainId, tokenAddress).catch(
-        () => null,
-      );
+      const token = resolveAddressInfo
+        ? await this.getToken(chainId, tokenAddress).catch(() => null)
+        : null;
       return new Erc721Transfer(
         tokenAddress,
         tokenId,

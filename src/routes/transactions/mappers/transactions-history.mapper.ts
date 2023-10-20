@@ -32,6 +32,8 @@ class TransactionDomainGroup {
 
 @Injectable()
 export class TransactionsHistoryMapper {
+  private static readonly MAX_NESTED_TXS = 10;
+
   constructor(
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
@@ -161,17 +163,24 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private mapTransfer(transfers: Transfer[], chainId: string, safe: Safe) {
-    return transfers.map(
-      async (transfer) =>
-        new TransactionItem(
-          await this.incomingTransferMapper.mapTransfer(
-            chainId,
-            transfer,
-            safe,
-          ),
-        ),
-    );
+  private async mapTransfers(
+    transfers: Transfer[],
+    chainId: string,
+    safe: Safe,
+  ): Promise<TransactionItem[]> {
+    const resolveAddressInfo =
+      transfers.length <= TransactionsHistoryMapper.MAX_NESTED_TXS;
+    const nestedTransactions: TransactionItem[] = [];
+    for (const transfer of transfers) {
+      const nestedTransaction = await this.incomingTransferMapper.mapTransfer(
+        chainId,
+        transfer,
+        safe,
+        resolveAddressInfo,
+      );
+      nestedTransactions.push(new TransactionItem(nestedTransaction));
+    }
+    return nestedTransactions;
   }
 
   private mapGroupTransactions(
@@ -199,9 +208,7 @@ export class TransactionsHistoryMapper {
         } else if (isEthereumTransaction(transaction)) {
           const transfers = transaction.transfers;
           if (transfers != null) {
-            return await Promise.all(
-              this.mapTransfer(transfers, chainId, safe),
-            );
+            return await this.mapTransfers(transfers, chainId, safe);
           }
         } else if (isCreationTransaction(transaction)) {
           return new TransactionItem(
