@@ -32,6 +32,8 @@ class TransactionDomainGroup {
 
 @Injectable()
 export class TransactionsHistoryMapper {
+  private static readonly MAX_NESTED_TXS = 10;
+
   constructor(
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
@@ -162,16 +164,18 @@ export class TransactionsHistoryMapper {
   }
 
   private mapTransfer(transfers: Transfer[], chainId: string, safe: Safe) {
-    return transfers.map(
-      async (transfer) =>
-        new TransactionItem(
-          await this.incomingTransferMapper.mapTransfer(
-            chainId,
-            transfer,
-            safe,
+    return transfers
+      .slice(0, TransactionsHistoryMapper.MAX_NESTED_TXS)
+      .map(
+        async (transfer) =>
+          new TransactionItem(
+            await this.incomingTransferMapper.mapTransfer(
+              chainId,
+              transfer,
+              safe,
+            ),
           ),
-        ),
-    );
+      );
   }
 
   private mapGroupTransactions(
