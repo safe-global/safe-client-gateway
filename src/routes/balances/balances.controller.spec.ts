@@ -326,6 +326,9 @@ describe('Balances Controller (Unit)', () => {
         const nativeCoinId = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
+        const apiKey = app
+          .get(IConfigurationService)
+          .getOrThrow('prices.apiKey');
         const chainName = app
           .get(IConfigurationService)
           .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
@@ -406,12 +409,14 @@ describe('Balances Controller (Unit)', () => {
           `${pricesProviderUrl}/simple/price`,
         );
         expect(networkService.get.mock.calls[2][1]).toStrictEqual({
-          params: { ids: 'ethereum', vs_currencies: currency.toLowerCase() },
+          headers: { 'x-cg-pro-api-key': apiKey },
+          params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
         });
         expect(networkService.get.mock.calls[3][0]).toBe(
           `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
         expect(networkService.get.mock.calls[3][1]).toStrictEqual({
+          headers: { 'x-cg-pro-api-key': apiKey },
           params: {
             vs_currencies: currency.toLowerCase(),
             contract_addresses: tokenAddress.toLowerCase(),
