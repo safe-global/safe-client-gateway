@@ -471,6 +471,353 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
+  it('txQueuedTag is computed from Multisig transaction with modified date', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const collectibleTransfers = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-18T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-16T03:52:02Z'))
+                    .build(),
+                ),
+                multisigTransactionToJson(
+                  multisigTransactionBuilder()
+                    .with('modified', new Date('2020-09-14T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txQueuedTag: '1600401122',
+        }),
+      );
+  });
+
+  it('txQueuedTag is now if there are no Multisig transactions', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const multisigTransactions = pageBuilder().build();
+    const collectibleTransfers = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: multisigTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txQueuedTag: Math.floor(Date.now() / 1000).toString(),
+        }),
+      );
+  });
+
+  it('txQueuedTag is now if Multisig transactions throw', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const collectibleTransfers = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txQueuedTag: Math.floor(Date.now() / 1000).toString(),
+        }),
+      );
+  });
+
+  it('collectiblesTag is computed from Ethereum transaction with executionDate date', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const multisigTransactions = pageBuilder().build();
+    const collectibleTransfers = pageBuilder()
+      .with('results', [
+        erc721TransferToJson(
+          erc721TransferBuilder()
+            .with('executionDate', new Date('2020-09-18T03:52:02Z'))
+            .build(),
+        ),
+        erc721TransferToJson(
+          erc721TransferBuilder()
+            .with('executionDate', new Date('2020-09-16T03:52:02Z'))
+            .build(),
+        ),
+        erc721TransferToJson(
+          erc721TransferBuilder()
+            .with('executionDate', new Date('2020-09-14T03:52:02Z'))
+            .build(),
+        ),
+      ])
+      .build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: multisigTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          collectiblesTag: '1600401122',
+        }),
+      );
+  });
+
+  it('collectiblesTag is now if there are no Ethereum transactions', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const multisigTransactions = pageBuilder().build();
+    const collectibleTransfers = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: multisigTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          collectiblesTag: Math.floor(Date.now() / 1000).toString(),
+        }),
+      );
+  });
+
+  it('collectiblesTag is now if Ethereum transactions throw', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const multisigTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: multisigTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          collectiblesTag: Math.floor(Date.now() / 1000).toString(),
+        }),
+      );
+  });
+
   it('txHistoryTag is computed from Multisig transaction with modified date', async () => {
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
@@ -755,6 +1102,227 @@ describe('Safes Controller (Unit)', () => {
       .expect((response) =>
         expect(response.body).toMatchObject({
           txHistoryTag: '1600314722',
+        }),
+      );
+  });
+
+  it('txHistoryTag is now if there are no Multisig/Ethereum/Module transactions', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const multisigTransactions = pageBuilder().build();
+    const collectibleTransfers = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: multisigTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txHistoryTag: Math.floor(Date.now() / 1000).toString(),
+        }),
+      );
+  });
+
+  it('txHistoryTag is computed from Ethereum transaction if Multisig transactions throw', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                erc721TransferToJson(
+                  erc721TransferBuilder()
+                    .with('executionDate', new Date('2020-09-17T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({
+            data: pageBuilder().build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txHistoryTag: '1600314722',
+        }),
+      );
+  });
+
+  it('txHistoryTag is computed from Module transaction if Multisig/Ethereum transactions throw', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                moduleTransactionToJson(
+                  moduleTransactionBuilder()
+                    .with('executionDate', new Date('2020-09-17T03:52:02Z'))
+                    .build(),
+                ),
+              ])
+              .build(),
+          });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txHistoryTag: '1600314722',
+        }),
+      );
+  });
+
+  it('txHistoryTag is now if Multisig/Ethereum/Module transactions throw', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.reject({ status: 500 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          txHistoryTag: Math.floor(Date.now() / 1000).toString(),
         }),
       );
   });

@@ -118,29 +118,31 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const lastCollectibleTransfer =
-      await this.safeRepository.getCollectibleTransfers({
+    const lastCollectibleTransfer = await this.safeRepository
+      .getCollectibleTransfers({
         chainId,
         safeAddress,
         limit: 1,
         offset: 0,
-      });
+      })
+      .catch(() => null);
 
-    return lastCollectibleTransfer.results[0]?.executionDate ?? null;
+    return lastCollectibleTransfer?.results[0]?.executionDate ?? null;
   }
 
   private async getQueuedTransactionTag(
     chainId: string,
     safe: Safe,
   ): Promise<Date | null> {
-    const lastQueuedTransaction =
-      await this.safeRepository.getTransactionQueueByModified({
+    const lastQueuedTransaction = await this.safeRepository
+      .getTransactionQueueByModified({
         chainId,
         safe,
         limit: 1,
-      });
+      })
+      .catch(() => null);
 
-    return lastQueuedTransaction.results[0]?.modified ?? null;
+    return lastQueuedTransaction?.results[0]?.modified ?? null;
   }
 
   /**
@@ -158,7 +160,7 @@ export class SafesService {
     chainId: string,
     safeAddress: string,
   ): Promise<Date | null> {
-    const txPages = await Promise.all([
+    const txPages = await Promise.allSettled([
       this.safeRepository.getMultisigTransactions({
         chainId,
         safeAddress,
@@ -178,9 +180,13 @@ export class SafesService {
     ]);
 
     const dates = txPages
+      .filter(
+        <T>(page: PromiseSettledResult<T>): page is PromiseFulfilledResult<T> =>
+          page.status === 'fulfilled',
+      )
       .flatMap(
-        ({ results }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
-          results,
+        ({ value }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
+          value.results,
       )
       .map((tx) => {
         const isMultisig = 'safeTxHash' in tx && tx.safeTxHash !== undefined;
