@@ -6019,15 +6019,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nestjs-cls@npm:^3.5.1":
-  version: 3.5.1
-  resolution: "nestjs-cls@npm:3.5.1"
+"nestjs-cls@npm:^3.6.0":
+  version: 3.6.0
+  resolution: "nestjs-cls@npm:3.6.0"
   peerDependencies:
     "@nestjs/common": "> 7.0.0 < 11"
     "@nestjs/core": "> 7.0.0 < 11"
     reflect-metadata: "*"
     rxjs: ">= 7"
-  checksum: 2c8401404a75ab86c1f3e88e66b076244f20faa1916b63f27c665384624cc5a95d0a2ef24227a484b1baec3492d4bd4b0326326650a8e78cca374253a2f18c78
+  checksum: 31ef22ec4215da93c3f0f6579bebc7999bff9f36680fec34bbf11ebdde2f595c423fc202fd37a270efcf2b101a4ce4a72388b77e2ddf82ce3bc23af30c74c33d
   languageName: node
   linkType: hard
 
@@ -6896,7 +6896,7 @@ __metadata:
     husky: ^8.0.3
     jest: 29.7.0
     lodash: ^4.17.21
-    nestjs-cls: ^3.5.1
+    nestjs-cls: ^3.6.0
     postgres: ^3.4.0
     prettier: ^3.0.3
     redis: ^4.6.10
