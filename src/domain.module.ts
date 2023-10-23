@@ -70,6 +70,8 @@ import { AlertsRepository } from '@/domain/alerts/alerts.repository';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { ISignaturesRepository } from '@/domain/signatures/signatures.repository.interace';
+import { SignaturesRepository } from '@/domain/signatures/signatures.repository';
 
 @Global()
 @Module({
@@ -103,6 +105,10 @@ import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.h
     { provide: IPricesRepository, useClass: PricesRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
+    {
+      provide: ISignaturesRepository,
+      useClass: SignaturesRepository,
+    },
     { provide: ITokenRepository, useClass: TokenRepository },
     AssetPriceValidator,
     BackboneValidator,
@@ -151,6 +157,7 @@ import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.h
     IPricesRepository,
     ISafeAppsRepository,
     ISafeRepository,
+    ISignaturesRepository,
     ITokenRepository,
   ],
 })

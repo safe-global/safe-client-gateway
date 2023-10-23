@@ -19,6 +19,7 @@ import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
+import { EmailsModule } from '@/routes/emails/emails.module';
 import { SafeAppsModule } from '@/routes/safe-apps/safe-apps.module';
 import { HealthModule } from '@/routes/health/health.module';
 import { OwnersModule } from '@/routes/owners/owners.module';
@@ -55,6 +56,7 @@ export const configurationModule = ConfigurationModule.register(configuration);
     ContractsModule,
     DataDecodedModule,
     DelegatesModule,
+    EmailsModule,
     EstimationsModule,
     FlushModule,
     HealthModule,
