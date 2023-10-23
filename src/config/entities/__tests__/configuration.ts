@@ -43,6 +43,11 @@ export default (): ReturnType<typeof configuration> => ({
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  mappings: {
+    history: {
+      maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),
+    },
+  },
   prices: {
     baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),

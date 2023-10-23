@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
@@ -19,6 +19,7 @@ import { CreationTransactionMapper } from '@/routes/transactions/mappers/creatio
 import { ModuleTransactionMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
 import { IncomingTransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 class TransactionDomainGroup {
   timestamp: number;
@@ -32,14 +33,20 @@ class TransactionDomainGroup {
 
 @Injectable()
 export class TransactionsHistoryMapper {
-  private static readonly MAX_NESTED_TXS = 10;
+  private readonly maxNestedTransfers: number;
 
   constructor(
+    @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly incomingTransferMapper: IncomingTransferMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
-  ) {}
+  ) {
+    this.maxNestedTransfers = configurationService.getOrThrow(
+      'mappings.history.maxNestedTransfers',
+    );
+  }
+
   async mapTransactionsHistory(
     chainId: string,
     transactionsDomain: TransactionDomain[],
@@ -165,7 +172,7 @@ export class TransactionsHistoryMapper {
 
   private mapTransfer(transfers: Transfer[], chainId: string, safe: Safe) {
     return transfers
-      .slice(0, TransactionsHistoryMapper.MAX_NESTED_TXS)
+      .slice(0, this.maxNestedTransfers)
       .map(
         async (transfer) =>
           new TransactionItem(

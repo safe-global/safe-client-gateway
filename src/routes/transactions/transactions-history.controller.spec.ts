@@ -45,6 +45,7 @@ import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { range } from 'lodash';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -659,5 +660,58 @@ describe('Transactions History Controller (Unit)', () => {
         },
       },
     );
+  });
+
+  it('Should limit the amount of nested transfers', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const maxNestedTransfers = app
+      .get(IConfigurationService)
+      .getOrThrow('mappings.history.maxNestedTransfers');
+    const date = new Date();
+    // the amount of transfers is the double of the max value
+    const transfers = range(maxNestedTransfers * 2).map(
+      () =>
+        nativeTokenTransferToJson(
+          nativeTokenTransferBuilder().with('executionDate', date).build(),
+        ) as Transfer,
+    );
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        // the amount of TransactionItems is limited to the max value
+        expect(
+          body.results.filter((item) => item.type === 'TRANSACTION'),
+        ).toHaveLength(maxNestedTransfers);
+      });
   });
 });
