@@ -1,5 +1,4 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { RedisClientType } from '@/datasources/cache/cache.module';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -14,8 +13,6 @@ export class RedisCacheService
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
-    @Inject(IConfigurationService)
-    private readonly configuration: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 

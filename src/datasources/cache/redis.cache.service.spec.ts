@@ -3,7 +3,6 @@ import { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { RedisClientType } from 'redis';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import clearAllMocks = jest.clearAllMocks;
 import { fakeJson } from '@/__tests__/faker';
 
@@ -27,13 +26,11 @@ const mockLoggingService = {
 
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
-  const configurationService = new FakeConfigurationService();
 
   beforeEach(async () => {
     clearAllMocks();
     redisCacheService = new RedisCacheService(
       redisClientTypeMock,
-      configurationService,
       mockLoggingService,
     );
   });
