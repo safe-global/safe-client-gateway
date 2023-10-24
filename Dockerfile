@@ -1,7 +1,7 @@
 #
 # BUILD CONTAINER
 #
-FROM node:18.17 as base
+FROM node:20.8.1 as base
 ENV NODE_ENV production
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
@@ -15,7 +15,7 @@ RUN yarn run build
 #
 # PRODUCTION CONTAINER
 #
-FROM node:18.17-alpine as production
+FROM node:20.8.1-alpine as production
 USER node
 
 ARG VERSION
