@@ -4,15 +4,18 @@ import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
 import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
-const mockNetworkService = jest.mocked({
+const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-}) as unknown as AxiosNetworkService;
+} as unknown as AxiosNetworkService;
+const mockNetworkService = jest.mocked(networkService);
 
-const mockHttpErrorFactory = jest.mocked({
+const httpErrorFactory = {
   from: jest.fn(),
-}) as unknown as HttpErrorFactory;
+} as unknown as HttpErrorFactory;
+const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('TenderlyApi', () => {
   let service: TenderlyApi;
@@ -27,7 +30,7 @@ describe('TenderlyApi', () => {
     jest.clearAllMocks();
 
     tenderlyBaseUri = faker.internet.url({ appendSlash: false });
-    tenderlyApiKey = faker.string.sample();
+    tenderlyApiKey = faker.string.hexadecimal({ length: 32 });
     tenderlyAccount = faker.string.sample();
     tenderlyProject = faker.string.sample();
 
@@ -57,63 +60,97 @@ describe('TenderlyApi', () => {
     ).toThrow();
   });
 
-  it('should add contracts', async () => {
-    const contracts: Array<Contract> = [
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
-        networkId: faker.string.numeric(),
-      },
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
-        networkId: faker.string.numeric(),
-      },
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
-        networkId: faker.string.numeric(),
-      },
-    ];
-
-    await service.addContracts(contracts);
-
-    expect(mockNetworkService.post).toBeCalledWith(
-      `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
-      {
-        headers: {
-          'X-Access-Key': tenderlyApiKey,
+  describe('Adding contracts', () => {
+    it('should add contracts', async () => {
+      const contracts: Array<Contract> = [
+        {
+          address: faker.finance.ethereumAddress(),
+          displayName: faker.word.words(),
+          networkId: faker.string.numeric(),
         },
-        params: {
-          contracts: contracts.map((contract) => ({
-            address: contract.address,
-            display_name: contract.displayName,
-            network_id: contract.networkId,
-          })),
+        {
+          address: faker.finance.ethereumAddress(),
+          displayName: faker.word.words(),
+          networkId: faker.string.numeric(),
         },
-      },
-    );
+        {
+          address: faker.finance.ethereumAddress(),
+          displayName: faker.word.words(),
+          networkId: faker.string.numeric(),
+        },
+      ];
+
+      await service.addContracts(contracts);
+
+      expect(mockNetworkService.post).toBeCalledWith(
+        `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
+        {
+          headers: {
+            'X-Access-Key': tenderlyApiKey,
+          },
+          params: {
+            contracts: contracts.map((contract) => ({
+              address: contract.address,
+              display_name: contract.displayName,
+              network_id: contract.networkId,
+            })),
+          },
+        },
+      );
+      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
+    });
+
+    it('should forward error', async () => {
+      mockNetworkService.post.mockImplementation(() =>
+        Promise.reject('Unexpected error'),
+      );
+      mockHttpErrorFactory.from.mockImplementation(
+        () => new DataSourceError('Unexpected error'),
+      );
+
+      await service.addContracts([]);
+
+      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+    });
   });
 
-  it('should remove contracts', async () => {
-    const contractIds: Array<ContractId> = [
-      `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-      `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-      `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-    ];
+  describe('Removing contracts', () => {
+    it('should remove contracts', async () => {
+      const contractIds: Array<ContractId> = [
+        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
+        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
+        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
+      ];
 
-    await service.removeContracts(contractIds);
+      await service.removeContracts(contractIds);
 
-    expect(mockNetworkService.delete).toBeCalledWith(
-      `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
-      {
-        headers: {
-          'X-Access-Key': tenderlyApiKey,
+      expect(mockNetworkService.delete).toBeCalledWith(
+        `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
+        {
+          headers: {
+            'X-Access-Key': tenderlyApiKey,
+          },
+          params: {
+            contract_ids: contractIds,
+          },
         },
-        params: {
-          contract_ids: contractIds,
-        },
-      },
-    );
+      );
+      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
+    });
+
+    it('should forward error', async () => {
+      mockNetworkService.delete.mockImplementation(() =>
+        Promise.reject('Unexpected error'),
+      );
+      mockHttpErrorFactory.from.mockImplementation(
+        () => new DataSourceError('Unexpected error'),
+      );
+
+      await service.removeContracts([]);
+
+      expect(mockNetworkService.delete).toHaveBeenCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+    });
   });
 });

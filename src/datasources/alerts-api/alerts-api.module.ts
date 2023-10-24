@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { HttpErrorFactory } from '../errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 
