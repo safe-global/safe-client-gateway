@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ExchangeApiModule } from '@/datasources/exchange-api/exchange-api.module';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { TransactionApiModule } from '@/datasources/transaction-api/transaction-api.module';
+import { AlertsApiModule } from '@/datasources/alerts-api/alerts-api.module';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -71,6 +72,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     ConfigApiModule,
     ExchangeApiModule,
     PricesApiModule,
+    AlertsApiModule,
     HumanDescriptionApiModule,
     TransactionApiModule,
   ],
