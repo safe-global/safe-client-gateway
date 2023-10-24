@@ -1362,7 +1362,7 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(Date.now() / 1000).toString(),
+          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
 
