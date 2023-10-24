@@ -6,7 +6,7 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import * as request from 'supertest';
 
-describe('Health Controller tests', () => {
+describe('Root Controller tests', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
