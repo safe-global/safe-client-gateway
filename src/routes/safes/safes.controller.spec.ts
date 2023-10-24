@@ -543,6 +543,11 @@ describe('Safes Controller (Unit)', () => {
   });
 
   it('txQueuedTag is now if there are no Multisig transactions', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -589,12 +594,19 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(Date.now() / 1000).toString(),
+          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('txQueuedTag is now if Multisig transactions throw', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -640,9 +652,11 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(Date.now() / 1000).toString(),
+          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('collectiblesTag is computed from Ethereum transaction with executionDate date', async () => {
@@ -716,6 +730,11 @@ describe('Safes Controller (Unit)', () => {
   });
 
   it('collectiblesTag is now if there are no Ethereum transactions', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -762,12 +781,19 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(Date.now() / 1000).toString(),
+          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('collectiblesTag is now if Ethereum transactions throw', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -813,9 +839,11 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(Date.now() / 1000).toString(),
+          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Multisig transaction with modified date', async () => {
@@ -1107,6 +1135,11 @@ describe('Safes Controller (Unit)', () => {
   });
 
   it('txHistoryTag is now if there are no Multisig/Ethereum/Module transactions', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -1153,9 +1186,11 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(Date.now() / 1000).toString(),
+          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Ethereum transaction if Multisig transactions throw', async () => {
@@ -1279,6 +1314,11 @@ describe('Safes Controller (Unit)', () => {
   });
 
   it('txHistoryTag is now if Multisig/Ethereum/Module transactions throw', async () => {
+    jest.useFakeTimers();
+
+    const date = faker.date.anytime();
+    jest.setSystemTime(date);
+
     const chain = chainBuilder().build();
     const masterCopies = [masterCopyBuilder().build()];
     const masterCopyInfo = contractBuilder().build();
@@ -1325,6 +1365,8 @@ describe('Safes Controller (Unit)', () => {
           txHistoryTag: Math.floor(Date.now() / 1000).toString(),
         }),
       );
+
+    jest.useRealTimers();
   });
 
   it('messagesTag is the latest modified timestamp', async () => {
