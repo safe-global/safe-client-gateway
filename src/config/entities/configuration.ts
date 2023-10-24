@@ -58,6 +58,13 @@ export default () => ({
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  mappings: {
+    history: {
+      maxNestedTransfers: parseInt(
+        process.env.MAX_NESTED_TRANSFERS ?? `${100}`,
+      ),
+    },
+  },
   prices: {
     baseUri:
       process.env.PRICES_PROVIDER_API_BASE_URI ||

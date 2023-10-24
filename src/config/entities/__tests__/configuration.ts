@@ -43,6 +43,11 @@ export default (): ReturnType<typeof configuration> => ({
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  mappings: {
+    history: {
+      maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),
+    },
+  },
   prices: {
     baseUri:
       process.env.PRICES_PROVIDER_API_BASE_URI ||
