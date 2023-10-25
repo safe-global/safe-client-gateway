@@ -44,7 +44,7 @@ export class TenderlyApi implements IAlertsApi {
           contracts: contracts.map((contract) => ({
             address: contract.address,
             display_name: contract.displayName,
-            network_id: contract.networkId,
+            network_id: contract.chainId,
           })),
         },
       });

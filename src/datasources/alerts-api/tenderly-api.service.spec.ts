@@ -2,14 +2,14 @@ import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-} as unknown as AxiosNetworkService;
+} as unknown as INetworkService;
 const mockNetworkService = jest.mocked(networkService);
 
 const httpErrorFactory = {
@@ -66,17 +66,17 @@ describe('TenderlyApi', () => {
         {
           address: faker.finance.ethereumAddress(),
           displayName: faker.word.words(),
-          networkId: faker.string.numeric(),
+          chainId: faker.string.numeric(),
         },
         {
           address: faker.finance.ethereumAddress(),
           displayName: faker.word.words(),
-          networkId: faker.string.numeric(),
+          chainId: faker.string.numeric(),
         },
         {
           address: faker.finance.ethereumAddress(),
           displayName: faker.word.words(),
-          networkId: faker.string.numeric(),
+          chainId: faker.string.numeric(),
         },
       ];
 
@@ -92,7 +92,7 @@ describe('TenderlyApi', () => {
             contracts: contracts.map((contract) => ({
               address: contract.address,
               display_name: contract.displayName,
-              network_id: contract.networkId,
+              network_id: contract.chainId,
             })),
           },
         },

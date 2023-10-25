@@ -69,10 +69,10 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
 @Global()
 @Module({
   imports: [
+    AlertsApiModule,
     ConfigApiModule,
     ExchangeApiModule,
     PricesApiModule,
-    AlertsApiModule,
     HumanDescriptionApiModule,
     TransactionApiModule,
   ],

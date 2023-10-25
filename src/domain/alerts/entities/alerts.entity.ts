@@ -1,7 +1,7 @@
 export type Contract = {
   address: string;
-  networkId: string;
+  chainId: string;
   displayName?: string;
 };
 
-export type ContractId = `${Contract['networkId']}:${Contract['address']}`;
+export type ContractId = `${Contract['chainId']}:${Contract['address']}`;
