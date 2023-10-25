@@ -9,8 +9,17 @@ const configurationSchema: Schema = {
       type: 'string',
       enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
     },
+    ALERTS_PROVIDER_API_KEY: { type: 'string' },
+    ALERTS_PROVIDER_ACCOUNT: { type: 'string' },
+    ALERTS_PROVIDER_PROJECT: { type: 'string' },
   },
-  required: ['AUTH_TOKEN', 'EXCHANGE_API_KEY'],
+  required: [
+    'AUTH_TOKEN',
+    'EXCHANGE_API_KEY',
+    'ALERTS_PROVIDER_API_KEY',
+    'ALERTS_PROVIDER_ACCOUNT',
+    'ALERTS_PROVIDER_PROJECT',
+  ],
 };
 
 export function validate(
