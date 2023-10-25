@@ -31,7 +31,8 @@ describe('Get contract e2e test', () => {
       address: '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4',
       name: 'CreateCall',
       displayName: '',
-      logoUri: expect.any(String),
+      logoUri:
+        'https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4.png',
       contractAbi: {
         abi: [
           {
@@ -107,25 +108,18 @@ describe('Get contract e2e test', () => {
       trustedForDelegateCall: false,
     };
 
-    let logoUri: string | null = null;
-
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/contracts/${contractAddress}`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
-
-        // logoUri is mutable and may have been updated on the Transaction Service
-        logoUri = body.logoUri;
       });
 
     const cacheContent = await redisClient.hGet(
       `${chainId}_contract_${contractAddress}`,
       '',
     );
-    expect(cacheContent).toEqual(
-      JSON.stringify({ ...expectedResponse, logoUri }),
-    );
+    expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
   });
 
   afterAll(async () => {
