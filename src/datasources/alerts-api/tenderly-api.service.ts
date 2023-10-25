@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
+import { Contract, ContractId } from '@/domain/alerts/entities/alert.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
 import {
   INetworkService,

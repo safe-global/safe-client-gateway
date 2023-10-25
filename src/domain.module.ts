@@ -3,6 +3,8 @@ import { ExchangeApiModule } from '@/datasources/exchange-api/exchange-api.modul
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { TransactionApiModule } from '@/datasources/transaction-api/transaction-api.module';
 import { AlertsApiModule } from '@/datasources/alerts-api/alerts-api.module';
+import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
+import { AlertsRepository } from '@/domain/alerts/alerts.repository';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -77,6 +79,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     TransactionApiModule,
   ],
   providers: [
+    { provide: IAlertsRepository, useClass: AlertsRepository },
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
