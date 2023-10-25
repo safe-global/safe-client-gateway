@@ -4,6 +4,13 @@ export default () => ({
     version: process.env.APPLICATION_VERSION,
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
+  alerts: {
+    baseUri:
+      process.env.ALERTS_PROVIDER_API_BASE_URI || 'https://api.tenderly.co',
+    apiKey: process.env.ALERTS_PROVIDER_API_KEY,
+    account: process.env.ALERTS_PROVIDER_ACCOUNT,
+    project: process.env.ALERTS_PROVIDER_PROJECT,
+  },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
     token: process.env.AUTH_TOKEN,

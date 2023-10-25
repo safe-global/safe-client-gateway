@@ -26,6 +26,9 @@ services:
       EXCHANGE_API_KEY: ${EXCHANGE_API_KEY-example_api_key}
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
       AUTH_TOKEN: ${AUTH_TOKEN-example_auth_token}
+      ALERTS_PROVIDER_API_KEY: ${ALERTS_PROVIDER_API_KEY-example_api_key}
+      ALERTS_PROVIDER_ACCOUNT: ${ALERTS_PROVIDER_ACCOUNT-example_account}
+      ALERTS_PROVIDER_PROJECT: ${ALERTS_PROVIDER_PROJECT-example_project}
     depends_on:
       - redis
       - db
