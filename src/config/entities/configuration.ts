@@ -74,7 +74,7 @@ export default () => ({
     chains: {
       1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
       10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
-      100: { nativeCoin: 'gnosis', chainName: 'xdai' },
+      100: { nativeCoin: 'xdai', chainName: 'xdai' },
       1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
       11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
       1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
