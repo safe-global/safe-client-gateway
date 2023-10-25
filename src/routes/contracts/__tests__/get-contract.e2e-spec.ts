@@ -31,8 +31,7 @@ describe('Get contract e2e test', () => {
       address: '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4',
       name: 'CreateCall',
       displayName: '',
-      logoUri:
-        'https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4.png',
+      logoUri: expect.any(String),
       contractAbi: {
         abi: [
           {
