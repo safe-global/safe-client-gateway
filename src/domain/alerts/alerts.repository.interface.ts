@@ -1,4 +1,4 @@
-import { Alert } from '@/domain/alerts/entities/alert.entity';
+import { Alert } from '@/domain/alerts/entities/alerts.entity';
 
 export const IAlertsRepository = Symbol('IAlertsRepository');
 

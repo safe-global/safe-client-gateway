@@ -1,4 +1,4 @@
-import { Contract, ContractId } from '@/domain/alerts/entities/alert.entity';
+import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
 
 export const IAlertsApi = Symbol('IAlertsApi');
 

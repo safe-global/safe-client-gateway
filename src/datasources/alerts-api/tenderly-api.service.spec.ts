@@ -3,7 +3,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Contract, ContractId } from '@/domain/alerts/entities/alert.entity';
+import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {

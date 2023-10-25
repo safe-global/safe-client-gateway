@@ -5,6 +5,7 @@ import { TransactionApiModule } from '@/datasources/transaction-api/transaction-
 import { AlertsApiModule } from '@/datasources/alerts-api/alerts-api.module';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { AlertsRepository } from '@/domain/alerts/alerts.repository';
+import { AlertsValidator } from '@/domain/alerts/alerts.validator';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -101,6 +102,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
+    AlertsValidator,
     AssetPriceValidator,
     BackboneValidator,
     BalancesValidator,
