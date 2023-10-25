@@ -4,7 +4,7 @@ import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.sourc
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
@@ -33,7 +33,7 @@ const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 const networkService = jest.mocked({
   post: jest.fn(),
-}) as unknown as AxiosNetworkService;
+}) as unknown as INetworkService;
 
 describe('TransactionApi', () => {
   const chainId = '1';
