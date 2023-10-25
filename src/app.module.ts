@@ -9,6 +9,7 @@ import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
 
+import { AlertsModule } from '@/routes/alerts/alerts.module';
 import { ChainsModule } from '@/routes/chains/chains.module';
 import { BalancesModule } from '@/routes/balances/balances.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -47,6 +48,7 @@ export const configurationModule = ConfigurationModule.register(configuration);
   imports: [
     // features
     AboutModule,
+    AlertsModule,
     BalancesModule,
     CacheHooksModule,
     ChainsModule,
