@@ -107,18 +107,25 @@ describe('Get contract e2e test', () => {
       trustedForDelegateCall: false,
     };
 
+    let logoUri: string | null = null;
+
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/contracts/${contractAddress}`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
+
+        // logoUri is mutable and may have been updated on the Transaction Service
+        logoUri = body.logoUri;
       });
 
     const cacheContent = await redisClient.hGet(
       `${chainId}_contract_${contractAddress}`,
       '',
     );
-    expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
+    expect(cacheContent).toEqual(
+      JSON.stringify({ ...expectedResponse, logoUri }),
+    );
   });
 
   afterAll(async () => {
