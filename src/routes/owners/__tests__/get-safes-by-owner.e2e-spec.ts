@@ -12,7 +12,7 @@ describe('Get safes by owner e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register()],
     }).compile();
 
     app = moduleRef.createNestApplication();
