@@ -4,8 +4,8 @@ import {
   AlertLog,
   AlertTransaction,
   Alert,
-  AlertEventType,
-} from '@/routes/alerts/entities/alerts.entity';
+  EventType,
+} from '@/routes/alerts/entities/alert.dto';
 
 function alertLogBuilder(): IBuilder<AlertLog> {
   return Builder.new<AlertLog>()
@@ -47,6 +47,6 @@ function alertTransactionBuilder(): IBuilder<AlertTransaction> {
 export function alertBuilder(): IBuilder<Alert> {
   return Builder.new<Alert>()
     .with('id', faker.string.uuid())
-    .with('event_type', faker.helpers.enumValue(AlertEventType))
+    .with('event_type', faker.helpers.enumValue(EventType))
     .with('transaction', alertTransactionBuilder().build());
 }

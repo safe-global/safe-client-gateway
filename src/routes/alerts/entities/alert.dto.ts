@@ -1,10 +1,10 @@
-export type AlertLog = {
+export class AlertLog {
   address: string;
   topics: Array<string>;
   data: string;
-};
+}
 
-export type AlertTransaction = {
+export class AlertTransaction {
   network: string;
   block_hash: string;
   block_number: number;
@@ -21,14 +21,14 @@ export type AlertTransaction = {
   gas_price: string;
   gas_tip_cap: string;
   gas_fee_cap: string;
-};
+}
 
-export enum AlertEventType {
+export enum EventType {
   ALERT = 'ALERT',
 }
 
-export type Alert = {
+export class Alert {
   id: string;
-  event_type: AlertEventType.ALERT;
+  event_type: EventType.ALERT;
   transaction: AlertTransaction;
-};
+}

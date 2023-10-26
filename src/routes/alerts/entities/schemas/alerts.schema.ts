@@ -3,8 +3,8 @@ import {
   AlertLog,
   AlertTransaction,
   Alert,
-  AlertEventType,
-} from '@/routes/alerts/entities/alerts.entity';
+  EventType,
+} from '@/routes/alerts/entities/alert.dto';
 
 export const ALERT_LOGS_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/alerts/alert-logs.json';
@@ -77,8 +77,8 @@ export const alertSchema: JSONSchemaType<Alert> = {
     id: { type: 'string' },
     event_type: {
       type: 'string',
-      default: AlertEventType.ALERT,
-      enum: Object.values(AlertEventType),
+      default: EventType.ALERT,
+      enum: Object.values(EventType),
     },
     transaction: { $ref: 'alert-transaction.json' },
   },
