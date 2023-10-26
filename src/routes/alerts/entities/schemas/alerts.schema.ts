@@ -75,11 +75,7 @@ export const alertSchema: JSONSchemaType<Alert> = {
   type: 'object',
   properties: {
     id: { type: 'string' },
-    event_type: {
-      type: 'string',
-      default: EventType.ALERT,
-      enum: Object.values(EventType),
-    },
+    event_type: { type: 'string', enum: Object.values(EventType) },
     transaction: { $ref: 'alert-transaction.json' },
   },
   required: ['id', 'event_type', 'transaction'],

@@ -25,6 +25,7 @@ export class AlertTransaction {
 
 export enum EventType {
   ALERT = 'ALERT',
+  TEST = 'TEST',
 }
 
 export class Alert {
