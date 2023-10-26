@@ -1,6 +1,6 @@
 import { ValidateFunction } from 'ajv';
 import { Injectable, PipeTransform, BadRequestException } from '@nestjs/common';
-import { Alert } from '@/routes/alerts/entities/alert.dto';
+import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import {
   ALERT_LOGS_SCHEMA_ID,
   ALERT_SCHEMA_ID,

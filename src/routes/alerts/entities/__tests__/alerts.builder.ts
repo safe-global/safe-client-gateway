@@ -5,7 +5,7 @@ import {
   AlertTransaction,
   Alert,
   EventType,
-} from '@/routes/alerts/entities/alert.dto';
+} from '@/routes/alerts/entities/alert.dto.entity';
 
 function alertLogBuilder(): IBuilder<AlertLog> {
   return Builder.new<AlertLog>()

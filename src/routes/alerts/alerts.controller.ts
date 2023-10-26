@@ -1,6 +1,6 @@
 import { Controller, Post, HttpCode, Body } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { Alert } from '@/routes/alerts/entities/alert.dto';
+import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { AlertValidationPipe } from '@/routes/alerts/pipes/alert-validation.pipe';
 import { AlertsService } from '@/routes/alerts/alerts.service';
 

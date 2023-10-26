@@ -4,7 +4,7 @@ import {
   AlertTransaction,
   Alert,
   EventType,
-} from '@/routes/alerts/entities/alert.dto';
+} from '@/routes/alerts/entities/alert.dto.entity';
 
 export const ALERT_LOGS_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/alerts/alert-logs.json';

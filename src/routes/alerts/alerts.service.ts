@@ -1,4 +1,4 @@
-import { Alert } from '@/routes/alerts/entities/alert.dto';
+import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
