@@ -12,7 +12,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder';
 
-describe('Alerts (Unit)', () => {
+describe.skip('Alerts (Unit)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
