@@ -30,6 +30,6 @@ export enum EventType {
 
 export class Alert {
   id: string;
-  event_type: EventType.ALERT;
+  event_type: EventType;
   transaction: AlertTransaction;
 }
