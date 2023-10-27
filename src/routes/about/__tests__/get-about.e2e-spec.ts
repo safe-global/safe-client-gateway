@@ -10,7 +10,7 @@ describe('Get about e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register()],
+      imports: [AppModule.registerAsync()],
     }).compile();
 
     app = moduleRef.createNestApplication();

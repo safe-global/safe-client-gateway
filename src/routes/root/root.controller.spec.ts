@@ -12,7 +12,7 @@ describe('Root Controller tests', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.registerAsync(configuration)],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)

@@ -16,7 +16,7 @@ describe('Data decode e2e tests', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register()],
+      imports: [AppModule.registerAsync()],
     }).compile();
 
     app = await new TestAppProvider().provide(moduleRef);

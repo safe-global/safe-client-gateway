@@ -52,7 +52,9 @@ export class AppModule implements NestModule {
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 
-  static register(configFactory: ConfigFactory = configuration): DynamicModule {
+  static async registerAsync(
+    configFactory: ConfigFactory = configuration,
+  ): Promise<DynamicModule> {
     return {
       module: AppModule,
       imports: [

@@ -24,7 +24,7 @@ describe('Owners Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.registerAsync(configuration)],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)

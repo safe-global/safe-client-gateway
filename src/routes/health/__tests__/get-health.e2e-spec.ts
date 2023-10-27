@@ -9,7 +9,7 @@ describe('Get health e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register()],
+      imports: [AppModule.registerAsync()],
     }).compile();
     app = await new TestAppProvider().provide(moduleRef);
     await app.init();
