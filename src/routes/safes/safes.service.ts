@@ -14,9 +14,10 @@ import { AddressInfoHelper } from '@/routes/common/address-info/address-info.hel
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
-  SafeState,
   MasterCopyVersionState,
+  SafeState,
 } from '@/routes/safes/entities/safe-info.entity';
+import { RecommendedNonce } from '@/routes/safes/entities/recommended-nonce.entity';
 
 @Injectable()
 export class SafesService {
@@ -107,6 +108,16 @@ export class SafesService {
       guardInfo,
       safe.version,
     );
+  }
+
+  public async getRecommendedNonce(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<RecommendedNonce> {
+    const recommendedNonce =
+      await this.safeRepository.getRecommendedNonce(args);
+
+    return new RecommendedNonce(recommendedNonce);
   }
 
   private toUnixTimestampInSecondsOrNow(date: Date | null): number {

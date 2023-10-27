@@ -160,4 +160,15 @@ export interface ISafeRepository {
     safeAddress: string;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown>;
+
+  /**
+   * Gets the maximum between the current Safe nonce and the last transaction nonce plus 1.
+   * If there is no last transaction, the Safe nonce is returned.
+   *
+   * @returns recommended nonce for next transaction.
+   */
+  getRecommendedNonce(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<number>;
 }

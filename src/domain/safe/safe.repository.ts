@@ -363,4 +363,23 @@ export class SafeRepository implements ISafeRepository {
       data: args.proposeTransactionDto,
     });
   }
+
+  async getRecommendedNonce(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<number> {
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+
+    const lastTransaction = await this.getLastTransactionSortedByNonce({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+
+    return lastTransaction
+      ? Math.max(safe.nonce, lastTransaction.nonce + 1)
+      : safe.nonce;
+  }
 }
