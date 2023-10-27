@@ -41,7 +41,6 @@ import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
 import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -58,8 +57,6 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         // features
-        // TODO: Rely on configFactory to enable/disable features
-        AlertsModule,
         AboutModule,
         BalancesModule,
         CacheHooksModule,

@@ -13,7 +13,7 @@ import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder'
 import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
-describe('Alerts (Unit)', () => {
+describe.skip('Alerts (Unit)', () => {
   let app: INestApplication;
   let loggingService: ILoggingService;
 
