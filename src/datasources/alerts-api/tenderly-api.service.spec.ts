@@ -3,7 +3,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
+import { Contract } from '@/domain/alerts/entities/alerts.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {
@@ -60,97 +60,56 @@ describe('TenderlyApi', () => {
     ).toThrow();
   });
 
-  describe('Adding contracts', () => {
-    it('should add contracts', async () => {
-      const contracts: Array<Contract> = [
-        {
-          address: faker.finance.ethereumAddress(),
-          displayName: faker.word.words(),
-          chainId: faker.string.numeric(),
+  it('should add contracts', async () => {
+    const contracts: Array<Contract> = [
+      {
+        address: faker.finance.ethereumAddress(),
+        displayName: faker.word.words(),
+        chainId: faker.string.numeric(),
+      },
+      {
+        address: faker.finance.ethereumAddress(),
+        displayName: faker.word.words(),
+        chainId: faker.string.numeric(),
+      },
+      {
+        address: faker.finance.ethereumAddress(),
+        displayName: faker.word.words(),
+        chainId: faker.string.numeric(),
+      },
+    ];
+
+    await service.addContracts(contracts);
+
+    expect(mockNetworkService.post).toBeCalledWith(
+      `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
+      {
+        headers: {
+          'X-Access-Key': tenderlyApiKey,
         },
-        {
-          address: faker.finance.ethereumAddress(),
-          displayName: faker.word.words(),
-          chainId: faker.string.numeric(),
+        params: {
+          contracts: contracts.map((contract) => ({
+            address: contract.address,
+            display_name: contract.displayName,
+            network_id: contract.chainId,
+          })),
         },
-        {
-          address: faker.finance.ethereumAddress(),
-          displayName: faker.word.words(),
-          chainId: faker.string.numeric(),
-        },
-      ];
-
-      await service.addContracts(contracts);
-
-      expect(mockNetworkService.post).toBeCalledWith(
-        `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
-        {
-          headers: {
-            'X-Access-Key': tenderlyApiKey,
-          },
-          params: {
-            contracts: contracts.map((contract) => ({
-              address: contract.address,
-              display_name: contract.displayName,
-              network_id: contract.chainId,
-            })),
-          },
-        },
-      );
-      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
-    });
-
-    it('should forward error', async () => {
-      mockNetworkService.post.mockImplementation(() =>
-        Promise.reject('Unexpected error'),
-      );
-      mockHttpErrorFactory.from.mockImplementation(
-        () => new DataSourceError('Unexpected error'),
-      );
-
-      await service.addContracts([]);
-
-      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
-    });
+      },
+    );
+    expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
   });
 
-  describe('Removing contracts', () => {
-    it('should remove contracts', async () => {
-      const contractIds: Array<ContractId> = [
-        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-        `${faker.string.numeric()}:${faker.finance.ethereumAddress()}`,
-      ];
+  it('should forward error', async () => {
+    mockNetworkService.post.mockImplementation(() =>
+      Promise.reject('Unexpected error'),
+    );
+    mockHttpErrorFactory.from.mockImplementation(
+      () => new DataSourceError('Unexpected error'),
+    );
 
-      await service.removeContracts(contractIds);
+    await service.addContracts([]);
 
-      expect(mockNetworkService.delete).toBeCalledWith(
-        `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
-        {
-          headers: {
-            'X-Access-Key': tenderlyApiKey,
-          },
-          params: {
-            contract_ids: contractIds,
-          },
-        },
-      );
-      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
-    });
-
-    it('should forward error', async () => {
-      mockNetworkService.delete.mockImplementation(() =>
-        Promise.reject('Unexpected error'),
-      );
-      mockHttpErrorFactory.from.mockImplementation(
-        () => new DataSourceError('Unexpected error'),
-      );
-
-      await service.removeContracts([]);
-
-      expect(mockNetworkService.delete).toHaveBeenCalledTimes(1);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
-    });
+    expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
   });
 });
