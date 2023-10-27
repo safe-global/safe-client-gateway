@@ -18,7 +18,7 @@ import { TransactionItem } from '@/routes/transactions/entities/transaction-item
 import { CreationTransactionMapper } from '@/routes/transactions/mappers/creation-transaction/creation-transaction.mapper';
 import { ModuleTransactionMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction.mapper';
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
-import { IncomingTransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 class TransactionDomainGroup {
@@ -39,7 +39,7 @@ export class TransactionsHistoryMapper {
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
-    private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly transferMapper: TransferMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {
     this.maxNestedTransfers = configurationService.getOrThrow(
@@ -176,11 +176,7 @@ export class TransactionsHistoryMapper {
       .map(
         async (transfer) =>
           new TransactionItem(
-            await this.incomingTransferMapper.mapTransfer(
-              chainId,
-              transfer,
-              safe,
-            ),
+            await this.transferMapper.mapTransfer(chainId, transfer, safe),
           ),
       );
   }
