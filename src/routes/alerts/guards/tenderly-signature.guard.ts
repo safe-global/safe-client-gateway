@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Request } from 'express';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
@@ -67,6 +67,10 @@ export class TenderlySignatureGuard implements CanActivate {
     const signatureBuffer = Buffer.from(args.signature);
     const digestBuffer = Buffer.from(args.digest);
 
-    return crypto.timingSafeEqual(signatureBuffer, digestBuffer);
+    try {
+      return crypto.timingSafeEqual(signatureBuffer, digestBuffer);
+    } catch {
+      return false;
+    }
   }
 }

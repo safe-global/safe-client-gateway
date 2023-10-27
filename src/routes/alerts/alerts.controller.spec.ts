@@ -10,9 +10,11 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder';
+import { TenderlySignatureGuard } from '@/routes/alerts/guards/tenderly-signature.guard';
 
 describe('Alerts (Unit)', () => {
   let app: INestApplication;
+  let canActive: boolean;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -26,6 +28,8 @@ describe('Alerts (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideGuard(TenderlySignatureGuard)
+      .useValue({ canActivate: () => canActive })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -36,15 +40,24 @@ describe('Alerts (Unit)', () => {
     await app.close();
   });
 
-  it('returns 200 (OK) for valid payload', async () => {
+  it('returns 200 (OK) for valid signature/valid payload', async () => {
+    canActive = true;
     const alert = alertBuilder().build();
 
     await request(app.getHttpServer()).post('/alerts').send(alert).expect(200);
   });
 
-  it('returns 400 (Bad Request) for invalid payload', async () => {
-    const data = {};
+  it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
+    canActive = true;
+    const alert = {};
 
-    await request(app.getHttpServer()).post('/alerts').send(data).expect(400);
+    await request(app.getHttpServer()).post('/alerts').send(alert).expect(400);
+  });
+
+  it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
+    canActive = false;
+    const alert = alertBuilder().build();
+
+    await request(app.getHttpServer()).post('/alerts').send(alert).expect(403);
   });
 });
