@@ -7,6 +7,7 @@ export default () => ({
   alerts: {
     baseUri:
       process.env.ALERTS_PROVIDER_API_BASE_URI || 'https://api.tenderly.co',
+    signingKey: process.env.ALERTS_PROVIDER_SIGNING_KEY,
     apiKey: process.env.ALERTS_PROVIDER_API_KEY,
     account: process.env.ALERTS_PROVIDER_ACCOUNT,
     project: process.env.ALERTS_PROVIDER_PROJECT,

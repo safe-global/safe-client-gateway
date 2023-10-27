@@ -9,6 +9,7 @@ const configurationSchema: Schema = {
       type: 'string',
       enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
     },
+    ALERTS_PROVIDER_SIGNING_KEY: { type: 'string' },
     ALERTS_PROVIDER_API_KEY: { type: 'string' },
     ALERTS_PROVIDER_ACCOUNT: { type: 'string' },
     ALERTS_PROVIDER_PROJECT: { type: 'string' },
@@ -16,6 +17,7 @@ const configurationSchema: Schema = {
   required: [
     'AUTH_TOKEN',
     'EXCHANGE_API_KEY',
+    'ALERTS_PROVIDER_SIGNING_KEY',
     'ALERTS_PROVIDER_API_KEY',
     'ALERTS_PROVIDER_ACCOUNT',
     'ALERTS_PROVIDER_PROJECT',

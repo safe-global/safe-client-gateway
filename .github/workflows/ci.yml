@@ -57,6 +57,7 @@ jobs:
         env:
           EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+          ALERTS_PROVIDER_SIGNING_KEY: ${{ secrets.ALERTS_PROVIDER_SIGNING_KEY }}
           ALERTS_PROVIDER_API_KEY: ${{ secrets.ALERTS_PROVIDER_API_KEY }}
           ALERTS_PROVIDER_ACCOUNT: ${{ secrets.ALERTS_PROVIDER_ACCOUNT }}
           ALERTS_PROVIDER_PROJECT: ${{ secrets.ALERTS_PROVIDER_PROJECT }}
