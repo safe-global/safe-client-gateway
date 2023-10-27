@@ -1,18 +1,13 @@
 import { Hex, toHex } from 'viem';
 import { faker } from '@faker-js/faker';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
-import { ILoggingService } from '@/logging/logging.interface';
-
-const mockLoggingService = {
-  warn: jest.fn(),
-} as unknown as ILoggingService;
 
 describe('DelayModifierDecoder', () => {
   let target: DelayModifierDecoder;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    target = new DelayModifierDecoder(mockLoggingService);
+    target = new DelayModifierDecoder();
   });
 
   it('decodes a TransactionAdded event correctly', () => {
@@ -36,17 +31,11 @@ describe('DelayModifierDecoder', () => {
         value: BigInt(0),
       },
     });
-    expect(mockLoggingService.warn).not.toHaveBeenCalled();
   });
 
-  it('logs if the event cannot be decoded', () => {
+  it('throws if the event cannot be decoded', () => {
     const data = toHex(faker.string.hexadecimal({ length: 514 }));
 
-    expect(target.decodeEventLog({ data, topics: [] })).toBeUndefined();
-    expect(mockLoggingService.warn).toHaveBeenCalledWith({
-      type: 'invalid_event_log',
-      data,
-      topics: [],
-    });
+    expect(() => target.decodeEventLog({ data, topics: [] })).toThrow();
   });
 });

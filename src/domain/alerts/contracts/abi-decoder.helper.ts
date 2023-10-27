@@ -6,15 +6,11 @@ import {
   decodeEventLog as _decodeEventLog,
   decodeFunctionData as _decodeFunctionData,
 } from 'viem';
-import { ILoggingService } from '@/logging/logging.interface';
 
-export class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
-  abi: TAbi;
+export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
+  readonly abi: TAbi;
 
-  constructor(
-    private readonly loggingService: ILoggingService,
-    abi: TAbi,
-  ) {
+  constructor(abi: TAbi) {
     this.abi = abi;
   }
 
@@ -29,30 +25,15 @@ export class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
       'abi'
     >,
   ) {
-    try {
-      return _decodeEventLog({
-        ...args,
-        abi: this.abi,
-      });
-    } catch {
-      this.loggingService.warn({
-        type: 'invalid_event_log',
-        data: args.data,
-        topics: args.topics,
-      });
-    }
+    return _decodeEventLog({
+      ...args,
+      abi: this.abi,
+    });
   }
 
   decodeFunctionData<TAbi extends Abi | readonly unknown[]>(
     args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
   ) {
-    try {
-      return _decodeFunctionData({ ...args, abi: this.abi });
-    } catch {
-      this.loggingService.warn({
-        type: 'invalid_function_data',
-        data: args.data,
-      });
-    }
+    return _decodeFunctionData({ ...args, abi: this.abi });
   }
 }
