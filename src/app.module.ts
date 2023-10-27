@@ -40,7 +40,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
-import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
+import { AlertsModule } from '@/routes/alerts/alerts.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -52,11 +52,13 @@ export class AppModule implements NestModule {
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 
-  static register(configFactory: ConfigFactory = configuration): DynamicModule {
+  static register(configFactory = configuration): DynamicModule {
+    const { features } = configFactory();
     return {
       module: AppModule,
       imports: [
         // features
+        ...(features.alerts ? [AlertsModule] : []),
         AboutModule,
         BalancesModule,
         CacheHooksModule,

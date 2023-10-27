@@ -43,6 +43,7 @@ export default (): ReturnType<typeof configuration> => ({
     pricesProviderChainIds: ['10'],
     humanDescription: true,
     messagesCache: true,
+    alerts: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
