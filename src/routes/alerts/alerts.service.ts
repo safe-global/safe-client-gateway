@@ -1,6 +1,6 @@
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
+import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -13,11 +13,6 @@ export class AlertsService {
   ) {}
 
   onAlert(alert: Alert): void {
-    if (alert.event_type === EventType.TEST) {
-      this.loggingService.debug('Test alert received');
-      return;
-    }
-
     for (const log of alert.transaction.logs) {
       try {
         this.alertsRepository.handleAlertLog(log);
