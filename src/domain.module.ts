@@ -65,6 +65,10 @@ import { PricesRepository } from '@/domain/prices/prices.repository';
 import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
 import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
 import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
+import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
+import { AlertsRepository } from '@/domain/alerts/alerts.repository';
+import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
+import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 
 @Global()
 @Module({
@@ -77,6 +81,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     TransactionApiModule,
   ],
   providers: [
+    { provide: IAlertsRepository, useClass: AlertsRepository },
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
@@ -106,6 +111,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     ContractsValidator,
     CreationTransactionValidator,
     DataDecodedValidator,
+    DelayModifierDecoder,
     DelegateValidator,
     EstimationsValidator,
     ExchangeFiatCodesValidator,
@@ -116,6 +122,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     ModuleTransactionValidator,
     MultisigTransactionValidator,
     SafeAppsValidator,
+    SafeDecoder,
     SafeListValidator,
     SafeValidator,
     SimpleBalancesValidator,
@@ -124,6 +131,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     TransferValidator,
   ],
   exports: [
+    IAlertsRepository,
     IBackboneRepository,
     IBalancesRepository,
     IChainsRepository,

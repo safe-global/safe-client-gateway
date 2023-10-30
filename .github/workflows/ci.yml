@@ -6,6 +6,10 @@ on:
   release:
     types: [released]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prettier:
     runs-on: ubuntu-latest

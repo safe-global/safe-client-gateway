@@ -170,15 +170,23 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private mapTransfer(transfers: Transfer[], chainId: string, safe: Safe) {
-    return transfers
-      .slice(0, this.maxNestedTransfers)
-      .map(
-        async (transfer) =>
-          new TransactionItem(
-            await this.transferMapper.mapTransfer(chainId, transfer, safe),
-          ),
+  private async mapTransfers(
+    transfers: Transfer[],
+    chainId: string,
+    safe: Safe,
+  ): Promise<TransactionItem[]> {
+    const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
+    const result: TransactionItem[] = [];
+
+    for (const transfer of limitedTransfers) {
+      const nestedTransaction = await this.transferMapper.mapTransfer(
+        chainId,
+        transfer,
+        safe,
       );
+      result.push(new TransactionItem(nestedTransaction));
+    }
+    return result;
   }
 
   private mapGroupTransactions(
@@ -206,9 +214,7 @@ export class TransactionsHistoryMapper {
         } else if (isEthereumTransaction(transaction)) {
           const transfers = transaction.transfers;
           if (transfers != null) {
-            return await Promise.all(
-              this.mapTransfer(transfers, chainId, safe),
-            );
+            return await this.mapTransfers(transfers, chainId, safe);
           }
         } else if (isCreationTransaction(transaction)) {
           return new TransactionItem(
