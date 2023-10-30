@@ -53,7 +53,7 @@ export class TenderlySignatureGuard implements CanActivate {
     // Create a HMAC SHA256 hash using the signing key
     const hmac = crypto.createHmac('sha256', this.signingKey);
     // Update the hash with the request body using utf8
-    hmac.update(args.body.toString(), 'utf8');
+    hmac.update(JSON.stringify(args.body), 'utf8');
     // Update the hash with the request timestamp
     hmac.update(timestamp);
 

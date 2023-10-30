@@ -9,7 +9,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   alerts: {
     baseUri: faker.internet.url({ appendSlash: false }),
-    signingKey: faker.string.uuid(),
+    signingKey: faker.string.nanoid(32),
     apiKey: faker.string.hexadecimal({ length: 32 }),
     account: faker.string.sample(),
     project: faker.string.sample(),
