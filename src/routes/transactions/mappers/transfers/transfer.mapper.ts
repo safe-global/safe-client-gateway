@@ -10,7 +10,7 @@ import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/tran
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 @Injectable()
-export class IncomingTransferMapper {
+export class TransferMapper {
   constructor(private readonly transferInfoMapper: TransferInfoMapper) {}
 
   async mapTransfer(

@@ -35,14 +35,14 @@ import { QueuedItemsMapper } from '@/routes/transactions/mappers/queued-items/qu
 import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transaction-preview.mapper';
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
-import { IncomingTransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
-    private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly transferMapper: TransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionsHistoryMapper: TransactionsHistoryMapper,
@@ -264,7 +264,7 @@ export class TransactionsService {
       transfers.results.map(
         async (transfer) =>
           new IncomingTransfer(
-            await this.incomingTransferMapper.mapTransfer(
+            await this.transferMapper.mapTransfer(
               args.chainId,
               transfer,
               safeInfo,
