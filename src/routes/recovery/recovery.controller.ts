@@ -6,7 +6,6 @@ import { AddRecoveryModuleDtoValidationPipe } from '@/routes/recovery/pipes/add-
 
 @ApiTags('recovery')
 @Controller({
-  path: '',
   version: '1',
 })
 export class RecoveryController {

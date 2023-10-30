@@ -21,6 +21,6 @@ export class RecoveryService {
       address: args.addRecoveryModuleDto.moduleAddress,
       displayName: `${args.chainId}:${args.safeAddress}`,
     };
-    return this.alertsRepository.addContracts([contract]);
+    await this.alertsRepository.addContracts([contract]);
   }
 }

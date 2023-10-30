@@ -5,7 +5,7 @@ import { TestingModule, Test } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
@@ -16,7 +16,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
 
-describe.skip('Recovery controller', () => {
+describe('Recovery (Unit)', () => {
   let app: INestApplication;
   let alertsUrl: string;
   let alertsAccount: string;
@@ -47,13 +47,17 @@ describe.skip('Recovery controller', () => {
     await app.init();
   });
 
+  afterAll(async () => {
+    await app.close();
+  });
+
   describe('POST add recovery module for a Safe', () => {
     it('Success', async () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
 
-      networkService.get.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
           ? Promise.resolve({ status: 200 })
@@ -71,17 +75,10 @@ describe.skip('Recovery controller', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
 
-      networkService.get.mockImplementation((url) =>
-        url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.resolve({ status: 200 })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/safes/${safeAddress}/recovery`)
         .send(omit(addRecoveryModuleDto, 'moduleAddress'))
-        .expect(400)
+        .expect(500)
         .expect({ message: 'Validation failed', code: 42, arguments: [] });
     });
 
@@ -90,10 +87,10 @@ describe.skip('Recovery controller', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
 
-      networkService.get.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.resolve({
+          ? Promise.reject({
               data: { message: 'Malformed body', status: 400 },
               status: 400,
             })
@@ -115,17 +112,17 @@ describe.skip('Recovery controller', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
 
-      networkService.get.mockImplementation((url) =>
+      networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.resolve({ status: 503 })
+          ? Promise.reject({ status: 503 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/safes/${safeAddress}/recovery`)
         .send(addRecoveryModuleDto)
-        .expect(400)
+        .expect(503)
         .expect({
           message: 'An error occurred',
           code: 503,

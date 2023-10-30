@@ -41,6 +41,7 @@ import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
 import { AlertsModule } from '@/routes/alerts/alerts.module';
+import { RecoveryModule } from '@/routes/recovery/recovery.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -73,6 +74,7 @@ export class AppModule implements NestModule {
         MessagesModule,
         NotificationsModule,
         OwnersModule,
+        ...(features.alerts && features.recovery ? [RecoveryModule] : []),
         RootModule,
         SafeAppsModule,
         SafesModule,

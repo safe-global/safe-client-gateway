@@ -6,8 +6,6 @@ import { Contract } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
-import { Contract } from '@/domain/alerts/entities/alerts.entity';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
