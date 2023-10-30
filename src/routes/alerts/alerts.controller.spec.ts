@@ -10,9 +10,12 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 describe('Alerts (Unit)', () => {
   let app: INestApplication;
+  let loggingService: ILoggingService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -29,6 +32,8 @@ describe('Alerts (Unit)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    loggingService = moduleFixture.get(LoggingService);
+
     await app.init();
   });
 
@@ -36,10 +41,18 @@ describe('Alerts (Unit)', () => {
     await app.close();
   });
 
-  it('returns 200 (OK) for valid payload', async () => {
-    const alert = alertBuilder().build();
+  it.todo('notifies about addOwnerWithThreshold attempts');
+  it.todo('notifies about non-addOwnerWithThreshold attempts');
+  it.todo('notifies about alerts with multiple logs');
+
+  it('logs unknown alerts', async () => {
+    const warnSpy = jest.spyOn(loggingService, 'warn');
+
+    const alert = alertBuilder().with('event_type', EventType.ALERT).build();
 
     await request(app.getHttpServer()).post('/alerts').send(alert).expect(200);
+
+    expect(warnSpy).toHaveBeenCalledWith('Unknown alert received');
   });
 
   it('returns 400 (Bad Request) for invalid payload', async () => {
