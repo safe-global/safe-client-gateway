@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Contract, ContractId } from '@/domain/alerts/entities/alerts.entity';
+import { Contract } from '@/domain/alerts/entities/alerts.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
 import {
   INetworkService,
@@ -46,22 +46,6 @@ export class TenderlyApi implements IAlertsApi {
             display_name: contract.displayName,
             network_id: contract.chainId,
           })),
-        },
-      });
-    } catch (error) {
-      this.httpErrorFactory.from(error);
-    }
-  }
-
-  async removeContracts(contractIds: Array<ContractId>): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/api/v2/accounts/${this.account}/projects/${this.project}/contracts`;
-      await this.networkService.delete(url, {
-        headers: {
-          [TenderlyApi.HEADER]: this.apiKey,
-        },
-        params: {
-          contract_ids: contractIds,
         },
       });
     } catch (error) {

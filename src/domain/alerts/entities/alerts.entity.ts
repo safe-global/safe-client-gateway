@@ -3,5 +3,3 @@ export type Contract = {
   chainId: string;
   displayName?: string;
 };
-
-export type ContractId = `${Contract['chainId']}:${Contract['address']}`;
