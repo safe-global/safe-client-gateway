@@ -100,14 +100,13 @@ describe('TenderlyApi', () => {
   });
 
   it('should forward error', async () => {
-    mockNetworkService.post.mockImplementation(() =>
-      Promise.reject('Unexpected error'),
-    );
-    mockHttpErrorFactory.from.mockImplementation(
-      () => new DataSourceError('Unexpected error'),
+    const expected = new DataSourceError('Unexpected error');
+    mockHttpErrorFactory.from.mockReturnValue(expected);
+    mockNetworkService.post.mockRejectedValueOnce(
+      new Error('Unexpected error'),
     );
 
-    await service.addContracts([]);
+    await expect(service.addContracts([])).rejects.toThrowError(expected);
 
     expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
     expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
