@@ -8,11 +8,7 @@ import {
 } from 'viem';
 
 export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
-  readonly abi: TAbi;
-
-  constructor(abi: TAbi) {
-    this.abi = abi;
-  }
+  protected constructor(private readonly abi: TAbi) {}
 
   decodeEventLog<
     TEventName extends string | undefined = undefined,

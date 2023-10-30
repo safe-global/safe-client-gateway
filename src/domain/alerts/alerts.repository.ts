@@ -26,15 +26,12 @@ export class AlertsRepository implements IAlertsRepository {
       // Transaction outside of specified ABI => notify user
     } else {
       // addOwnerWithThreshold transaction => notify user
-
-      const safeAddress = decodedEvent.args.to;
-      const [owner, _threshold] = decodedTransaction.args;
-
-      console.log(safeAddress, owner, _threshold);
+      // const safeAddress = decodedEvent.args.to;
+      // const [owner, _threshold] = decodedTransaction.args;
     }
   }
 
-  decodeTransactionAdded(data: Hex) {
+  private decodeTransactionAdded(data: Hex) {
     try {
       return this.safeDecoder.decodeFunctionData({ data });
     } catch {

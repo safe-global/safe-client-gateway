@@ -15,7 +15,7 @@ describe('SafeDecoder', () => {
     const threshold = faker.number.bigInt();
 
     const data = encodeFunctionData({
-      abi: target.abi,
+      abi: (target as any).abi, // cast to access private property
       functionName: 'addOwnerWithThreshold',
       args: [owner, threshold],
     });
@@ -26,7 +26,7 @@ describe('SafeDecoder', () => {
     });
   });
 
-  it('logs if the function call cannot be decoded', () => {
+  it('throws if the function call cannot be decoded', () => {
     const data = faker.string.hexadecimal({ length: 138 }) as Hex;
 
     expect(() => target.decodeFunctionData({ data })).toThrow();
