@@ -4,7 +4,7 @@
 
 ## Motivation
 
-The Safe Client Gateway serves as a bridge for the Safe clients (Android, iOS, Web).
+The Safe Client Gateway serves as a bridge for the Safe{Wallet} clients (Android, iOS, Web).
 
 It provides UI-oriented mappings and data structures for easier integration with several Safe Backend services. In essence, it works as a bridge, connecting the two sides and ensuring smooth, efficient data exchange.
 
