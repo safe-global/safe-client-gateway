@@ -27,6 +27,9 @@ export default (): ReturnType<typeof configuration> => ({
       password: faker.internet.password(),
     },
   },
+  email: {
+    verificationExpireTimeInSeconds: faker.number.int({ max: 60 }),
+  },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),

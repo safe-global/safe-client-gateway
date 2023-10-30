@@ -89,7 +89,8 @@
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
       "index.ts",
-      ".+\\/__tests__\\/.+\\.factory.(t|j)s"
+      ".+\\/__tests__\\/.+\\.factory.(t|j)s",
+      "<rootDir>/src/datasources/db/migration.helper.js"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {

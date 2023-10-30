@@ -35,6 +35,11 @@ jobs:
       fail-fast: false
       matrix:
         task: ['test:cov', 'test:e2e:cov']
+    env:
+      POSTGRES_TEST_DB: test-db
+      POSTGRES_TEST_USER: postgres
+      POSTGRES_TEST_PASSWORD: postgres
+      POSTGRES_TEST_PORT: 5433
     services:
       redis:
         image: redis
@@ -45,6 +50,21 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
+      postgres:
+        image: postgres:14.8
+        env:
+          # Should match the env above. "Variables in the env map cannot be defined in terms of other variables in the map."
+          # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
+          POSTGRES_DB: test-db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
