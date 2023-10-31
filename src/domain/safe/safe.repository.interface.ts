@@ -162,13 +162,17 @@ export interface ISafeRepository {
   }): Promise<unknown>;
 
   /**
-   * Gets the maximum between the current Safe nonce and the last transaction nonce plus 1.
+   * Returns the nonce information for a Safe which includes its current nonce
+   * and the recommended nonce for transaction execution.
+   *
+   * The recommended nonce is executed by getting the maximum between the
+   * current Safe nonce and the last transaction nonce plus 1.
    * If there is no last transaction, the Safe nonce is returned.
    *
-   * @returns recommended nonce for next transaction.
+   * @returns the nonce state of the safe
    */
-  getRecommendedNonce(args: {
+  getNonces(args: {
     chainId: string;
     safeAddress: string;
-  }): Promise<number>;
+  }): Promise<{ currentNonce: number; recommendedNonce: number }>;
 }
