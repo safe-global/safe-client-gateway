@@ -1694,15 +1694,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express@npm:^4.17.18":
-  version: 4.17.18
-  resolution: "@types/express@npm:4.17.18"
+"@types/express@npm:^4.17.20":
+  version: 4.17.20
+  resolution: "@types/express@npm:4.17.20"
   dependencies:
     "@types/body-parser": "*"
     "@types/express-serve-static-core": ^4.17.33
     "@types/qs": "*"
     "@types/serve-static": "*"
-  checksum: 8c178da4f0edff1f006d871fbdc3f849620986ff10bad252f3dfd45b57554e26aaa28c602285df028930d5216e257a06fbaf795070f8bb42f7d87e3b689cba50
+  checksum: bf8a97d283128e5129f9ccabbeef728ff3f0484465e0ae74a304bd0588fa6cb715ae68845650caba9a641944b7791ba125d02ddbd47a7e62aaefdd036570c6c5
   languageName: node
   linkType: hard
 
@@ -6933,7 +6933,7 @@ __metadata:
     "@nestjs/testing": ^10.2.7
     "@node-redis/json": ^1.0.2
     "@safe-global/safe-deployments": ^1.28.0
-    "@types/express": ^4.17.18
+    "@types/express": ^4.17.20
     "@types/jest": 29.5.5
     "@types/lodash": ^4.14.199
     "@types/node": ^20.8.6
