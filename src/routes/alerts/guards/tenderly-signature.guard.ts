@@ -19,7 +19,6 @@ export class TenderlySignatureGuard implements CanActivate {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    // Dashboard key for specific webhook
     this.signingKey =
       this.configurationService.getOrThrow<string>('alerts.signingKey');
   }

@@ -80,7 +80,8 @@ describe('Alerts (Unit)', () => {
       .set('x-tenderly-signature', signature)
       .set('date', timestamp)
       .send(alert)
-      .expect(200);
+      .expect(200)
+      .expect({});
   });
 
   it.todo('notifies about addOwnerWithThreshold attempts');
