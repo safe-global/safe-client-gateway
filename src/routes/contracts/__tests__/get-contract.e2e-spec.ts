@@ -13,7 +13,7 @@ describe('Get contract e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register()],
+      imports: [AppModule],
     }).compile();
 
     app = await new TestAppProvider().provide(moduleRef);
@@ -30,7 +30,7 @@ describe('Get contract e2e test', () => {
     const expectedResponse = {
       address: '0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4',
       name: 'CreateCall',
-      displayName: '',
+      displayName: 'Safe: CreateCall 1.3.0',
       logoUri:
         'https://safe-transaction-assets.staging.5afe.dev/contracts/logos/0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4.png',
       contractAbi: {

@@ -5,7 +5,6 @@ import { TestingModule, Test } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
@@ -15,6 +14,8 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
+import { AlertsModule } from '@/routes/alerts/alerts.module';
+import { RecoveryModule } from '@/routes/recovery/recovery.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -27,7 +28,8 @@ describe('Recovery (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      // TODO remove AlertsModule and RecoveryModule once they're integrated in the AppModule
+      imports: [AppModule, AlertsModule, RecoveryModule],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
