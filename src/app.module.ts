@@ -38,6 +38,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
+import { AlertsModule } from '@/routes/alerts/alerts.module';
 
 // See https://github.com/nestjs/nest/issues/11967
 export const configurationModule = ConfigurationModule.register(configuration);
@@ -46,6 +47,7 @@ export const configurationModule = ConfigurationModule.register(configuration);
   imports: [
     // features
     AboutModule,
+    AlertsModule,
     BalancesModule,
     CacheHooksModule,
     ChainsModule,

@@ -15,7 +15,6 @@ import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder'
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { ConfigurationModule } from '@/config/configuration.module';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -57,8 +56,7 @@ describe('Alerts (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        // TODO remove AlertsModule once it's integrated in the AppModule
-        imports: [AppModule, AlertsModule],
+        imports: [AppModule],
       })
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
@@ -151,8 +149,7 @@ describe('Alerts (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        // TODO remove AlertsModule once it's integrated in the AppModule
-        imports: [AppModule, AlertsModule],
+        imports: [AppModule],
       })
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
