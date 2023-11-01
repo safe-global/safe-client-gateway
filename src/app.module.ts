@@ -1,5 +1,4 @@
 import {
-  DynamicModule,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -9,7 +8,6 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
-
 import { ChainsModule } from '@/routes/chains/chains.module';
 import { BalancesModule } from '@/routes/balances/balances.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -40,9 +38,69 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 
-@Module({})
+// See https://github.com/nestjs/nest/issues/11967
+export const configurationModule = ConfigurationModule.register(configuration);
+
+@Module({
+  imports: [
+    // features
+    AboutModule,
+    BalancesModule,
+    CacheHooksModule,
+    ChainsModule,
+    CollectiblesModule,
+    ContractsModule,
+    DataDecodedModule,
+    DelegatesModule,
+    EstimationsModule,
+    FlushModule,
+    HealthModule,
+    MessagesModule,
+    NotificationsModule,
+    OwnersModule,
+    RootModule,
+    SafeAppsModule,
+    SafesModule,
+    TransactionsModule,
+    // common
+    CacheModule,
+    // Module for storing and reading from the async local storage
+    ClsModule.forRoot({
+      global: true,
+      middleware: {
+        generateId: true,
+        idGenerator: () => uuidv4(),
+      },
+    }),
+    configurationModule,
+    DomainModule,
+    NetworkModule,
+    RequestScopedLoggingModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets'),
+      // Excludes the paths under '/' (base url) from being served as static content
+      // If we do not exclude these paths, the service will try to find the file and
+      // return 500 for files that do not exist instead of a 404
+      exclude: ['/(.*)'],
+    }),
+    ValidationModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RouteLoggerInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalErrorFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DataSourceErrorFilter,
+    },
+  ],
+})
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
@@ -50,70 +108,5 @@ export class AppModule implements NestModule {
       // in order to generate the request ids that will be logged afterward
       .apply(ClsMiddleware, NotFoundLoggerMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
-  }
-
-  static register(configFactory = configuration): DynamicModule {
-    const { features } = configFactory();
-    return {
-      module: AppModule,
-      imports: [
-        // features
-        ...(features.alerts ? [AlertsModule] : []),
-        AboutModule,
-        BalancesModule,
-        CacheHooksModule,
-        ChainsModule,
-        CollectiblesModule,
-        ContractsModule,
-        DataDecodedModule,
-        DelegatesModule,
-        EstimationsModule,
-        FlushModule,
-        HealthModule,
-        MessagesModule,
-        NotificationsModule,
-        OwnersModule,
-        RootModule,
-        SafeAppsModule,
-        SafesModule,
-        TransactionsModule,
-        // common
-        CacheModule,
-        // Module for storing and reading from the async local storage
-        ClsModule.forRoot({
-          global: true,
-          middleware: {
-            generateId: true,
-            idGenerator: () => uuidv4(),
-          },
-        }),
-        ConfigurationModule.register(configFactory),
-        DomainModule,
-        NetworkModule,
-        RequestScopedLoggingModule,
-        ServeStaticModule.forRoot({
-          rootPath: join(__dirname, '..', 'assets'),
-          // Excludes the paths under '/' (base url) from being served as static content
-          // If we do not exclude these paths, the service will try to find the file and
-          // return 500 for files that do not exist instead of a 404
-          exclude: ['/(.*)'],
-        }),
-        ValidationModule,
-      ],
-      providers: [
-        {
-          provide: APP_INTERCEPTOR,
-          useClass: RouteLoggerInterceptor,
-        },
-        {
-          provide: APP_FILTER,
-          useClass: GlobalErrorFilter,
-        },
-        {
-          provide: APP_FILTER,
-          useClass: DataSourceErrorFilter,
-        },
-      ],
-    };
   }
 }

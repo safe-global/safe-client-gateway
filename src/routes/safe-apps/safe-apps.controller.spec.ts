@@ -10,9 +10,10 @@ import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-a
 import { safeAppAccessControlBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { AppModule } from '@/app.module';
+import { AppModule, configurationModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -27,10 +28,12 @@ describe('Safe Apps Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)

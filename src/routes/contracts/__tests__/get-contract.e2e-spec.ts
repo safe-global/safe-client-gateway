@@ -13,7 +13,7 @@ describe('Get contract e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register()],
+      imports: [AppModule],
     }).compile();
 
     app = await new TestAppProvider().provide(moduleRef);
