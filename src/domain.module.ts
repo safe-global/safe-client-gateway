@@ -69,6 +69,7 @@ import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { AlertsRepository } from '@/domain/alerts/alerts.repository';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
+import { MultiSendMapper } from '@/domain/alerts/mappers/multi-send.mapper';
 
 @Global()
 @Module({
@@ -120,6 +121,7 @@ import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
+    MultiSendMapper,
     MultisigTransactionValidator,
     SafeAppsValidator,
     SafeDecoder,
