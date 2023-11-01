@@ -45,6 +45,7 @@ export default (): ReturnType<typeof configuration> => ({
     humanDescription: true,
     messagesCache: true,
     alerts: true,
+    noncesRoute: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
