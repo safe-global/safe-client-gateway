@@ -6,6 +6,8 @@ import {
   hexToBigInt,
   hexToNumber,
   parseAbi,
+  size,
+  slice,
 } from 'viem';
 
 @Injectable()
@@ -31,39 +33,17 @@ export class MultiSendMapper {
       abi: this.abi,
       data: multiSendData,
     });
-    const encodedTransactions = multiSend.args[0];
+    const transactions = multiSend.args[0];
 
-    // Decode after 0x
-    let index = 2;
+    let i = 0;
 
-    while (index < encodedTransactions.length) {
-      // As we are decoding hex encoded bytes, each byte is represented by 2 chars
+    while (i < size(transactions)) {
       // uint8 operation, address to, value uint256, dataLength uint256, bytes data
-
-      const operation = `0x${encodedTransactions.slice(
-        index,
-        (index += 2), // 1 byte
-      )}` as const;
-
-      const to = `0x${encodedTransactions.slice(
-        index,
-        (index += 40), // 20 bytes
-      )}` as const;
-
-      const value = `0x${encodedTransactions.slice(
-        index,
-        (index += 64), // 32 bytes
-      )}` as const;
-
-      const dataLength = `0x${encodedTransactions.slice(
-        index,
-        (index += 64), // 32 bytes
-      )}` as const;
-
-      const data = `0x${encodedTransactions.slice(
-        index,
-        (index += hexToNumber(dataLength) * 2), // dataLength bytes
-      )}` as const;
+      const operation = slice(transactions, i, (i += 1));
+      const to = slice(transactions, i, (i += 20));
+      const value = slice(transactions, i, (i += 32));
+      const dataLength = slice(transactions, i, (i += 32));
+      const data = slice(transactions, i, (i += hexToNumber(dataLength)));
 
       mapped.push({
         operation: hexToNumber(operation),
