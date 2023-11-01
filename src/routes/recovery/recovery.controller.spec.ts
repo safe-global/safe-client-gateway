@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule } from '@/app.module';
+import { AppModule, configurationModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
@@ -14,8 +14,10 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
+import configuration from '@/config/entities/__tests__/configuration';
 import { AlertsModule } from '@/routes/alerts/alerts.module';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
+import { ConfigurationModule } from '@/config/configuration.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -33,6 +35,8 @@ describe('Recovery (Unit)', () => {
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
+      .overrideModule(configurationModule)
+      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
