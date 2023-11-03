@@ -28,6 +28,9 @@ describe('Configuration validator', () => {
         ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
         ALERTS_PROVIDER_ACCOUNT: faker.string.alphanumeric(),
         ALERTS_PROVIDER_PROJECT: faker.string.alphanumeric(),
+        EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
+        EMAIL_API_FROM_EMAIL: faker.internet.email(),
+        EMAIL_API_KEY: faker.string.uuid(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
   });
