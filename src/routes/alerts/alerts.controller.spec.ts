@@ -15,7 +15,6 @@ import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder'
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { ConfigurationModule } from '@/config/configuration.module';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -40,86 +39,154 @@ function fakeTenderlySignature(args: {
 }
 
 describe('Alerts (Unit)', () => {
-  let app: INestApplication;
-  let signingKey: string;
+  describe('/alerts route enabled', () => {
+    let app: INestApplication;
+    let signingKey: string;
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
+    beforeEach(async () => {
+      jest.clearAllMocks();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      // TODO remove AlertsModule once it's integrated in the AppModule
-      imports: [AppModule, AlertsModule],
-    })
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(configurationModule)
-      .useModule(ConfigurationModule.register(configuration))
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .compile();
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          alerts: true,
+        },
+      });
 
-    app = moduleFixture.createNestApplication();
-    const configurationService = moduleFixture.get(IConfigurationService);
-    signingKey = configurationService.getOrThrow('alerts.signingKey');
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideModule(CacheModule)
+        .useModule(TestCacheModule)
+        .overrideModule(configurationModule)
+        .useModule(ConfigurationModule.register(testConfiguration))
+        .overrideModule(RequestScopedLoggingModule)
+        .useModule(TestLoggingModule)
+        .overrideModule(NetworkModule)
+        .useModule(TestNetworkModule)
+        .compile();
 
-    await app.init();
-  });
+      app = moduleFixture.createNestApplication();
+      const configurationService = moduleFixture.get(IConfigurationService);
+      signingKey = configurationService.getOrThrow('alerts.signingKey');
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  it('returns 200 (OK) for valid signature/valid payload', async () => {
-    const alert = alertBuilder().build();
-    const timestamp = Date.now().toString();
-    const signature = fakeTenderlySignature({
-      signingKey,
-      alert,
-      timestamp,
+      await app.init();
     });
 
-    await request(app.getHttpServer())
-      .post('/alerts')
-      .set('x-tenderly-signature', signature)
-      .set('date', timestamp)
-      .send(alert)
-      .expect(200)
-      .expect({});
-  });
-
-  it.todo('notifies about addOwnerWithThreshold attempts');
-  it.todo('notifies about non-addOwnerWithThreshold attempts');
-  it.todo('notifies about alerts with multiple logs');
-
-  it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
-    const alert = {};
-    const timestamp = Date.now().toString();
-    const signature = fakeTenderlySignature({
-      signingKey,
-      alert: alert as Alert,
-      timestamp,
+    afterAll(async () => {
+      await app.close();
     });
 
-    await request(app.getHttpServer())
-      .post('/alerts')
-      .set('x-tenderly-signature', signature)
-      .set('date', timestamp)
-      .send(alert)
-      .expect(400);
+    it('returns 200 (OK) for valid signature/valid payload', async () => {
+      const alert = alertBuilder().build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert,
+        timestamp,
+      });
+
+      await request(app.getHttpServer())
+        .post('/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(200)
+        .expect({});
+    });
+
+    it.todo('notifies about addOwnerWithThreshold attempts');
+    it.todo('notifies about non-addOwnerWithThreshold attempts');
+    it.todo('notifies about alerts with multiple logs');
+
+    it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
+      const alert = {};
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert: alert as Alert,
+        timestamp,
+      });
+
+      await request(app.getHttpServer())
+        .post('/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(400);
+    });
+
+    it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
+      const alert = alertBuilder().build();
+      const timestamp = Date.now().toString();
+      const signature = faker.string.alphanumeric({ length: 64 });
+
+      await request(app.getHttpServer())
+        .post('/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(403);
+    });
   });
 
-  it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
-    const alert = alertBuilder().build();
-    const timestamp = Date.now().toString();
-    const signature = faker.string.alphanumeric({ length: 64 });
+  describe('/alerts route disabled', () => {
+    let app: INestApplication;
+    let signingKey: string;
 
-    await request(app.getHttpServer())
-      .post('/alerts')
-      .set('x-tenderly-signature', signature)
-      .set('date', timestamp)
-      .send(alert)
-      .expect(403);
+    beforeEach(async () => {
+      jest.clearAllMocks();
+
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          alerts: false,
+        },
+      });
+
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideModule(CacheModule)
+        .useModule(TestCacheModule)
+        .overrideModule(configurationModule)
+        .useModule(ConfigurationModule.register(testConfiguration))
+        .overrideModule(RequestScopedLoggingModule)
+        .useModule(TestLoggingModule)
+        .overrideModule(NetworkModule)
+        .useModule(TestNetworkModule)
+        .compile();
+
+      app = moduleFixture.createNestApplication();
+      const configurationService = moduleFixture.get(IConfigurationService);
+      signingKey = configurationService.getOrThrow('alerts.signingKey');
+
+      await app.init();
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
+
+    it('returns 403 (Forbidden) for valid signature/invalid payload', async () => {
+      const alert = alertBuilder().build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert,
+        timestamp,
+      });
+
+      await request(app.getHttpServer())
+        .post('/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(403);
+    });
   });
 });
