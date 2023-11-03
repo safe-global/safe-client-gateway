@@ -4,14 +4,14 @@ import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
-import { MultiSendMapper } from '@/domain/alerts/mappers/multi-send.mapper';
+import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
   constructor(
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
-    private readonly multiSendMapper: MultiSendMapper,
+    private readonly multiSendDecoder: MultiSendDecoder,
   ) {}
 
   handleAlertLog(log: AlertLog): void {
@@ -60,7 +60,7 @@ export class AlertsRepository implements IAlertsRepository {
 
   private decodeTransactionAdded(data: Hex) {
     try {
-      return this.multiSendMapper
+      return this.multiSendDecoder
         .mapMultiSendTransactions(data)
         .map(this.safeDecoder.decodeFunctionData);
     } catch {

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { MultiSendMapper } from '@/domain/alerts/mappers/multi-send.mapper';
+import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -9,11 +9,11 @@ import {
 } from '@/domain/alerts/__tests__/safe-transactions.encoder';
 import { multiSendEncoder } from '@/domain/alerts/__tests__/multisend-transactions.encoder';
 
-describe('MultiSendMapper', () => {
-  let mapper: MultiSendMapper;
+describe('MultiSendDecoder', () => {
+  let mapper: MultiSendDecoder;
 
   beforeEach(() => {
-    mapper = new MultiSendMapper();
+    mapper = new MultiSendDecoder();
   });
 
   describe('mapMultiSendTransactions', () => {
