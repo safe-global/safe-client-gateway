@@ -9,7 +9,7 @@ import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class PushwooshEmailApi implements IEmailApi {
+export class PushwooshApi implements IEmailApi {
   private readonly apiKey: string;
   private readonly applicationCode: string;
   private readonly baseUri: string;
