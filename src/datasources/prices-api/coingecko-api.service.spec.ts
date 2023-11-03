@@ -12,6 +12,7 @@ const mockCacheFirstDataSource = jest.mocked({
 
 const mockCacheService = jest.mocked({
   deleteByKey: jest.fn(),
+  expire: jest.fn(),
 } as unknown as ICacheService);
 
 describe('CoingeckoAPI', () => {
@@ -235,5 +236,27 @@ describe('CoingeckoAPI', () => {
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
+  });
+
+  it('should call CacheService.expire when registering a not found token price', async () => {
+    const chainName = faker.string.sample();
+    const tokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+
+    await service.registerNotFoundTokenPrice({
+      chainName,
+      tokenAddress,
+      fiatCode,
+    });
+
+    const expectedCacheDir = new CacheDir(
+      `${chainName}_token_price_${tokenAddress}_${fiatCode}`,
+      '',
+    );
+    expect(mockCacheService.expire).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.expire).toHaveBeenCalledWith(
+      expectedCacheDir.key,
+      fakeConfigurationService.get('prices.notFoundPriceTtlSeconds'),
+    );
   });
 });
