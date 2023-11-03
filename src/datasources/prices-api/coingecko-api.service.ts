@@ -5,6 +5,10 @@ import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -16,6 +20,7 @@ export class CoingeckoApi implements IPricesApi {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly pricesTtlSeconds: number;
+  private readonly notFoundPriceTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
 
@@ -23,6 +28,7 @@ export class CoingeckoApi implements IPricesApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.apiKey = this.configurationService.get<string>('prices.apiKey');
     this.baseUrl =
@@ -33,6 +39,9 @@ export class CoingeckoApi implements IPricesApi {
       );
     this.pricesTtlSeconds = this.configurationService.getOrThrow<number>(
       'prices.pricesTtlSeconds',
+    );
+    this.notFoundPriceTtlSeconds = this.configurationService.getOrThrow<number>(
+      'prices.notFoundPriceTtlSeconds',
     );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
@@ -130,6 +139,15 @@ export class CoingeckoApi implements IPricesApi {
         )}`,
       );
     }
+  }
+
+  async registerNotFoundTokenPrice(args: {
+    chainName: string;
+    tokenAddress: string;
+    fiatCode: string;
+  }): Promise<void> {
+    const cacheDir = CacheRouter.getTokenPriceCacheDir(args);
+    return this.cacheService.expire(cacheDir.key, this.notFoundPriceTtlSeconds);
   }
 
   private _mapProviderError(error: any): string {

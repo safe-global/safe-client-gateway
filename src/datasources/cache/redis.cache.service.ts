@@ -53,6 +53,10 @@ export class RedisCacheService
     }
   }
 
+  async expire(key: string, expireTimeSeconds: number) {
+    return await this.client.expire(key, expireTimeSeconds);
+  }
+
   /**
    * Closes the connection to Redis when the module associated with this service
    * is destroyed. This tries to gracefully close the connection. If the Redis

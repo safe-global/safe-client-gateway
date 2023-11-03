@@ -15,4 +15,10 @@ export interface IPricesApi {
   }): Promise<AssetPrice>;
 
   getFiatCodes(): Promise<string[]>;
+
+  registerNotFoundTokenPrice(args: {
+    chainName: string;
+    tokenAddress: string;
+    fiatCode: string;
+  }): Promise<void>;
 }

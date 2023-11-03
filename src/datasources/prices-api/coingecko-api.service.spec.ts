@@ -4,10 +4,15 @@ import { CoingeckoApi } from '@/datasources/prices-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as unknown as CacheFirstDataSource);
+
+const mockCacheService = jest.mocked({
+  deleteByKey: jest.fn(),
+} as unknown as ICacheService);
 
 describe('CoingeckoAPI', () => {
   let service: CoingeckoApi;
@@ -15,6 +20,7 @@ describe('CoingeckoAPI', () => {
   const coingeckoBaseUri = faker.internet.url({ appendSlash: false });
   const coingeckoApiKey = faker.string.sample();
   const pricesCacheTtlSeconds = faker.number.int();
+  const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
@@ -28,6 +34,10 @@ describe('CoingeckoAPI', () => {
       pricesCacheTtlSeconds,
     );
     fakeConfigurationService.set(
+      'prices.notFoundPriceTtlSeconds',
+      notFoundPriceTtlSeconds,
+    );
+    fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       defaultExpirationTimeInSeconds,
     );
@@ -38,6 +48,7 @@ describe('CoingeckoAPI', () => {
     service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
   });
 
@@ -46,7 +57,11 @@ describe('CoingeckoAPI', () => {
 
     await expect(
       () =>
-        new CoingeckoApi(fakeConfigurationService, mockCacheFirstDataSource),
+        new CoingeckoApi(
+          fakeConfigurationService,
+          mockCacheFirstDataSource,
+          mockCacheService,
+        ),
     ).toThrow();
   });
 
@@ -77,6 +92,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     const fiatCodes = await service.getFiatCodes();
@@ -135,6 +151,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     const assetPrice = await service.getTokenPrice({
@@ -198,6 +215,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
