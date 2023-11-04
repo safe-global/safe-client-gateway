@@ -3,6 +3,7 @@ import { PushwooshApi } from '@/datasources/email-api/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 
 const networkService = {
@@ -63,6 +64,30 @@ describe('PushwooshApi', () => {
           mockHttpErrorFactory,
         ),
     ).toThrow();
+  });
+
+  it('should forward error', async () => {
+    const createEmailMessageDto: CreateEmailMessageDto = {
+      to: [faker.internet.email(), faker.internet.email()],
+      template: faker.string.uuid(),
+      subject: faker.string.sample(),
+      substitutions: {
+        [faker.string.sample()]: faker.string.sample(),
+        [faker.string.sample()]: faker.string.sample(),
+      },
+    };
+    const expected = new DataSourceError(faker.string.sample());
+    mockHttpErrorFactory.from.mockReturnValue(expected);
+    const error = new Error(faker.string.sample());
+    mockNetworkService.post.mockRejectedValueOnce(error);
+
+    await expect(
+      service.createMessage(createEmailMessageDto),
+    ).rejects.toThrowError(expected);
+
+    expect(networkService.post).toHaveBeenCalledTimes(1);
+    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+    expect(mockHttpErrorFactory.from).toBeCalledWith(error);
   });
 
   it('should create a new message', async () => {

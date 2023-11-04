@@ -1,3 +1,5 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -6,7 +8,6 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PushwooshApi implements IEmailApi {
@@ -45,7 +46,7 @@ export class PushwooshApi implements IEmailApi {
           application: this.applicationCode,
           auth: this.apiKey,
           notifications: {
-            transactionId: 'TODO',
+            transactionId: uuidv4(),
             send_date: 'now',
             email_template: createEmailMessageDto.template,
             devices: createEmailMessageDto.to,
@@ -57,7 +58,7 @@ export class PushwooshApi implements IEmailApi {
         },
       });
     } catch (error) {
-      this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 }
