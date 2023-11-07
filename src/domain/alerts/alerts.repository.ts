@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
+import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
@@ -9,10 +11,16 @@ import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.h
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
   constructor(
+    @Inject(IAlertsApi)
+    private readonly alertsApi: IAlertsApi,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
   ) {}
+
+  async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
+    await this.alertsApi.addContracts(contracts);
+  }
 
   handleAlertLog(log: AlertLog): void {
     const decodedEvent = this.delayModifierDecoder.decodeEventLog({

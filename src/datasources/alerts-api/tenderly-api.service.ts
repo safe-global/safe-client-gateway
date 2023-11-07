@@ -49,7 +49,7 @@ export class TenderlyApi implements IAlertsApi {
         },
       });
     } catch (error) {
-      this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(error);
     }
   }
 }

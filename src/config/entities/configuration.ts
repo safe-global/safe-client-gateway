@@ -55,6 +55,7 @@ export default () => ({
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
     alerts: process.env.FF_ALERTS?.toLowerCase() === 'true',
+    recovery: process.env.FF_RECOVERY?.toLowerCase() === 'true',
     noncesRoute: process.env.FF_NONCES_ROUTE?.toLowerCase() === 'true',
   },
   httpClient: {

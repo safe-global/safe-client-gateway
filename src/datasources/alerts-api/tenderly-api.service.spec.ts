@@ -12,14 +12,10 @@ const networkService = {
 } as unknown as INetworkService;
 const mockNetworkService = jest.mocked(networkService);
 
-const httpErrorFactory = {
-  from: jest.fn(),
-} as unknown as HttpErrorFactory;
-const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
-
 describe('TenderlyApi', () => {
   let service: TenderlyApi;
   let fakeConfigurationService: FakeConfigurationService;
+  let httpErrorFactory: HttpErrorFactory;
 
   let tenderlyBaseUri: string;
   let tenderlyApiKey: string;
@@ -40,41 +36,51 @@ describe('TenderlyApi', () => {
     fakeConfigurationService.set('alerts.account', tenderlyAccount);
     fakeConfigurationService.set('alerts.project', tenderlyProject);
 
+    httpErrorFactory = new HttpErrorFactory();
+
     service = new TenderlyApi(
       fakeConfigurationService,
       mockNetworkService,
-      mockHttpErrorFactory,
+      httpErrorFactory,
     );
   });
 
   it('should error if configuration is not defined', async () => {
     const fakeConfigurationService = new FakeConfigurationService();
+    const httpErrorFactory = new HttpErrorFactory();
 
     expect(
       () =>
         new TenderlyApi(
           fakeConfigurationService,
           mockNetworkService,
-          mockHttpErrorFactory,
+          httpErrorFactory,
         ),
     ).toThrow();
   });
 
   it('should add contracts', async () => {
+    const fakeDisplayName = (): `${string}:${string}:${string}` => {
+      const chain = faker.string.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const moduleAddress = faker.finance.ethereumAddress();
+      return `${chain}:${safeAddress}:${moduleAddress}`;
+    };
+
     const contracts: Array<AlertsRegistration> = [
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
     ];
@@ -96,20 +102,22 @@ describe('TenderlyApi', () => {
         },
       },
     );
-    expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
   });
 
   it('should forward error', async () => {
-    mockNetworkService.post.mockImplementation(() =>
-      Promise.reject('Unexpected error'),
-    );
-    mockHttpErrorFactory.from.mockImplementation(
-      () => new DataSourceError('Unexpected error'),
-    );
+    const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+    const error = {
+      status,
+      data: {
+        message: 'Unexpected error',
+      },
+    };
+    mockNetworkService.post.mockRejectedValueOnce(error);
 
-    await service.addContracts([]);
+    await expect(service.addContracts([])).rejects.toThrowError(
+      new DataSourceError('Unexpected error', status),
+    );
 
     expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
-    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
   });
 });
