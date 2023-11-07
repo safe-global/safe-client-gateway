@@ -13,12 +13,14 @@ export interface IEmailDataSource {
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the email address to
+   * @param args.code - the generated code to be used to verify this email address
    */
   saveEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
     signer: string;
+    code: number;
   }): Promise<EmailVerificationCode>;
 
   /**
@@ -28,32 +30,27 @@ export interface IEmailDataSource {
    * {@link EmailVerificationCode} is returned.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.safeAddress - the Safe address
+   * @param args.signer - the owner address
+   * @param args.code - the generated code to be used to verify this email address
    */
-  resetVerificationCode(args: {
+  setVerificationCode(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
+    code: number;
   }): Promise<EmailVerificationCode>;
 
   /**
    * Verifies the email address for the signer of a Safe.
-   * The code has an expiration time tied to it.
-   * It is configurable via the 'email.verificationExpireTimeInSeconds' key.
-   *
-   * If the code is not valid, a {@link InvalidVerificationCodeError} is thrown.
-   * If the code expired, a {@link ExpiredVerificationCodeError} is thrown.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.signer - the owner address to which we should link the email address to
-   * @param args.code - the code that was sent to verify the user
+   * @param args.safeAddress - the Safe address
+   * @param args.signer - the owner address
    */
   verifyEmail(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
-    code: string;
   }): Promise<void>;
 }
