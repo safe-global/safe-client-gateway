@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { AlertsRepository } from '@/domain/alerts/alerts.repository';
 import { AddRecoveryModuleDto } from '@/routes/recovery/entities/add-recovery-module.dto.entity';
-import { Contract } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 
 @Injectable()
 export class RecoveryService {
@@ -16,7 +16,7 @@ export class RecoveryService {
     safeAddress: string;
     addRecoveryModuleDto: AddRecoveryModuleDto;
   }): Promise<void> {
-    const contract: Contract = {
+    const contract: AlertsRegistration = {
       chainId: args.chainId,
       address: args.addRecoveryModuleDto.moduleAddress,
       displayName: `${args.chainId}:${args.safeAddress}:${args.addRecoveryModuleDto.moduleAddress}`,
