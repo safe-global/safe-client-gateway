@@ -123,7 +123,7 @@ describe('Recovery (Unit)', () => {
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({ status: [statusCode] })
+          ? Promise.reject({ status: statusCode })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
