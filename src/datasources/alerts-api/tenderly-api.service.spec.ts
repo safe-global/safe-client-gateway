@@ -3,7 +3,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Contract } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {
@@ -61,7 +61,7 @@ describe('TenderlyApi', () => {
   });
 
   it('should add contracts', async () => {
-    const contracts: Array<Contract> = [
+    const contracts: Array<AlertsRegistration> = [
       {
         address: faker.finance.ethereumAddress(),
         displayName: faker.word.words(),

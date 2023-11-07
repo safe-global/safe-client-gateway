@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Contract } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
 import {
   INetworkService,
@@ -33,7 +33,7 @@ export class TenderlyApi implements IAlertsApi {
       this.configurationService.getOrThrow<string>('alerts.project');
   }
 
-  async addContracts(contracts: Array<Contract>): Promise<void> {
+  async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v2/accounts/${this.account}/projects/${this.project}/contracts`;
       await this.networkService.post(url, {
