@@ -4,7 +4,7 @@ import { VerificationStatus } from '@/datasources/email/entities/verification.st
 export class ExpiredVerificationCodeError extends Error {
   constructor(email: Email, verificationStatus: VerificationStatus) {
     super(
-      `Verification code for ${email.email_address} expired. Code: ${verificationStatus.verification_code} `,
+      `Verification code for ${email.email_address} expired. Code: ${verificationStatus.verification_code}`,
     );
   }
 }
