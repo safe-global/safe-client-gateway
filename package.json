@@ -39,7 +39,7 @@
     "axios": "^1.6.0",
     "lodash": "^4.17.21",
     "nestjs-cls": "^3.6.0",
-    "postgres": "^3.4.0",
+    "postgres": "^3.4.3",
     "redis": "^4.6.10",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^5.0.5",

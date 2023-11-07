@@ -6479,10 +6479,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postgres@npm:^3.4.0":
-  version: 3.4.0
-  resolution: "postgres@npm:3.4.0"
-  checksum: b512a352103d95aa7c92188da024e7ee4b95937345903b4d5be59f7a0d21464735e4d45f8ce26601d15026c9a6061b18fb5a96c027ca56cbc5fc0f3b95f05d54
+"postgres@npm:^3.4.3":
+  version: 3.4.3
+  resolution: "postgres@npm:3.4.3"
+  checksum: e226377ed330673ddce055871b4f45ff1b1633916a6be095e8291d90c8ebf204269b381c44deb65b6225c844f6cefec92adb50df01ff8605054c573add1ac444
   languageName: node
   linkType: hard
 
@@ -6951,7 +6951,7 @@ __metadata:
     jest: 29.7.0
     lodash: ^4.17.21
     nestjs-cls: ^3.6.0
-    postgres: ^3.4.0
+    postgres: ^3.4.3
     prettier: ^3.0.3
     redis: ^4.6.10
     reflect-metadata: ^0.1.13
