@@ -1,5 +1,5 @@
 export type Contract = {
   address: string;
   chainId: string;
-  displayName?: string;
+  displayName?: `${string}:${string}:${string}`;
 };

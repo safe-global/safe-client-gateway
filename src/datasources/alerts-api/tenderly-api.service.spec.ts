@@ -4,6 +4,7 @@ import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Contract } from '@/domain/alerts/entities/alerts.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {
   post: jest.fn(),
@@ -11,14 +12,10 @@ const networkService = {
 } as unknown as INetworkService;
 const mockNetworkService = jest.mocked(networkService);
 
-const httpErrorFactory = {
-  from: jest.fn(),
-} as unknown as HttpErrorFactory;
-const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
-
 describe('TenderlyApi', () => {
   let service: TenderlyApi;
   let fakeConfigurationService: FakeConfigurationService;
+  const httpErrorFactory = new HttpErrorFactory();
 
   let tenderlyBaseUri: string;
   let tenderlyApiKey: string;
@@ -42,7 +39,7 @@ describe('TenderlyApi', () => {
     service = new TenderlyApi(
       fakeConfigurationService,
       mockNetworkService,
-      mockHttpErrorFactory,
+      httpErrorFactory,
     );
   });
 
@@ -54,26 +51,35 @@ describe('TenderlyApi', () => {
         new TenderlyApi(
           fakeConfigurationService,
           mockNetworkService,
-          mockHttpErrorFactory,
+          httpErrorFactory,
         ),
     ).toThrow();
   });
 
   it('should add contracts', async () => {
+    const httpErrorFactoryFromSpy = jest.spyOn(httpErrorFactory, 'from');
+
+    const fakeDisplayName = (): `${string}:${string}:${string}` => {
+      const chain = faker.string.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const moduleAddress = faker.finance.ethereumAddress();
+      return `${chain}:${safeAddress}:${moduleAddress}`;
+    };
+
     const contracts: Array<Contract> = [
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
       {
         address: faker.finance.ethereumAddress(),
-        displayName: faker.word.words(),
+        displayName: fakeDisplayName(),
         chainId: faker.string.numeric(),
       },
     ];
@@ -95,20 +101,23 @@ describe('TenderlyApi', () => {
         },
       },
     );
-    expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
+    expect(httpErrorFactoryFromSpy).not.toHaveBeenCalled();
   });
 
   it('should forward error', async () => {
-    const httpErrorFactory = new HttpErrorFactory();
-    const expected = httpErrorFactory.from(new Error('Unexpected error'));
-    mockHttpErrorFactory.from.mockReturnValue(expected);
-    mockNetworkService.post.mockRejectedValueOnce(
-      new Error('Unexpected error'),
+    const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+    const error = {
+      status,
+      data: {
+        message: 'Unexpected error',
+      },
+    };
+    mockNetworkService.post.mockRejectedValueOnce(error);
+
+    await expect(service.addContracts([])).rejects.toThrowError(
+      new DataSourceError('Unexpected error', status),
     );
 
-    await expect(service.addContracts([])).rejects.toThrowError(expected);
-
     expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
-    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
   });
 });

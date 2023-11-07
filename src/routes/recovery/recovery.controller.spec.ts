@@ -116,21 +116,24 @@ describe('Recovery (Unit)', () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
 
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({ status: 503 })
+          ? Promise.reject({ status: [statusCode] })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/safes/${safeAddress}/recovery`)
         .send(addRecoveryModuleDto)
-        .expect(503)
+        .expect(statusCode)
         .expect({
           message: 'An error occurred',
-          code: 503,
+          code: statusCode,
         });
     });
   });
