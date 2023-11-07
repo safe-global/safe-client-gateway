@@ -1,7 +1,7 @@
-import { Contract } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 
 export const IAlertsApi = Symbol('IAlertsApi');
 
 export interface IAlertsApi {
-  addContracts(contracts: Array<Contract>): Promise<void>;
+  addContracts(contracts: Array<AlertsRegistration>): Promise<void>;
 }
