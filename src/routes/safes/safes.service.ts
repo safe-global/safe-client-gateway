@@ -17,7 +17,7 @@ import {
   MasterCopyVersionState,
   SafeState,
 } from '@/routes/safes/entities/safe-info.entity';
-import { RecommendedNonce } from '@/routes/safes/entities/recommended-nonce.entity';
+import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 
 @Injectable()
 export class SafesService {
@@ -110,14 +110,12 @@ export class SafesService {
     );
   }
 
-  public async getRecommendedNonce(args: {
+  public async getNonces(args: {
     chainId: string;
     safeAddress: string;
-  }): Promise<RecommendedNonce> {
-    const recommendedNonce =
-      await this.safeRepository.getRecommendedNonce(args);
-
-    return new RecommendedNonce(recommendedNonce);
+  }): Promise<SafeNonces> {
+    const nonce = await this.safeRepository.getNonces(args);
+    return new SafeNonces(nonce);
   }
 
   private toUnixTimestampInSecondsOrNow(date: Date | null): number {

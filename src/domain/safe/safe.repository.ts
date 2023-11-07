@@ -364,10 +364,10 @@ export class SafeRepository implements ISafeRepository {
     });
   }
 
-  async getRecommendedNonce(args: {
+  async getNonces(args: {
     chainId: string;
     safeAddress: string;
-  }): Promise<number> {
+  }): Promise<{ currentNonce: number; recommendedNonce: number }> {
     const safe = await this.getSafe({
       chainId: args.chainId,
       address: args.safeAddress,
@@ -378,8 +378,13 @@ export class SafeRepository implements ISafeRepository {
       safeAddress: args.safeAddress,
     });
 
-    return lastTransaction
+    const recommendedNonce = lastTransaction
       ? Math.max(safe.nonce, lastTransaction.nonce + 1)
       : safe.nonce;
+
+    return {
+      currentNonce: safe.nonce,
+      recommendedNonce: recommendedNonce,
+    };
   }
 }

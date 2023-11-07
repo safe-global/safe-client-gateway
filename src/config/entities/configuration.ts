@@ -7,6 +7,7 @@ export default () => ({
   alerts: {
     baseUri:
       process.env.ALERTS_PROVIDER_API_BASE_URI || 'https://api.tenderly.co',
+    signingKey: process.env.ALERTS_PROVIDER_SIGNING_KEY,
     apiKey: process.env.ALERTS_PROVIDER_API_KEY,
     account: process.env.ALERTS_PROVIDER_ACCOUNT,
     project: process.env.ALERTS_PROVIDER_PROJECT,
@@ -55,6 +56,7 @@ export default () => ({
     messagesCache: process.env.FF_MESSAGES_CACHE?.toLowerCase() === 'true',
     alerts: process.env.FF_ALERTS?.toLowerCase() === 'true',
     recovery: process.env.FF_RECOVERY?.toLowerCase() === 'true',
+    noncesRoute: process.env.FF_NONCES_ROUTE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

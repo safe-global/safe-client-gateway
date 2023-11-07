@@ -9,6 +9,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   alerts: {
     baseUri: faker.internet.url({ appendSlash: false }),
+    signingKey: faker.string.nanoid(32),
     apiKey: faker.string.hexadecimal({ length: 32 }),
     account: faker.string.sample(),
     project: faker.string.sample(),
@@ -45,6 +46,7 @@ export default (): ReturnType<typeof configuration> => ({
     messagesCache: true,
     alerts: true,
     recovery: true,
+    noncesRoute: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {

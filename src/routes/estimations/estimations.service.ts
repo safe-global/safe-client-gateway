@@ -30,17 +30,13 @@ export class EstimationsService {
     getEstimationDto: GetEstimationDto;
   }): Promise<EstimationResponse> {
     const estimation = await this.estimationsRepository.getEstimation(args);
-    const safe = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.address,
-    });
-    const recommendedNonce = await this.safeRepository.getRecommendedNonce({
+    const nonceState = await this.safeRepository.getNonces({
       chainId: args.chainId,
       safeAddress: args.address,
     });
     return new EstimationResponse(
-      safe.nonce,
-      recommendedNonce,
+      nonceState.currentNonce,
+      nonceState.recommendedNonce,
       estimation.safeTxGas,
     );
   }

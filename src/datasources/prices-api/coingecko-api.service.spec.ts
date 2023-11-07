@@ -107,8 +107,8 @@ describe('CoingeckoAPI', () => {
     expect(assetPrice).toBe(expectedAssetPrice);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(
-        `${chainName}_token_price`,
-        `${tokenAddress}_${fiatCode}`,
+        `${chainName}_token_price_${tokenAddress}_${fiatCode}`,
+        '',
       ),
       networkRequest: {
         headers: {
@@ -146,8 +146,8 @@ describe('CoingeckoAPI', () => {
     expect(assetPrice).toBe(expectedAssetPrice);
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
       cacheDir: new CacheDir(
-        `${chainName}_token_price`,
-        `${tokenAddress}_${fiatCode}`,
+        `${chainName}_token_price_${tokenAddress}_${fiatCode}`,
+        '',
       ),
       networkRequest: {
         params: {
@@ -170,7 +170,10 @@ describe('CoingeckoAPI', () => {
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
-      cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
+      cacheDir: new CacheDir(
+        `${nativeCoinId}_native_coin_price_${fiatCode}`,
+        '',
+      ),
       url: `${coingeckoBaseUri}/simple/price`,
       networkRequest: {
         headers: {
@@ -200,7 +203,10 @@ describe('CoingeckoAPI', () => {
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
 
     expect(mockCacheFirstDataSource.get).toBeCalledWith({
-      cacheDir: new CacheDir(`${nativeCoinId}_native_coin_price`, fiatCode),
+      cacheDir: new CacheDir(
+        `${nativeCoinId}_native_coin_price_${fiatCode}`,
+        '',
+      ),
       url: `${coingeckoBaseUri}/simple/price`,
       networkRequest: {
         params: {

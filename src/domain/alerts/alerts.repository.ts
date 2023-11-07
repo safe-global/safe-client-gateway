@@ -6,6 +6,7 @@ import { Contract } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
+import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -14,6 +15,7 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly alertsApi: IAlertsApi,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
+    private readonly multiSendDecoder: MultiSendDecoder,
   ) {}
 
   async addContracts(contracts: Array<Contract>): Promise<void> {
@@ -26,24 +28,55 @@ export class AlertsRepository implements IAlertsRepository {
       topics: log.topics as [Hex, Hex, Hex],
     });
 
-    const decodedTransaction = this.decodeTransactionAdded(
+    const decodedTransactions = this.decodeTransactionAdded(
       decodedEvent.args.data,
     );
 
-    if (decodedTransaction?.functionName !== 'addOwnerWithThreshold') {
+    if (!decodedTransactions) {
       // Transaction outside of specified ABI => notify user
-    } else {
-      // addOwnerWithThreshold transaction => notify user
-      // const safeAddress = decodedEvent.args.to;
-      // const [owner, _threshold] = decodedTransaction.args;
+      return;
+    }
+
+    for (const decodedTransaction of decodedTransactions) {
+      switch (decodedTransaction.functionName) {
+        case 'addOwnerWithThreshold': {
+          // const safeAddress = decodedEvent.args.to;
+          // const [owner, _threshold] = decodedTransaction.args;
+          break;
+        }
+        case 'removeOwner': {
+          // const safeAddress = decodedEvent.args.to;
+          // const [prevOwner, owner, _threshold] = decodedTransaction.args;
+          break;
+        }
+        case 'swapOwner': {
+          // const safeAddress = decodedEvent.args.to;
+          // const [prevOwner, oldOwner, newOwner] = decodedTransaction.args;
+          break;
+        }
+        case 'changeThreshold': {
+          // const safeAddress = decodedEvent.args.to;
+          // const [_threshold] = decodedTransaction.args;
+          break;
+        }
+        default: {
+          // Transaction outside of specified ABI => notify user
+        }
+      }
     }
   }
 
   private decodeTransactionAdded(data: Hex) {
     try {
-      return this.safeDecoder.decodeFunctionData({ data });
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(data)
+        .map(this.safeDecoder.decodeFunctionData);
     } catch {
-      return null;
+      try {
+        return [this.safeDecoder.decodeFunctionData({ data })];
+      } catch {
+        return null;
+      }
     }
   }
 }

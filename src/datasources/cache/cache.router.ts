@@ -438,8 +438,8 @@ export class CacheRouter {
     fiatCode: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}`,
-      args.fiatCode,
+      `${args.nativeCoinId}_${CacheRouter.NATIVE_COIN_PRICE_KEY}_${args.fiatCode}`,
+      '',
     );
   }
 
@@ -449,8 +449,8 @@ export class CacheRouter {
     tokenAddress: string;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}`,
-      `${args.tokenAddress}_${args.fiatCode}`,
+      `${args.chainName}_${CacheRouter.TOKEN_PRICE_KEY}_${args.tokenAddress}_${args.fiatCode}`,
+      '',
     );
   }
 
