@@ -15,7 +15,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 
@@ -30,8 +29,8 @@ describe('Recovery (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      // TODO remove AlertsModule and RecoveryModule once they're integrated in the AppModule
-      imports: [AppModule, AlertsModule, RecoveryModule],
+      // TODO remove RecoveryModule once they're integrated in the AppModule
+      imports: [AppModule, RecoveryModule],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)

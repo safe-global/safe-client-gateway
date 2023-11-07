@@ -7,12 +7,13 @@ import { AddRecoveryModuleDtoValidationPipe } from '@/routes/recovery/pipes/add-
 @ApiTags('recovery')
 @Controller({
   version: '1',
+  path: 'chains/:chainId/safes/:safeAddress/recovery',
 })
 export class RecoveryController {
   constructor(private readonly recoveryService: RecoveryService) {}
 
   @HttpCode(200)
-  @Post('chains/:chainId/safes/:safeAddress/recovery')
+  @Post()
   async addRecoveryModule(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,

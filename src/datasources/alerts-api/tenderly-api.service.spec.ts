@@ -4,7 +4,6 @@ import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Contract } from '@/domain/alerts/entities/alerts.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const networkService = {
   post: jest.fn(),
@@ -100,7 +99,8 @@ describe('TenderlyApi', () => {
   });
 
   it('should forward error', async () => {
-    const expected = new DataSourceError('Unexpected error');
+    const httpErrorFactory = new HttpErrorFactory();
+    const expected = httpErrorFactory.from(new Error('Unexpected error'));
     mockHttpErrorFactory.from.mockReturnValue(expected);
     mockNetworkService.post.mockRejectedValueOnce(
       new Error('Unexpected error'),
