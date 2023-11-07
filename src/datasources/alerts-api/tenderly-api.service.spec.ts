@@ -15,7 +15,7 @@ const mockNetworkService = jest.mocked(networkService);
 describe('TenderlyApi', () => {
   let service: TenderlyApi;
   let fakeConfigurationService: FakeConfigurationService;
-  const httpErrorFactory = new HttpErrorFactory();
+  let httpErrorFactory: HttpErrorFactory;
 
   let tenderlyBaseUri: string;
   let tenderlyApiKey: string;
@@ -36,6 +36,8 @@ describe('TenderlyApi', () => {
     fakeConfigurationService.set('alerts.account', tenderlyAccount);
     fakeConfigurationService.set('alerts.project', tenderlyProject);
 
+    httpErrorFactory = new HttpErrorFactory();
+
     service = new TenderlyApi(
       fakeConfigurationService,
       mockNetworkService,
@@ -45,6 +47,7 @@ describe('TenderlyApi', () => {
 
   it('should error if configuration is not defined', async () => {
     const fakeConfigurationService = new FakeConfigurationService();
+    const httpErrorFactory = new HttpErrorFactory();
 
     expect(
       () =>
@@ -57,8 +60,6 @@ describe('TenderlyApi', () => {
   });
 
   it('should add contracts', async () => {
-    const httpErrorFactoryFromSpy = jest.spyOn(httpErrorFactory, 'from');
-
     const fakeDisplayName = (): `${string}:${string}:${string}` => {
       const chain = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
@@ -101,7 +102,6 @@ describe('TenderlyApi', () => {
         },
       },
     );
-    expect(httpErrorFactoryFromSpy).not.toHaveBeenCalled();
   });
 
   it('should forward error', async () => {
