@@ -19,15 +19,8 @@ export class RecoveryService {
     const contract: Contract = {
       chainId: args.chainId,
       address: args.addRecoveryModuleDto.moduleAddress,
-      displayName: this.getDisplayName(args),
+      displayName: `${args.chainId}:${args.safeAddress}:${args.addRecoveryModuleDto.moduleAddress}`,
     };
     await this.alertsRepository.addContracts([contract]);
-  }
-
-  private getDisplayName(args: {
-    chainId: string;
-    safeAddress: string;
-  }): string {
-    return `${args.chainId}:${args.safeAddress}`;
   }
 }
