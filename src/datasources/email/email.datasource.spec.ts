@@ -1,7 +1,6 @@
 import { EmailDatasource } from '@/datasources/email/email.datasource';
 import * as postgres from 'postgres';
 import { PostgresError } from 'postgres';
-import shift from '@/datasources/db/migration.helper';
 import { faker } from '@faker-js/faker';
 import { Email } from '@/datasources/email/entities/email.entity';
 import { VerificationStatus } from '@/datasources/email/entities/verification.status';
@@ -10,6 +9,7 @@ import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-
 import { InvalidVerificationCodeError } from '@/datasources/email/errors/invalid-verification-code.error';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { ExpiredVerificationCodeError } from '@/datasources/email/errors/expired-verification-code.error';
+import * as shift from 'postgres-shift';
 
 describe('Email Datasource Tests', () => {
   let target: EmailDatasource;

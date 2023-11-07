@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import postgres from 'postgres';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import shift from '@/datasources/db/migration.helper.js';
+import * as shift from 'postgres-shift';
 
 /**
  * The {@link PostgresDatabaseMigrationHook} is a Module Init hook meaning
