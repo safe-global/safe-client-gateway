@@ -82,7 +82,7 @@ export default () => ({
     apiKey: process.env.PRICES_PROVIDER_API_KEY,
     pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
     notFoundPriceTtlSeconds: parseInt(
-      process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${259200}`,
+      process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
     ),
     chains: {
       1: { nativeCoin: 'ethereum', chainName: 'ethereum' },

@@ -53,8 +53,8 @@ export class RedisCacheService
     }
   }
 
-  async expire(key: string, expireTimeSeconds: number) {
-    return await this.client.expire(key, expireTimeSeconds);
+  async expire(key: string, expireTimeSeconds: number): Promise<void> {
+    await this.client.expire(key, expireTimeSeconds);
   }
 
   /**

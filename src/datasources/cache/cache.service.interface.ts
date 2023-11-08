@@ -15,5 +15,5 @@ export interface ICacheService {
 
   deleteByKeyPattern(pattern: string): Promise<void>;
 
-  expire(key: string, expireTimeSeconds: number);
+  expire(key: string, expireTimeSeconds: number): Promise<void>;
 }
