@@ -22,16 +22,12 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
   async onModuleInit() {
     this.loggingService.info('Checking migrations');
     try {
-      const [lockAcquired] = await this
-        .sql`SELECT pg_try_advisory_lock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
-      if (!lockAcquired) {
-        this.loggingService.debug(
-          'Lock was already acquired by different session',
-        );
-        // If the lock was not acquired by this session, we exit since the migration is being
-        // performed by a different instance.
-        return;
-      }
+      // Acquire lock to perform a migration.
+      // If the lock is not acquired, then a migration is being executed by another instance.
+      // Migrations should strive to be idempotent as they can be executed by multiple instances
+      // on the same database.
+      await this
+        .sql`SELECT pg_advisory_lock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
       // Perform migration
       await shift({ sql: this.sql });
       this.loggingService.info('Pending migrations executed');
