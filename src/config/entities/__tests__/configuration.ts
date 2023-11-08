@@ -20,11 +20,11 @@ export default (): ReturnType<typeof configuration> => ({
   },
   db: {
     postgres: {
-      host: faker.internet.ip(),
-      port: faker.internet.port().toString(),
-      database: faker.word.sample(),
-      username: faker.internet.userName(),
-      password: faker.internet.password(),
+      host: process.env.POSTGRES_TEST_HOST || 'localhost',
+      port: process.env.POSTGRES_TEST_PORT || '5433',
+      database: process.env.POSTGRES_TEST_DB || 'test-db',
+      username: process.env.POSTGRES_TEST_USER || 'postgres',
+      password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
     },
   },
   email: {

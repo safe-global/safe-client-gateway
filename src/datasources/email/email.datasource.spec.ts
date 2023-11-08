@@ -6,16 +6,18 @@ import { Email } from '@/datasources/email/entities/email.entity';
 import { VerificationStatus } from '@/datasources/email/entities/verification.status';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import * as shift from 'postgres-shift';
+import configuration from '@/config/entities/__tests__/configuration';
 
 describe('Email Datasource Tests', () => {
   let target: EmailDataSource;
+  const configuation = configuration();
 
   const sql = postgres({
-    host: process.env.POSTGRES_TEST_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_TEST_PORT || `${5433}`),
-    db: process.env.POSTGRES_TEST_DB || 'test-db',
-    user: process.env.POSTGRES_TEST_USER || 'postgres',
-    password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+    host: configuation.db.postgres.host,
+    port: parseInt(configuation.db.postgres.port),
+    db: configuation.db.postgres.database,
+    user: configuation.db.postgres.username,
+    password: configuation.db.postgres.password,
   });
 
   // Run any pending migration before test execution
