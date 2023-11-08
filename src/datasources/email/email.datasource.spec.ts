@@ -3,7 +3,6 @@ import * as postgres from 'postgres';
 import { PostgresError } from 'postgres';
 import { faker } from '@faker-js/faker';
 import { Email } from '@/datasources/email/entities/email.entity';
-import { VerificationStatus } from '@/datasources/email/entities/verification.status';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import * as shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -101,7 +100,7 @@ describe('Email Datasource Tests', () => {
     const code = faker.number.int({ max: 999998 });
     const newCode = code + 1;
 
-    await target.saveEmail({
+    const verificationCode = await target.saveEmail({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
@@ -113,23 +112,23 @@ describe('Email Datasource Tests', () => {
                                        WHERE chain_id = ${chainId}
                                          and safe_address = ${safeAddress}
                                          and signer = ${signer}`;
-    const [initialVerificationStatus] = await sql<VerificationStatus[]>`SELECT *
-                                                                        FROM emails.verification
-                                                                        WHERE id = ${email.id}`;
-    await target.setVerificationCode({
+    const updatedVerificationCode = await target.setVerificationCode({
       chainId: chainId.toString(),
       safeAddress,
       signer,
       code: newCode,
     });
-    const [newVerificationStatus] = await sql<VerificationStatus[]>`SELECT *
-                                                                    FROM emails.verification
-                                                                    WHERE id = ${email.id}`;
-    expect(initialVerificationStatus.verification_code).not.toBe(
-      newVerificationStatus.verification_code,
+    const [updatedEmail] = await sql<Email[]>`SELECT *
+                                              FROM emails.signer_emails
+                                              WHERE chain_id = ${chainId}
+                                                and safe_address = ${safeAddress}
+                                                and signer = ${signer}`;
+
+    expect(updatedVerificationCode.verificationCode).not.toBe(
+      verificationCode.verificationCode,
     );
-    expect(initialVerificationStatus.sent_on.getTime()).toBeLessThan(
-      newVerificationStatus.sent_on.getTime(),
+    expect(email.sent_on.getTime()).toBeLessThan(
+      updatedEmail.sent_on.getTime(),
     );
   });
 

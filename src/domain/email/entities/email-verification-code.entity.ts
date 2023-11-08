@@ -1,4 +1,4 @@
 export interface EmailVerificationCode {
   emailAddress: string;
-  verificationCode: string;
+  verificationCode?: string;
 }

@@ -2,27 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { EmailVerificationCode } from '@/domain/email/entities/email-verification-code.entity';
-import { VerificationStatus } from '@/datasources/email/entities/verification.status';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import { Email } from '@/datasources/email/entities/email.entity';
 
 @Injectable()
 export class EmailDataSource implements IEmailDataSource {
   constructor(@Inject('DB_INSTANCE') private readonly sql: postgres.Sql) {}
-
-  private _setVerificationCode(args: {
-    sql: postgres.Sql;
-    emailId: number;
-    code: number;
-  }): postgres.PendingQuery<VerificationStatus[]> {
-    return args.sql<VerificationStatus[]>`
-        INSERT INTO emails.verification (id, verification_code)
-        VALUES (${args.emailId}, ${args.code})
-        ON CONFLICT (id) DO UPDATE SET verification_code = ${args.code},
-                                       sent_on           = now()
-        RETURNING *
-    `;
-  }
 
   private async _getEmail(args: {
     chainId: string;
@@ -55,20 +40,14 @@ export class EmailDataSource implements IEmailDataSource {
   }): Promise<EmailVerificationCode> {
     return await this.sql.begin(async (sql) => {
       const [email] = await sql<Email[]>`
-          INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer)
-          VALUES (${args.chainId}, ${args.emailAddress}, ${args.safeAddress}, ${args.signer})
+          INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer, verification_code)
+          VALUES (${args.chainId}, ${args.emailAddress}, ${args.safeAddress}, ${args.signer}, ${args.code})
           RETURNING *
       `;
 
-      const [verificationStatus] = await this._setVerificationCode({
-        sql,
-        emailId: email.id,
-        code: args.code,
-      });
-
       return <EmailVerificationCode>{
         emailAddress: email.email_address,
-        verificationCode: verificationStatus.verification_code,
+        verificationCode: email.verification_code,
       };
     });
   }
@@ -78,18 +57,26 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: number;
-  }): Promise<{ emailAddress: string; verificationCode: string }> {
-    const email = await this._getEmail(args);
+  }): Promise<EmailVerificationCode> {
+    const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
+                                            SET verification_code = ${args.code},
+                                                sent_on           = now()
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND signer = ${args.signer}
+                                            RETURNING *`;
 
-    const [verificationStatus] = await this._setVerificationCode({
-      sql: this.sql,
-      emailId: email.id,
-      code: args.code,
-    });
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.signer,
+      );
+    }
 
     return <EmailVerificationCode>{
       emailAddress: email.email_address,
-      verificationCode: verificationStatus.verification_code,
+      verificationCode: email.verification_code,
     };
   }
 
@@ -98,21 +85,20 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    return await this.sql.begin(async (sql) => {
-      const email = await this._getEmail(args);
+    const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
+                                            SET verified          = true,
+                                                verification_code = null
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND signer = ${args.signer}
+                                            RETURNING *`;
 
-      // Deletes email verification entry
-      await sql`DELETE
-                FROM emails.verification
-                WHERE id = ${email.id}
-      `;
-
-      // Sets email as verified
-      await sql`
-          UPDATE emails.signer_emails
-          SET verified = true
-          WHERE id = ${email.id}
-      `;
-    });
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.signer,
+      );
+    }
   }
 }
