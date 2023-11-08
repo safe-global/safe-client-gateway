@@ -17,6 +17,11 @@ export class CoingeckoApi implements IPricesApi {
    */
   private static readonly pricesProviderHeader: string = 'x-cg-pro-api-key';
 
+  /**
+   * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
+   */
+  static readonly notFoundTtlRange: number = 60 * 60 * 24;
+
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly pricesTtlSeconds: number;
@@ -147,11 +152,22 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<void> {
     const cacheDir = CacheRouter.getTokenPriceCacheDir(args);
-    return this.cacheService.expire(cacheDir.key, this.notFoundPriceTtlSeconds);
+    const expireTimeSeconds = this._getRandomNotFoundTokenPriceTtl();
+    return this.cacheService.expire(cacheDir.key, expireTimeSeconds);
   }
 
   private _mapProviderError(error: any): string {
     const errorCode = error?.status?.error_code;
     return errorCode ? ` [status: ${errorCode}]` : '';
+  }
+
+  /**
+   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRange)
+   * and (notFoundPriceTtlSeconds + notFoundTtlRange).
+   */
+  private _getRandomNotFoundTokenPriceTtl() {
+    const min = this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRange;
+    const max = this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRange;
+    return Math.floor(Math.random() * (max - min) + min);
   }
 }

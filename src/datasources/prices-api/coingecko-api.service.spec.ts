@@ -254,9 +254,16 @@ describe('CoingeckoAPI', () => {
       '',
     );
     expect(mockCacheService.expire).toHaveBeenCalledTimes(1);
-    expect(mockCacheService.expire).toHaveBeenCalledWith(
-      expectedCacheDir.key,
-      fakeConfigurationService.get('prices.notFoundPriceTtlSeconds'),
+    expect(mockCacheService.expire.mock.calls[0][0]).toBe(expectedCacheDir.key);
+    expect(mockCacheService.expire.mock.calls[0][1]).toBeGreaterThanOrEqual(
+      (fakeConfigurationService.get(
+        'prices.notFoundPriceTtlSeconds',
+      ) as number) - CoingeckoApi.notFoundTtlRange,
+    );
+    expect(mockCacheService.expire.mock.calls[0][1]).toBeLessThanOrEqual(
+      (fakeConfigurationService.get(
+        'prices.notFoundPriceTtlSeconds',
+      ) as number) + CoingeckoApi.notFoundTtlRange,
     );
   });
 });
