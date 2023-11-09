@@ -24,7 +24,7 @@ export interface IEmailDataSource {
   }): Promise<EmailVerificationCode>;
 
   /**
-   * Resets the verification code for the signer of a Safe.
+   * Sets the verification code for the signer of a Safe.
    *
    * If the reset was successful, the new verification code
    * {@link EmailVerificationCode} is returned.

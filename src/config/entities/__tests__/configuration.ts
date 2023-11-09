@@ -27,9 +27,6 @@ export default (): ReturnType<typeof configuration> => ({
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
     },
   },
-  email: {
-    verificationExpireTimeInSeconds: faker.number.int({ max: 60 }),
-  },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),

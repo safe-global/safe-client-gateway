@@ -25,11 +25,6 @@ export default () => ({
       password: process.env.POSTGRES_PASSWORD || 'postgres',
     },
   },
-  email: {
-    verificationExpireTimeInSeconds: parseInt(
-      process.env.EMAIL_VERIFICATION_EXPIRE_TIME_SECONDS || `${30}`,
-    ),
-  },
   exchange: {
     baseUri:
       process.env.EXCHANGE_API_BASE_URI ||
