@@ -6,5 +6,5 @@ export interface Email {
   signer: string;
   verified: boolean;
   verification_code?: string;
-  sent_on: Date;
+  verification_sent_on: Date;
 }

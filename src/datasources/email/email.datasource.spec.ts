@@ -127,8 +127,8 @@ describe('Email Datasource Tests', () => {
     expect(updatedVerificationCode.verificationCode).not.toBe(
       verificationCode.verificationCode,
     );
-    expect(email.sent_on.getTime()).toBeLessThan(
-      updatedEmail.sent_on.getTime(),
+    expect(email.verification_sent_on.getTime()).toBeLessThan(
+      updatedEmail.verification_sent_on.getTime(),
     );
   });
 
