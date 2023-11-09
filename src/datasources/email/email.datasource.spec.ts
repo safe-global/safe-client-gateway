@@ -9,14 +9,14 @@ import configuration from '@/config/entities/__tests__/configuration';
 
 describe('Email Datasource Tests', () => {
   let target: EmailDataSource;
-  const configuation = configuration();
+  const config = configuration();
 
   const sql = postgres({
-    host: configuation.db.postgres.host,
-    port: parseInt(configuation.db.postgres.port),
-    db: configuation.db.postgres.database,
-    user: configuation.db.postgres.username,
-    password: configuation.db.postgres.password,
+    host: config.db.postgres.host,
+    port: parseInt(config.db.postgres.port),
+    db: config.db.postgres.database,
+    user: config.db.postgres.username,
+    password: config.db.postgres.password,
   });
 
   // Run any pending migration before test execution
