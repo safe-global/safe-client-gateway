@@ -20,7 +20,7 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */
-  static readonly notFoundTtlRange: number = 60 * 60 * 24;
+  static readonly notFoundTtlRangeSeconds: number = 60 * 60 * 24;
 
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
@@ -162,12 +162,14 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRange)
-   * and (notFoundPriceTtlSeconds + notFoundTtlRange).
+   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
+   * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
    */
   private _getRandomNotFoundTokenPriceTtl() {
-    const min = this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRange;
-    const max = this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRange;
+    const min =
+      this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
+    const max =
+      this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRangeSeconds;
     return Math.floor(Math.random() * (max - min) + min);
   }
 }

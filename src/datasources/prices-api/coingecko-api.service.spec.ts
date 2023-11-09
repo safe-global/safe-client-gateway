@@ -258,12 +258,12 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.expire.mock.calls[0][1]).toBeGreaterThanOrEqual(
       (fakeConfigurationService.get(
         'prices.notFoundPriceTtlSeconds',
-      ) as number) - CoingeckoApi.notFoundTtlRange,
+      ) as number) - CoingeckoApi.notFoundTtlRangeSeconds,
     );
     expect(mockCacheService.expire.mock.calls[0][1]).toBeLessThanOrEqual(
       (fakeConfigurationService.get(
         'prices.notFoundPriceTtlSeconds',
-      ) as number) + CoingeckoApi.notFoundTtlRange,
+      ) as number) + CoingeckoApi.notFoundTtlRangeSeconds,
     );
   });
 });
