@@ -82,6 +82,9 @@ export default () => ({
       'https://api.coingecko.com/api/v3',
     apiKey: process.env.PRICES_PROVIDER_API_KEY,
     pricesTtlSeconds: parseInt(process.env.PRICES_TTL_SECONDS ?? `${300}`),
+    notFoundPriceTtlSeconds: parseInt(
+      process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
+    ),
     chains: {
       1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
       10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },

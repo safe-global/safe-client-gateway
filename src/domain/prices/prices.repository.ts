@@ -38,7 +38,17 @@ export class PricesRepository implements IPricesRepository {
       fiatCode: lowerCaseFiatCode,
     });
     const assetPrice = this.assetPriceValidator.validate(result);
-    return assetPrice?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
+    const tokenPrice = assetPrice?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
+
+    if (!tokenPrice) {
+      await this.coingeckoApi.registerNotFoundTokenPrice({
+        chainName: args.chainName,
+        tokenAddress: lowerCaseTokenAddress,
+        fiatCode: lowerCaseFiatCode,
+      });
+    }
+
+    return tokenPrice;
   }
 
   async getFiatCodes(): Promise<string[]> {

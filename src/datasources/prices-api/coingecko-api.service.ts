@@ -5,6 +5,10 @@ import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -13,9 +17,15 @@ export class CoingeckoApi implements IPricesApi {
    */
   private static readonly pricesProviderHeader: string = 'x-cg-pro-api-key';
 
+  /**
+   * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
+   */
+  static readonly notFoundTtlRange: number = 60 * 60 * 24;
+
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly pricesTtlSeconds: number;
+  private readonly notFoundPriceTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
 
@@ -23,6 +33,7 @@ export class CoingeckoApi implements IPricesApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.apiKey = this.configurationService.get<string>('prices.apiKey');
     this.baseUrl =
@@ -33,6 +44,9 @@ export class CoingeckoApi implements IPricesApi {
       );
     this.pricesTtlSeconds = this.configurationService.getOrThrow<number>(
       'prices.pricesTtlSeconds',
+    );
+    this.notFoundPriceTtlSeconds = this.configurationService.getOrThrow<number>(
+      'prices.notFoundPriceTtlSeconds',
     );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
@@ -132,8 +146,28 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
+  async registerNotFoundTokenPrice(args: {
+    chainName: string;
+    tokenAddress: string;
+    fiatCode: string;
+  }): Promise<void> {
+    const cacheDir = CacheRouter.getTokenPriceCacheDir(args);
+    const expireTimeSeconds = this._getRandomNotFoundTokenPriceTtl();
+    return this.cacheService.expire(cacheDir.key, expireTimeSeconds);
+  }
+
   private _mapProviderError(error: any): string {
     const errorCode = error?.status?.error_code;
     return errorCode ? ` [status: ${errorCode}]` : '';
+  }
+
+  /**
+   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRange)
+   * and (notFoundPriceTtlSeconds + notFoundTtlRange).
+   */
+  private _getRandomNotFoundTokenPriceTtl() {
+    const min = this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRange;
+    const max = this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRange;
+    return Math.floor(Math.random() * (max - min) + min);
   }
 }

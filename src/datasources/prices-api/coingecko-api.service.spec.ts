@@ -4,10 +4,16 @@ import { CoingeckoApi } from '@/datasources/prices-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as unknown as CacheFirstDataSource);
+
+const mockCacheService = jest.mocked({
+  deleteByKey: jest.fn(),
+  expire: jest.fn(),
+} as unknown as ICacheService);
 
 describe('CoingeckoAPI', () => {
   let service: CoingeckoApi;
@@ -15,6 +21,7 @@ describe('CoingeckoAPI', () => {
   const coingeckoBaseUri = faker.internet.url({ appendSlash: false });
   const coingeckoApiKey = faker.string.sample();
   const pricesCacheTtlSeconds = faker.number.int();
+  const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
@@ -28,6 +35,10 @@ describe('CoingeckoAPI', () => {
       pricesCacheTtlSeconds,
     );
     fakeConfigurationService.set(
+      'prices.notFoundPriceTtlSeconds',
+      notFoundPriceTtlSeconds,
+    );
+    fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       defaultExpirationTimeInSeconds,
     );
@@ -38,6 +49,7 @@ describe('CoingeckoAPI', () => {
     service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
   });
 
@@ -46,7 +58,11 @@ describe('CoingeckoAPI', () => {
 
     await expect(
       () =>
-        new CoingeckoApi(fakeConfigurationService, mockCacheFirstDataSource),
+        new CoingeckoApi(
+          fakeConfigurationService,
+          mockCacheFirstDataSource,
+          mockCacheService,
+        ),
     ).toThrow();
   });
 
@@ -77,6 +93,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     const fiatCodes = await service.getFiatCodes();
@@ -135,6 +152,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     const assetPrice = await service.getTokenPrice({
@@ -198,6 +216,7 @@ describe('CoingeckoAPI', () => {
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
+      mockCacheService,
     );
 
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
@@ -217,5 +236,34 @@ describe('CoingeckoAPI', () => {
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: pricesCacheTtlSeconds,
     });
+  });
+
+  it('should call CacheService.expire when registering a not found token price', async () => {
+    const chainName = faker.string.sample();
+    const tokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+
+    await service.registerNotFoundTokenPrice({
+      chainName,
+      tokenAddress,
+      fiatCode,
+    });
+
+    const expectedCacheDir = new CacheDir(
+      `${chainName}_token_price_${tokenAddress}_${fiatCode}`,
+      '',
+    );
+    expect(mockCacheService.expire).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.expire.mock.calls[0][0]).toBe(expectedCacheDir.key);
+    expect(mockCacheService.expire.mock.calls[0][1]).toBeGreaterThanOrEqual(
+      (fakeConfigurationService.get(
+        'prices.notFoundPriceTtlSeconds',
+      ) as number) - CoingeckoApi.notFoundTtlRange,
+    );
+    expect(mockCacheService.expire.mock.calls[0][1]).toBeLessThanOrEqual(
+      (fakeConfigurationService.get(
+        'prices.notFoundPriceTtlSeconds',
+      ) as number) + CoingeckoApi.notFoundTtlRange,
+    );
   });
 });
