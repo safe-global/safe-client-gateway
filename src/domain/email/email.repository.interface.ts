@@ -3,8 +3,8 @@ export const IEmailRepository = Symbol('IEmailRepository');
 export interface IEmailRepository {
   saveEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safe: string;
     emailAddress: string;
-    signer: string;
+    account: string;
   }): Promise<void>;
 }

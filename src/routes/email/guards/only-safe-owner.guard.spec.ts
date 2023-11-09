@@ -6,7 +6,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { OnlySafeOwnerGuard } from '@/routes/email/only-safe-owner.guard';
+import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 const safeRepository = {

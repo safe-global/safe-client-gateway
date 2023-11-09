@@ -8,7 +8,7 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { Hash } from 'viem';
-import { EmailRegistrationGuard } from '@/routes/email/email-registration.guard';
+import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
 
 @Controller()
 class TestController {
