@@ -83,13 +83,22 @@ export class BalancesRepository implements IBalancesRepository {
     simpleBalances.map((simpleBalance) =>
       this.simpleBalancesValidator.validate(simpleBalance),
     );
+
+    const tokenAddresses = simpleBalances
+      .map((sb) => sb.tokenAddress)
+      .filter((a): a is string => a !== null);
+
+    const prices = tokenAddresses.length
+      ? await this._getTokenPrices(args.chainId, args.fiatCode, tokenAddresses)
+      : [];
+
     return await Promise.all(
       simpleBalances.map(async (simpleBalance) => {
-        const price = await this._getPrice(
-          args.chainId,
-          args.fiatCode,
-          simpleBalance.tokenAddress,
-        );
+        const tokenAddress = simpleBalance.tokenAddress?.toLowerCase() ?? null;
+        const price =
+          tokenAddress === null
+            ? await this._getNativeCoinPrice(args.chainId, args.fiatCode)
+            : prices.find((i) => i[0] === tokenAddress)?.[1] || null; // TODO: refactor
         const fiatBalance = await this._getFiatBalance(price, simpleBalance);
         return {
           ...simpleBalance,
@@ -98,16 +107,6 @@ export class BalancesRepository implements IBalancesRepository {
         };
       }),
     );
-  }
-
-  private async _getPrice(
-    chainId: string,
-    fiatCode: string,
-    tokenAddress: string | null,
-  ): Promise<number | null> {
-    return tokenAddress === null
-      ? this._getNativeCoinPrice(chainId, fiatCode)
-      : this._getTokenPrice(chainId, fiatCode, tokenAddress);
   }
 
   private async _getNativeCoinPrice(
@@ -132,27 +131,27 @@ export class BalancesRepository implements IBalancesRepository {
     }
   }
 
-  private async _getTokenPrice(
+  private async _getTokenPrices(
     chainId: string,
     fiatCode: string,
-    tokenAddress: string,
-  ): Promise<number | null> {
+    tokenAddresses: string[],
+  ): Promise<[string, number | null][]> {
     const chainName = this.configurationService.getOrThrow<string>(
       `prices.chains.${chainId}.chainName`,
     );
     try {
-      return await this.pricesRepository.getTokenPrice({
+      return await this.pricesRepository.getTokenPrices({
         chainName,
-        tokenAddress,
+        tokenAddresses,
         fiatCode,
       });
     } catch (err) {
       this.loggingService.warn({
         type: 'invalid_token_price',
-        token_address: tokenAddress,
+        token_address: tokenAddresses,
         fiat_code: fiatCode,
       });
-      return null;
+      return tokenAddresses.map((a) => [a, null]);
     }
   }
 

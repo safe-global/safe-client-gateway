@@ -25,29 +25,20 @@ export class PricesRepository implements IPricesRepository {
     return assetPrice?.[args.nativeCoinId]?.[lowerCaseFiatCode];
   }
 
-  async getTokenPrice(args: {
+  async getTokenPrices(args: {
     chainName: string;
-    tokenAddress: string;
+    tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<number> {
+  }): Promise<[string, number | null][]> {
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
-    const lowerCaseTokenAddress = args.tokenAddress.toLowerCase();
-    const result = await this.coingeckoApi.getTokenPrice({
+    const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
+      address.toLowerCase(),
+    );
+    return this.coingeckoApi.getTokenPrices({
       chainName: args.chainName,
-      tokenAddress: lowerCaseTokenAddress,
+      tokenAddresses: lowerCaseTokenAddresses,
       fiatCode: lowerCaseFiatCode,
     });
-
-    const tokenPrice = result?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
-    if (!tokenPrice) {
-      await this.coingeckoApi.registerNotFoundTokenPrice({
-        chainName: args.chainName,
-        tokenAddress: lowerCaseTokenAddress,
-        fiatCode: lowerCaseFiatCode,
-      });
-    }
-
-    return tokenPrice;
   }
 
   async getFiatCodes(): Promise<string[]> {

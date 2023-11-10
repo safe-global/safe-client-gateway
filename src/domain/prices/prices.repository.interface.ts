@@ -6,11 +6,11 @@ export interface IPricesRepository {
     fiatCode: string;
   }): Promise<number>;
 
-  getTokenPrice(args: {
+  getTokenPrices(args: {
     chainName: string;
-    tokenAddress: string;
+    tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<number>;
+  }): Promise<[string, number | null][]>;
 
   getFiatCodes(): Promise<string[]>;
 }
