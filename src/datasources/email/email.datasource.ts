@@ -9,28 +9,6 @@ import { Email } from '@/datasources/email/entities/email.entity';
 export class EmailDataSource implements IEmailDataSource {
   constructor(@Inject('DB_INSTANCE') private readonly sql: postgres.Sql) {}
 
-  private async _getEmail(args: {
-    chainId: string;
-    safeAddress: string;
-    signer: string;
-  }): Promise<Email> {
-    const [email] = await this.sql<Email[]>`SELECT *
-                                            FROM emails.signer_emails
-                                            WHERE chain_id = ${args.chainId}
-                                              and safe_address = ${args.safeAddress}
-                                              and signer = ${args.signer}`;
-
-    if (!email) {
-      throw new EmailAddressDoesNotExistError(
-        args.chainId,
-        args.safeAddress,
-        args.signer,
-      );
-    }
-
-    return email;
-  }
-
   async saveEmail(args: {
     chainId: string;
     safeAddress: string;
@@ -59,8 +37,7 @@ export class EmailDataSource implements IEmailDataSource {
     code: number;
   }): Promise<EmailVerificationCode> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
-                                            SET verification_code    = ${args.code},
-                                                verification_sent_on = now()
+                                            SET verification_code = ${args.code}
                                             WHERE chain_id = ${args.chainId}
                                               AND safe_address = ${args.safeAddress}
                                               AND signer = ${args.signer}
@@ -78,6 +55,28 @@ export class EmailDataSource implements IEmailDataSource {
       emailAddress: email.email_address,
       verificationCode: email.verification_code,
     };
+  }
+
+  async setVerificationSentDate(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+    sentOn: Date;
+  }): Promise<void> {
+    const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
+                                            SET verification_sent_on = ${args.sentOn}
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND signer = ${args.signer}
+                                            RETURNING *`;
+
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.signer,
+      );
+    }
   }
 
   async verifyEmail(args: {

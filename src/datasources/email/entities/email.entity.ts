@@ -5,6 +5,6 @@ export interface Email {
   safe_address: string;
   signer: string;
   verified: boolean;
-  verification_code?: string;
-  verification_sent_on: Date;
+  verification_code: string | null;
+  verification_sent_on: Date | null;
 }

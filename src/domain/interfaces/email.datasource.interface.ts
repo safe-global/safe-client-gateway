@@ -4,7 +4,7 @@ export const IEmailDataSource = Symbol('IEmailDataSource');
 
 export interface IEmailDataSource {
   /**
-   * Saves an email address in the respective data source.
+   * Saves an email entry in the respective data source.
    *
    * If the email is saved successfully, a verification code
    * {@link EmailVerificationCode} is returned
@@ -24,7 +24,7 @@ export interface IEmailDataSource {
   }): Promise<EmailVerificationCode>;
 
   /**
-   * Sets the verification code for the signer of a Safe.
+   * Sets the verification code for an email entry.
    *
    * If the reset was successful, the new verification code
    * {@link EmailVerificationCode} is returned.
@@ -42,7 +42,22 @@ export interface IEmailDataSource {
   }): Promise<EmailVerificationCode>;
 
   /**
-   * Verifies the email address for the signer of a Safe.
+   * Sets the verification date for an email entry.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address
+   * @param args.signer - the owner address
+   * @param args.sent_on - the verification-sent date
+   */
+  setVerificationSentDate(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+    sentOn: Date;
+  }): Promise<void>;
+
+  /**
+   * Verifies the email address for a signer of a Safe.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address
