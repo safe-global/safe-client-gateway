@@ -13,9 +13,17 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-safe-client-gateway}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
+
+  db-test:
+    image: postgres:14.8-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-test-db}
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-postgres}
+    ports:
+      - '${POSTGRES_TEST_PORT:-5433}:5432'
 
   web:
     build: .
