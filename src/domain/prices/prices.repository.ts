@@ -37,9 +37,8 @@ export class PricesRepository implements IPricesRepository {
       tokenAddress: lowerCaseTokenAddress,
       fiatCode: lowerCaseFiatCode,
     });
-    const assetPrice = this.assetPriceValidator.validate(result);
-    const tokenPrice = assetPrice?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
 
+    const tokenPrice = result?.[lowerCaseTokenAddress]?.[lowerCaseFiatCode];
     if (!tokenPrice) {
       await this.coingeckoApi.registerNotFoundTokenPrice({
         chainName: args.chainName,
