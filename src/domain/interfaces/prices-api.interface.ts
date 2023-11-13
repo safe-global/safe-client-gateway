@@ -12,7 +12,7 @@ export interface IPricesApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<[string, number | null][]>;
+  }): Promise<AssetPrice[]>;
 
   getFiatCodes(): Promise<string[]>;
 }

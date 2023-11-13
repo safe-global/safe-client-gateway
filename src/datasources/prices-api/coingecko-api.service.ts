@@ -24,6 +24,11 @@ export class CoingeckoApi implements IPricesApi {
   private static readonly pricesProviderHeader: string = 'x-cg-pro-api-key';
 
   /**
+   * Coingecko API maximum amount of token addresses being requested in the same call.
+   */
+  private static readonly maxBatchSize: number = 100;
+
+  /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */
   static readonly notFoundTtlRangeSeconds: number = 60 * 60 * 24;
@@ -99,40 +104,20 @@ export class CoingeckoApi implements IPricesApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<[string, number | null][]> {
-    const cachedAssetPrices = await this._getAssetPricesFromCache(args);
-    const notCachedAddresses = difference(
+  }): Promise<AssetPrice[]> {
+    const pricesFromCache = await this._getTokenPricesFromCache(args);
+    const notCachedTokenPrices = difference(
       args.tokenAddresses,
-      cachedAssetPrices.map((assetPrice) => assetPrice[0]),
+      pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
     );
-    const retrievedAssetPrices = await this._getAssetPricesFromProvider({
-      ...args,
-      notCachedAddresses,
-    });
+    const pricesFromNetwork = notCachedTokenPrices.length
+      ? await this._getTokenPricesFromNetwork({
+          ...args,
+          tokenAddresses: notCachedTokenPrices,
+        })
+      : [];
 
-    const assetPrices = await Promise.all(
-      notCachedAddresses.map(async (notCachedAddress) => {
-        const price =
-          retrievedAssetPrices.data[notCachedAddress]?.[args.fiatCode];
-        const assetPrice: [string, number | null] = [
-          notCachedAddress,
-          price ?? null,
-        ];
-        await this.cacheService.set(
-          CacheRouter.getTokenPriceCacheDir({
-            ...args,
-            tokenAddress: notCachedAddress,
-          }),
-          JSON.stringify(assetPrice),
-          price
-            ? this.pricesTtlSeconds
-            : this._getRandomNotFoundTokenPriceTtl(),
-        );
-        return assetPrice;
-      }),
-    );
-
-    return [cachedAssetPrices, assetPrices].flat();
+    return [pricesFromCache, pricesFromNetwork].flat();
   }
 
   async getFiatCodes(): Promise<string[]> {
@@ -161,28 +146,11 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
-  private _mapProviderError(error: any): string {
-    const errorCode = error?.status?.error_code;
-    return errorCode ? ` [status: ${errorCode}]` : '';
-  }
-
-  /**
-   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
-   * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
-   */
-  private _getRandomNotFoundTokenPriceTtl() {
-    const min =
-      this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
-    const max =
-      this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRangeSeconds;
-    return Math.floor(Math.random() * (max - min) + min);
-  }
-
-  private async _getAssetPricesFromCache(args: {
+  private async _getTokenPricesFromCache(args: {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<[string, number][]> {
+  }): Promise<AssetPrice[]> {
     const result = await Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
         const cacheDir = CacheRouter.getTokenPriceCacheDir({
@@ -203,9 +171,37 @@ export class CoingeckoApi implements IPricesApi {
     return result.filter((i) => i !== null);
   }
 
-  private async _getAssetPricesFromProvider(args: {
+  private async _getTokenPricesFromNetwork(args: {
     chainName: string;
-    notCachedAddresses: string[];
+    tokenAddresses: string[];
+    fiatCode: string;
+  }): Promise<AssetPrice[]> {
+    const prices = await this._requestPricesFromNetwork({
+      ...args,
+      tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.maxBatchSize),
+    });
+
+    return Promise.all(
+      args.tokenAddresses.map(async (tokenAddress) => {
+        const validPrice = prices.data[tokenAddress]?.[args.fiatCode];
+        const price: AssetPrice = validPrice
+          ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
+          : { [tokenAddress]: { [args.fiatCode]: null } };
+        await this.cacheService.set(
+          CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
+          JSON.stringify(price),
+          validPrice
+            ? this.pricesTtlSeconds
+            : this._getRandomNotFoundTokenPriceTtl(),
+        );
+        return price;
+      }),
+    );
+  }
+
+  private async _requestPricesFromNetwork(args: {
+    chainName: string;
+    tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice> {
     try {
@@ -213,7 +209,7 @@ export class CoingeckoApi implements IPricesApi {
       return await this.networkService.get(url, {
         params: {
           vs_currencies: args.fiatCode,
-          contract_addresses: args.notCachedAddresses.join(','),
+          contract_addresses: args.tokenAddresses.join(','),
         },
         ...(this.apiKey && {
           headers: {
@@ -224,9 +220,26 @@ export class CoingeckoApi implements IPricesApi {
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${
-          args.notCachedAddresses
+          args.tokenAddresses
         } price from provider${this._mapProviderError(error)}`,
       );
     }
+  }
+
+  /**
+   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
+   * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
+   */
+  private _getRandomNotFoundTokenPriceTtl(): number {
+    const min =
+      this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
+    const max =
+      this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRangeSeconds;
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
+  private _mapProviderError(error: any): string {
+    const errorCode = error?.status?.error_code;
+    return errorCode ? ` [status: ${errorCode}]` : '';
   }
 }

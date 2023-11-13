@@ -9,6 +9,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
+import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
@@ -95,10 +96,12 @@ export class BalancesRepository implements IBalancesRepository {
     return await Promise.all(
       simpleBalances.map(async (simpleBalance) => {
         const tokenAddress = simpleBalance.tokenAddress?.toLowerCase() ?? null;
-        const price =
-          tokenAddress === null
-            ? await this._getNativeCoinPrice(args.chainId, args.fiatCode)
-            : prices.find((i) => i[0] === tokenAddress)?.[1] || null; // TODO: refactor
+        const price = await this._getPrice(
+          args.chainId,
+          args.fiatCode,
+          tokenAddress,
+          prices,
+        );
         const fiatBalance = await this._getFiatBalance(price, simpleBalance);
         return {
           ...simpleBalance,
@@ -107,6 +110,19 @@ export class BalancesRepository implements IBalancesRepository {
         };
       }),
     );
+  }
+
+  private async _getPrice(
+    chainId: string,
+    fiatCode: string,
+    tokenAddress: string | null,
+    prices: AssetPrice[],
+  ): Promise<number | null> {
+    if (tokenAddress === null) {
+      return this._getNativeCoinPrice(chainId, fiatCode);
+    }
+    const price = prices.find((assetPrice) => assetPrice[tokenAddress]);
+    return price?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
   }
 
   private async _getNativeCoinPrice(
@@ -135,7 +151,7 @@ export class BalancesRepository implements IBalancesRepository {
     chainId: string,
     fiatCode: string,
     tokenAddresses: string[],
-  ): Promise<[string, number | null][]> {
+  ): Promise<AssetPrice[]> {
     const chainName = this.configurationService.getOrThrow<string>(
       `prices.chains.${chainId}.chainName`,
     );
@@ -151,7 +167,7 @@ export class BalancesRepository implements IBalancesRepository {
         token_address: tokenAddresses,
         fiat_code: fiatCode,
       });
-      return tokenAddresses.map((a) => [a, null]);
+      return [];
     }
   }
 

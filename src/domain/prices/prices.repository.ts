@@ -3,6 +3,7 @@ import { IPricesApi } from '../interfaces/prices-api.interface';
 import { IPricesRepository } from './prices.repository.interface';
 import { AssetPriceValidator } from './asset-price.validator';
 import { FiatCodesValidator } from './fiat-codes.validator';
+import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 
 @Injectable()
 export class PricesRepository implements IPricesRepository {
@@ -29,7 +30,7 @@ export class PricesRepository implements IPricesRepository {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<[string, number | null][]> {
+  }): Promise<AssetPrice[]> {
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
       address.toLowerCase(),
