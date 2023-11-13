@@ -100,6 +100,15 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
+  /**
+   * Gets prices for a set of token addresses, trying to get them from cache first.
+   * For those not found in the cache, it trying to retrieve them from the Coingecko API.
+   *
+   * @param chainName Coingecko's name for the chain (see configuration)
+   * @param tokenAddresses Array of token addresses which prices are being retrieved
+   * @param fiatCode
+   * @returns Array of {@link AssetPrice}
+   */
   async getTokenPrices(args: {
     chainName: string;
     tokenAddresses: string[];
@@ -146,6 +155,14 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
+  private _mapProviderError(error: any): string {
+    const errorCode = error?.status?.error_code;
+    return errorCode ? ` [status: ${errorCode}]` : '';
+  }
+
+  /**
+   * For an array of token addresses, gets the prices available from cache.
+   */
   private async _getTokenPricesFromCache(args: {
     chainName: string;
     tokenAddresses: string[];
@@ -171,6 +188,10 @@ export class CoingeckoApi implements IPricesApi {
     return result.filter((i) => i !== null);
   }
 
+  /**
+   * For an array of token addresses, gets the prices available from the Coingecko API.
+   * Stores both retrieved prices and not-found prices in cache.
+   */
   private async _getTokenPricesFromNetwork(args: {
     chainName: string;
     tokenAddresses: string[];
@@ -199,6 +220,9 @@ export class CoingeckoApi implements IPricesApi {
     );
   }
 
+  /**
+   * Does the actual price requests to the Coingecko API, using the {@link NetworkService}.
+   */
   private async _requestPricesFromNetwork(args: {
     chainName: string;
     tokenAddresses: string[];
@@ -230,16 +254,11 @@ export class CoingeckoApi implements IPricesApi {
    * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
    * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
    */
-  private _getRandomNotFoundTokenPriceTtl(): number {
+  private _getRandomNotFoundTokenPriceTtl() {
     const min =
       this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
     const max =
       this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRangeSeconds;
     return Math.floor(Math.random() * (max - min) + min);
-  }
-
-  private _mapProviderError(error: any): string {
-    const errorCode = error?.status?.error_code;
-    return errorCode ? ` [status: ${errorCode}]` : '';
   }
 }

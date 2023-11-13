@@ -86,8 +86,8 @@ export class BalancesRepository implements IBalancesRepository {
     );
 
     const tokenAddresses = simpleBalances
-      .map((sb) => sb.tokenAddress)
-      .filter((a): a is string => a !== null);
+      .map((simpleBalance) => simpleBalance.tokenAddress)
+      .filter((address): address is string => address !== null);
 
     const prices = tokenAddresses.length
       ? await this._getTokenPrices(args.chainId, args.fiatCode, tokenAddresses)
