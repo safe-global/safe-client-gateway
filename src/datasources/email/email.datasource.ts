@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
-import { EmailVerificationCode } from '@/domain/email/entities/email-verification-code.entity';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import { Email } from '@/datasources/email/entities/email.entity';
 
@@ -15,7 +14,7 @@ export class EmailDataSource implements IEmailDataSource {
     emailAddress: string;
     signer: string;
     code: number;
-  }): Promise<EmailVerificationCode> {
+  }): Promise<{ email: string; verificationCode: string | null }> {
     return await this.sql.begin(async (sql) => {
       const [email] = await sql<Email[]>`
           INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer, verification_code)
@@ -23,8 +22,8 @@ export class EmailDataSource implements IEmailDataSource {
           RETURNING *
       `;
 
-      return <EmailVerificationCode>{
-        emailAddress: email.email_address,
+      return {
+        email: email.email_address,
         verificationCode: email.verification_code,
       };
     });
@@ -35,7 +34,7 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: number;
-  }): Promise<EmailVerificationCode> {
+  }): Promise<{ email: string; verificationCode: string | null }> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
                                             SET verification_code = ${args.code}
                                             WHERE chain_id = ${args.chainId}
@@ -51,8 +50,8 @@ export class EmailDataSource implements IEmailDataSource {
       );
     }
 
-    return <EmailVerificationCode>{
-      emailAddress: email.email_address,
+    return {
+      email: email.email_address,
       verificationCode: email.verification_code,
     };
   }

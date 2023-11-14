@@ -1,13 +1,8 @@
-import { EmailVerificationCode } from '@/domain/email/entities/email-verification-code.entity';
-
 export const IEmailDataSource = Symbol('IEmailDataSource');
 
 export interface IEmailDataSource {
   /**
    * Saves an email entry in the respective data source.
-   *
-   * If the email is saved successfully, a verification code
-   * {@link EmailVerificationCode} is returned
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
@@ -21,13 +16,12 @@ export interface IEmailDataSource {
     emailAddress: string;
     signer: string;
     code: number;
-  }): Promise<EmailVerificationCode>;
+  }): Promise<{ email: string; verificationCode: string | null }>;
 
   /**
    * Sets the verification code for an email entry.
    *
-   * If the reset was successful, the new verification code
-   * {@link EmailVerificationCode} is returned.
+   * If the reset was successful, the new verification code is returned.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address
@@ -39,7 +33,7 @@ export interface IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: number;
-  }): Promise<EmailVerificationCode>;
+  }): Promise<{ email: string; verificationCode: string | null }>;
 
   /**
    * Sets the verification date for an email entry.
