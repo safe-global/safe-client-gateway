@@ -21,8 +21,7 @@ export interface IEmailDataSource {
   /**
    * Sets the verification code for an email entry.
    *
-   * If the reset was successful, the new verification code
-   * {@link EmailVerificationCode} is returned.
+   * If the reset was successful, the new verification code is returned.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address

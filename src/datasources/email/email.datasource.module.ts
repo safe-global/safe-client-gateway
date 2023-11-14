@@ -8,4 +8,4 @@ import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.modul
   providers: [{ provide: IEmailDataSource, useClass: EmailDataSource }],
   exports: [IEmailDataSource],
 })
-export class EmailDatasourceModule {}
+export class EmailDataSourceModule {}

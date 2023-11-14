@@ -27,7 +27,7 @@ export class EmailRepository implements IEmailRepository {
       address: args.safeAddress,
     });
 
-    if (!(args.signer in safe.owners)) {
+    if (!safe.owners.includes(args.signer)) {
       // Signer needs to be an owner of the safe
       throw new SignerNotOwnerError(
         args.chainId,
