@@ -96,12 +96,6 @@ export class CacheHooksService {
       // - the transaction executed – clear multisig transaction
       // - the safe configuration - clear safe info
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
-        this.loggingService.info({
-          eventType: event.type,
-          address: event.address,
-          chainId: event.chainId,
-          safeTxHash: event.safeTxHash,
-        });
         promises.push(
           this.collectiblesRepository.clearCollectibles({
             chainId: event.chainId,
@@ -134,12 +128,6 @@ export class CacheHooksService {
       // - queued transactions – clear multisig transactions
       // - the pending transaction – clear multisig transaction
       case EventType.NEW_CONFIRMATION:
-        this.loggingService.info({
-          eventType: event.type,
-          address: event.address,
-          chainId: event.chainId,
-          safeTxHash: event.safeTxHash,
-        });
         promises.push(
           this.safeRepository.clearMultisigTransactions({
             chainId: event.chainId,
