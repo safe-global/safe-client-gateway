@@ -73,13 +73,12 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    const api = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
+    const { chainId, safeAddress, fiatCode, trusted, excludeSpam } = args;
+    const api = await this.transactionApiManager.getTransactionApi(chainId);
     const simpleBalances = await api.getSimpleBalances({
-      safeAddress: args.safeAddress,
-      trusted: args.trusted,
-      excludeSpam: args.excludeSpam,
+      safeAddress,
+      trusted,
+      excludeSpam,
     });
     simpleBalances.map((simpleBalance) =>
       this.simpleBalancesValidator.validate(simpleBalance),
@@ -90,18 +89,19 @@ export class BalancesRepository implements IBalancesRepository {
       .filter((address): address is string => address !== null);
 
     const prices = tokenAddresses.length
-      ? await this._getTokenPrices(args.chainId, args.fiatCode, tokenAddresses)
+      ? await this._getTokenPrices(chainId, fiatCode, tokenAddresses)
       : [];
 
     return await Promise.all(
       simpleBalances.map(async (simpleBalance) => {
         const tokenAddress = simpleBalance.tokenAddress?.toLowerCase() ?? null;
-        const price = await this._getPrice(
-          args.chainId,
-          args.fiatCode,
-          tokenAddress,
-          prices,
-        );
+        let price: number | null;
+        if (tokenAddress === null) {
+          price = await this._getNativeCoinPrice(chainId, fiatCode);
+        } else {
+          const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
+          price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
+        }
         const fiatBalance = await this._getFiatBalance(price, simpleBalance);
         return {
           ...simpleBalance,
@@ -110,19 +110,6 @@ export class BalancesRepository implements IBalancesRepository {
         };
       }),
     );
-  }
-
-  private async _getPrice(
-    chainId: string,
-    fiatCode: string,
-    tokenAddress: string | null,
-    prices: AssetPrice[],
-  ): Promise<number | null> {
-    if (tokenAddress === null) {
-      return this._getNativeCoinPrice(chainId, fiatCode);
-    }
-    const price = prices.find((assetPrice) => assetPrice[tokenAddress]);
-    return price?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
   }
 
   private async _getNativeCoinPrice(

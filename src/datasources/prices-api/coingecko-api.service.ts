@@ -102,11 +102,11 @@ export class CoingeckoApi implements IPricesApi {
 
   /**
    * Gets prices for a set of token addresses, trying to get them from cache first.
-   * For those not found in the cache, it trying to retrieve them from the Coingecko API.
+   * For those not found in the cache, it tries to retrieve them from the Coingecko API.
    *
-   * @param chainName Coingecko's name for the chain (see configuration)
-   * @param tokenAddresses Array of token addresses which prices are being retrieved
-   * @param fiatCode
+   * @param args.chainName Coingecko's name for the chain (see configuration)
+   * @param args.tokenAddresses Array of token addresses which prices are being retrieved
+   * @param args.fiatCode
    * @returns Array of {@link AssetPrice}
    */
   async getTokenPrices(args: {
@@ -168,28 +168,26 @@ export class CoingeckoApi implements IPricesApi {
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]> {
-    const result = await Promise.all(
-      args.tokenAddresses.map(async (tokenAddress) => {
-        const cacheDir = CacheRouter.getTokenPriceCacheDir({
-          ...args,
-          tokenAddress,
-        });
-        const cached = await this.cacheService.get(cacheDir);
-        const { key, field } = cacheDir;
-        if (cached != null) {
-          this.loggingService.debug({ type: 'cache_hit', key, field });
-          return JSON.parse(cached);
-        }
+    const result: AssetPrice[] = [];
+    for (const tokenAddress of args.tokenAddresses) {
+      const cacheDir = CacheRouter.getTokenPriceCacheDir({
+        ...args,
+        tokenAddress,
+      });
+      const cached = await this.cacheService.get(cacheDir);
+      const { key, field } = cacheDir;
+      if (cached != null) {
+        this.loggingService.debug({ type: 'cache_hit', key, field });
+        result.push(JSON.parse(cached));
+      } else {
         this.loggingService.debug({ type: 'cache_miss', key, field });
-        return null;
-      }),
-    );
-
-    return result.filter((i) => i !== null);
+      }
+    }
+    return result;
   }
 
   /**
-   * For an array of token addresses, gets the prices available from the Coingecko API.
+   * For an array of token addresses, gets the prices available from the CoinGecko API.
    * Stores both retrieved prices and not-found prices in cache.
    */
   private async _getTokenPricesFromNetwork(args: {
@@ -221,7 +219,7 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * Does the actual price requests to the Coingecko API, using the {@link NetworkService}.
+   * Requests the token prices provided by the CoinGecko API, using the {@link NetworkService}.
    */
   private async _requestPricesFromNetwork(args: {
     chainName: string;
