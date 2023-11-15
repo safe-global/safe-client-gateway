@@ -1,6 +1,6 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { getAddress, hexToNumber, isHex, toHex, verifyMessage } from 'viem';
-import { ISignaturesRepository } from '@/domain/signatures/signatures.repository.interace';
+import { ISignaturesRepository } from '@/domain/signatures/signatures.repository.interface';
 import { SignatureType } from '@/domain/signatures/entities/signatures.entity';
 
 export class SignaturesRepository implements ISignaturesRepository {
@@ -56,7 +56,8 @@ export class SignaturesRepository implements ISignaturesRepository {
         message: args.message,
         signature,
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       return false;
     }
   }
