@@ -16,6 +16,12 @@ export interface ISafeRepository {
 
   clearSafe(args: { chainId: string; address: string }): Promise<void>;
 
+  isOwner(args: {
+    chainId: string;
+    safeAddress: string;
+    address: string;
+  }): Promise<boolean>;
+
   getCollectibleTransfers(args: {
     chainId: string;
     safeAddress: string;

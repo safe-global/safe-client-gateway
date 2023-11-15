@@ -19,6 +19,7 @@ import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validat
 import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -45,6 +46,20 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     return transactionService.clearSafe(args.address);
+  }
+
+  async isOwner(args: {
+    chainId: string;
+    safeAddress: string;
+    address: string;
+  }): Promise<boolean> {
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    const owner = getAddress(args.address);
+    const owners = safe.owners.map((rawAddress) => getAddress(rawAddress));
+    return owners.includes(owner);
   }
 
   async getCollectibleTransfers(args: {
