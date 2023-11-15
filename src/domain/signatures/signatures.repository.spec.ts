@@ -1,6 +1,5 @@
 import { ISignaturesRepository } from '@/domain/signatures/signatures.repository.interface';
 import { SignaturesRepository } from '@/domain/signatures/signatures.repository';
-import { verifyMessage } from 'viem';
 
 describe('Signatures Repository tests', () => {
   let target: ISignaturesRepository;
@@ -9,18 +8,11 @@ describe('Signatures Repository tests', () => {
     target = new SignaturesRepository();
   });
 
-  it('foo', async () => {
-    const message = 'hello world';
-    const address = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
+  it('verify message is successful', async () => {
+    const message = 'test message';
+    const address = '0x21509ab252a92b180c539e4d84ea1406f0f87fb8';
     const signature =
-      '0x66edc32e2ab001213321ab7d959a2207fcef5190cc9abb6da5b0d2a8a9af2d4d2b0700e2c317c4106f337fd934fbbb0bf62efc8811a78603b33a8265d3b8f8cb1c';
-
-    const lol = await verifyMessage({
-      address: '0x3FCf42e10CC70Fe75A62EB3aDD6D305Aa840d145',
-      message: 'This is a test message for viem!',
-      signature:
-        '0xefd5fb29a274ea6682673d8b3caa9263e936d48d486e5df68893003e0a76496439594d12245008c6fba1c8e3ef28241cffe1bef27ff6bca487b167f261f329251c',
-    });
+      '0xb33304b4cf11dd739154245adca598a33e3aac33c5af1d2a6be49bae7572818d1106305c34d6af24be2551a3d7ab958203b372c012177b15bf2bd108efe02a981b';
 
     const actual = await target.verifySignature({
       address,
@@ -29,5 +21,20 @@ describe('Signatures Repository tests', () => {
     });
 
     expect(actual).toBeTruthy();
+  });
+
+  it('verify message is not successful', async () => {
+    const message = 'test message';
+    const address = '0x23509ab252a92b180c539e4d84ea1406f0f87fb8';
+    const invalidSignature =
+      '0xb33304b4cf11dd739154245adca598a33e3aac33c5af1d2a6be49bae7572818d1106305c34d6af24be2551a3d7ab958203b372c012177b15bf2bd108efe02a981b';
+
+    const actual = await target.verifySignature({
+      address,
+      message,
+      signature: invalidSignature,
+    });
+
+    expect(actual).toBeFalsy();
   });
 });
