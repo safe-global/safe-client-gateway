@@ -47,7 +47,6 @@ describe('TransactionApi', () => {
 
     defaultExpirationTimeInSeconds = faker.number.int();
     notFoundExpireTimeSeconds = faker.number.int();
-    const messagesCache = faker.datatype.boolean();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
@@ -61,7 +60,6 @@ describe('TransactionApi', () => {
       if (key === 'expirationTimeInSeconds.notFound.token') {
         return notFoundExpireTimeSeconds;
       }
-      if (key === 'features.messagesCache') return messagesCache;
       throw Error(`Unexpected key: ${key}`);
     });
 
