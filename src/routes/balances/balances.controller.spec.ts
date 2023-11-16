@@ -311,6 +311,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', '10').build();
         const safeAddress = faker.finance.ethereumAddress();
         const tokenAddress = faker.finance.ethereumAddress();
+        const secondTokenAddress = faker.finance.ethereumAddress();
         const transactionApiBalancesResponse = [
           simpleBalanceBuilder()
             .with('tokenAddress', null)
@@ -320,6 +321,11 @@ describe('Balances Controller (Unit)', () => {
           simpleBalanceBuilder()
             .with('tokenAddress', tokenAddress)
             .with('balance', '4000000000000000000')
+            .with('token', balanceTokenBuilder().with('decimals', 17).build())
+            .build(),
+          simpleBalanceBuilder()
+            .with('tokenAddress', secondTokenAddress)
+            .with('balance', '3000000000000000000')
             .with('token', balanceTokenBuilder().with('decimals', 17).build())
             .build(),
         ];
@@ -338,6 +344,7 @@ describe('Balances Controller (Unit)', () => {
         };
         const tokenPriceProviderResponse = {
           [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
+          [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
         };
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -362,7 +369,7 @@ describe('Balances Controller (Unit)', () => {
           )
           .expect(200)
           .expect({
-            fiatTotal: '5110.25',
+            fiatTotal: '5410.25',
             items: [
               {
                 tokenInfo: {
@@ -390,11 +397,24 @@ describe('Balances Controller (Unit)', () => {
                 fiatBalance: '500',
                 fiatConversion: '12.5',
               },
+              {
+                tokenInfo: {
+                  type: 'ERC20',
+                  address: transactionApiBalancesResponse[2].tokenAddress,
+                  decimals: 17,
+                  symbol: transactionApiBalancesResponse[2].token?.symbol,
+                  name: transactionApiBalancesResponse[2].token?.name,
+                  logoUri: transactionApiBalancesResponse[2].token?.logoUri,
+                },
+                balance: '3000000000000000000',
+                fiatBalance: '300',
+                fiatConversion: '10',
+              },
             ],
           });
 
         // 4 Network calls are expected
-        // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko token)
+        // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko tokens)
         expect(networkService.get.mock.calls.length).toBe(4);
         expect(networkService.get.mock.calls[0][0]).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -406,21 +426,24 @@ describe('Balances Controller (Unit)', () => {
           params: { trusted: false, exclude_spam: true },
         });
         expect(networkService.get.mock.calls[2][0]).toBe(
-          `${pricesProviderUrl}/simple/price`,
+          `${pricesProviderUrl}/simple/token_price/${chainName}`,
         );
         expect(networkService.get.mock.calls[2][1]).toStrictEqual({
           headers: { 'x-cg-pro-api-key': apiKey },
-          params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
+          params: {
+            vs_currencies: currency.toLowerCase(),
+            contract_addresses: [
+              tokenAddress.toLowerCase(),
+              secondTokenAddress.toLowerCase(),
+            ].join(','),
+          },
         });
         expect(networkService.get.mock.calls[3][0]).toBe(
-          `${pricesProviderUrl}/simple/token_price/${chainName}`,
+          `${pricesProviderUrl}/simple/price`,
         );
         expect(networkService.get.mock.calls[3][1]).toStrictEqual({
           headers: { 'x-cg-pro-api-key': apiKey },
-          params: {
-            vs_currencies: currency.toLowerCase(),
-            contract_addresses: tokenAddress.toLowerCase(),
-          },
+          params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
         });
       });
 

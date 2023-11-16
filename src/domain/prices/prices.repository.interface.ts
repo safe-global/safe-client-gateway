@@ -1,3 +1,5 @@
+import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+
 export const IPricesRepository = Symbol('IPricesRepository');
 
 export interface IPricesRepository {
@@ -6,11 +8,11 @@ export interface IPricesRepository {
     fiatCode: string;
   }): Promise<number>;
 
-  getTokenPrice(args: {
+  getTokenPrices(args: {
     chainName: string;
-    tokenAddress: string;
+    tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<number>;
+  }): Promise<AssetPrice[]>;
 
   getFiatCodes(): Promise<string[]>;
 }
