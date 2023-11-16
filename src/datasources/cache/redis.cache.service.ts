@@ -38,8 +38,8 @@ export class RedisCacheService
     }
   }
 
-  async get(cacheDir: CacheDir): Promise<string | undefined> {
-    return await this.client.hGet(cacheDir.key, cacheDir.field);
+  async get(cacheDir: CacheDir): Promise<string | null> {
+    return (await this.client.hGet(cacheDir.key, cacheDir.field)) ?? null;
   }
 
   async deleteByKey(key: string): Promise<number> {

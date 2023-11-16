@@ -155,7 +155,7 @@ describe('CacheFirstDataSource', () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
     const expectedError = new NetworkResponseError(404);
-    mockCache.get.mockResolvedValue(undefined);
+    mockCache.get.mockResolvedValue(null);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -197,7 +197,7 @@ describe('CacheFirstDataSource', () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const expectedError = new NetworkResponseError(404);
     const notFoundExpireTimeSeconds = faker.number.int();
-    mockCache.get.mockResolvedValue(undefined);
+    mockCache.get.mockResolvedValue(null);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:

@@ -224,7 +224,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -272,7 +272,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -320,7 +320,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -359,7 +359,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -408,7 +408,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -457,7 +457,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -501,7 +501,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -540,7 +540,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -604,7 +604,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -646,7 +646,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -668,7 +668,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -690,7 +690,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -712,6 +712,6 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(200);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
   });
 });

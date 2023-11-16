@@ -36,10 +36,10 @@ export class FakeCacheService implements ICacheService {
     return Promise.resolve();
   }
 
-  get(cacheDir: CacheDir): Promise<string | undefined> {
+  get(cacheDir: CacheDir): Promise<string | null> {
     const fields = this.cache[cacheDir.key];
-    if (fields === undefined) return Promise.resolve(undefined);
-    return Promise.resolve(this.cache[cacheDir.key][cacheDir.field]);
+    if (fields === undefined) return Promise.resolve(null);
+    return Promise.resolve(this.cache[cacheDir.key][cacheDir.field] ?? null);
   }
 
   set(
