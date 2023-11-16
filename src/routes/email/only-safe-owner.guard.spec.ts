@@ -6,7 +6,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { OnlySafeOwner } from '@/routes/email/only-safe-owner.guard';
+import { OnlySafeOwnerGuard } from '@/routes/email/only-safe-owner.guard';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 const safeRepository = {
@@ -19,17 +19,17 @@ const safeRepositoryMock = jest.mocked(safeRepository);
 class TestController {
   @Post('test/:chainId/:safeAddress')
   @HttpCode(200)
-  @UseGuards(OnlySafeOwner)
+  @UseGuards(OnlySafeOwnerGuard)
   async validRoute() {}
 
   @Post('test/invalid/chains/:chainId')
   @HttpCode(200)
-  @UseGuards(OnlySafeOwner)
+  @UseGuards(OnlySafeOwnerGuard)
   async invalidRouteWithChainId() {}
 
   @Post('test/invalid/safes/:safeAddress')
   @HttpCode(200)
-  @UseGuards(OnlySafeOwner)
+  @UseGuards(OnlySafeOwnerGuard)
   async invalidRouteWithSafeAddress() {}
 }
 

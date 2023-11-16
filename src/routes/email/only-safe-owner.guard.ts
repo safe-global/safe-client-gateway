@@ -18,7 +18,7 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
  * - the 'account' as part of the JSON body (top level)
  */
 @Injectable()
-export class OnlySafeOwner implements CanActivate {
+export class OnlySafeOwnerGuard implements CanActivate {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: ISafeRepository,
   ) {}
