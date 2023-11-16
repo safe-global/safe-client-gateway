@@ -8,6 +8,8 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { Hash } from 'viem';
 
 const safeRepository = {
   isOwner: jest.fn(),
@@ -35,11 +37,16 @@ class TestController {
 
 describe('OnlySafeOwner guard tests', () => {
   let app;
-  // The following address, message and signature represent a valid combination of parameters for validation
-  const testAddress = '0x21509ab252a92b180c539e4d84ea1406f0f87fb8';
-  const testMessage = 'This is a test';
-  const testSignature =
-    '0xcf103c6090c344ffdaa7635d1c41078c5702fd8a8c0528cd980f28c10fb7b3275b7bd803cc99316fc42bf803dcaf982e078d94b094afb3f9853f0dd7ce888aea1c';
+
+  const privateKey = generatePrivateKey();
+  const account = privateKeyToAccount(privateKey);
+  const signer = account.address;
+  const message = faker.word.words();
+  let signature: Hash;
+
+  beforeAll(async () => {
+    signature = await account.signMessage({ message });
+  });
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -85,9 +92,9 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        signature: testSignature,
-        message: testMessage,
-        address: testAddress,
+        signature,
+        message,
+        address: signer,
       })
       .expect(200);
 
@@ -102,9 +109,9 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        signature: testSignature,
+        signature,
         message,
-        address: testAddress,
+        address: signer,
       })
       .expect(403)
       .expect({
@@ -124,9 +131,9 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        signature: testSignature,
-        message: testMessage,
-        address: testAddress,
+        signature,
+        message,
+        address: signer,
       })
       .expect(403)
       .expect({
@@ -145,8 +152,8 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        signature: testSignature,
-        message: testMessage,
+        signature,
+        message,
       })
       .expect(403)
       .expect({
@@ -165,8 +172,8 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        signature: testSignature,
-        address: testAddress,
+        signature,
+        address: signer,
       })
       .expect(403)
       .expect({
@@ -185,8 +192,8 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        message: testMessage,
-        address: testAddress,
+        message: message,
+        address: signer,
       })
       .expect(403)
       .expect({
@@ -204,9 +211,9 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/invalid/chains/${chainId}`)
       .send({
-        signature: testSignature,
-        message: testMessage,
-        address: testAddress,
+        signature,
+        message,
+        address: signer,
       })
       .expect(403)
       .expect({
@@ -224,9 +231,9 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/invalid/safes/${safeAddress}`)
       .send({
-        signature: testSignature,
-        message: testMessage,
-        address: testAddress,
+        signature,
+        message: message,
+        address: signer,
       })
       .expect(403)
       .expect({
