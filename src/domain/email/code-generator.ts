@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+
 /**
  * Generates a random number up to six digits
  */
