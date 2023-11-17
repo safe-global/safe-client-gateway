@@ -176,7 +176,7 @@ export class CoingeckoApi implements IPricesApi {
       });
       const cached = await this.cacheService.get(cacheDir);
       const { key, field } = cacheDir;
-      if (cached != null) {
+      if (cached !== null) {
         this.loggingService.debug({ type: 'cache_hit', key, field });
         result.push(JSON.parse(cached));
       } else {

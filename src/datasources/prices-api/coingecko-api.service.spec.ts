@@ -135,7 +135,7 @@ describe('CoingeckoAPI', () => {
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
-    mockCacheService.get.mockResolvedValue(undefined);
+    mockCacheService.get.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrice = await service.getTokenPrices({
@@ -180,7 +180,7 @@ describe('CoingeckoAPI', () => {
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
-    mockCacheService.get.mockResolvedValue(undefined);
+    mockCacheService.get.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
     const service = new CoingeckoApi(
       fakeConfigurationService,
@@ -234,7 +234,7 @@ describe('CoingeckoAPI', () => {
       [secondTokenAddress]: { [fiatCode]: secondPrice },
       [thirdTokenAddress]: { [fiatCode]: thirdPrice },
     };
-    mockCacheService.get.mockResolvedValue(undefined);
+    mockCacheService.get.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrice = await service.getTokenPrices({
@@ -327,11 +327,11 @@ describe('CoingeckoAPI', () => {
       [firstTokenAddress]: { [fiatCode]: firstPrice },
       [thirdTokenAddress]: { [fiatCode]: thirdPrice },
     };
-    mockCacheService.get.mockResolvedValueOnce(undefined);
+    mockCacheService.get.mockResolvedValueOnce(null);
     mockCacheService.get.mockResolvedValueOnce(
       JSON.stringify({ [secondTokenAddress]: { [fiatCode]: secondPrice } }),
     );
-    mockCacheService.get.mockResolvedValueOnce(undefined);
+    mockCacheService.get.mockResolvedValueOnce(null);
     mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrices = await service.getTokenPrices({
@@ -423,7 +423,7 @@ describe('CoingeckoAPI', () => {
     mockCacheService.get.mockResolvedValueOnce(
       JSON.stringify({ [secondTokenAddress]: { [fiatCode]: secondPrice } }),
     );
-    mockCacheService.get.mockResolvedValueOnce(undefined);
+    mockCacheService.get.mockResolvedValueOnce(null);
     mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrices = await service.getTokenPrices({
