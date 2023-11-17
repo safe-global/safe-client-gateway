@@ -43,7 +43,7 @@ describe('Email Datasource Tests', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const emailAddress = faker.internet.email();
     const signer = faker.finance.ethereumAddress();
-    const code = faker.number.int();
+    const code = faker.string.numeric();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -73,7 +73,7 @@ describe('Email Datasource Tests', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const emailAddress = faker.internet.email();
     const signer = faker.finance.ethereumAddress();
-    const code = faker.number.int();
+    const code = faker.string.numeric();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -107,7 +107,7 @@ describe('Email Datasource Tests', () => {
       safeAddress,
       emailAddress,
       signer,
-      code,
+      code: code.toString(),
     });
     const [email] = await sql<Email[]>`SELECT *
                                        FROM emails.signer_emails
@@ -118,7 +118,7 @@ describe('Email Datasource Tests', () => {
       chainId: chainId.toString(),
       safeAddress,
       signer,
-      code: newCode,
+      code: newCode.toString(),
     });
 
     expect(updatedVerificationCode.verificationCode).not.toBe(
@@ -133,7 +133,7 @@ describe('Email Datasource Tests', () => {
     const emailAddress = faker.internet.email();
     const signer = faker.finance.ethereumAddress();
     const sentOn = faker.date.recent();
-    const code = faker.number.int();
+    const code = faker.string.numeric();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -169,7 +169,7 @@ describe('Email Datasource Tests', () => {
         chainId: chainId.toString(),
         safeAddress,
         signer,
-        code: newCode,
+        code: newCode.toString(),
       }),
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });

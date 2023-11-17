@@ -13,7 +13,7 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     emailAddress: string;
     signer: string;
-    code: number;
+    code: string;
   }): Promise<{ email: string; verificationCode: string | null }> {
     return await this.sql.begin(async (sql) => {
       const [email] = await sql<Email[]>`
@@ -33,7 +33,7 @@ export class EmailDataSource implements IEmailDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-    code: number;
+    code: string;
   }): Promise<{ email: string; verificationCode: string | null }> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
                                             SET verification_code = ${args.code}
