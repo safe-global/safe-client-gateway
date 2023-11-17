@@ -15,7 +15,7 @@ export interface IEmailDataSource {
     safeAddress: string;
     emailAddress: string;
     signer: string;
-    code: number;
+    code: string;
   }): Promise<{ email: string; verificationCode: string | null }>;
 
   /**
@@ -32,7 +32,7 @@ export interface IEmailDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-    code: number;
+    code: string;
   }): Promise<{ email: string; verificationCode: string | null }>;
 
   /**

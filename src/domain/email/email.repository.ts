@@ -38,10 +38,15 @@ export class EmailRepository implements IEmailRepository {
 
     const verificationCode = codeGenerator();
 
+    // Pads the final verification code to 6 characters
+    // The generated code might have less than 6 digits so the version to be
+    // validated against should account with the leading zeroes
+    const paddedVerificationCode = verificationCode.toString().padStart(6, '0');
+
     try {
       await this.emailDataSource.saveEmail({
         chainId: args.chainId,
-        code: verificationCode,
+        code: paddedVerificationCode,
         emailAddress: email.value,
         safeAddress: args.safeAddress,
         signer: args.signer,
