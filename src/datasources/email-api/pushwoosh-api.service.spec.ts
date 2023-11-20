@@ -110,16 +110,18 @@ describe('PushwooshApi', () => {
         request: {
           application: pushwooshApplicationCode,
           auth: pushwooshApiKey,
-          notifications: {
-            transactionId: expect.any(String),
-            send_date: 'now',
-            email_template: createEmailMessageDto.template,
-            devices: createEmailMessageDto.to,
-            use_auto_registration: true,
-            subject: [{ default: createEmailMessageDto.subject }],
-            dynamic_content_placeholders: createEmailMessageDto.substitutions,
-            from: { name: pushwooshFromName, email: pushwooshFromEmail },
-          },
+          notifications: [
+            {
+              transactionId: expect.any(String),
+              send_date: 'now',
+              email_template: createEmailMessageDto.template,
+              devices: createEmailMessageDto.to,
+              use_auto_registration: true,
+              subject: [{ default: createEmailMessageDto.subject }],
+              dynamic_content_placeholders: createEmailMessageDto.substitutions,
+              from: { name: pushwooshFromName, email: pushwooshFromEmail },
+            },
+          ],
         },
       },
     );
