@@ -45,16 +45,18 @@ export class PushwooshApi implements IEmailApi {
         request: {
           application: this.applicationCode,
           auth: this.apiKey,
-          notifications: {
-            transactionId: uuidv4(),
-            send_date: 'now',
-            email_template: createEmailMessageDto.template,
-            devices: createEmailMessageDto.to,
-            use_auto_registration: true,
-            subject: [{ default: createEmailMessageDto.subject }],
-            dynamic_content_placeholders: createEmailMessageDto.substitutions,
-            from: { name: this.fromName, email: this.fromEmail },
-          },
+          notifications: [
+            {
+              transactionId: uuidv4(),
+              send_date: 'now',
+              email_template: createEmailMessageDto.template,
+              devices: createEmailMessageDto.to,
+              use_auto_registration: true,
+              subject: [{ default: createEmailMessageDto.subject }],
+              dynamic_content_placeholders: createEmailMessageDto.substitutions,
+              from: { name: this.fromName, email: this.fromEmail },
+            },
+          ],
         },
       });
     } catch (error) {
