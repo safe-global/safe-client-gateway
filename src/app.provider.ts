@@ -2,6 +2,7 @@ import { INestApplication, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { json } from 'express';
 
 function configureVersioning(app: INestApplication) {
   app.enableVersioning({
@@ -31,10 +32,23 @@ function configureSwagger(app: INestApplication) {
   });
 }
 
+function configureRequestBodyLimit(app: INestApplication) {
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+
+  const jsonBodySizeLimit =
+    configurationService.get<string>('express.jsonLimit');
+  if (jsonBodySizeLimit) {
+    app.use(json({ limit: jsonBodySizeLimit }));
+  }
+}
+
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
   configureVersioning,
   configureShutdownHooks,
   configureSwagger,
+  configureRequestBodyLimit,
 ];
 
 /**
