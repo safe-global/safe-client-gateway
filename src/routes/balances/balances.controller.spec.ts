@@ -21,6 +21,8 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { simpleBalanceBuilder } from '@/domain/balances/entities/__tests__/simple.balance.builder';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -36,6 +38,8 @@ describe('Balances Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
+      .overrideModule(EmailDataSourceModule)
+      .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(configurationModule)
