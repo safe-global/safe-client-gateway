@@ -40,7 +40,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: undefined },
+  express: { jsonLimit: '1mb' },
   features: {
     pricesProviderChainIds: ['10'],
     humanDescription: true,

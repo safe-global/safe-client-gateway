@@ -53,7 +53,7 @@ export default () => ({
     // specifies the number of bytes; if it is a string, the value is passed to the
     // bytes library for parsing. Defaults to '100kb'.
     // https://expressjs.com/en/resources/middleware/body-parser.html
-    jsonLimit: process.env.EXPRESS_JSON_LIMIT,
+    jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
   },
   features: {
     pricesProviderChainIds:
