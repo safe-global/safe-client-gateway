@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
+import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';

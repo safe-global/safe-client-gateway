@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.inferface';
+import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import {
   INetworkService,
   NetworkService,
