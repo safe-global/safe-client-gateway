@@ -70,6 +70,7 @@ export default () => ({
     alerts: process.env.FF_ALERTS?.toLowerCase() === 'true',
     recovery: process.env.FF_RECOVERY?.toLowerCase() === 'true',
     noncesRoute: process.env.FF_NONCES_ROUTE?.toLowerCase() === 'true',
+    email: process.env.FF_EMAIL?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
