@@ -5,3 +5,10 @@ process.env.ALERTS_PROVIDER_SIGNING_KEY = 'fake-signing-key';
 process.env.ALERTS_PROVIDER_API_KEY = 'fake-api-key';
 process.env.ALERTS_PROVIDER_ACCOUNT = 'fake-account';
 process.env.ALERTS_PROVIDER_PROJECT = 'fake-project';
+
+// For E2E tests, connect to the test database
+process.env.POSTGRES_HOST = 'localhost';
+process.env.POSTGRES_PORT = '5433';
+process.env.POSTGRES_DB = 'test-db';
+process.env.POSTGRES_USER = 'postgres';
+process.env.POSTGRES_PASSWORD = 'postgres';
