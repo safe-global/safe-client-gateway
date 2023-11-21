@@ -12,10 +12,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@adraffy/ens-normalize@npm:1.9.4":
-  version: 1.9.4
-  resolution: "@adraffy/ens-normalize@npm:1.9.4"
-  checksum: 7d7fff58ebe2c4961f7e5e61dad123aa6a63fec0df5c84af1fa41079dc05d398599690be4427b3a94d2baa94084544bcfdf2d51cbed7504b9b0583b0960ad550
+"@adraffy/ens-normalize@npm:1.10.0":
+  version: 1.10.0
+  resolution: "@adraffy/ens-normalize@npm:1.10.0"
+  checksum: af0540f963a2632da2bbc37e36ea6593dcfc607b937857133791781e246d47f870d5e3d21fa70d5cfe94e772c284588c81ea3f5b7f4ea8fbb824369444e4dbcb
   languageName: node
   linkType: hard
 
@@ -6981,7 +6981,7 @@ __metadata:
     tsconfig-paths: 4.2.0
     typescript: ^5.2.2
     uuid: ^9.0.1
-    viem: ^1.19.1
+    viem: ^1.19.4
     winston: ^3.11.0
   languageName: unknown
   linkType: soft
@@ -7955,11 +7955,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^1.19.1":
-  version: 1.19.1
-  resolution: "viem@npm:1.19.1"
+"viem@npm:^1.19.4":
+  version: 1.19.4
+  resolution: "viem@npm:1.19.4"
   dependencies:
-    "@adraffy/ens-normalize": 1.9.4
+    "@adraffy/ens-normalize": 1.10.0
     "@noble/curves": 1.2.0
     "@noble/hashes": 1.3.2
     "@scure/bip32": 1.3.2
@@ -7972,7 +7972,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 5ebb8d26894f4fc1f95c2510389827da19623b2b1f150ce95cb80680ee6e28aa9cb16f3e1a00662a0b81f8de301075e2349bbd14bac2ab90c55c5694092a38b0
+  checksum: d8fbbc4c519791b49214cde94c9026f24cf8affe549c1e0ab687667efc98a1d38e181fb2fe94f16ded3b9711f40f4ffb9617111af6910c38f5c37a4dfabbafd5
   languageName: node
   linkType: hard
 
