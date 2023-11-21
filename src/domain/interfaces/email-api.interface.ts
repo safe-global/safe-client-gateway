@@ -14,4 +14,11 @@ export interface IEmailApi {
    * @param createEmailMessageDto.emailMessageId - optional unique identifier for the email message
    */
   createMessage(createEmailMessageDto: CreateEmailMessageDto): Promise<void>;
+
+  /**
+   * Deletes an email address previously persisted into the underlying provider.
+   *
+   * @param args.emailAddress - the email address to be deleted from the provider systems
+   */
+  deleteEmailAddress(args: { emailAddress: string }): Promise<void>;
 }

@@ -70,4 +70,18 @@ export class PushwooshApi implements IEmailApi {
       throw this.httpErrorFactory.from(error);
     }
   }
+
+  async deleteEmailAddress(args: { emailAddress: string }): Promise<void> {
+    try {
+      const url = `${this.baseUri}/json/1.3/deleteEmail`;
+      await this.networkService.post(url, {
+        request: {
+          application: this.applicationCode,
+          email: args.emailAddress,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 }
