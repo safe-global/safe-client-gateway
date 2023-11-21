@@ -131,7 +131,7 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
-    const price = faker.number.float({ precision: 0.01 });
+    const price = faker.number.float({ min: 0.01, precision: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
@@ -176,7 +176,7 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
-    const price = faker.number.float({ precision: 0.01 });
+    const price = faker.number.float({ min: 0.01, precision: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
