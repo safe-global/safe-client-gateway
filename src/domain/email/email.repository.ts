@@ -13,7 +13,7 @@ export class EmailRepository implements IEmailRepository {
 
   async saveEmail(args: {
     chainId: string;
-    safe: string;
+    safeAddress: string;
     emailAddress: string;
     account: string;
   }): Promise<void> {
@@ -30,13 +30,13 @@ export class EmailRepository implements IEmailRepository {
         chainId: args.chainId,
         code: paddedVerificationCode,
         emailAddress: email.value,
-        safeAddress: args.safe,
+        safeAddress: args.safeAddress,
         signer: args.account,
       });
 
       // TODO if successful, send the generated code (result.verification)
     } catch (e) {
-      throw new EmailSaveError(args.chainId, args.safe, args.account);
+      throw new EmailSaveError(args.chainId, args.safeAddress, args.account);
     }
   }
 }

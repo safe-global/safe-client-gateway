@@ -9,7 +9,7 @@ export class EmailService {
 
   async saveEmail(args: {
     chainId: string;
-    safe: string;
+    safeAddress: string;
     emailAddress: string;
     account: string;
   }): Promise<void> {

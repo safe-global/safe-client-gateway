@@ -29,7 +29,7 @@ export class EmailController {
     await this.service.saveEmail({
       chainId,
       emailAddress: saveEmailDto.emailAddress,
-      safe: safeAddress,
+      safeAddress,
       account: saveEmailDto.account,
     });
   }
