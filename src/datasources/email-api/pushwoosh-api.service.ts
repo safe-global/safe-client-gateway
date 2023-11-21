@@ -36,6 +36,11 @@ export class PushwooshApi implements IEmailApi {
       this.configurationService.getOrThrow<string>('email.fromName');
   }
 
+  /**
+   * Creates an email message through the Pushwoosh API.
+   * For details on the specification see:
+   * https://docs.pushwoosh.com/platform-docs/api-reference/email-api#createemailmessage
+   */
   async createMessage(
     createEmailMessageDto: CreateEmailMessageDto,
   ): Promise<void> {
@@ -43,17 +48,17 @@ export class PushwooshApi implements IEmailApi {
       const url = `${this.baseUri}/json/1.3/createEmailMessage`;
       await this.networkService.post(url, {
         request: {
-          application: this.applicationCode,
+          application: this.applicationCode, // application code, should exist on Pushwoosh
           auth: this.apiKey,
           notifications: [
             {
-              transactionId: uuidv4(),
+              transactionId: uuidv4(), // unique identifier to avoid messages duplication
               send_date: 'now',
-              email_template: createEmailMessageDto.template,
+              email_template: createEmailMessageDto.template, // template code, should exist on Pushwoosh
               devices: createEmailMessageDto.to,
-              use_auto_registration: true,
+              use_auto_registration: true, // auto-register email addresses while sending
               subject: [{ default: createEmailMessageDto.subject }],
-              dynamic_content_placeholders: createEmailMessageDto.substitutions,
+              dynamic_content_placeholders: createEmailMessageDto.substitutions, // key-value template substitutions
               from: { name: this.fromName, email: this.fromEmail },
             },
           ],

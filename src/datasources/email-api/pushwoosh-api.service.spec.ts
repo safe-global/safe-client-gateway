@@ -12,11 +12,6 @@ const networkService = {
 } as unknown as INetworkService;
 const mockNetworkService = jest.mocked(networkService);
 
-const httpErrorFactory = {
-  from: jest.fn(),
-} as unknown as HttpErrorFactory;
-const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
-
 describe('PushwooshApi', () => {
   let service: PushwooshApi;
   let fakeConfigurationService: FakeConfigurationService;
@@ -49,7 +44,7 @@ describe('PushwooshApi', () => {
     service = new PushwooshApi(
       fakeConfigurationService,
       mockNetworkService,
-      mockHttpErrorFactory,
+      new HttpErrorFactory(),
     );
   });
 
@@ -61,7 +56,7 @@ describe('PushwooshApi', () => {
         new PushwooshApi(
           fakeConfigurationService,
           mockNetworkService,
-          mockHttpErrorFactory,
+          new HttpErrorFactory(),
         ),
     ).toThrow();
   });
@@ -76,18 +71,20 @@ describe('PushwooshApi', () => {
         [faker.string.sample()]: faker.string.sample(),
       },
     };
-    const expected = new DataSourceError(faker.string.sample());
-    mockHttpErrorFactory.from.mockReturnValue(expected);
-    const error = new Error(faker.string.sample());
+    const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+    const error = {
+      status,
+      data: {
+        message: 'Unexpected error',
+      },
+    };
     mockNetworkService.post.mockRejectedValueOnce(error);
 
     await expect(
       service.createMessage(createEmailMessageDto),
-    ).rejects.toThrowError(expected);
+    ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
 
     expect(networkService.post).toHaveBeenCalledTimes(1);
-    expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
-    expect(mockHttpErrorFactory.from).toBeCalledWith(error);
   });
 
   it('should create a new message', async () => {
