@@ -2,6 +2,17 @@ export const IEmailDataSource = Symbol('IEmailDataSource');
 
 export interface IEmailDataSource {
   /**
+   * Gets the array of verified emails associated with a Safe address.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to use as filter
+   */
+  getVerifiedSignerEmailsBySafeAddress(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<{ email: string }[]>;
+
+  /**
    * Saves an email entry in the respective data source.
    *
    * @param args.chainId - the chain id of where the Safe is deployed

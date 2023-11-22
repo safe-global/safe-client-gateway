@@ -187,4 +187,68 @@ describe('Email Datasource Tests', () => {
       }),
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });
+
+  it('gets verified email addresses for a given safe address', async () => {
+    const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
+    const safeAddress = faker.finance.ethereumAddress();
+    const verifiedSigners = [
+      {
+        emailAddress: faker.internet.email(),
+        signer: faker.finance.ethereumAddress(),
+        code: faker.number.int({ max: 999998 }).toString(),
+      },
+      {
+        emailAddress: faker.internet.email(),
+        signer: faker.finance.ethereumAddress(),
+        code: faker.number.int({ max: 999998 }).toString(),
+      },
+    ];
+    const nonVerifiedSigners = [
+      {
+        emailAddress: faker.internet.email(),
+        signer: faker.finance.ethereumAddress(),
+        code: faker.number.int({ max: 999998 }).toString(),
+      },
+      {
+        emailAddress: faker.internet.email(),
+        signer: faker.finance.ethereumAddress(),
+        code: faker.number.int({ max: 999998 }).toString(),
+      },
+    ];
+    await Promise.all(
+      verifiedSigners.map(async ({ emailAddress, signer, code }) => {
+        await target.saveEmail({
+          chainId,
+          safeAddress,
+          emailAddress,
+          signer,
+          code,
+        });
+        await target.setVerificationSentDate({
+          chainId,
+          safeAddress,
+          signer,
+          sentOn: faker.date.recent(),
+        });
+      }),
+    );
+    await Promise.all(
+      nonVerifiedSigners.map(async ({ emailAddress, signer, code }) => {
+        await target.saveEmail({
+          chainId,
+          safeAddress,
+          emailAddress,
+          signer,
+          code,
+        });
+      }),
+    );
+
+    const result = await target.getVerifiedSignerEmailsBySafeAddress({
+      chainId,
+      safeAddress,
+    });
+
+    expect(result).toBeDefined(); // TODO:
+  });
 });
