@@ -21,6 +21,8 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { ConfigurationModule } from '@/config/configuration.module';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Safes Controller Nonces (Unit)', () => {
   describe('Nonces Route is enabled', () => {
@@ -44,6 +46,8 @@ describe('Safes Controller Nonces (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       })
+        .overrideModule(EmailDataSourceModule)
+        .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(configurationModule)
@@ -177,6 +181,8 @@ describe('Safes Controller Nonces (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
       })
+        .overrideModule(EmailDataSourceModule)
+        .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(configurationModule)

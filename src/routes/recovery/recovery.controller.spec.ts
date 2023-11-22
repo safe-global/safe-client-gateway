@@ -17,6 +17,8 @@ import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { ConfigurationModule } from '@/config/configuration.module';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -32,6 +34,8 @@ describe('Recovery (Unit)', () => {
       // TODO remove RecoveryModule once they're integrated in the AppModule
       imports: [AppModule, RecoveryModule],
     })
+      .overrideModule(EmailDataSourceModule)
+      .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(configurationModule)
