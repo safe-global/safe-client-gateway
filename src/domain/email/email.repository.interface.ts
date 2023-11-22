@@ -5,6 +5,6 @@ export interface IEmailRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: string;
+    account: string;
   }): Promise<void>;
 }

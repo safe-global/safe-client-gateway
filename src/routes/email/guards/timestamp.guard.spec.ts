@@ -3,7 +3,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/configuration';
 import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { TimestampGuard } from '@/routes/email/timestamp.guard';
+import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
