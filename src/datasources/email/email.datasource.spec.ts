@@ -6,6 +6,7 @@ import { Email } from '@/datasources/email/entities/email.entity';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import * as shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
+import { orderBy } from 'lodash';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
@@ -188,7 +189,7 @@ describe('Email Datasource Tests', () => {
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });
 
-  it('gets verified email addresses for a given safe address', async () => {
+  it('gets only verified email addresses associated with a given safe address', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
     const safeAddress = faker.finance.ethereumAddress();
     const verifiedSigners = [
@@ -224,11 +225,10 @@ describe('Email Datasource Tests', () => {
           signer,
           code,
         });
-        await target.setVerificationSentDate({
-          chainId,
+        await target.verifyEmail({
+          chainId: chainId,
           safeAddress,
           signer,
-          sentOn: faker.date.recent(),
         });
       }),
     );
@@ -249,6 +249,12 @@ describe('Email Datasource Tests', () => {
       safeAddress,
     });
 
-    expect(result).toBeDefined(); // TODO:
+    const expected = orderBy(
+      verifiedSigners.map((verifiedSigner) => ({
+        email: verifiedSigner.emailAddress,
+      })),
+      'email',
+    );
+    expect(orderBy(result, 'email')).toEqual(expected);
   });
 });
