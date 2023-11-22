@@ -62,103 +62,142 @@ describe('PushwooshApi', () => {
     ).toThrow();
   });
 
-  it('should forward error', async () => {
-    const createEmailMessageDto: CreateEmailMessageDto = {
-      to: [faker.internet.email(), faker.internet.email()],
-      template: faker.string.uuid(),
-      subject: faker.string.sample(),
-      substitutions: {
-        [faker.string.sample()]: faker.string.sample(),
-        [faker.string.sample()]: faker.string.sample(),
-      },
-    };
-    const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-    const error = {
-      status,
-      data: {
-        message: 'Unexpected error',
-      },
-    };
-    mockNetworkService.post.mockRejectedValueOnce(error);
+  describe('sending email messages', () => {
+    it('should forward error', async () => {
+      const createEmailMessageDto: CreateEmailMessageDto = {
+        to: [faker.internet.email(), faker.internet.email()],
+        template: faker.string.uuid(),
+        subject: faker.string.sample(),
+        substitutions: {
+          [faker.string.sample()]: faker.string.sample(),
+          [faker.string.sample()]: faker.string.sample(),
+        },
+      };
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = {
+        status,
+        data: {
+          message: 'Unexpected error',
+        },
+      };
+      mockNetworkService.post.mockRejectedValueOnce(error);
 
-    await expect(
-      service.createMessage(createEmailMessageDto),
-    ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
+      await expect(
+        service.createMessage(createEmailMessageDto),
+      ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
 
-    expect(networkService.post).toHaveBeenCalledTimes(1);
+      expect(networkService.post).toHaveBeenCalledTimes(1);
+    });
+
+    it('should create a new message', async () => {
+      const createEmailMessageDto: CreateEmailMessageDto = {
+        to: [faker.internet.email(), faker.internet.email()],
+        template: faker.string.uuid(),
+        subject: faker.string.sample(),
+        substitutions: {
+          [faker.string.sample()]: faker.string.sample(),
+          [faker.string.sample()]: faker.string.sample(),
+        },
+      };
+
+      await service.createMessage(createEmailMessageDto);
+
+      expect(networkService.post).toHaveBeenCalledTimes(1);
+      expect(networkService.post).toHaveBeenCalledWith(
+        `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
+        {
+          request: {
+            application: pushwooshApplicationCode,
+            auth: pushwooshApiKey,
+            notifications: [
+              {
+                send_date: 'now',
+                email_template: createEmailMessageDto.template,
+                devices: createEmailMessageDto.to,
+                use_auto_registration: true,
+                subject: [{ default: createEmailMessageDto.subject }],
+                dynamic_content_placeholders:
+                  createEmailMessageDto.substitutions,
+                from: { name: pushwooshFromName, email: pushwooshFromEmail },
+              },
+            ],
+          },
+        },
+      );
+    });
+
+    it('should create a new unique (using emailMessageId field) message', async () => {
+      const createEmailMessageDto: CreateEmailMessageDto = {
+        to: [faker.internet.email(), faker.internet.email()],
+        template: faker.string.uuid(),
+        subject: faker.string.sample(),
+        substitutions: {
+          [faker.string.sample()]: faker.string.sample(),
+          [faker.string.sample()]: faker.string.sample(),
+        },
+        emailMessageId: uuidv4(),
+      };
+
+      await service.createMessage(createEmailMessageDto);
+
+      expect(networkService.post).toHaveBeenCalledTimes(1);
+      expect(networkService.post).toHaveBeenCalledWith(
+        `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
+        {
+          request: {
+            application: pushwooshApplicationCode,
+            auth: pushwooshApiKey,
+            notifications: [
+              {
+                send_date: 'now',
+                email_template: createEmailMessageDto.template,
+                devices: createEmailMessageDto.to,
+                use_auto_registration: true,
+                subject: [{ default: createEmailMessageDto.subject }],
+                dynamic_content_placeholders:
+                  createEmailMessageDto.substitutions,
+                from: { name: pushwooshFromName, email: pushwooshFromEmail },
+                transactionId: createEmailMessageDto.emailMessageId,
+              },
+            ],
+          },
+        },
+      );
+    });
   });
 
-  it('should create a new message', async () => {
-    const createEmailMessageDto: CreateEmailMessageDto = {
-      to: [faker.internet.email(), faker.internet.email()],
-      template: faker.string.uuid(),
-      subject: faker.string.sample(),
-      substitutions: {
-        [faker.string.sample()]: faker.string.sample(),
-        [faker.string.sample()]: faker.string.sample(),
-      },
-    };
-
-    await service.createMessage(createEmailMessageDto);
-
-    expect(networkService.post).toHaveBeenCalledTimes(1);
-    expect(networkService.post).toHaveBeenCalledWith(
-      `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
-      {
-        request: {
-          application: pushwooshApplicationCode,
-          auth: pushwooshApiKey,
-          notifications: [
-            {
-              send_date: 'now',
-              email_template: createEmailMessageDto.template,
-              devices: createEmailMessageDto.to,
-              use_auto_registration: true,
-              subject: [{ default: createEmailMessageDto.subject }],
-              dynamic_content_placeholders: createEmailMessageDto.substitutions,
-              from: { name: pushwooshFromName, email: pushwooshFromEmail },
-            },
-          ],
+  describe('deleting email addresses', () => {
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = {
+        status,
+        data: {
+          message: 'Unexpected error',
         },
-      },
-    );
-  });
+      };
+      mockNetworkService.post.mockRejectedValueOnce(error);
 
-  it('should create a new unique (using emailMessageId field) message', async () => {
-    const createEmailMessageDto: CreateEmailMessageDto = {
-      to: [faker.internet.email(), faker.internet.email()],
-      template: faker.string.uuid(),
-      subject: faker.string.sample(),
-      substitutions: {
-        [faker.string.sample()]: faker.string.sample(),
-        [faker.string.sample()]: faker.string.sample(),
-      },
-      emailMessageId: uuidv4(),
-    };
+      await expect(
+        service.deleteEmailAddress({ emailAddress: faker.internet.email() }),
+      ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
 
-    await service.createMessage(createEmailMessageDto);
+      expect(networkService.post).toHaveBeenCalledTimes(1);
+    });
 
-    expect(networkService.post).toHaveBeenCalledTimes(1);
-    expect(networkService.post).toHaveBeenCalledWith(
-      `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
-      {
-        request: {
-          application: pushwooshApplicationCode,
-          auth: pushwooshApiKey,
-          notifications: [
-            {
-              send_date: 'now',
-              email_template: createEmailMessageDto.template,
-              devices: createEmailMessageDto.to,
-              use_auto_registration: true,
-              subject: [{ default: createEmailMessageDto.subject }],
-              dynamic_content_placeholders: createEmailMessageDto.substitutions,
-              from: { name: pushwooshFromName, email: pushwooshFromEmail },
-              transactionId: createEmailMessageDto.emailMessageId,
-            },
-          ],
+    it('should delete an email address from Pushwoosh', async () => {
+      const emailAddress = faker.internet.email();
+      await service.deleteEmailAddress({ emailAddress });
+
+      expect(networkService.post).toHaveBeenCalledTimes(1);
+      expect(networkService.post).toHaveBeenCalledWith(
+        `${pushwooshBaseUri}/json/1.3/deleteEmail`,
+        {
+          request: {
+            application: pushwooshApplicationCode,
+            email: emailAddress,
+          },
         },
-      },
-    );
+      );
+    });
   });
 });
