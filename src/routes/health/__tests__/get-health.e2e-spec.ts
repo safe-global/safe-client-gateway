@@ -3,13 +3,14 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import configuration from '@/config/entities/configuration';
 
 describe('Get health e2e test', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register(configuration)],
     }).compile();
     app = await new TestAppProvider().provide(moduleRef);
     await app.init();

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule, configurationModule } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -20,7 +20,6 @@ import {
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
-import { ConfigurationModule } from '@/config/configuration.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
@@ -44,14 +43,12 @@ describe('Safes Controller Nonces (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [AppModule],
+        imports: [AppModule.register(testConfiguration)],
       })
         .overrideModule(EmailDataSourceModule)
         .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
-        .overrideModule(configurationModule)
-        .useModule(ConfigurationModule.register(testConfiguration))
         .overrideModule(RequestScopedLoggingModule)
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)
@@ -179,14 +176,12 @@ describe('Safes Controller Nonces (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [AppModule],
+        imports: [AppModule.register(testConfiguration)],
       })
         .overrideModule(EmailDataSourceModule)
         .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
-        .overrideModule(configurationModule)
-        .useModule(ConfigurationModule.register(testConfiguration))
         .overrideModule(RequestScopedLoggingModule)
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)
