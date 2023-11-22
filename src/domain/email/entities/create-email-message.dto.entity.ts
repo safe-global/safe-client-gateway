@@ -3,4 +3,5 @@ export class CreateEmailMessageDto {
   template: string;
   subject: string;
   substitutions: Record<string, string> | null;
+  emailMessageId?: string;
 }

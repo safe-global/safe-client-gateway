@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -52,7 +51,6 @@ export class PushwooshApi implements IEmailApi {
           auth: this.apiKey,
           notifications: [
             {
-              transactionId: uuidv4(), // unique identifier to avoid messages duplication
               send_date: 'now',
               email_template: createEmailMessageDto.template, // template code, should exist on Pushwoosh
               devices: createEmailMessageDto.to,
@@ -60,6 +58,10 @@ export class PushwooshApi implements IEmailApi {
               subject: [{ default: createEmailMessageDto.subject }],
               dynamic_content_placeholders: createEmailMessageDto.substitutions, // key-value template substitutions
               from: { name: this.fromName, email: this.fromEmail },
+              // optional unique identifier to avoid messages duplication
+              ...(createEmailMessageDto.emailMessageId && {
+                transactionId: createEmailMessageDto.emailMessageId,
+              }),
             },
           ],
         },

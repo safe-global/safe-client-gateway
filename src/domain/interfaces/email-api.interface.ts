@@ -11,6 +11,7 @@ export interface IEmailApi {
    * @param createEmailMessageDto.subject - the email message subject
    * @param createEmailMessageDto.substitutions - object containing a dictionary of substitutions
    * to be applied to the email message template
+   * @param createEmailMessageDto.emailMessageId - optional unique identifier for the email message
    */
   createMessage(createEmailMessageDto: CreateEmailMessageDto): Promise<void>;
 }

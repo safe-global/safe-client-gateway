@@ -5,6 +5,7 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
+import { v4 as uuidv4 } from 'uuid';
 
 const networkService = {
   post: jest.fn(),
@@ -109,7 +110,6 @@ describe('PushwooshApi', () => {
           auth: pushwooshApiKey,
           notifications: [
             {
-              transactionId: expect.any(String),
               send_date: 'now',
               email_template: createEmailMessageDto.template,
               devices: createEmailMessageDto.to,
@@ -117,6 +117,44 @@ describe('PushwooshApi', () => {
               subject: [{ default: createEmailMessageDto.subject }],
               dynamic_content_placeholders: createEmailMessageDto.substitutions,
               from: { name: pushwooshFromName, email: pushwooshFromEmail },
+            },
+          ],
+        },
+      },
+    );
+  });
+
+  it('should create a new unique (using emailMessageId field) message', async () => {
+    const createEmailMessageDto: CreateEmailMessageDto = {
+      to: [faker.internet.email(), faker.internet.email()],
+      template: faker.string.uuid(),
+      subject: faker.string.sample(),
+      substitutions: {
+        [faker.string.sample()]: faker.string.sample(),
+        [faker.string.sample()]: faker.string.sample(),
+      },
+      emailMessageId: uuidv4(),
+    };
+
+    await service.createMessage(createEmailMessageDto);
+
+    expect(networkService.post).toHaveBeenCalledTimes(1);
+    expect(networkService.post).toHaveBeenCalledWith(
+      `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
+      {
+        request: {
+          application: pushwooshApplicationCode,
+          auth: pushwooshApiKey,
+          notifications: [
+            {
+              send_date: 'now',
+              email_template: createEmailMessageDto.template,
+              devices: createEmailMessageDto.to,
+              use_auto_registration: true,
+              subject: [{ default: createEmailMessageDto.subject }],
+              dynamic_content_placeholders: createEmailMessageDto.substitutions,
+              from: { name: pushwooshFromName, email: pushwooshFromEmail },
+              transactionId: createEmailMessageDto.emailMessageId,
             },
           ],
         },
