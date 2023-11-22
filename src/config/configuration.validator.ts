@@ -1,4 +1,5 @@
 import Ajv, { Schema } from 'ajv';
+import addFormats from 'ajv-formats';
 
 const configurationSchema: Schema = {
   type: 'object',
@@ -13,6 +14,9 @@ const configurationSchema: Schema = {
     ALERTS_PROVIDER_API_KEY: { type: 'string' },
     ALERTS_PROVIDER_ACCOUNT: { type: 'string' },
     ALERTS_PROVIDER_PROJECT: { type: 'string' },
+    EMAIL_API_APPLICATION_CODE: { type: 'string' },
+    EMAIL_API_FROM_EMAIL: { type: 'string', format: 'email' },
+    EMAIL_API_KEY: { type: 'string' },
   },
   required: [
     'AUTH_TOKEN',
@@ -21,6 +25,9 @@ const configurationSchema: Schema = {
     'ALERTS_PROVIDER_API_KEY',
     'ALERTS_PROVIDER_ACCOUNT',
     'ALERTS_PROVIDER_PROJECT',
+    'EMAIL_API_APPLICATION_CODE',
+    'EMAIL_API_FROM_EMAIL',
+    'EMAIL_API_KEY',
   ],
 };
 
@@ -29,6 +36,8 @@ export function validate(
 ): Record<string, unknown> {
   if (process.env.NODE_ENV !== 'test') {
     const ajv = new Ajv({ allErrors: true });
+    addFormats(ajv, { formats: ['email'] });
+
     if (!ajv.validate(configurationSchema, configuration)) {
       const errors = ajv.errors
         ?.map((error) => `${error.instancePath} ${error.message}`)
