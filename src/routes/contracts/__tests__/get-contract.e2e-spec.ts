@@ -5,7 +5,6 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import configuration from '@/config/entities/configuration';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication;
@@ -14,7 +13,7 @@ describe('Get contract e2e test', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register()],
     }).compile();
 
     app = await new TestAppProvider().provide(moduleRef);

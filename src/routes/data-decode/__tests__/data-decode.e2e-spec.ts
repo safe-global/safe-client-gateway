@@ -8,7 +8,6 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { getDataDecodedDtoBuilder } from '@/routes/data-decode/entities/__tests__/get-data-decoded.dto.builder';
-import configuration from '@/config/entities/configuration';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
@@ -17,7 +16,7 @@ describe('Data decode e2e tests', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register()],
     }).compile();
 
     app = await new TestAppProvider().provide(moduleRef);
