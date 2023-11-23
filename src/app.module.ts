@@ -41,6 +41,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
 import { AlertsModule } from '@/routes/alerts/alerts.module';
 import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
+import { EmailControllerModule } from '@/routes/email/email.controller.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -48,6 +49,8 @@ export class AppModule implements NestModule {
   // into account. The .env file loading is done by the ConfigurationModule
   // which is not available at this stage.
   static register(configFactory: ConfigFactory = configuration): DynamicModule {
+    const isEmailFeatureEnabled = configFactory()['features']['email'];
+
     return {
       module: AppModule,
       imports: [
@@ -61,6 +64,7 @@ export class AppModule implements NestModule {
         ContractsModule,
         DataDecodedModule,
         DelegatesModule,
+        ...(isEmailFeatureEnabled ? [EmailControllerModule] : []),
         EstimationsModule,
         FlushModule,
         HealthModule,
