@@ -7,14 +7,13 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { AppModule, configurationModule } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
-import { ConfigurationModule } from '@/config/configuration.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
@@ -58,14 +57,12 @@ describe('Alerts (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [AppModule],
+        imports: [AppModule.register(testConfiguration)],
       })
         .overrideModule(EmailDataSourceModule)
         .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
-        .overrideModule(configurationModule)
-        .useModule(ConfigurationModule.register(testConfiguration))
         .overrideModule(RequestScopedLoggingModule)
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)
@@ -153,14 +150,12 @@ describe('Alerts (Unit)', () => {
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [AppModule],
+        imports: [AppModule.register(testConfiguration)],
       })
         .overrideModule(EmailDataSourceModule)
         .useModule(TestEmailDatasourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
-        .overrideModule(configurationModule)
-        .useModule(ConfigurationModule.register(testConfiguration))
         .overrideModule(RequestScopedLoggingModule)
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)

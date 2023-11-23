@@ -1,4 +1,5 @@
 import {
+  DynamicModule,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -39,71 +40,77 @@ import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
 import { AlertsModule } from '@/routes/alerts/alerts.module';
+import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 
-// See https://github.com/nestjs/nest/issues/11967
-export const configurationModule = ConfigurationModule.register(configuration);
-
-@Module({
-  imports: [
-    // features
-    AboutModule,
-    AlertsModule,
-    BalancesModule,
-    CacheHooksModule,
-    ChainsModule,
-    CollectiblesModule,
-    ContractsModule,
-    DataDecodedModule,
-    DelegatesModule,
-    EstimationsModule,
-    FlushModule,
-    HealthModule,
-    MessagesModule,
-    NotificationsModule,
-    OwnersModule,
-    RootModule,
-    SafeAppsModule,
-    SafesModule,
-    TransactionsModule,
-    // common
-    CacheModule,
-    // Module for storing and reading from the async local storage
-    ClsModule.forRoot({
-      global: true,
-      middleware: {
-        generateId: true,
-        idGenerator: () => uuidv4(),
-      },
-    }),
-    configurationModule,
-    DomainModule,
-    NetworkModule,
-    RequestScopedLoggingModule,
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'assets'),
-      // Excludes the paths under '/' (base url) from being served as static content
-      // If we do not exclude these paths, the service will try to find the file and
-      // return 500 for files that do not exist instead of a 404
-      exclude: ['/(.*)'],
-    }),
-    ValidationModule,
-  ],
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: RouteLoggerInterceptor,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: GlobalErrorFilter,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: DataSourceErrorFilter,
-    },
-  ],
-})
+@Module({})
 export class AppModule implements NestModule {
+  // Important: values read via the config factory do not take the .env file
+  // into account. The .env file loading is done by the ConfigurationModule
+  // which is not available at this stage.
+  static register(configFactory: ConfigFactory = configuration): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [
+        // features
+        AboutModule,
+        AlertsModule,
+        BalancesModule,
+        CacheHooksModule,
+        ChainsModule,
+        CollectiblesModule,
+        ContractsModule,
+        DataDecodedModule,
+        DelegatesModule,
+        EstimationsModule,
+        FlushModule,
+        HealthModule,
+        MessagesModule,
+        NotificationsModule,
+        OwnersModule,
+        RootModule,
+        SafeAppsModule,
+        SafesModule,
+        TransactionsModule,
+        // common
+        CacheModule,
+        // Module for storing and reading from the async local storage
+        ClsModule.forRoot({
+          global: true,
+          middleware: {
+            generateId: true,
+            idGenerator: () => uuidv4(),
+          },
+        }),
+        ConfigurationModule.register(configFactory),
+        DomainModule,
+        NetworkModule,
+        RequestScopedLoggingModule,
+        ServeStaticModule.forRoot({
+          rootPath: join(__dirname, '..', 'assets'),
+          // Excludes the paths under '/' (base url) from being served as static content
+          // If we do not exclude these paths, the service will try to find the file and
+          // return 500 for files that do not exist instead of a 404
+          exclude: ['/(.*)'],
+        }),
+        ValidationModule,
+      ],
+      providers: [
+        {
+          provide: APP_INTERCEPTOR,
+          useClass: RouteLoggerInterceptor,
+        },
+        {
+          provide: APP_FILTER,
+          useClass: GlobalErrorFilter,
+        },
+        {
+          provide: APP_FILTER,
+          useClass: DataSourceErrorFilter,
+        },
+      ],
+    };
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer
       // The ClsMiddleware needs to be applied before the LoggerMiddleware

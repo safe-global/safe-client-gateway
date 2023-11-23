@@ -1,9 +1,9 @@
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule, configurationModule } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
@@ -16,7 +16,6 @@ import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests_
 import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
-import { ConfigurationModule } from '@/config/configuration.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
@@ -32,14 +31,12 @@ describe('Recovery (Unit)', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       // TODO remove RecoveryModule once they're integrated in the AppModule
-      imports: [AppModule, RecoveryModule],
+      imports: [AppModule.register(configuration), RecoveryModule],
     })
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
-      .overrideModule(configurationModule)
-      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
