@@ -39,4 +39,13 @@ export class EmailRepository implements IEmailRepository {
       throw new EmailSaveError(args.chainId, args.safeAddress, args.account);
     }
   }
+
+  async getVerifiedEmailsBySafeAddress(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<string[]> {
+    const emails =
+      await this.emailDataSource.getVerifiedSignerEmailsBySafeAddress(args);
+    return emails.map(({ email }) => email);
+  }
 }
