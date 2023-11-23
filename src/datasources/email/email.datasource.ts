@@ -8,6 +8,19 @@ import { Email } from '@/datasources/email/entities/email.entity';
 export class EmailDataSource implements IEmailDataSource {
   constructor(@Inject('DB_INSTANCE') private readonly sql: postgres.Sql) {}
 
+  async getVerifiedSignerEmailsBySafeAddress(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<{ email: string }[]> {
+    const emails = await this.sql<{ email_address: string }[]>`
+      SELECT email_address
+      FROM emails.signer_emails
+      WHERE chain_id = ${args.chainId} AND safe_address = ${args.safeAddress} AND verified is true
+      ORDER by id`;
+
+    return emails.map((email) => ({ email: email.email_address }));
+  }
+
   async saveEmail(args: {
     chainId: string;
     safeAddress: string;
