@@ -6,7 +6,6 @@ import { Email } from '@/datasources/email/entities/email.entity';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import * as shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
-import { orderBy } from 'lodash';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
@@ -216,45 +215,39 @@ describe('Email Datasource Tests', () => {
         code: faker.number.int({ max: 999998 }).toString(),
       },
     ];
-    await Promise.all(
-      verifiedSigners.map(async ({ emailAddress, signer, code }) => {
-        await target.saveEmail({
-          chainId,
-          safeAddress,
-          emailAddress,
-          signer,
-          code,
-        });
-        await target.verifyEmail({
-          chainId: chainId,
-          safeAddress,
-          signer,
-        });
-      }),
-    );
-    await Promise.all(
-      nonVerifiedSigners.map(async ({ emailAddress, signer, code }) => {
-        await target.saveEmail({
-          chainId,
-          safeAddress,
-          emailAddress,
-          signer,
-          code,
-        });
-      }),
-    );
+    for (const { emailAddress, signer, code } of verifiedSigners) {
+      await target.saveEmail({
+        chainId,
+        safeAddress,
+        emailAddress,
+        signer,
+        code,
+      });
+      await target.verifyEmail({
+        chainId: chainId,
+        safeAddress,
+        signer,
+      });
+    }
+    for (const { emailAddress, signer, code } of nonVerifiedSigners) {
+      await target.saveEmail({
+        chainId,
+        safeAddress,
+        emailAddress,
+        signer,
+        code,
+      });
+    }
 
     const result = await target.getVerifiedSignerEmailsBySafeAddress({
       chainId,
       safeAddress,
     });
 
-    const expected = orderBy(
+    expect(result).toEqual(
       verifiedSigners.map((verifiedSigner) => ({
         email: verifiedSigner.emailAddress,
       })),
-      'email',
     );
-    expect(orderBy(result, 'email')).toEqual(expected);
   });
 });

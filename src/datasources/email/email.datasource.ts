@@ -12,10 +12,11 @@ export class EmailDataSource implements IEmailDataSource {
     chainId: string;
     safeAddress: string;
   }): Promise<{ email: string }[]> {
-    const emails = await this.sql<Email[]>`
+    const emails = await this.sql<{ email_address: string }[]>`
       SELECT email_address
       FROM emails.signer_emails
-      WHERE chain_id = ${args.chainId} AND safe_address = ${args.safeAddress} AND verified is true`;
+      WHERE chain_id = ${args.chainId} AND safe_address = ${args.safeAddress} AND verified is true
+      ORDER by id`;
 
     return emails.map((email) => ({ email: email.email_address }));
   }
