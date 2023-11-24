@@ -22,6 +22,8 @@ import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class CacheHooksService {
+  private static readonly HOOK_TYPE = 'hook';
+
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
@@ -305,6 +307,7 @@ export class CacheHooksService {
     event: ExecutedTransaction | NewConfirmation | PendingTransaction,
   ): void {
     this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
       eventType: event.type,
       address: event.address,
       chainId: event.chainId,
@@ -321,6 +324,7 @@ export class CacheHooksService {
       | OutgoingToken,
   ): void {
     this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
       eventType: event.type,
       address: event.address,
       chainId: event.chainId,
@@ -332,6 +336,7 @@ export class CacheHooksService {
     event: MessageCreated | NewMessageConfirmation,
   ): void {
     this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
       eventType: event.type,
       address: event.address,
       chainId: event.chainId,
@@ -341,6 +346,7 @@ export class CacheHooksService {
 
   private _logEvent(event: ChainUpdate | SafeAppsUpdate): void {
     this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
       eventType: event.type,
       chainId: event.chainId,
     });
