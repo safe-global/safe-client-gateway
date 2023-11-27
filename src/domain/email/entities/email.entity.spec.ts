@@ -1,5 +1,5 @@
 import {
-  Email,
+  EmailAddress,
   InvalidEmailFormatError,
 } from '@/domain/email/entities/email.entity';
 import { faker } from '@faker-js/faker';
@@ -8,7 +8,7 @@ describe('Email entity tests', () => {
   it.each(['test@email.com', faker.internet.email()])(
     '%s is a valid email',
     (input) => {
-      const email = new Email(input);
+      const email = new EmailAddress(input);
 
       expect(email.value).toBe(input);
     },
@@ -18,7 +18,7 @@ describe('Email entity tests', () => {
     '%s is not a valid email',
     (input) => {
       expect(() => {
-        new Email(input);
+        new EmailAddress(input);
       }).toThrow(InvalidEmailFormatError);
     },
   );

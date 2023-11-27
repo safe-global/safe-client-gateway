@@ -2,10 +2,10 @@ import { EmailDataSource } from '@/datasources/email/email.datasource';
 import * as postgres from 'postgres';
 import { PostgresError } from 'postgres';
 import { faker } from '@faker-js/faker';
-import { Email } from '@/datasources/email/entities/email.entity';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import * as shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
+import { EmailAddress } from '@/domain/email/entities/email.entity';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
@@ -41,7 +41,7 @@ describe('Email Datasource Tests', () => {
   it('stores email successfully', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
     const safeAddress = faker.finance.ethereumAddress();
-    const emailAddress = faker.internet.email();
+    const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.string.numeric();
 
@@ -52,26 +52,27 @@ describe('Email Datasource Tests', () => {
       signer,
       code,
     });
+    const email = await target.getEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      signer,
+    });
 
-    const emails = await sql<Email[]>`SELECT *
-                                      FROM emails.signer_emails
-                                      WHERE chain_id = ${chainId}
-                                        and safe_address = ${safeAddress}
-                                        and signer = ${signer}`;
-    expect(emails.length).toBe(1);
-    expect(emails[0]).toMatchObject({
-      chain_id: chainId,
-      email_address: emailAddress,
-      safe_address: safeAddress,
+    expect(email).toMatchObject({
+      chainId: chainId.toString(),
+      emailAddress: emailAddress,
+      isVerified: false,
+      safeAddress: safeAddress,
       signer: signer,
-      verified: false,
+      verificationCode: code,
+      verificationSentOn: null,
     });
   });
 
   it('storing same email throws', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
     const safeAddress = faker.finance.ethereumAddress();
-    const emailAddress = faker.internet.email();
+    const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.string.numeric();
 
@@ -97,40 +98,43 @@ describe('Email Datasource Tests', () => {
   it('updates email verification successfully', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
     const safeAddress = faker.finance.ethereumAddress();
-    const emailAddress = faker.internet.email();
+    const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.number.int({ max: 999998 });
     const newCode = code + 1;
 
-    const verificationCode = await target.saveEmail({
+    await target.saveEmail({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
       signer,
       code: code.toString(),
     });
-    const [email] = await sql<Email[]>`SELECT *
-                                       FROM emails.signer_emails
-                                       WHERE chain_id = ${chainId}
-                                         and safe_address = ${safeAddress}
-                                         and signer = ${signer}`;
-    const updatedVerificationCode = await target.setVerificationCode({
+    const savedEmail = await target.getEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      signer,
+    });
+    await target.setVerificationCode({
       chainId: chainId.toString(),
       safeAddress,
       signer,
       code: newCode.toString(),
     });
 
-    expect(updatedVerificationCode.verificationCode).not.toBe(
-      verificationCode.verificationCode,
-    );
-    expect(email.verification_sent_on).toBeNull();
+    const updatedEmail = await target.getEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      signer,
+    });
+    expect(updatedEmail.verificationCode).not.toBe(savedEmail.verificationCode);
+    expect(updatedEmail.verificationSentOn).toBeNull();
   });
 
   it('sets verification sent date successfully', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
     const safeAddress = faker.finance.ethereumAddress();
-    const emailAddress = faker.internet.email();
+    const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const sentOn = faker.date.recent();
     const code = faker.string.numeric();
@@ -149,12 +153,12 @@ describe('Email Datasource Tests', () => {
       sentOn,
     });
 
-    const [email] = await sql<Email[]>`SELECT *
-                                       FROM emails.signer_emails
-                                       WHERE chain_id = ${chainId}
-                                         and safe_address = ${safeAddress}
-                                         and signer = ${signer}`;
-    expect(email.verification_sent_on).toEqual(sentOn);
+    const email = await target.getEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      signer,
+    });
+    expect(email.verificationSentOn).toEqual(sentOn);
   });
 
   it('setting verification code throws on unknown emails', async () => {
@@ -193,24 +197,24 @@ describe('Email Datasource Tests', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const verifiedSigners = [
       {
-        emailAddress: faker.internet.email(),
+        emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
       },
       {
-        emailAddress: faker.internet.email(),
+        emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
       },
     ];
     const nonVerifiedSigners = [
       {
-        emailAddress: faker.internet.email(),
+        emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
       },
       {
-        emailAddress: faker.internet.email(),
+        emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
       },
@@ -246,7 +250,7 @@ describe('Email Datasource Tests', () => {
 
     expect(result).toEqual(
       verifiedSigners.map((verifiedSigner) => ({
-        email: verifiedSigner.emailAddress,
+        email: verifiedSigner.emailAddress.value,
       })),
     );
   });
