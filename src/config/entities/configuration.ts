@@ -119,6 +119,9 @@ export default () => ({
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
+    cacheInvalidationDelayMs: parseInt(
+      process.env.REDIS_INVALIDATION_DELAY_MS ?? `${5_000}`,
+    ),
   },
   relay: {
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),

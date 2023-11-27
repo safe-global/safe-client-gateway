@@ -4,17 +4,26 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class RedisCacheService
   implements ICacheService, ICacheReadiness, OnModuleDestroy
 {
   private readonly quitTimeoutInSeconds: number = 2;
+  private readonly cacheInvalidationDelayMs: number;
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.cacheInvalidationDelayMs =
+      this.configurationService.getOrThrow<number>(
+        'redis.cacheInvalidationDelayMs',
+      );
+  }
 
   async ping(): Promise<unknown> {
     return this.client.ping();
@@ -44,10 +53,12 @@ export class RedisCacheService
 
   async deleteByKey(key: string): Promise<number> {
     // see https://redis.io/commands/unlink/
+    await this.delay(this.cacheInvalidationDelayMs);
     return await this.client.unlink(key);
   }
 
   async deleteByKeyPattern(pattern: string): Promise<void> {
+    await this.delay(this.cacheInvalidationDelayMs);
     for await (const key of this.client.scanIterator({ MATCH: pattern })) {
       await this.client.unlink(key);
     }
@@ -80,5 +91,13 @@ export class RedisCacheService
     this.loggingService.warn('Forcing Redis connection close');
     await this.client.disconnect();
     this.loggingService.warn('Redis connection closed');
+  }
+
+  /**
+   * Stops the execution for ms milliseconds.
+   * @param ms milliseconds to wait
+   */
+  private async delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

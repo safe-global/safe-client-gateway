@@ -5,6 +5,7 @@ import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { RedisClientType } from 'redis';
 import clearAllMocks = jest.clearAllMocks;
 import { fakeJson } from '@/__tests__/faker';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const redisClientType = {
   hGet: jest.fn(),
@@ -24,6 +25,11 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as unknown as ILoggingService;
 
+const configurationService = {
+  getOrThrow: jest.fn(),
+} as unknown as IConfigurationService;
+const mockConfigurationService = jest.mocked(configurationService);
+
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
 
@@ -32,6 +38,7 @@ describe('RedisCacheService', () => {
     redisCacheService = new RedisCacheService(
       redisClientTypeMock,
       mockLoggingService,
+      mockConfigurationService,
     );
   });
 
