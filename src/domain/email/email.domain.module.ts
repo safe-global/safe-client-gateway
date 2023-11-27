@@ -1,9 +1,8 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { EmailRepository } from '@/domain/email/email.repository';
 
-@Global()
 @Module({
   imports: [EmailDataSourceModule],
   providers: [{ provide: IEmailRepository, useClass: EmailRepository }],
