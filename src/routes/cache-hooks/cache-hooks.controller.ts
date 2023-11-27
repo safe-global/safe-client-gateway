@@ -43,6 +43,6 @@ export class CacheHooksController {
       | PendingTransaction
       | SafeAppsUpdate,
   ): Promise<void> {
-    await this.service.onEvent(eventPayload);
+    this.service.onEvent(eventPayload);
   }
 }
