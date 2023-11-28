@@ -50,7 +50,7 @@ export class CacheFirstDataSource {
     expireTimeSeconds?: number;
   }): Promise<T> {
     const cached = await this.cacheService.get(args.cacheDir);
-    if (cached !== null) {
+    if (cached != null) {
       this.loggingService.debug({
         type: 'cache_hit',
         key: args.cacheDir.key,

@@ -9,7 +9,7 @@ export interface ICacheService {
     expireTimeSeconds?: number,
   ): Promise<void>;
 
-  get(cacheDir: CacheDir): Promise<string | null>;
+  get(cacheDir: CacheDir): Promise<string | undefined>;
 
   deleteByKey(key: string): Promise<number>;
 
