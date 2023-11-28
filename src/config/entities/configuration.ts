@@ -130,4 +130,7 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
+  webHookExecutionDelayMs: parseInt(
+    process.env.WEB_HOOK_EXECUTION_DELAY_MS ?? `${5_000}`,
+  ),
 });

@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { CacheHooksService } from '@/routes/cache-hooks/cache-hooks.service';
 import { ChainUpdate } from '@/routes/cache-hooks/entities/chain-update.entity';
@@ -15,6 +22,7 @@ import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transa
 import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 import { EventValidationPipe } from '@/routes/cache-hooks/pipes/event-validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Controller({
   path: '',
@@ -22,11 +30,21 @@ import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
 })
 @ApiExcludeController()
 export class CacheHooksController {
-  constructor(private readonly service: CacheHooksService) {}
+  private readonly webHookExecutionDelayMs: number;
+
+  constructor(
+    private readonly service: CacheHooksService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.webHookExecutionDelayMs = this.configurationService.getOrThrow<number>(
+      'webHookExecutionDelayMs',
+    );
+  }
 
   @UseGuards(BasicAuthGuard)
   @Post('/hooks/events')
-  @HttpCode(200)
+  @HttpCode(202)
   async postEvent(
     @Body(EventValidationPipe)
     eventPayload:
@@ -43,6 +61,9 @@ export class CacheHooksController {
       | PendingTransaction
       | SafeAppsUpdate,
   ): Promise<void> {
-    await this.service.onEvent(eventPayload);
+    setTimeout(
+      () => this.service.onEvent(eventPayload),
+      this.webHookExecutionDelayMs,
+    );
   }
 }

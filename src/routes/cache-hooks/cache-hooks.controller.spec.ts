@@ -25,9 +25,11 @@ describe('Post Hook Events (Unit)', () => {
   let safeConfigUrl;
   let fakeCacheService: FakeCacheService;
   let networkService;
+  let webHookExecutionDelayMs;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
@@ -47,9 +49,16 @@ describe('Post Hook Events (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     authToken = configurationService.get('auth.token');
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    webHookExecutionDelayMs = configurationService.get(
+      'webHookExecutionDelayMs',
+    );
     networkService = moduleFixture.get(NetworkService);
 
     await app.init();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   afterAll(async () => {
@@ -148,7 +157,7 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
   });
 
   it('returns 400 (Bad Request) on unknown payload', async () => {
@@ -223,9 +232,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -271,9 +283,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -319,9 +334,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -358,9 +376,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -407,9 +428,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -456,9 +480,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -500,9 +527,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -539,9 +569,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -603,9 +636,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -645,9 +681,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -667,9 +706,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -689,9 +731,12 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 
   it.each([
@@ -711,8 +756,11 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(200);
+      .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeNull();
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
   });
 });
