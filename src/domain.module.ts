@@ -2,7 +2,6 @@ import { Global, Module } from '@nestjs/common';
 import { ExchangeApiModule } from '@/datasources/exchange-api/exchange-api.module';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { TransactionApiModule } from '@/datasources/transaction-api/transaction-api.module';
-import { AlertsApiModule } from '@/datasources/alerts-api/alerts-api.module';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -65,17 +64,11 @@ import { PricesRepository } from '@/domain/prices/prices.repository';
 import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
 import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
 import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
-import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
-import { AlertsRepository } from '@/domain/alerts/alerts.repository';
-import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
-import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
-import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 
 @Global()
 @Module({
   imports: [
-    AlertsApiModule,
     ConfigApiModule,
     EmailApiModule,
     ExchangeApiModule,
@@ -84,7 +77,6 @@ import { EmailApiModule } from '@/datasources/email-api/email-api.module';
     TransactionApiModule,
   ],
   providers: [
-    { provide: IAlertsRepository, useClass: AlertsRepository },
     { provide: IBackboneRepository, useClass: BackboneRepository },
     { provide: IBalancesRepository, useClass: BalancesRepository },
     { provide: IChainsRepository, useClass: ChainsRepository },
@@ -114,7 +106,6 @@ import { EmailApiModule } from '@/datasources/email-api/email-api.module';
     ContractsValidator,
     CreationTransactionValidator,
     DataDecodedValidator,
-    DelayModifierDecoder,
     DelegateValidator,
     EstimationsValidator,
     ExchangeFiatCodesValidator,
@@ -123,10 +114,8 @@ import { EmailApiModule } from '@/datasources/email-api/email-api.module';
     MasterCopyValidator,
     MessageValidator,
     ModuleTransactionValidator,
-    MultiSendDecoder,
     MultisigTransactionValidator,
     SafeAppsValidator,
-    SafeDecoder,
     SafeListValidator,
     SafeValidator,
     SimpleBalancesValidator,
@@ -135,7 +124,6 @@ import { EmailApiModule } from '@/datasources/email-api/email-api.module';
     TransferValidator,
   ],
   exports: [
-    IAlertsRepository,
     IBackboneRepository,
     IBalancesRepository,
     IChainsRepository,

@@ -39,9 +39,9 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
-import { AlertsModule } from '@/routes/alerts/alerts.module';
 import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
+import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -56,7 +56,7 @@ export class AppModule implements NestModule {
       imports: [
         // features
         AboutModule,
-        AlertsModule,
+        AlertsControllerModule,
         BalancesModule,
         CacheHooksModule,
         ChainsModule,
