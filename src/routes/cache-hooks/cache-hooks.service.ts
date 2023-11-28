@@ -77,6 +77,7 @@ export class CacheHooksService {
       // An executed module transaction might affect:
       // - the list of all executed transactions for the safe
       // - the list of module transactions for the safe
+      // - the safe configuration
       case EventType.MODULE_TRANSACTION:
         promises.push(
           this.safeRepository.clearAllExecutedTransactions({
@@ -86,6 +87,10 @@ export class CacheHooksService {
           this.safeRepository.clearModuleTransactions({
             chainId: event.chainId,
             safeAddress: event.address,
+          }),
+          this.safeRepository.clearSafe({
+            chainId: event.chainId,
+            address: event.address,
           }),
         );
         this._logTxEvent(event);
