@@ -119,9 +119,6 @@ export default () => ({
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
-    cacheInvalidationDelayMs: parseInt(
-      process.env.REDIS_INVALIDATION_DELAY_MS ?? `${5_000}`,
-    ),
   },
   relay: {
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
@@ -133,4 +130,7 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
+  webHookExecutionDelayMs: parseInt(
+    process.env.WEB_HOOK_EXECUTION_DELAY_MS ?? `${5_000}`,
+  ),
 });

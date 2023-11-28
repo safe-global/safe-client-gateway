@@ -133,7 +133,6 @@ export default (): ReturnType<typeof configuration> => ({
   redis: {
     host: faker.internet.domainName(),
     port: faker.internet.port().toString(),
-    cacheInvalidationDelayMs: 0,
   },
   relay: { limit: faker.number.int({ min: 1 }) },
   safeConfig: {
@@ -142,4 +141,5 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
   },
+  webHookExecutionDelayMs: faker.number.int({ min: 1, max: 10 }),
 });
