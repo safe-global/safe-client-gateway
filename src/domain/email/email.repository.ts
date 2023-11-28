@@ -1,7 +1,7 @@
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { Inject } from '@nestjs/common';
 import codeGenerator from '@/domain/email/code-generator';
-import { Email } from '@/domain/email/entities/email.entity';
+import { EmailAddress } from '@/domain/email/entities/email.entity';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { EmailSaveError } from '@/domain/email/errors/email-save.error';
 
@@ -17,7 +17,7 @@ export class EmailRepository implements IEmailRepository {
     emailAddress: string;
     account: string;
   }): Promise<void> {
-    const email = new Email(args.emailAddress);
+    const email = new EmailAddress(args.emailAddress);
     const verificationCode = codeGenerator();
 
     // Pads the final verification code to 6 characters
@@ -29,7 +29,7 @@ export class EmailRepository implements IEmailRepository {
       await this.emailDataSource.saveEmail({
         chainId: args.chainId,
         code: paddedVerificationCode,
-        emailAddress: email.value,
+        emailAddress: email,
         safeAddress: args.safeAddress,
         signer: args.account,
       });

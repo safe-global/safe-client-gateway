@@ -1,3 +1,5 @@
+import { Email, EmailAddress } from '@/domain/email/entities/email.entity';
+
 export const IEmailDataSource = Symbol('IEmailDataSource');
 
 export interface IEmailDataSource {
@@ -13,6 +15,19 @@ export interface IEmailDataSource {
   }): Promise<{ email: string }[]>;
 
   /**
+   * Gets the email associated with a signer of a Safe for a specific chain.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to use as filter
+   * @param args.signer - the owner address to which link the email address is linked to
+   */
+  getEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<Email>;
+
+  /**
    * Saves an email entry in the respective data source.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
@@ -24,10 +39,10 @@ export interface IEmailDataSource {
   saveEmail(args: {
     chainId: string;
     safeAddress: string;
-    emailAddress: string;
+    emailAddress: EmailAddress;
     signer: string;
     code: string;
-  }): Promise<{ email: string; verificationCode: string | null }>;
+  }): Promise<void>;
 
   /**
    * Sets the verification code for an email entry.
@@ -44,7 +59,7 @@ export interface IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: string;
-  }): Promise<{ email: string; verificationCode: string | null }>;
+  }): Promise<void>;
 
   /**
    * Sets the verification date for an email entry.

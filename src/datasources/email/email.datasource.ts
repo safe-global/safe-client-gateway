@@ -2,7 +2,21 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
-import { Email } from '@/datasources/email/entities/email.entity';
+import {
+  Email as DomainEmail,
+  EmailAddress,
+} from '@/domain/email/entities/email.entity';
+
+interface Email {
+  id: number;
+  chain_id: number;
+  email_address: string;
+  safe_address: string;
+  signer: string;
+  verified: boolean;
+  verification_code: string | null;
+  verification_sent_on: Date | null;
+}
 
 @Injectable()
 export class EmailDataSource implements IEmailDataSource {
@@ -21,24 +35,48 @@ export class EmailDataSource implements IEmailDataSource {
     return emails.map((email) => ({ email: email.email_address }));
   }
 
+  async getEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<DomainEmail> {
+    const [email] = await this.sql<Email[]>`SELECT *
+                                            FROM emails.signer_emails
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND signer = ${args.signer}`;
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.signer,
+      );
+    }
+
+    return <DomainEmail>{
+      chainId: email.chain_id.toString(),
+      emailAddress: new EmailAddress(email.email_address),
+      isVerified: email.verified,
+      safeAddress: email.safe_address,
+      signer: email.signer,
+      verificationCode: email.verification_code,
+      verificationSentOn: email.verification_sent_on,
+    };
+  }
+
   async saveEmail(args: {
     chainId: string;
     safeAddress: string;
-    emailAddress: string;
+    emailAddress: EmailAddress;
     signer: string;
     code: string;
-  }): Promise<{ email: string; verificationCode: string | null }> {
+  }): Promise<void> {
     return await this.sql.begin(async (sql) => {
-      const [email] = await sql<Email[]>`
+      await sql<Email[]>`
           INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer, verification_code)
-          VALUES (${args.chainId}, ${args.emailAddress}, ${args.safeAddress}, ${args.signer}, ${args.code})
+          VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer}, ${args.code})
           RETURNING *
       `;
-
-      return {
-        email: email.email_address,
-        verificationCode: email.verification_code,
-      };
     });
   }
 
@@ -47,7 +85,7 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: string;
-  }): Promise<{ email: string; verificationCode: string | null }> {
+  }): Promise<void> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
                                             SET verification_code = ${args.code}
                                             WHERE chain_id = ${args.chainId}
@@ -62,11 +100,6 @@ export class EmailDataSource implements IEmailDataSource {
         args.signer,
       );
     }
-
-    return {
-      email: email.email_address,
-      verificationCode: email.verification_code,
-    };
   }
 
   async setVerificationSentDate(args: {
