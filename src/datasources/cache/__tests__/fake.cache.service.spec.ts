@@ -32,7 +32,7 @@ describe('FakeCacheService', () => {
     await target.set(cacheDir, value, 0);
     await target.deleteByKey(key);
 
-    await expect(target.get(cacheDir)).resolves.toBe(null);
+    await expect(target.get(cacheDir)).resolves.toBe(undefined);
     expect(target.keyCount()).toBe(0);
   });
 
