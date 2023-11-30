@@ -7,22 +7,34 @@ import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { IEmailRepository } from '@/domain/email/email.repository.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
   constructor(
     @Inject(IAlertsApi)
     private readonly alertsApi: IAlertsApi,
+    @Inject(IEmailApi)
+    private readonly emailApi: IEmailApi,
+    @Inject(IEmailRepository)
+    private readonly emailRepository: IEmailRepository,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
     await this.alertsApi.addContracts(contracts);
   }
 
-  handleAlertLog(log: AlertLog): void {
+  async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
     const decodedEvent = this.delayModifierDecoder.decodeEventLog({
       data: log.data as Hex,
       topics: log.topics as [Hex, Hex, Hex],
@@ -33,8 +45,7 @@ export class AlertsRepository implements IAlertsRepository {
     );
 
     if (!decodedTransactions) {
-      // Transaction outside of specified ABI => notify user
-      return;
+      return this.notifyInvalidTransaction(chainId, log);
     }
 
     for (const decodedTransaction of decodedTransactions) {
@@ -60,7 +71,7 @@ export class AlertsRepository implements IAlertsRepository {
           break;
         }
         default: {
-          // Transaction outside of specified ABI => notify user
+          return this.notifyInvalidTransaction(chainId, log);
         }
       }
     }
@@ -78,5 +89,29 @@ export class AlertsRepository implements IAlertsRepository {
         return null;
       }
     }
+  }
+
+  private async notifyInvalidTransaction(
+    chainId: string,
+    log: AlertLog,
+  ): Promise<void> {
+    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+      chainId,
+      safeAddress: log.address,
+    });
+
+    if (emails.length) {
+      return this.emailApi.createMessage({
+        to: emails,
+        template: this.configurationService.getOrThrow<string>(
+          'email.templates.unknownRecoveryTx',
+        ),
+        subject: 'Unknown transaction attempt',
+        substitutions: {},
+      });
+    }
+    this.loggingService.debug(
+      `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
+    );
   }
 }

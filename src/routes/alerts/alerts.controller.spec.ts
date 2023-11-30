@@ -101,6 +101,7 @@ describe('Alerts (Unit)', () => {
     it.todo('notifies about addOwnerWithThreshold attempts');
     it.todo('notifies about non-addOwnerWithThreshold attempts');
     it.todo('notifies about alerts with multiple logs');
+    it.todo('notifies about an invalid transaction attempt');
 
     it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
       const alert = {};
