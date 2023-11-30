@@ -7,9 +7,9 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
-import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { simpleBalanceBuilder } from '@/domain/balances/entities/__tests__/simple.balance.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -76,7 +76,10 @@ describe('TransactionApi', () => {
 
   describe('Balances', () => {
     it('should return the balances retrieved', async () => {
-      const data = [balanceBuilder().build(), balanceBuilder().build()];
+      const data = [
+        simpleBalanceBuilder().build(),
+        simpleBalanceBuilder().build(),
+      ];
       mockDataSource.get.mockResolvedValue(data);
 
       const actual = await service.getBalances({
