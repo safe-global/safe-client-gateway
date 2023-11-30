@@ -6,9 +6,10 @@ import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-d
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import { EmailDomainModule } from '@/domain/email/email.domain.module';
+import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 
 @Module({
-  imports: [AlertsApiModule, EmailDomainModule],
+  imports: [AlertsApiModule, EmailApiModule, EmailDomainModule],
   providers: [
     { provide: IAlertsRepository, useClass: AlertsRepository },
     DelayModifierDecoder,
