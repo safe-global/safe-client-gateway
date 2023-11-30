@@ -18,10 +18,10 @@ export class AlertsController {
   @UseGuards(TenderlySignatureGuard)
   @Post('/alerts')
   @HttpCode(200)
-  postAlert(
+  async postAlert(
     @Body(AlertValidationPipe)
     alertPayload: Alert,
-  ): void {
+  ): Promise<void> {
     this.alertsService.onAlert(alertPayload);
   }
 }
