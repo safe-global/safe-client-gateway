@@ -15,6 +15,7 @@ interface Email {
   signer: string;
   verified: boolean;
   verification_code: string | null;
+  verification_code_generated_on: Date | null;
   verification_sent_on: Date | null;
 }
 
@@ -27,10 +28,12 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
   }): Promise<{ email: string }[]> {
     const emails = await this.sql<{ email_address: string }[]>`
-      SELECT email_address
-      FROM emails.signer_emails
-      WHERE chain_id = ${args.chainId} AND safe_address = ${args.safeAddress} AND verified is true
-      ORDER by id`;
+        SELECT email_address
+        FROM emails.signer_emails
+        WHERE chain_id = ${args.chainId}
+          AND safe_address = ${args.safeAddress}
+          AND verified is true
+        ORDER by id`;
 
     return emails.map((email) => ({ email: email.email_address }));
   }
@@ -70,11 +73,14 @@ export class EmailDataSource implements IEmailDataSource {
     emailAddress: EmailAddress;
     signer: string;
     code: string;
+    codeGenerationDate: Date;
   }): Promise<void> {
     return await this.sql.begin(async (sql) => {
       await sql<Email[]>`
-          INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer, verification_code)
-          VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer}, ${args.code})
+          INSERT INTO emails.signer_emails (chain_id, email_address, safe_address, signer, verification_code,
+                                            verification_code_generated_on)
+          VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer}, ${args.code},
+                  ${args.codeGenerationDate})
           RETURNING *
       `;
     });
@@ -85,6 +91,7 @@ export class EmailDataSource implements IEmailDataSource {
     safeAddress: string;
     signer: string;
     code: string;
+    codeGenerationDate: Date;
   }): Promise<void> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
                                             SET verification_code = ${args.code}

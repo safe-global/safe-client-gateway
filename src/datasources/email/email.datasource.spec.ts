@@ -44,6 +44,7 @@ describe('Email Datasource Tests', () => {
     const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.string.numeric();
+    const codeGenerationDate = faker.date.recent();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -51,6 +52,7 @@ describe('Email Datasource Tests', () => {
       emailAddress,
       signer,
       code,
+      codeGenerationDate,
     });
     const email = await target.getEmail({
       chainId: chainId.toString(),
@@ -75,6 +77,7 @@ describe('Email Datasource Tests', () => {
     const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.string.numeric();
+    const codeGenerationDate = faker.date.recent();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -82,6 +85,7 @@ describe('Email Datasource Tests', () => {
       emailAddress,
       signer,
       code,
+      codeGenerationDate,
     });
 
     await expect(
@@ -91,6 +95,7 @@ describe('Email Datasource Tests', () => {
         emailAddress,
         signer,
         code,
+        codeGenerationDate,
       }),
     ).rejects.toThrow(PostgresError);
   });
@@ -101,7 +106,9 @@ describe('Email Datasource Tests', () => {
     const emailAddress = new EmailAddress(faker.internet.email());
     const signer = faker.finance.ethereumAddress();
     const code = faker.number.int({ max: 999998 });
+    const codeGenerationDate = faker.date.recent();
     const newCode = code + 1;
+    const newCodeGenerationDate = faker.date.recent();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -109,6 +116,7 @@ describe('Email Datasource Tests', () => {
       emailAddress,
       signer,
       code: code.toString(),
+      codeGenerationDate,
     });
     const savedEmail = await target.getEmail({
       chainId: chainId.toString(),
@@ -120,6 +128,7 @@ describe('Email Datasource Tests', () => {
       safeAddress,
       signer,
       code: newCode.toString(),
+      codeGenerationDate: newCodeGenerationDate,
     });
 
     const updatedEmail = await target.getEmail({
@@ -138,6 +147,7 @@ describe('Email Datasource Tests', () => {
     const signer = faker.finance.ethereumAddress();
     const sentOn = faker.date.recent();
     const code = faker.string.numeric();
+    const codeGenerationDate = faker.date.recent();
 
     await target.saveEmail({
       chainId: chainId.toString(),
@@ -145,6 +155,7 @@ describe('Email Datasource Tests', () => {
       emailAddress,
       signer,
       code,
+      codeGenerationDate,
     });
     await target.setVerificationSentDate({
       chainId: chainId.toString(),
@@ -167,6 +178,7 @@ describe('Email Datasource Tests', () => {
     const signer = faker.finance.ethereumAddress();
     const code = faker.number.int({ max: 999998 });
     const newCode = code + 1;
+    const newCodeGenerationDate = faker.date.recent();
 
     await expect(
       target.setVerificationCode({
@@ -174,6 +186,7 @@ describe('Email Datasource Tests', () => {
         safeAddress,
         signer,
         code: newCode.toString(),
+        codeGenerationDate: newCodeGenerationDate,
       }),
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });
@@ -200,11 +213,13 @@ describe('Email Datasource Tests', () => {
         emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
+        codeGenerationDate: faker.date.recent(),
       },
       {
         emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
+        codeGenerationDate: faker.date.recent(),
       },
     ];
     const nonVerifiedSigners = [
@@ -212,20 +227,28 @@ describe('Email Datasource Tests', () => {
         emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
+        codeGenerationDate: faker.date.recent(),
       },
       {
         emailAddress: new EmailAddress(faker.internet.email()),
         signer: faker.finance.ethereumAddress(),
         code: faker.number.int({ max: 999998 }).toString(),
+        codeGenerationDate: faker.date.recent(),
       },
     ];
-    for (const { emailAddress, signer, code } of verifiedSigners) {
+    for (const {
+      emailAddress,
+      signer,
+      code,
+      codeGenerationDate,
+    } of verifiedSigners) {
       await target.saveEmail({
         chainId,
         safeAddress,
         emailAddress,
         signer,
         code,
+        codeGenerationDate,
       });
       await target.verifyEmail({
         chainId: chainId,
@@ -233,13 +256,19 @@ describe('Email Datasource Tests', () => {
         signer,
       });
     }
-    for (const { emailAddress, signer, code } of nonVerifiedSigners) {
+    for (const {
+      emailAddress,
+      signer,
+      code,
+      codeGenerationDate,
+    } of nonVerifiedSigners) {
       await target.saveEmail({
         chainId,
         safeAddress,
         emailAddress,
         signer,
         code,
+        codeGenerationDate,
       });
     }
 

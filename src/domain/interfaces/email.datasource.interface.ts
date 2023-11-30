@@ -35,6 +35,7 @@ export interface IEmailDataSource {
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the email address to
    * @param args.code - the generated code to be used to verify this email address
+   * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
   saveEmail(args: {
     chainId: string;
@@ -42,6 +43,7 @@ export interface IEmailDataSource {
     emailAddress: EmailAddress;
     signer: string;
     code: string;
+    codeGenerationDate: Date;
   }): Promise<void>;
 
   /**
@@ -53,12 +55,14 @@ export interface IEmailDataSource {
    * @param args.safeAddress - the Safe address
    * @param args.signer - the owner address
    * @param args.code - the generated code to be used to verify this email address
+   * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
   setVerificationCode(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
     code: string;
+    codeGenerationDate: Date;
   }): Promise<void>;
 
   /**
