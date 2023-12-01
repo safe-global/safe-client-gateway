@@ -49,6 +49,7 @@ export class AppModule implements NestModule {
   // into account. The .env file loading is done by the ConfigurationModule
   // which is not available at this stage.
   static register(configFactory: ConfigFactory = configuration): DynamicModule {
+    const isAlertsFeatureEnabled = configFactory()['features']['alerts'];
     const isEmailFeatureEnabled = configFactory()['features']['email'];
 
     return {
@@ -56,7 +57,7 @@ export class AppModule implements NestModule {
       imports: [
         // features
         AboutModule,
-        AlertsControllerModule,
+        ...(isAlertsFeatureEnabled ? [AlertsControllerModule] : []),
         BalancesModule,
         CacheHooksModule,
         ChainsModule,
