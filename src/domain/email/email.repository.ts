@@ -32,6 +32,7 @@ export class EmailRepository implements IEmailRepository {
         emailAddress: email,
         safeAddress: args.safeAddress,
         signer: args.account,
+        codeGenerationDate: new Date(),
       });
 
       // TODO if successful, send the generated code (result.verification)
