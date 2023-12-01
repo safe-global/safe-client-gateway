@@ -7,7 +7,7 @@ import {
   EventType,
 } from '@/routes/alerts/entities/alert.dto.entity';
 
-function alertLogBuilder(): IBuilder<AlertLog> {
+export function alertLogBuilder(): IBuilder<AlertLog> {
   return Builder.new<AlertLog>()
     .with('address', faker.finance.ethereumAddress())
     .with(
@@ -19,7 +19,7 @@ function alertLogBuilder(): IBuilder<AlertLog> {
     .with('data', faker.string.hexadecimal());
 }
 
-function alertTransactionBuilder(): IBuilder<AlertTransaction> {
+export function alertTransactionBuilder(): IBuilder<AlertTransaction> {
   return Builder.new<AlertTransaction>()
     .with('network', faker.string.numeric())
     .with('block_hash', faker.string.hexadecimal({ length: 66 }))

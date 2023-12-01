@@ -11,11 +11,25 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { alertBuilder } from '@/routes/alerts/entities/__tests__/alerts.builder';
+import {
+  alertBuilder,
+  alertLogBuilder,
+  alertTransactionBuilder,
+} from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AlertsDecodersModule } from '@/domain/alerts/alerts-decoders.module';
+import { TestAlertsDecodersModule } from '@/domain/alerts/__tests__/test.alerts-decoders.module';
+import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
+import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
+import { fakeJson } from '@/__tests__/faker';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import { EmailApiModule } from '@/datasources/email-api/email-api.module';
+import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -40,6 +54,13 @@ function fakeTenderlySignature(args: {
 }
 
 describe('Alerts (Unit)', () => {
+  let configurationService;
+  let emailApi;
+  let emailDataSource;
+  let delayModifierDecoder;
+  let multiSendDecoder;
+  let safeDecoder;
+
   describe('/alerts route enabled', () => {
     let app: INestApplication;
     let signingKey: string;
@@ -67,11 +88,20 @@ describe('Alerts (Unit)', () => {
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)
         .useModule(TestNetworkModule)
+        .overrideModule(AlertsDecodersModule)
+        .useModule(TestAlertsDecodersModule)
+        .overrideModule(EmailApiModule)
+        .useModule(TestEmailApiModule)
         .compile();
 
       app = moduleFixture.createNestApplication();
-      const configurationService = moduleFixture.get(IConfigurationService);
+      configurationService = moduleFixture.get(IConfigurationService);
       signingKey = configurationService.getOrThrow('alerts.signingKey');
+      delayModifierDecoder = moduleFixture.get(DelayModifierDecoder);
+      multiSendDecoder = moduleFixture.get(MultiSendDecoder);
+      safeDecoder = moduleFixture.get(SafeDecoder);
+      emailApi = moduleFixture.get(IEmailApi);
+      emailDataSource = moduleFixture.get(IEmailDataSource);
 
       await app.init();
     });
@@ -101,7 +131,71 @@ describe('Alerts (Unit)', () => {
     it.todo('notifies about addOwnerWithThreshold attempts');
     it.todo('notifies about non-addOwnerWithThreshold attempts');
     it.todo('notifies about alerts with multiple logs');
-    it.todo('notifies about an invalid transaction attempt');
+
+    it('notifies about an invalid transaction attempt', async () => {
+      const alert = alertBuilder()
+        .with(
+          'transaction',
+          alertTransactionBuilder()
+            .with('logs', [
+              alertLogBuilder().build(),
+              alertLogBuilder().build(),
+            ])
+            .build(),
+        )
+        .build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert,
+        timestamp,
+      });
+      delayModifierDecoder.decodeEventLog.mockReturnValue({
+        args: { data: fakeJson() },
+      });
+      multiSendDecoder.mapMultiSendTransactions.mockImplementation(() => {
+        throw new Error('Some random error');
+      });
+      safeDecoder.decodeFunctionData.mockImplementation(() => {
+        throw new Error('Some random error');
+      });
+      const verifiedSignerEmails = [
+        { email: faker.internet.email() },
+        { email: faker.internet.email() },
+      ];
+      emailDataSource.getVerifiedSignerEmailsBySafeAddress.mockResolvedValue(
+        verifiedSignerEmails,
+      );
+
+      await request(app.getHttpServer())
+        .post('/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(200)
+        .expect({});
+
+      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
+        (i) => i.email,
+      );
+      expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+      expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+        subject: 'Unknown transaction attempt',
+        substitutions: {},
+        template: configurationService.getOrThrow(
+          'email.templates.unknownRecoveryTx',
+        ),
+        to: expectedTargetEmailAddresses,
+      });
+      expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
+        subject: 'Unknown transaction attempt',
+        substitutions: {},
+        template: configurationService.getOrThrow(
+          'email.templates.unknownRecoveryTx',
+        ),
+        to: expectedTargetEmailAddresses,
+      });
+    });
 
     it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
       const alert = {};
