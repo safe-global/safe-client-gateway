@@ -45,7 +45,7 @@ export class AlertsRepository implements IAlertsRepository {
     );
 
     if (!decodedTransactions) {
-      return this.notifyInvalidTransaction(chainId, log);
+      return this._notifyUnknownTransaction(chainId, log);
     }
 
     for (const decodedTransaction of decodedTransactions) {
@@ -71,7 +71,7 @@ export class AlertsRepository implements IAlertsRepository {
           break;
         }
         default: {
-          return this.notifyInvalidTransaction(chainId, log);
+          return this._notifyUnknownTransaction(chainId, log);
         }
       }
     }
@@ -91,7 +91,7 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private async notifyInvalidTransaction(
+  private async _notifyUnknownTransaction(
     chainId: string,
     log: AlertLog,
   ): Promise<void> {
@@ -100,18 +100,20 @@ export class AlertsRepository implements IAlertsRepository {
       safeAddress: log.address,
     });
 
-    if (emails.length) {
+    if (!emails.length) {
+      this.loggingService.debug(
+        `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
+      );
+    } else {
       return this.emailApi.createMessage({
         to: emails,
         template: this.configurationService.getOrThrow<string>(
           'email.templates.unknownRecoveryTx',
         ),
+        // TODO: subject and substitutions need to be set according to the template design
         subject: 'Unknown transaction attempt',
         substitutions: {},
       });
     }
-    this.loggingService.debug(
-      `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
-    );
   }
 }
