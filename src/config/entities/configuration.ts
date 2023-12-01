@@ -31,6 +31,9 @@ export default () => ({
     apiKey: process.env.EMAIL_API_KEY,
     fromEmail: process.env.EMAIL_API_FROM_EMAIL,
     fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
+    templates: {
+      unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
+    },
   },
   exchange: {
     baseUri:

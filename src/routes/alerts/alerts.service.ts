@@ -12,10 +12,11 @@ export class AlertsService {
     private readonly alertsRepository: IAlertsRepository,
   ) {}
 
-  onAlert(alert: Alert): void {
+  async onAlert(alert: Alert): Promise<void> {
     for (const log of alert.transaction.logs) {
       try {
-        this.alertsRepository.handleAlertLog(log);
+        const chainId = alert.transaction.network;
+        await this.alertsRepository.handleAlertLog(chainId, log);
       } catch {
         this.loggingService.warn('Unknown alert received');
       }

@@ -13,7 +13,7 @@ describe('Configuration validator', () => {
   it('should detect missing mandatory configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
     expect(() => validate(JSON.parse(fakeJson()))).toThrow(
-      /must have required property 'AUTH_TOKEN'.*must have required property 'EXCHANGE_API_KEY'.*must have required property 'ALERTS_PROVIDER_SIGNING_KEY'.*must have required property 'ALERTS_PROVIDER_API_KEY'.*must have required property 'ALERTS_PROVIDER_ACCOUNT'.*must have required property 'ALERTS_PROVIDER_PROJECT'.*must have required property 'EMAIL_API_APPLICATION_CODE'.*must have required property 'EMAIL_API_FROM_EMAIL'.*must have required property 'EMAIL_API_KEY'/,
+      /must have required property 'AUTH_TOKEN'.*must have required property 'EXCHANGE_API_KEY'.*must have required property 'ALERTS_PROVIDER_SIGNING_KEY'.*must have required property 'ALERTS_PROVIDER_API_KEY'.*must have required property 'ALERTS_PROVIDER_ACCOUNT'.*must have required property 'ALERTS_PROVIDER_PROJECT'.*must have required property 'EMAIL_API_APPLICATION_CODE'.*must have required property 'EMAIL_API_FROM_EMAIL'.*must have required property 'EMAIL_API_KEY'.*must have required property 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX'/,
     );
   });
 
@@ -31,6 +31,7 @@ describe('Configuration validator', () => {
         EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
         EMAIL_API_FROM_EMAIL: faker.internet.email(),
         EMAIL_API_KEY: faker.string.uuid(),
+        EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
   });
@@ -48,6 +49,7 @@ describe('Configuration validator', () => {
       EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
       EMAIL_API_FROM_EMAIL: faker.internet.email(),
       EMAIL_API_KEY: faker.string.uuid(),
+      EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     };
     const validated = validate(expected);
     expect(validated).toBe(expected);

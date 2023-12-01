@@ -1,10 +1,11 @@
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import codeGenerator from '@/domain/email/code-generator';
 import { EmailAddress } from '@/domain/email/entities/email.entity';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { EmailSaveError } from '@/domain/email/errors/email-save.error';
 
+@Injectable()
 export class EmailRepository implements IEmailRepository {
   constructor(
     @Inject(IEmailDataSource)

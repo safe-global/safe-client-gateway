@@ -33,6 +33,9 @@ export default (): ReturnType<typeof configuration> => ({
     apiKey: faker.string.hexadecimal({ length: 32 }),
     fromEmail: faker.internet.email(),
     fromName: faker.person.fullName(),
+    templates: {
+      unknownRecoveryTx: faker.string.alphanumeric(),
+    },
   },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
