@@ -63,6 +63,7 @@ export class EmailDataSource implements IEmailDataSource {
       safeAddress: email.safe_address,
       signer: email.signer,
       verificationCode: email.verification_code,
+      verificationGeneratedOn: email.verification_code_generated_on,
       verificationSentOn: email.verification_sent_on,
     };
   }
@@ -94,7 +95,8 @@ export class EmailDataSource implements IEmailDataSource {
     codeGenerationDate: Date;
   }): Promise<void> {
     const [email] = await this.sql<Email[]>`UPDATE emails.signer_emails
-                                            SET verification_code = ${args.code}
+                                            SET verification_code              = ${args.code},
+                                                verification_code_generated_on = ${args.codeGenerationDate}
                                             WHERE chain_id = ${args.chainId}
                                               AND safe_address = ${args.safeAddress}
                                               AND signer = ${args.signer}

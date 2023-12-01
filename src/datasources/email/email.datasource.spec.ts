@@ -138,6 +138,7 @@ describe('Email Datasource Tests', () => {
     });
     expect(updatedEmail.verificationCode).not.toBe(savedEmail.verificationCode);
     expect(updatedEmail.verificationSentOn).toBeNull();
+    expect(updatedEmail.verificationGeneratedOn).toEqual(newCodeGenerationDate);
   });
 
   it('sets verification sent date successfully', async () => {
