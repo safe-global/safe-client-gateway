@@ -54,8 +54,6 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     pricesProviderChainIds: ['10'],
     humanDescription: true,
-    alerts: true,
-    recovery: true,
     noncesRoute: true,
     email: true,
   },
