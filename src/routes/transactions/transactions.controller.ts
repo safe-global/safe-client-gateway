@@ -211,6 +211,8 @@ export class TransactionsController {
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
     timezoneOffset: number,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({
       chainId,
@@ -218,6 +220,7 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       timezoneOffset,
+      onlyTrusted: trusted,
     });
   }
 
