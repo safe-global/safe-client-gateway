@@ -52,7 +52,7 @@ describe('Alerts (Unit)', () => {
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          alerts: true,
+          email: true,
         },
       });
 
@@ -146,7 +146,7 @@ describe('Alerts (Unit)', () => {
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          alerts: false,
+          email: false,
         },
       });
 
@@ -174,7 +174,7 @@ describe('Alerts (Unit)', () => {
       await app.close();
     });
 
-    it('returns 403 (Forbidden) for valid signature/invalid payload', async () => {
+    it('returns 404 (Not found) for valid signature/invalid payload', async () => {
       const alert = alertBuilder().build();
       const timestamp = Date.now().toString();
       const signature = fakeTenderlySignature({
@@ -188,7 +188,7 @@ describe('Alerts (Unit)', () => {
         .set('x-tenderly-signature', signature)
         .set('date', timestamp)
         .send(alert)
-        .expect(403);
+        .expect(404);
     });
   });
 });

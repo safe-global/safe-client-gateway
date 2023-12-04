@@ -42,6 +42,7 @@ import { RootModule } from '@/routes/root/root.module';
 import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module';
+import { RecoveryModule } from '@/routes/recovery/recovery.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -56,7 +57,6 @@ export class AppModule implements NestModule {
       imports: [
         // features
         AboutModule,
-        AlertsControllerModule,
         BalancesModule,
         CacheHooksModule,
         ChainsModule,
@@ -64,7 +64,9 @@ export class AppModule implements NestModule {
         ContractsModule,
         DataDecodedModule,
         DelegatesModule,
-        ...(isEmailFeatureEnabled ? [EmailControllerModule] : []),
+        ...(isEmailFeatureEnabled
+          ? [AlertsControllerModule, EmailControllerModule, RecoveryModule]
+          : []),
         EstimationsModule,
         FlushModule,
         HealthModule,
