@@ -15,7 +15,9 @@ export const tokenSchema: JSONSchemaType<Token> = {
     name: { type: 'string' },
     symbol: { type: 'string' },
     type: { type: 'string', enum: Object.values(TokenType) },
+    trusted: { type: 'boolean' },
   },
+  // TODO: trusted should be required. Add to required fields once features.trustedTokens is removed
   required: ['address', 'decimals', 'logoUri', 'name', 'symbol', 'type'],
 };
 
