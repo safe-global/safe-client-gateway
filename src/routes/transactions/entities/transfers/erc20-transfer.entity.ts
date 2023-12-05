@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
+import {
+  Transfer,
+  TransferType,
+} from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty()
@@ -26,7 +29,7 @@ export class Erc20Transfer extends Transfer {
     decimals: number | null = null,
     trusted: boolean | null = null,
   ) {
-    super('ERC20');
+    super(TransferType.Erc20);
     this.tokenAddress = tokenAddress;
     this.value = value;
     this.tokenName = tokenName;
@@ -38,5 +41,5 @@ export class Erc20Transfer extends Transfer {
 }
 
 export function isErc20Transfer(transfer: Transfer): transfer is Erc20Transfer {
-  return transfer.type === 'ERC20';
+  return transfer.type === TransferType.Erc20;
 }
