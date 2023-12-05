@@ -81,6 +81,7 @@ export default () => ({
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     noncesRoute: process.env.FF_NONCES_ROUTE?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
+    trustedTokens: process.env.FF_TRUSTED_TOKENS?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

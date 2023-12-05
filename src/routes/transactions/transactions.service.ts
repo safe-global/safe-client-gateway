@@ -7,10 +7,10 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { Page } from '@/routes/common/entities/page.entity';
 import {
-  PaginationData,
   buildNextPageURL,
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
+  PaginationData,
 } from '@/routes/common/pagination/pagination.data';
 import {
   MODULE_TRANSACTION_PREFIX,
@@ -360,6 +360,7 @@ export class TransactionsService {
     safeAddress: string;
     paginationData: PaginationData;
     timezoneOffset: number;
+    onlyTrusted: boolean;
   }): Promise<TransactionItemPage> {
     const paginationDataAdjusted = this.getAdjustedPaginationForHistory(
       args.paginationData,
@@ -390,6 +391,7 @@ export class TransactionsService {
       safeInfo,
       args.paginationData.offset,
       args.timezoneOffset,
+      args.onlyTrusted,
     );
 
     return {

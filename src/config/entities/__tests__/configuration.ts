@@ -60,6 +60,7 @@ export default (): ReturnType<typeof configuration> => ({
     humanDescription: true,
     noncesRoute: true,
     email: true,
+    trustedTokens: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
