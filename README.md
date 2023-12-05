@@ -20,7 +20,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Installation
 
-**Optional:** If you have NVM installed, you can run `nvm use` in root folder of the project to use the recommended
+**Optional:** If you have NVM installed, you can run `nvm use` in the root folder of the project to use the recommended
 Node version set for this project.
 
 We use Yarn as the package manager for this project. Yarn is bundled with the project so to use it run:
