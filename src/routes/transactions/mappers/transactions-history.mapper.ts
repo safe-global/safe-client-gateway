@@ -22,7 +22,6 @@ import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { isTransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
-import { isErc721Transfer } from '@/routes/transactions/entities/transfers/erc721-transfer.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 class TransactionDomainGroup {
@@ -233,11 +232,7 @@ export class TransactionsHistoryMapper {
 
   private mapTrustedTransfer(transaction: Transaction): Transaction | null {
     if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
-    if (
-      !isErc20Transfer(transaction.txInfo.transferInfo) &&
-      !isErc721Transfer(transaction.txInfo.transferInfo)
-    )
-      return transaction;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
 
     // If we have successfully retrieved the token information, and it is a
     // trusted token, return it. Else return null
