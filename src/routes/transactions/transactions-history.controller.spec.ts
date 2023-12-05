@@ -879,4 +879,75 @@ describe('Transactions History Controller (Unit)', () => {
         });
       });
   });
+
+  it('Nested transfers with a value of zero are not returned', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const trustedToken = tokenBuilder().with('trusted', true).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const transfers = [
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .with('value', '1')
+          .build(),
+      ) as Transfer,
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .with('value', '0')
+          .build(),
+      ) as Transfer,
+    ];
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+          return Promise.resolve({ data: trustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // One date label and one transaction
+        expect(response.body['results']).toHaveLength(2);
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                value: '1',
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+      });
+  });
 });
