@@ -99,10 +99,10 @@ export class SafesService {
       safe.owners.map((ownerAddress) => new AddressInfo(ownerAddress)),
       masterCopyInfo,
       versionState,
-      this.toUnixTimestampInSecondsOrNow(collectiblesTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(queuedTransactionTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(transactionHistoryTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(messagesTag).toString(),
+      this.toUnixTimestampInSecondsOrNull(collectiblesTag),
+      this.toUnixTimestampInSecondsOrNull(queuedTransactionTag),
+      this.toUnixTimestampInSecondsOrNull(transactionHistoryTag),
+      this.toUnixTimestampInSecondsOrNull(messagesTag),
       moduleAddressesInfo,
       fallbackHandlerInfo,
       guardInfo,
@@ -118,9 +118,8 @@ export class SafesService {
     return new SafeNonces(nonce);
   }
 
-  private toUnixTimestampInSecondsOrNow(date: Date | null): number {
-    const dateValue = date ? date.valueOf() : Date.now();
-    return Math.floor(dateValue / 1000);
+  private toUnixTimestampInSecondsOrNull(date: Date | null): string | null {
+    return date ? Math.floor(date.valueOf() / 1000).toString() : null;
   }
 
   private async getCollectiblesTag(
