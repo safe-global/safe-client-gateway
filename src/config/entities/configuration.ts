@@ -34,6 +34,15 @@ export default () => ({
     templates: {
       unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
     },
+    verificationCode: {
+      resendLockWindowMs: parseInt(
+        process.env.EMAIL_VERIFICATION_CODE_RESEND_LOCK_WINDOW_MS ??
+          `${30 * 1000}`,
+      ),
+      ttlMs: parseInt(
+        process.env.EMAIL_VERIFICATION_CODE_TTL_MS ?? `${5 * 60 * 1000}`,
+      ),
+    },
   },
   exchange: {
     baseUri:
