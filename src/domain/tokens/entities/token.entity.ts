@@ -11,4 +11,6 @@ export interface Token {
   name: string;
   symbol: string;
   type: TokenType;
+  // TODO: trusted should be non-null. Remove null type once features.trustedTokens is removed
+  trusted: boolean | null;
 }

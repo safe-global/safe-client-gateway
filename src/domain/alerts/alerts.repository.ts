@@ -45,7 +45,7 @@ export class AlertsRepository implements IAlertsRepository {
     );
 
     if (!decodedTransactions) {
-      return this._notifyUnknownTransaction(chainId, log);
+      return this._notifyInvalidTransaction(chainId, log);
     }
 
     for (const decodedTransaction of decodedTransactions) {
@@ -71,7 +71,7 @@ export class AlertsRepository implements IAlertsRepository {
           break;
         }
         default: {
-          return this._notifyUnknownTransaction(chainId, log);
+          return this._notifyInvalidTransaction(chainId, log);
         }
       }
     }
@@ -91,7 +91,7 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private async _notifyUnknownTransaction(
+  private async _notifyInvalidTransaction(
     chainId: string,
     log: AlertLog,
   ): Promise<void> {

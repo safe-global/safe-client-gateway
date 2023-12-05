@@ -35,3 +35,9 @@ export class TransferTransactionInfo extends TransactionInfo {
     this.transferInfo = transferInfo;
   }
 }
+
+export function isTransferTransactionInfo(
+  txInfo: TransactionInfo,
+): txInfo is TransferTransactionInfo {
+  return txInfo.type === 'Transfer';
+}

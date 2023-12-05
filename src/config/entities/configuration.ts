@@ -34,6 +34,15 @@ export default () => ({
     templates: {
       unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
     },
+    verificationCode: {
+      resendLockWindowMs: parseInt(
+        process.env.EMAIL_VERIFICATION_CODE_RESEND_LOCK_WINDOW_MS ??
+          `${30 * 1000}`,
+      ),
+      ttlMs: parseInt(
+        process.env.EMAIL_VERIFICATION_CODE_TTL_MS ?? `${5 * 60 * 1000}`,
+      ),
+    },
   },
   exchange: {
     baseUri:
@@ -72,6 +81,7 @@ export default () => ({
       process.env.FF_HUMAN_DESCRIPTION?.toLowerCase() === 'true',
     noncesRoute: process.env.FF_NONCES_ROUTE?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
+    trustedTokens: process.env.FF_TRUSTED_TOKENS?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
