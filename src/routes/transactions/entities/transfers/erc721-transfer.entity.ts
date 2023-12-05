@@ -12,6 +12,8 @@ export class Erc721Transfer extends Transfer {
   tokenSymbol: string | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   logoUri: string | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  trusted: boolean | null;
 
   constructor(
     tokenAddress: string,
@@ -19,6 +21,7 @@ export class Erc721Transfer extends Transfer {
     tokenName: string | null = null,
     tokenSymbol: string | null = null,
     logoUri: string | null = null,
+    trusted: boolean | null = null,
   ) {
     super('ERC721');
     this.tokenAddress = tokenAddress;
@@ -26,5 +29,12 @@ export class Erc721Transfer extends Transfer {
     this.tokenName = tokenName;
     this.tokenSymbol = tokenSymbol;
     this.logoUri = logoUri;
+    this.trusted = trusted;
   }
+}
+
+export function isErc721Transfer(
+  transfer: Transfer,
+): transfer is Erc721Transfer {
+  return transfer.type === 'ERC721';
 }

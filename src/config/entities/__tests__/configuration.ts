@@ -36,6 +36,10 @@ export default (): ReturnType<typeof configuration> => ({
     templates: {
       unknownRecoveryTx: faker.string.alphanumeric(),
     },
+    verificationCode: {
+      resendLockWindowMs: faker.number.int(),
+      ttlMs: faker.number.int(),
+    },
   },
   exchange: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -54,10 +58,9 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     pricesProviderChainIds: ['10'],
     humanDescription: true,
-    alerts: true,
-    recovery: true,
     noncesRoute: true,
     email: true,
+    trustedTokens: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {

@@ -11,6 +11,7 @@ export interface Email {
   safeAddress: string;
   signer: string;
   verificationCode: string | null;
+  verificationGeneratedOn: Date | null;
   verificationSentOn: Date | null;
 }
 

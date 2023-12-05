@@ -15,5 +15,5 @@ export interface IAlertsRepository {
    * @param chainId - chain where the alert log was generated
    * @param log - the {@link AlertLog} to decode
    */
-  handleAlertLog(chainId: string, log: AlertLog): void;
+  handleAlertLog(chainId: string, log: AlertLog): Promise<void>;
 }

@@ -14,6 +14,8 @@ export class Erc20Transfer extends Transfer {
   logoUri: string | null;
   @ApiPropertyOptional({ type: Number, nullable: true })
   decimals: number | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  trusted: boolean | null;
 
   constructor(
     tokenAddress: string,
@@ -22,6 +24,7 @@ export class Erc20Transfer extends Transfer {
     tokenSymbol: string | null = null,
     logoUri: string | null = null,
     decimals: number | null = null,
+    trusted: boolean | null = null,
   ) {
     super('ERC20');
     this.tokenAddress = tokenAddress;
@@ -30,5 +33,10 @@ export class Erc20Transfer extends Transfer {
     this.tokenSymbol = tokenSymbol;
     this.logoUri = logoUri;
     this.decimals = decimals;
+    this.trusted = trusted;
   }
+}
+
+export function isErc20Transfer(transfer: Transfer): transfer is Erc20Transfer {
+  return transfer.type === 'ERC20';
 }

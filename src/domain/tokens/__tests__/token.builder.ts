@@ -9,5 +9,6 @@ export function tokenBuilder(): IBuilder<Token> {
     .with('logoUri', faker.internet.url({ appendSlash: false }))
     .with('name', faker.word.sample())
     .with('symbol', faker.finance.currencySymbol())
-    .with('type', faker.helpers.arrayElement(Object.values(TokenType)));
+    .with('type', faker.helpers.arrayElement(Object.values(TokenType)))
+    .with('trusted', faker.datatype.boolean());
 }

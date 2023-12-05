@@ -47,6 +47,14 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { range } from 'lodash';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import {
+  erc20TransferBuilder,
+  toJson as erc20TransferToJson,
+} from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
+import {
+  erc721TransferBuilder,
+  toJson as erc721TransferToJson,
+} from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -56,8 +64,17 @@ describe('Transactions History Controller (Unit)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    const testConfiguration = () => ({
+      ...configuration(),
+      mappings: {
+        history: {
+          maxNestedTransfers: 5,
+        },
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
@@ -713,6 +730,314 @@ describe('Transactions History Controller (Unit)', () => {
         expect(
           body.results.filter((item) => item.type === 'TRANSACTION'),
         ).toHaveLength(maxNestedTransfers);
+      });
+  });
+
+  it('Untrusted token transfers are ignored by default', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const untrustedToken = tokenBuilder().with('trusted', false).build();
+    const trustedToken = tokenBuilder().with('trusted', true).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const transfers = [
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', untrustedToken.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+    ];
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+          return Promise.resolve({ data: trustedToken });
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+          return Promise.resolve({ data: untrustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // One date label and one transaction
+        expect(response.body['results']).toHaveLength(2);
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+      });
+  });
+
+  it('Untrusted transfers are returned when trusted=false', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const untrustedToken = tokenBuilder().with('trusted', false).build();
+    const trustedToken = tokenBuilder().with('trusted', true).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const transfers = [
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', untrustedToken.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+    ];
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+          return Promise.resolve({ data: trustedToken });
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+          return Promise.resolve({ data: untrustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // One date label and one transaction
+        expect(response.body['results']).toHaveLength(3);
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: untrustedToken.address,
+              },
+            },
+          },
+        });
+        expect(response.body['results'][2]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+      });
+  });
+
+  it('Nested transfers with a value of zero are not returned', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const trustedToken = tokenBuilder().with('trusted', true).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const transfers = [
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .with('value', '1')
+          .build(),
+      ) as Transfer,
+      erc20TransferToJson(
+        erc20TransferBuilder()
+          .with('tokenAddress', trustedToken.address)
+          .with('executionDate', date)
+          .with('value', '0')
+          .build(),
+      ) as Transfer,
+    ];
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+          return Promise.resolve({ data: trustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // One date label and one transaction
+        expect(response.body['results']).toHaveLength(2);
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                value: '1',
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+      });
+  });
+
+  it('ERC721 transfers marked as non-trusted are returned', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const notTrustedErc721 = tokenBuilder()
+      .with('trusted', false)
+      .with('type', TokenType.Erc721)
+      .build();
+    const trustedErc721 = tokenBuilder()
+      .with('trusted', true)
+      .with('type', TokenType.Erc721)
+      .build();
+    // Use the same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const transfers = [
+      erc721TransferToJson(
+        erc721TransferBuilder()
+          .with('tokenAddress', notTrustedErc721.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+      erc721TransferToJson(
+        erc721TransferBuilder()
+          .with('tokenAddress', trustedErc721.address)
+          .with('executionDate', date)
+          .build(),
+      ) as Transfer,
+    ];
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder().with('transfers', transfers).build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedErc721.address}`:
+          return Promise.resolve({ data: trustedErc721 });
+        case `${chain.transactionService}/api/v1/tokens/${notTrustedErc721.address}`:
+          return Promise.resolve({ data: notTrustedErc721 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // One date label and one transaction
+        expect(response.body['results']).toHaveLength(3);
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: notTrustedErc721.address,
+              },
+            },
+          },
+        });
+        expect(response.body['results'][2]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: trustedErc721.address,
+              },
+            },
+          },
+        });
       });
   });
 });

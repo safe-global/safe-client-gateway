@@ -100,18 +100,20 @@ export class AlertsRepository implements IAlertsRepository {
       safeAddress: log.address,
     });
 
-    if (emails.length) {
+    if (!emails.length) {
+      this.loggingService.debug(
+        `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
+      );
+    } else {
       return this.emailApi.createMessage({
         to: emails,
         template: this.configurationService.getOrThrow<string>(
           'email.templates.unknownRecoveryTx',
         ),
+        // TODO: subject and substitutions need to be set according to the template design
         subject: 'Unknown transaction attempt',
         substitutions: {},
       });
     }
-    this.loggingService.debug(
-      `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
-    );
   }
 }

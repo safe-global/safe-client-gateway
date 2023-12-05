@@ -73,6 +73,7 @@ export class TransferInfoMapper {
         token?.symbol,
         token?.logoUri,
         token?.decimals,
+        token?.trusted,
       );
     } else if (isERC721Transfer(domainTransfer)) {
       const { tokenAddress, tokenId } = domainTransfer;
@@ -85,6 +86,7 @@ export class TransferInfoMapper {
         token?.name,
         token?.symbol,
         token?.logoUri,
+        token?.trusted,
       );
     } else if (isNativeTokenTransfer(domainTransfer)) {
       return new NativeCoinTransfer(domainTransfer.value);
