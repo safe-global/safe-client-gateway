@@ -165,26 +165,35 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs> {
   static readonly FUNCTION_SIGNATURE =
     'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
 
-  private constructor(private args: Partial<T>) {}
+  private constructor(
+    private args: Partial<T>,
+    private owners?: Safe['owners'],
+  ) {}
 
-  public static new<T extends RemoveOwnerArgs>(): RemoveOwnerEncoder<T> {
-    return new RemoveOwnerEncoder<T>({});
+  public static new<T extends RemoveOwnerArgs>(
+    owners?: Safe['owners'],
+  ): RemoveOwnerEncoder<T> {
+    return new RemoveOwnerEncoder<T>({}, owners);
   }
 
   with<K extends keyof T>(key: K, value: T[K]) {
     const args: Partial<T> = { ...this.args, [key]: value };
-    return new RemoveOwnerEncoder(args);
+    return new RemoveOwnerEncoder(args, this.owners);
   }
 
-  build(owners: Safe['owners']) {
+  build() {
     const prevOwner = (() => {
-      const ownerIndex = owners.findIndex((owners) => {
-        return getAddress(owners) === getAddress(this.args.owner!);
+      if (!this.owners) {
+        return SENTINEL_ADDRESS;
+      }
+
+      const ownerIndex = this.owners.findIndex((owner) => {
+        return getAddress(owner) === getAddress(this.args.owner!);
       });
 
       return ownerIndex <= 0
         ? SENTINEL_ADDRESS
-        : getAddress(owners[ownerIndex - 1]);
+        : getAddress(this.owners[ownerIndex - 1]);
     })();
 
     return {
@@ -194,10 +203,10 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs> {
     };
   }
 
-  encode(owners: Safe['owners']): Hex {
+  encode(): Hex {
     const abi = parseAbi([RemoveOwnerEncoder.FUNCTION_SIGNATURE]);
 
-    const { prevOwner, owner, threshold } = this.build(owners);
+    const { prevOwner, owner, threshold } = this.build();
 
     return encodeFunctionData({
       abi,
@@ -207,8 +216,8 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs> {
   }
 }
 
-export function removeOwnerEncoder() {
-  return RemoveOwnerEncoder.new()
+export function removeOwnerEncoder(owners?: Safe['owners']) {
+  return RemoveOwnerEncoder.new(owners)
     .with('owner', faker.finance.ethereumAddress())
     .with('threshold', faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }));
 }
@@ -224,26 +233,35 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs> {
   static readonly FUNCTION_SIGNATURE =
     'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
 
-  private constructor(private args: Partial<T>) {}
+  private constructor(
+    private args: Partial<T>,
+    private owners?: Safe['owners'],
+  ) {}
 
-  public static new<T extends SwapOwnerArgs>(): SwapOwnerEncoder<T> {
-    return new SwapOwnerEncoder<T>({});
+  public static new<T extends SwapOwnerArgs>(
+    owners?: Safe['owners'],
+  ): SwapOwnerEncoder<T> {
+    return new SwapOwnerEncoder<T>({}, owners);
   }
 
   with<K extends keyof T>(key: K, value: T[K]) {
     const args: Partial<T> = { ...this.args, [key]: value };
-    return new SwapOwnerEncoder(args);
+    return new SwapOwnerEncoder(args, this.owners);
   }
 
-  build(owners: Safe['owners']) {
+  build() {
     const prevOwner = (() => {
-      const ownerIndex = owners.findIndex((owners) => {
-        return getAddress(owners) === getAddress(this.args.oldOwner!);
+      if (!this.owners) {
+        return SENTINEL_ADDRESS;
+      }
+
+      const ownerIndex = this.owners.findIndex((owner) => {
+        return getAddress(owner) === getAddress(this.args.oldOwner!);
       });
 
       return ownerIndex <= 0
         ? SENTINEL_ADDRESS
-        : getAddress(owners[ownerIndex - 1]);
+        : getAddress(this.owners[ownerIndex - 1]);
     })();
 
     return {
@@ -253,10 +271,10 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs> {
     };
   }
 
-  encode(owners: Safe['owners']): Hex {
+  encode(): Hex {
     const abi = parseAbi([SwapOwnerEncoder.FUNCTION_SIGNATURE]);
 
-    const { prevOwner, oldOwner, newOwner } = this.build(owners);
+    const { prevOwner, oldOwner, newOwner } = this.build();
 
     return encodeFunctionData({
       abi,
@@ -266,8 +284,8 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs> {
   }
 }
 
-export function swapOwnerEncoder() {
-  return SwapOwnerEncoder.new()
+export function swapOwnerEncoder(owners?: Safe['owners']) {
+  return SwapOwnerEncoder.new(owners)
     .with('oldOwner', faker.finance.ethereumAddress())
     .with('newOwner', faker.finance.ethereumAddress());
 }

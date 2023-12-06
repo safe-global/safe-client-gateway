@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
@@ -8,6 +8,7 @@ import {
   swapOwnerEncoder,
 } from '@/domain/alerts/__tests__/safe-transactions.encoder';
 import { multiSendEncoder } from '@/domain/alerts/__tests__/multisend-transactions.encoder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {
   let mapper: MultiSendDecoder;
@@ -18,21 +19,23 @@ describe('MultiSendDecoder', () => {
 
   describe('mapMultiSendTransactions', () => {
     it('maps multiSend transactions correctly', () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safe = safeBuilder().build();
       const transactions = [
-        addOwnerWithThresholdEncoder(),
-        removeOwnerEncoder(),
-        swapOwnerEncoder(),
-        changeThresholdEncoder(),
+        addOwnerWithThresholdEncoder().encode(),
+        removeOwnerEncoder(safe.owners).encode(),
+        swapOwnerEncoder(safe.owners).encode(),
+        changeThresholdEncoder().encode(),
       ].map((data) => ({
         operation: faker.number.int({ min: 0, max: 1 }),
         data,
         // Normally static (0/0) but more robust if we generate random values
-        to: safeAddress,
+        to: safe.address,
         value: faker.number.bigInt(),
       }));
 
-      const data = multiSendEncoder(transactions);
+      const data = multiSendEncoder()
+        .with('transactions', transactions)
+        .encode();
 
       expect(mapper.mapMultiSendTransactions(data)).toStrictEqual(transactions);
     });
