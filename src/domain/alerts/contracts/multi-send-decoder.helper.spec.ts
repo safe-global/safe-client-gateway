@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import {
@@ -29,7 +30,7 @@ describe('MultiSendDecoder', () => {
         operation: faker.number.int({ min: 0, max: 1 }),
         data,
         // Normally static (0/0) but more robust if we generate random values
-        to: safe.address,
+        to: getAddress(safe.address),
         value: faker.number.bigInt(),
       }));
 
