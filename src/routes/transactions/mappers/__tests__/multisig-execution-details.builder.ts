@@ -7,6 +7,7 @@ import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
+import { ExecutionDetailsType } from '@/routes/transactions/entities/transaction-details/execution-details.entity';
 
 const MIN_SIGNERS = 2;
 const MAX_SIGNERS = 5;
@@ -27,7 +28,7 @@ export function multisigExecutionDetailsBuilder(): IBuilder<MultisigExecutionDet
   );
 
   return Builder.new<MultisigExecutionDetails>()
-    .with('type', 'MULTISIG')
+    .with('type', ExecutionDetailsType.Multisig)
     .with('submittedAt', faker.number.int())
     .with('nonce', faker.number.int())
     .with('safeTxGas', faker.string.numeric())

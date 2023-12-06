@@ -1,7 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
-import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import {
+  TransactionInfo,
+  TransactionInfoType,
+} from '@/routes/transactions/entities/transaction-info.entity';
 
 export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty()
@@ -27,7 +30,7 @@ export class CustomTransactionInfo extends TransactionInfo {
     humanDescription: string | null,
     richDecodedInfo: RichDecodedInfo | null,
   ) {
-    super('Custom', humanDescription, richDecodedInfo);
+    super(TransactionInfoType.Custom, humanDescription, richDecodedInfo);
     this.to = to;
     this.dataSize = dataSize;
     this.value = value;
