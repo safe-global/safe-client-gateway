@@ -117,24 +117,26 @@ describe('Alerts (Unit)', () => {
         .expect({});
     });
 
-    it.todo('notifies about addOwnerWithThreshold attempts');
-    it.todo('notifies about non-addOwnerWithThreshold attempts');
+    it.skip('notifies about addOwnerWithThreshold attempts');
+    it.skip('notifies about removeOwner attempts');
+    it.skip('notifies about swapOwner attempts');
+    it.skip('notifies about changeThreshold attempts');
+    it.todo('notifies about batched owner management attempts');
     it.todo('notifies about alerts with multiple logs');
 
     it('notifies about an invalid transaction attempt', async () => {
-      const recipient = faker.finance.ethereumAddress();
       const delayModifier = faker.finance.ethereumAddress();
       const safe = safeBuilder().with('modules', [delayModifier]).build();
       const transactionAddedEvent = transactionAddedEventBuilder()
         .with('data', execTransactionEncoder().encode())
+        .with('to', safe.address)
         .build();
 
       const alert = alertBuilder()
         .with(
           'transaction',
           alertTransactionBuilder()
-            .with('from', safe.address)
-            .with('to', recipient)
+            .with('to', delayModifier)
             .with('logs', [
               alertLogBuilder()
                 .with('address', delayModifier)
