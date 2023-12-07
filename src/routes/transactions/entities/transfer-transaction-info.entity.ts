@@ -1,7 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
-import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
+import {
+  TransactionInfo,
+  TransactionInfoType,
+} from '@/routes/transactions/entities/transaction-info.entity';
 import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export enum TransferDirection {
@@ -28,7 +31,7 @@ export class TransferTransactionInfo extends TransactionInfo {
     humanDescription: string | null,
     richDecodedInfo: RichDecodedInfo | null,
   ) {
-    super('Transfer', humanDescription, richDecodedInfo);
+    super(TransactionInfoType.Transfer, humanDescription, richDecodedInfo);
     this.sender = sender;
     this.recipient = recipient;
     this.direction = direction;
@@ -39,5 +42,5 @@ export class TransferTransactionInfo extends TransactionInfo {
 export function isTransferTransactionInfo(
   txInfo: TransactionInfo,
 ): txInfo is TransferTransactionInfo {
-  return txInfo.type === 'Transfer';
+  return txInfo.type === TransactionInfoType.Transfer;
 }
