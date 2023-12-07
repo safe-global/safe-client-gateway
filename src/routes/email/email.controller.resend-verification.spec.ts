@@ -127,7 +127,11 @@ describe('Email controller resend verification tests', () => {
       .send({
         account: account,
       })
-      .expect(429);
+      .expect(429)
+      .expect({
+        message: 'Verification cannot be resent at this time',
+        statusCode: 429,
+      });
   });
 
   it('triggering email resend on verified emails throws 409', async () => {
