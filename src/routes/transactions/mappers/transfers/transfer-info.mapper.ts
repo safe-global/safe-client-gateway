@@ -19,10 +19,6 @@ import { Transfer } from '@/routes/transactions/entities/transfers/transfer.enti
 
 @Injectable()
 export class TransferInfoMapper {
-  private static readonly ERC20_TRANSFER = 'ERC20_TRANSFER';
-  private static readonly ERC721_TRANSFER = 'ERC721_TRANSFER';
-  private static readonly ETHER_TRANSFER = 'ETHER_TRANSFER';
-
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     private readonly addressInfoHelper: AddressInfoHelper,

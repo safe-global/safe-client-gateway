@@ -11,6 +11,7 @@ import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -28,6 +29,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
@@ -45,33 +48,50 @@ export class AlertsRepository implements IAlertsRepository {
     );
 
     if (!decodedTransactions) {
-      return this._notifyInvalidTransaction(chainId, log);
+      return this._notifyUnknownTransaction(chainId, log);
     }
+
+    const safe = await this.safeRepository.getSafe({
+      chainId,
+      address: decodedEvent.args.to,
+    });
 
     for (const decodedTransaction of decodedTransactions) {
       switch (decodedTransaction.functionName) {
         case 'addOwnerWithThreshold': {
-          // const safeAddress = decodedEvent.args.to;
-          // const [owner, _threshold] = decodedTransaction.args;
+          const [ownerToAdd, newThreshold] = decodedTransaction.args;
+
+          safe.owners.push(ownerToAdd);
+          safe.threshold = Number(newThreshold);
           break;
         }
         case 'removeOwner': {
-          // const safeAddress = decodedEvent.args.to;
-          // const [prevOwner, owner, _threshold] = decodedTransaction.args;
+          const [, ownerToRemove, newThreshold] = decodedTransaction.args;
+
+          safe.owners = safe.owners.filter((owner) => {
+            return owner.toLowerCase() !== ownerToRemove.toLowerCase();
+          });
+          safe.threshold = Number(newThreshold);
           break;
         }
         case 'swapOwner': {
-          // const safeAddress = decodedEvent.args.to;
-          // const [prevOwner, oldOwner, newOwner] = decodedTransaction.args;
+          const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
+
+          safe.owners = safe.owners.map((owner) => {
+            return owner.toLowerCase() === ownerToRemove.toLowerCase()
+              ? ownerToAdd
+              : owner;
+          });
           break;
         }
         case 'changeThreshold': {
-          // const safeAddress = decodedEvent.args.to;
-          // const [_threshold] = decodedTransaction.args;
+          const [newThreshold] = decodedTransaction.args;
+
+          safe.threshold = Number(newThreshold);
           break;
         }
         default: {
-          return this._notifyInvalidTransaction(chainId, log);
+          return this._notifyUnknownTransaction(chainId, log);
         }
       }
     }
@@ -79,19 +99,25 @@ export class AlertsRepository implements IAlertsRepository {
 
   private decodeTransactionAdded(data: Hex) {
     try {
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(data)
-        .map(this.safeDecoder.decodeFunctionData);
-    } catch {
-      try {
-        return [this.safeDecoder.decodeFunctionData({ data })];
-      } catch {
-        return null;
+      const decoded = this.safeDecoder.decodeFunctionData({ data });
+
+      if (decoded.functionName !== 'execTransaction') {
+        return [decoded];
       }
+
+      // TODO: Check "validity" of multiSend transaction:
+      // - calling official deployment
+      // - all transactions are to current Safe
+      // - all transactions are owner management
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(decoded.args[2])
+        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
+    } catch {
+      return null;
     }
   }
 
-  private async _notifyInvalidTransaction(
+  private async _notifyUnknownTransaction(
     chainId: string,
     log: AlertLog,
   ): Promise<void> {
