@@ -26,4 +26,16 @@ export class EmailService {
       signer: args.account,
     });
   }
+
+  async verifyEmailAddress(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+    code: string;
+  }): Promise<any> {
+    return this.repository.verifyEmailAddress({
+      ...args,
+      signer: args.account,
+    });
+  }
 }

@@ -18,6 +18,8 @@ import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { ResendVerificationDto } from '@/routes/email/entities/resend-verification-dto.entity';
 import { EmailAlreadyVerifiedExceptionFilter } from '@/routes/email/exception-filters/email-already-verified.exception-filter';
 import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/exception-filters/resend-verification-timespan-error.exception-filter';
+import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
+import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -62,6 +64,22 @@ export class EmailController {
       chainId,
       safeAddress,
       account: resendVerificationDto.account,
+    });
+  }
+
+  @Put('verify')
+  @UseFilters(InvalidVerificationCodeExceptionFilter)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async verifyEmailAddress(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body() verifyEmailDto: VerifyEmailDto,
+  ): Promise<void> {
+    await this.service.verifyEmailAddress({
+      chainId,
+      safeAddress,
+      account: verifyEmailDto.account,
+      code: verifyEmailDto.code,
     });
   }
 }
