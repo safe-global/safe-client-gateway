@@ -1,7 +1,7 @@
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import codeGenerator from '@/domain/email/code-generator';
-import { EmailAddress } from '@/domain/email/entities/email.entity';
+import { Email, EmailAddress } from '@/domain/email/entities/email.entity';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { EmailSaveError } from '@/domain/email/errors/email-save.error';
 import { ResendVerificationTimespanError } from '@/domain/email/errors/verification-timeframe.error';
@@ -100,12 +100,7 @@ export class EmailRepository implements IEmailRepository {
       }
     }
 
-    const isCodeValid = email.verificationGeneratedOn
-      ? Date.now() - email.verificationGeneratedOn.getTime() <
-        this.verificationCodeTtlMs
-      : false;
-
-    if (!isCodeValid) {
+    if (!this._isEmailVerificationCodeValid(email)) {
       // Expired code. Generate new one
       await this.emailDataSource.setVerificationCode({
         chainId: args.chainId,
@@ -125,6 +120,32 @@ export class EmailRepository implements IEmailRepository {
       ...args,
       code: email.verificationCode,
     });
+  }
+
+  async verifyEmailAddress(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+    code: string;
+  }): Promise<void> {
+    const email = await this.emailDataSource.getEmail(args);
+
+    if (email.verificationCode !== args.code) {
+      throw new InvalidVerificationCodeError(args);
+    }
+
+    if (!this._isEmailVerificationCodeValid(email)) {
+      throw new InvalidVerificationCodeError(args);
+    }
+
+    // TODO: it is possible that when verifying the email address, a new code generation was triggered
+    return this.emailDataSource.verifyEmail(args);
+  }
+
+  private _isEmailVerificationCodeValid(email: Email) {
+    if (!email.verificationGeneratedOn) return false;
+    const window = Date.now() - email.verificationGeneratedOn.getTime();
+    return window < this.verificationCodeTtlMs;
   }
 
   private async _sendEmailVerification(args: {
