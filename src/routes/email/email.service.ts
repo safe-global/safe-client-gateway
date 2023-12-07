@@ -15,4 +15,15 @@ export class EmailService {
   }): Promise<void> {
     return this.repository.saveEmail(args);
   }
+
+  async resendVerification(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void> {
+    return this.repository.resendEmailVerification({
+      ...args,
+      signer: args.account,
+    });
+  }
 }
