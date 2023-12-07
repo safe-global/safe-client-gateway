@@ -99,15 +99,21 @@ export class AlertsRepository implements IAlertsRepository {
 
   private decodeTransactionAdded(data: Hex) {
     try {
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(data)
-        .map(this.safeDecoder.decodeFunctionData);
-    } catch {
-      try {
-        return [this.safeDecoder.decodeFunctionData({ data })];
-      } catch {
-        return null;
+      const decoded = this.safeDecoder.decodeFunctionData({ data });
+
+      if (decoded.functionName !== 'execTransaction') {
+        return [decoded];
       }
+
+      // TODO: Check "validity" of multiSend transaction:
+      // - calling official deployment
+      // - all transactions are to current Safe
+      // - all transactions are owner management
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(decoded.args[2])
+        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
+    } catch {
+      return null;
     }
   }
 
