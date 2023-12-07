@@ -117,10 +117,10 @@ describe('Alerts (Unit)', () => {
         .expect({});
     });
 
-    it.skip('notifies about addOwnerWithThreshold attempts');
-    it.skip('notifies about removeOwner attempts');
-    it.skip('notifies about swapOwner attempts');
-    it.skip('notifies about changeThreshold attempts');
+    it.todo('notifies about addOwnerWithThreshold attempts');
+    it.todo('notifies about removeOwner attempts');
+    it.todo('notifies about swapOwner attempts');
+    it.todo('notifies about changeThreshold attempts');
     it.todo('notifies about batched owner management attempts');
     it.todo('notifies about alerts with multiple logs');
 
