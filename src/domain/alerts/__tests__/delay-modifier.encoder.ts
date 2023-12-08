@@ -1,3 +1,4 @@
+import { Encoder, IEncoder } from '@/__tests__/encoder';
 import { faker } from '@faker-js/faker';
 import {
   Hex,
@@ -12,66 +13,64 @@ import {
 
 type TransactionAddedEventArgs = {
   queueNonce: bigint;
-  txHash: string;
-  to: string;
+  txHash: Hex;
+  to: Hex;
   value: bigint;
-  data: string;
+  data: Hex;
   operation: 0 | 1;
 };
 
-class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs> {
+type TransactionAddedEvent = {
+  data: Hex;
+  topics: [signature: Hex, ...args: Array<Hex>];
+};
+
+class TransactionAddedEventBuilder<
+  T extends TransactionAddedEventArgs,
+  E extends TransactionAddedEvent,
+> extends Encoder<T, E> {
   static readonly NON_INDEXED_PARAMS =
     'address to, uint256 value, bytes data, uint8 operation' as const;
   static readonly EVENT_SIGNATURE =
     `event TransactionAdded(uint256 indexed queueNonce, bytes32 indexed txHash, ${TransactionAddedEventBuilder.NON_INDEXED_PARAMS})` as const;
 
-  private constructor(private args: Partial<T>) {}
-
-  public static new<
-    T extends TransactionAddedEventArgs,
-  >(): TransactionAddedEventBuilder<T> {
-    return new TransactionAddedEventBuilder<T>({});
-  }
-
-  with<K extends keyof T>(key: K, value: T[K]) {
-    const args: Partial<T> = { ...this.args, [key]: value };
-    return new TransactionAddedEventBuilder(args);
-  }
-
-  build() {
+  encode() {
     const abi = parseAbi([TransactionAddedEventBuilder.EVENT_SIGNATURE]);
+
+    const args = this.build();
 
     const data = encodeAbiParameters(
       parseAbiParameters(TransactionAddedEventBuilder.NON_INDEXED_PARAMS),
-      [
-        getAddress(this.args.to!),
-        this.args.value!,
-        this.args.data as Hex,
-        this.args.operation!,
-      ],
+      [args.to!, args.value!, args.data!, args.operation!],
     );
 
     const topics = encodeEventTopics({
       abi,
       eventName: 'TransactionAdded',
       args: {
-        queueNonce: this.args.queueNonce!,
-        txHash: this.args.txHash! as Hex,
+        queueNonce: args.queueNonce!,
+        txHash: args.txHash!,
       },
     });
 
     return {
       data,
       topics,
-    };
+    } as E;
   }
 }
 
-export function transactionAddedEventBuilder() {
-  return TransactionAddedEventBuilder.new<TransactionAddedEventArgs>()
+export function transactionAddedEventBuilder(): IEncoder<
+  TransactionAddedEventArgs,
+  TransactionAddedEvent
+> {
+  return TransactionAddedEventBuilder.new<
+    TransactionAddedEventArgs,
+    TransactionAddedEvent
+  >()
     .with('queueNonce', faker.number.bigInt())
-    .with('txHash', faker.string.hexadecimal({ length: 64 }))
-    .with('to', faker.finance.ethereumAddress())
+    .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
     .with('data', '0x')
     .with('operation', 0);
