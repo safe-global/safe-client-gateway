@@ -179,7 +179,6 @@ export class AlertsRepository implements IAlertsRepository {
         `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.safeAddress}`,
       );
     } else {
-      // TODO: Add test coverage
       return this.emailApi.createMessage({
         to: emails,
         template: this.configurationService.getOrThrow<string>(
@@ -187,7 +186,10 @@ export class AlertsRepository implements IAlertsRepository {
         ),
         // TODO: subject and substitutions need to be set according to the template design
         subject: 'Recovery attempt',
-        substitutions: {},
+        substitutions: {
+          owners: JSON.stringify(args.newSafe.owners),
+          threshold: args.newSafe.threshold.toString(),
+        },
       });
     }
   }
