@@ -15,6 +15,7 @@ describe('Configuration validator', () => {
     EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
     EMAIL_API_FROM_EMAIL: faker.internet.email(),
     EMAIL_API_KEY: faker.string.uuid(),
+    EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
   };
 
@@ -41,6 +42,7 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_API_APPLICATION_CODE' },
     { key: 'EMAIL_API_FROM_EMAIL' },
     { key: 'EMAIL_API_KEY' },
+    { key: 'EMAIL_TEMPLATE_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
@@ -66,6 +68,7 @@ describe('Configuration validator', () => {
         EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
         EMAIL_API_FROM_EMAIL: faker.internet.email(),
         EMAIL_API_KEY: faker.string.uuid(),
+        EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
         EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);

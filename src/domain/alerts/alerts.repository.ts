@@ -12,6 +12,7 @@ import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -51,49 +52,18 @@ export class AlertsRepository implements IAlertsRepository {
       return this._notifyUnknownTransaction(chainId, log);
     }
 
-    const safe = await this.safeRepository.getSafe({
-      chainId,
-      address: decodedEvent.args.to,
-    });
+    try {
+      const safeAddress = decodedEvent.args.to;
 
-    for (const decodedTransaction of decodedTransactions) {
-      switch (decodedTransaction.functionName) {
-        case 'addOwnerWithThreshold': {
-          const [ownerToAdd, newThreshold] = decodedTransaction.args;
+      const newSafe = await this.predictNewSafeSetup({
+        chainId,
+        safeAddress,
+        decodedTransactions,
+      });
 
-          safe.owners.push(ownerToAdd);
-          safe.threshold = Number(newThreshold);
-          break;
-        }
-        case 'removeOwner': {
-          const [, ownerToRemove, newThreshold] = decodedTransaction.args;
-
-          safe.owners = safe.owners.filter((owner) => {
-            return owner.toLowerCase() !== ownerToRemove.toLowerCase();
-          });
-          safe.threshold = Number(newThreshold);
-          break;
-        }
-        case 'swapOwner': {
-          const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
-
-          safe.owners = safe.owners.map((owner) => {
-            return owner.toLowerCase() === ownerToRemove.toLowerCase()
-              ? ownerToAdd
-              : owner;
-          });
-          break;
-        }
-        case 'changeThreshold': {
-          const [newThreshold] = decodedTransaction.args;
-
-          safe.threshold = Number(newThreshold);
-          break;
-        }
-        default: {
-          return this._notifyUnknownTransaction(chainId, log);
-        }
-      }
+      return this._notifyNewSafeSetup({ chainId, safeAddress, newSafe });
+    } catch {
+      return this._notifyUnknownTransaction(chainId, log);
     }
   }
 
@@ -105,16 +75,67 @@ export class AlertsRepository implements IAlertsRepository {
         return [decoded];
       }
 
-      // TODO: Check "validity" of multiSend transaction:
-      // - calling official deployment
-      // - all transactions are to current Safe
-      // - all transactions are owner management
       return this.multiSendDecoder
         .mapMultiSendTransactions(decoded.args[2])
         .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
     } catch {
       return null;
     }
+  }
+
+  private async predictNewSafeSetup(args: {
+    chainId: string;
+    safeAddress: string;
+    decodedTransactions: Array<ReturnType<SafeDecoder['decodeFunctionData']>>;
+  }): Promise<Safe> {
+    const currentSafe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+
+    return args.decodedTransactions.reduce((newSafe, decodedTransaction) => {
+      switch (decodedTransaction.functionName) {
+        case 'addOwnerWithThreshold': {
+          const [ownerToAdd, newThreshold] = decodedTransaction.args;
+
+          newSafe.owners.push(ownerToAdd);
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        case 'removeOwner': {
+          const [, ownerToRemove, newThreshold] = decodedTransaction.args;
+
+          newSafe.owners = newSafe.owners.filter((owner) => {
+            return owner.toLowerCase() !== ownerToRemove.toLowerCase();
+          });
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        case 'swapOwner': {
+          const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
+
+          newSafe.owners = newSafe.owners.map((owner) => {
+            return owner.toLowerCase() === ownerToRemove.toLowerCase()
+              ? ownerToAdd
+              : owner;
+          });
+          break;
+        }
+        case 'changeThreshold': {
+          const [newThreshold] = decodedTransaction.args;
+
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        default: {
+          throw new Error(
+            `Unknown recovery transaction ${decodedTransaction?.functionName}`,
+          );
+        }
+      }
+
+      return newSafe;
+    }, currentSafe);
   }
 
   private async _notifyUnknownTransaction(
@@ -138,6 +159,34 @@ export class AlertsRepository implements IAlertsRepository {
         ),
         // TODO: subject and substitutions need to be set according to the template design
         subject: 'Unknown transaction attempt',
+        substitutions: {},
+      });
+    }
+  }
+
+  private async _notifyNewSafeSetup(args: {
+    chainId: string;
+    safeAddress: string;
+    newSafe: Safe;
+  }): Promise<void> {
+    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
+
+    if (!emails.length) {
+      this.loggingService.debug(
+        `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.safeAddress}`,
+      );
+    } else {
+      // TODO: Add test coverage
+      return this.emailApi.createMessage({
+        to: emails,
+        template: this.configurationService.getOrThrow<string>(
+          'email.templates.recoveryTx',
+        ),
+        // TODO: subject and substitutions need to be set according to the template design
+        subject: 'Recovery attempt',
         substitutions: {},
       });
     }

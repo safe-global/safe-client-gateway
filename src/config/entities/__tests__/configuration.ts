@@ -34,6 +34,7 @@ export default (): ReturnType<typeof configuration> => ({
     fromEmail: faker.internet.email(),
     fromName: faker.person.fullName(),
     templates: {
+      recoveryTx: faker.string.alphanumeric(),
       unknownRecoveryTx: faker.string.alphanumeric(),
     },
     verificationCode: {
