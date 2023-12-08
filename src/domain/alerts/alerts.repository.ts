@@ -135,7 +135,7 @@ export class AlertsRepository implements IAlertsRepository {
       }
 
       return newSafe;
-    }, currentSafe);
+    }, structuredClone(currentSafe));
   }
 
   private async _notifyUnknownTransaction(
