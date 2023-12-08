@@ -21,7 +21,7 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 
-describe('Email controller tests', () => {
+describe('Email controller save email tests', () => {
   let app;
   let safeConfigUrl;
   let emailDatasource;

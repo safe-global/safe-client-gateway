@@ -3,6 +3,7 @@ import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface
 
 const emailDataSource = {
   getVerifiedSignerEmailsBySafeAddress: jest.fn(),
+  getEmail: jest.fn(),
   saveEmail: jest.fn(),
   setVerificationCode: jest.fn(),
   setVerificationSentDate: jest.fn(),

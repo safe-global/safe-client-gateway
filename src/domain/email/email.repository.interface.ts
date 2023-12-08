@@ -44,4 +44,22 @@ export interface IEmailRepository {
     safeAddress: string;
     signer: string;
   }): Promise<void>;
+
+  /**
+   * Verifies an email address with the provided code.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should store the email address
+   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.code - the user-provided code to validate the email verification
+   *
+   * @throws {InvalidVerificationCodeError} - if the verification code does not match the expected one
+   * @throws {InvalidVerificationCodeError} - if the verification code expired
+   */
+  verifyEmailAddress(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+    code: string;
+  }): Promise<any>;
 }
