@@ -63,6 +63,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
+      0,
     );
 
     expect(actual).toEqual(
@@ -126,6 +127,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
+      0,
     );
 
     expect(actual).toEqual(
@@ -191,6 +193,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
+      0,
     );
 
     expect(actual).toEqual(

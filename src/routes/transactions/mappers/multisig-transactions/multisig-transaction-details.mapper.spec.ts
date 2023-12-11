@@ -77,7 +77,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction, safe, 0);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -128,7 +128,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction, safe, 0);
 
     expect(actual).toEqual({
       safeAddress: safe.address,

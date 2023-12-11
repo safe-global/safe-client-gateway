@@ -55,6 +55,7 @@ export class TransactionsService {
   async getById(args: {
     chainId: string;
     txId: string;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = args.txId.split(TRANSACTION_ID_SEPARATOR);
 
@@ -66,7 +67,11 @@ export class TransactionsService {
             moduleTransactionId: id,
           }),
         ]);
-        return this.moduleTransactionDetailsMapper.mapDetails(args.chainId, tx);
+        return this.moduleTransactionDetailsMapper.mapDetails(
+          args.chainId,
+          tx,
+          args.timezoneOffsetMs,
+        );
       }
 
       case TRANSFER_PREFIX: {
@@ -84,6 +89,7 @@ export class TransactionsService {
           args.chainId,
           transfer,
           safe,
+          args.timezoneOffsetMs,
         );
       }
 
@@ -102,6 +108,7 @@ export class TransactionsService {
           args.chainId,
           tx,
           safe,
+          args.timezoneOffsetMs,
         );
       }
 
@@ -119,6 +126,7 @@ export class TransactionsService {
           args.chainId,
           tx,
           safe,
+          args.timezoneOffsetMs,
         );
       }
     }
@@ -135,6 +143,7 @@ export class TransactionsService {
     value?: string;
     nonce?: string;
     executed?: boolean;
+    timezoneOffsetMs: number;
   }): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
@@ -155,7 +164,7 @@ export class TransactionsService {
               args.chainId,
               domainTransaction,
               safeInfo,
-              0, // TODO add timezone offset query parameter
+              args.timezoneOffsetMs,
             ),
             ConflictType.None,
           ),
@@ -181,6 +190,7 @@ export class TransactionsService {
     chainId: string;
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     await this.safeRepository.addConfirmation(args);
     const transaction = await this.safeRepository.getMultiSigTransaction({
@@ -196,6 +206,7 @@ export class TransactionsService {
       args.chainId,
       transaction,
       safe,
+      args.timezoneOffsetMs,
     );
   }
 
@@ -206,6 +217,7 @@ export class TransactionsService {
     to?: string;
     module?: string;
     paginationData?: PaginationData;
+    timezoneOffsetMs: number;
   }): Promise<Page<ModuleTransaction>> {
     const domainTransactions = await this.safeRepository.getModuleTransactions({
       ...args,
@@ -220,7 +232,7 @@ export class TransactionsService {
             await this.moduleTransactionMapper.mapTransaction(
               args.chainId,
               domainTransaction,
-              0, // TODO add timezone offset query parameter
+              args.timezoneOffsetMs,
             ),
           ),
       ),
@@ -251,6 +263,7 @@ export class TransactionsService {
     value?: string;
     tokenAddress?: string;
     paginationData?: PaginationData;
+    timezoneOffsetMs: number;
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
@@ -270,7 +283,7 @@ export class TransactionsService {
               args.chainId,
               transfer,
               safeInfo,
-              0, // TODO add timezone offset query parameter
+              args.timezoneOffsetMs,
             ),
           ),
       ),
@@ -362,7 +375,7 @@ export class TransactionsService {
     routeUrl: Readonly<URL>;
     safeAddress: string;
     paginationData: PaginationData;
-    timezoneOffset: number;
+    timezoneOffsetMs: number;
     onlyTrusted: boolean;
   }): Promise<TransactionItemPage> {
     const paginationDataAdjusted = this.getAdjustedPaginationForHistory(
@@ -393,7 +406,7 @@ export class TransactionsService {
       domainTransactions.results,
       safeInfo,
       args.paginationData.offset,
-      args.timezoneOffset,
+      args.timezoneOffsetMs,
       args.onlyTrusted,
     );
 
@@ -409,6 +422,7 @@ export class TransactionsService {
     chainId: string;
     safeAddress: string;
     proposeTransactionDto: ProposeTransactionDto;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(args);
 
@@ -425,6 +439,7 @@ export class TransactionsService {
       args.chainId,
       domainTransaction,
       safe,
+      args.timezoneOffsetMs,
     );
   }
 

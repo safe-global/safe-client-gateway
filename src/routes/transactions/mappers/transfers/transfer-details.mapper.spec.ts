@@ -24,7 +24,7 @@ describe('TransferDetails mapper (Unit)', () => {
     const transferInfo = transferTransactionInfoBuilder().build();
     transferInfoMapper.mapTransferInfo.mockResolvedValue(transferInfo);
 
-    const actual = await mapper.mapDetails(chainId, transfer, safe);
+    const actual = await mapper.mapDetails(chainId, transfer, safe, 0);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
