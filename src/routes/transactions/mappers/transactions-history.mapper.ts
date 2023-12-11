@@ -172,15 +172,10 @@ export class TransactionsHistoryMapper {
    * @param timezoneOffset - Offset of time zone in milliseconds
    */
   private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
-    if (timezoneOffset != 0) {
-      timestamp.setUTCMilliseconds(timezoneOffset);
-    }
+    const date = structuredClone(timestamp);
+    date.setTime(date.getTime() + timezoneOffset);
     return new Date(
-      Date.UTC(
-        timestamp.getUTCFullYear(),
-        timestamp.getUTCMonth(),
-        timestamp.getUTCDate(),
-      ),
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     );
   }
 
