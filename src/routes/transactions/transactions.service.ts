@@ -155,6 +155,7 @@ export class TransactionsService {
               args.chainId,
               domainTransaction,
               safeInfo,
+              0, // TODO add timezone offset query parameter
             ),
             ConflictType.None,
           ),
@@ -219,6 +220,7 @@ export class TransactionsService {
             await this.moduleTransactionMapper.mapTransaction(
               args.chainId,
               domainTransaction,
+              0, // TODO add timezone offset query parameter
             ),
           ),
       ),
@@ -268,6 +270,7 @@ export class TransactionsService {
               args.chainId,
               transfer,
               safeInfo,
+              0, // TODO add timezone offset query parameter
             ),
           ),
       ),
@@ -308,7 +311,7 @@ export class TransactionsService {
     safeAddress: string;
     paginationData: PaginationData;
     trusted?: boolean;
-    timezoneOffset: number;
+    timezoneOffsetMs: number;
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -331,7 +334,7 @@ export class TransactionsService {
       args.chainId,
       this.getPreviousPageLastNonce(transactions, args.paginationData),
       this.getNextPageFirstNonce(transactions),
-      args.timezoneOffset,
+      args.timezoneOffsetMs,
     );
 
     return {
