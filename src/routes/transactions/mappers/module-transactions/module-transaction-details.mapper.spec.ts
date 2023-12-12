@@ -84,6 +84,42 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     });
   });
 
+  it('should return an execution date with a timezone offset', async () => {
+    const chainId = faker.string.numeric();
+    const safe = safeBuilder().build();
+    const transaction = moduleTransactionBuilder()
+      .with('safe', safe.address)
+      .build();
+    const txStatus =
+      sample(Object.values(TransactionStatus)) ?? TransactionStatus.Success;
+    statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
+    const txInfo = transferTransactionInfoBuilder().build();
+    transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
+    const addressInfo = addressInfoBuilder().build();
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    transactionDataMapper.buildAddressInfoIndex.mockResolvedValue({});
+    const trustedDelegateCallTarget = faker.datatype.boolean();
+    transactionDataMapper.isTrustedDelegateCall.mockResolvedValue(
+      trustedDelegateCallTarget,
+    );
+    const timezoneOffset = faker.number.int({
+      min: -12 * 60 * 60 * 1000,
+      max: 12 * 60 * 60 * 1000,
+    }); // range from -12 hours to +12 hours
+
+    const actual = await mapper.mapDetails(
+      chainId,
+      transaction,
+      timezoneOffset,
+    );
+
+    const expectedExecutionDate =
+      transaction.executionDate.getTime() + timezoneOffset;
+    expect(actual).toMatchObject({
+      executedAt: expectedExecutionDate,
+    });
+  });
+
   it('should return a TransactionDetails object with an non-empty addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
