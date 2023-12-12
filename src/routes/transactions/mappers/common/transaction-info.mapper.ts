@@ -23,7 +23,7 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
-  private readonly isHumanDescriptionEnabled: boolean;
+  private readonly isRichFragmentsEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -48,8 +48,8 @@ export class MultisigTransactionInfoMapper {
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
   ) {
-    this.isHumanDescriptionEnabled = this.configurationService.getOrThrow(
-      'features.humanDescription',
+    this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
+      'features.richFragments',
     );
   }
 
@@ -65,16 +65,15 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const richDecodedInfo = this.isHumanDescriptionEnabled
+    const richDecodedInfo = this.isRichFragmentsEnabled
       ? await this.humanDescriptionMapper.mapRichDecodedInfo(
           transaction,
           chainId,
         )
       : null;
 
-    const humanDescription = this.isHumanDescriptionEnabled
-      ? this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo)
-      : null;
+    const humanDescription =
+      this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo);
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
