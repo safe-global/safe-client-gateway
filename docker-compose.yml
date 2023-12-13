@@ -41,6 +41,7 @@ services:
       EMAIL_API_APPLICATION_CODE: ${EMAIL_API_APPLICATION_CODE-example_application_code}
       EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-example_from_email}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}
+      EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: ${EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX-example_template_unknown_recovery_tx}
     depends_on:
       - redis
       - db
