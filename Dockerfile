@@ -5,7 +5,6 @@ FROM node:20.10.0 as base
 ENV NODE_ENV production
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
-COPY --chown=node:node .yarn/plugins ./.yarn/plugins
 COPY --chown=node:node .yarn/patches ./.yarn/patches
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn workspaces focus --production
