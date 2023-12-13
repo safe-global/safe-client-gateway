@@ -100,7 +100,7 @@
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",
-  "packageManager": "yarn@3.6.3",
+  "packageManager": "yarn@4.0.2",
   "resolutions": {
     "postgres-shift@^0.1.0": "patch:postgres-shift@npm%3A0.1.0#./.yarn/patches/postgres-shift-npm-0.1.0-9342b5f6f6.patch"
   }
