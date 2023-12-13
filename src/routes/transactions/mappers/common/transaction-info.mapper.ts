@@ -65,15 +65,20 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const richDecodedInfo = this.isRichFragmentsEnabled
-      ? await this.humanDescriptionMapper.mapRichDecodedInfo(
-          transaction,
-          chainId,
-        )
-      : null;
+    const richDecodedInfo =
+      await this.humanDescriptionMapper.mapRichDecodedInfo(
+        transaction,
+        chainId,
+      );
 
     const humanDescription =
       this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo);
+
+    // If the rich fragment feature is disabled, we set it as undefined.
+    // Undefined properties are not rendered on the response
+    const richDecodedInfoApiProperty = this.isRichFragmentsEnabled
+      ? richDecodedInfo
+      : undefined;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
@@ -81,7 +86,7 @@ export class MultisigTransactionInfoMapper {
         dataSize,
         chainId,
         humanDescription,
-        richDecodedInfo,
+        richDecodedInfoApiProperty,
       );
     }
 
@@ -90,7 +95,7 @@ export class MultisigTransactionInfoMapper {
         chainId,
         transaction,
         humanDescription,
-        richDecodedInfo,
+        richDecodedInfoApiProperty,
       );
     }
 
@@ -121,7 +126,7 @@ export class MultisigTransactionInfoMapper {
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
         humanDescription,
-        richDecodedInfo,
+        richDecodedInfoApiProperty,
       );
     }
 
@@ -137,7 +142,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richDecodedInfo,
+            richDecodedInfoApiProperty,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
@@ -145,7 +150,7 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richDecodedInfo,
+            richDecodedInfoApiProperty,
           );
       }
     }
@@ -155,7 +160,7 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
       humanDescription,
-      richDecodedInfo,
+      richDecodedInfoApiProperty,
     );
   }
 
