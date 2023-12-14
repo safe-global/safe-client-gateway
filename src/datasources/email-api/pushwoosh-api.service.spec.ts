@@ -84,7 +84,7 @@ describe('PushwooshApi', () => {
 
       await expect(
         service.createMessage(createEmailMessageDto),
-      ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
     });
@@ -179,7 +179,7 @@ describe('PushwooshApi', () => {
 
       await expect(
         service.deleteEmailAddress({ emailAddress: faker.internet.email() }),
-      ).rejects.toThrowError(new DataSourceError('Unexpected error', status));
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
     });
