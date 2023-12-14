@@ -31,7 +31,6 @@ services:
     environment:
       REDIS_HOST: redis
       PRICES_PROVIDER_API_KEY: ${PRICES_PROVIDER_API_KEY-example_api_key}
-      EXCHANGE_API_KEY: ${EXCHANGE_API_KEY-example_api_key}
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
       AUTH_TOKEN: ${AUTH_TOKEN-example_auth_token}
       ALERTS_PROVIDER_SIGNING_KEY: ${ALERTS_PROVIDER_SIGNING_KEY-example_signing_key}

@@ -44,15 +44,6 @@ export default () => ({
       ),
     },
   },
-  exchange: {
-    baseUri:
-      process.env.EXCHANGE_API_BASE_URI ||
-      'https://api.apilayer.com/exchangerates_data',
-    apiKey: process.env.EXCHANGE_API_KEY,
-    cacheTtlSeconds: parseInt(
-      process.env.EXCHANGE_API_CACHE_TTL_SECONDS ?? `${60 * 60 * 12}`,
-    ),
-  },
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
     notFound: {

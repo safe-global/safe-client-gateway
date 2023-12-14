@@ -7,7 +7,6 @@ describe('Configuration validator', () => {
   const validConfiguration = {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
-    EXCHANGE_API_KEY: faker.string.uuid(),
     ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
     ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
     ALERTS_PROVIDER_ACCOUNT: faker.string.alphanumeric(),
@@ -33,7 +32,6 @@ describe('Configuration validator', () => {
 
   it.each([
     { key: 'AUTH_TOKEN' },
-    { key: 'EXCHANGE_API_KEY' },
     { key: 'ALERTS_PROVIDER_SIGNING_KEY' },
     { key: 'ALERTS_PROVIDER_API_KEY' },
     { key: 'ALERTS_PROVIDER_ACCOUNT' },
@@ -57,7 +55,6 @@ describe('Configuration validator', () => {
       validate({
         ...JSON.parse(fakeJson()),
         AUTH_TOKEN: faker.string.uuid(),
-        EXCHANGE_API_KEY: faker.string.uuid(),
         LOG_LEVEL: faker.word.words(),
         ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
         ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
