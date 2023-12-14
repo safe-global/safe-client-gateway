@@ -41,11 +41,6 @@ export default (): ReturnType<typeof configuration> => ({
       ttlMs: faker.number.int(),
     },
   },
-  exchange: {
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    cacheTtlSeconds: faker.number.int(),
-  },
   expirationTimeInSeconds: {
     default: faker.number.int(),
     notFound: {
@@ -56,7 +51,6 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
-    pricesProviderChainIds: ['10'],
     richFragments: true,
     email: true,
     trustedTokens: true,

@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
@@ -13,8 +12,6 @@ import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
-  private readonly pricesProviderChainIds: string[];
-
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -23,50 +20,10 @@ export class BalancesRepository implements IBalancesRepository {
     @Inject(IPricesRepository)
     private readonly pricesRepository: IPricesRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    private readonly balancesValidator: BalancesValidator,
     private readonly simpleBalancesValidator: SimpleBalancesValidator,
-  ) {
-    this.pricesProviderChainIds = this.configurationService.getOrThrow<
-      string[]
-    >('features.pricesProviderChainIds');
-  }
+  ) {}
 
   async getBalances(args: {
-    chainId: string;
-    safeAddress: string;
-    fiatCode: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<Balance[]> {
-    let balances: Balance[];
-    if (this.pricesProviderChainIds.includes(args.chainId)) {
-      return this._buildFromSimpleBalances(args);
-    } else {
-      const api = await this.transactionApiManager.getTransactionApi(
-        args.chainId,
-      );
-      balances = await api.getBalances({
-        safeAddress: args.safeAddress,
-        trusted: args.trusted,
-        excludeSpam: args.excludeSpam,
-      });
-      return balances.map((balance) =>
-        this.balancesValidator.validate(balance),
-      );
-    }
-  }
-
-  async clearLocalBalances(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void> {
-    const api = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
-    await api.clearLocalBalances(args.safeAddress);
-  }
-
-  private async _buildFromSimpleBalances(args: {
     chainId: string;
     safeAddress: string;
     fiatCode: string;
@@ -110,6 +67,16 @@ export class BalancesRepository implements IBalancesRepository {
         };
       }),
     );
+  }
+
+  async clearLocalBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const api = await this.transactionApiManager.getTransactionApi(
+      args.chainId,
+    );
+    await api.clearLocalBalances(args.safeAddress);
   }
 
   private async _getNativeCoinPrice(

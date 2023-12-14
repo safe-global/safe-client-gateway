@@ -5,7 +5,6 @@ const configurationSchema: Schema = {
   type: 'object',
   properties: {
     AUTH_TOKEN: { type: 'string' },
-    EXCHANGE_API_KEY: { type: 'string' },
     LOG_LEVEL: {
       type: 'string',
       enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
@@ -21,7 +20,6 @@ const configurationSchema: Schema = {
   },
   required: [
     'AUTH_TOKEN',
-    'EXCHANGE_API_KEY',
     'ALERTS_PROVIDER_SIGNING_KEY',
     'ALERTS_PROVIDER_API_KEY',
     'ALERTS_PROVIDER_ACCOUNT',
