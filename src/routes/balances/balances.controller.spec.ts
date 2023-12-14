@@ -56,323 +56,319 @@ describe('Balances Controller (Unit)', () => {
   });
 
   describe('GET /balances', () => {
-    describe('GET /balances', () => {
-      it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
-        const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
-        const tokenAddress = faker.finance.ethereumAddress();
-        const secondTokenAddress = faker.finance.ethereumAddress();
-        const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
-            .with('tokenAddress', null)
-            .with('balance', '3000000000000000000')
-            .with('token', null)
-            .build(),
-          simpleBalanceBuilder()
-            .with('tokenAddress', tokenAddress)
-            .with('balance', '4000000000000000000')
-            .with('token', balanceTokenBuilder().with('decimals', 17).build())
-            .build(),
-          simpleBalanceBuilder()
-            .with('tokenAddress', secondTokenAddress)
-            .with('balance', '3000000000000000000')
-            .with('token', balanceTokenBuilder().with('decimals', 17).build())
-            .build(),
-        ];
-        const nativeCoinId = app
-          .get(IConfigurationService)
-          .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
-        const apiKey = app
-          .get(IConfigurationService)
-          .getOrThrow('prices.apiKey');
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = faker.finance.currencyCode();
-        const nativeCoinPriceProviderResponse = {
-          [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
-        };
-        const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
-          [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
-        };
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/price`:
-              return Promise.resolve({ data: nativeCoinPriceProviderResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-              return Promise.resolve({ data: tokenPriceProviderResponse });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${
-              chain.chainId
-            }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
-          )
-          .expect(200)
-          .expect({
-            fiatTotal: '5410.25',
-            items: [
-              {
-                tokenInfo: {
-                  type: 'NATIVE_TOKEN',
-                  address: NULL_ADDRESS,
-                  decimals: chain.nativeCurrency.decimals,
-                  symbol: chain.nativeCurrency.symbol,
-                  name: chain.nativeCurrency.name,
-                  logoUri: chain.nativeCurrency.logoUri,
-                },
-                balance: '3000000000000000000',
-                fiatBalance: '4610.25',
-                fiatConversion: '1536.75',
-              },
-              {
-                tokenInfo: {
-                  type: 'ERC20',
-                  address: transactionApiBalancesResponse[1].tokenAddress,
-                  decimals: 17,
-                  symbol: transactionApiBalancesResponse[1].token?.symbol,
-                  name: transactionApiBalancesResponse[1].token?.name,
-                  logoUri: transactionApiBalancesResponse[1].token?.logoUri,
-                },
-                balance: '4000000000000000000',
-                fiatBalance: '500',
-                fiatConversion: '12.5',
-              },
-              {
-                tokenInfo: {
-                  type: 'ERC20',
-                  address: transactionApiBalancesResponse[2].tokenAddress,
-                  decimals: 17,
-                  symbol: transactionApiBalancesResponse[2].token?.symbol,
-                  name: transactionApiBalancesResponse[2].token?.name,
-                  logoUri: transactionApiBalancesResponse[2].token?.logoUri,
-                },
-                balance: '3000000000000000000',
-                fiatBalance: '300',
-                fiatConversion: '10',
-              },
-            ],
-          });
-
-        // 4 Network calls are expected
-        // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko tokens)
-        expect(networkService.get.mock.calls.length).toBe(4);
-        expect(networkService.get.mock.calls[0][0]).toBe(
-          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-        );
-        expect(networkService.get.mock.calls[1][0]).toBe(
-          `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
-        );
-        expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-          params: { trusted: false, exclude_spam: true },
-        });
-        expect(networkService.get.mock.calls[2][0]).toBe(
-          `${pricesProviderUrl}/simple/token_price/${chainName}`,
-        );
-        expect(networkService.get.mock.calls[2][1]).toStrictEqual({
-          headers: { 'x-cg-pro-api-key': apiKey },
-          params: {
-            vs_currencies: currency.toLowerCase(),
-            contract_addresses: [
-              tokenAddress.toLowerCase(),
-              secondTokenAddress.toLowerCase(),
-            ].join(','),
-          },
-        });
-        expect(networkService.get.mock.calls[3][0]).toBe(
-          `${pricesProviderUrl}/simple/price`,
-        );
-        expect(networkService.get.mock.calls[3][1]).toStrictEqual({
-          headers: { 'x-cg-pro-api-key': apiKey },
-          params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
-        });
+    it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
+      const chain = chainBuilder().with('chainId', '10').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const tokenAddress = faker.finance.ethereumAddress();
+      const secondTokenAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        simpleBalanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        simpleBalanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        simpleBalanceBuilder()
+          .with('tokenAddress', secondTokenAddress)
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
+      const apiKey = app.get(IConfigurationService).getOrThrow('prices.apiKey');
+      const chainName = app
+        .get(IConfigurationService)
+        .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
+      const currency = faker.finance.currencyCode();
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
+      };
+      const tokenPriceProviderResponse = {
+        [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
+        [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
+      };
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${pricesProviderUrl}/simple/price`:
+            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
       });
 
-      it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
-        const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
-        const tokenAddress = faker.finance.ethereumAddress();
-        const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
-            .with('tokenAddress', tokenAddress)
-            .with('balance', '4000000000000000000')
-            .with('token', balanceTokenBuilder().with('decimals', 17).build())
-            .build(),
-        ];
-        const excludeSpam = true;
-        const trusted = true;
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = faker.finance.currencyCode();
-        const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
-        };
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-              return Promise.resolve({ data: tokenPriceProviderResponse });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}/?trusted=${trusted}&exclude_spam=${excludeSpam}`,
-          )
-          .expect(200);
-
-        // trusted and exclude_spam params are passed
-        expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-          params: {
-            trusted,
-            exclude_spam: excludeSpam,
-          },
-        });
-      });
-
-      it(`maps native token correctly`, async () => {
-        const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
-        const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
-            .with('tokenAddress', null)
-            .with('balance', '3000000000000000000')
-            .with('token', null)
-            .build(),
-        ];
-        const currency = faker.finance.currencyCode();
-        const nativeCoinId = app
-          .get(IConfigurationService)
-          .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
-        const nativeCoinPriceProviderResponse = {
-          [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
-        };
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/price`:
-              return Promise.resolve({ data: nativeCoinPriceProviderResponse });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${
-              chain.chainId
-            }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
-          )
-          .expect(200)
-          .expect({
-            fiatTotal: '4610.25',
-            items: [
-              {
-                tokenInfo: {
-                  type: 'NATIVE_TOKEN',
-                  address: NULL_ADDRESS,
-                  decimals: chain.nativeCurrency.decimals,
-                  symbol: chain.nativeCurrency.symbol,
-                  name: chain.nativeCurrency.name,
-                  logoUri: chain.nativeCurrency.logoUri,
-                },
-                balance: '3000000000000000000',
-                fiatBalance: '4610.25',
-                fiatConversion: '1536.75',
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${
+            chain.chainId
+          }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '5410.25',
+          items: [
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
               },
-            ],
-          });
-      });
-
-      it('returns large numbers as is (not in scientific notation)', async () => {
-        const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
-        const tokenAddress = faker.finance.ethereumAddress();
-        const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
-            .with('tokenAddress', tokenAddress)
-            .with('balance', '40000000000000000000000000000000000')
-            .with('token', balanceTokenBuilder().with('decimals', 17).build())
-            .build(),
-        ];
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
-        const currency = faker.finance.currencyCode();
-        const tokenPriceProviderResponse = {
-          [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
-        };
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-              return Promise.resolve({ data: tokenPriceProviderResponse });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
-          )
-          .expect(200)
-          .expect({
-            fiatTotal: '1000000000000000000',
-            items: [
-              {
-                tokenInfo: {
-                  type: 'ERC20',
-                  address: transactionApiBalancesResponse[0].tokenAddress,
-                  decimals: 17,
-                  symbol: transactionApiBalancesResponse[0].token?.symbol,
-                  name: transactionApiBalancesResponse[0].token?.name,
-                  logoUri: transactionApiBalancesResponse[0].token?.logoUri,
-                },
-                balance: '40000000000000000000000000000000000',
-                fiatBalance: '1000000000000000000',
-                fiatConversion: '2.5',
+              balance: '3000000000000000000',
+              fiatBalance: '4610.25',
+              fiatConversion: '1536.75',
+            },
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[1].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[1].token?.symbol,
+                name: transactionApiBalancesResponse[1].token?.name,
+                logoUri: transactionApiBalancesResponse[1].token?.logoUri,
               },
-            ],
-          });
-
-        // 3 Network calls are expected
-        // (1. Chain data, 2. Balances, 3. Coingecko token)
-        expect(networkService.get.mock.calls.length).toBe(3);
-        expect(networkService.get.mock.calls[0][0]).toBe(
-          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-        );
-        expect(networkService.get.mock.calls[1][0]).toBe(
-          `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
-        );
-        expect(networkService.get.mock.calls[1][1]).toStrictEqual({
-          params: { trusted: false, exclude_spam: true },
+              balance: '4000000000000000000',
+              fiatBalance: '500',
+              fiatConversion: '12.5',
+            },
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[2].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[2].token?.symbol,
+                name: transactionApiBalancesResponse[2].token?.name,
+                logoUri: transactionApiBalancesResponse[2].token?.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '300',
+              fiatConversion: '10',
+            },
+          ],
         });
-        expect(networkService.get.mock.calls[2][0]).toBe(
-          `${pricesProviderUrl}/simple/token_price/${chainName}`,
-        );
+
+      // 4 Network calls are expected
+      // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko tokens)
+      expect(networkService.get.mock.calls.length).toBe(4);
+      expect(networkService.get.mock.calls[0][0]).toBe(
+        `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+      );
+      expect(networkService.get.mock.calls[1][0]).toBe(
+        `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
+      );
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+        params: { trusted: false, exclude_spam: true },
       });
+      expect(networkService.get.mock.calls[2][0]).toBe(
+        `${pricesProviderUrl}/simple/token_price/${chainName}`,
+      );
+      expect(networkService.get.mock.calls[2][1]).toStrictEqual({
+        headers: { 'x-cg-pro-api-key': apiKey },
+        params: {
+          vs_currencies: currency.toLowerCase(),
+          contract_addresses: [
+            tokenAddress.toLowerCase(),
+            secondTokenAddress.toLowerCase(),
+          ].join(','),
+        },
+      });
+      expect(networkService.get.mock.calls[3][0]).toBe(
+        `${pricesProviderUrl}/simple/price`,
+      );
+      expect(networkService.get.mock.calls[3][1]).toStrictEqual({
+        headers: { 'x-cg-pro-api-key': apiKey },
+        params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
+      });
+    });
+
+    it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
+      const chain = chainBuilder().with('chainId', '10').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const tokenAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        simpleBalanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const excludeSpam = true;
+      const trusted = true;
+      const chainName = app
+        .get(IConfigurationService)
+        .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
+      const currency = faker.finance.currencyCode();
+      const tokenPriceProviderResponse = {
+        [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
+      };
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}/?trusted=${trusted}&exclude_spam=${excludeSpam}`,
+        )
+        .expect(200);
+
+      // trusted and exclude_spam params are passed
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+        params: {
+          trusted,
+          exclude_spam: excludeSpam,
+        },
+      });
+    });
+
+    it(`maps native token correctly`, async () => {
+      const chain = chainBuilder().with('chainId', '10').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        simpleBalanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+      ];
+      const currency = faker.finance.currencyCode();
+      const nativeCoinId = app
+        .get(IConfigurationService)
+        .getOrThrow(`prices.chains.${chain.chainId}.nativeCoin`);
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
+      };
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${pricesProviderUrl}/simple/price`:
+            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${
+            chain.chainId
+          }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '4610.25',
+          items: [
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '4610.25',
+              fiatConversion: '1536.75',
+            },
+          ],
+        });
+    });
+
+    it('returns large numbers as is (not in scientific notation)', async () => {
+      const chain = chainBuilder().with('chainId', '10').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const tokenAddress = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse = [
+        simpleBalanceBuilder()
+          .with('tokenAddress', tokenAddress)
+          .with('balance', '40000000000000000000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const chainName = app
+        .get(IConfigurationService)
+        .getOrThrow(`prices.chains.${chain.chainId}.chainName`);
+      const currency = faker.finance.currencyCode();
+      const tokenPriceProviderResponse = {
+        [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
+      };
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({ data: transactionApiBalancesResponse });
+          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+            return Promise.resolve({ data: tokenPriceProviderResponse });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '1000000000000000000',
+          items: [
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[0].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[0].token?.symbol,
+                name: transactionApiBalancesResponse[0].token?.name,
+                logoUri: transactionApiBalancesResponse[0].token?.logoUri,
+              },
+              balance: '40000000000000000000000000000000000',
+              fiatBalance: '1000000000000000000',
+              fiatConversion: '2.5',
+            },
+          ],
+        });
+
+      // 3 Network calls are expected
+      // (1. Chain data, 2. Balances, 3. Coingecko token)
+      expect(networkService.get.mock.calls.length).toBe(3);
+      expect(networkService.get.mock.calls[0][0]).toBe(
+        `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+      );
+      expect(networkService.get.mock.calls[1][0]).toBe(
+        `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
+      );
+      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+        params: { trusted: false, exclude_spam: true },
+      });
+      expect(networkService.get.mock.calls[2][0]).toBe(
+        `${pricesProviderUrl}/simple/token_price/${chainName}`,
+      );
     });
 
     describe('Config API Error', () => {

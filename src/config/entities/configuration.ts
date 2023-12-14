@@ -75,8 +75,6 @@ export default () => ({
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
   },
   features: {
-    pricesProviderChainIds:
-      process.env.FF_PRICES_PROVIDER_CHAIN_IDS?.split(',') ?? [],
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     trustedTokens: process.env.FF_TRUSTED_TOKENS?.toLowerCase() === 'true',

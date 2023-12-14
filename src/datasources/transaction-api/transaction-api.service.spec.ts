@@ -75,14 +75,14 @@ describe('TransactionApi', () => {
   });
 
   describe('Balances', () => {
-    it('should return the balances retrieved', async () => {
+    it('should return the simpleBalances retrieved', async () => {
       const data = [
         simpleBalanceBuilder().build(),
         simpleBalanceBuilder().build(),
       ];
       mockDataSource.get.mockResolvedValue(data);
 
-      const actual = await service.getBalances({
+      const actual = await service.getSimpleBalances({
         safeAddress: 'test',
         trusted: true,
         excludeSpam: true,
@@ -98,7 +98,7 @@ describe('TransactionApi', () => {
       mockHttpErrorFactory.from.mockReturnValue(expected);
 
       await expect(
-        service.getBalances({
+        service.getSimpleBalances({
           safeAddress: 'test',
           trusted: true,
           excludeSpam: true,
@@ -140,7 +140,7 @@ describe('TransactionApi', () => {
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_balances_${safeAddress}`,
       );

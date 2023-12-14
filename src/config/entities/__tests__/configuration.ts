@@ -56,7 +56,6 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
-    pricesProviderChainIds: ['10'],
     richFragments: true,
     email: true,
     trustedTokens: true,

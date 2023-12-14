@@ -14,8 +14,6 @@ import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable()
 export class BalancesService {
-  static readonly fromRateCurrencyCode: string = 'USD';
-
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
