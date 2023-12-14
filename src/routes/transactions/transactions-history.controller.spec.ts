@@ -661,11 +661,11 @@ describe('Transactions History Controller (Unit)', () => {
         expect(body.previous).toContain(clientPreviousCursor);
       });
 
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledWith(
       `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`,
       {
         params: {

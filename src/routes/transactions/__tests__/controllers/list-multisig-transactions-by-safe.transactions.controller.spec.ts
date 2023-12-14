@@ -80,8 +80,8 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(1);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(1);
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -104,12 +104,12 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(2);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(2);
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledWith(
       `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`,
       expect.objectContaining({
         params: expect.objectContaining({
