@@ -2,8 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
-import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity';
+import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -20,7 +19,7 @@ export class BalancesRepository implements IBalancesRepository {
     @Inject(IPricesRepository)
     private readonly pricesRepository: IPricesRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    private readonly simpleBalancesValidator: SimpleBalancesValidator,
+    private readonly balancesValidator: BalancesValidator,
   ) {}
 
   async getBalances(args: {
@@ -32,17 +31,15 @@ export class BalancesRepository implements IBalancesRepository {
   }): Promise<Balance[]> {
     const { chainId, safeAddress, fiatCode, trusted, excludeSpam } = args;
     const api = await this.transactionApiManager.getTransactionApi(chainId);
-    const simpleBalances = await api.getSimpleBalances({
+    const balances = await api.getBalances({
       safeAddress,
       trusted,
       excludeSpam,
     });
-    simpleBalances.map((simpleBalance) =>
-      this.simpleBalancesValidator.validate(simpleBalance),
-    );
+    balances.map((balance) => this.balancesValidator.validate(balance));
 
-    const tokenAddresses = simpleBalances
-      .map((simpleBalance) => simpleBalance.tokenAddress)
+    const tokenAddresses = balances
+      .map((balance) => balance.tokenAddress)
       .filter((address): address is string => address !== null);
 
     const prices = tokenAddresses.length
@@ -50,8 +47,8 @@ export class BalancesRepository implements IBalancesRepository {
       : [];
 
     return await Promise.all(
-      simpleBalances.map(async (simpleBalance) => {
-        const tokenAddress = simpleBalance.tokenAddress?.toLowerCase() ?? null;
+      balances.map(async (balance) => {
+        const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
         let price: number | null;
         if (tokenAddress === null) {
           price = await this._getNativeCoinPrice(chainId, fiatCode);
@@ -59,9 +56,9 @@ export class BalancesRepository implements IBalancesRepository {
           const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
           price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
         }
-        const fiatBalance = await this._getFiatBalance(price, simpleBalance);
+        const fiatBalance = await this._getFiatBalance(price, balance);
         return {
-          ...simpleBalance,
+          ...balance,
           fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
           fiatConversion: price ? getNumberString(price) : null,
         };
@@ -127,7 +124,7 @@ export class BalancesRepository implements IBalancesRepository {
 
   private _getFiatBalance(
     price: number | null,
-    balance: SimpleBalance,
+    balance: Balance,
   ): number | null {
     return price !== null
       ? (price * Number(balance.balance)) /
