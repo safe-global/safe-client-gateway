@@ -21,10 +21,7 @@ export class EmailService {
     safeAddress: string;
     account: string;
   }): Promise<void> {
-    return this.repository.resendEmailVerification({
-      ...args,
-      signer: args.account,
-    });
+    return this.repository.resendEmailVerification(args);
   }
 
   async verifyEmailAddress(args: {
@@ -33,9 +30,6 @@ export class EmailService {
     account: string;
     code: string;
   }): Promise<any> {
-    return this.repository.verifyEmailAddress({
-      ...args,
-      signer: args.account,
-    });
+    return this.repository.verifyEmailAddress(args);
   }
 }

@@ -155,7 +155,7 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      emailDataSource.getVerifiedSignerEmailsBySafeAddress.mockResolvedValue(
+      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 

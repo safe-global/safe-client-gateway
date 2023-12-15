@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 
 const emailDataSource = {
-  getVerifiedSignerEmailsBySafeAddress: jest.fn(),
+  getVerifiedAccountEmailsBySafeAddress: jest.fn(),
   getEmail: jest.fn(),
   saveEmail: jest.fn(),
   setVerificationCode: jest.fn(),
