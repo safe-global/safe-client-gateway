@@ -39,7 +39,7 @@ services:
       ALERTS_PROVIDER_ACCOUNT: ${ALERTS_PROVIDER_ACCOUNT-example_account}
       ALERTS_PROVIDER_PROJECT: ${ALERTS_PROVIDER_PROJECT-example_project}
       EMAIL_API_APPLICATION_CODE: ${EMAIL_API_APPLICATION_CODE-example_application_code}
-      EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-ch@nge.me}
+      EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-changeme@example.com}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: ${EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX-example_template_unknown_recovery_tx}
     depends_on:
