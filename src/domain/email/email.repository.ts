@@ -57,7 +57,6 @@ export class EmailRepository implements IEmailRepository {
       });
       await this._sendEmailVerification({
         ...args,
-        account: args.account,
         code: verificationCode,
       });
     } catch (e) {
