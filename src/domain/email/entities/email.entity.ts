@@ -9,7 +9,7 @@ export interface Email {
   emailAddress: EmailAddress;
   isVerified: boolean;
   safeAddress: string;
-  signer: string;
+  account: string;
   verificationCode: string | null;
   verificationGeneratedOn: Date | null;
   verificationSentOn: Date | null;

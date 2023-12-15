@@ -52,12 +52,12 @@ export class EmailRepository implements IEmailRepository {
         code: verificationCode,
         emailAddress: email,
         safeAddress: args.safeAddress,
-        signer: args.account,
+        account: args.account,
         codeGenerationDate: new Date(),
       });
       await this._sendEmailVerification({
         ...args,
-        signer: args.account,
+        account: args.account,
         code: verificationCode,
       });
     } catch (e) {
@@ -70,14 +70,14 @@ export class EmailRepository implements IEmailRepository {
     safeAddress: string;
   }): Promise<string[]> {
     const emails =
-      await this.emailDataSource.getVerifiedSignerEmailsBySafeAddress(args);
+      await this.emailDataSource.getVerifiedAccountEmailsBySafeAddress(args);
     return emails.map(({ email }) => email);
   }
 
   async resendEmailVerification(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
   }): Promise<void> {
     let email = await this.emailDataSource.getEmail(args);
 
@@ -105,7 +105,7 @@ export class EmailRepository implements IEmailRepository {
       await this.emailDataSource.setVerificationCode({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        signer: args.signer,
+        account: args.account,
         code: this._generateCode(),
         codeGenerationDate: new Date(),
       });
@@ -125,7 +125,7 @@ export class EmailRepository implements IEmailRepository {
   async verifyEmailAddress(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
     code: string;
   }): Promise<void> {
     const email = await this.emailDataSource.getEmail(args);
@@ -151,7 +151,7 @@ export class EmailRepository implements IEmailRepository {
   private async _sendEmailVerification(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
     code: string;
   }) {
     // TODO send email via provider

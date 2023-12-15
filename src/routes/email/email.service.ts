@@ -23,7 +23,7 @@ export class EmailService {
   }): Promise<void> {
     return this.repository.resendEmailVerification({
       ...args,
-      signer: args.account,
+      account: args.account,
     });
   }
 
@@ -35,7 +35,7 @@ export class EmailService {
   }): Promise<any> {
     return this.repository.verifyEmailAddress({
       ...args,
-      signer: args.account,
+      account: args.account,
     });
   }
 }
