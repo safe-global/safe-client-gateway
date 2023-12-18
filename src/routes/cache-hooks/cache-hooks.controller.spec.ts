@@ -768,4 +768,54 @@ describe('Post Hook Events (Unit)', () => {
       webHookExecutionDelayMs,
     );
   });
+
+  it.each([
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
+  ])('$type clears Safes by module', async (payload) => {
+    const chainId = faker.string.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+    const moduleAddress = faker.finance.ethereumAddress();
+    const safesByModule = {
+      safes: [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ],
+    };
+    const cacheDir = new CacheDir(
+      `${chainId}_modules_${moduleAddress}`,
+      faker.string.alpha(),
+    );
+    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/modules/${moduleAddress}/safes/`:
+          return Promise.resolve({
+            data: safesByModule,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(202);
+
+    setTimeout(
+      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
+      webHookExecutionDelayMs,
+    );
+  });
 });
