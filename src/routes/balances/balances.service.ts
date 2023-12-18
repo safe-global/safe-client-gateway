@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { Balance as TransactionApiBalance } from '@/domain/balances/entities/balance.entity';
+import { Balance as DomainBalance } from '@/domain/balances/entities/balance.entity';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
 import { Balance } from '@/routes/balances/entities/balance.entity';
@@ -31,12 +31,10 @@ export class BalancesService {
     excludeSpam: boolean;
   }): Promise<Balances> {
     const { chainId } = args;
-    const simpleBalances = await this.balancesRepository.getBalances(args);
+    const domainBalances = await this.balancesRepository.getBalances(args);
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
     const balances: Balance[] = await Promise.all(
-      simpleBalances.map(async (balance) =>
-        this._mapBalance(balance, nativeCurrency),
-      ),
+      domainBalances.map(async (b) => this._mapBalance(b, nativeCurrency)),
     );
     const fiatTotal = balances
       .filter((b) => b.fiatBalance !== null)
@@ -49,7 +47,7 @@ export class BalancesService {
   }
 
   private async _mapBalance(
-    balance: TransactionApiBalance,
+    balance: DomainBalance,
     nativeCurrency: NativeCurrency,
   ): Promise<Balance> {
     const tokenAddress = balance.tokenAddress;

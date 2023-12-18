@@ -15,7 +15,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { simpleBalanceBuilder } from '@/domain/balances/entities/__tests__/simple.balance.builder';
+import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
@@ -62,17 +62,17 @@ describe('Balances Controller (Unit)', () => {
       const tokenAddress = faker.finance.ethereumAddress();
       const secondTokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', null)
           .with('balance', '3000000000000000000')
           .with('token', null)
           .build(),
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', tokenAddress)
           .with('balance', '4000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', secondTokenAddress)
           .with('balance', '3000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
@@ -199,7 +199,7 @@ describe('Balances Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', tokenAddress)
           .with('balance', '4000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
@@ -246,7 +246,7 @@ describe('Balances Controller (Unit)', () => {
       const chain = chainBuilder().with('chainId', '10').build();
       const safeAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', null)
           .with('balance', '3000000000000000000')
           .with('token', null)
@@ -304,7 +304,7 @@ describe('Balances Controller (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
-        simpleBalanceBuilder()
+        balanceBuilder()
           .with('tokenAddress', tokenAddress)
           .with('balance', '40000000000000000000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
@@ -397,7 +397,7 @@ describe('Balances Controller (Unit)', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const tokenAddress = faker.finance.ethereumAddress();
         const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
+          balanceBuilder()
             .with('tokenAddress', tokenAddress)
             .with('balance', '40000000000000000000000000000000000')
             .with('token', balanceTokenBuilder().with('decimals', 17).build())
@@ -453,7 +453,7 @@ describe('Balances Controller (Unit)', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const tokenAddress = faker.finance.ethereumAddress();
         const transactionApiBalancesResponse = [
-          simpleBalanceBuilder()
+          balanceBuilder()
             .with('tokenAddress', tokenAddress)
             .with('balance', '40000000000000000000000000000000000')
             .with('token', balanceTokenBuilder().with('decimals', 17).build())

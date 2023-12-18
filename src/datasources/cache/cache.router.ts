@@ -22,28 +22,28 @@ export class CacheRouter {
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
-  private static readonly SIMPLE_BALANCES_KEY = 'simple_balances';
+  private static readonly BALANCES_KEY = 'balances';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
 
-  static getSimpleBalancesCacheKey(args: {
+  static getBalancesCacheKey(args: {
     chainId: string;
     safeAddress: string;
   }): string {
-    return `${args.chainId}_${CacheRouter.SIMPLE_BALANCES_KEY}_${args.safeAddress}`;
+    return `${args.chainId}_${CacheRouter.BALANCES_KEY}_${args.safeAddress}`;
   }
 
-  static getSimpleBalancesCacheDir(args: {
+  static getBalancesCacheDir(args: {
     chainId: string;
     safeAddress: string;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): CacheDir {
     return new CacheDir(
-      CacheRouter.getSimpleBalancesCacheKey(args),
+      CacheRouter.getBalancesCacheKey(args),
       `${args.trusted}_${args.excludeSpam}`,
     );
   }
