@@ -39,6 +39,19 @@ export class AlertsRepository implements IAlertsRepository {
   }
 
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
+    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+      chainId,
+      // TODO: This is the address of the module, _not_ the Safe
+      // Discussion in https://github.com/safe-global/safe-client-gateway/pull/923
+      safeAddress: log.address,
+    });
+
+    if (emails.length === 0) {
+      return this.loggingService.debug(
+        `An alert for a Safe with no associated emails was received. safeAddress=${log.address}`,
+      );
+    }
+
     const decodedEvent = this.delayModifierDecoder.decodeEventLog({
       data: log.data as Hex,
       topics: log.topics as [Hex, Hex, Hex],
@@ -49,7 +62,7 @@ export class AlertsRepository implements IAlertsRepository {
     );
 
     if (!decodedTransactions) {
-      return this._notifyUnknownTransaction(chainId, log);
+      return this._notifyUnknownTransaction(emails);
     }
 
     try {
@@ -70,7 +83,7 @@ export class AlertsRepository implements IAlertsRepository {
         newSafeState,
       });
     } catch {
-      return this._notifyUnknownTransaction(chainId, log);
+      return this._notifyUnknownTransaction(emails);
     }
   }
 
@@ -140,30 +153,16 @@ export class AlertsRepository implements IAlertsRepository {
     }, structuredClone(args.safe));
   }
 
-  private async _notifyUnknownTransaction(
-    chainId: string,
-    log: AlertLog,
-  ): Promise<void> {
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
-      chainId,
-      safeAddress: log.address,
+  private async _notifyUnknownTransaction(emails: string[]): Promise<void> {
+    return this.emailApi.createMessage({
+      to: emails,
+      template: this.configurationService.getOrThrow<string>(
+        'email.templates.unknownRecoveryTx',
+      ),
+      // TODO: subject and substitutions need to be set according to the template design
+      subject: 'Unknown transaction attempt',
+      substitutions: {},
     });
-
-    if (!emails.length) {
-      this.loggingService.debug(
-        `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
-      );
-    } else {
-      return this.emailApi.createMessage({
-        to: emails,
-        template: this.configurationService.getOrThrow<string>(
-          'email.templates.unknownRecoveryTx',
-        ),
-        // TODO: subject and substitutions need to be set according to the template design
-        subject: 'Unknown transaction attempt',
-        substitutions: {},
-      });
-    }
   }
 
   private async _notifySafeSetup(args: {
