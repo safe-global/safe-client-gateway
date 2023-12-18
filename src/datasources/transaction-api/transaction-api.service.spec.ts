@@ -9,7 +9,7 @@ import { TransactionApi } from '@/datasources/transaction-api/transaction-api.se
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { simpleBalanceBuilder } from '@/domain/balances/entities/__tests__/simple.balance.builder';
+import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -75,14 +75,11 @@ describe('TransactionApi', () => {
   });
 
   describe('Balances', () => {
-    it('should return the simpleBalances retrieved', async () => {
-      const data = [
-        simpleBalanceBuilder().build(),
-        simpleBalanceBuilder().build(),
-      ];
+    it('should return the balances retrieved', async () => {
+      const data = [balanceBuilder().build(), balanceBuilder().build()];
       mockDataSource.get.mockResolvedValue(data);
 
-      const actual = await service.getSimpleBalances({
+      const actual = await service.getBalances({
         safeAddress: 'test',
         trusted: true,
         excludeSpam: true,
@@ -98,7 +95,7 @@ describe('TransactionApi', () => {
       mockHttpErrorFactory.from.mockReturnValue(expected);
 
       await expect(
-        service.getSimpleBalances({
+        service.getBalances({
           safeAddress: 'test',
           trusted: true,
           excludeSpam: true,
@@ -142,7 +139,7 @@ describe('TransactionApi', () => {
 
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
-        `${chainId}_simple_balances_${safeAddress}`,
+        `${chainId}_balances_${safeAddress}`,
       );
       expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });

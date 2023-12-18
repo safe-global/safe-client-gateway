@@ -17,7 +17,7 @@ export class AlertsController {
   @UseGuards(AlertsRouteGuard)
   @UseGuards(TenderlySignatureGuard)
   @Post('/alerts')
-  @HttpCode(200)
+  @HttpCode(202)
   async postAlert(
     @Body(AlertValidationPipe)
     alertPayload: Alert,

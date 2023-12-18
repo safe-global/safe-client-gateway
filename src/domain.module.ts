@@ -55,7 +55,7 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
 import { PricesApiModule } from '@/datasources/prices-api/prices-api.module';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { PricesRepository } from '@/domain/prices/prices.repository';
-import { SimpleBalancesValidator } from '@/domain/balances/simple-balances.validator';
+import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
 import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
@@ -107,7 +107,7 @@ import { EmailApiModule } from '@/datasources/email-api/email-api.module';
     SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
-    SimpleBalancesValidator,
+    BalancesValidator,
     TokenValidator,
     TransactionTypeValidator,
     TransferValidator,

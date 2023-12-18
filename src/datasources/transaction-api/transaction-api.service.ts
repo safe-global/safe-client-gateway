@@ -26,7 +26,7 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
-import { SimpleBalance } from '../../domain/balances/entities/simple-balance.entity';
+import { Balance } from '@/domain/balances/entities/balance.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -61,13 +61,13 @@ export class TransactionApi implements ITransactionApi {
       );
   }
 
-  async getSimpleBalances(args: {
+  async getBalances(args: {
     safeAddress: string;
     trusted?: boolean;
     excludeSpam?: boolean;
-  }): Promise<SimpleBalance[]> {
+  }): Promise<Balance[]> {
     try {
-      const cacheDir = CacheRouter.getSimpleBalancesCacheDir({
+      const cacheDir = CacheRouter.getBalancesCacheDir({
         chainId: this.chainId,
         ...args,
       });
@@ -90,7 +90,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const key = CacheRouter.getSimpleBalancesCacheKey({
+    const key = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
