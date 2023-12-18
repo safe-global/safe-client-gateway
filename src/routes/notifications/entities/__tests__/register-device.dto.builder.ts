@@ -6,7 +6,7 @@ import { RegisterDeviceDto } from '@/routes/notifications/entities/register-devi
 import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests__/safe-registration.builder';
 
 export function registerDeviceDtoBuilder(): IBuilder<RegisterDeviceDto> {
-  return Builder.new<RegisterDeviceDto>()
+  return new Builder<RegisterDeviceDto>()
     .with('uuid', faker.string.uuid())
     .with('cloudMessagingToken', faker.string.uuid())
     .with('buildNumber', faker.string.numeric())

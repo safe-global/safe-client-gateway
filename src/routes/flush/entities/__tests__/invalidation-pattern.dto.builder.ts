@@ -4,7 +4,7 @@ import { invalidationPatternDetailsBuilder } from '@/routes/flush/entities/__tes
 import { InvalidationPatternDto } from '@/routes/flush/entities/invalidation-pattern.dto.entity';
 
 export function invalidationPatternDtoBuilder(): IBuilder<InvalidationPatternDto> {
-  return Builder.new<InvalidationPatternDto>()
+  return new Builder<InvalidationPatternDto>()
     .with('invalidate', faker.word.sample())
     .with('patternDetails', invalidationPatternDetailsBuilder().build());
 }

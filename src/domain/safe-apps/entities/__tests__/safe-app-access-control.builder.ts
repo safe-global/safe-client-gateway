@@ -7,7 +7,7 @@ import {
 } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 
 export function safeAppAccessControlBuilder(): IBuilder<SafeAppAccessControl> {
-  return Builder.new<SafeAppAccessControl>()
+  return new Builder<SafeAppAccessControl>()
     .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
     .with(
       'value',

@@ -1,14 +1,15 @@
-import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
+import { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import {
-  Hex,
   concat,
   encodeFunctionData,
   encodePacked,
   getAddress,
+  Hex,
   parseAbi,
   size,
 } from 'viem';
+import { Builder } from '@/__tests__/builder';
 
 // multiSend
 
@@ -16,7 +17,10 @@ type MultiSendArgs = {
   transactions: Hex;
 };
 
-class MultiSendEncoder<T extends MultiSendArgs> extends EncoderBuilder<T> {
+class MultiSendEncoder<T extends MultiSendArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function multiSend(bytes memory transactions)' as const;
 
@@ -53,7 +57,7 @@ export function multiSendTransactionsEncoder(
   return concat(encodedTransactions);
 }
 
-export function multiSendEncoder(): IEncoderBuilder<MultiSendArgs> {
+export function multiSendEncoder() {
   const transactions = multiSendTransactionsEncoder([
     {
       operation: 0,
@@ -63,8 +67,5 @@ export function multiSendEncoder(): IEncoderBuilder<MultiSendArgs> {
     },
   ]);
 
-  return MultiSendEncoder.new<MultiSendArgs>().with(
-    'transactions',
-    transactions,
-  );
+  return new MultiSendEncoder().with('transactions', transactions);
 }

@@ -10,7 +10,7 @@ import { TransactionInfoType } from '@/routes/transactions/entities/transaction-
 import { TransferType } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export function transferTransactionInfoBuilder(): IBuilder<TransferTransactionInfo> {
-  return Builder.new<TransferTransactionInfo>()
+  return new Builder<TransferTransactionInfo>()
     .with('type', TransactionInfoType.Transfer)
     .with('sender', addressInfoBuilder().build())
     .with('recipient', addressInfoBuilder().build())

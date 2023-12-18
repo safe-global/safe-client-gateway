@@ -8,7 +8,7 @@ import {
 } from '@/routes/alerts/entities/alert.dto.entity';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
-  return Builder.new<AlertLog>()
+  return new Builder<AlertLog>()
     .with('address', faker.finance.ethereumAddress())
     .with(
       'topics',
@@ -20,7 +20,7 @@ export function alertLogBuilder(): IBuilder<AlertLog> {
 }
 
 export function alertTransactionBuilder(): IBuilder<AlertTransaction> {
-  return Builder.new<AlertTransaction>()
+  return new Builder<AlertTransaction>()
     .with('network', faker.string.numeric())
     .with('block_hash', faker.string.hexadecimal({ length: 66 }))
     .with('block_number', faker.number.int())
@@ -45,7 +45,7 @@ export function alertTransactionBuilder(): IBuilder<AlertTransaction> {
 }
 
 export function alertBuilder(): IBuilder<Alert> {
-  return Builder.new<Alert>()
+  return new Builder<Alert>()
     .with('id', faker.string.uuid())
     .with('event_type', faker.helpers.enumValue(EventType))
     .with('transaction', alertTransactionBuilder().build());
