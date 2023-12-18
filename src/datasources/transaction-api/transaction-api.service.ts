@@ -27,6 +27,7 @@ import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
+import { SafesByModule } from '@/domain/modules/entities/safes-by-module.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -440,6 +441,32 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  async getSafesByModule(moduleAddress: string): Promise<SafesByModule> {
+    try {
+      const cacheDir = CacheRouter.getSafesByModuleCacheDir({
+        chainId: this.chainId,
+        moduleAddress,
+      });
+      const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
+      return await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async clearSafesByModule(moduleAddress: string): Promise<void> {
+    const key = CacheRouter.getSafesByModuleCacheKey({
+      chainId: this.chainId,
+      moduleAddress,
+    });
+    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,

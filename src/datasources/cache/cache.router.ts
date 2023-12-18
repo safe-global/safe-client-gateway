@@ -14,6 +14,7 @@ export class CacheRouter {
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
+  private static readonly MODULES_KEY = 'modules';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
@@ -146,6 +147,23 @@ export class CacheRouter {
 
   static getTransfersCacheKey(args: { chainId: string; safeAddress: string }) {
     return `${args.chainId}_${CacheRouter.TRANSFERS_KEY}_${args.safeAddress}`;
+  }
+
+  static getSafesByModuleCacheDir(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): CacheDir {
+    return new CacheDir(
+      this.getSafesByModuleCacheKey(args), // TODO: Refactor other `CacheDir` keys to use respective key methods
+      '',
+    );
+  }
+
+  static getSafesByModuleCacheKey(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.MODULES_KEY}_${args.moduleAddress}`;
   }
 
   static getModuleTransactionCacheDir(args: {

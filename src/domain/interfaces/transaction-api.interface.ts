@@ -9,6 +9,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { Estimation } from '@/domain/estimations/entities/estimation.entity';
 import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
 import { Message } from '@/domain/messages/entities/message.entity';
+import { SafesByModule } from '@/domain/modules/entities/safes-by-module.entity';
 import { Device } from '@/domain/notifications/entities/device.entity';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
@@ -110,6 +111,10 @@ export interface ITransactionApi {
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
   }): Promise<unknown>;
+
+  getSafesByModule(moduleAddress: string): Promise<SafesByModule>;
+
+  clearSafesByModule(moduleAddress: string): Promise<void>;
 
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
