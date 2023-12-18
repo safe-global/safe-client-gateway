@@ -16,6 +16,9 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
+  blockchain: {
+    infuraToken: process.env.INFURA_TOKEN,
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_HOST || 'localhost',

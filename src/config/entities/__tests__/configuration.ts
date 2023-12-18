@@ -18,6 +18,9 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
   },
+  blockchain: {
+    infuraToken: faker.string.alphanumeric(),
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_TEST_HOST || 'localhost',

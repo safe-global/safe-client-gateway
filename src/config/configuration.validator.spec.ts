@@ -15,6 +15,7 @@ describe('Configuration validator', () => {
     EMAIL_API_FROM_EMAIL: faker.internet.email(),
     EMAIL_API_KEY: faker.string.uuid(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
+    INFURA_TOKEN: faker.string.alphanumeric(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -40,6 +41,7 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_API_FROM_EMAIL' },
     { key: 'EMAIL_API_KEY' },
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
+    { key: 'INFURA_TOKEN' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
     ({ key }) => {
@@ -64,6 +66,7 @@ describe('Configuration validator', () => {
         EMAIL_API_FROM_EMAIL: faker.internet.email(),
         EMAIL_API_KEY: faker.string.uuid(),
         EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
+        INFURA_TOKEN: faker.string.alphanumeric(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
   });

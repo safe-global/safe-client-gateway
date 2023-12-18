@@ -28,6 +28,7 @@ const configurationSchema: Schema = {
     'EMAIL_API_FROM_EMAIL',
     'EMAIL_API_KEY',
     'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX',
+    'INFURA_TOKEN',
   ],
 };
 
