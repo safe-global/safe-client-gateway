@@ -47,9 +47,10 @@ export class AlertsRepository implements IAlertsRepository {
     });
 
     if (emails.length === 0) {
-      return this.loggingService.debug(
+      this.loggingService.debug(
         `An alert for a Safe with no associated emails was received. safeAddress=${log.address}`,
       );
+      return;
     }
 
     const decodedEvent = this.delayModifierDecoder.decodeEventLog({
