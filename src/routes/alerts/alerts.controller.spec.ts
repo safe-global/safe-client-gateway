@@ -27,6 +27,7 @@ import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { execTransactionEncoder } from '@/domain/alerts/__tests__/safe-transactions.encoder';
 import { transactionAddedEventBuilder } from '@/domain/alerts/__tests__/delay-modifier.encoder';
+import { getAddress } from 'viem';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -129,8 +130,8 @@ describe('Alerts (Unit)', () => {
       const safe = safeBuilder().with('modules', [delayModifier]).build();
       const transactionAddedEvent = transactionAddedEventBuilder()
         .with('data', execTransactionEncoder().encode())
-        .with('to', safe.address)
-        .build();
+        .with('to', getAddress(safe.address))
+        .encode();
 
       const alert = alertBuilder()
         .with(
