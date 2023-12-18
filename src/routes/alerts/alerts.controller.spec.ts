@@ -581,6 +581,7 @@ describe('Alerts (Unit)', () => {
         const delayModifier = faker.finance.ethereumAddress();
         const safe = safeBuilder().with('modules', [delayModifier]).build();
         const transactionAddedEvent = transactionAddedEventBuilder()
+          // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
           .with('data', execTransactionEncoder().encode())
           .with('to', safe.address)
           .build();

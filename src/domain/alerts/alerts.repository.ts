@@ -44,7 +44,7 @@ export class AlertsRepository implements IAlertsRepository {
       topics: log.topics as [Hex, Hex, Hex],
     });
 
-    const decodedTransactions = this.decodeTransactionAdded(
+    const decodedTransactions = this._decodeTransactionAdded(
       decodedEvent.args.data,
     );
 
@@ -55,19 +55,26 @@ export class AlertsRepository implements IAlertsRepository {
     try {
       const safeAddress = decodedEvent.args.to;
 
-      const newSafe = await this.predictNewSafeSetup({
+      const safe = await this.safeRepository.getSafe({
         chainId,
-        safeAddress,
+        address: safeAddress,
+      });
+
+      const newSafeState = await this._mapSafeSetup({
+        safe,
         decodedTransactions,
       });
 
-      return this._notifyNewSafeSetup({ chainId, safeAddress, newSafe });
+      return this._notifySafeSetup({
+        chainId,
+        newSafeState,
+      });
     } catch {
       return this._notifyUnknownTransaction(chainId, log);
     }
   }
 
-  private decodeTransactionAdded(data: Hex) {
+  private _decodeTransactionAdded(data: Hex) {
     try {
       const decoded = this.safeDecoder.decodeFunctionData({ data });
 
@@ -75,24 +82,19 @@ export class AlertsRepository implements IAlertsRepository {
         return [decoded];
       }
 
+      const execTransactionData = decoded.args[2];
       return this.multiSendDecoder
-        .mapMultiSendTransactions(decoded.args[2])
+        .mapMultiSendTransactions(execTransactionData)
         .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
     } catch {
       return null;
     }
   }
 
-  private async predictNewSafeSetup(args: {
-    chainId: string;
-    safeAddress: string;
+  private async _mapSafeSetup(args: {
+    safe: Safe;
     decodedTransactions: Array<ReturnType<SafeDecoder['decodeFunctionData']>>;
   }): Promise<Safe> {
-    const currentSafe = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
-
     return args.decodedTransactions.reduce((newSafe, decodedTransaction) => {
       switch (decodedTransaction.functionName) {
         case 'addOwnerWithThreshold': {
@@ -135,7 +137,7 @@ export class AlertsRepository implements IAlertsRepository {
       }
 
       return newSafe;
-    }, structuredClone(currentSafe));
+    }, structuredClone(args.safe));
   }
 
   private async _notifyUnknownTransaction(
@@ -164,19 +166,18 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private async _notifyNewSafeSetup(args: {
+  private async _notifySafeSetup(args: {
     chainId: string;
-    safeAddress: string;
-    newSafe: Safe;
+    newSafeState: Safe;
   }): Promise<void> {
     const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
       chainId: args.chainId,
-      safeAddress: args.safeAddress,
+      safeAddress: args.newSafeState.address,
     });
 
     if (!emails.length) {
       this.loggingService.debug(
-        `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.safeAddress}`,
+        `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.newSafeState.address}`,
       );
     } else {
       return this.emailApi.createMessage({
@@ -187,8 +188,8 @@ export class AlertsRepository implements IAlertsRepository {
         // TODO: subject and substitutions need to be set according to the template design
         subject: 'Recovery attempt',
         substitutions: {
-          owners: JSON.stringify(args.newSafe.owners),
-          threshold: args.newSafe.threshold.toString(),
+          owners: JSON.stringify(args.newSafeState.owners),
+          threshold: args.newSafeState.threshold.toString(),
         },
       });
     }
