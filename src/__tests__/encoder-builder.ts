@@ -2,11 +2,14 @@ import { Hex } from 'viem';
 
 import { Builder, IBuilder } from '@/__tests__/builder';
 
-export interface IEncoder<T, E = Hex> extends IBuilder<T> {
+export interface IEncoderBuilder<T, E = Hex> extends IBuilder<T> {
   encode(): E;
 }
 
-export class Encoder<T, E = Hex> extends Builder<T> implements IEncoder<T, E> {
+export class EncoderBuilder<T, E = Hex>
+  extends Builder<T>
+  implements IEncoderBuilder<T, E>
+{
   encode(): E {
     throw new Error('Method not implemented.');
   }

@@ -1,4 +1,4 @@
-import { Encoder, IEncoder } from '@/__tests__/encoder';
+import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import {
   Hex,
@@ -28,7 +28,7 @@ type TransactionAddedEvent = {
 class TransactionAddedEventBuilder<
   T extends TransactionAddedEventArgs,
   E extends TransactionAddedEvent,
-> extends Encoder<T, E> {
+> extends EncoderBuilder<T, E> {
   static readonly NON_INDEXED_PARAMS =
     'address to, uint256 value, bytes data, uint8 operation' as const;
   static readonly EVENT_SIGNATURE =
@@ -60,7 +60,7 @@ class TransactionAddedEventBuilder<
   }
 }
 
-export function transactionAddedEventBuilder(): IEncoder<
+export function transactionAddedEventBuilder(): IEncoderBuilder<
   TransactionAddedEventArgs,
   TransactionAddedEvent
 > {

@@ -1,4 +1,4 @@
-import { Encoder, IEncoder } from '@/__tests__/encoder';
+import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import {
   Hex,
@@ -16,7 +16,7 @@ type MultiSendArgs = {
   transactions: Hex;
 };
 
-class MultiSendEncoder<T extends MultiSendArgs> extends Encoder<T> {
+class MultiSendEncoder<T extends MultiSendArgs> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function multiSend(bytes memory transactions)' as const;
 
@@ -53,7 +53,7 @@ export function multiSendTransactionsEncoder(
   return concat(encodedTransactions);
 }
 
-export function multiSendEncoder(): IEncoder<MultiSendArgs> {
+export function multiSendEncoder(): IEncoderBuilder<MultiSendArgs> {
   const transactions = multiSendTransactionsEncoder([
     {
       operation: 0,

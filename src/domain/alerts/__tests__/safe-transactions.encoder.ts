@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { parseAbi, encodeFunctionData, getAddress, Hex, pad } from 'viem';
 
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Encoder, IEncoder } from '@/__tests__/encoder';
+import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });
 const SENTINEL_ADDRESS = pad('0x1', { dir: 'left', size: 20 });
@@ -38,7 +38,9 @@ type ExecTransactionArgs = {
   signatures: Hex;
 };
 
-class ExecTransactionEncoder<T extends ExecTransactionArgs> extends Encoder<T> {
+class ExecTransactionEncoder<
+  T extends ExecTransactionArgs,
+> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)' as const;
 
@@ -66,7 +68,7 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs> extends Encoder<T> {
   }
 }
 
-export function execTransactionEncoder(): IEncoder<ExecTransactionArgs> {
+export function execTransactionEncoder(): IEncoderBuilder<ExecTransactionArgs> {
   return ExecTransactionEncoder.new<ExecTransactionArgs>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
@@ -89,7 +91,7 @@ type AddOwnerWithThresholdArgs = {
 
 class AddOwnerWithThresholdEncoder<
   T extends AddOwnerWithThresholdArgs,
-> extends Encoder<T> {
+> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function addOwnerWithThreshold(address owner, uint256 _threshold)' as const;
 
@@ -106,7 +108,7 @@ class AddOwnerWithThresholdEncoder<
   }
 }
 
-export function addOwnerWithThresholdEncoder(): IEncoder<AddOwnerWithThresholdArgs> {
+export function addOwnerWithThresholdEncoder(): IEncoderBuilder<AddOwnerWithThresholdArgs> {
   return AddOwnerWithThresholdEncoder.new<AddOwnerWithThresholdArgs>()
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('threshold', faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }));
@@ -120,7 +122,7 @@ type RemoveOwnerArgs = {
   threshold: bigint;
 };
 
-class RemoveOwnerEncoder<T extends RemoveOwnerArgs> extends Encoder<T> {
+class RemoveOwnerEncoder<T extends RemoveOwnerArgs> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
 
@@ -139,7 +141,7 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs> extends Encoder<T> {
 
 export function removeOwnerEncoder(
   owners?: Safe['owners'],
-): IEncoder<RemoveOwnerArgs> {
+): IEncoderBuilder<RemoveOwnerArgs> {
   const owner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(owner, owners);
 
@@ -157,7 +159,7 @@ type SwapOwnerArgs = {
   newOwner: Hex;
 };
 
-class SwapOwnerEncoder<T extends SwapOwnerArgs> extends Encoder<T> {
+class SwapOwnerEncoder<T extends SwapOwnerArgs> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
 
@@ -176,7 +178,7 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs> extends Encoder<T> {
 
 export function swapOwnerEncoder(
   owners?: Safe['owners'],
-): IEncoder<SwapOwnerArgs> {
+): IEncoderBuilder<SwapOwnerArgs> {
   const oldOwner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(oldOwner, owners);
 
@@ -192,7 +194,9 @@ type ChangeThresholdArgs = {
   threshold: bigint;
 };
 
-class ChangeThresholdEncoder<T extends ChangeThresholdArgs> extends Encoder<T> {
+class ChangeThresholdEncoder<
+  T extends ChangeThresholdArgs,
+> extends EncoderBuilder<T> {
   static readonly FUNCTION_SIGNATURE =
     'function changeThreshold(uint256 _threshold)';
 
@@ -209,7 +213,7 @@ class ChangeThresholdEncoder<T extends ChangeThresholdArgs> extends Encoder<T> {
   }
 }
 
-export function changeThresholdEncoder(): IEncoder<ChangeThresholdArgs> {
+export function changeThresholdEncoder(): IEncoderBuilder<ChangeThresholdArgs> {
   return ChangeThresholdEncoder.new<ChangeThresholdArgs>().with(
     'threshold',
     faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }),
