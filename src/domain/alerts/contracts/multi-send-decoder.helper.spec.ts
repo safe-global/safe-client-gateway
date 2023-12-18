@@ -8,7 +8,10 @@ import {
   removeOwnerEncoder,
   swapOwnerEncoder,
 } from '@/domain/alerts/__tests__/safe-transactions.encoder';
-import { multiSendEncoder } from '@/domain/alerts/__tests__/multisend-transactions.encoder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {
@@ -34,8 +37,10 @@ describe('MultiSendDecoder', () => {
         value: faker.number.bigInt(),
       }));
 
+      const encodedTransactions = multiSendTransactionsEncoder(transactions);
+
       const data = multiSendEncoder()
-        .with('transactions', transactions)
+        .with('transactions', encodedTransactions)
         .encode();
 
       expect(mapper.mapMultiSendTransactions(data)).toStrictEqual(transactions);
