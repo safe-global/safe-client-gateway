@@ -1,13 +1,14 @@
-import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
+import { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import {
-  Hex,
   encodeAbiParameters,
   encodeEventTopics,
   getAddress,
+  Hex,
   parseAbi,
   parseAbiParameters,
 } from 'viem';
+import { Builder } from '@/__tests__/builder';
 
 // TransactionAdded
 
@@ -25,10 +26,10 @@ type TransactionAddedEvent = {
   topics: [signature: Hex, ...args: Array<Hex>];
 };
 
-class TransactionAddedEventBuilder<
-  T extends TransactionAddedEventArgs,
-  E extends TransactionAddedEvent,
-> extends EncoderBuilder<T, E> {
+class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
+  extends Builder<T>
+  implements IEncoder<TransactionAddedEvent>
+{
   static readonly NON_INDEXED_PARAMS =
     'address to, uint256 value, bytes data, uint8 operation' as const;
   static readonly EVENT_SIGNATURE =
@@ -53,21 +54,15 @@ class TransactionAddedEventBuilder<
       },
     });
 
-    return {
+    return <TransactionAddedEvent>{
       data,
       topics,
-    } as E;
+    };
   }
 }
 
-export function transactionAddedEventBuilder(): IEncoderBuilder<
-  TransactionAddedEventArgs,
-  TransactionAddedEvent
-> {
-  return TransactionAddedEventBuilder.new<
-    TransactionAddedEventArgs,
-    TransactionAddedEvent
-  >()
+export function transactionAddedEventBuilder() {
+  return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
     .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('to', getAddress(faker.finance.ethereumAddress()))

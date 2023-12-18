@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { parseAbi, encodeFunctionData, getAddress, Hex, pad } from 'viem';
+import { encodeFunctionData, getAddress, Hex, pad, parseAbi } from 'viem';
 
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { EncoderBuilder, IEncoderBuilder } from '@/__tests__/encoder-builder';
+import { IEncoder } from '@/__tests__/encoder-builder';
+import { Builder } from '@/__tests__/builder';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });
 const SENTINEL_ADDRESS = pad('0x1', { dir: 'left', size: 20 });
@@ -38,9 +39,10 @@ type ExecTransactionArgs = {
   signatures: Hex;
 };
 
-class ExecTransactionEncoder<
-  T extends ExecTransactionArgs,
-> extends EncoderBuilder<T> {
+class ExecTransactionEncoder<T extends ExecTransactionArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)' as const;
 
@@ -68,8 +70,8 @@ class ExecTransactionEncoder<
   }
 }
 
-export function execTransactionEncoder(): IEncoderBuilder<ExecTransactionArgs> {
-  return ExecTransactionEncoder.new<ExecTransactionArgs>()
+export function execTransactionEncoder() {
+  return new ExecTransactionEncoder()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
     .with('data', '0x')
@@ -89,9 +91,10 @@ type AddOwnerWithThresholdArgs = {
   threshold: bigint;
 };
 
-class AddOwnerWithThresholdEncoder<
-  T extends AddOwnerWithThresholdArgs,
-> extends EncoderBuilder<T> {
+class AddOwnerWithThresholdEncoder<T extends AddOwnerWithThresholdArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function addOwnerWithThreshold(address owner, uint256 _threshold)' as const;
 
@@ -108,8 +111,8 @@ class AddOwnerWithThresholdEncoder<
   }
 }
 
-export function addOwnerWithThresholdEncoder(): IEncoderBuilder<AddOwnerWithThresholdArgs> {
-  return AddOwnerWithThresholdEncoder.new<AddOwnerWithThresholdArgs>()
+export function addOwnerWithThresholdEncoder() {
+  return new AddOwnerWithThresholdEncoder()
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('threshold', faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }));
 }
@@ -122,7 +125,10 @@ type RemoveOwnerArgs = {
   threshold: bigint;
 };
 
-class RemoveOwnerEncoder<T extends RemoveOwnerArgs> extends EncoderBuilder<T> {
+class RemoveOwnerEncoder<T extends RemoveOwnerArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
 
@@ -139,13 +145,11 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs> extends EncoderBuilder<T> {
   }
 }
 
-export function removeOwnerEncoder(
-  owners?: Safe['owners'],
-): IEncoderBuilder<RemoveOwnerArgs> {
+export function removeOwnerEncoder(owners?: Safe['owners']) {
   const owner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(owner, owners);
 
-  return RemoveOwnerEncoder.new<RemoveOwnerArgs>()
+  return new RemoveOwnerEncoder()
     .with('prevOwner', prevOwner)
     .with('owner', owner)
     .with('threshold', faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }));
@@ -159,7 +163,10 @@ type SwapOwnerArgs = {
   newOwner: Hex;
 };
 
-class SwapOwnerEncoder<T extends SwapOwnerArgs> extends EncoderBuilder<T> {
+class SwapOwnerEncoder<T extends SwapOwnerArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
 
@@ -176,13 +183,11 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs> extends EncoderBuilder<T> {
   }
 }
 
-export function swapOwnerEncoder(
-  owners?: Safe['owners'],
-): IEncoderBuilder<SwapOwnerArgs> {
+export function swapOwnerEncoder(owners?: Safe['owners']) {
   const oldOwner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(oldOwner, owners);
 
-  return SwapOwnerEncoder.new<SwapOwnerArgs>()
+  return new SwapOwnerEncoder()
     .with('prevOwner', prevOwner)
     .with('oldOwner', oldOwner)
     .with('newOwner', getAddress(faker.finance.ethereumAddress()));
@@ -194,9 +199,10 @@ type ChangeThresholdArgs = {
   threshold: bigint;
 };
 
-class ChangeThresholdEncoder<
-  T extends ChangeThresholdArgs,
-> extends EncoderBuilder<T> {
+class ChangeThresholdEncoder<T extends ChangeThresholdArgs>
+  extends Builder<T>
+  implements IEncoder
+{
   static readonly FUNCTION_SIGNATURE =
     'function changeThreshold(uint256 _threshold)';
 
@@ -213,8 +219,8 @@ class ChangeThresholdEncoder<
   }
 }
 
-export function changeThresholdEncoder(): IEncoderBuilder<ChangeThresholdArgs> {
-  return ChangeThresholdEncoder.new<ChangeThresholdArgs>().with(
+export function changeThresholdEncoder() {
+  return new ChangeThresholdEncoder().with(
     'threshold',
     faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }),
   );

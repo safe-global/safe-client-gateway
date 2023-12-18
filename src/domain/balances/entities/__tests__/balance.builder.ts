@@ -4,7 +4,7 @@ import { balanceTokenBuilder } from './balance.token.builder';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 
 export function balanceBuilder(): IBuilder<Balance> {
-  return Builder.new<Balance>()
+  return new Builder<Balance>()
     .with('tokenAddress', faker.finance.ethereumAddress())
     .with('token', balanceTokenBuilder().build())
     .with('balance', faker.string.numeric());

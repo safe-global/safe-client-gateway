@@ -13,7 +13,7 @@ const MIN_SIGNERS = 2;
 const MAX_SIGNERS = 5;
 
 function multisigConfirmationDetailsBuilder(): IBuilder<MultisigConfirmationDetails> {
-  return Builder.new<MultisigConfirmationDetails>()
+  return new Builder<MultisigConfirmationDetails>()
     .with('signer', addressInfoBuilder().build())
     .with('signature', faker.string.hexadecimal())
     .with('submittedAt', faker.number.int());
@@ -27,7 +27,7 @@ export function multisigExecutionDetailsBuilder(): IBuilder<MultisigExecutionDet
     multisigConfirmationDetailsBuilder().build(),
   );
 
-  return Builder.new<MultisigExecutionDetails>()
+  return new Builder<MultisigExecutionDetails>()
     .with('type', ExecutionDetailsType.Multisig)
     .with('submittedAt', faker.number.int())
     .with('nonce', faker.number.int())

@@ -7,7 +7,7 @@ import { safeAppSocialProfileBuilder } from '@/domain/safe-apps/entities/__tests
 import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export function safeAppBuilder(): IBuilder<SafeApp> {
-  return Builder.new<SafeApp>()
+  return new Builder<SafeApp>()
     .with('id', faker.number.int())
     .with('url', faker.internet.url({ appendSlash: false }))
     .with('name', faker.word.sample())
