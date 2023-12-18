@@ -44,22 +44,16 @@ export class AlertsRepository implements IAlertsRepository {
       topics: log.topics as [Hex, Hex, Hex],
     });
 
-    const decodedTransactions = this._decodeTransactionAdded(
-      decodedEvent.args.data,
-    );
-
-    if (!decodedTransactions) {
-      return this._notifyUnknownTransaction(chainId, log);
-    }
-
     try {
       const safeAddress = decodedEvent.args.to;
-
       const safe = await this.safeRepository.getSafe({
         chainId,
         address: safeAddress,
       });
 
+      const decodedTransactions = this._decodeTransactionAdded(
+        decodedEvent.args.data,
+      );
       const newSafeState = await this._mapSafeSetup({
         safe,
         decodedTransactions,
@@ -75,20 +69,16 @@ export class AlertsRepository implements IAlertsRepository {
   }
 
   private _decodeTransactionAdded(data: Hex) {
-    try {
-      const decoded = this.safeDecoder.decodeFunctionData({ data });
+    const decoded = this.safeDecoder.decodeFunctionData({ data });
 
-      if (decoded.functionName !== 'execTransaction') {
-        return [decoded];
-      }
-
-      const execTransactionData = decoded.args[2];
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(execTransactionData)
-        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
-    } catch {
-      return null;
+    if (decoded.functionName !== 'execTransaction') {
+      return [decoded];
     }
+
+    const execTransactionData = decoded.args[2];
+    return this.multiSendDecoder
+      .mapMultiSendTransactions(execTransactionData)
+      .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
   }
 
   private async _mapSafeSetup(args: {
