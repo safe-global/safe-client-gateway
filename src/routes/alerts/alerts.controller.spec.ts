@@ -195,7 +195,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -284,7 +284,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -372,7 +372,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -450,7 +450,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -562,7 +562,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -644,7 +644,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -736,7 +736,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -799,7 +799,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -856,7 +856,7 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(200)
+          .expect(202)
           .expect({});
 
         const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -1076,7 +1076,7 @@ describe('Alerts (Unit)', () => {
         .set('x-tenderly-signature', signature)
         .set('date', timestamp)
         .send(alert)
-        .expect(200)
+        .expect(202)
         .expect({});
 
       const expectedTargetEmailAddresses = verifiedSignerEmails.map(
@@ -1163,7 +1163,7 @@ describe('Alerts (Unit)', () => {
         .set('x-tenderly-signature', signature)
         .set('date', timestamp)
         .send(alert)
-        .expect(200)
+        .expect(202)
         .expect({});
 
       const expectedTargetEmailAddresses = verifiedSignerEmails.map(
