@@ -16,6 +16,7 @@ const configurationSchema: Schema = {
     EMAIL_API_APPLICATION_CODE: { type: 'string' },
     EMAIL_API_FROM_EMAIL: { type: 'string', format: 'email' },
     EMAIL_API_KEY: { type: 'string' },
+    EMAIL_TEMPLATE_RECOVERY_TX: { type: 'string' },
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: { type: 'string' },
   },
   required: [
@@ -27,6 +28,7 @@ const configurationSchema: Schema = {
     'EMAIL_API_APPLICATION_CODE',
     'EMAIL_API_FROM_EMAIL',
     'EMAIL_API_KEY',
+    'EMAIL_TEMPLATE_RECOVERY_TX',
     'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX',
   ],
 };

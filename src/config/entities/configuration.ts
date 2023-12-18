@@ -32,6 +32,7 @@ export default () => ({
     fromEmail: process.env.EMAIL_API_FROM_EMAIL,
     fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
     templates: {
+      recoveryTx: process.env.EMAIL_TEMPLATE_RECOVERY_TX,
       unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
     },
     verificationCode: {

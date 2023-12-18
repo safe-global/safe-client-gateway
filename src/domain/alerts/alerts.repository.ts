@@ -12,6 +12,7 @@ import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -38,46 +39,98 @@ export class AlertsRepository implements IAlertsRepository {
   }
 
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
+    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+      chainId,
+      // TODO: This is the address of the module, _not_ the Safe
+      // Discussion in https://github.com/safe-global/safe-client-gateway/pull/923
+      safeAddress: log.address,
+    });
+
+    if (emails.length === 0) {
+      this.loggingService.debug(
+        `An alert for a Safe with no associated emails was received. safeAddress=${log.address}`,
+      );
+      return;
+    }
+
     const decodedEvent = this.delayModifierDecoder.decodeEventLog({
       data: log.data as Hex,
       topics: log.topics as [Hex, Hex, Hex],
     });
 
-    const decodedTransactions = this.decodeTransactionAdded(
+    const decodedTransactions = this._decodeTransactionAdded(
       decodedEvent.args.data,
     );
 
     if (!decodedTransactions) {
-      return this._notifyUnknownTransaction(chainId, log);
+      return this._notifyUnknownTransaction(emails);
     }
 
-    const safe = await this.safeRepository.getSafe({
-      chainId,
-      address: decodedEvent.args.to,
-    });
+    try {
+      const safeAddress = decodedEvent.args.to;
 
-    for (const decodedTransaction of decodedTransactions) {
+      const safe = await this.safeRepository.getSafe({
+        chainId,
+        address: safeAddress,
+      });
+
+      const newSafeState = await this._mapSafeSetup({
+        safe,
+        decodedTransactions,
+      });
+
+      return this._notifySafeSetup({
+        chainId,
+        newSafeState,
+      });
+    } catch {
+      return this._notifyUnknownTransaction(emails);
+    }
+  }
+
+  private _decodeTransactionAdded(data: Hex) {
+    try {
+      const decoded = this.safeDecoder.decodeFunctionData({ data });
+
+      if (decoded.functionName !== 'execTransaction') {
+        return [decoded];
+      }
+
+      const execTransactionData = decoded.args[2];
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(execTransactionData)
+        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
+    } catch {
+      return null;
+    }
+  }
+
+  private async _mapSafeSetup(args: {
+    safe: Safe;
+    decodedTransactions: Array<ReturnType<SafeDecoder['decodeFunctionData']>>;
+  }): Promise<Safe> {
+    return args.decodedTransactions.reduce((newSafe, decodedTransaction) => {
       switch (decodedTransaction.functionName) {
         case 'addOwnerWithThreshold': {
           const [ownerToAdd, newThreshold] = decodedTransaction.args;
 
-          safe.owners.push(ownerToAdd);
-          safe.threshold = Number(newThreshold);
+          newSafe.owners.push(ownerToAdd);
+          newSafe.threshold = Number(newThreshold);
           break;
         }
         case 'removeOwner': {
           const [, ownerToRemove, newThreshold] = decodedTransaction.args;
 
-          safe.owners = safe.owners.filter((owner) => {
+          newSafe.owners = newSafe.owners.filter((owner) => {
             return owner.toLowerCase() !== ownerToRemove.toLowerCase();
           });
-          safe.threshold = Number(newThreshold);
+          newSafe.threshold = Number(newThreshold);
           break;
         }
         case 'swapOwner': {
           const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
 
-          safe.owners = safe.owners.map((owner) => {
+          newSafe.owners = newSafe.owners.map((owner) => {
             return owner.toLowerCase() === ownerToRemove.toLowerCase()
               ? ownerToAdd
               : owner;
@@ -87,58 +140,57 @@ export class AlertsRepository implements IAlertsRepository {
         case 'changeThreshold': {
           const [newThreshold] = decodedTransaction.args;
 
-          safe.threshold = Number(newThreshold);
+          newSafe.threshold = Number(newThreshold);
           break;
         }
         default: {
-          return this._notifyUnknownTransaction(chainId, log);
+          throw new Error(
+            `Unknown recovery transaction ${decodedTransaction?.functionName}`,
+          );
         }
       }
-    }
+
+      return newSafe;
+    }, structuredClone(args.safe));
   }
 
-  private decodeTransactionAdded(data: Hex) {
-    try {
-      const decoded = this.safeDecoder.decodeFunctionData({ data });
-
-      if (decoded.functionName !== 'execTransaction') {
-        return [decoded];
-      }
-
-      // TODO: Check "validity" of multiSend transaction:
-      // - calling official deployment
-      // - all transactions are to current Safe
-      // - all transactions are owner management
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(decoded.args[2])
-        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
-    } catch {
-      return null;
-    }
+  private async _notifyUnknownTransaction(emails: string[]): Promise<void> {
+    return this.emailApi.createMessage({
+      to: emails,
+      template: this.configurationService.getOrThrow<string>(
+        'email.templates.unknownRecoveryTx',
+      ),
+      // TODO: subject and substitutions need to be set according to the template design
+      subject: 'Unknown transaction attempt',
+      substitutions: {},
+    });
   }
 
-  private async _notifyUnknownTransaction(
-    chainId: string,
-    log: AlertLog,
-  ): Promise<void> {
+  private async _notifySafeSetup(args: {
+    chainId: string;
+    newSafeState: Safe;
+  }): Promise<void> {
     const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
-      chainId,
-      safeAddress: log.address,
+      chainId: args.chainId,
+      safeAddress: args.newSafeState.address,
     });
 
     if (!emails.length) {
       this.loggingService.debug(
-        `An alert log for an invalid transaction with no verified emails associated was thrown for Safe ${log.address}`,
+        `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.newSafeState.address}`,
       );
     } else {
       return this.emailApi.createMessage({
         to: emails,
         template: this.configurationService.getOrThrow<string>(
-          'email.templates.unknownRecoveryTx',
+          'email.templates.recoveryTx',
         ),
         // TODO: subject and substitutions need to be set according to the template design
-        subject: 'Unknown transaction attempt',
-        substitutions: {},
+        subject: 'Recovery attempt',
+        substitutions: {
+          owners: JSON.stringify(args.newSafeState.owners),
+          threshold: args.newSafeState.threshold.toString(),
+        },
       });
     }
   }
