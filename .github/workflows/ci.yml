@@ -75,8 +75,6 @@ jobs:
       - run: yarn run build
       - run: yarn run ${{matrix.task}}
         env:
-          EXCHANGE_API_BASE_URI: http://api.exchangeratesapi.io/v1
-          EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}

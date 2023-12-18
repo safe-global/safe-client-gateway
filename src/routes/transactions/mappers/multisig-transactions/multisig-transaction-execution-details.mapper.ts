@@ -10,8 +10,8 @@ import { AddressInfoHelper } from '@/routes/common/address-info/address-info.hel
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
-  MultisigExecutionDetails,
   MultisigConfirmationDetails,
+  MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 
 @Injectable()
@@ -27,6 +27,7 @@ export class MultisigTransactionExecutionDetailsMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
+    timezoneOffsetMs: number,
   ): Promise<MultisigExecutionDetails> {
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
     const gasToken = transaction.gasToken ?? NULL_ADDRESS;
@@ -61,8 +62,11 @@ export class MultisigTransactionExecutionDetailsMapper {
         this._getRejectors(chainId, transaction),
       ]);
 
+    const date = structuredClone(transaction.submissionDate);
+    date.setTime(date.getTime() + timezoneOffsetMs);
+
     return new MultisigExecutionDetails(
-      transaction.submissionDate.getTime(),
+      date.getTime(),
       transaction.nonce,
       transaction.safeTxGas?.toString() ?? '0',
       transaction.baseGas?.toString() ?? '0',

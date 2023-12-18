@@ -127,8 +127,8 @@ describe('Chains Controller (Unit)', () => {
           ],
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -149,8 +149,8 @@ describe('Chains Controller (Unit)', () => {
         code: 500,
       });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -175,8 +175,8 @@ describe('Chains Controller (Unit)', () => {
         arguments: [],
       });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -260,7 +260,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect(backboneResponse);
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -283,8 +283,8 @@ describe('Chains Controller (Unit)', () => {
           code: 400,
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
@@ -304,7 +304,7 @@ describe('Chains Controller (Unit)', () => {
           code: 502,
         });
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -341,7 +341,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect(masterCopiesResponse);
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -364,8 +364,8 @@ describe('Chains Controller (Unit)', () => {
           code: 400,
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
@@ -385,7 +385,7 @@ describe('Chains Controller (Unit)', () => {
           code: 502,
         });
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );

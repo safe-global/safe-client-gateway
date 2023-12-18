@@ -5,7 +5,6 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
-import { Balance } from '@/domain/balances/entities/balance.entity';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
@@ -62,34 +61,6 @@ export class TransactionApi implements ITransactionApi {
       );
   }
 
-  async getBalances(args: {
-    safeAddress: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<Balance[]> {
-    try {
-      const cacheDir = CacheRouter.getBalanceCacheDir({
-        chainId: this.chainId,
-        ...args,
-      });
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/usd/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            trusted: args.trusted,
-            exclude_spam: args.excludeSpam,
-          },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-  }
-
   async getSimpleBalances(args: {
     safeAddress: string;
     trusted?: boolean;
@@ -119,18 +90,11 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const balancesCacheKey = CacheRouter.getBalancesCacheKey({
+    const key = CacheRouter.getSimpleBalancesCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    const simpleBalancesCacheKey = CacheRouter.getSimpleBalancesCacheKey({
-      chainId: this.chainId,
-      safeAddress,
-    });
-    await Promise.all([
-      this.cacheService.deleteByKey(balancesCacheKey),
-      this.cacheService.deleteByKey(simpleBalancesCacheKey),
-    ]);
+    await this.cacheService.deleteByKey(key);
   }
 
   async getDataDecoded(args: {

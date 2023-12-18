@@ -79,7 +79,7 @@ describe('Transaction API Manager Tests', () => {
     const transactionApi = await target.getTransactionApi(chain.chainId);
     await transactionApi.getBackbone();
 
-    expect(dataSourceMock.get).toBeCalledWith({
+    expect(dataSourceMock.get).toHaveBeenCalledWith({
       cacheDir: expect.anything(),
       url: `${expectedUrl}/api/v1/about`,
       notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,

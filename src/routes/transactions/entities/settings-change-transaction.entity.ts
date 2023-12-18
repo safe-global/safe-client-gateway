@@ -17,7 +17,7 @@ export class SettingsChangeTransaction extends TransactionInfo {
     dataDecoded: DataDecoded,
     settingsInfo: SettingsChange | null,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null,
+    richDecodedInfo: RichDecodedInfo | null | undefined,
   ) {
     super(
       TransactionInfoType.SettingsChange,

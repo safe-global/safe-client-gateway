@@ -1,9 +1,8 @@
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { SafeState } from '@/routes/safes/entities/safe-info.entity';
 import { SafesService } from '@/routes/safes/safes.service';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
-import { NoncesRouteGuard } from '@/routes/safes/guards/nonces-route.guard';
 
 @ApiTags('safes')
 @Controller({
@@ -21,7 +20,6 @@ export class SafesController {
     return this.service.getSafeInfo({ chainId, safeAddress });
   }
 
-  @UseGuards(NoncesRouteGuard)
   @ApiOkResponse({ type: SafeNonces })
   @Get('chains/:chainId/safes/:safeAddress/nonces')
   async getNonces(

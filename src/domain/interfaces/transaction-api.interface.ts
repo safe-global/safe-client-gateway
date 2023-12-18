@@ -1,5 +1,4 @@
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
-import { Balance } from '@/domain/balances/entities/balance.entity';
 import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
@@ -23,12 +22,6 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export interface ITransactionApi {
-  getBalances(args: {
-    safeAddress: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<Balance[]>;
-
   getSimpleBalances(args: {
     safeAddress: string;
     trusted?: boolean;

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import {
-  TRANSFER_PREFIX,
   TRANSACTION_ID_SEPARATOR,
+  TRANSFER_PREFIX,
 } from '@/routes/transactions/constants';
 import { TransactionDetails } from '@/routes/transactions/entities/transaction-details/transaction-details.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
@@ -17,11 +17,15 @@ export class TransferDetailsMapper {
     chainId: string,
     transfer: Transfer,
     safe: Safe,
+    timezoneOffsetMs: number,
   ): Promise<TransactionDetails> {
+    const date = structuredClone(transfer.executionDate);
+    date.setTime(date.getTime() + timezoneOffsetMs);
+
     return {
       safeAddress: safe.address,
       txId: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-      executedAt: transfer.executionDate?.getTime() ?? null,
+      executedAt: date.getTime(),
       txStatus: TransactionStatus.Success,
       txInfo: await this.transferInfoMapper.mapTransferInfo(
         chainId,

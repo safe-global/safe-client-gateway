@@ -96,6 +96,7 @@ export class TransactionsHistoryMapper {
             chainId,
             safe,
             onlyTrusted,
+            timezoneOffset,
           )
         )
           .filter(<T>(x: T | undefined): x is T => x != null)
@@ -172,15 +173,10 @@ export class TransactionsHistoryMapper {
    * @param timezoneOffset - Offset of time zone in milliseconds
    */
   private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
-    if (timezoneOffset != 0) {
-      timestamp.setUTCMilliseconds(timezoneOffset);
-    }
+    const date = structuredClone(timestamp);
+    date.setTime(date.getTime() + timezoneOffset);
     return new Date(
-      Date.UTC(
-        timestamp.getUTCFullYear(),
-        timestamp.getUTCMonth(),
-        timestamp.getUTCDate(),
-      ),
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     );
   }
 
@@ -189,6 +185,7 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
+    timezoneOffsetMs: number,
   ): Promise<TransactionItem[]> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
     const result: TransactionItem[] = [];
@@ -198,6 +195,7 @@ export class TransactionsHistoryMapper {
         chainId,
         transfer,
         safe,
+        timezoneOffsetMs,
       );
 
       const transferWithValue = this.mapZeroValueTransfer(nestedTransaction);
@@ -248,6 +246,7 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
+    timezoneOffsetMs: number,
   ): Promise<(TransactionItem | TransactionItem[] | undefined)[]> {
     return Promise.all(
       transactionGroup.transactions.map(async (transaction) => {
@@ -257,6 +256,7 @@ export class TransactionsHistoryMapper {
               chainId,
               transaction,
               safe,
+              timezoneOffsetMs,
             ),
           );
         } else if (isModuleTransaction(transaction)) {
@@ -264,6 +264,7 @@ export class TransactionsHistoryMapper {
             await this.moduleTransactionMapper.mapTransaction(
               chainId,
               transaction,
+              timezoneOffsetMs,
             ),
           );
         } else if (isEthereumTransaction(transaction)) {
@@ -274,6 +275,7 @@ export class TransactionsHistoryMapper {
               chainId,
               safe,
               onlyTrusted,
+              timezoneOffsetMs,
             );
           }
         } else if (isCreationTransaction(transaction)) {
@@ -282,6 +284,7 @@ export class TransactionsHistoryMapper {
               chainId,
               transaction,
               safe,
+              timezoneOffsetMs,
             ),
           );
         } else {

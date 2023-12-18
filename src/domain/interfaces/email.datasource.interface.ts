@@ -9,22 +9,22 @@ export interface IEmailDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to use as filter
    */
-  getVerifiedSignerEmailsBySafeAddress(args: {
+  getVerifiedAccountEmailsBySafeAddress(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<{ email: string }[]>;
 
   /**
-   * Gets the email associated with a signer of a Safe for a specific chain.
+   * Gets the email associated with an account of a Safe for a specific chain.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to use as filter
-   * @param args.signer - the owner address to which link the email address is linked to
+   * @param args.account - the owner address to which link the email address is linked to
    */
   getEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
   }): Promise<Email>;
 
   /**
@@ -33,7 +33,7 @@ export interface IEmailDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
-   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.account - the owner address to which we should link the email address to
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
@@ -41,7 +41,7 @@ export interface IEmailDataSource {
     chainId: string;
     safeAddress: string;
     emailAddress: EmailAddress;
-    signer: string;
+    account: string;
     code: string;
     codeGenerationDate: Date;
   }): Promise<void>;
@@ -53,14 +53,14 @@ export interface IEmailDataSource {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address
-   * @param args.signer - the owner address
+   * @param args.account - the owner address
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
   setVerificationCode(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
     code: string;
     codeGenerationDate: Date;
   }): Promise<void>;
@@ -70,26 +70,26 @@ export interface IEmailDataSource {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address
-   * @param args.signer - the owner address
+   * @param args.account - the owner address
    * @param args.sent_on - the verification-sent date
    */
   setVerificationSentDate(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
     sentOn: Date;
   }): Promise<void>;
 
   /**
-   * Verifies the email address for a signer of a Safe.
+   * Verifies the email address for an account of a Safe.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address
-   * @param args.signer - the owner address
+   * @param args.account - the owner address
    */
   verifyEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
   }): Promise<void>;
 }
