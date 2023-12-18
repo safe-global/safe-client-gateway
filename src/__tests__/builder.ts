@@ -5,7 +5,7 @@ export interface IBuilder<T> {
 }
 
 export class Builder<T> implements IBuilder<T> {
-  private constructor(private target: Partial<T>) {}
+  protected constructor(private target: Partial<T>) {}
 
   /**
    * Returns a new {@link Builder} with the property {@link key} set to {@link value}.

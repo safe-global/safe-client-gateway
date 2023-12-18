@@ -37,8 +37,11 @@ import { NetworkService } from '@/datasources/network/network.service.interface'
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { getAddress } from 'viem';
-import { multiSendEncoder } from '@/domain/alerts/__tests__/multisend-transactions.encoder';
 import { getMultiSendCallOnlyDeployment } from '@safe-global/safe-deployments';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -143,8 +146,8 @@ describe('Alerts (Unit)', () => {
         const { threshold, owner } = addOwnerWithThreshold.build();
         const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', addOwnerWithThreshold.encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
@@ -225,12 +228,15 @@ describe('Alerts (Unit)', () => {
           .with('modules', [delayModifier])
           .build();
 
-        const removeOwner = removeOwnerEncoder(owners).with('owner', owners[1]);
+        const removeOwner = removeOwnerEncoder(owners).with(
+          'owner',
+          getAddress(owners[1]),
+        );
         const { threshold } = removeOwner.build();
         const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', removeOwner.encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
@@ -312,13 +318,13 @@ describe('Alerts (Unit)', () => {
           .build();
 
         const swapOwner = swapOwnerEncoder(owners)
-          .with('oldOwner', owners[1])
-          .with('newOwner', faker.finance.ethereumAddress());
+          .with('oldOwner', getAddress(owners[1]))
+          .with('newOwner', getAddress(faker.finance.ethereumAddress()));
         const { newOwner } = swapOwner.build();
         const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', swapOwner.encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
@@ -395,8 +401,8 @@ describe('Alerts (Unit)', () => {
         const { threshold } = changeThreshold.build();
         const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', changeThreshold.encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
@@ -479,29 +485,36 @@ describe('Alerts (Unit)', () => {
 
         const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
         const removeOwner = removeOwnerEncoder(safe.owners)
-          .with('owner', owners[0])
+          .with('owner', getAddress(owners[0]))
           .with('threshold', faker.number.bigInt());
-        const multiSend = multiSendEncoder().with('transactions', [
+        const multiSendTransactions = multiSendTransactionsEncoder([
           {
             operation: 0,
-            to: safe.address,
+            to: getAddress(safe.address),
             value: BigInt(0),
             data: addOwnerWithThreshold.encode(),
           },
           {
             operation: 0,
-            to: safe.address,
+            to: getAddress(safe.address),
             value: BigInt(0),
             data: removeOwner.encode(),
           },
         ]);
+        const multiSend = multiSendEncoder().with(
+          'transactions',
+          multiSendTransactions,
+        );
         const execTransaction = execTransactionEncoder()
           .with('data', multiSend.encode())
-          .with('to', getMultiSendCallOnlyDeployment()!.defaultAddress!);
+          .with(
+            'to',
+            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+          );
         const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', execTransaction.encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
@@ -585,8 +598,8 @@ describe('Alerts (Unit)', () => {
         const transactionAddedEvent = transactionAddedEventBuilder()
           // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
           .with('data', execTransactionEncoder().encode())
-          .with('to', safe.address)
-          .build();
+          .with('to', getAddress(safe.address))
+          .encode();
 
         const alert = alertBuilder()
           .with(
