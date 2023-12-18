@@ -7,9 +7,9 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
-import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { simpleBalanceBuilder } from '@/domain/balances/entities/__tests__/simple.balance.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -75,18 +75,21 @@ describe('TransactionApi', () => {
   });
 
   describe('Balances', () => {
-    it('should return the balances retrieved', async () => {
-      const data = [balanceBuilder().build(), balanceBuilder().build()];
+    it('should return the simpleBalances retrieved', async () => {
+      const data = [
+        simpleBalanceBuilder().build(),
+        simpleBalanceBuilder().build(),
+      ];
       mockDataSource.get.mockResolvedValue(data);
 
-      const actual = await service.getBalances({
+      const actual = await service.getSimpleBalances({
         safeAddress: 'test',
         trusted: true,
         excludeSpam: true,
       });
 
       expect(actual).toBe(data);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });
 
     it('should forward error', async () => {
@@ -95,15 +98,15 @@ describe('TransactionApi', () => {
       mockHttpErrorFactory.from.mockReturnValue(expected);
 
       await expect(
-        service.getBalances({
+        service.getSimpleBalances({
           safeAddress: 'test',
           trusted: true,
           excludeSpam: true,
         }),
-      ).rejects.toThrowError(expected);
+      ).rejects.toThrow(expected);
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -115,7 +118,7 @@ describe('TransactionApi', () => {
       const actual = await service.getBackbone();
 
       expect(actual).toBe(data);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });
 
     it('should forward error', async () => {
@@ -123,10 +126,10 @@ describe('TransactionApi', () => {
       mockHttpErrorFactory.from.mockReturnValue(expected);
       mockDataSource.get.mockRejectedValueOnce(new Error('testErr'));
 
-      await expect(service.getBackbone()).rejects.toThrowError(expected);
+      await expect(service.getBackbone()).rejects.toThrow(expected);
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(1);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -137,11 +140,11 @@ describe('TransactionApi', () => {
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.deleteByKey).toBeCalledTimes(2);
-      expect(mockCacheService.deleteByKey).toBeCalledWith(
-        `${chainId}_balances_${safeAddress}`,
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_simple_balances_${safeAddress}`,
       );
-      expect(mockHttpErrorFactory.from).toBeCalledTimes(0);
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -153,7 +156,7 @@ describe('TransactionApi', () => {
       const actual = await service.getSafe(safe.address);
 
       expect(actual).toBe(safe);
-      expect(mockDataSource.get).toBeCalledWith({
+      expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir: new CacheDir(`${chainId}_safe_${safe.address}`, ''),
         url: `${baseUrl}/api/v1/safes/${safe.address}`,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
@@ -169,9 +172,7 @@ describe('TransactionApi', () => {
       mockDataSource.get.mockRejectedValueOnce(error);
       mockHttpErrorFactory.from.mockReturnValue(expected);
 
-      await expect(service.getSafe(safe.address)).rejects.toThrowError(
-        expected,
-      );
+      await expect(service.getSafe(safe.address)).rejects.toThrow(expected);
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(1);
     });
   });

@@ -90,7 +90,7 @@ describe('CoingeckoAPI', () => {
     const fiatCodes = await service.getFiatCodes();
 
     expect(fiatCodes).toBe(expectedFiatCodes);
-    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+    expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {
@@ -118,7 +118,7 @@ describe('CoingeckoAPI', () => {
     const fiatCodes = await service.getFiatCodes();
 
     expect(fiatCodes).toBe(expectedFiatCodes);
-    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+    expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {},
@@ -149,7 +149,7 @@ describe('CoingeckoAPI', () => {
       '',
     );
     expect(assetPrice).toEqual([{ [tokenAddress]: { [fiatCode]: price } }]);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(mockNetworkService.get).toHaveBeenCalledWith(
       `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       {
         headers: {
@@ -201,7 +201,7 @@ describe('CoingeckoAPI', () => {
       '',
     );
     expect(assetPrice).toEqual([{ [tokenAddress]: { [fiatCode]: price } }]);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(mockNetworkService.get).toHaveBeenCalledWith(
       `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       {
         params: {
@@ -252,7 +252,7 @@ describe('CoingeckoAPI', () => {
       { [secondTokenAddress]: { [fiatCode]: secondPrice } },
       { [thirdTokenAddress]: { [fiatCode]: thirdPrice } },
     ]);
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(mockNetworkService.get).toHaveBeenCalledWith(
       `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       {
         headers: {
@@ -354,7 +354,7 @@ describe('CoingeckoAPI', () => {
         (i) => Object.keys(i)[0],
       ),
     );
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(mockNetworkService.get).toHaveBeenCalledWith(
       `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       {
         headers: {
@@ -446,7 +446,7 @@ describe('CoingeckoAPI', () => {
         (i) => Object.keys(i)[0],
       ),
     );
-    expect(mockNetworkService.get).toBeCalledWith(
+    expect(mockNetworkService.get).toHaveBeenCalledWith(
       `${coingeckoBaseUri}/simple/token_price/${chainName}`,
       {
         headers: {
@@ -501,7 +501,7 @@ describe('CoingeckoAPI', () => {
 
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+    expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
         `${nativeCoinId}_native_coin_price_${fiatCode}`,
         '',
@@ -537,7 +537,7 @@ describe('CoingeckoAPI', () => {
 
     await service.getNativeCoinPrice({ nativeCoinId, fiatCode });
 
-    expect(mockCacheFirstDataSource.get).toBeCalledWith({
+    expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
         `${nativeCoinId}_native_coin_price_${fiatCode}`,
         '',

@@ -6,7 +6,7 @@ import { IValidator } from '../interfaces/validator.interface';
 import {
   BALANCE_TOKEN_SCHEMA_ID,
   balanceTokenSchema,
-} from './entities/schemas/balance.schema';
+} from './entities/schemas/simple-balance.schema';
 import {
   SIMPLE_BALANCE_SCHEMA_ID,
   simpleBalanceSchema,

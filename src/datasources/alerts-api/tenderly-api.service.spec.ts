@@ -87,7 +87,7 @@ describe('TenderlyApi', () => {
 
     await service.addContracts(contracts);
 
-    expect(mockNetworkService.post).toBeCalledWith(
+    expect(mockNetworkService.post).toHaveBeenCalledWith(
       `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
       {
         headers: {
@@ -114,7 +114,7 @@ describe('TenderlyApi', () => {
     };
     mockNetworkService.post.mockRejectedValueOnce(error);
 
-    await expect(service.addContracts([])).rejects.toThrowError(
+    await expect(service.addContracts([])).rejects.toThrow(
       new DataSourceError('Unexpected error', status),
     );
 

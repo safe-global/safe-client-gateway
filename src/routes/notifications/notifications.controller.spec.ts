@@ -252,8 +252,8 @@ describe('Notifications Controller (Unit)', () => {
         .delete(`/v1/chains/${chain.chainId}/notifications/devices/${uuid}`)
         .expect(200)
         .expect({});
-      expect(networkService.delete).toBeCalledTimes(1);
-      expect(networkService.delete).toBeCalledWith(expectedProviderURL);
+      expect(networkService.delete).toHaveBeenCalledTimes(1);
+      expect(networkService.delete).toHaveBeenCalledWith(expectedProviderURL);
     });
 
     it('Failure: Config API fails', async () => {
@@ -268,7 +268,7 @@ describe('Notifications Controller (Unit)', () => {
       await request(app.getHttpServer())
         .delete(`/v1/chains/${chainId}/notifications/devices/${uuid}`)
         .expect(503);
-      expect(networkService.delete).toBeCalledTimes(0);
+      expect(networkService.delete).toHaveBeenCalledTimes(0);
     });
 
     it('Failure: Transaction API fails', async () => {
@@ -289,7 +289,7 @@ describe('Notifications Controller (Unit)', () => {
       await request(app.getHttpServer())
         .delete(`/v1/chains/${chain.chainId}/notifications/devices/${uuid}`)
         .expect(503);
-      expect(networkService.delete).toBeCalledTimes(1);
+      expect(networkService.delete).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -314,8 +314,8 @@ describe('Notifications Controller (Unit)', () => {
         )
         .expect(200)
         .expect({});
-      expect(networkService.delete).toBeCalledTimes(1);
-      expect(networkService.delete).toBeCalledWith(expectedProviderURL);
+      expect(networkService.delete).toHaveBeenCalledTimes(1);
+      expect(networkService.delete).toHaveBeenCalledWith(expectedProviderURL);
     });
 
     it('Failure: Config API fails', async () => {
@@ -333,7 +333,7 @@ describe('Notifications Controller (Unit)', () => {
           `/v1/chains/${chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
-      expect(networkService.delete).toBeCalledTimes(0);
+      expect(networkService.delete).toHaveBeenCalledTimes(0);
     });
 
     it('Failure: Transaction API fails', async () => {
@@ -357,7 +357,7 @@ describe('Notifications Controller (Unit)', () => {
           `/v1/chains/${chain.chainId}/notifications/devices/${uuid}/safes/${safeAddress}`,
         )
         .expect(503);
-      expect(networkService.delete).toBeCalledTimes(1);
+      expect(networkService.delete).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -1,7 +1,7 @@
 export class EmailAddressDoesNotExistError extends Error {
-  constructor(chainId: string, safeAddress: string, signer: string) {
+  constructor(chainId: string, safeAddress: string, account: string) {
     super(
-      `Email address for signer ${signer} of ${safeAddress} on chain ${chainId} does not exist.`,
+      `Email address for account ${account} of ${safeAddress} on chain ${chainId} does not exist.`,
     );
   }
 }

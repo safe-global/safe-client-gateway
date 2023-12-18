@@ -8,8 +8,8 @@ import { ConflictType } from '@/routes/transactions/entities/conflict-type.entit
 import { QueuedItem } from '@/routes/transactions/entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '@/routes/transactions/entities/queued-items/conflict-header-queued-item.entity';
 import {
-  LabelQueuedItem,
   LabelItem,
+  LabelQueuedItem,
 } from '@/routes/transactions/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/routes/transactions/entities/queued-items/transaction-queued-item.entity';
 
@@ -28,11 +28,9 @@ export class QueuedItemsMapper {
     chainId: string,
     previousPageLastNonce: number | null,
     nextPageFirstNonce: number | null,
-    timezoneOffset: number,
+    timezoneOffsetMs: number,
   ): Promise<QueuedItem[]> {
-    const transactionGroups = this.groupByNonce(
-      this.getTimezoneOffsetTransactions(transactions.results, timezoneOffset),
-    );
+    const transactionGroups = this.groupByNonce(transactions.results);
     let lastProcessedNonce = previousPageLastNonce ?? -1;
 
     return flatten(
@@ -62,6 +60,7 @@ export class QueuedItemsMapper {
             conflictFromPreviousPage,
             isEdgeGroup,
             transactionGroup,
+            timezoneOffsetMs,
           );
 
           transactionGroupItems.push(...mappedTransactionItems);
@@ -78,13 +77,19 @@ export class QueuedItemsMapper {
     conflictFromPreviousPage: boolean,
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
+    timezoneOffsetMs: number,
   ): Promise<TransactionQueuedItem[]> {
     return Promise.all(
       transactionGroup.transactions.map(async (transaction, idx) => {
         const isFirstInGroup = idx === 0;
         const isLastInGroup = idx === transactionGroup.transactions.length - 1;
         return new TransactionQueuedItem(
-          await this.mapper.mapTransaction(chainId, transaction, safe),
+          await this.mapper.mapTransaction(
+            chainId,
+            transaction,
+            safe,
+            timezoneOffsetMs,
+          ),
           this.getConflictType(
             isFirstInGroup,
             isLastInGroup,
@@ -134,28 +139,5 @@ export class QueuedItemsMapper {
           transactions: transactions,
         },
     );
-  }
-
-  /**
-   * Adjusts the timestamps of transactions array by given offset
-   * @param transactions transactions to offset the timestamp of
-   * @param timezoneOffset UTC timezone offset in milliseconds
-   */
-  private getTimezoneOffsetTransactions(
-    transactions: MultisigTransaction[],
-    timezoneOffset: number,
-  ): MultisigTransaction[] {
-    if (timezoneOffset === 0) {
-      return transactions;
-    }
-
-    // We clone so as to not modify the original dates
-    return structuredClone(transactions).map((transaction) => {
-      // No need to set the `executionDate` as it will not exist in the queue
-      transaction.modified?.setUTCMilliseconds(timezoneOffset);
-      transaction.submissionDate.setUTCMilliseconds(timezoneOffset);
-
-      return transaction;
-    });
   }
 }

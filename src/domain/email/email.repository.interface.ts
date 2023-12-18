@@ -32,7 +32,7 @@ export interface IEmailRepository {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.account - the owner address to which we should link the email address to
    *
    * @throws {EmailAlreadyVerifiedError} - if the email is already verified
    * @throws {ResendVerificationTimespanError} -
@@ -42,7 +42,7 @@ export interface IEmailRepository {
   resendEmailVerification(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
   }): Promise<void>;
 
   /**
@@ -50,7 +50,7 @@ export interface IEmailRepository {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.account - the owner address to which we should link the email address to
    * @param args.code - the user-provided code to validate the email verification
    *
    * @throws {InvalidVerificationCodeError} - if the verification code does not match the expected one
@@ -59,7 +59,7 @@ export interface IEmailRepository {
   verifyEmailAddress(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    account: string;
     code: string;
   }): Promise<any>;
 }

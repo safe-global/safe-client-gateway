@@ -87,8 +87,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(1);
-    expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
+    expect(networkService.get).toHaveBeenCalledTimes(1);
+    expect(networkService.get).toHaveBeenCalledWith(getChainUrl, undefined);
   });
 
   it('Failure: Transaction API fails', async () => {
@@ -118,9 +118,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(2);
-    expect(networkService.get).toBeCalledWith(getChainUrl, undefined);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(2);
+    expect(networkService.get).toHaveBeenCalledWith(getChainUrl, undefined);
+    expect(networkService.get).toHaveBeenCalledWith(
       getModuleTransactionUrl,
       undefined,
     );

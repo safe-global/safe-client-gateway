@@ -3,15 +3,12 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly BACKBONE_KEY = 'backbone';
-  private static readonly BALANCES_KEY = 'balances';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
   private static readonly COLLECTIBLES_KEY = 'collectibles';
   private static readonly CONTRACT_KEY = 'contract';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
-  private static readonly EXCHANGE_FIAT_CODES_KEY = 'exchange_fiat_codes';
-  private static readonly EXCHANGE_RATES_KEY = 'exchange_rates';
   private static readonly FIAT_CODES_KEY = 'fiat_codes';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MASTER_COPIES_KEY = 'master_copies';
@@ -31,31 +28,6 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
-
-  /**
-   * @deprecated to be removed after Coingecko prices retrieval is complete.
-   */
-  static getBalancesCacheKey(args: {
-    chainId: string;
-    safeAddress: string;
-  }): string {
-    return `${args.chainId}_${CacheRouter.BALANCES_KEY}_${args.safeAddress}`;
-  }
-
-  /**
-   * @deprecated to be removed after Coingecko prices retrieval is complete.
-   */
-  static getBalanceCacheDir(args: {
-    chainId: string;
-    safeAddress: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): CacheDir {
-    return new CacheDir(
-      CacheRouter.getBalancesCacheKey(args),
-      `${args.trusted}_${args.excludeSpam}`,
-    );
-  }
 
   static getSimpleBalancesCacheKey(args: {
     chainId: string;
@@ -423,14 +395,6 @@ export class CacheRouter {
 
   static getSafeAppsCachePattern(): string {
     return `*_${CacheRouter.SAFE_APPS_KEY}`;
-  }
-
-  static getExchangeFiatCodesCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.EXCHANGE_FIAT_CODES_KEY, '');
-  }
-
-  static getExchangeRatesCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.EXCHANGE_RATES_KEY, '');
   }
 
   static getNativeCoinPriceCacheDir(args: {

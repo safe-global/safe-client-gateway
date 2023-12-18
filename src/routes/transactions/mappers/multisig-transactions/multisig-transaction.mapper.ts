@@ -24,6 +24,7 @@ export class MultisigTransactionMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
+    timezoneOffsetMs: number,
   ): Promise<Transaction> {
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
@@ -39,11 +40,14 @@ export class MultisigTransactionMapper {
       chainId,
       transaction,
     );
-    const timestamp = transaction.executionDate ?? transaction.submissionDate;
+    const date = structuredClone(
+      transaction.executionDate ?? transaction.submissionDate,
+    );
+    date.setTime(date.getTime() + timezoneOffsetMs);
 
     return new Transaction(
       `${MULTISIG_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.safeTxHash}`,
-      timestamp?.getTime() ?? null,
+      date.getTime(),
       txStatus,
       txInfo,
       executionInfo,
