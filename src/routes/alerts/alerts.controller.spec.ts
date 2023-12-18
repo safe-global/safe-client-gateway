@@ -574,6 +574,8 @@ describe('Alerts (Unit)', () => {
       });
 
       it.todo('notifies about alerts with multiple logs');
+
+      it.todo('notifies multiple emails of a Safe for a single alert');
     });
 
     describe('it notifies about an invalid transaction attempt', () => {
@@ -644,6 +646,8 @@ describe('Alerts (Unit)', () => {
     it.todo(
       'notifies about alerts with multiple a log of a valid and a log of an invalid transaction attempt',
     );
+
+    it.todo('notifies multiple email addresses of a Safe');
 
     it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
       const alert = {};
