@@ -181,4 +181,14 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: string;
   }): Promise<{ currentNonce: number; recommendedNonce: number }>;
+
+  getSafesByModule(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): Promise<SafeList>;
+
+  clearSafesByModule(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): Promise<void>;
 }

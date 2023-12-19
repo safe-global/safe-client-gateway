@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
-import { IModulesRepository } from '@/domain/modules/modules.repository.interface';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -32,8 +31,6 @@ export class CacheHooksService {
     private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
-    @Inject(IModulesRepository)
-    private readonly modulesRepository: IModulesRepository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
     @Inject(ISafeAppsRepository)
@@ -96,7 +93,7 @@ export class CacheHooksService {
             chainId: event.chainId,
             address: event.address,
           }),
-          this.modulesRepository.clearSafesByModule({
+          this.safeRepository.clearSafesByModule({
             chainId: event.chainId,
             moduleAddress: event.module,
           }),

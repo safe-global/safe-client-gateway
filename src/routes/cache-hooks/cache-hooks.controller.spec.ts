@@ -779,16 +779,9 @@ describe('Post Hook Events (Unit)', () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const moduleAddress = faker.finance.ethereumAddress();
-    const safesByModule = {
-      safes: [
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-      ],
-    };
     const cacheDir = new CacheDir(
-      `${chainId}_modules_${moduleAddress}`,
-      faker.string.alpha(),
+      `${chainId}_module_safes_${moduleAddress}`,
+      '',
     );
     await fakeCacheService.set(cacheDir, faker.string.alpha());
     const data = {
@@ -796,16 +789,6 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/modules/${moduleAddress}/safes/`:
-          return Promise.resolve({
-            data: safesByModule,
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
