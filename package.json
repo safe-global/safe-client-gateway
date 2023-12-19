@@ -41,7 +41,7 @@
     "nestjs-cls": "^3.6.0",
     "postgres": "^3.4.3",
     "postgres-shift": "^0.1.0",
-    "redis": "^4.6.11",
+    "redis": "^4.6.12",
     "reflect-metadata": "^0.2.1",
     "rimraf": "^5.0.5",
     "rxjs": "^7.8.1",
