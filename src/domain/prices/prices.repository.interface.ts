@@ -14,5 +14,10 @@ export interface IPricesRepository {
     fiatCode: string;
   }): Promise<AssetPrice[]>;
 
+  /**
+   * Gets the list of supported fiat codes.
+   * USD and EUR fiat codes are fixed, and should be the first ones in the result list.
+   * @returns ordered list of uppercase strings representing the supported fiat codes.
+   */
   getFiatCodes(): Promise<string[]>;
 }

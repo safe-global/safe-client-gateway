@@ -44,6 +44,12 @@ export class PricesRepository implements IPricesRepository {
 
   async getFiatCodes(): Promise<string[]> {
     const result = await this.coingeckoApi.getFiatCodes();
-    return this.fiatCodesValidator.validate(result);
+
+    const fiatCodes = this.fiatCodesValidator
+      .validate(result)
+      .map((item) => item.toUpperCase())
+      .sort();
+
+    return Array.from(new Set(['USD', 'EUR', ...fiatCodes]));
   }
 }
