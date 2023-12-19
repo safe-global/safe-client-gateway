@@ -14,7 +14,7 @@ export class CacheRouter {
   private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
-  private static readonly MODULES_KEY = 'modules';
+  private static readonly MODULES_SAFES_KEY = 'modules_safes';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
@@ -163,7 +163,7 @@ export class CacheRouter {
     chainId: string;
     moduleAddress: string;
   }): string {
-    return `${args.chainId}_${CacheRouter.MODULES_KEY}_${args.moduleAddress}`;
+    return `${args.chainId}_${CacheRouter.MODULES_SAFES_KEY}_${args.moduleAddress}`;
   }
 
   static getModuleTransactionCacheDir(args: {
