@@ -175,7 +175,7 @@ describe('TransactionApi', () => {
   });
 
   describe('Modules', () => {
-    it('should return Safes with module enables', async () => {
+    it('should return Safes with module enabled', async () => {
       const moduleAddress = faker.finance.ethereumAddress();
       const safesByModule = {
         safes: [
