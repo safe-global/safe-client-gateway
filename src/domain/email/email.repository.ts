@@ -141,19 +141,6 @@ export class EmailRepository implements IEmailRepository {
     return this.emailDataSource.verifyEmail(args);
   }
 
-  async updateEmail(args: {
-    chainId: string;
-    safeAddress: string;
-    account: string;
-    emailAddress: string;
-  }): Promise<void> {
-    const email = new EmailAddress(args.emailAddress);
-    return this.emailDataSource.updateEmail({
-      ...args,
-      emailAddress: email,
-    });
-  }
-
   async deleteEmail(args: {
     chainId: string;
     safeAddress: string;
