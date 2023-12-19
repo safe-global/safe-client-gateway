@@ -181,9 +181,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -270,9 +270,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -358,9 +358,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -436,9 +436,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -548,9 +548,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -608,7 +608,6 @@ describe('Alerts (Unit)', () => {
             'transaction',
             alertTransactionBuilder()
               .with('to', delayModifier)
-
               .with('logs', [log, log]) // Multiple logs
               .with('network', chain.chainId)
               .build(),
@@ -630,9 +629,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -722,9 +721,9 @@ describe('Alerts (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
-            case `${chain.transactionService}/api/v1/safes/${getAddress(
-              safe.address,
-            )}`:
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -759,6 +758,7 @@ describe('Alerts (Unit)', () => {
 
     describe('it notifies about an invalid transaction attempt', () => {
       it('notifies about an invalid transaction attempt', async () => {
+        const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
         const safe = safeBuilder().with('modules', [delayModifier]).build();
         const transactionAddedEvent = transactionAddedEventBuilder()
@@ -779,6 +779,7 @@ describe('Alerts (Unit)', () => {
                   .with('topics', transactionAddedEvent.topics)
                   .build(),
               ])
+              .with('network', chain.chainId)
               .build(),
           )
           .with('event_type', EventType.ALERT)
@@ -793,6 +794,19 @@ describe('Alerts (Unit)', () => {
         emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
+
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({ data: safe });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
 
         await request(app.getHttpServer())
           .post('/v1/alerts')
@@ -817,6 +831,7 @@ describe('Alerts (Unit)', () => {
       });
 
       it('notifies about alerts with multiple logs', async () => {
+        const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
         const safe = safeBuilder().with('modules', [delayModifier]).build();
         const transactionAddedEvent = transactionAddedEventBuilder()
@@ -836,6 +851,7 @@ describe('Alerts (Unit)', () => {
             alertTransactionBuilder()
               .with('to', delayModifier)
               .with('logs', [log, log]) // Multiple logs
+              .with('network', chain.chainId)
               .build(),
           )
           .with('event_type', EventType.ALERT)
@@ -850,6 +866,19 @@ describe('Alerts (Unit)', () => {
         emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
+
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain });
+            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+              return Promise.resolve({ data: { safes: [safe.address] } });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({ data: safe });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
 
         await request(app.getHttpServer())
           .post('/v1/alerts')
@@ -957,9 +986,9 @@ describe('Alerts (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
-          case `${chain.transactionService}/api/v1/safes/${getAddress(
-            safe.address,
-          )}`:
+          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+            return Promise.resolve({ data: { safes: [safe.address] } });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -1062,9 +1091,9 @@ describe('Alerts (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
-          case `${chain.transactionService}/api/v1/safes/${getAddress(
-            safe.address,
-          )}`:
+          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+            return Promise.resolve({ data: { safes: [safe.address] } });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -1149,9 +1178,9 @@ describe('Alerts (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
-          case `${chain.transactionService}/api/v1/safes/${getAddress(
-            safe.address,
-          )}`:
+          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+            return Promise.resolve({ data: { safes: [safe.address] } });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);

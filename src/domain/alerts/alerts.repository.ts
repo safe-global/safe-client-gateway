@@ -10,6 +10,7 @@ import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.h
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IModulesRepository } from '@/domain/modules/modules.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
@@ -32,6 +33,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IModulesRepository)
+    private readonly modulesRepository: IModulesRepository,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
@@ -39,70 +42,74 @@ export class AlertsRepository implements IAlertsRepository {
   }
 
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const moduleAddress = log.address;
+
+    const { safes } = await this.modulesRepository.getSafesByModule({
       chainId,
-      // TODO: This is the address of the module, _not_ the Safe
-      // Discussion in https://github.com/safe-global/safe-client-gateway/pull/923
-      safeAddress: log.address,
+      moduleAddress,
     });
 
-    if (emails.length === 0) {
+    if (safes.length === 0) {
       this.loggingService.debug(
-        `An alert for a Safe with no associated emails was received. safeAddress=${log.address}`,
+        `An alert for a module that is not activated on a Safe was received. moduleAddress=${moduleAddress}`,
       );
       return;
     }
 
-    const decodedEvent = this.delayModifierDecoder.decodeEventLog({
-      data: log.data as Hex,
-      topics: log.topics as [Hex, Hex, Hex],
+    // Recovery module is deployed per Safe so we can assume that it is only enabled on one
+    const safeAddress = safes[0];
+
+    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+      chainId,
+      safeAddress,
     });
 
-    const decodedTransactions = this._decodeTransactionAdded(
-      decodedEvent.args.data,
-    );
-
-    if (!decodedTransactions) {
-      return this._notifyUnknownTransaction(emails);
+    if (emails.length === 0) {
+      this.loggingService.debug(
+        `An alert for a Safe with no associated emails was received. moduleAddress=${moduleAddress}, safeAddress=${safeAddress}`,
+      );
+      return;
     }
 
     try {
-      const safeAddress = decodedEvent.args.to;
-
       const safe = await this.safeRepository.getSafe({
         chainId,
         address: safeAddress,
       });
+
+      const decodedEvent = this.delayModifierDecoder.decodeEventLog({
+        data: log.data as Hex,
+        topics: log.topics as [Hex, Hex, Hex],
+      });
+      const decodedTransactions = this._decodeTransactionAdded(
+        decodedEvent.args.data,
+      );
 
       const newSafeState = await this._mapSafeSetup({
         safe,
         decodedTransactions,
       });
 
-      return this._notifySafeSetup({
+      this._notifySafeSetup({
         chainId,
         newSafeState,
       });
     } catch {
-      return this._notifyUnknownTransaction(emails);
+      this._notifyUnknownTransaction(emails);
     }
   }
 
   private _decodeTransactionAdded(data: Hex) {
-    try {
-      const decoded = this.safeDecoder.decodeFunctionData({ data });
+    const decoded = this.safeDecoder.decodeFunctionData({ data });
 
-      if (decoded.functionName !== 'execTransaction') {
-        return [decoded];
-      }
-
-      const execTransactionData = decoded.args[2];
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(execTransactionData)
-        .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
-    } catch {
-      return null;
+    if (decoded.functionName !== 'execTransaction') {
+      return [decoded];
     }
+
+    const execTransactionData = decoded.args[2];
+    return this.multiSendDecoder
+      .mapMultiSendTransactions(execTransactionData)
+      .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
   }
 
   private async _mapSafeSetup(args: {
