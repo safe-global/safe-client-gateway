@@ -108,6 +108,10 @@ export class CacheHooksService {
       // - the transaction executed – clear multisig transaction
       // - the safe configuration - clear safe info
       case EventType.EXECUTED_MULTISIG_TRANSACTION:
+        // Important: we should be clearing Safes by module here but we don't have module address
+        // As this is only being used for recovery, whereby our UI deploys new module per Safe
+        // we can assume that the Safes-module relationship does not change for said module
+
         promises.push(
           this.collectiblesRepository.clearCollectibles({
             chainId: event.chainId,
@@ -133,8 +137,6 @@ export class CacheHooksService {
             chainId: event.chainId,
             address: event.address,
           }),
-          // TODO: Need also call clearSafesByModule here but have no access to module address
-          // We must restructure the caching of Safes by module to be Safe <-> Module
         );
         this._logSafeTxEvent(event);
         break;
