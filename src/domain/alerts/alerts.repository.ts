@@ -10,7 +10,6 @@ import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.h
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IModulesRepository } from '@/domain/modules/modules.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
@@ -33,8 +32,6 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(IModulesRepository)
-    private readonly modulesRepository: IModulesRepository,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
