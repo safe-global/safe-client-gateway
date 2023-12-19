@@ -189,7 +189,7 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(safesByModule);
       expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(`${chainId}_modules_${moduleAddress}`, ''),
+        cacheDir: new CacheDir(`${chainId}_module_safes_${moduleAddress}`, ''),
         url: `${baseUrl}/api/v1/modules/${moduleAddress}/safes/`,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         expireTimeSeconds: defaultExpirationTimeInSeconds,
