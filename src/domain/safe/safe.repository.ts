@@ -402,4 +402,26 @@ export class SafeRepository implements ISafeRepository {
       recommendedNonce: recommendedNonce,
     };
   }
+
+  async getSafesByModule(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): Promise<SafeList> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const safesByModule = await transactionService.getSafesByModule(
+      args.moduleAddress,
+    );
+
+    return this.safeListValidator.validate(safesByModule);
+  }
+
+  async clearSafesByModule(args: {
+    chainId: string;
+    moduleAddress: string;
+  }): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    await transactionService.clearSafesByModule(args.moduleAddress);
+  }
 }

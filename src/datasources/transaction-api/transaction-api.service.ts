@@ -27,7 +27,6 @@ import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { SafesByModule } from '@/domain/modules/entities/safes-by-module.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -443,7 +442,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getSafesByModule(moduleAddress: string): Promise<SafesByModule> {
+  async getSafesByModule(moduleAddress: string): Promise<SafeList> {
     try {
       const cacheDir = CacheRouter.getSafesByModuleCacheDir({
         chainId: this.chainId,

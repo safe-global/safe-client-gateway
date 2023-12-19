@@ -150,10 +150,7 @@ export class CacheRouter {
     chainId: string;
     moduleAddress: string;
   }): CacheDir {
-    return new CacheDir(
-      this.getSafesByModuleCacheKey(args), // TODO: Refactor other `CacheDir` keys to use respective key methods
-      '',
-    );
+    return new CacheDir(CacheRouter.getSafesByModuleCacheKey(args), '');
   }
 
   static getSafesByModuleCacheKey(args: {
