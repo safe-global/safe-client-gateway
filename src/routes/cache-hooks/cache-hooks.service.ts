@@ -133,6 +133,8 @@ export class CacheHooksService {
             chainId: event.chainId,
             address: event.address,
           }),
+          // TODO: Need also call clearSafesByModule here but have no access to module address
+          // We must restructure the caching of Safes by module to be Safe <-> Module
         );
         this._logSafeTxEvent(event);
         break;
