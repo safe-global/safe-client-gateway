@@ -41,7 +41,7 @@ export class AlertsRepository implements IAlertsRepository {
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
     const moduleAddress = log.address;
 
-    const { safes } = await this.modulesRepository.getSafesByModule({
+    const { safes } = await this.safeRepository.getSafesByModule({
       chainId,
       moduleAddress,
     });
