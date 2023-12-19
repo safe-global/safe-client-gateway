@@ -8,6 +8,8 @@ const emailDataSource = {
   setVerificationCode: jest.fn(),
   setVerificationSentDate: jest.fn(),
   verifyEmail: jest.fn(),
+  updateEmail: jest.fn(),
+  deleteEmail: jest.fn(),
 } as unknown as IEmailDataSource;
 
 @Module({

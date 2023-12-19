@@ -62,4 +62,38 @@ export interface IEmailRepository {
     account: string;
     code: string;
   }): Promise<any>;
+
+  /**
+   * Updates an email address for a given account.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should update the email address
+   * @param args.account - the owner address to which we should link the email address to
+   * @param args.emailAddress - the email address to store
+   *
+   * @throws {InvalidEmailFormatError} - if the email address is not a valid email format
+   *
+   * TODO: Other errors?
+   */
+  updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+    emailAddress: string;
+  }): Promise<void>;
+
+  /**
+   * Deletes an email address for a given account.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should remove the email address from
+   * @param args.account - the owner address to which we should remove the email address from
+   *
+   * TODO: Other errors?
+   */
+  deleteEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void>;
 }

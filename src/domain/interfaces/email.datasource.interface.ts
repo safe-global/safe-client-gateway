@@ -92,4 +92,32 @@ export interface IEmailDataSource {
     safeAddress: string;
     account: string;
   }): Promise<void>;
+
+  /**
+   * Updates an email address for a given account.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should update the email address
+   * @param args.account - the owner address to which we should link the email address to
+   * @param args.emailAddress - the email address to store
+   */
+  updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+    emailAddress: EmailAddress;
+  }): Promise<void>;
+
+  /**
+   * Deletes an email address for a given account.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should remove the email address from
+   * @param args.account - the owner address to which we should remove the email address from
+   */
+  deleteEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void>;
 }
