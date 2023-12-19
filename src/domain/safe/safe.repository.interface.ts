@@ -186,9 +186,4 @@ export interface ISafeRepository {
     chainId: string;
     moduleAddress: string;
   }): Promise<SafeList>;
-
-  clearSafesByModule(args: {
-    chainId: string;
-    moduleAddress: string;
-  }): Promise<void>;
 }

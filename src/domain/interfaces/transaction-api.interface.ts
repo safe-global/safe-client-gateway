@@ -113,8 +113,6 @@ export interface ITransactionApi {
 
   getSafesByModule(moduleAddress: string): Promise<SafeList>;
 
-  clearSafesByModule(moduleAddress: string): Promise<void>;
-
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
   getModuleTransactions(args: {

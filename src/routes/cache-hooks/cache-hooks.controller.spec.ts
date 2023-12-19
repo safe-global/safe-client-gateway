@@ -768,37 +768,4 @@ describe('Post Hook Events (Unit)', () => {
       webHookExecutionDelayMs,
     );
   });
-
-  it.each([
-    {
-      type: 'MODULE_TRANSACTION',
-      module: faker.finance.ethereumAddress(),
-      txHash: faker.string.hexadecimal({ length: 32 }),
-    },
-  ])('$type clears Safes by module', async (payload) => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-    const moduleAddress = faker.finance.ethereumAddress();
-    const cacheDir = new CacheDir(
-      `${chainId}_module_safes_${moduleAddress}`,
-      '',
-    );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      ...payload,
-    };
-
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(202);
-
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
-  });
 });

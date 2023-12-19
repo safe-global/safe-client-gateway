@@ -444,28 +444,11 @@ export class TransactionApi implements ITransactionApi {
 
   async getSafesByModule(moduleAddress: string): Promise<SafeList> {
     try {
-      const cacheDir = CacheRouter.getSafesByModuleCacheDir({
-        chainId: this.chainId,
-        moduleAddress,
-      });
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+      return await this.networkService.get(url);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
-  }
-
-  async clearSafesByModule(moduleAddress: string): Promise<void> {
-    const key = CacheRouter.getSafesByModuleCacheKey({
-      chainId: this.chainId,
-      moduleAddress,
-    });
-    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,

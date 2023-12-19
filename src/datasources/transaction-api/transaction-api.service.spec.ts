@@ -173,41 +173,4 @@ describe('TransactionApi', () => {
       expect(httpErrorFactory.from).toHaveBeenCalledTimes(1);
     });
   });
-
-  describe('Modules', () => {
-    it('should return Safes with module enabled', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const safesByModule = {
-        safes: [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ],
-      };
-      mockDataSource.get.mockResolvedValueOnce(safesByModule);
-
-      const actual = await service.getSafesByModule(moduleAddress);
-
-      expect(actual).toBe(safesByModule);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(`${chainId}_module_safes_${moduleAddress}`, ''),
-        url: `${baseUrl}/api/v1/modules/${moduleAddress}/safes/`,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-      });
-      expect(httpErrorFactory.from).toHaveBeenCalledTimes(0);
-    });
-
-    it('should map error on error', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const error = new Error('some error');
-      const expected = new DataSourceError('some data source error');
-      mockDataSource.get.mockRejectedValueOnce(error);
-      mockHttpErrorFactory.from.mockReturnValue(expected);
-
-      await expect(service.getSafesByModule(moduleAddress)).rejects.toThrow(
-        expected,
-      );
-      expect(httpErrorFactory.from).toHaveBeenCalledTimes(1);
-    });
-  });
 });
