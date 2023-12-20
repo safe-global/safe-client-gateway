@@ -259,7 +259,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         },
         txData: {
           hexData: previewTransactionDto.data,
-          dataDecoded: previewTransactionDto.data,
+          dataDecoded: null,
           to: {
             value: previewTransactionDto.to,
             name: null,
