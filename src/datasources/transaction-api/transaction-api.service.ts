@@ -445,7 +445,8 @@ export class TransactionApi implements ITransactionApi {
   async getSafesByModule(moduleAddress: string): Promise<SafeList> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      return await this.networkService.get(url);
+      const { data } = await this.networkService.get(url);
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

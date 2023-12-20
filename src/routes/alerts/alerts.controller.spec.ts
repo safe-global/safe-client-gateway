@@ -182,7 +182,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -271,7 +271,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -359,7 +359,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -437,7 +437,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -549,7 +549,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -630,7 +630,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -722,7 +722,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -800,7 +800,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -872,7 +872,7 @@ describe('Alerts (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ safes: [safe.address] });
+              return Promise.resolve({ data: { safes: [safe.address] } });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({ data: safe });
             default:
@@ -987,7 +987,7 @@ describe('Alerts (Unit)', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ safes: [safe.address] });
+            return Promise.resolve({ data: { safes: [safe.address] } });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
@@ -1092,7 +1092,7 @@ describe('Alerts (Unit)', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ safes: [safe.address] });
+            return Promise.resolve({ data: { safes: [safe.address] } });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
@@ -1179,7 +1179,7 @@ describe('Alerts (Unit)', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ safes: [safe.address] });
+            return Promise.resolve({ data: { safes: [safe.address] } });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: safe });
           default:
