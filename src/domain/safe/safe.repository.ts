@@ -415,13 +415,4 @@ export class SafeRepository implements ISafeRepository {
 
     return this.safeListValidator.validate(safesByModule);
   }
-
-  async clearSafesByModule(args: {
-    chainId: string;
-    moduleAddress: string;
-  }): Promise<void> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
-    await transactionService.clearSafesByModule(args.moduleAddress);
-  }
 }
