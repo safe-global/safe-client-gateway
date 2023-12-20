@@ -25,6 +25,7 @@ import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/except
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
 import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
+import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -94,6 +95,7 @@ export class EmailController {
     TimestampGuard(5 * 60 * 1000), // 5 minutes
     OnlySafeOwnerGuard,
   )
+  @UseFilters(EmailAddressDoesNotExistExceptionFilter)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteEmail(
     @Param('chainId') chainId: string,

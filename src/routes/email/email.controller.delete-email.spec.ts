@@ -20,6 +20,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
+import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 
 describe('Email controller delete email tests', () => {
   let app;
@@ -100,7 +101,7 @@ describe('Email controller delete email tests', () => {
       .expect({});
   });
 
-  it("returns 500 if trying to deleting an email that doesn't exist", async () => {
+  it("returns 404 if trying to deleting an email that doesn't exist", async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
@@ -125,7 +126,13 @@ describe('Email controller delete email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.deleteEmail.mockImplementation(() => Promise.reject());
+    emailDatasource.deleteEmail.mockRejectedValue(
+      new EmailAddressDoesNotExistError(
+        chain.chainId,
+        safe.address,
+        accountAddress,
+      ),
+    );
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -135,7 +142,11 @@ describe('Email controller delete email tests', () => {
         timestamp: timestamp,
         signature: signature,
       })
-      .expect(500);
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        message: 'The provided email address does not exist.',
+      });
   });
 
   it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
