@@ -141,6 +141,14 @@ export class EmailRepository implements IEmailRepository {
     return this.emailDataSource.verifyEmail(args);
   }
 
+  async deleteEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void> {
+    return this.emailDataSource.deleteEmail(args);
+  }
+
   private _isEmailVerificationCodeValid(email: Email) {
     if (!email.verificationGeneratedOn) return false;
     const window = Date.now() - email.verificationGeneratedOn.getTime();

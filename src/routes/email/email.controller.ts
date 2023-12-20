@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { EmailService } from '@/routes/email/email.service';
 import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
+import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
 import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
@@ -20,6 +22,8 @@ import { EmailAlreadyVerifiedExceptionFilter } from '@/routes/email/exception-fi
 import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/exception-filters/resend-verification-timespan-error.exception-filter';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
+import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
+import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -80,6 +84,26 @@ export class EmailController {
       safeAddress,
       account: verifyEmailDto.account,
       code: verifyEmailDto.code,
+    });
+  }
+
+  @Delete('')
+  @UseGuards(
+    EmailDeletionGuard,
+    TimestampGuard(5 * 60 * 1000), // 5 minutes
+    OnlySafeOwnerGuard,
+  )
+  @UseFilters(EmailAddressDoesNotExistExceptionFilter)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteEmail(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress') safeAddress: string,
+    @Body() deleteEmailDto: DeleteEmailDto,
+  ): Promise<void> {
+    await this.service.deleteEmail({
+      chainId,
+      safeAddress,
+      account: deleteEmailDto.account,
     });
   }
 }

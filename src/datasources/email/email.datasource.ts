@@ -154,4 +154,25 @@ export class EmailDataSource implements IEmailDataSource {
       );
     }
   }
+
+  async deleteEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void> {
+    const [email] = await this.sql<Email[]>`DELETE
+                                            FROM emails.account_emails
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND account = ${args.account}
+                                            RETURNING *`;
+
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.account,
+      );
+    }
+  }
 }

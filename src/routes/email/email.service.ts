@@ -32,4 +32,12 @@ export class EmailService {
   }): Promise<any> {
     return this.repository.verifyEmailAddress(args);
   }
+
+  async deleteEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<void> {
+    return this.repository.deleteEmail(args);
+  }
 }
