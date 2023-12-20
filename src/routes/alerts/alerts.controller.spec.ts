@@ -178,7 +178,6 @@ describe('Alerts (Unit)', () => {
         );
 
         networkService.get.mockImplementation((url) => {
-          console.log(url);
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain });
