@@ -5,5 +5,8 @@ export class DeleteEmailDto {
   account: string;
 
   @ApiProperty()
-  emailAddress: string;
+  timestamp: number;
+
+  @ApiProperty()
+  signature: string;
 }

@@ -14,7 +14,7 @@ import { verifyMessage } from 'viem';
  * This guard therefore validates if the message came from the specified account.
  *
  * The following message should be signed:
- * email-register-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
+ * email-delete-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
  *
  * (where ${} represents placeholder values for the respective data)
  *

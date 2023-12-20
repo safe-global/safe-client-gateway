@@ -16,7 +16,7 @@ export class EmailAddressDoesNotExistExceptionFilter
     const response = ctx.getResponse<Response>();
 
     response.status(HttpStatus.NOT_FOUND).json({
-      message: 'The provided email address does not exist.',
+      message: `No email address was found for the provided account ${exception.account}.`,
       statusCode: HttpStatus.NOT_FOUND,
     });
   }

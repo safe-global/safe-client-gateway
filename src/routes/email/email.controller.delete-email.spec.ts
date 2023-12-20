@@ -141,7 +141,7 @@ describe('Email controller delete email tests', () => {
       .expect(404)
       .expect({
         statusCode: 404,
-        message: 'The provided email address does not exist.',
+        message: `No email address was found for the provided account ${accountAddress}.`,
       });
   });
 
