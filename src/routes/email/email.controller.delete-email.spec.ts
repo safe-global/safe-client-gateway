@@ -64,7 +64,6 @@ describe('Email controller delete email tests', () => {
 
   it('deletes email successfully', async () => {
     const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
@@ -75,7 +74,7 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -92,7 +91,6 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        emailAddress,
         account: account.address,
         timestamp: timestamp,
         signature: signature,
@@ -103,7 +101,6 @@ describe('Email controller delete email tests', () => {
 
   it("returns 404 if trying to deleting an email that doesn't exist", async () => {
     const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
@@ -114,7 +111,7 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -137,7 +134,6 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        emailAddress,
         account: account.address,
         timestamp: timestamp,
         signature: signature,
@@ -151,7 +147,6 @@ describe('Email controller delete email tests', () => {
 
   it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
     const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
@@ -162,7 +157,7 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
 
     jest.advanceTimersByTime(5 * 60 * 1000);
@@ -170,7 +165,6 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        emailAddress,
         account: account.address,
         timestamp: timestamp,
         signature: signature,
@@ -185,7 +179,6 @@ describe('Email controller delete email tests', () => {
 
   it('returns 403 on wrong message signature', async () => {
     const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
@@ -196,13 +189,12 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `some-action-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `some-action-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        emailAddress,
         account: account.address,
         timestamp: timestamp,
         signature: signature,
@@ -217,7 +209,6 @@ describe('Email controller delete email tests', () => {
 
   it('returns 403 if message not signed by owner', async () => {
     const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
@@ -227,7 +218,7 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-register-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -243,7 +234,6 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        emailAddress,
         account: account.address,
         timestamp: timestamp,
         signature: signature,

@@ -1,4 +1,4 @@
-import { Controller, Delete, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -7,35 +7,28 @@ import configuration from '@/config/entities/__tests__/configuration';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import {
-  EmailGuard,
-  EmailGuardActionPrefix,
-} from '@/routes/email/guards/email.guard';
+import { Hash } from 'viem';
+import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
 
 @Controller()
 class TestController {
   @Post('test/:chainId/:safeAddress')
   @HttpCode(200)
-  @UseGuards(EmailGuard(EmailGuardActionPrefix.Register))
-  async validRegisterRoute() {}
-
-  @Delete('test/:chainId/:safeAddress')
-  @HttpCode(200)
-  @UseGuards(EmailGuard(EmailGuardActionPrefix.Delete))
-  async validDeleteRoute() {}
+  @UseGuards(EmailRegistrationGuard)
+  async validRoute() {}
 
   @Post('test/invalid/chains/:chainId')
   @HttpCode(200)
-  @UseGuards(EmailGuard(EmailGuardActionPrefix.Register))
+  @UseGuards(EmailRegistrationGuard)
   async invalidRouteWithChainId() {}
 
   @Post('test/invalid/safes/:safeAddress')
   @HttpCode(200)
-  @UseGuards(EmailGuard(EmailGuardActionPrefix.Register))
+  @UseGuards(EmailRegistrationGuard)
   async invalidRouteWithSafeAddress() {}
 }
 
-describe('EmailGuard tests', () => {
+describe('EmailRegistration guard tests', () => {
   let app;
 
   const chainId = faker.string.numeric();
@@ -45,9 +38,12 @@ describe('EmailGuard tests', () => {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
   const accountAddress = account.address;
+  let signature: Hash;
 
-  const registerMessage = `email-register-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
-  const deleteMessage = `email-delete-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
+  beforeAll(async () => {
+    const message = `email-register-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
+    signature = await account.signMessage({ message });
+  });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -73,9 +69,7 @@ describe('EmailGuard tests', () => {
       });
   });
 
-  it('returns 200 on a valid register signature', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
+  it('returns 200 on a valid signature', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
@@ -87,23 +81,7 @@ describe('EmailGuard tests', () => {
       .expect(200);
   });
 
-  it('returns 200 on a valid delete signature', async () => {
-    const signature = await account.signMessage({ message: deleteMessage });
-
-    await request(app.getHttpServer())
-      .delete(`/test/${chainId}/${safe}`)
-      .send({
-        emailAddress: emailAddress,
-        account: accountAddress,
-        signature: signature,
-        timestamp: timestamp,
-      })
-      .expect(200);
-  });
-
   it('returns 403 on an invalid signature', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
@@ -121,8 +99,6 @@ describe('EmailGuard tests', () => {
   });
 
   it('returns 403 if the email address is missing from payload', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
@@ -139,8 +115,6 @@ describe('EmailGuard tests', () => {
   });
 
   it('returns 403 if the account is missing from payload', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
@@ -173,8 +147,6 @@ describe('EmailGuard tests', () => {
   });
 
   it('returns 403 if the timestamp is missing from payload', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
 
@@ -194,8 +166,6 @@ describe('EmailGuard tests', () => {
   });
 
   it('returns 403 on routes without safe address', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     const chainId = faker.string.numeric();
 
     await request(app.getHttpServer())
@@ -215,8 +185,6 @@ describe('EmailGuard tests', () => {
   });
 
   it('returns 403 on routes without chain id', async () => {
-    const signature = await account.signMessage({ message: registerMessage });
-
     const safeAddress = faker.finance.ethereumAddress();
 
     await request(app.getHttpServer())
