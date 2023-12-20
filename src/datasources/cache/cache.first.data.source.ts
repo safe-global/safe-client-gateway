@@ -50,35 +50,10 @@ export class CacheFirstDataSource {
     expireTimeSeconds?: number;
   }): Promise<T> {
     const cached = await this.cacheService.get(args.cacheDir);
-    if (cached != null) {
-      this.loggingService.debug({
-        type: 'cache_hit',
-        key: args.cacheDir.key,
-        field: args.cacheDir.field,
-      });
-      const cachedData = JSON.parse(cached);
-      if (get(cachedData, 'status') === 404) {
-        throw new NetworkResponseError(cachedData.status, cachedData.data);
-      }
-      return cachedData;
-    }
+    if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
+
     try {
-      this.loggingService.debug({
-        type: 'cache_miss',
-        key: args.cacheDir.key,
-        field: args.cacheDir.field,
-      });
-      const { data } = await this.networkService.get(
-        args.url,
-        args.networkRequest,
-      );
-      const rawJson = JSON.stringify(data);
-      await this.cacheService.set(
-        args.cacheDir,
-        rawJson,
-        args.expireTimeSeconds,
-      );
-      return data;
+      return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
       if (get(error, 'status') === 404) {
         await this.cacheNotFoundError(
@@ -89,6 +64,38 @@ export class CacheFirstDataSource {
       }
       throw error;
     }
+  }
+
+  /**
+   * Gets the data from the contents stored in the cache.
+   */
+  private _getFromCachedData<T>({ key, field }, cached: string): Promise<T> {
+    this.loggingService.debug({ type: 'cache_hit', key, field });
+    const cachedData = JSON.parse(cached);
+    if (get(cachedData, 'status') === 404) {
+      throw new NetworkResponseError(cachedData.status, cachedData.data);
+    }
+    return cachedData;
+  }
+
+  /**
+   * Gets the data from the network and caches the result.
+   */
+  private async _getFromNetworkAndWriteCache<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+  }): Promise<T> {
+    const { key, field } = args.cacheDir;
+    this.loggingService.debug({ type: 'cache_miss', key, field });
+    const { data } = await this.networkService.get(
+      args.url,
+      args.networkRequest,
+    );
+    const rawJson = JSON.stringify(data);
+    await this.cacheService.set(args.cacheDir, rawJson, args.expireTimeSeconds);
+    return data;
   }
 
   /**
