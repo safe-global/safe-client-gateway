@@ -11,7 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EmailService } from '@/routes/email/email.service';
-import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
+import {
+  EmailGuard,
+  EmailGuardActionPrefix,
+} from '@/routes/email/guards/email.guard';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
 import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
@@ -34,7 +37,7 @@ export class EmailController {
 
   @Post('')
   @UseGuards(
-    EmailRegistrationGuard,
+    EmailGuard(EmailGuardActionPrefix.Register),
     TimestampGuard(5 * 60 * 1000), // 5 minutes
     OnlySafeOwnerGuard,
   )
@@ -87,10 +90,11 @@ export class EmailController {
 
   @Delete('')
   @UseGuards(
-    EmailRegistrationGuard,
+    EmailGuard(EmailGuardActionPrefix.Delete),
     TimestampGuard(5 * 60 * 1000), // 5 minutes
     OnlySafeOwnerGuard,
   )
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,

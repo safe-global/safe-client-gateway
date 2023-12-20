@@ -74,7 +74,7 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -96,11 +96,11 @@ describe('Email controller delete email tests', () => {
         timestamp: timestamp,
         signature: signature,
       })
-      .expect(200)
+      .expect(204)
       .expect({});
   });
 
-  it('returns 403 is message was signed with a timestamp older than 5 minutes', async () => {
+  it("returns 500 if trying to deleting an email that doesn't exist", async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
@@ -113,7 +113,45 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.deleteEmail.mockImplementation(() => Promise.reject());
+
+    await request(app.getHttpServer())
+      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        emailAddress,
+        account: account.address,
+        timestamp: timestamp,
+        signature: signature,
+      })
+      .expect(500);
+  });
+
+  it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
+    const chain = chainBuilder().build();
+    const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const message = `email-delete-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
 
     jest.advanceTimersByTime(5 * 60 * 1000);
