@@ -69,7 +69,7 @@ export class CacheFirstDataSource {
   /**
    * Gets the data from the contents stored in the cache.
    */
-  private _getFromCachedData<T>({ key, field }, cached: string): Promise<T> {
+  private _getFromCachedData<T>({ key, field }: CacheDir, cached: string): Promise<T> {
     this.loggingService.debug({ type: 'cache_hit', key, field });
     const cachedData = JSON.parse(cached);
     if (get(cachedData, 'status') === 404) {
