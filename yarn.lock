@@ -7040,7 +7040,6 @@ __metadata:
     ts-node: "npm:^10.0.0"
     tsconfig-paths: "npm:4.2.0"
     typescript: "npm:^5.3.2"
-    uuid: "npm:^9.0.1"
     viem: "npm:^1.19.9"
     winston: "npm:^3.11.0"
   languageName: unknown
@@ -7998,15 +7997,6 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 23857699a616d1b48224bc2b8440eae6e57d25463c3a0200e514ba8279dfa3bde7e92ea056122237839cfa32045e57d8f8f4a30e581d720fd72935572853ae2e
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.1":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 9d0b6adb72b736e36f2b1b53da0d559125ba3e39d913b6072f6f033e0c87835b414f0836b45bcfaf2bdf698f92297fea1c3cc19b0b258bc182c9c43cc0fab9f2
   languageName: node
   linkType: hard
 

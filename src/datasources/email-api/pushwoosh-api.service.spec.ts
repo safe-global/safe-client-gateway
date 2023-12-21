@@ -5,7 +5,6 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
-import { v4 as uuidv4 } from 'uuid';
 
 const networkService = {
   post: jest.fn(),
@@ -135,7 +134,7 @@ describe('PushwooshApi', () => {
           [faker.string.sample()]: faker.string.sample(),
           [faker.string.sample()]: faker.string.sample(),
         },
-        emailMessageId: uuidv4(),
+        emailMessageId: faker.string.uuid(),
       };
 
       await service.createMessage(createEmailMessageDto);

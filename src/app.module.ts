@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
-import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
 import { BalancesModule } from '@/routes/balances/balances.module';
@@ -84,7 +83,7 @@ export class AppModule implements NestModule {
           global: true,
           middleware: {
             generateId: true,
-            idGenerator: () => uuidv4(),
+            idGenerator: () => crypto.randomUUID(),
           },
         }),
         ConfigurationModule.register(configFactory),
