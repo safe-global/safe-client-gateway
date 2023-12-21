@@ -110,17 +110,17 @@ export class CacheFirstDataSource {
   }
 
   /**
-   * Validates that the response is newer than the last invalidation recorded for the item,
+   * Validates that the request is more recent than the last invalidation recorded for the item,
    * preventing a race condition where outdated data is stored due to the request being initiated
    * before the source communicated a change (via webhook or by other means).
    *
-   * Returns true if:
+   * Returns true if (any of the following):
    * 1. An invalidationTimeMs entry for the key received as param is *not* found in the cache.
    * 2. An entry *is* found and contains an integer that is less than the received startTimeMs param.
    *
    * @param key key part of the {@link CacheDir} holding the requested item
    * @param startTimeMs Unix epoch timestamp in ms when the request was initiated
-   * @returns true if both conditions are met
+   * @returns true if any of the above conditions is met
    */
   private async _shouldBeCached(
     key: string,
