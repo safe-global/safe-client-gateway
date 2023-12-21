@@ -18,6 +18,7 @@ const mockDataSource = jest.mocked(dataSource);
 
 const cacheService = {
   deleteByKey: jest.fn(),
+  set: jest.fn(),
 } as unknown as ICacheService;
 const mockCacheService = jest.mocked(cacheService);
 
@@ -133,6 +134,14 @@ describe('TransactionApi', () => {
   });
 
   describe('Clear Local Balances', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+
     it('should call delete', async () => {
       const safeAddress = faker.finance.ethereumAddress();
       mockCacheService.deleteByKey.mockResolvedValueOnce(1);
@@ -142,6 +151,17 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_balances_${safeAddress}`,
+      );
+      expect(mockCacheService.set).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.set).toHaveBeenCalledWith(
+        new CacheDir(
+          `invalidationTimeMs:${chainId}_balances_${safeAddress}`,
+          '',
+        ),
+        jest.now().toString(),
+        configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.default',
+        ),
       );
       expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });

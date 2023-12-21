@@ -27,6 +27,7 @@ import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -95,6 +96,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async getDataDecoded(args: {
@@ -151,6 +153,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -211,6 +214,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -380,6 +384,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async getIncomingTransfers(args: {
@@ -426,6 +431,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async postConfirmation(args: {
@@ -512,6 +518,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async getMultisigTransactions(args: {
@@ -567,6 +574,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async getMultisigTransaction(
@@ -595,6 +603,7 @@ export class TransactionApi implements ITransactionApi {
       safeTransactionHash,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -660,6 +669,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -906,6 +916,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
   }
 
   async clearMessagesByHash(args: { messageHash: string }): Promise<void> {
@@ -914,5 +925,16 @@ export class TransactionApi implements ITransactionApi {
       messageHash: args.messageHash,
     });
     await this.cacheService.deleteByKey(key);
+    await this._setInvalidationTimeForKey(key);
+  }
+
+  private async _setInvalidationTimeForKey(key: string): Promise<void> {
+    await this.cacheService.set(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      Date.now().toString(),
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      ),
+    );
   }
 }

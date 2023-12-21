@@ -92,13 +92,50 @@ export class CacheFirstDataSource {
   }): Promise<T> {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: 'cache_miss', key, field });
+    const startTimeMs = Date.now();
     const { data } = await this.networkService.get(
       args.url,
       args.networkRequest,
     );
-    const rawJson = JSON.stringify(data);
-    await this.cacheService.set(args.cacheDir, rawJson, args.expireTimeSeconds);
+
+    const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
+    if (shouldBeCached) {
+      await this.cacheService.set(
+        args.cacheDir,
+        JSON.stringify(data),
+        args.expireTimeSeconds,
+      );
+    }
     return data;
+  }
+
+  /**
+   * Validates that the response is newer than the last invalidation recorded for the item,
+   * preventing a race condition where outdated data is stored due to the request being initiated
+   * before the source communicated a change (via webhook or by other means).
+   *
+   * Returns true if:
+   * 1. An invalidationTimeMs entry for the key received as param is *not* found in the cache.
+   * 2. An entry *is* found and contains an integer that is less than the received startTimeMs param.
+   *
+   * @param key key part of the {@link CacheDir} holding the requested item
+   * @param startTimeMs Unix epoch timestamp in ms when the request was initiated
+   * @returns true if both conditions are met
+   */
+  private async _shouldBeCached(
+    key: string,
+    startTimeMs: number,
+  ): Promise<boolean> {
+    const invalidationTimeMsStr = await this.cacheService.get(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+    );
+
+    if (!invalidationTimeMsStr) return true;
+
+    const invalidationTimeMs = Number(invalidationTimeMsStr);
+    return (
+      Number.isInteger(invalidationTimeMs) && invalidationTimeMs < startTimeMs
+    );
   }
 
   /**
