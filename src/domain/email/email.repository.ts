@@ -9,6 +9,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-verified.error';
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
 import { EmailUpdateError } from '@/domain/email/errors/email-update.error';
+import { EmailUpdateMatchesError } from '@/domain/email/errors/email-update-matches.error';
 
 @Injectable()
 export class EmailRepository implements IEmailRepository {
@@ -156,14 +157,20 @@ export class EmailRepository implements IEmailRepository {
     emailAddress: string;
     account: string;
   }): Promise<void> {
-    const email = new EmailAddress(args.emailAddress);
+    const newEmail = new EmailAddress(args.emailAddress);
+    const currentEmail = await this.emailDataSource.getEmail(args);
+
+    if (newEmail.value === currentEmail.emailAddress.value) {
+      throw new EmailUpdateMatchesError(args);
+    }
+
     const verificationCode = this._generateCode();
 
     try {
       await this.emailDataSource.updateEmail({
         chainId: args.chainId,
         code: verificationCode,
-        emailAddress: email,
+        emailAddress: newEmail,
         safeAddress: args.safeAddress,
         account: args.account,
         codeGenerationDate: new Date(),

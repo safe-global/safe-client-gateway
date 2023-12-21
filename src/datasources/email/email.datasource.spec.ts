@@ -331,24 +331,31 @@ describe('Email Datasource Tests', () => {
   });
 
   it('updates emails successfully', async () => {
-    const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
+    const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
     const safeAddress = faker.finance.ethereumAddress();
+    const prevEmailAddress = new EmailAddress(faker.internet.email());
     const emailAddress = new EmailAddress(faker.internet.email());
     const account = faker.finance.ethereumAddress();
     const code = faker.string.numeric();
     const codeGenerationDate = faker.date.recent();
 
     await target.saveEmail({
-      chainId: chainId.toString(),
+      chainId,
       safeAddress,
-      emailAddress: new EmailAddress(faker.internet.email()),
+      emailAddress: prevEmailAddress,
       account,
       code: faker.string.numeric(),
       codeGenerationDate: faker.date.recent(),
     });
 
+    await target.verifyEmail({
+      chainId,
+      safeAddress,
+      account,
+    });
+
     await target.updateEmail({
-      chainId: chainId.toString(),
+      chainId,
       safeAddress,
       emailAddress,
       account,
@@ -357,13 +364,13 @@ describe('Email Datasource Tests', () => {
     });
 
     const email = await target.getEmail({
-      chainId: chainId.toString(),
+      chainId,
       safeAddress,
       account,
     });
 
     expect(email).toMatchObject({
-      chainId: chainId.toString(),
+      chainId,
       emailAddress,
       isVerified: false,
       safeAddress,

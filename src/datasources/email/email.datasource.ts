@@ -186,6 +186,7 @@ export class EmailDataSource implements IEmailDataSource {
   }): Promise<void> {
     const [email] = await this.sql<Email[]>`UPDATE emails.account_emails
                                             SET email_address                  = ${args.emailAddress.value},
+                                                verified                       = false,
                                                 verification_code              = ${args.code},
                                                 verification_code_generated_on = ${args.codeGenerationDate}
                                             WHERE chain_id = ${args.chainId}

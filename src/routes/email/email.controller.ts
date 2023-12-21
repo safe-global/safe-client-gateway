@@ -26,6 +26,7 @@ import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity'
 import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
 import { UpdateEmailDto } from '@/routes/email/entities/update-email-dto.entity';
 import { EmailUpdateGuard } from '@/routes/email/guards/email-update.guard';
+import { EmailUpdateMatchesExceptionFilter } from '@/routes/email/exception-filters/email-update-matches.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -115,7 +116,10 @@ export class EmailController {
     TimestampGuard(5 * 60 * 1000), // 5 minutes
     OnlySafeOwnerGuard,
   )
-  @UseFilters(EmailAddressDoesNotExistExceptionFilter)
+  @UseFilters(
+    EmailUpdateMatchesExceptionFilter,
+    EmailAddressDoesNotExistExceptionFilter,
+  )
   @HttpCode(HttpStatus.ACCEPTED)
   async updateEmail(
     @Param('chainId') chainId: string,

@@ -20,6 +20,8 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
+import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
+import { EmailAddress } from '@/domain/email/entities/email.entity';
 
 describe('Email controller update email tests', () => {
   let app;
@@ -63,6 +65,7 @@ describe('Email controller update email tests', () => {
 
   it('updates email successfully', async () => {
     const chain = chainBuilder().build();
+    const prevEmailAddress = faker.internet.email();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
@@ -86,11 +89,9 @@ describe('Email controller update email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.updateEmail.mockResolvedValue({
-      email: emailAddress,
-      verificationCode: faker.string.numeric(),
+    emailDatasource.getEmail.mockResolvedValue({
+      emailAddress: new EmailAddress(prevEmailAddress),
     });
-
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
@@ -101,6 +102,98 @@ describe('Email controller update email tests', () => {
       })
       .expect(202)
       .expect({});
+  });
+
+  it('should return 409 if trying to update with the same email', async () => {
+    const chain = chainBuilder().build();
+    const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.getEmail.mockResolvedValue({
+      emailAddress: new EmailAddress(emailAddress),
+    });
+
+    await request(app.getHttpServer())
+      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        emailAddress,
+        account: account.address,
+        timestamp,
+        signature,
+      })
+      .expect(409)
+      .expect({
+        statusCode: 409,
+        message: 'Email address matches that of the Safe owner.',
+      });
+  });
+
+  it('should return 404 if trying to update a non-existent email entry', async () => {
+    const chain = chainBuilder().build();
+    const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.getEmail.mockRejectedValue(
+      new EmailAddressDoesNotExistError(
+        chain.chainId,
+        safe.address,
+        accountAddress,
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        emailAddress,
+        account: account.address,
+        timestamp,
+        signature,
+      })
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        message: `No email address was found for the provided account ${accountAddress}.`,
+      });
   });
 
   it('returns 403 is message was signed with a timestamp older than 5 minutes', async () => {
