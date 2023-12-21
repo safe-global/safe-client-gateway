@@ -329,4 +329,67 @@ describe('Email Datasource Tests', () => {
       }),
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });
+
+  it('updates emails successfully', async () => {
+    const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
+    const safeAddress = faker.finance.ethereumAddress();
+    const emailAddress = new EmailAddress(faker.internet.email());
+    const account = faker.finance.ethereumAddress();
+    const code = faker.string.numeric();
+    const codeGenerationDate = faker.date.recent();
+
+    await target.saveEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      emailAddress: new EmailAddress(faker.internet.email()),
+      account,
+      code: faker.string.numeric(),
+      codeGenerationDate: faker.date.recent(),
+    });
+
+    await target.updateEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      emailAddress,
+      account,
+      code,
+      codeGenerationDate,
+    });
+
+    const email = await target.getEmail({
+      chainId: chainId.toString(),
+      safeAddress,
+      account,
+    });
+
+    expect(email).toMatchObject({
+      chainId: chainId.toString(),
+      emailAddress,
+      isVerified: false,
+      safeAddress,
+      account,
+      verificationCode: code,
+      verificationSentOn: null,
+    });
+  });
+
+  it('updating a non-existent email throws', async () => {
+    const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE });
+    const safeAddress = faker.finance.ethereumAddress();
+    const emailAddress = new EmailAddress(faker.internet.email());
+    const account = faker.finance.ethereumAddress();
+    const code = faker.string.numeric();
+    const codeGenerationDate = faker.date.recent();
+
+    await expect(
+      target.updateEmail({
+        chainId: chainId.toString(),
+        safeAddress,
+        emailAddress,
+        account,
+        code,
+        codeGenerationDate,
+      }),
+    ).rejects.toThrow(EmailAddressDoesNotExistError);
+  });
 });

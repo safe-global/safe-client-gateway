@@ -75,4 +75,19 @@ export interface IEmailRepository {
     safeAddress: string;
     account: string;
   }): Promise<void>;
+
+  /**
+   * Updates an email entry.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should store the email address
+   * @param args.emailAddress - the email address to store
+   * @param args.account - the owner address to which we should link the email address to
+   */
+  updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    emailAddress: string;
+    account: string;
+  }): Promise<void>;
 }
