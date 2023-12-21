@@ -321,7 +321,7 @@ describe('Email Datasource Tests', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const account = faker.finance.ethereumAddress();
 
-    expect(
+    await expect(
       target.deleteEmail({
         chainId,
         safeAddress,
