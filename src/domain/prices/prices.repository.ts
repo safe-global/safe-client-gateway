@@ -4,11 +4,13 @@ import { IPricesRepository } from './prices.repository.interface';
 import { AssetPriceValidator } from './asset-price.validator';
 import { FiatCodesValidator } from './fiat-codes.validator';
 import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class PricesRepository implements IPricesRepository {
   constructor(
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly assetPriceValidator: AssetPriceValidator,
     private readonly fiatCodesValidator: FiatCodesValidator,
   ) {}
@@ -50,6 +52,12 @@ export class PricesRepository implements IPricesRepository {
       .map((item) => item.toUpperCase())
       .sort();
 
-    return Array.from(new Set(['USD', 'EUR', ...fiatCodes]));
+    if (!fiatCodes.includes('USD')) {
+      this.loggingService.error(
+        'USD fiat code is not supported by the Prices Provider API',
+      );
+    }
+
+    return fiatCodes;
   }
 }

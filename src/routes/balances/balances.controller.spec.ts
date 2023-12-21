@@ -568,7 +568,7 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/supported-fiat-codes', () => {
     it('should return the ordered list of supported fiat codes', async () => {
-      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'usd', 'eth'];
+      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'eth', 'afn'];
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
@@ -581,7 +581,7 @@ describe('Balances Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'EUR', 'CHF', 'ETH', 'GBP']);
+        .expect(['AFN', 'CHF', 'ETH', 'EUR', 'GBP']);
     });
 
     it('should fail getting fiat currencies data from prices provider', async () => {
@@ -626,48 +626,6 @@ describe('Balances Controller (Unit)', () => {
 
     it('validation error (2) getting fiat currencies data from prices provider', async () => {
       const pricesProviderFiatCodes = 'notAnArray';
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({ data: pricesProviderFiatCodes });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
-    });
-
-    it('validation error when the fiat codes does not include the mandatory EUR code', async () => {
-      const pricesProviderFiatCodes = ['chf', 'gbp', 'usd', 'eth'];
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({ data: pricesProviderFiatCodes });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
-    });
-
-    it('validation error when the fiat codes does not include the mandatory USD code', async () => {
-      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'eth'];
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
