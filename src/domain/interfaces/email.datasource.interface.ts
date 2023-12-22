@@ -105,4 +105,23 @@ export interface IEmailDataSource {
     safeAddress: string;
     account: string;
   }): Promise<void>;
+
+  /**
+   * Updates an email entry in the respective data source.
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which we should store the email address
+   * @param args.emailAddress - the email address to store
+   * @param args.account - the owner address to which we should link the email address to
+   * @param args.code - the generated code to be used to verify this email address
+   * @param args.verificationGeneratedOn – the date which represents when the code was generated
+   */
+  updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    emailAddress: EmailAddress;
+    account: string;
+    code: string;
+    codeGenerationDate: Date;
+  }): Promise<void>;
 }

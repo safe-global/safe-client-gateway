@@ -40,4 +40,13 @@ export class EmailService {
   }): Promise<void> {
     return this.repository.deleteEmail(args);
   }
+
+  async updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+    emailAddress: string;
+  }): Promise<void> {
+    return this.repository.updateEmail(args);
+  }
 }

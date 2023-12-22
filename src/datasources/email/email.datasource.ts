@@ -175,4 +175,31 @@ export class EmailDataSource implements IEmailDataSource {
       );
     }
   }
+
+  async updateEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    emailAddress: EmailAddress;
+    account: string;
+    code: string;
+    codeGenerationDate: Date;
+  }): Promise<void> {
+    const [email] = await this.sql<Email[]>`UPDATE emails.account_emails
+                                            SET email_address                  = ${args.emailAddress.value},
+                                                verified                       = false,
+                                                verification_code              = ${args.code},
+                                                verification_code_generated_on = ${args.codeGenerationDate}
+                                            WHERE chain_id = ${args.chainId}
+                                              AND safe_address = ${args.safeAddress}
+                                              AND account = ${args.account}
+                                            RETURNING *`;
+
+    if (!email) {
+      throw new EmailAddressDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.account,
+      );
+    }
+  }
 }
