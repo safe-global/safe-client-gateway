@@ -189,7 +189,7 @@ describe('ConfigApi', () => {
     it('clear chains should trigger delete on cache service', async () => {
       await service.clearChains();
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith('chains', true);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith('chains');
       expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledWith(
         '*_chain',
       );
@@ -214,7 +214,6 @@ describe('ConfigApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_safe_apps`,
-        true,
       );
     });
   });

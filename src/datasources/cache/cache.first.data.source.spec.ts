@@ -98,7 +98,7 @@ describe('CacheFirstDataSource', () => {
     expect(await fakeCacheService.get(cacheDir)).toEqual(JSON.stringify(data)); // item is cached
   });
 
-  it("should return the network data but it shouldn't not cache it if the last invalidation happened after the request was initiated", async () => {
+  it('should return the network data but it should not not cache it if the last invalidation happened after the request was initiated', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();

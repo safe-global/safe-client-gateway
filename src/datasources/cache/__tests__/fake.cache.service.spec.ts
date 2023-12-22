@@ -8,7 +8,6 @@ describe('FakeCacheService', () => {
 
   beforeEach(async () => {
     target = new FakeCacheService();
-    jest.useRealTimers();
   });
 
   it('sets key', async () => {
@@ -24,19 +23,6 @@ describe('FakeCacheService', () => {
     expect(target.keyCount()).toBe(1);
   });
 
-  it('deletes key without setting invalidationTimeMs', async () => {
-    const key = faker.string.alphanumeric();
-    const field = faker.string.alphanumeric();
-    const cacheDir = new CacheDir(key, field);
-    const value = faker.string.alphanumeric();
-
-    await target.set(cacheDir, value, 0);
-    await target.deleteByKey(key);
-
-    await expect(target.get(cacheDir)).resolves.toBe(undefined);
-    expect(target.keyCount()).toBe(0);
-  });
-
   it('deletes key and sets invalidationTimeMs', async () => {
     jest.useFakeTimers();
     const now = jest.now();
@@ -46,13 +32,14 @@ describe('FakeCacheService', () => {
     const value = faker.string.alphanumeric();
 
     await target.set(cacheDir, value, 0);
-    await target.deleteByKey(key, true);
+    await target.deleteByKey(key);
 
     await expect(target.get(cacheDir)).resolves.toBe(undefined);
     await expect(
       target.get(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
     ).resolves.toBe(now.toString());
     expect(target.keyCount()).toBe(1);
+    jest.useRealTimers();
   });
 
   it('clears keys', async () => {

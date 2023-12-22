@@ -11,7 +11,7 @@ export interface ICacheService {
 
   get(cacheDir: CacheDir): Promise<string | undefined>;
 
-  deleteByKey(key: string, setInvalidationTime?: boolean): Promise<number>;
+  deleteByKey(key: string): Promise<number>;
 
   deleteByKeyPattern(pattern: string): Promise<void>;
 }

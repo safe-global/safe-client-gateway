@@ -49,7 +49,6 @@ describe('RedisCacheService', () => {
       mockLoggingService,
       mockConfigurationService,
     );
-    jest.useRealTimers();
   });
 
   it('Setting key without setting expireTimeSeconds', async () => {
@@ -170,24 +169,12 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
-  it("Deleting key calls delete and don't set invalidationTime", async () => {
-    const key = faker.string.alphanumeric();
-
-    await redisCacheService.deleteByKey(key);
-
-    expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
-  });
-
   it('Deleting key calls delete and sets invalidationTime', async () => {
     jest.useFakeTimers();
     const now = jest.now();
     const key = faker.string.alphanumeric();
 
-    await redisCacheService.deleteByKey(key, true);
+    await redisCacheService.deleteByKey(key);
 
     expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(1);
     expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
@@ -197,8 +184,14 @@ describe('RedisCacheService', () => {
       '',
       now.toString(),
     );
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+      `invalidationTimeMs:${key}`,
+      defaultExpirationTimeInSeconds,
+    );
     expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
     expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    jest.useRealTimers();
   });
 
   it('Deleting keys by pattern calls scan and unlink', async () => {

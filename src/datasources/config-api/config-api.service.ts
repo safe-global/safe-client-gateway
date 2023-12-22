@@ -61,7 +61,7 @@ export class ConfigApi implements IConfigApi {
     const pattern = CacheRouter.getChainsCachePattern();
     const key = CacheRouter.getChainsCacheKey();
     await Promise.all([
-      this.cacheService.deleteByKey(key, true),
+      this.cacheService.deleteByKey(key),
       this.cacheService.deleteByKeyPattern(pattern),
       // TODO: call _setInvalidationTimeForKey for each item matching the pattern
     ]);
@@ -87,8 +87,8 @@ export class ConfigApi implements IConfigApi {
     const chainCacheKey = CacheRouter.getChainCacheKey(chainId);
     const chainsCacheKey = CacheRouter.getChainsCacheKey();
     await Promise.all([
-      this.cacheService.deleteByKey(chainCacheKey, true),
-      this.cacheService.deleteByKey(chainsCacheKey, true),
+      this.cacheService.deleteByKey(chainCacheKey),
+      this.cacheService.deleteByKey(chainsCacheKey),
     ]);
   }
 
@@ -121,7 +121,7 @@ export class ConfigApi implements IConfigApi {
     if (chainId) {
       // if a chain id is provided, delete the safe apps data for that chain id
       const key = CacheRouter.getSafeAppsKey(chainId);
-      await this.cacheService.deleteByKey(key, true);
+      await this.cacheService.deleteByKey(key);
     } else {
       // if a chain id is not provided, delete all the safe apps data
       const pattern = CacheRouter.getSafeAppsCachePattern();

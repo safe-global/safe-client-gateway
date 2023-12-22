@@ -21,14 +21,12 @@ export class FakeCacheService implements ICacheService {
     this.cache = {};
   }
 
-  deleteByKey(key: string, setInvalidationTime?: boolean): Promise<number> {
+  deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
-    if (setInvalidationTime) {
-      this.set(
-        new CacheDir(`invalidationTimeMs:${key}`, ''),
-        Date.now().toString(),
-      );
-    }
+    this.set(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      Date.now().toString(),
+    );
     return Promise.resolve(1);
   }
 

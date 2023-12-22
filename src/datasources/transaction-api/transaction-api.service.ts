@@ -94,7 +94,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async getDataDecoded(args: {
@@ -150,7 +150,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -210,7 +210,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -379,7 +379,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async getIncomingTransfers(args: {
@@ -425,7 +425,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async postConfirmation(args: {
@@ -511,7 +511,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async getMultisigTransactions(args: {
@@ -566,7 +566,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async getMultisigTransaction(
@@ -594,7 +594,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeTransactionHash,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -659,7 +659,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
@@ -905,7 +905,7 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       safeAddress: args.safeAddress,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 
   async clearMessagesByHash(args: { messageHash: string }): Promise<void> {
@@ -913,6 +913,6 @@ export class TransactionApi implements ITransactionApi {
       chainId: this.chainId,
       messageHash: args.messageHash,
     });
-    await this.cacheService.deleteByKey(key, true);
+    await this.cacheService.deleteByKey(key);
   }
 }

@@ -151,7 +151,6 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_balances_${safeAddress}`,
-        true,
       );
       expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });

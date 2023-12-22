@@ -51,19 +51,14 @@ export class RedisCacheService
     return await this.client.hGet(cacheDir.key, cacheDir.field);
   }
 
-  async deleteByKey(
-    key: string,
-    setInvalidationTime?: boolean,
-  ): Promise<number> {
+  async deleteByKey(key: string): Promise<number> {
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(key);
-    if (setInvalidationTime) {
-      await this.set(
-        new CacheDir(`invalidationTimeMs:${key}`, ''),
-        Date.now().toString(),
-        this.defaultExpirationTimeInSeconds,
-      );
-    }
+    await this.set(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      Date.now().toString(),
+      this.defaultExpirationTimeInSeconds,
+    );
     return result;
   }
 
