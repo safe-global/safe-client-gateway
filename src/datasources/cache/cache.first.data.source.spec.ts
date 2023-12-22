@@ -63,7 +63,9 @@ describe('CacheFirstDataSource', () => {
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     expect(fakeCacheService.keyCount()).toBe(1); // only data is cached (as no invalidation happened yet at this point in time)
-    expect(await fakeCacheService.get(cacheDir)).toEqual(JSON.stringify(data));
+    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual(
+      JSON.stringify(data),
+    );
   });
 
   it('should return the network data and it should cache it if the last invalidation happened before the request was initiated', async () => {
