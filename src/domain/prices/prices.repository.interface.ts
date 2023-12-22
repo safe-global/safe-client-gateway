@@ -16,7 +16,7 @@ export interface IPricesRepository {
 
   /**
    * Gets the list of supported fiat codes.
-   * @returns alphabetically ordered list of uppercase strings representing the supported fiat codes.
+   * @returns an alphabetically ordered list of uppercase strings representing the supported fiat codes.
    */
   getFiatCodes(): Promise<string[]>;
 }
