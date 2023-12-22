@@ -95,7 +95,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/../src/$1"
-    }
+    },
+    "globalSetup": "<rootDir>/../test/global-setup.ts"
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",
