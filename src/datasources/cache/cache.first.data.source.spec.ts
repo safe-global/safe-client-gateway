@@ -74,7 +74,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
-    fakeCacheService.set(
+    await fakeCacheService.set(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
     );
@@ -106,7 +106,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
-    fakeCacheService.set(
+    await fakeCacheService.set(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
     );
@@ -129,14 +129,14 @@ describe('CacheFirstDataSource', () => {
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
-    expect(await fakeCacheService.get(cacheDir)).toEqual(undefined); // item is not cached
+    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual(undefined); // item is not cached
   });
 
   it('should return the cached data without calling the underlying network interface', async () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
     const rawJson = fakeJson();
-    fakeCacheService.set(cacheDir, rawJson);
+    await fakeCacheService.set(cacheDir, rawJson);
     mockNetworkService.get.mockImplementation((url) =>
       Promise.reject(`Unexpected request to ${url}`),
     );
