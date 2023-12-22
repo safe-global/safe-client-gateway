@@ -62,7 +62,7 @@ describe('CacheFirstDataSource', () => {
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(1); // only data is cached (as no invalidation happened yet a this point in time)
+    expect(fakeCacheService.keyCount()).toBe(1); // only data is cached (as no invalidation happened yet at this point in time)
     expect(await fakeCacheService.get(cacheDir)).toEqual(JSON.stringify(data));
   });
 
