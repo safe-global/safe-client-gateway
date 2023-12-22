@@ -10,7 +10,6 @@ import {
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { EmailService } from '@/routes/email/email.service';
 import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
 import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
@@ -133,14 +132,5 @@ export class EmailController {
       account: updateEmailDto.account,
       emailAddress: updateEmailDto.emailAddress,
     });
-  }
-
-  @Cron(CronExpression.EVERY_WEEK)
-  async deleteUnverifiedEmailsOlderThanAWeek(): Promise<void> {
-    const today = new Date();
-    const oneWeekInMs = 7 * 24 * 60 * 60 * 1_000;
-    const oneWeekAgo = new Date(today.getTime() - oneWeekInMs);
-
-    await this.service.deleteUnverifiedEmailsUntil(oneWeekAgo);
   }
 }

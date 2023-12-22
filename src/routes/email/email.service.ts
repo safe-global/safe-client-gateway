@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { IEmailRepository } from '@/domain/email/email.repository.interface';
 
 @Injectable()
@@ -6,6 +7,15 @@ export class EmailService {
   constructor(
     @Inject(IEmailRepository) private readonly repository: IEmailRepository,
   ) {}
+
+  @Cron(CronExpression.EVERY_WEEK)
+  async deleteUnverifiedEmailsOlderThanAWeek(): Promise<void> {
+    const today = new Date();
+    const oneWeekInMs = 7 * 24 * 60 * 60 * 1_000;
+    const oneWeekAgo = new Date(today.getTime() - oneWeekInMs);
+
+    await this.repository.deleteUnverifiedEmailsUntil(oneWeekAgo);
+  }
 
   async saveEmail(args: {
     chainId: string;
