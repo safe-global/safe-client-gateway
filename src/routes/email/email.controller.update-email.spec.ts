@@ -92,6 +92,8 @@ describe('Email controller update email tests', () => {
     emailDatasource.getEmail.mockResolvedValue({
       emailAddress: new EmailAddress(prevEmailAddress),
     });
+    emailDatasource.updateEmail.mockResolvedValue();
+
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
@@ -146,6 +148,7 @@ describe('Email controller update email tests', () => {
         statusCode: 409,
         message: 'Email address matches that of the Safe owner.',
       });
+    expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
   });
 
   it('should return 404 if trying to update a non-existent email entry', async () => {
@@ -193,6 +196,53 @@ describe('Email controller update email tests', () => {
       .expect({
         statusCode: 404,
         message: `No email address was found for the provided account ${accountAddress}.`,
+      });
+    expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
+  });
+
+  it('return 500 if updating fails in general', async () => {
+    const chain = chainBuilder().build();
+    const prevEmailAddress = faker.internet.email();
+    const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.getEmail.mockResolvedValue({
+      emailAddress: new EmailAddress(prevEmailAddress),
+    });
+    emailDatasource.updateEmail.mockRejectedValue(new Error());
+
+    await request(app.getHttpServer())
+      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        emailAddress,
+        account: account.address,
+        timestamp,
+        signature,
+      })
+      .expect(500)
+      .expect({
+        code: 500,
+        message: 'Internal server error',
       });
   });
 
