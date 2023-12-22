@@ -151,17 +151,7 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_balances_${safeAddress}`,
-      );
-      expect(mockCacheService.set).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.set).toHaveBeenCalledWith(
-        new CacheDir(
-          `invalidationTimeMs:${chainId}_balances_${safeAddress}`,
-          '',
-        ),
-        jest.now().toString(),
-        configurationService.getOrThrow<number>(
-          'expirationTimeInSeconds.default',
-        ),
+        true,
       );
       expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });

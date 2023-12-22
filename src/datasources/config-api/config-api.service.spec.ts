@@ -189,18 +189,12 @@ describe('ConfigApi', () => {
     it('clear chains should trigger delete on cache service', async () => {
       await service.clearChains();
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith('chains');
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith('chains', true);
       expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledWith(
         '*_chain',
       );
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.set).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.set).toHaveBeenCalledWith(
-        new CacheDir('invalidationTimeMs:chains', ''),
-        jest.now().toString(),
-        fakeConfigurationService.get('expirationTimeInSeconds.default'),
-      );
     });
 
     it('clear safe apps should trigger delete on cache service', async () => {
@@ -218,10 +212,9 @@ describe('ConfigApi', () => {
       await service.clearSafeApps(chainId);
 
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.set).toHaveBeenCalledWith(
-        new CacheDir(`invalidationTimeMs:${chainId}_safe_apps`, ''),
-        jest.now().toString(),
-        fakeConfigurationService.get('expirationTimeInSeconds.default'),
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_safe_apps`,
+        true,
       );
     });
   });

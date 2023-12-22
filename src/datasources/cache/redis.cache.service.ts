@@ -4,17 +4,26 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class RedisCacheService
   implements ICacheService, ICacheReadiness, OnModuleDestroy
 {
   private readonly quitTimeoutInSeconds: number = 2;
+  private readonly defaultExpirationTimeInSeconds: number;
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+  }
 
   async ping(): Promise<unknown> {
     return this.client.ping();
@@ -42,9 +51,20 @@ export class RedisCacheService
     return await this.client.hGet(cacheDir.key, cacheDir.field);
   }
 
-  async deleteByKey(key: string): Promise<number> {
+  async deleteByKey(
+    key: string,
+    setInvalidationTime?: boolean,
+  ): Promise<number> {
     // see https://redis.io/commands/unlink/
-    return await this.client.unlink(key);
+    const result = await this.client.unlink(key);
+    if (setInvalidationTime) {
+      await this.set(
+        new CacheDir(`invalidationTimeMs:${key}`, ''),
+        Date.now().toString(),
+        this.defaultExpirationTimeInSeconds,
+      );
+    }
+    return result;
   }
 
   async deleteByKeyPattern(pattern: string): Promise<void> {

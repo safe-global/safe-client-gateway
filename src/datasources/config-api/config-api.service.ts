@@ -11,7 +11,6 @@ import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
@@ -62,10 +61,9 @@ export class ConfigApi implements IConfigApi {
     const pattern = CacheRouter.getChainsCachePattern();
     const key = CacheRouter.getChainsCacheKey();
     await Promise.all([
-      this.cacheService.deleteByKey(key),
+      this.cacheService.deleteByKey(key, true),
       this.cacheService.deleteByKeyPattern(pattern),
       // TODO: call _setInvalidationTimeForKey for each item matching the pattern
-      this._setInvalidationTimeForKey(key),
     ]);
   }
 
@@ -89,10 +87,8 @@ export class ConfigApi implements IConfigApi {
     const chainCacheKey = CacheRouter.getChainCacheKey(chainId);
     const chainsCacheKey = CacheRouter.getChainsCacheKey();
     await Promise.all([
-      this.cacheService.deleteByKey(chainCacheKey),
-      this.cacheService.deleteByKey(chainsCacheKey),
-      this._setInvalidationTimeForKey(chainCacheKey),
-      this._setInvalidationTimeForKey(chainsCacheKey),
+      this.cacheService.deleteByKey(chainCacheKey, true),
+      this.cacheService.deleteByKey(chainsCacheKey, true),
     ]);
   }
 
@@ -125,23 +121,12 @@ export class ConfigApi implements IConfigApi {
     if (chainId) {
       // if a chain id is provided, delete the safe apps data for that chain id
       const key = CacheRouter.getSafeAppsKey(chainId);
-      await this.cacheService.deleteByKey(key);
-      await this._setInvalidationTimeForKey(key);
+      await this.cacheService.deleteByKey(key, true);
     } else {
       // if a chain id is not provided, delete all the safe apps data
       const pattern = CacheRouter.getSafeAppsCachePattern();
       await this.cacheService.deleteByKeyPattern(pattern);
       // TODO: call _setInvalidationTimeForKey for each item matching the pattern
     }
-  }
-
-  private async _setInvalidationTimeForKey(key: string): Promise<void> {
-    await this.cacheService.set(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
-      Date.now().toString(),
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.default',
-      ),
-    );
   }
 }
