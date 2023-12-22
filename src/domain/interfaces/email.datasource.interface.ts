@@ -28,6 +28,13 @@ export interface IEmailDataSource {
   }): Promise<Email>;
 
   /**
+   * Gets all unverified emails across chains, Safes and accounts until a specific date.
+   *
+   * @param until - the date which the verification was sent
+   */
+  getUnverifiedEmailsUntil(until): Promise<Email[]>;
+
+  /**
    * Saves an email entry in the respective data source.
    *
    * @param args.chainId - the chain id of where the Safe is deployed

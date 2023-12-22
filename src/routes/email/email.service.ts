@@ -49,4 +49,8 @@ export class EmailService {
   }): Promise<void> {
     return this.repository.updateEmail(args);
   }
+
+  async deleteUnverifiedEmailsUntil(until: Date): Promise<void> {
+    return this.repository.deleteUnverifiedEmailsUntil(until);
+  }
 }

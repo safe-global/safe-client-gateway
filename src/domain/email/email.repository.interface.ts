@@ -90,4 +90,11 @@ export interface IEmailRepository {
     emailAddress: string;
     account: string;
   }): Promise<void>;
+
+  /**
+   * Deletes all unverified emails across chains, Safes and accounts until a specific date.
+   *
+   * @param until - the date which the verification was sent
+   */
+  deleteUnverifiedEmailsUntil(until: Date): Promise<void>;
 }

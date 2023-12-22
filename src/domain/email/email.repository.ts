@@ -179,6 +179,24 @@ export class EmailRepository implements IEmailRepository {
     });
   }
 
+  async deleteUnverifiedEmailsUntil(until: Date): Promise<void> {
+    const emails = await this.emailDataSource.getUnverifiedEmailsUntil(until);
+
+    // TODO: Add logs
+    if (emails.length > 0) {
+      await Promise.all(
+        emails.map(
+          async ({ chainId, safeAddress, account }) =>
+            await this.emailDataSource.deleteEmail({
+              chainId,
+              safeAddress,
+              account,
+            }),
+        ),
+      );
+    }
+  }
+
   private _isEmailVerificationCodeValid(email: Email) {
     if (!email.verificationGeneratedOn) return false;
     const window = Date.now() - email.verificationGeneratedOn.getTime();

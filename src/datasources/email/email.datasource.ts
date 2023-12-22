@@ -68,6 +68,25 @@ export class EmailDataSource implements IEmailDataSource {
     };
   }
 
+  async getUnverifiedEmailsUntil(until: Date): Promise<DomainEmail[]> {
+    const emails = await this.sql<Email[]>`SELECT *
+                                            FROM emails.account_emails
+                                            WHERE verified is false
+                                              AND verification_code_generated_on < ${until}
+                                            ORDER by id`;
+
+    return emails.map((email) => ({
+      chainId: email.chain_id.toString(),
+      emailAddress: new EmailAddress(email.email_address),
+      isVerified: email.verified,
+      safeAddress: email.safe_address,
+      account: email.account,
+      verificationCode: email.verification_code,
+      verificationGeneratedOn: email.verification_code_generated_on,
+      verificationSentOn: email.verification_sent_on,
+    }));
+  }
+
   async saveEmail(args: {
     chainId: string;
     safeAddress: string;
