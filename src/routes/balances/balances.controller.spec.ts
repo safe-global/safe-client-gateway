@@ -581,7 +581,7 @@ describe('Balances Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'EUR', 'AFN', 'CHF', 'ETH', 'GBP']);
+        .expect(['AFN', 'CHF', 'ETH', 'EUR', 'GBP']);
     });
 
     it('should fail getting fiat currencies data from prices provider', async () => {

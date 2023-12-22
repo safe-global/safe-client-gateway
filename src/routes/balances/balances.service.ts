@@ -81,17 +81,7 @@ export class BalancesService {
     };
   }
 
-  /**
-   * Gets the list of supported fiat codes.
-   * USD and EUR fiat codes are fixed, and should be the first ones in the result list.
-   * @returns ordered list of uppercase strings representing the supported fiat codes.
-   */
   async getSupportedFiatCodes(): Promise<string[]> {
-    const pricesProviderFiatCodes = await this.pricesRepository.getFiatCodes();
-    const fiatCodes = pricesProviderFiatCodes
-      .map((item) => item.toUpperCase())
-      .sort();
-
-    return Array.from(new Set(['USD', 'EUR', ...fiatCodes]));
+    return this.pricesRepository.getFiatCodes();
   }
 }
