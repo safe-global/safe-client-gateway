@@ -32,7 +32,7 @@
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.1.16",
     "@node-redis/json": "^1.0.2",
-    "@safe-global/safe-deployments": "^1.28.0",
+    "@safe-global/safe-deployments": "^1.29.0",
     "@types/lodash": "^4.14.200",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
