@@ -65,6 +65,10 @@ import {
   NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
   newMessageConfirmationEventSchema,
 } from '@/routes/cache-hooks/entities/schemas/new-message-confirmation.schema';
+import {
+  DELETED_MULTISIG_TRANSACTION_SCHEMA_ID,
+  deletedMultisigTransactionEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/deleted-multisig-transaction.schema';
 
 @Injectable()
 export class EventValidationPipe
@@ -103,6 +107,10 @@ export class EventValidationPipe
     jsonSchemaService.getSchema(
       CHAIN_UPDATE_EVENT_SCHEMA_ID,
       chainUpdateEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      DELETED_MULTISIG_TRANSACTION_SCHEMA_ID,
+      deletedMultisigTransactionEventSchema,
     );
     jsonSchemaService.getSchema(
       EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
@@ -148,6 +156,7 @@ export class EventValidationPipe
       SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
       safeAppsUpdateEventSchema,
     );
+
     this.isWebHookEvent = jsonSchemaService.getSchema(
       WEB_HOOK_SCHEMA_ID,
       webHookSchema,
