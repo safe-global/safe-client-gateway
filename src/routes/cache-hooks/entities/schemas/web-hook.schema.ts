@@ -11,12 +11,14 @@ import { OutgoingEther } from '@/routes/cache-hooks/entities/outgoing-ether.enti
 import { OutgoingToken } from '@/routes/cache-hooks/entities/outgoing-token.entity';
 import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
 import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 export const WEB_HOOK_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json';
 
 export const webHookSchema: JSONSchemaType<
   | ChainUpdate
+  | DeletedMultisigTransaction
   | ExecutedTransaction
   | IncomingEther
   | IncomingToken
@@ -36,6 +38,9 @@ export const webHookSchema: JSONSchemaType<
   oneOf: [
     {
       $ref: 'chain-update.json',
+    },
+    {
+      $ref: 'deleted-multisig-transaction.json',
     },
     {
       $ref: 'executed-transaction.json',
