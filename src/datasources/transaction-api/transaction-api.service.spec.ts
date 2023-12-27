@@ -134,14 +134,6 @@ describe('TransactionApi', () => {
   });
 
   describe('Clear Local Balances', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterAll(() => {
-      jest.useRealTimers();
-    });
-
     it('should call delete', async () => {
       const safeAddress = faker.finance.ethereumAddress();
       mockCacheService.deleteByKey.mockResolvedValueOnce(1);
