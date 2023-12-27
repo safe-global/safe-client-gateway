@@ -145,5 +145,4 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
   },
-  webHookExecutionDelayMs: faker.number.int({ min: 1, max: 10 }),
 });
