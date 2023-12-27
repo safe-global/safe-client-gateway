@@ -106,7 +106,7 @@ describe('Flush Controller (Unit)', () => {
       )
       .expect(200);
 
-    // check the cache is empty
-    expect(fakeCacheService.keyCount()).toBe(0);
+    // check the cache contains the invalidationTimeMs key only
+    expect(fakeCacheService.keyCount()).toBe(1);
   });
 });
