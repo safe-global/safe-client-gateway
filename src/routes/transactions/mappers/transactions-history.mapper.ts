@@ -86,10 +86,7 @@ export class TransactionsHistoryMapper {
 
     const transactionList = await Promise.all(
       transactionsDomainGroups.map(async (transactionGroup) => {
-        const transactions: (TransactionItem | DateLabel)[] = [];
-        if (transactionGroup.timestamp != prevPageTimestamp) {
-          transactions.push(new DateLabel(transactionGroup.timestamp));
-        }
+        const items: (TransactionItem | DateLabel)[] = [];
         const groupTransactions = (
           await this.mapGroupTransactions(
             transactionGroup,
@@ -101,8 +98,15 @@ export class TransactionsHistoryMapper {
         )
           .filter(<T>(x: T | undefined): x is T => x != null)
           .flat();
-        transactions.push(...groupTransactions);
-        return transactions;
+
+        // If the current group is a follow-up from the previous page,
+        // or the group is empty, the date label shouldn't be added.
+        const isFollowUp = transactionGroup.timestamp == prevPageTimestamp;
+        if (!isFollowUp && groupTransactions.length) {
+          items.push(new DateLabel(transactionGroup.timestamp));
+        }
+        items.push(...groupTransactions);
+        return items;
       }),
     );
 
