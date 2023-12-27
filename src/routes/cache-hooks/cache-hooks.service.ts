@@ -19,6 +19,7 @@ import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transa
 import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 import { ModuleTransaction } from '@/routes/cache-hooks/entities/module-transaction.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 @Injectable()
 export class CacheHooksService {
@@ -44,6 +45,7 @@ export class CacheHooksService {
   async onEvent(
     event:
       | ChainUpdate
+      | DeletedMultisigTransaction
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -62,6 +64,22 @@ export class CacheHooksService {
       // queued transactions – clear multisig transactions
       // the pending transaction – clear multisig transaction
       case EventType.PENDING_MULTISIG_TRANSACTION:
+        promises.push(
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransaction({
+            chainId: event.chainId,
+            safeTransactionHash: event.safeTxHash,
+          }),
+        );
+        this._logSafeTxEvent(event);
+        break;
+      // A deleted multisig transaction affects:
+      // queued transactions – clear multisig transactions
+      // the pending transaction – clear multisig transaction
+      case EventType.DELETED_MULTISIG_TRANSACTION:
         promises.push(
           this.safeRepository.clearMultisigTransactions({
             chainId: event.chainId,
@@ -309,7 +327,11 @@ export class CacheHooksService {
   }
 
   private _logSafeTxEvent(
-    event: ExecutedTransaction | NewConfirmation | PendingTransaction,
+    event:
+      | DeletedMultisigTransaction
+      | ExecutedTransaction
+      | NewConfirmation
+      | PendingTransaction,
   ): void {
     this.loggingService.info({
       type: CacheHooksService.HOOK_TYPE,

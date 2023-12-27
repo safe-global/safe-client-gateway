@@ -23,6 +23,7 @@ import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.e
 import { EventValidationPipe } from '@/routes/cache-hooks/pipes/event-validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 @Controller({
   path: '',
@@ -49,6 +50,7 @@ export class CacheHooksController {
     @Body(EventValidationPipe)
     eventPayload:
       | ChainUpdate
+      | DeletedMultisigTransaction
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
