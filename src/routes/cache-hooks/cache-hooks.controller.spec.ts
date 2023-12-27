@@ -74,6 +74,11 @@ describe('Post Hook Events (Unit)', () => {
 
   it.each([
     {
+      type: 'DELETED_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       address: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
@@ -255,6 +260,11 @@ describe('Post Hook Events (Unit)', () => {
       owner: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
+    {
+      type: 'DELETED_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
   ])('$type clears multisig transactions', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
@@ -304,6 +314,11 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'DELETED_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transaction', async (payload) => {
