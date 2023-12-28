@@ -6,6 +6,7 @@ import { RedisClientType } from 'redis';
 import { fakeJson } from '@/__tests__/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
 const redisClientType = {
   hGet: jest.fn(),
@@ -34,6 +35,11 @@ describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
   let defaultExpirationTimeInSeconds: number;
   const keyPrefix = '';
+  let redisClient: RedisClientType;
+
+  beforeAll(async () => {
+    redisClient = await redisClientFactory();
+  });
 
   beforeEach(async () => {
     clearAllMocks();
@@ -59,14 +65,18 @@ describe('RedisCacheService', () => {
       faker.string.sample(),
     );
     const value = fakeJson();
+    const redisCacheServiceNotMocked = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      crypto.randomUUID(),
+    );
 
-    await redisCacheService.set(cacheDir, value, undefined);
+    await redisCacheServiceNotMocked.set(cacheDir, value, undefined);
+    const res = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    expect(res).toBeNull();
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    // TODO: do the same on other test and delete/rename redisCacheService/redisCacheServiceNotMocked and other const
   });
 
   it('Setting key with expireTimeSeconds', async () => {
@@ -221,5 +231,10 @@ describe('RedisCacheService', () => {
     expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
     expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
     expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(1);
+  });
+
+  afterAll(async () => {
+    await redisClient.flushAll();
+    await redisClient.quit();
   });
 });
