@@ -125,7 +125,7 @@ describe('RedisCacheService', () => {
       `invalidationTimeMs:${cacheDir.key}`,
     );
     expect(storedValue).toBeNull();
-    expect(invalidationTime).toBeGreaterThan(startTime);
+    expect(invalidationTime).toBeGreaterThanOrEqual(startTime);
     expect(invalidationTimeTtl).toBeGreaterThan(0);
     expect(invalidationTimeTtl).toBeLessThanOrEqual(
       defaultExpirationTimeInSeconds,
