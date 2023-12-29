@@ -8,17 +8,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
-const redisClientType = {
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-  hDel: jest.fn(),
-  expire: jest.fn(),
-  unlink: jest.fn(),
-  quit: jest.fn(),
-  scanIterator: jest.fn(),
-} as unknown as RedisClientType;
-const redisClientTypeMock = jest.mocked(redisClientType);
-
 const mockLoggingService = {
   info: jest.fn(),
   debug: jest.fn(),
@@ -52,34 +41,27 @@ describe('RedisCacheService', () => {
     });
 
     redisCacheService = new RedisCacheService(
-      redisClientTypeMock,
+      redisClient,
       mockLoggingService,
       mockConfigurationService,
       keyPrefix,
     );
   });
 
-  it('Setting key without setting expireTimeSeconds', async () => {
+  it('Setting key without setting expireTimeSeconds does not store the value', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
     const value = fakeJson();
-    const redisCacheServiceNotMocked = new RedisCacheService(
-      redisClient,
-      mockLoggingService,
-      mockConfigurationService,
-      crypto.randomUUID(),
-    );
 
-    await redisCacheServiceNotMocked.set(cacheDir, value, undefined);
-    const res = await redisClient.hGet(cacheDir.key, cacheDir.field);
-    expect(res).toBeNull();
+    await redisCacheService.set(cacheDir, value, undefined);
 
-    // TODO: do the same on other test and delete/rename redisCacheService/redisCacheServiceNotMocked and other const
+    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    expect(storedValue).toBeNull();
   });
 
-  it('Setting key with expireTimeSeconds', async () => {
+  it('Setting key with expireTimeSeconds does store the value with the provided TTL', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
       faker.string.sample(),
@@ -89,20 +71,11 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.set(cacheDir, value, expireTime);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-      value,
-    );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
-      cacheDir.key,
-      expireTime,
-    );
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    const ttl = await redisClient.ttl(cacheDir.key);
+    expect(storedValue).toEqual(value);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(expireTime);
   });
 
   it('Setting key throws on expire', async () => {
@@ -110,127 +83,84 @@ describe('RedisCacheService', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    const value = fakeJson();
-    const expireTimeSeconds = faker.number.int({ min: 5 });
-    redisClientTypeMock.expire.mockRejectedValueOnce(new Error('cache error'));
 
+    // Expiration time out of range to force an error
     await expect(
-      redisCacheService.set(cacheDir, value, expireTimeSeconds),
-    ).rejects.toThrow('cache error');
+      redisCacheService.set(cacheDir, '', Number.MAX_VALUE + 1),
+    ).rejects.toThrow();
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-      value,
-    );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
-      cacheDir.key,
-      expireTimeSeconds,
-    );
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-    );
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    expect(storedValue).toBeNull();
   });
 
-  it('Setting key throws on set', async () => {
+  it('Getting key gets the stored value', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
     const value = fakeJson();
-    redisClientTypeMock.hSet.mockRejectedValueOnce(new Error('cache error'));
+    redisClient.hSet(cacheDir.key, cacheDir.field, value);
 
-    await expect(
-      redisCacheService.set(cacheDir, value, faker.number.int({ min: 5 })),
-    ).rejects.toThrow('cache error');
+    const storedValue = await redisCacheService.get(cacheDir);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-      value,
-    );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
-    );
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    expect(storedValue).toEqual(value);
   });
 
-  it('Getting key calls hGet', async () => {
+  it('Deleting key deletes the stored value and sets invalidationTime', async () => {
+    const startTime = Date.now();
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    await redisCacheService.get(cacheDir);
+    const value = fakeJson();
+    redisClient.hSet(cacheDir.key, cacheDir.field, value);
 
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledWith(
-      cacheDir.key,
-      cacheDir.field,
+    await redisCacheService.deleteByKey(cacheDir.key);
+
+    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    const invalidationTime = Number(
+      await redisClient.hGet(`invalidationTimeMs:${cacheDir.key}`, ''),
     );
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
-  });
-
-  it('Deleting key calls delete and sets invalidationTime', async () => {
-    jest.useFakeTimers();
-    const now = jest.now();
-    const key = faker.string.alphanumeric();
-
-    await redisCacheService.deleteByKey(key);
-
-    expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
-      `invalidationTimeMs:${key}`,
-      '',
-      now.toString(),
+    const invalidationTimeTtl = await redisClient.ttl(
+      `invalidationTimeMs:${cacheDir.key}`,
     );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
-      `invalidationTimeMs:${key}`,
+    expect(storedValue).toBeNull();
+    expect(invalidationTime).toBeGreaterThan(startTime);
+    expect(invalidationTimeTtl).toBeGreaterThan(0);
+    expect(invalidationTimeTtl).toBeLessThanOrEqual(
       defaultExpirationTimeInSeconds,
     );
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
-    jest.useRealTimers();
   });
 
-  it('Deleting keys by pattern calls scan and unlink', async () => {
+  it('Deleting keys by pattern deletes matching keys only', async () => {
+    const pattern = faker.string.alphanumeric();
     const matches = [
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
+      `${pattern}${faker.string.alphanumeric()}`,
+      `${pattern}${faker.string.alphanumeric()}`,
+      `${pattern}${faker.string.alphanumeric()}`,
     ];
-    redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
+    const anotherPattern = faker.string.alphanumeric();
+    const value = fakeJson();
+    await redisClient.hSet(anotherPattern, '', value);
+    for (const key of matches) {
+      await redisClient.hSet(key, '', value);
+    }
 
-    await redisCacheService.deleteByKeyPattern(faker.string.alphanumeric());
+    await redisCacheService.deleteByKeyPattern(`${pattern}*`);
 
-    expect(redisClientTypeMock.scanIterator).toHaveBeenCalledTimes(1);
-    expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(matches.length);
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    for (const key of matches) {
+      expect(await redisClient.hGet(key, '')).toBeNull();
+    }
+    expect(await redisClient.hGet(anotherPattern, '')).toEqual(value);
   });
 
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
-    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
-    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(1);
+    // Connection is closed, this is expected to throw an error
+    await expect(redisCacheService.ping()).rejects.toThrow();
+    // Connection is reopened after this test execution
+    redisClient = await redisClientFactory();
   });
 
   afterAll(async () => {
