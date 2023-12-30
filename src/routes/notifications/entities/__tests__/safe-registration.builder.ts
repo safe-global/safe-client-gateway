@@ -4,7 +4,7 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import { SafeRegistration } from '@/routes/notifications/entities/safe-registration.entity';
 
 export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {
-  return Builder.new<SafeRegistration>()
+  return new Builder<SafeRegistration>()
     .with('chainId', faker.string.numeric())
     .with(
       'safes',

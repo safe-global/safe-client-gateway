@@ -18,9 +18,13 @@ import { OutgoingToken } from '@/routes/cache-hooks/entities/outgoing-token.enti
 import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
 import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 import { ModuleTransaction } from '@/routes/cache-hooks/entities/module-transaction.entity';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 @Injectable()
 export class CacheHooksService {
+  private static readonly HOOK_TYPE = 'hook';
+
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
@@ -34,11 +38,14 @@ export class CacheHooksService {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   async onEvent(
     event:
       | ChainUpdate
+      | DeletedMultisigTransaction
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -67,10 +74,28 @@ export class CacheHooksService {
             safeTransactionHash: event.safeTxHash,
           }),
         );
+        this._logSafeTxEvent(event);
+        break;
+      // A deleted multisig transaction affects:
+      // queued transactions – clear multisig transactions
+      // the pending transaction – clear multisig transaction
+      case EventType.DELETED_MULTISIG_TRANSACTION:
+        promises.push(
+          this.safeRepository.clearMultisigTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.safeRepository.clearMultisigTransaction({
+            chainId: event.chainId,
+            safeTransactionHash: event.safeTxHash,
+          }),
+        );
+        this._logSafeTxEvent(event);
         break;
       // An executed module transaction might affect:
       // - the list of all executed transactions for the safe
       // - the list of module transactions for the safe
+      // - the safe configuration
       case EventType.MODULE_TRANSACTION:
         promises.push(
           this.safeRepository.clearAllExecutedTransactions({
@@ -81,7 +106,12 @@ export class CacheHooksService {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.safeRepository.clearSafe({
+            chainId: event.chainId,
+            address: event.address,
+          }),
         );
+        this._logTxEvent(event);
         break;
       // A new executed multisig transaction affects:
       // - the collectibles that the safe has
@@ -117,6 +147,7 @@ export class CacheHooksService {
             address: event.address,
           }),
         );
+        this._logSafeTxEvent(event);
         break;
       // A new confirmation for a pending transaction affects:
       // - queued transactions – clear multisig transactions
@@ -132,6 +163,7 @@ export class CacheHooksService {
             safeTransactionHash: event.safeTxHash,
           }),
         );
+        this._logSafeTxEvent(event);
         break;
       // Incoming ether affects:
       // - the balance of the safe - clear safe balance
@@ -160,6 +192,7 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logTxEvent(event);
         break;
       // Outgoing ether affects:
       // - the balance of the safe - clear safe balance
@@ -185,6 +218,7 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logTxEvent(event);
         break;
       // An incoming token affects:
       // - the balance of the safe - clear safe balance
@@ -220,6 +254,7 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logTxEvent(event);
         break;
       // An outgoing token affects:
       // - the balance of the safe - clear safe balance
@@ -250,6 +285,7 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logTxEvent(event);
         break;
       // A message created affects:
       // - the messages associated to the Safe
@@ -260,6 +296,7 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logMessageEvent(event);
         break;
       // A new message confirmation affects:
       // - the message itself
@@ -275,14 +312,70 @@ export class CacheHooksService {
             safeAddress: event.address,
           }),
         );
+        this._logMessageEvent(event);
         break;
       case EventType.CHAIN_UPDATE:
         promises.push(this.chainsRepository.clearChain(event.chainId));
+        this._logEvent(event);
         break;
       case EventType.SAFE_APPS_UPDATE:
         promises.push(this.safeAppsRepository.clearSafeApps(event.chainId));
+        this._logEvent(event);
         break;
     }
     return Promise.all(promises);
+  }
+
+  private _logSafeTxEvent(
+    event:
+      | DeletedMultisigTransaction
+      | ExecutedTransaction
+      | NewConfirmation
+      | PendingTransaction,
+  ): void {
+    this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
+      eventType: event.type,
+      address: event.address,
+      chainId: event.chainId,
+      safeTxHash: event.safeTxHash,
+    });
+  }
+
+  private _logTxEvent(
+    event:
+      | IncomingEther
+      | IncomingToken
+      | ModuleTransaction
+      | OutgoingEther
+      | OutgoingToken,
+  ): void {
+    this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
+      eventType: event.type,
+      address: event.address,
+      chainId: event.chainId,
+      txHash: event.txHash,
+    });
+  }
+
+  private _logMessageEvent(
+    event: MessageCreated | NewMessageConfirmation,
+  ): void {
+    this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
+      eventType: event.type,
+      address: event.address,
+      chainId: event.chainId,
+      messageHash: event.messageHash,
+    });
+  }
+
+  private _logEvent(event: ChainUpdate | SafeAppsUpdate): void {
+    this.loggingService.info({
+      type: CacheHooksService.HOOK_TYPE,
+      eventType: event.type,
+      chainId: event.chainId,
+    });
   }
 }

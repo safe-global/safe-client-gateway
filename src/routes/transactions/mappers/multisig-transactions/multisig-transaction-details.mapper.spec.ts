@@ -77,7 +77,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction, safe, 0);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -97,6 +97,46 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       txHash: transaction.transactionHash,
       detailedExecutionInfo: multisigExecutionDetails,
       safeAppInfo,
+    });
+  });
+
+  it('should return an execution date with a timezone offset', async () => {
+    const chainId = faker.string.numeric();
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .build();
+    const txStatus =
+      sample(Object.values(TransactionStatus)) ?? TransactionStatus.Success;
+    statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
+    const txInfo = transferTransactionInfoBuilder().build();
+    transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
+    const safeAppInfo = safeAppInfoBuilder().build();
+    safeAppInfoMapper.mapSafeAppInfo.mockResolvedValue(safeAppInfo);
+    const multisigExecutionDetails = multisigExecutionDetailsBuilder().build();
+    multisigExecutionDetailsMapper.mapMultisigExecutionDetails.mockResolvedValue(
+      multisigExecutionDetails,
+    );
+    transactionDataMapper.isTrustedDelegateCall.mockResolvedValue(true);
+    transactionDataMapper.buildAddressInfoIndex.mockResolvedValue({});
+    const to = addressInfoBuilder().build();
+    addressInfoHelper.getOrDefault.mockResolvedValue(to);
+    const timezoneOffset = faker.number.int({
+      min: -12 * 60 * 60 * 1000,
+      max: 12 * 60 * 60 * 1000,
+    }); // range from -12 hours to +12 hours
+
+    const actual = await mapper.mapDetails(
+      chainId,
+      transaction,
+      safe,
+      timezoneOffset,
+    );
+
+    const expectedExecutionDate =
+      transaction.executionDate!.getTime() + timezoneOffset;
+    expect(actual).toMatchObject({
+      executedAt: expectedExecutionDate,
     });
   });
 
@@ -128,7 +168,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(chainId, transaction, safe, 0);
 
     expect(actual).toEqual({
       safeAddress: safe.address,

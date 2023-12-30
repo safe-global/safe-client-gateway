@@ -1,10 +1,9 @@
-import { JSONSchemaType } from 'ajv';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import { Schema } from 'ajv';
 
 export const SAFE_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/safe.json';
 
-export const safeSchema: JSONSchemaType<Safe> = {
+export const safeSchema: Schema = {
   $id: SAFE_SCHEMA_ID,
   type: 'object',
   properties: {
@@ -22,7 +21,7 @@ export const safeSchema: JSONSchemaType<Safe> = {
     },
     fallbackHandler: { type: 'string' },
     guard: { type: 'string' },
-    version: { type: 'string' },
+    version: { type: 'string', nullable: true, default: null },
   },
   required: [
     'address',
@@ -32,6 +31,5 @@ export const safeSchema: JSONSchemaType<Safe> = {
     'masterCopy',
     'fallbackHandler',
     'guard',
-    'version',
   ],
 };

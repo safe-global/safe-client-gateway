@@ -48,12 +48,19 @@ export class TransactionsController {
   async getTransactionById(
     @Param('chainId') chainId: string,
     @Param('id') id: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.getById({ chainId, txId: id });
+    return this.transactionsService.getById({
+      chainId,
+      txId: id,
+      timezoneOffsetMs,
+    });
   }
 
   @ApiOkResponse({ type: MultisigTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
+  @ApiQuery({ name: 'timezone_offset', required: false, type: Number })
   @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
   @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
   @ApiQuery({ name: 'to', required: false, type: String })
@@ -66,6 +73,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress') safeAddress: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to') to?: string,
@@ -85,11 +94,13 @@ export class TransactionsController {
       value,
       nonce,
       executed,
+      timezoneOffsetMs,
     });
   }
 
   @ApiOkResponse({ type: ModuleTransactionPage })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
+  @ApiQuery({ name: 'timezone_offset', required: false, type: Number })
   @ApiQuery({ name: 'to', required: false, type: String })
   @ApiQuery({ name: 'module', required: false, type: String })
   @ApiQuery({ name: 'cursor', required: false, type: String })
@@ -98,6 +109,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress') safeAddress: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
     @Query('to') to?: string,
     @Query('module') module?: string,
   ): Promise<Page<ModuleTransaction>> {
@@ -108,6 +121,7 @@ export class TransactionsController {
       to,
       module,
       paginationData,
+      timezoneOffsetMs,
     });
   }
 
@@ -117,6 +131,8 @@ export class TransactionsController {
   async addConfirmation(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
     @Body(AddConfirmationDtoValidationPipe)
     addConfirmationDto: AddConfirmationDto,
   ): Promise<TransactionDetails> {
@@ -124,11 +140,13 @@ export class TransactionsController {
       chainId,
       safeTxHash,
       addConfirmationDto,
+      timezoneOffsetMs,
     });
   }
 
   @ApiOkResponse({ type: IncomingTransferPage })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
+  @ApiQuery({ name: 'timezone_offset', required: false, type: Number })
   @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
   @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
   @ApiQuery({ name: 'to', required: false, type: String })
@@ -140,6 +158,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to') to?: string,
@@ -156,6 +176,7 @@ export class TransactionsController {
       value,
       tokenAddress,
       paginationData,
+      timezoneOffsetMs,
     });
   }
 
@@ -186,7 +207,7 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
-    timezoneOffset: number,
+    timezoneOffsetMs: number,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
@@ -196,7 +217,7 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       trusted,
-      timezoneOffset,
+      timezoneOffsetMs,
     });
   }
 
@@ -210,14 +231,17 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
-    timezoneOffset: number,
+    timezoneOffsetMs: number,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
-      timezoneOffset,
+      timezoneOffsetMs,
+      onlyTrusted: trusted,
     });
   }
 
@@ -227,6 +251,8 @@ export class TransactionsController {
   async proposeTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
+    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
+    timezoneOffsetMs: number,
     @Body(ProposeTransactionDtoValidationPipe)
     proposeTransactionDto: ProposeTransactionDto,
   ): Promise<TransactionDetails> {
@@ -234,6 +260,7 @@ export class TransactionsController {
       chainId,
       safeAddress,
       proposeTransactionDto,
+      timezoneOffsetMs,
     });
   }
 }

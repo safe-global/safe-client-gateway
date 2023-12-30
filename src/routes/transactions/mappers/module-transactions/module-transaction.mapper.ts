@@ -21,6 +21,7 @@ export class ModuleTransactionMapper {
   async mapTransaction(
     chainId: string,
     transaction: ModuleTransaction,
+    timezoneOffsetMs: number,
   ): Promise<Transaction> {
     const txStatus = this.statusMapper.mapTransactionStatus(transaction);
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
@@ -32,9 +33,13 @@ export class ModuleTransactionMapper {
         'CONTRACT',
       ]),
     );
+
+    const date = structuredClone(transaction.executionDate);
+    date.setTime(date.getTime() + timezoneOffsetMs);
+
     return new Transaction(
       `${MODULE_TRANSACTION_PREFIX}${TRANSACTION_ID_SEPARATOR}${transaction.safe}${TRANSACTION_ID_SEPARATOR}${transaction.moduleTransactionId}`,
-      transaction.executionDate.getTime(),
+      date.getTime(),
       txStatus,
       txInfo,
       executionInfo,

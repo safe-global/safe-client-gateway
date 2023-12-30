@@ -15,6 +15,7 @@ import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transa
 import { SafeAppsUpdate } from '@/routes/cache-hooks/entities/safe-apps-update.entity';
 import { EventValidationPipe } from '@/routes/cache-hooks/pipes/event-validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 @Controller({
   path: '',
@@ -26,11 +27,12 @@ export class CacheHooksController {
 
   @UseGuards(BasicAuthGuard)
   @Post('/hooks/events')
-  @HttpCode(200)
+  @HttpCode(202)
   async postEvent(
     @Body(EventValidationPipe)
     eventPayload:
       | ChainUpdate
+      | DeletedMultisigTransaction
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken

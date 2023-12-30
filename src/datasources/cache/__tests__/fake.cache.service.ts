@@ -21,8 +21,12 @@ export class FakeCacheService implements ICacheService {
     this.cache = {};
   }
 
-  deleteByKey(key: string): Promise<number> {
+  async deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
+    await this.set(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      Date.now().toString(),
+    );
     return Promise.resolve(1);
   }
 

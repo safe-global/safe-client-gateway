@@ -7,5 +7,5 @@ export interface Safe {
   nonce: number;
   owners: string[];
   threshold: number;
-  version: string;
+  version: string | null;
 }

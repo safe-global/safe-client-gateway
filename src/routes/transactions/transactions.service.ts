@@ -7,10 +7,10 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { Page } from '@/routes/common/entities/page.entity';
 import {
-  PaginationData,
   buildNextPageURL,
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
+  PaginationData,
 } from '@/routes/common/pagination/pagination.data';
 import {
   MODULE_TRANSACTION_PREFIX,
@@ -35,14 +35,14 @@ import { QueuedItemsMapper } from '@/routes/transactions/mappers/queued-items/qu
 import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transaction-preview.mapper';
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
-import { IncomingTransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
-    private readonly incomingTransferMapper: IncomingTransferMapper,
+    private readonly transferMapper: TransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly queuedItemsMapper: QueuedItemsMapper,
     private readonly transactionsHistoryMapper: TransactionsHistoryMapper,
@@ -55,6 +55,7 @@ export class TransactionsService {
   async getById(args: {
     chainId: string;
     txId: string;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = args.txId.split(TRANSACTION_ID_SEPARATOR);
 
@@ -66,7 +67,11 @@ export class TransactionsService {
             moduleTransactionId: id,
           }),
         ]);
-        return this.moduleTransactionDetailsMapper.mapDetails(args.chainId, tx);
+        return this.moduleTransactionDetailsMapper.mapDetails(
+          args.chainId,
+          tx,
+          args.timezoneOffsetMs,
+        );
       }
 
       case TRANSFER_PREFIX: {
@@ -84,6 +89,7 @@ export class TransactionsService {
           args.chainId,
           transfer,
           safe,
+          args.timezoneOffsetMs,
         );
       }
 
@@ -102,6 +108,7 @@ export class TransactionsService {
           args.chainId,
           tx,
           safe,
+          args.timezoneOffsetMs,
         );
       }
 
@@ -119,6 +126,7 @@ export class TransactionsService {
           args.chainId,
           tx,
           safe,
+          args.timezoneOffsetMs,
         );
       }
     }
@@ -135,6 +143,7 @@ export class TransactionsService {
     value?: string;
     nonce?: string;
     executed?: boolean;
+    timezoneOffsetMs: number;
   }): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
@@ -155,6 +164,7 @@ export class TransactionsService {
               args.chainId,
               domainTransaction,
               safeInfo,
+              args.timezoneOffsetMs,
             ),
             ConflictType.None,
           ),
@@ -180,6 +190,7 @@ export class TransactionsService {
     chainId: string;
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     await this.safeRepository.addConfirmation(args);
     const transaction = await this.safeRepository.getMultiSigTransaction({
@@ -195,6 +206,7 @@ export class TransactionsService {
       args.chainId,
       transaction,
       safe,
+      args.timezoneOffsetMs,
     );
   }
 
@@ -205,6 +217,7 @@ export class TransactionsService {
     to?: string;
     module?: string;
     paginationData?: PaginationData;
+    timezoneOffsetMs: number;
   }): Promise<Page<ModuleTransaction>> {
     const domainTransactions = await this.safeRepository.getModuleTransactions({
       ...args,
@@ -219,6 +232,7 @@ export class TransactionsService {
             await this.moduleTransactionMapper.mapTransaction(
               args.chainId,
               domainTransaction,
+              args.timezoneOffsetMs,
             ),
           ),
       ),
@@ -249,6 +263,7 @@ export class TransactionsService {
     value?: string;
     tokenAddress?: string;
     paginationData?: PaginationData;
+    timezoneOffsetMs: number;
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
@@ -264,10 +279,11 @@ export class TransactionsService {
       transfers.results.map(
         async (transfer) =>
           new IncomingTransfer(
-            await this.incomingTransferMapper.mapTransfer(
+            await this.transferMapper.mapTransfer(
               args.chainId,
               transfer,
               safeInfo,
+              args.timezoneOffsetMs,
             ),
           ),
       ),
@@ -308,7 +324,7 @@ export class TransactionsService {
     safeAddress: string;
     paginationData: PaginationData;
     trusted?: boolean;
-    timezoneOffset: number;
+    timezoneOffsetMs: number;
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -331,7 +347,7 @@ export class TransactionsService {
       args.chainId,
       this.getPreviousPageLastNonce(transactions, args.paginationData),
       this.getNextPageFirstNonce(transactions),
-      args.timezoneOffset,
+      args.timezoneOffsetMs,
     );
 
     return {
@@ -359,7 +375,8 @@ export class TransactionsService {
     routeUrl: Readonly<URL>;
     safeAddress: string;
     paginationData: PaginationData;
-    timezoneOffset: number;
+    timezoneOffsetMs: number;
+    onlyTrusted: boolean;
   }): Promise<TransactionItemPage> {
     const paginationDataAdjusted = this.getAdjustedPaginationForHistory(
       args.paginationData,
@@ -389,7 +406,8 @@ export class TransactionsService {
       domainTransactions.results,
       safeInfo,
       args.paginationData.offset,
-      args.timezoneOffset,
+      args.timezoneOffsetMs,
+      args.onlyTrusted,
     );
 
     return {
@@ -404,6 +422,7 @@ export class TransactionsService {
     chainId: string;
     safeAddress: string;
     proposeTransactionDto: ProposeTransactionDto;
+    timezoneOffsetMs: number;
   }): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(args);
 
@@ -420,6 +439,7 @@ export class TransactionsService {
       args.chainId,
       domainTransaction,
       safe,
+      args.timezoneOffsetMs,
     );
   }
 

@@ -3,9 +3,9 @@ import { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { RedisClientType } from 'redis';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import clearAllMocks = jest.clearAllMocks;
 import { fakeJson } from '@/__tests__/faker';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const redisClientType = {
   hGet: jest.fn(),
@@ -25,16 +25,29 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as unknown as ILoggingService;
 
+const configurationService = {
+  getOrThrow: jest.fn(),
+} as unknown as IConfigurationService;
+const mockConfigurationService = jest.mocked(configurationService);
+
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;
-  const configurationService = new FakeConfigurationService();
+  let defaultExpirationTimeInSeconds: number;
 
   beforeEach(async () => {
     clearAllMocks();
+    defaultExpirationTimeInSeconds = faker.number.int();
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') {
+        return defaultExpirationTimeInSeconds;
+      }
+      throw Error(`Unexpected key: ${key}`);
+    });
+
     redisCacheService = new RedisCacheService(
       redisClientTypeMock,
-      configurationService,
       mockLoggingService,
+      mockConfigurationService,
     );
   });
 
@@ -47,11 +60,11 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.set(cacheDir, value, undefined);
 
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.expire).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
   it('Setting key with expireTimeSeconds', async () => {
@@ -64,17 +77,20 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.set(cacheDir, value, expireTime);
 
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toBeCalledWith(
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
       value,
     );
-    expect(redisClientTypeMock.expire).toBeCalledTimes(1);
-    expect(redisClientTypeMock.expire).toBeCalledWith(cacheDir.key, expireTime);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+      cacheDir.key,
+      expireTime,
+    );
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
   it('Setting key throws on expire', async () => {
@@ -90,23 +106,23 @@ describe('RedisCacheService', () => {
       redisCacheService.set(cacheDir, value, expireTimeSeconds),
     ).rejects.toThrow('cache error');
 
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toBeCalledWith(
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
       value,
     );
-    expect(redisClientTypeMock.expire).toBeCalledTimes(1);
-    expect(redisClientTypeMock.expire).toBeCalledWith(
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
       cacheDir.key,
       expireTimeSeconds,
     );
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hDel).toBeCalledWith(
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
     );
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
   it('Setting key throws on set', async () => {
@@ -121,19 +137,19 @@ describe('RedisCacheService', () => {
       redisCacheService.set(cacheDir, value, faker.number.int({ min: 5 })),
     ).rejects.toThrow('cache error');
 
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hSet).toBeCalledWith(
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
       value,
     );
-    expect(redisClientTypeMock.expire).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hDel).toBeCalledWith(
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
     );
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
   it('Getting key calls hGet', async () => {
@@ -143,26 +159,39 @@ describe('RedisCacheService', () => {
     );
     await redisCacheService.get(cacheDir);
 
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toBeCalledWith(
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledWith(
       cacheDir.key,
       cacheDir.field,
     );
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
-  it('Deleting key calls delete', async () => {
+  it('Deleting key calls delete and sets invalidationTime', async () => {
+    jest.useFakeTimers();
+    const now = jest.now();
     const key = faker.string.alphanumeric();
 
     await redisCacheService.deleteByKey(key);
 
-    expect(redisClientTypeMock.unlink).toBeCalledTimes(1);
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
+      `invalidationTimeMs:${key}`,
+      '',
+      now.toString(),
+    );
+    expect(redisClientTypeMock.expire).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+      `invalidationTimeMs:${key}`,
+      defaultExpirationTimeInSeconds,
+    );
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
+    jest.useRealTimers();
   });
 
   it('Deleting keys by pattern calls scan and unlink', async () => {
@@ -175,20 +204,20 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.deleteByKeyPattern(faker.string.alphanumeric());
 
-    expect(redisClientTypeMock.scanIterator).toBeCalledTimes(1);
-    expect(redisClientTypeMock.unlink).toBeCalledTimes(matches.length);
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(0);
+    expect(redisClientTypeMock.scanIterator).toHaveBeenCalledTimes(1);
+    expect(redisClientTypeMock.unlink).toHaveBeenCalledTimes(matches.length);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(0);
   });
 
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
-    expect(redisClientTypeMock.hGet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hSet).toBeCalledTimes(0);
-    expect(redisClientTypeMock.hDel).toBeCalledTimes(0);
-    expect(redisClientTypeMock.quit).toBeCalledTimes(1);
+    expect(redisClientTypeMock.hGet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hSet).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.hDel).toHaveBeenCalledTimes(0);
+    expect(redisClientTypeMock.quit).toHaveBeenCalledTimes(1);
   });
 });

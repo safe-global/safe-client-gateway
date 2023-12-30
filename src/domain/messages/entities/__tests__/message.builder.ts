@@ -8,7 +8,7 @@ import {
 } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 
 export function messageBuilder(): IBuilder<Message> {
-  return Builder.new<Message>()
+  return new Builder<Message>()
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
     .with('safe', faker.finance.ethereumAddress())

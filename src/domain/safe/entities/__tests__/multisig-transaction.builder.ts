@@ -12,7 +12,7 @@ import { Operation } from '@/domain/safe/entities/operation.entity';
 const HASH_LENGTH = 10;
 
 export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
-  return Builder.new<MultisigTransaction>()
+  return new Builder<MultisigTransaction>()
     .with('baseGas', faker.number.int())
     .with('blockNumber', faker.number.int())
     .with(

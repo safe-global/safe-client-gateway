@@ -602,7 +602,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const timezoneOffsetSubmissionDates = transactions.map(
       ({ submissionDate }) => {
         const dateObj = new Date(submissionDate);
-        dateObj.setUTCMilliseconds(timezoneOffset);
+        dateObj.setTime(dateObj.getTime() + timezoneOffset);
         return dateObj.getTime();
       },
     );

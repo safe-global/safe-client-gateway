@@ -65,12 +65,18 @@ import {
   NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
   newMessageConfirmationEventSchema,
 } from '@/routes/cache-hooks/entities/schemas/new-message-confirmation.schema';
+import {
+  DELETED_MULTISIG_TRANSACTION_SCHEMA_ID,
+  deletedMultisigTransactionEventSchema,
+} from '@/routes/cache-hooks/entities/schemas/deleted-multisig-transaction.schema';
+import { DeletedMultisigTransaction } from '@/routes/cache-hooks/entities/deleted-multisig-transaction.entity';
 
 @Injectable()
 export class EventValidationPipe
   implements
     PipeTransform<
       | ChainUpdate
+      | DeletedMultisigTransaction
       | ExecutedTransaction
       | IncomingEther
       | IncomingToken
@@ -86,6 +92,7 @@ export class EventValidationPipe
 {
   private readonly isWebHookEvent: ValidateFunction<
     | ChainUpdate
+    | DeletedMultisigTransaction
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
@@ -103,6 +110,10 @@ export class EventValidationPipe
     jsonSchemaService.getSchema(
       CHAIN_UPDATE_EVENT_SCHEMA_ID,
       chainUpdateEventSchema,
+    );
+    jsonSchemaService.getSchema(
+      DELETED_MULTISIG_TRANSACTION_SCHEMA_ID,
+      deletedMultisigTransactionEventSchema,
     );
     jsonSchemaService.getSchema(
       EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
@@ -158,6 +169,7 @@ export class EventValidationPipe
     value: any,
   ):
     | ChainUpdate
+    | DeletedMultisigTransaction
     | ExecutedTransaction
     | IncomingEther
     | IncomingToken
