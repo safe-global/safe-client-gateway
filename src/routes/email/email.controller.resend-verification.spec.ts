@@ -13,10 +13,8 @@ import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.em
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { Email, EmailAddress } from '@/domain/email/entities/email.entity';
+import { emailBuilder } from '@/domain/email/entities/email.builder';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -68,64 +66,45 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('resends email verification successfully', async () => {
-    const chain = chainBuilder().build();
-    const account = faker.finance.ethereumAddress();
-    const safe = safeBuilder().with('owners', [account]).build();
-    const emailAddress = faker.internet.email();
-    const verificationCode = faker.string.numeric({ length: 6 });
-    const verificationGeneratedOn = new Date();
-    const verificationSentOn = new Date();
-    emailDatasource.getEmail.mockResolvedValue(<Email>{
-      chainId: chain.chainId,
-      emailAddress: new EmailAddress(emailAddress),
-      isVerified: false,
-      safeAddress: safe.address,
-      account: account,
-      verificationCode: verificationCode,
-      verificationGeneratedOn: verificationGeneratedOn,
-      verificationSentOn: verificationSentOn,
+    const email = emailBuilder()
+      .with('isVerified', false)
+      .with('verificationGeneratedOn', new Date())
+      .with('verificationSentOn', new Date())
+      .build();
+    emailDatasource.getEmail.mockResolvedValueOnce(email);
+    emailDatasource.getEmail.mockResolvedValueOnce({
+      ...email,
+      verificationCode: faker.string.numeric({ length: 6 }),
     });
 
     // Advance timer by the minimum amount of time required to resend email
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/verify-resend`,
+        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: account,
+        account: email.account,
       })
       .expect(202)
       .expect({});
   });
 
   it('triggering email resend within lock window returns 429', async () => {
-    const chain = chainBuilder().build();
-    const account = faker.finance.ethereumAddress();
-    const safe = safeBuilder().with('owners', [account]).build();
-    const emailAddress = faker.internet.email();
-    const verificationCode = faker.string.numeric({ length: 6 });
-    const verificationGeneratedOn = new Date();
-    const verificationSentOn = new Date();
-    emailDatasource.getEmail.mockResolvedValue(<Email>{
-      chainId: chain.chainId,
-      emailAddress: new EmailAddress(emailAddress),
-      isVerified: false,
-      safeAddress: safe.address,
-      account: account,
-      verificationCode: verificationCode,
-      verificationGeneratedOn: verificationGeneratedOn,
-      verificationSentOn: verificationSentOn,
-    });
+    const email = emailBuilder()
+      .with('isVerified', false)
+      .with('verificationSentOn', new Date())
+      .build();
+    emailDatasource.getEmail.mockResolvedValue(email);
 
     // Advance timer to a time within resendLockWindowMs
     jest.advanceTimersByTime(resendLockWindowMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/verify-resend`,
+        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: account,
+        account: email.account,
       })
       .expect(429)
       .expect({
@@ -135,58 +114,31 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('triggering email resend on verified emails throws 409', async () => {
-    const chain = chainBuilder().build();
-    const account = faker.finance.ethereumAddress();
-    const safe = safeBuilder().with('owners', [account]).build();
-    const emailAddress = faker.internet.email();
-    const verificationCode = faker.string.numeric({ length: 6 });
-    const verificationGeneratedOn = new Date();
-    const verificationSentOn = new Date();
-    emailDatasource.getEmail.mockResolvedValue(<Email>{
-      chainId: chain.chainId,
-      emailAddress: new EmailAddress(emailAddress),
-      isVerified: true,
-      safeAddress: safe.address,
-      account: account,
-      verificationCode: verificationCode,
-      verificationGeneratedOn: verificationGeneratedOn,
-      verificationSentOn: verificationSentOn,
-    });
+    const email = emailBuilder().with('isVerified', true).build();
+    emailDatasource.getEmail.mockResolvedValue(email);
 
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/verify-resend`,
+        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: account,
+        account: email.account,
       })
       .expect(409)
       .expect({
-        message: `Cannot verify the provided email for the provided account ${account}`,
+        message: `Cannot verify the provided email for the provided account ${email.account}`,
         statusCode: 409,
       });
   });
 
   it('resend email with new code', async () => {
-    const chain = chainBuilder().build();
-    const account = faker.finance.ethereumAddress();
-    const safe = safeBuilder().with('owners', [account]).build();
-    const emailAddress = faker.internet.email();
-    const verificationCode = faker.string.numeric({ length: 6 });
     const newVerificationCode = faker.string.numeric({ length: 6 });
-    const verificationGeneratedOn = new Date();
-    const verificationSentOn = new Date();
-    const email = <Email>{
-      chainId: chain.chainId,
-      emailAddress: new EmailAddress(emailAddress),
-      isVerified: false,
-      safeAddress: safe.address,
-      account: account,
-      verificationCode: verificationCode,
-      verificationGeneratedOn: verificationGeneratedOn,
-      verificationSentOn: verificationSentOn,
-    };
+    const email = emailBuilder()
+      .with('isVerified', false)
+      .with('verificationGeneratedOn', new Date())
+      .with('verificationSentOn', new Date())
+      .build();
     emailDatasource.getEmail.mockResolvedValueOnce(email);
     emailDatasource.getEmail.mockResolvedValueOnce({
       ...email,
@@ -197,10 +149,10 @@ describe('Email controller resend verification tests', () => {
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/verify-resend`,
+        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: account,
+        account: email.account,
       })
       .expect(202)
       .expect({});
@@ -209,23 +161,11 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('null verificationCode should return 500', async () => {
-    const chain = chainBuilder().build();
-    const account = faker.finance.ethereumAddress();
-    const safe = safeBuilder().with('owners', [account]).build();
-    const emailAddress = faker.internet.email();
-    const verificationCode = faker.string.numeric({ length: 6 });
-    const verificationGeneratedOn = new Date();
-    const verificationSentOn = new Date();
-    const email = <Email>{
-      chainId: chain.chainId,
-      emailAddress: new EmailAddress(emailAddress),
-      isVerified: false,
-      safeAddress: safe.address,
-      account: account,
-      verificationCode: verificationCode,
-      verificationGeneratedOn: verificationGeneratedOn,
-      verificationSentOn: verificationSentOn,
-    };
+    const email = emailBuilder()
+      .with('verificationCode', faker.string.numeric({ length: 6 }))
+      .with('isVerified', false)
+      .with('verificationGeneratedOn', new Date())
+      .build();
     emailDatasource.getEmail.mockResolvedValueOnce(email);
     emailDatasource.getEmail.mockResolvedValueOnce({
       ...email,
@@ -235,10 +175,10 @@ describe('Email controller resend verification tests', () => {
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/verify-resend`,
+        `/v1/chains/${email.chainId}/safes/${email.account}/emails/verify-resend`,
       )
       .send({
-        account: account,
+        account: email.account,
       })
       .expect(500)
       .expect({ code: 500, message: 'Internal server error' });
