@@ -14,7 +14,7 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
-import { emailBuilder } from '@/domain/email/entities/email.builder';
+import { emailBuilder } from '@/domain/email/entities/__tests__/email.builder';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
