@@ -91,11 +91,7 @@ describe('Email controller verify email tests', () => {
   });
 
   it('returns 204 on already verified emails', async () => {
-    const email = emailBuilder()
-      .with('isVerified', true)
-      .with('verificationGeneratedOn', new Date())
-      .with('verificationCode', faker.string.numeric({ length: 6 }))
-      .build();
+    const email = emailBuilder().with('isVerified', true).build();
     emailDatasource.getEmail.mockResolvedValueOnce(email);
 
     jest.advanceTimersByTime(ttlMs - 1);
@@ -110,7 +106,7 @@ describe('Email controller verify email tests', () => {
       .expect(204)
       .expect({});
 
-    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(1);
+    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(0);
   });
 
   it('email verification with expired code returns 400', async () => {
