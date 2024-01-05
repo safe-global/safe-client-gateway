@@ -5,6 +5,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
 
 @Injectable()
 export class RedisCacheService
@@ -18,6 +19,7 @@ export class RedisCacheService
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(CacheKeyPrefix) private readonly keyPrefix: string,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -38,24 +40,28 @@ export class RedisCacheService
       return;
     }
 
+    const key = `${this.keyPrefix}${cacheDir.key}`;
+
     try {
-      await this.client.hSet(cacheDir.key, cacheDir.field, value);
-      await this.client.expire(cacheDir.key, expireTimeSeconds);
+      await this.client.hSet(key, cacheDir.field, value);
+      await this.client.expire(key, expireTimeSeconds);
     } catch (error) {
-      await this.client.hDel(cacheDir.key, cacheDir.field);
+      await this.client.hDel(key, cacheDir.field);
       throw error;
     }
   }
 
   async get(cacheDir: CacheDir): Promise<string | undefined> {
-    return await this.client.hGet(cacheDir.key, cacheDir.field);
+    const key = `${this.keyPrefix}${cacheDir.key}`;
+    return await this.client.hGet(key, cacheDir.field);
   }
 
   async deleteByKey(key: string): Promise<number> {
+    const keyWithPrefix = `${this.keyPrefix}${key}`;
     // see https://redis.io/commands/unlink/
-    const result = await this.client.unlink(key);
+    const result = await this.client.unlink(keyWithPrefix);
     await this.set(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      new CacheDir(`invalidationTimeMs:${keyWithPrefix}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
     );
@@ -63,7 +69,10 @@ export class RedisCacheService
   }
 
   async deleteByKeyPattern(pattern: string): Promise<void> {
-    for await (const key of this.client.scanIterator({ MATCH: pattern })) {
+    const patternWithPrefix = `${this.keyPrefix}${pattern}`;
+    for await (const key of this.client.scanIterator({
+      MATCH: patternWithPrefix,
+    })) {
       await this.client.unlink(key);
     }
   }
