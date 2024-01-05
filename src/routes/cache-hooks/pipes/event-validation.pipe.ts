@@ -107,59 +107,59 @@ export class EventValidationPipe
   >;
 
   constructor(private readonly jsonSchemaService: JsonSchemaService) {
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       CHAIN_UPDATE_EVENT_SCHEMA_ID,
       chainUpdateEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       DELETED_MULTISIG_TRANSACTION_SCHEMA_ID,
       deletedMultisigTransactionEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       EXECUTED_TRANSACTION_EVENT_SCHEMA_ID,
       executedTransactionEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       INCOMING_ETHER_EVENT_SCHEMA_ID,
       incomingEtherEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       INCOMING_TOKEN_EVENT_SCHEMA_ID,
       incomingTokenEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       MESSAGE_CREATED_EVENT_SCHEMA_ID,
       messageCreatedEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       MODULE_TRANSACTION_EVENT_SCHEMA_ID,
       moduleTransactionEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       NEW_CONFIRMATION_EVENT_SCHEMA_ID,
       newConfirmationEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
       newMessageConfirmationEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       OUTGOING_ETHER_EVENT_SCHEMA_ID,
       outgoingEtherEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       OUTGOING_TOKEN_EVENT_SCHEMA_ID,
       outgoingTokenEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       PENDING_TRANSACTION_EVENT_SCHEMA_ID,
       pendingTransactionEventSchema,
     );
-    jsonSchemaService.getSchema(
+    this.jsonSchemaService.getSchema(
       SAFE_APPS_UPDATE_EVENT_SCHEMA_ID,
       safeAppsUpdateEventSchema,
     );
-    this.isWebHookEvent = jsonSchemaService.getSchema(
+    this.isWebHookEvent = this.jsonSchemaService.getSchema(
       WEB_HOOK_SCHEMA_ID,
       webHookSchema,
     );
