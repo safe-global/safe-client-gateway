@@ -881,7 +881,7 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
-  it('Should avoid returning a date label if all the token transfers for that date are untrusted', async () => {
+  it('Should not return a date label if all the token transfers for that date are untrusted', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
     const untrustedToken = tokenBuilder().with('trusted', false).build();
