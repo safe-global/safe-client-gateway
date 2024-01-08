@@ -155,7 +155,7 @@ export class EmailRepository implements IEmailRepository {
     return this.emailDataSource.deleteEmail(args);
   }
 
-  async updateEmail(args: {
+  async editEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;

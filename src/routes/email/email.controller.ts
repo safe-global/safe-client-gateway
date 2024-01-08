@@ -24,7 +24,7 @@ import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity'
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
 import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
 import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
-import { UpdateEmailDto } from '@/routes/email/entities/update-email-dto.entity';
+import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
 
@@ -121,16 +121,16 @@ export class EmailController {
     EmailAddressDoesNotExistExceptionFilter,
   )
   @HttpCode(HttpStatus.ACCEPTED)
-  async updateEmail(
+  async editEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body() updateEmailDto: UpdateEmailDto,
+    @Body() editEmailDto: EditEmailDto,
   ): Promise<void> {
-    await this.service.updateEmail({
+    await this.service.editEmail({
       chainId,
       safeAddress,
-      account: updateEmailDto.account,
-      emailAddress: updateEmailDto.emailAddress,
+      account: editEmailDto.account,
+      emailAddress: editEmailDto.emailAddress,
     });
   }
 }

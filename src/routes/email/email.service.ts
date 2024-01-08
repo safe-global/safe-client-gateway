@@ -41,12 +41,12 @@ export class EmailService {
     return this.repository.deleteEmail(args);
   }
 
-  async updateEmail(args: {
+  async editEmail(args: {
     chainId: string;
     safeAddress: string;
     account: string;
     emailAddress: string;
   }): Promise<void> {
-    return this.repository.updateEmail(args);
+    return this.repository.editEmail(args);
   }
 }
