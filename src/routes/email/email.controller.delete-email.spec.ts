@@ -113,8 +113,8 @@ describe('Email controller delete email tests', () => {
       .expect(204)
       .expect({});
 
-    expect(emailApi.deleteEmailAddress).toBeCalledTimes(1);
-    expect(emailDatasource.deleteEmail).toBeCalledTimes(1);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(1);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(1);
   });
 
   it("returns 404 if trying to deleting an email that doesn't exist", async () => {
@@ -162,8 +162,8 @@ describe('Email controller delete email tests', () => {
         message: `No email address was found for the provided account ${accountAddress}.`,
       });
 
-    expect(emailApi.deleteEmailAddress).toBeCalledTimes(0);
-    expect(emailDatasource.deleteEmail).toBeCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(0);
   });
 
   it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
@@ -298,7 +298,6 @@ describe('Email controller delete email tests', () => {
     });
     emailDatasource.getEmail.mockResolvedValueOnce(email);
     emailApi.deleteEmailAddress.mockRejectedValue(new Error('Some error'));
-    emailDatasource.deleteEmail.mockResolvedValueOnce();
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -310,7 +309,7 @@ describe('Email controller delete email tests', () => {
       .expect(500)
       .expect({ code: 500, message: 'Internal server error' });
 
-    expect(emailApi.deleteEmailAddress).toBeCalledTimes(1);
-    expect(emailDatasource.deleteEmail).toBeCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(1);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(0);
   });
 });
