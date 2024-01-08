@@ -24,7 +24,7 @@ import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { emailBuilder } from '@/domain/email/entities/email.builder';
+import { emailBuilder } from '@/domain/email/entities/__tests__/email.builder';
 
 describe('Email controller delete email tests', () => {
   let app;
