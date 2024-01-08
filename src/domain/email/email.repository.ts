@@ -130,6 +130,11 @@ export class EmailRepository implements IEmailRepository {
   }): Promise<void> {
     const email = await this.emailDataSource.getEmail(args);
 
+    if (email.isVerified) {
+      // email is already verified, so we don't need to perform further checks
+      return;
+    }
+
     if (email.verificationCode !== args.code) {
       throw new InvalidVerificationCodeError(args);
     }
