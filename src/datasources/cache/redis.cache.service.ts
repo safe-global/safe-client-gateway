@@ -40,7 +40,7 @@ export class RedisCacheService
       return;
     }
 
-    const key = `${this.keyPrefix}${cacheDir.key}`;
+    const key = this._prefixKey(cacheDir.key);
 
     try {
       await this.client.hSet(key, cacheDir.field, value);
@@ -52,16 +52,16 @@ export class RedisCacheService
   }
 
   async get(cacheDir: CacheDir): Promise<string | undefined> {
-    const key = `${this.keyPrefix}${cacheDir.key}`;
+    const key = this._prefixKey(cacheDir.key);
     return await this.client.hGet(key, cacheDir.field);
   }
 
   async deleteByKey(key: string): Promise<number> {
-    const keyWithPrefix = `${this.keyPrefix}${key}`;
+    const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(keyWithPrefix);
     await this.set(
-      new CacheDir(`invalidationTimeMs:${keyWithPrefix}`, ''),
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
     );
@@ -69,12 +69,31 @@ export class RedisCacheService
   }
 
   async deleteByKeyPattern(pattern: string): Promise<void> {
-    const patternWithPrefix = `${this.keyPrefix}${pattern}`;
+    const patternWithPrefix = this._prefixKey(pattern);
     for await (const key of this.client.scanIterator({
       MATCH: patternWithPrefix,
     })) {
       await this.client.unlink(key);
     }
+  }
+
+  /**
+   * Constructs a prefixed key string.
+   *
+   * This function takes a key string as an input and prefixes it with `this.keyPrefix`.
+   * If `this.keyPrefix` is empty, it returns the original key without any prefix.
+   *
+   * @param key - The original key string that needs to be prefixed.
+   * @returns A string that combines `this.keyPrefix` and the original `key` with a hyphen.
+   *          If `this.keyPrefix` is empty, the original `key` is returned without any modification.
+   * @private
+   */
+  private _prefixKey(key: string): string {
+    if (this.keyPrefix.length === 0) {
+      return key;
+    }
+
+    return `${this.keyPrefix}-${key}`;
   }
 
   /**

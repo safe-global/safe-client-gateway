@@ -32,7 +32,7 @@ describe('Get safes by owner e2e test', () => {
 
   it('GET /owners/<owner_address>/safes', async () => {
     const ownerAddress = '0xf10E2042ec19747401E5EA174EfB63A0058265E6';
-    const ownerCacheKey = `${cacheKeyPrefix}${chainId}_owner_safes_${ownerAddress}`;
+    const ownerCacheKey = `${cacheKeyPrefix}-${chainId}_owner_safes_${ownerAddress}`;
 
     await request(app.getHttpServer())
       .get(`/chains/${chainId}/owners/${ownerAddress}/safes`)

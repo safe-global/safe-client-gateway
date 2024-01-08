@@ -122,7 +122,7 @@ describe('Get contract e2e test', () => {
       });
 
     const cacheContent = await redisClient.hGet(
-      `${cacheKeyPrefix}${chainId}_contract_${contractAddress}`,
+      `${cacheKeyPrefix}-${chainId}_contract_${contractAddress}`,
       '',
     );
     expect(cacheContent).toEqual(JSON.stringify(expectedResponse));
