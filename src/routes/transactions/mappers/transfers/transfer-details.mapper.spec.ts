@@ -24,7 +24,7 @@ describe('TransferDetails mapper (Unit)', () => {
     const transferInfo = transferTransactionInfoBuilder().build();
     transferInfoMapper.mapTransferInfo.mockResolvedValue(transferInfo);
 
-    const actual = await mapper.mapDetails(chainId, transfer, safe, 0);
+    const actual = await mapper.mapDetails(chainId, transfer, safe);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -36,31 +36,6 @@ describe('TransferDetails mapper (Unit)', () => {
       detailedExecutionInfo: null,
       txHash: transfer.transactionHash,
       safeAppInfo: null,
-    });
-  });
-
-  it('should return an execution date with a timezone offset', async () => {
-    const chainId = faker.string.numeric();
-    const transfer = erc20TransferBuilder().build();
-    const safe = safeBuilder().build();
-    const transferInfo = transferTransactionInfoBuilder().build();
-    transferInfoMapper.mapTransferInfo.mockResolvedValue(transferInfo);
-    const timezoneOffset = faker.number.int({
-      min: -12 * 60 * 60 * 1000,
-      max: 12 * 60 * 60 * 1000,
-    }); // range from -12 hours to +12 hours
-
-    const actual = await mapper.mapDetails(
-      chainId,
-      transfer,
-      safe,
-      timezoneOffset,
-    );
-
-    const expectedExecutionDate =
-      transfer.executionDate.getTime() + timezoneOffset;
-    expect(actual).toMatchObject({
-      executedAt: expectedExecutionDate,
     });
   });
 });

@@ -16,7 +16,6 @@ export class CreationTransactionMapper {
     chainId: string,
     transaction: CreationTransaction,
     safe: Safe,
-    timezoneOffsetMs: number,
   ): Promise<Transaction> {
     const creator = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -42,12 +41,9 @@ export class CreationTransactionMapper {
       factory,
     );
 
-    const date = structuredClone(transaction.created);
-    date.setTime(date.getTime() + timezoneOffsetMs);
-
     return new Transaction(
       `${CreationTransactionMapper.TRANSACTION_TYPE}_${safe.address}`,
-      date.getTime(),
+      transaction.created.getTime(),
       TransactionStatus.Success,
       txInfo,
       null,
