@@ -77,7 +77,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -119,7 +119,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -164,7 +164,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -214,7 +214,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
@@ -259,7 +259,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
 
     jest.advanceTimersByTime(5 * 60 * 1000);
@@ -324,7 +324,7 @@ describe('Email controller update email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-update-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {

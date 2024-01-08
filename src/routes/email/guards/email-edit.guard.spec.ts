@@ -8,27 +8,27 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { Hash } from 'viem';
-import { EmailUpdateGuard } from '@/routes/email/guards/email-update.guard';
+import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 
 @Controller()
 class TestController {
   @Post('test/:chainId/:safeAddress')
   @HttpCode(200)
-  @UseGuards(EmailUpdateGuard)
+  @UseGuards(EmailEditGuard)
   async validRoute() {}
 
   @Post('test/invalid/chains/:chainId')
   @HttpCode(200)
-  @UseGuards(EmailUpdateGuard)
+  @UseGuards(EmailEditGuard)
   async invalidRouteWithChainId() {}
 
   @Post('test/invalid/safes/:safeAddress')
   @HttpCode(200)
-  @UseGuards(EmailUpdateGuard)
+  @UseGuards(EmailEditGuard)
   async invalidRouteWithSafeAddress() {}
 }
 
-describe('EmailUpdate guard tests', () => {
+describe('EmailEdit guard tests', () => {
   let app;
 
   const chainId = faker.string.numeric();
@@ -41,7 +41,7 @@ describe('EmailUpdate guard tests', () => {
   let signature: Hash;
 
   beforeAll(async () => {
-    const message = `email-update-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const message = `email-edit-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
     signature = await account.signMessage({ message });
   });
 

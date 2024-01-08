@@ -8,7 +8,7 @@ import { ResendVerificationTimespanError } from '@/domain/email/errors/verificat
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-verified.error';
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
-import { EmailUpdateMatchesError } from '@/domain/email/errors/email-update-matches.error';
+import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()
@@ -161,7 +161,7 @@ export class EmailRepository implements IEmailRepository {
     await this.emailDataSource.deleteEmail(args);
   }
 
-  async updateEmail(args: {
+  async editEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
@@ -171,7 +171,7 @@ export class EmailRepository implements IEmailRepository {
     const currentEmail = await this.emailDataSource.getEmail(args);
 
     if (newEmail.value === currentEmail.emailAddress.value) {
-      throw new EmailUpdateMatchesError(args);
+      throw new EmailEditMatchesError(args);
     }
 
     const verificationCode = this._generateCode();

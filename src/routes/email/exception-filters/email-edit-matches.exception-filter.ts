@@ -5,11 +5,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { EmailUpdateMatchesError } from '@/domain/email/errors/email-update-matches.error';
+import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
 
-@Catch(EmailUpdateMatchesError)
-export class EmailUpdateMatchesExceptionFilter implements ExceptionFilter {
-  catch(exception: EmailUpdateMatchesError, host: ArgumentsHost) {
+@Catch(EmailEditMatchesError)
+export class EmailEditMatchesExceptionFilter implements ExceptionFilter {
+  catch(exception: EmailEditMatchesError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
