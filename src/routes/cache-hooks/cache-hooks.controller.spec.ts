@@ -25,11 +25,9 @@ describe('Post Hook Events (Unit)', () => {
   let safeConfigUrl;
   let fakeCacheService: FakeCacheService;
   let networkService;
-  let webHookExecutionDelayMs;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
@@ -49,16 +47,9 @@ describe('Post Hook Events (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     authToken = configurationService.get('auth.token');
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
-    webHookExecutionDelayMs = configurationService.get(
-      'webHookExecutionDelayMs',
-    );
     networkService = moduleFixture.get(NetworkService);
 
     await app.init();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   afterAll(async () => {
@@ -73,6 +64,11 @@ describe('Post Hook Events (Unit)', () => {
   });
 
   it.each([
+    {
+      type: 'DELETED_MULTISIG_TRANSACTION',
+      address: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       address: faker.finance.ethereumAddress(),
@@ -234,10 +230,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -253,6 +246,10 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'DELETED_MULTISIG_TRANSACTION',
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transactions', async (payload) => {
@@ -285,10 +282,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -304,6 +298,10 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'NEW_CONFIRMATION',
       owner: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'DELETED_MULTISIG_TRANSACTION',
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transaction', async (payload) => {
@@ -336,10 +334,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -383,10 +378,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -435,10 +427,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -487,10 +476,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -534,10 +520,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -576,10 +559,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -643,10 +623,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -688,10 +665,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -713,10 +687,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -738,10 +709,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -763,9 +731,6 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    setTimeout(
-      () => expect(fakeCacheService.get(cacheDir)).resolves.toBeNull(),
-      webHookExecutionDelayMs,
-    );
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 });

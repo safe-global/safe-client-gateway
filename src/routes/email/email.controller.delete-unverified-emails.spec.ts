@@ -27,10 +27,6 @@ describe('Email controller delete unverified emails tests', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
-    // Temporarily allow us to alter timezone calculation for testing
-    // TODO: Remove after setting Jest timezone to UTC
-    Date.prototype.getTimezoneOffset = jest.fn(() => 0);
-
     // The CRON job runs every Sunday at 00:00:00:000
     // Sunday 24.12.23 00:00:01
     const now = new Date('2023-12-24T00:00:00.001Z');
