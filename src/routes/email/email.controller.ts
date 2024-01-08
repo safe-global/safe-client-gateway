@@ -25,8 +25,8 @@ import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception
 import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
 import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
 import { UpdateEmailDto } from '@/routes/email/entities/update-email-dto.entity';
-import { EmailUpdateGuard } from '@/routes/email/guards/email-update.guard';
-import { EmailUpdateMatchesExceptionFilter } from '@/routes/email/exception-filters/email-update-matches.exception-filter';
+import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
+import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -112,12 +112,12 @@ export class EmailController {
 
   @Put('')
   @UseGuards(
-    EmailUpdateGuard,
+    EmailEditGuard,
     TimestampGuard(5 * 60 * 1000), // 5 minutes
     OnlySafeOwnerGuard,
   )
   @UseFilters(
-    EmailUpdateMatchesExceptionFilter,
+    EmailEditMatchesExceptionFilter,
     EmailAddressDoesNotExistExceptionFilter,
   )
   @HttpCode(HttpStatus.ACCEPTED)
