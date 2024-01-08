@@ -21,11 +21,16 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
+import { EmailApiModule } from '@/datasources/email-api/email-api.module';
+import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { emailBuilder } from '@/domain/email/entities/__tests__/email.builder';
 
 describe('Email controller delete email tests', () => {
   let app;
   let safeConfigUrl;
   let emailDatasource;
+  let emailApi;
   let networkService;
 
   beforeEach(async () => {
@@ -37,6 +42,8 @@ describe('Email controller delete email tests', () => {
     })
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
+      .overrideModule(EmailApiModule)
+      .useModule(TestEmailApiModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -48,6 +55,7 @@ describe('Email controller delete email tests', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     emailDatasource = moduleFixture.get(IEmailDataSource);
+    emailApi = moduleFixture.get(IEmailApi);
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -74,6 +82,11 @@ describe('Email controller delete email tests', () => {
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
+    const email = emailBuilder()
+      .with('account', accountAddress)
+      .with('safeAddress', safe.address)
+      .with('chainId', chain.chainId)
+      .build();
     const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
     networkService.get.mockImplementation((url) => {
@@ -86,7 +99,9 @@ describe('Email controller delete email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
+    emailDatasource.getEmail.mockResolvedValue(email);
     emailDatasource.deleteEmail.mockImplementation(() => Promise.resolve());
+    emailApi.deleteEmailAddress.mockResolvedValue();
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -97,6 +112,9 @@ describe('Email controller delete email tests', () => {
       })
       .expect(204)
       .expect({});
+
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(1);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(1);
   });
 
   it("returns 404 if trying to deleting an email that doesn't exist", async () => {
@@ -123,7 +141,7 @@ describe('Email controller delete email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.deleteEmail.mockRejectedValue(
+    emailDatasource.getEmail.mockRejectedValueOnce(
       new EmailAddressDoesNotExistError(
         chain.chainId,
         safe.address,
@@ -143,6 +161,9 @@ describe('Email controller delete email tests', () => {
         statusCode: 404,
         message: `No email address was found for the provided account ${accountAddress}.`,
       });
+
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(0);
   });
 
   it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
@@ -244,5 +265,51 @@ describe('Email controller delete email tests', () => {
         error: 'Forbidden',
         statusCode: 403,
       });
+  });
+
+  it('returns 500 if email api throws', async () => {
+    const chain = chainBuilder().build();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const email = emailBuilder()
+      .with('account', accountAddress)
+      .with('safeAddress', safe.address)
+      .with('chainId', chain.chainId)
+      .build();
+    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.getEmail.mockResolvedValueOnce(email);
+    emailApi.deleteEmailAddress.mockRejectedValue(new Error('Some error'));
+
+    await request(app.getHttpServer())
+      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        account: account.address,
+        timestamp: timestamp,
+        signature: signature,
+      })
+      .expect(500)
+      .expect({ code: 500, message: 'Internal server error' });
+
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(1);
+    expect(emailDatasource.deleteEmail).toHaveBeenCalledTimes(0);
   });
 });

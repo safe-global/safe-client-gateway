@@ -9,6 +9,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-verified.error';
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
 import { EmailUpdateMatchesError } from '@/domain/email/errors/email-update-matches.error';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()
 export class EmailRepository implements IEmailRepository {
@@ -20,6 +21,7 @@ export class EmailRepository implements IEmailRepository {
     private readonly emailDataSource: IEmailDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IEmailApi) private readonly emailApi: IEmailApi,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -152,7 +154,11 @@ export class EmailRepository implements IEmailRepository {
     safeAddress: string;
     account: string;
   }): Promise<void> {
-    return this.emailDataSource.deleteEmail(args);
+    const email = await this.emailDataSource.getEmail(args);
+    await this.emailApi.deleteEmailAddress({
+      emailAddress: email.emailAddress.value,
+    });
+    await this.emailDataSource.deleteEmail(args);
   }
 
   async updateEmail(args: {
