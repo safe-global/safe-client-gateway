@@ -30,6 +30,10 @@ describe('RedisCacheService', () => {
     redisClient = await redisClientFactory();
   });
 
+  afterAll(async () => {
+    await redisClient.quit();
+  });
+
   beforeEach(async () => {
     clearAllMocks();
     defaultExpirationTimeInSeconds = faker.number.int();
@@ -161,10 +165,5 @@ describe('RedisCacheService', () => {
     await expect(redisCacheService.ping()).rejects.toThrow();
     // Connection is reopened after this test execution
     redisClient = await redisClientFactory();
-  });
-
-  afterAll(async () => {
-    await redisClient.flushAll();
-    await redisClient.quit();
   });
 });
