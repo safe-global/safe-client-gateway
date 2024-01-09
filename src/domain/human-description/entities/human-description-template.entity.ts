@@ -93,8 +93,14 @@ export class HumanDescriptionTemplate {
     to: string,
     tokenType: string,
     index: number,
-    args: unknown[],
+    args: readonly unknown[] | undefined,
   ): HumanDescriptionFragment {
+    if (!args) {
+      throw Error(
+        `Error mapping token type ${tokenType}. No arguments provided`,
+      );
+    }
+
     switch (tokenType) {
       case ValueType.TokenValue:
         return <TokenValueFragment>{
