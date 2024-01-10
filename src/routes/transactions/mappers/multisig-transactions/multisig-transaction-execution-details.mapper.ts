@@ -27,7 +27,6 @@ export class MultisigTransactionExecutionDetailsMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-    timezoneOffsetMs: number,
   ): Promise<MultisigExecutionDetails> {
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
     const gasToken = transaction.gasToken ?? NULL_ADDRESS;
@@ -62,11 +61,8 @@ export class MultisigTransactionExecutionDetailsMapper {
         this._getRejectors(chainId, transaction),
       ]);
 
-    const date = structuredClone(transaction.submissionDate);
-    date.setTime(date.getTime() + timezoneOffsetMs);
-
     return new MultisigExecutionDetails(
-      date.getTime(),
+      transaction.submissionDate.getTime(),
       transaction.nonce,
       transaction.safeTxGas?.toString() ?? '0',
       transaction.baseGas?.toString() ?? '0',

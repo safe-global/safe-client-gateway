@@ -63,7 +63,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
-      0,
     );
 
     expect(actual).toEqual(
@@ -86,39 +85,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
       }),
     );
-  });
-
-  it('should return a submission date with a timezone offset', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .with('confirmations', [])
-      .build();
-    const addressInfo = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
-    const gasTokenInfo = tokenBuilder().build();
-    tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
-    const timezoneOffset = faker.number.int({
-      min: -12 * 60 * 60 * 1000,
-      max: 12 * 60 * 60 * 1000,
-    }); // range from -12 hours to +12 hours
-
-    const actual = await mapper.mapMultisigExecutionDetails(
-      chainId,
-      transaction,
-      safe,
-      timezoneOffset,
-    );
-
-    const expectedSubmissionDate =
-      transaction.submissionDate.getTime() + timezoneOffset;
-    expect(actual).toMatchObject({
-      submittedAt: expectedSubmissionDate,
-    });
   });
 
   it('should return a MultisigExecutionDetails object with NULL_ADDRESS gasToken, confirmations and rejections', async () => {
@@ -160,7 +126,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
-      0,
     );
 
     expect(actual).toEqual(
@@ -226,7 +191,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       chainId,
       transaction,
       safe,
-      0,
     );
 
     expect(actual).toEqual(
