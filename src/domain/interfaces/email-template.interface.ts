@@ -1,7 +1,7 @@
 export const IEmailTemplate = Symbol('IEmailTemplate');
 
 /**
- * Templates are required (but used sparingly) as PushWoosh doesn't support
+ * Templates are required (but used sparingly) as some providers don't support
  * JavaScript or arrays passed as substitution variables
  */
 export interface IEmailTemplate {

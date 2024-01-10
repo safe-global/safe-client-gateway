@@ -3,7 +3,7 @@ import { getAddress } from 'viem';
 import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
 
 @Injectable()
-export class PushwooshTemplate implements IEmailTemplate {
+export class PushWooshTemplate implements IEmailTemplate {
   addressToHtml(address: string): string {
     const CSS_ID = 'address-center';
 
