@@ -78,6 +78,12 @@ export class HumanDescriptionTemplate {
         const tokenType = match.groups.typeToken;
         const paramIndex = match.groups.paramIndex;
 
+        if (!args) {
+          throw Error(
+            `Error mapping token type ${tokenType}. No arguments provided`,
+          );
+        }
+
         fragments.push(
           this._mapTokenType(to, tokenType, Number(paramIndex), args),
         );
@@ -93,14 +99,8 @@ export class HumanDescriptionTemplate {
     to: string,
     tokenType: string,
     index: number,
-    args: readonly unknown[] | undefined,
+    args: readonly unknown[],
   ): HumanDescriptionFragment {
-    if (!args) {
-      throw Error(
-        `Error mapping token type ${tokenType}. No arguments provided`,
-      );
-    }
-
     switch (tokenType) {
       case ValueType.TokenValue:
         return <TokenValueFragment>{
