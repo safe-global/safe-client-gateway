@@ -7,13 +7,28 @@ export const IEmailTemplate = Symbol('IEmailTemplate');
 export interface IEmailTemplate {
   /**
    * Checksums and formats address to be displayed in email
+   * @param chainId - chain ID of the address
    * @param address - address to be converted
    */
-  addressToHtml(address: string): string;
+  addressToHtml(args: { chainId: string; address: string }): Promise<string>;
 
   /**
    * Checksums and formats addresses to be displayed in email as list
+   * @param chainId - chain ID of the addresses
    * @param addresses - addresses to be converted
    */
-  addressListToHtml(addresses: Array<string>): string;
+  addressListToHtml(args: {
+    chainId: string;
+    addresses: Array<string>;
+  }): Promise<string>;
+
+  /**
+   * Gets the URL of the Safe on the web app
+   * @param chainId - chain ID of the Safe
+   * @param safeAddress - address of the Safe
+   */
+  getSafeWebAppUrl(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<string>;
 }

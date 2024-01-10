@@ -169,6 +169,17 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     emails: string[];
   }): Promise<void> {
+    const [safeAddressHtml, webAppUrl] = await Promise.all([
+      this.emailTemplate.addressToHtml({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.emailTemplate.getSafeWebAppUrl({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
+    ]);
+
     return this.emailApi.createMessage({
       to: args.emails,
       template: this.configurationService.getOrThrow<string>(
@@ -176,8 +187,8 @@ export class AlertsRepository implements IAlertsRepository {
       ),
       subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
       substitutions: {
-        chainId: args.chainId,
-        safeAddress: this.emailTemplate.addressToHtml(args.safeAddress),
+        webAppUrl,
+        safeAddressHtml,
       },
     });
   }
@@ -198,6 +209,21 @@ export class AlertsRepository implements IAlertsRepository {
       return;
     }
 
+    const [webAppUrl, safeAddressHtml, ownersListHtml] = await Promise.all([
+      this.emailTemplate.getSafeWebAppUrl({
+        chainId: args.chainId,
+        safeAddress: args.newSafeState.address,
+      }),
+      this.emailTemplate.addressToHtml({
+        chainId: args.chainId,
+        address: args.newSafeState.address,
+      }),
+      this.emailTemplate.addressListToHtml({
+        chainId: args.chainId,
+        addresses: args.newSafeState.owners,
+      }),
+    ]);
+
     return this.emailApi.createMessage({
       to: emails,
       template: this.configurationService.getOrThrow<string>(
@@ -205,11 +231,9 @@ export class AlertsRepository implements IAlertsRepository {
       ),
       subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
       substitutions: {
-        chainId: args.chainId,
-        safeAddress: this.emailTemplate.addressToHtml(
-          args.newSafeState.address,
-        ),
-        owners: this.emailTemplate.addressListToHtml(args.newSafeState.owners),
+        webAppUrl,
+        safeAddressHtml,
+        ownersListHtml,
         threshold: args.newSafeState.threshold.toString(),
       },
     });
