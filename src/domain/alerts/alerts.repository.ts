@@ -13,6 +13,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
+import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -26,6 +27,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly emailApi: IEmailApi,
     @Inject(IEmailRepository)
     private readonly emailRepository: IEmailRepository,
+    @Inject(IEmailTemplate)
+    private readonly emailTemplate: IEmailTemplate,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
@@ -174,7 +177,7 @@ export class AlertsRepository implements IAlertsRepository {
       subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
       substitutions: {
         chainId: args.chainId,
-        safeAddress: this._formatAddress(args.safeAddress),
+        safeAddress: this.emailTemplate.addressToHtml(args.safeAddress),
       },
     });
   }
@@ -203,32 +206,12 @@ export class AlertsRepository implements IAlertsRepository {
       subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
       substitutions: {
         chainId: args.chainId,
-        safeAddress: this._formatAddress(args.newSafeState.address),
-        // PushWoosh doesn't allow substitution arrays so we send pre-structured owners element
-        owners: `<ul>${args.newSafeState.owners.map(
-          (owner) => `<li>${this._formatAddress(owner)}</li>`,
-        )}</ul>`,
+        safeAddress: this.emailTemplate.addressToHtml(
+          args.newSafeState.address,
+        ),
+        owners: this.emailTemplate.addressListToHtml(args.newSafeState.owners),
         threshold: args.newSafeState.threshold.toString(),
       },
     });
-  }
-
-  /**
-   * Checksums and formats the address to be displayed in the email as
-   * PushWoosh doesn't support JavaScript
-   *
-   * 0x1234...7890 => 0x1234<span id="address-center">.../span>7890
-   * @param address - address to be formatted
-   */
-  private _formatAddress(address: string): string {
-    const CSS_ID = 'address-center';
-
-    const checksummedAddress = getAddress(address);
-
-    const start = checksummedAddress.slice(0, 6);
-    const center = checksummedAddress.slice(6, -4);
-    const end = checksummedAddress.slice(-4);
-
-    return `${start}<span id="${CSS_ID}">${center}</span>${end}`;
   }
 }
