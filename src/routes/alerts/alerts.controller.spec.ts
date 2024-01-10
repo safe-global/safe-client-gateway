@@ -65,6 +65,18 @@ function fakeTenderlySignature(args: {
   return hmac.digest('hex');
 }
 
+function formatAddress(address: string): string {
+  const CSS_ID = 'address-center';
+
+  const checksummedAddress = getAddress(address);
+
+  const start = checksummedAddress.slice(0, 6);
+  const center = checksummedAddress.slice(6, -4);
+  const end = checksummedAddress.slice(-4);
+
+  return `${start}<span id="${CSS_ID}">${center}</span>${end}`;
+}
+
 describe('Alerts (Unit)', () => {
   let configurationService;
   let emailApi;
@@ -205,7 +217,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([...safe.owners, owner]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[...safe.owners, owner].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -294,7 +310,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([owners[0], owners[2]]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[owners[0], owners[2]].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -382,7 +402,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([owners[0], newOwner, owners[2]]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[owners[0], newOwner, owners[2]].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: safe.threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -460,7 +484,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify(safe.owners),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${safe.owners.map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -572,11 +600,13 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[
               owners[1],
               owners[2],
               addOwnerWithThreshold.build().owner,
-            ]),
+            ].map((owner) => `<li>${formatAddress(owner)}</li>`)}</ul>`,
             threshold: removeOwner.build().threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -653,7 +683,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([...safe.owners, owner]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[...safe.owners, owner].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -664,7 +698,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([...safe.owners, owner]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[...safe.owners, owner].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -745,7 +783,11 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            owners: JSON.stringify([...safe.owners, owner]),
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+            owners: `<ul>${[...safe.owners, owner].map(
+              (owner) => `<li>${formatAddress(owner)}</li>`,
+            )}</ul>`,
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -821,8 +863,11 @@ describe('Alerts (Unit)', () => {
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Unknown transaction attempt',
-          substitutions: {},
+          subject: 'Malicious transaction',
+          substitutions: {
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+          },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
           ),
@@ -893,16 +938,22 @@ describe('Alerts (Unit)', () => {
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Unknown transaction attempt',
-          substitutions: {},
+          subject: 'Malicious transaction',
+          substitutions: {
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+          },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
           ),
           to: expectedTargetEmailAddresses,
         });
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
-          subject: 'Unknown transaction attempt',
-          substitutions: {},
+          subject: 'Malicious transaction',
+          substitutions: {
+            chainId: chain.chainId,
+            safeAddress: formatAddress(safe.address),
+          },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
           ),
@@ -1008,8 +1059,11 @@ describe('Alerts (Unit)', () => {
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-        subject: 'Unknown transaction attempt',
-        substitutions: {},
+        subject: 'Malicious transaction',
+        substitutions: {
+          chainId: chain.chainId,
+          safeAddress: formatAddress(safe.address),
+        },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
         ),
@@ -1113,16 +1167,22 @@ describe('Alerts (Unit)', () => {
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-        subject: 'Unknown transaction attempt',
-        substitutions: {},
+        subject: 'Malicious transaction',
+        substitutions: {
+          chainId: chain.chainId,
+          safeAddress: formatAddress(safe.address),
+        },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
         ),
         to: expectedTargetEmailAddresses,
       });
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
-        subject: 'Unknown transaction attempt',
-        substitutions: {},
+        subject: 'Malicious transaction',
+        substitutions: {
+          chainId: chain.chainId,
+          safeAddress: formatAddress(safe.address),
+        },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
         ),
@@ -1202,7 +1262,11 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Recovery attempt',
         substitutions: {
-          owners: JSON.stringify([...safe.owners, owner]),
+          chainId: chain.chainId,
+          safeAddress: formatAddress(safe.address),
+          owners: `<ul>${[...safe.owners, owner].map(
+            (owner) => `<li>${formatAddress(owner)}</li>`,
+          )}</ul>`,
           threshold: threshold.toString(),
         },
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
