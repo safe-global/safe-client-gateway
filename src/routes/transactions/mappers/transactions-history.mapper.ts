@@ -155,9 +155,10 @@ export class TransactionsHistoryMapper {
   ): TransactionDomainGroup[] {
     return Object.entries(
       groupBy(transactions, (transaction) => {
-        return [
-          this.getDayFromTransactionDate(transaction, timezoneOffset).getTime(),
-        ];
+        return this.getDayFromTransactionDate(
+          transaction,
+          timezoneOffset,
+        ).getTime();
       }),
     ).map(([, transactions]) => {
       // The groups respect the timezone offset – this was done for grouping only.
