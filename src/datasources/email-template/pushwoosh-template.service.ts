@@ -17,8 +17,8 @@ export class PushwooshTemplate implements IEmailTemplate {
   }
 
   addressListToHtml(addresses: Array<string>): string {
-    return `<ul>${addresses.map(
-      (owner) => `<li>${this.addressToHtml(owner)}</li>`,
-    )}</ul>`;
+    return `<ul>${addresses
+      .map((owner) => `<li>${this.addressToHtml(owner)}</li>`)
+      .join('')}</ul>`;
   }
 }

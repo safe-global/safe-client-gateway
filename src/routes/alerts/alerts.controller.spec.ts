@@ -42,6 +42,7 @@ import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
+import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -65,22 +66,11 @@ function fakeTenderlySignature(args: {
   return hmac.digest('hex');
 }
 
-function formatAddress(address: string): string {
-  const CSS_ID = 'address-center';
-
-  const checksummedAddress = getAddress(address);
-
-  const start = checksummedAddress.slice(0, 6);
-  const center = checksummedAddress.slice(6, -4);
-  const end = checksummedAddress.slice(-4);
-
-  return `${start}<span id="${CSS_ID}">${center}</span>${end}`;
-}
-
 describe('Alerts (Unit)', () => {
   let configurationService;
   let emailApi;
   let emailDataSource;
+  let emailTemplate;
 
   describe('/alerts route enabled', () => {
     let app: INestApplication;
@@ -119,6 +109,7 @@ describe('Alerts (Unit)', () => {
       safeConfigUrl = configurationService.get('safeConfig.baseUri');
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
+      emailTemplate = moduleFixture.get(IEmailTemplate);
       emailDataSource = moduleFixture.get(IEmailDataSource);
       networkService = moduleFixture.get(NetworkService);
 
@@ -218,10 +209,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[...safe.owners, owner].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -311,10 +300,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[owners[0], owners[2]].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([owners[0], owners[2]]),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -403,10 +390,12 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[owners[0], newOwner, owners[2]].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([
+              owners[0],
+              newOwner,
+              owners[2],
+            ]),
             threshold: safe.threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -485,10 +474,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${safe.owners.map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml(safe.owners),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -601,12 +588,12 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([
               owners[1],
               owners[2],
               addOwnerWithThreshold.build().owner,
-            ].map((owner) => `<li>${formatAddress(owner)}</li>`)}</ul>`,
+            ]),
             threshold: removeOwner.build().threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -684,10 +671,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[...safe.owners, owner].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -699,10 +684,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[...safe.owners, owner].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -784,10 +767,8 @@ describe('Alerts (Unit)', () => {
           subject: 'Recovery attempt',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
-            owners: `<ul>${[...safe.owners, owner].map(
-              (owner) => `<li>${formatAddress(owner)}</li>`,
-            )}</ul>`,
+            safeAddress: emailTemplate.addressToHtml(safe.address),
+            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -866,7 +847,7 @@ describe('Alerts (Unit)', () => {
           subject: 'Malicious transaction',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
+            safeAddress: emailTemplate.addressToHtml(safe.address),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -941,7 +922,7 @@ describe('Alerts (Unit)', () => {
           subject: 'Malicious transaction',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
+            safeAddress: emailTemplate.addressToHtml(safe.address),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -952,7 +933,7 @@ describe('Alerts (Unit)', () => {
           subject: 'Malicious transaction',
           substitutions: {
             chainId: chain.chainId,
-            safeAddress: formatAddress(safe.address),
+            safeAddress: emailTemplate.addressToHtml(safe.address),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1062,7 +1043,7 @@ describe('Alerts (Unit)', () => {
         subject: 'Malicious transaction',
         substitutions: {
           chainId: chain.chainId,
-          safeAddress: formatAddress(safe.address),
+          safeAddress: emailTemplate.addressToHtml(safe.address),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1170,7 +1151,7 @@ describe('Alerts (Unit)', () => {
         subject: 'Malicious transaction',
         substitutions: {
           chainId: chain.chainId,
-          safeAddress: formatAddress(safe.address),
+          safeAddress: emailTemplate.addressToHtml(safe.address),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1181,7 +1162,7 @@ describe('Alerts (Unit)', () => {
         subject: 'Malicious transaction',
         substitutions: {
           chainId: chain.chainId,
-          safeAddress: formatAddress(safe.address),
+          safeAddress: emailTemplate.addressToHtml(safe.address),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1263,10 +1244,8 @@ describe('Alerts (Unit)', () => {
         subject: 'Recovery attempt',
         substitutions: {
           chainId: chain.chainId,
-          safeAddress: formatAddress(safe.address),
-          owners: `<ul>${[...safe.owners, owner].map(
-            (owner) => `<li>${formatAddress(owner)}</li>`,
-          )}</ul>`,
+          safeAddress: emailTemplate.addressToHtml(safe.address),
+          owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
           threshold: threshold.toString(),
         },
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
