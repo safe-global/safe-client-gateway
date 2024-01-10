@@ -14,6 +14,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -38,6 +39,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IChainsRepository)
+    private readonly chainRepository: IChainsRepository,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
@@ -169,16 +172,16 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     emails: string[];
   }): Promise<void> {
-    const [safeAddressHtml, webAppUrl] = await Promise.all([
-      this.emailTemplate.addressToHtml({
-        chainId: args.chainId,
-        address: args.safeAddress,
-      }),
-      this.emailTemplate.getSafeWebAppUrl({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-    ]);
+    const chain = await this.chainRepository.getChain(args.chainId);
+
+    const safeAddressHtml = this.emailTemplate.addressToHtml({
+      chain,
+      address: args.safeAddress,
+    });
+    const webAppUrl = this.emailTemplate.getSafeWebAppUrl({
+      chain,
+      safeAddress: args.safeAddress,
+    });
 
     return this.emailApi.createMessage({
       to: args.emails,
@@ -209,20 +212,20 @@ export class AlertsRepository implements IAlertsRepository {
       return;
     }
 
-    const [webAppUrl, safeAddressHtml, ownersListHtml] = await Promise.all([
-      this.emailTemplate.getSafeWebAppUrl({
-        chainId: args.chainId,
-        safeAddress: args.newSafeState.address,
-      }),
-      this.emailTemplate.addressToHtml({
-        chainId: args.chainId,
-        address: args.newSafeState.address,
-      }),
-      this.emailTemplate.addressListToHtml({
-        chainId: args.chainId,
-        addresses: args.newSafeState.owners,
-      }),
-    ]);
+    const chain = await this.chainRepository.getChain(args.chainId);
+
+    const webAppUrl = this.emailTemplate.getSafeWebAppUrl({
+      chain,
+      safeAddress: args.newSafeState.address,
+    });
+    const safeAddressHtml = this.emailTemplate.addressToHtml({
+      chain,
+      address: args.newSafeState.address,
+    });
+    const ownersListHtml = this.emailTemplate.addressListToHtml({
+      chain,
+      addresses: args.newSafeState.owners,
+    });
 
     return this.emailApi.createMessage({
       to: emails,

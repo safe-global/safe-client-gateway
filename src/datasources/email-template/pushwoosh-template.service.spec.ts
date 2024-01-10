@@ -1,22 +1,11 @@
 import { PushWooshTemplate } from '@/datasources/email-template/pushwoosh-template.service';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { blockExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/block-explorer-uri-template.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-const chainRepository = {
-  getChain: jest.fn(),
-} as unknown as IChainsRepository;
-const chainRepositoryeMock = jest.mocked(chainRepository);
-
 describe('PushWooshTemplate', () => {
-  let target: PushWooshTemplate;
-
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    target = new PushWooshTemplate(chainRepositoryeMock);
-  });
+  const target = new PushWooshTemplate();
 
   describe('addressToHtml', () => {
     it('should return an element with a checksummed address', () => {
@@ -30,8 +19,6 @@ describe('PushWooshTemplate', () => {
         )
         .build();
 
-      chainRepositoryeMock.getChain.mockResolvedValue(chain);
-
       const address = faker.finance.ethereumAddress();
       const checksummedAddress = getAddress(address);
 
@@ -41,9 +28,7 @@ describe('PushWooshTemplate', () => {
 
       const expected = `<a href="${explorerUrl}/${checksummedAddress}">${start}<span id="address-center">${center}</span>${end}</a>`;
 
-      expect(
-        target.addressToHtml({ chainId: chain.chainId, address }),
-      ).resolves.toEqual(expected);
+      expect(target.addressToHtml({ chain, address })).toEqual(expected);
     });
   });
 
@@ -58,8 +43,6 @@ describe('PushWooshTemplate', () => {
             .build(),
         )
         .build();
-
-      chainRepositoryeMock.getChain.mockResolvedValue(chain);
 
       const addresses = [
         faker.finance.ethereumAddress(),
@@ -78,9 +61,7 @@ describe('PushWooshTemplate', () => {
         })
         .join('')}</ul>`;
 
-      expect(
-        target.addressListToHtml({ chainId: chain.chainId, addresses }),
-      ).resolves.toEqual(expected);
+      expect(target.addressListToHtml({ chain, addresses })).toEqual(expected);
     });
   });
 
@@ -88,14 +69,10 @@ describe('PushWooshTemplate', () => {
     it('should return a safe web app url', () => {
       const chain = chainBuilder().build();
 
-      chainRepositoryeMock.getChain.mockResolvedValue(chain);
-
       const safeAddress = faker.finance.ethereumAddress();
       const expected = `https://app.safe.global/home?safe=${chain.shortName}:${safeAddress}`;
 
-      expect(
-        target.getSafeWebAppUrl({ chainId: chain.chainId, safeAddress }),
-      ).resolves.toEqual(expected);
+      expect(target.getSafeWebAppUrl({ chain, safeAddress })).toEqual(expected);
     });
   });
 });

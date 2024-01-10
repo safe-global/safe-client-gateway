@@ -208,16 +208,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [...safe.owners, owner],
             }),
             threshold: threshold.toString(),
@@ -308,16 +308,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [owners[0], owners[2]],
             }),
             threshold: threshold.toString(),
@@ -407,16 +407,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [owners[0], newOwner, owners[2]],
             }),
             threshold: safe.threshold.toString(),
@@ -496,16 +496,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: safe.owners,
             }),
             threshold: threshold.toString(),
@@ -619,16 +619,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [
                 owners[1],
                 owners[2],
@@ -711,16 +711,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [...safe.owners, owner],
             }),
             threshold: threshold.toString(),
@@ -733,16 +733,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [...safe.owners, owner],
             }),
             threshold: threshold.toString(),
@@ -825,16 +825,16 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
-            ownersListHtml: await emailTemplate.addressListToHtml({
-              chainId: chain.chainId,
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
               addresses: [...safe.owners, owner],
             }),
             threshold: threshold.toString(),
@@ -914,12 +914,12 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
           },
@@ -995,12 +995,12 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
           },
@@ -1012,12 +1012,12 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: await emailTemplate.getSafeWebAppUrl({
-              chainId: chain.chainId,
+            webAppUrl: emailTemplate.getSafeWebAppUrl({
+              chain,
               safeAddress: safe.address,
             }),
-            safeAddressHtml: await emailTemplate.addressToHtml({
-              chainId: chain.chainId,
+            safeAddressHtml: emailTemplate.addressToHtml({
+              chain,
               address: safe.address,
             }),
           },
@@ -1128,12 +1128,12 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: await emailTemplate.getSafeWebAppUrl({
-            chainId: chain.chainId,
+          webAppUrl: emailTemplate.getSafeWebAppUrl({
+            chain,
             safeAddress: safe.address,
           }),
-          safeAddressHtml: await emailTemplate.addressToHtml({
-            chainId: chain.chainId,
+          safeAddressHtml: emailTemplate.addressToHtml({
+            chain,
             address: safe.address,
           }),
         },
@@ -1242,12 +1242,12 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: await emailTemplate.getSafeWebAppUrl({
-            chainId: chain.chainId,
+          webAppUrl: emailTemplate.getSafeWebAppUrl({
+            chain,
             safeAddress: safe.address,
           }),
-          safeAddressHtml: await emailTemplate.addressToHtml({
-            chainId: chain.chainId,
+          safeAddressHtml: emailTemplate.addressToHtml({
+            chain,
             address: safe.address,
           }),
         },
@@ -1259,12 +1259,12 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: await emailTemplate.getSafeWebAppUrl({
-            chainId: chain.chainId,
+          webAppUrl: emailTemplate.getSafeWebAppUrl({
+            chain,
             safeAddress: safe.address,
           }),
-          safeAddressHtml: await emailTemplate.addressToHtml({
-            chainId: chain.chainId,
+          safeAddressHtml: emailTemplate.addressToHtml({
+            chain,
             address: safe.address,
           }),
         },
@@ -1347,16 +1347,16 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Recovery attempt',
         substitutions: {
-          webAppUrl: await emailTemplate.getSafeWebAppUrl({
-            chainId: chain.chainId,
+          webAppUrl: emailTemplate.getSafeWebAppUrl({
+            chain,
             safeAddress: safe.address,
           }),
-          safeAddressHtml: await emailTemplate.addressToHtml({
-            chainId: chain.chainId,
+          safeAddressHtml: emailTemplate.addressToHtml({
+            chain,
             address: safe.address,
           }),
-          ownersListHtml: await emailTemplate.addressListToHtml({
-            chainId: chain.chainId,
+          ownersListHtml: emailTemplate.addressListToHtml({
+            chain,
             addresses: [...safe.owners, owner],
           }),
           threshold: threshold.toString(),

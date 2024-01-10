@@ -1,25 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { getAddress } from 'viem';
 import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { Chain } from '@/routes/chains/entities/chain.entity';
 
 @Injectable()
 export class PushWooshTemplate implements IEmailTemplate {
-  constructor(
-    @Inject(IChainsRepository)
-    private readonly chainsRepository: IChainsRepository,
-  ) {}
-
-  async addressToHtml(args: {
-    chainId: string;
-    address: string;
-  }): Promise<string> {
+  addressToHtml(args: { chain: Chain; address: string }): string {
     const CSS_ID = 'address-center';
 
     const checksummedAddress = getAddress(args.address);
 
-    const addressedExplorerUrl = await this.getAddressedExplorerUrl({
-      chainId: args.chainId,
+    const addressedExplorerUrl = this.getAddressedExplorerUrl({
+      chain: args.chain,
       address: checksummedAddress,
     });
 
@@ -30,44 +22,30 @@ export class PushWooshTemplate implements IEmailTemplate {
     return `<a href="${addressedExplorerUrl}">${start}<span id="${CSS_ID}">${center}</span>${end}</a>`;
   }
 
-  async addressListToHtml(args: {
-    chainId: string;
-    addresses: Array<string>;
-  }): Promise<string> {
-    const listItems = await Promise.all(
-      args.addresses.map(async (owner) => {
-        const addressHtml = await this.addressToHtml({
-          chainId: args.chainId,
-          address: owner,
-        });
+  addressListToHtml(args: { chain: Chain; addresses: Array<string> }): string {
+    const listItems = args.addresses.map((owner) => {
+      const addressHtml = this.addressToHtml({
+        chain: args.chain,
+        address: owner,
+      });
 
-        return `<li>${addressHtml}</li>`;
-      }),
-    );
+      return `<li>${addressHtml}</li>`;
+    });
 
     return `<ul>${listItems.join('')}</ul>`;
   }
 
-  async getSafeWebAppUrl(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<string> {
-    const { shortName } = await this.chainsRepository.getChain(args.chainId);
-
-    return `https://app.safe.global/home?safe=${shortName}:${args.safeAddress}`;
+  getSafeWebAppUrl(args: { chain: Chain; safeAddress: string }): string {
+    return `https://app.safe.global/home?safe=${args.chain.shortName}:${args.safeAddress}`;
   }
 
-  private async getAddressedExplorerUrl(args: {
-    chainId: string;
+  private getAddressedExplorerUrl(args: {
+    chain: Chain;
     address: string;
-  }): Promise<string> {
+  }): string {
     const ADDRESS_TEMPLATE = '{{address}}';
 
-    const { blockExplorerUriTemplate } = await this.chainsRepository.getChain(
-      args.chainId,
-    );
-
-    return blockExplorerUriTemplate.address.replace(
+    return args.chain.blockExplorerUriTemplate.address.replace(
       ADDRESS_TEMPLATE,
       args.address,
     );
