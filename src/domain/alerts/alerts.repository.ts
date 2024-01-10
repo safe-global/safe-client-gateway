@@ -13,9 +13,13 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
+import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
+  private static readonly UNKNOWN_TX_EMAIL_SUBJECT = 'Malicious transaction';
+  private static readonly RECOVERY_TX_EMAIL_SUBJECT = 'Recovery attempt';
+
   constructor(
     @Inject(IAlertsApi)
     private readonly alertsApi: IAlertsApi,
@@ -23,6 +27,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly emailApi: IEmailApi,
     @Inject(IEmailRepository)
     private readonly emailRepository: IEmailRepository,
+    @Inject(IEmailTemplate)
+    private readonly emailTemplate: IEmailTemplate,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
@@ -92,7 +98,7 @@ export class AlertsRepository implements IAlertsRepository {
         newSafeState,
       });
     } catch {
-      this._notifyUnknownTransaction(emails);
+      this._notifyUnknownTransaction({ chainId, safeAddress, emails });
     }
   }
 
@@ -158,15 +164,21 @@ export class AlertsRepository implements IAlertsRepository {
     }, structuredClone(args.safe));
   }
 
-  private async _notifyUnknownTransaction(emails: string[]): Promise<void> {
+  private async _notifyUnknownTransaction(args: {
+    safeAddress: string;
+    chainId: string;
+    emails: string[];
+  }): Promise<void> {
     return this.emailApi.createMessage({
-      to: emails,
+      to: args.emails,
       template: this.configurationService.getOrThrow<string>(
         'email.templates.unknownRecoveryTx',
       ),
-      // TODO: subject and substitutions need to be set according to the template design
-      subject: 'Unknown transaction attempt',
-      substitutions: {},
+      subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
+      substitutions: {
+        chainId: args.chainId,
+        safeAddress: this.emailTemplate.addressToHtml(args.safeAddress),
+      },
     });
   }
 
@@ -183,19 +195,23 @@ export class AlertsRepository implements IAlertsRepository {
       this.loggingService.debug(
         `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.newSafeState.address}`,
       );
-    } else {
-      return this.emailApi.createMessage({
-        to: emails,
-        template: this.configurationService.getOrThrow<string>(
-          'email.templates.recoveryTx',
-        ),
-        // TODO: subject and substitutions need to be set according to the template design
-        subject: 'Recovery attempt',
-        substitutions: {
-          owners: JSON.stringify(args.newSafeState.owners),
-          threshold: args.newSafeState.threshold.toString(),
-        },
-      });
+      return;
     }
+
+    return this.emailApi.createMessage({
+      to: emails,
+      template: this.configurationService.getOrThrow<string>(
+        'email.templates.recoveryTx',
+      ),
+      subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
+      substitutions: {
+        chainId: args.chainId,
+        safeAddress: this.emailTemplate.addressToHtml(
+          args.newSafeState.address,
+        ),
+        owners: this.emailTemplate.addressListToHtml(args.newSafeState.owners),
+        threshold: args.newSafeState.threshold.toString(),
+      },
+    });
   }
 }
