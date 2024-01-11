@@ -90,7 +90,8 @@
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
       "index.ts",
-      ".+\\/__tests__\\/.+\\.factory.(t|j)s"
+      ".+\\/__tests__\\/.+\\.factory.(t|j)s",
+      ".e2e.spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
