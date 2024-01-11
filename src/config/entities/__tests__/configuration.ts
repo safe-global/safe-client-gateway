@@ -145,4 +145,7 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
   },
+  safeWebApp: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
 });
