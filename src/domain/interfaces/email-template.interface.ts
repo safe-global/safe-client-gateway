@@ -1,3 +1,5 @@
+import { Chain } from '@/routes/chains/entities/chain.entity';
+
 export const IEmailTemplate = Symbol('IEmailTemplate');
 
 /**
@@ -6,14 +8,16 @@ export const IEmailTemplate = Symbol('IEmailTemplate');
  */
 export interface IEmailTemplate {
   /**
-   * Checksums and formats address to be displayed in email
-   * @param address - address to be converted
+   * Gets the URL of the Safe on the web app
+   * @param chain - chain of the Safe
+   * @param safeAddress - address of the Safe
    */
-  addressToHtml(address: string): string;
+  addressToSafeWebAppUrl(args: { chain: Chain; safeAddress: string }): string;
 
   /**
    * Checksums and formats addresses to be displayed in email as list
+   * @param chain - chain of the addresses
    * @param addresses - addresses to be converted
    */
-  addressListToHtml(addresses: Array<string>): string;
+  addressListToHtml(args: { chain: Chain; addresses: Array<string> }): string;
 }

@@ -14,6 +14,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {
@@ -38,6 +39,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IChainsRepository)
+    private readonly chainRepository: IChainsRepository,
   ) {}
 
   async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
@@ -169,6 +172,13 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     emails: string[];
   }): Promise<void> {
+    const chain = await this.chainRepository.getChain(args.chainId);
+
+    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
+      chain,
+      safeAddress: args.safeAddress,
+    });
+
     return this.emailApi.createMessage({
       to: args.emails,
       template: this.configurationService.getOrThrow<string>(
@@ -176,8 +186,7 @@ export class AlertsRepository implements IAlertsRepository {
       ),
       subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
       substitutions: {
-        chainId: args.chainId,
-        safeAddress: this.emailTemplate.addressToHtml(args.safeAddress),
+        webAppUrl,
       },
     });
   }
@@ -198,6 +207,17 @@ export class AlertsRepository implements IAlertsRepository {
       return;
     }
 
+    const chain = await this.chainRepository.getChain(args.chainId);
+
+    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
+      chain,
+      safeAddress: args.newSafeState.address,
+    });
+    const ownersListHtml = this.emailTemplate.addressListToHtml({
+      chain,
+      addresses: args.newSafeState.owners,
+    });
+
     return this.emailApi.createMessage({
       to: emails,
       template: this.configurationService.getOrThrow<string>(
@@ -205,11 +225,8 @@ export class AlertsRepository implements IAlertsRepository {
       ),
       subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
       substitutions: {
-        chainId: args.chainId,
-        safeAddress: this.emailTemplate.addressToHtml(
-          args.newSafeState.address,
-        ),
-        owners: this.emailTemplate.addressListToHtml(args.newSafeState.owners),
+        webAppUrl,
+        ownersListHtml,
         threshold: args.newSafeState.threshold.toString(),
       },
     });

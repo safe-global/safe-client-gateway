@@ -208,9 +208,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [...safe.owners, owner],
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -299,9 +304,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([owners[0], owners[2]]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [owners[0], owners[2]],
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -389,13 +399,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([
-              owners[0],
-              newOwner,
-              owners[2],
-            ]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [owners[0], newOwner, owners[2]],
+            }),
             threshold: safe.threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -473,9 +484,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml(safe.owners),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: safe.owners,
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -587,13 +603,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([
-              owners[1],
-              owners[2],
-              addOwnerWithThreshold.build().owner,
-            ]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [
+                owners[1],
+                owners[2],
+                addOwnerWithThreshold.build().owner,
+              ],
+            }),
             threshold: removeOwner.build().threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -670,9 +691,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [...safe.owners, owner],
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -683,9 +709,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [...safe.owners, owner],
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -766,9 +797,14 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
-            owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
+            ownersListHtml: emailTemplate.addressListToHtml({
+              chain,
+              addresses: [...safe.owners, owner],
+            }),
             threshold: threshold.toString(),
           },
           template: configurationService.getOrThrow(
@@ -846,8 +882,10 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -921,8 +959,10 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -932,8 +972,10 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            chainId: chain.chainId,
-            safeAddress: emailTemplate.addressToHtml(safe.address),
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+              chain,
+              safeAddress: safe.address,
+            }),
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1042,8 +1084,10 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          chainId: chain.chainId,
-          safeAddress: emailTemplate.addressToHtml(safe.address),
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            chain,
+            safeAddress: safe.address,
+          }),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1150,8 +1194,10 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          chainId: chain.chainId,
-          safeAddress: emailTemplate.addressToHtml(safe.address),
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            chain,
+            safeAddress: safe.address,
+          }),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1161,8 +1207,10 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          chainId: chain.chainId,
-          safeAddress: emailTemplate.addressToHtml(safe.address),
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            chain,
+            safeAddress: safe.address,
+          }),
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1243,9 +1291,14 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Recovery attempt',
         substitutions: {
-          chainId: chain.chainId,
-          safeAddress: emailTemplate.addressToHtml(safe.address),
-          owners: emailTemplate.addressListToHtml([...safe.owners, owner]),
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            chain,
+            safeAddress: safe.address,
+          }),
+          ownersListHtml: emailTemplate.addressListToHtml({
+            chain,
+            addresses: [...safe.owners, owner],
+          }),
           threshold: threshold.toString(),
         },
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
