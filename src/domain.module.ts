@@ -58,13 +58,11 @@ import { PricesRepository } from '@/domain/prices/prices.repository';
 import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
 import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
-import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 
 @Global()
 @Module({
   imports: [
     ConfigApiModule,
-    EmailApiModule,
     PricesApiModule,
     HumanDescriptionApiModule,
     TransactionApiModule,
