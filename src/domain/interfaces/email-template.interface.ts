@@ -8,11 +8,11 @@ export const IEmailTemplate = Symbol('IEmailTemplate');
  */
 export interface IEmailTemplate {
   /**
-   * Checksums and formats address to be displayed in email
-   * @param chain - chain of the address
-   * @param address - address to be converted
+   * Gets the URL of the Safe on the web app
+   * @param chain - chain of the Safe
+   * @param safeAddress - address of the Safe
    */
-  addressToHtml(args: { chain: Chain; address: string }): string;
+  addressToSafeWebAppUrl(args: { chain: Chain; safeAddress: string }): string;
 
   /**
    * Checksums and formats addresses to be displayed in email as list
@@ -20,11 +20,4 @@ export interface IEmailTemplate {
    * @param addresses - addresses to be converted
    */
   addressListToHtml(args: { chain: Chain; addresses: Array<string> }): string;
-
-  /**
-   * Gets the URL of the Safe on the web app
-   * @param chain - chain of the Safe
-   * @param safeAddress - address of the Safe
-   */
-  getSafeWebAppUrl(args: { chain: Chain; safeAddress: string }): string;
 }

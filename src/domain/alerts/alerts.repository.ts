@@ -174,11 +174,7 @@ export class AlertsRepository implements IAlertsRepository {
   }): Promise<void> {
     const chain = await this.chainRepository.getChain(args.chainId);
 
-    const safeAddressHtml = this.emailTemplate.addressToHtml({
-      chain,
-      address: args.safeAddress,
-    });
-    const webAppUrl = this.emailTemplate.getSafeWebAppUrl({
+    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
       chain,
       safeAddress: args.safeAddress,
     });
@@ -191,7 +187,6 @@ export class AlertsRepository implements IAlertsRepository {
       subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
       substitutions: {
         webAppUrl,
-        safeAddressHtml,
       },
     });
   }
@@ -214,13 +209,9 @@ export class AlertsRepository implements IAlertsRepository {
 
     const chain = await this.chainRepository.getChain(args.chainId);
 
-    const webAppUrl = this.emailTemplate.getSafeWebAppUrl({
+    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
       chain,
       safeAddress: args.newSafeState.address,
-    });
-    const safeAddressHtml = this.emailTemplate.addressToHtml({
-      chain,
-      address: args.newSafeState.address,
     });
     const ownersListHtml = this.emailTemplate.addressListToHtml({
       chain,
@@ -235,7 +226,6 @@ export class AlertsRepository implements IAlertsRepository {
       subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
       substitutions: {
         webAppUrl,
-        safeAddressHtml,
         ownersListHtml,
         threshold: args.newSafeState.threshold.toString(),
       },

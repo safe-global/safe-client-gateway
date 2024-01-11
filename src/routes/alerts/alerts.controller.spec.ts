@@ -208,13 +208,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -308,13 +304,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -407,13 +399,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -496,13 +484,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -619,13 +603,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -711,13 +691,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -733,13 +709,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -825,13 +797,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
             ownersListHtml: emailTemplate.addressListToHtml({
               chain,
@@ -914,13 +882,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
           },
           template: configurationService.getOrThrow(
@@ -995,13 +959,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
           },
           template: configurationService.getOrThrow(
@@ -1012,13 +972,9 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.getSafeWebAppUrl({
+            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
-            }),
-            safeAddressHtml: emailTemplate.addressToHtml({
-              chain,
-              address: safe.address,
             }),
           },
           template: configurationService.getOrThrow(
@@ -1128,13 +1084,9 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.getSafeWebAppUrl({
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
-          }),
-          safeAddressHtml: emailTemplate.addressToHtml({
-            chain,
-            address: safe.address,
           }),
         },
         template: configurationService.getOrThrow(
@@ -1242,13 +1194,9 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.getSafeWebAppUrl({
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
-          }),
-          safeAddressHtml: emailTemplate.addressToHtml({
-            chain,
-            address: safe.address,
           }),
         },
         template: configurationService.getOrThrow(
@@ -1259,13 +1207,9 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.getSafeWebAppUrl({
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
-          }),
-          safeAddressHtml: emailTemplate.addressToHtml({
-            chain,
-            address: safe.address,
           }),
         },
         template: configurationService.getOrThrow(
@@ -1347,13 +1291,9 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Recovery attempt',
         substitutions: {
-          webAppUrl: emailTemplate.getSafeWebAppUrl({
+          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
-          }),
-          safeAddressHtml: emailTemplate.addressToHtml({
-            chain,
-            address: safe.address,
           }),
           ownersListHtml: emailTemplate.addressListToHtml({
             chain,
