@@ -36,6 +36,7 @@ export default (): ReturnType<typeof configuration> => ({
     templates: {
       recoveryTx: faker.string.alphanumeric(),
       unknownRecoveryTx: faker.string.alphanumeric(),
+      verificationCode: faker.string.alphanumeric(),
     },
     verificationCode: {
       resendLockWindowMs: faker.number.int(),

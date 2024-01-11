@@ -34,6 +34,7 @@ export default () => ({
     templates: {
       recoveryTx: process.env.EMAIL_TEMPLATE_RECOVERY_TX,
       unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
+      verificationCode: process.env.EMAIL_TEMPLATE_VERIFICATION_CODE,
     },
     verificationCode: {
       resendLockWindowMs: parseInt(
