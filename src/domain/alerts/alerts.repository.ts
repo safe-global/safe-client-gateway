@@ -13,7 +13,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
+import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
@@ -28,8 +28,7 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly emailApi: IEmailApi,
     @Inject(IEmailRepository)
     private readonly emailRepository: IEmailRepository,
-    @Inject(IEmailTemplate)
-    private readonly emailTemplate: IEmailTemplate,
+    private readonly urlGenerator: UrlGeneratorHelper,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
@@ -174,7 +173,7 @@ export class AlertsRepository implements IAlertsRepository {
   }): Promise<void> {
     const chain = await this.chainRepository.getChain(args.chainId);
 
-    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
+    const webAppUrl = this.urlGenerator.addressToSafeWebAppUrl({
       chain,
       safeAddress: args.safeAddress,
     });
@@ -209,13 +208,18 @@ export class AlertsRepository implements IAlertsRepository {
 
     const chain = await this.chainRepository.getChain(args.chainId);
 
-    const webAppUrl = this.emailTemplate.addressToSafeWebAppUrl({
+    const webAppUrl = this.urlGenerator.addressToSafeWebAppUrl({
       chain,
       safeAddress: args.newSafeState.address,
     });
-    const ownersListHtml = this.emailTemplate.addressListToHtml({
-      chain,
-      addresses: args.newSafeState.owners,
+    const owners = args.newSafeState.owners.map((address) => {
+      return {
+        address,
+        explorerUrl: this.urlGenerator.addressToExplorerUrl({
+          chain,
+          address,
+        }),
+      };
     });
 
     return this.emailApi.createMessage({
@@ -226,7 +230,7 @@ export class AlertsRepository implements IAlertsRepository {
       subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
       substitutions: {
         webAppUrl,
-        ownersListHtml,
+        owners,
         threshold: args.newSafeState.threshold.toString(),
       },
     });
