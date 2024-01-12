@@ -28,7 +28,6 @@ export class QueuedItemsMapper {
     chainId: string,
     previousPageLastNonce: number | null,
     nextPageFirstNonce: number | null,
-    timezoneOffsetMs: number,
   ): Promise<QueuedItem[]> {
     const transactionGroups = this.groupByNonce(transactions.results);
     let lastProcessedNonce = previousPageLastNonce ?? -1;
@@ -60,7 +59,6 @@ export class QueuedItemsMapper {
             conflictFromPreviousPage,
             isEdgeGroup,
             transactionGroup,
-            timezoneOffsetMs,
           );
 
           transactionGroupItems.push(...mappedTransactionItems);
@@ -77,19 +75,13 @@ export class QueuedItemsMapper {
     conflictFromPreviousPage: boolean,
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
-    timezoneOffsetMs: number,
   ): Promise<TransactionQueuedItem[]> {
     return Promise.all(
       transactionGroup.transactions.map(async (transaction, idx) => {
         const isFirstInGroup = idx === 0;
         const isLastInGroup = idx === transactionGroup.transactions.length - 1;
         return new TransactionQueuedItem(
-          await this.mapper.mapTransaction(
-            chainId,
-            transaction,
-            safe,
-            timezoneOffsetMs,
-          ),
+          await this.mapper.mapTransaction(chainId, transaction, safe),
           this.getConflictType(
             isFirstInGroup,
             isLastInGroup,

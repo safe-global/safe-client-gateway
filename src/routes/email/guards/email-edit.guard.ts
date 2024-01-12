@@ -8,13 +8,13 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { verifyMessage } from 'viem';
 
 /**
- * The EmailUpdateGuard guard should be used on routes that require
+ * The EmailEditGuard guard should be used on routes that require
  * authenticated actions on updating email addresses.
  *
  * This guard therefore validates if the message came from the specified account.
  *
  * The following message should be signed:
- * email-update-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
+ * email-edit-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
  *
  * (where ${} represents placeholder values for the respective data)
  *
@@ -27,12 +27,12 @@ import { verifyMessage } from 'viem';
  * - the 'timestamp' as part of the JSON body (top level)
  */
 @Injectable()
-export class EmailUpdateGuard implements CanActivate {
+export class EmailEditGuard implements CanActivate {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  private static readonly ACTION_PREFIX = 'email-update';
+  private static readonly ACTION_PREFIX = 'email-edit';
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -55,7 +55,7 @@ export class EmailUpdateGuard implements CanActivate {
     )
       return false;
 
-    const message = `${EmailUpdateGuard.ACTION_PREFIX}-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}`;
+    const message = `${EmailEditGuard.ACTION_PREFIX}-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}`;
 
     try {
       return await verifyMessage({

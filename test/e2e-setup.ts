@@ -15,3 +15,7 @@ process.env.POSTGRES_PORT = '5433';
 process.env.POSTGRES_DB = 'test-db';
 process.env.POSTGRES_USER = 'postgres';
 process.env.POSTGRES_PASSWORD = 'postgres';
+
+// For E2E tests, connect to the test cache
+process.env.REDIS_HOST = '127.0.0.1';
+process.env.REDIS_PORT = '6379';

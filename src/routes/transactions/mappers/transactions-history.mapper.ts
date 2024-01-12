@@ -86,23 +86,26 @@ export class TransactionsHistoryMapper {
 
     const transactionList = await Promise.all(
       transactionsDomainGroups.map(async (transactionGroup) => {
-        const transactions: (TransactionItem | DateLabel)[] = [];
-        if (transactionGroup.timestamp != prevPageTimestamp) {
-          transactions.push(new DateLabel(transactionGroup.timestamp));
-        }
+        const items: (TransactionItem | DateLabel)[] = [];
         const groupTransactions = (
           await this.mapGroupTransactions(
             transactionGroup,
             chainId,
             safe,
             onlyTrusted,
-            timezoneOffset,
           )
         )
           .filter(<T>(x: T | undefined): x is T => x != null)
           .flat();
-        transactions.push(...groupTransactions);
-        return transactions;
+
+        // If the current group is a follow-up from the previous page,
+        // or the group is empty, the date label shouldn't be added.
+        const isFollowUp = transactionGroup.timestamp == prevPageTimestamp;
+        if (!isFollowUp && groupTransactions.length) {
+          items.push(new DateLabel(transactionGroup.timestamp));
+        }
+        items.push(...groupTransactions);
+        return items;
       }),
     );
 
@@ -157,13 +160,15 @@ export class TransactionsHistoryMapper {
           timezoneOffset,
         ).getTime();
       }),
-    ).map(
-      ([timestamp, transactions]) =>
-        <TransactionDomainGroup>{
-          timestamp: Number(timestamp),
-          transactions: transactions,
-        },
-    );
+    ).map(([, transactions]) => {
+      // The groups respect the timezone offset – this was done for grouping only.
+      // The actual value of the group should be in the UTC timezone instead
+      // A group should always have at least one transaction.
+      return <TransactionDomainGroup>{
+        timestamp: this.getTransactionTimestamp(transactions[0]).getTime(),
+        transactions: transactions,
+      };
+    });
   }
 
   /**
@@ -185,7 +190,6 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-    timezoneOffsetMs: number,
   ): Promise<TransactionItem[]> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
     const result: TransactionItem[] = [];
@@ -195,7 +199,6 @@ export class TransactionsHistoryMapper {
         chainId,
         transfer,
         safe,
-        timezoneOffsetMs,
       );
 
       const transferWithValue = this.mapZeroValueTransfer(nestedTransaction);
@@ -246,7 +249,6 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-    timezoneOffsetMs: number,
   ): Promise<(TransactionItem | TransactionItem[] | undefined)[]> {
     return Promise.all(
       transactionGroup.transactions.map(async (transaction) => {
@@ -256,7 +258,6 @@ export class TransactionsHistoryMapper {
               chainId,
               transaction,
               safe,
-              timezoneOffsetMs,
             ),
           );
         } else if (isModuleTransaction(transaction)) {
@@ -264,7 +265,6 @@ export class TransactionsHistoryMapper {
             await this.moduleTransactionMapper.mapTransaction(
               chainId,
               transaction,
-              timezoneOffsetMs,
             ),
           );
         } else if (isEthereumTransaction(transaction)) {
@@ -275,7 +275,6 @@ export class TransactionsHistoryMapper {
               chainId,
               safe,
               onlyTrusted,
-              timezoneOffsetMs,
             );
           }
         } else if (isCreationTransaction(transaction)) {
@@ -284,7 +283,6 @@ export class TransactionsHistoryMapper {
               chainId,
               transaction,
               safe,
-              timezoneOffsetMs,
             ),
           );
         } else {

@@ -224,38 +224,20 @@ describe('Transactions History Controller (Unit)', () => {
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
         .with('dataDecoded', null)
-        .with(
-          'executionDate',
-          faker.date.between({
-            from: '2022-12-06T23:00:00Z',
-            to: '2022-12-06T23:59:59Z',
-          }),
-        )
+        .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
     const multisigTransaction = multisigTransactionToJson(
       multisigTransactionBuilder()
         .with('dataDecoded', null)
         .with('origin', null)
-        .with(
-          'executionDate',
-          faker.date.between({
-            from: '2022-12-25T00:00:00Z',
-            to: '2022-12-25T00:59:59Z',
-          }),
-        )
+        .with('executionDate', new Date('2022-12-25T00:00:00Z'))
         .build(),
     );
     const nativeTokenTransfer = nativeTokenTransferBuilder().build();
     const incomingTransaction = ethereumTransactionToJson(
       ethereumTransactionBuilder()
-        .with(
-          'executionDate',
-          faker.date.between({
-            from: '2022-12-31T00:00:00Z',
-            to: '2022-12-31T23:59:59Z',
-          }),
-        )
+        .with('executionDate', new Date('2022-12-31T00:00:00Z'))
         .with('transfers', [
           nativeTokenTransferToJson(nativeTokenTransfer) as Transfer,
         ])
@@ -293,7 +275,7 @@ describe('Transactions History Controller (Unit)', () => {
           6, //3 date labels and 3 transactions
         );
         expect(body.results[0].timestamp).toEqual(
-          1670284800000, // Date('2022-12-06T00:00:00Z').getTime()
+          1670367600000, // Date('2022-12-06T23:00:00Z').getTime()
         );
         expect(body.results[2].timestamp).toEqual(
           1671926400000, // Date('2022-12-25T00:00:00Z').getTime()
@@ -304,7 +286,7 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
-  it('Should change date label with time offset', async () => {
+  it('Should not change date label with time offset', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const timezoneOffset = 2 * 60 * 60 * 1000 + 1; // 2 hours in milliseconds + 1 millisecond to test precision of offsetting
     const chainResponse = chainBuilder().build();
@@ -346,7 +328,73 @@ describe('Transactions History Controller (Unit)', () => {
       .then(({ body }) => {
         expect(body.results).toHaveLength(2);
         expect(body.results[0].timestamp).toEqual(
-          new Date('2023-01-01T00:00:00Z').getTime(),
+          new Date('2022-12-31T22:09:36Z').getTime(),
+        );
+      });
+  });
+
+  it('Should group transactions according to timezone offset', async () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const timezoneOffset = 60 * 60 * 1000; // 1 hour in milliseconds
+    const chainResponse = chainBuilder().build();
+    const chainId = chainResponse.chainId;
+    const moduleTransaction1 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .with('executionDate', new Date('2022-12-31T21:09:36Z'))
+      .build();
+    const moduleTransaction2 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .with('executionDate', new Date('2022-12-31T23:09:36Z'))
+      .build();
+    const safe = safeBuilder().build();
+    const transactionHistoryBuilder = {
+      count: 40,
+      next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+      previous: null,
+      results: [
+        moduleTransactionToJson(moduleTransaction2),
+        moduleTransactionToJson(moduleTransaction1),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({ data: transactionHistoryBuilder });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone_offset=${timezoneOffset}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(4);
+        // Top group represents the header with the time shifted (January 1, 2023)
+        // Note that the value of the header should still be in UTC
+        expect(body.results[0].timestamp).toEqual(
+          new Date('2022-12-31T23:09:36Z').getTime(),
+        );
+        // The timezone offset should not change the time of the transaction (i.e. UTC should still be used)
+        expect(body.results[1].transaction.timestamp).toEqual(
+          moduleTransaction2.executionDate.getTime(),
+        );
+        // Followup group represents the header with the time shifted (December 31, 2022)
+        expect(body.results[2].timestamp).toEqual(
+          new Date('2022-12-31T21:09:36Z').getTime(),
+        );
+        // The timezone offset should not change the time of the transaction (i.e. UTC should still be used)
+        expect(body.results[3].transaction.timestamp).toEqual(
+          moduleTransaction1.executionDate.getTime(),
         );
       });
   });
@@ -793,6 +841,200 @@ describe('Transactions History Controller (Unit)', () => {
         // One date label and one transaction
         expect(response.body['results']).toHaveLength(2);
         expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+      });
+  });
+
+  it('Should return an empty array with no date labels if all the token transfers are untrusted', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const untrustedToken = tokenBuilder().with('trusted', false).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const oneDayAfter = new Date(date.getTime() + 1000 * 60 * 60 * 24);
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('transfers', [
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+            ])
+            .with('executionDate', date)
+            .build(),
+        ),
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('transfers', [
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+            ])
+            .with('executionDate', oneDayAfter)
+            .build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+          return Promise.resolve({ data: untrustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // Empty array
+        expect(response.body['results']).toEqual([]);
+      });
+  });
+
+  it('Should not return a date label if all the token transfers for that date are untrusted', async () => {
+    const safe = safeBuilder().build();
+    const chain = chainBuilder().build();
+    const untrustedToken = tokenBuilder().with('trusted', false).build();
+    const trustedToken = tokenBuilder().with('trusted', true).build();
+    // Use same date so that groups are created deterministically
+    const date = faker.date.recent();
+    const oneDayAfter = new Date(date.getTime() + 1000 * 60 * 60 * 24);
+    const twoDaysAfter = new Date(date.getTime() + 1000 * 60 * 60 * 48);
+    const transactionHistoryData = {
+      count: faker.number.int(),
+      next: faker.internet.url(),
+      previous: faker.internet.url(),
+      results: [
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('transfers', [
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', trustedToken.address)
+                  .build(),
+              ) as Transfer,
+            ])
+            .with('executionDate', date)
+            .build(),
+        ),
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('transfers', [
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', untrustedToken.address)
+                  .build(),
+              ) as Transfer,
+            ])
+            .with('executionDate', oneDayAfter)
+            .build(),
+        ),
+        ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('transfers', [
+              erc20TransferToJson(
+                erc20TransferBuilder()
+                  .with('tokenAddress', trustedToken.address)
+                  .build(),
+              ) as Transfer,
+            ])
+            .with('executionDate', twoDaysAfter)
+            .build(),
+        ),
+      ],
+    };
+    networkService.get.mockImplementation((url) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: chain });
+        case getAllTransactions:
+          return Promise.resolve({ data: transactionHistoryData });
+        case getSafeUrl:
+          return Promise.resolve({ data: safe });
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+          return Promise.resolve({ data: trustedToken });
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+          return Promise.resolve({ data: untrustedToken });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history`,
+      )
+      .expect(200)
+      .expect((response) => {
+        // Two date labels and two transactions
+        expect(response.body['results']).toHaveLength(4);
+        expect(response.body['results'][0]).toMatchObject({
+          type: 'DATE_LABEL',
+        });
+        expect(response.body['results'][1]).toMatchObject({
+          transaction: {
+            txInfo: {
+              transferInfo: {
+                tokenAddress: trustedToken.address,
+              },
+            },
+          },
+        });
+        expect(response.body['results'][2]).toMatchObject({
+          type: 'DATE_LABEL',
+        });
+        expect(response.body['results'][3]).toMatchObject({
           transaction: {
             txInfo: {
               transferInfo: {

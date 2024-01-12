@@ -34,6 +34,7 @@ export default () => ({
     templates: {
       recoveryTx: process.env.EMAIL_TEMPLATE_RECOVERY_TX,
       unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
+      verificationCode: process.env.EMAIL_TEMPLATE_VERIFICATION_CODE,
     },
     verificationCode: {
       resendLockWindowMs: parseInt(
@@ -129,5 +130,8 @@ export default () => ({
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
+  },
+  safeWebApp: {
+    baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
 });

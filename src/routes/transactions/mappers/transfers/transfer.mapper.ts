@@ -17,14 +17,10 @@ export class TransferMapper {
     chainId: string,
     transfer: Transfer,
     safe: Safe,
-    timezoneOffsetMs: number,
   ): Promise<Transaction> {
-    const date = structuredClone(transfer.executionDate);
-    date.setTime(date.getTime() + timezoneOffsetMs);
-
     return new Transaction(
       `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-      date.getTime(),
+      transfer.executionDate.getTime(),
       TransactionStatus.Success,
       await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
       null,

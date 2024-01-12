@@ -61,7 +61,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction, 0);
+    const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -81,42 +81,6 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(addressInfo),
       safeAppInfo: null,
-    });
-  });
-
-  it('should return an execution date with a timezone offset', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
-    const transaction = moduleTransactionBuilder()
-      .with('safe', safe.address)
-      .build();
-    const txStatus =
-      sample(Object.values(TransactionStatus)) ?? TransactionStatus.Success;
-    statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
-    const txInfo = transferTransactionInfoBuilder().build();
-    transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
-    const addressInfo = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    transactionDataMapper.buildAddressInfoIndex.mockResolvedValue({});
-    const trustedDelegateCallTarget = faker.datatype.boolean();
-    transactionDataMapper.isTrustedDelegateCall.mockResolvedValue(
-      trustedDelegateCallTarget,
-    );
-    const timezoneOffset = faker.number.int({
-      min: -12 * 60 * 60 * 1000,
-      max: 12 * 60 * 60 * 1000,
-    }); // range from -12 hours to +12 hours
-
-    const actual = await mapper.mapDetails(
-      chainId,
-      transaction,
-      timezoneOffset,
-    );
-
-    const expectedExecutionDate =
-      transaction.executionDate.getTime() + timezoneOffset;
-    expect(actual).toMatchObject({
-      executedAt: expectedExecutionDate,
     });
   });
 
@@ -145,7 +109,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction, 0);
+    const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
       safeAddress: safe.address,

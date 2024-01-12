@@ -36,6 +36,7 @@ export default (): ReturnType<typeof configuration> => ({
     templates: {
       recoveryTx: faker.string.alphanumeric(),
       unknownRecoveryTx: faker.string.alphanumeric(),
+      verificationCode: faker.string.alphanumeric(),
     },
     verificationCode: {
       resendLockWindowMs: faker.number.int(),
@@ -135,8 +136,8 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   redis: {
-    host: faker.internet.domainName(),
-    port: faker.internet.port().toString(),
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || '6379',
   },
   relay: { limit: faker.number.int({ min: 1 }) },
   safeConfig: {
@@ -144,5 +145,8 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeTransaction: {
     useVpcUrl: false,
+  },
+  safeWebApp: {
+    baseUri: faker.internet.url({ appendSlash: false }),
   },
 });

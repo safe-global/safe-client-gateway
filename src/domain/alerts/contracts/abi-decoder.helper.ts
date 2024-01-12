@@ -1,5 +1,6 @@
 import {
   Abi,
+  ContractEventName,
   DecodeEventLogParameters,
   DecodeFunctionDataParameters,
   Hex,
@@ -11,13 +12,14 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
   protected constructor(private readonly abi: TAbi) {}
 
   decodeEventLog<
-    TEventName extends string | undefined = undefined,
-    TTopics extends Hex[] = Hex[],
-    TData extends Hex | undefined = undefined,
-    TStrict extends boolean = true,
+    const abi extends Abi | readonly unknown[],
+    eventName extends ContractEventName<abi> | undefined = undefined,
+    topics extends Hex[] = Hex[],
+    data extends Hex | undefined = undefined,
+    strict extends boolean = true,
   >(
     args: Omit<
-      DecodeEventLogParameters<TAbi, TEventName, TTopics, TData, TStrict>,
+      DecodeEventLogParameters<abi, eventName, topics, data, strict>,
       'abi'
     >,
   ) {

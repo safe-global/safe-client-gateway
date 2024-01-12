@@ -8,18 +8,21 @@ import { ResendVerificationTimespanError } from '@/domain/email/errors/verificat
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-verified.error';
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
-import { EmailUpdateMatchesError } from '@/domain/email/errors/email-update-matches.error';
+import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()
 export class EmailRepository implements IEmailRepository {
   private readonly verificationCodeResendLockWindowMs: number;
   private readonly verificationCodeTtlMs: number;
+  private static readonly VERIFICATION_CODE_EMAIL_SUBJECT = 'Verification code';
 
   constructor(
     @Inject(IEmailDataSource)
     private readonly emailDataSource: IEmailDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IEmailApi) private readonly emailApi: IEmailApi,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -119,6 +122,7 @@ export class EmailRepository implements IEmailRepository {
     await this._sendEmailVerification({
       ...args,
       code: email.verificationCode,
+      emailAddress: email.emailAddress.value,
     });
   }
 
@@ -129,6 +133,11 @@ export class EmailRepository implements IEmailRepository {
     code: string;
   }): Promise<void> {
     const email = await this.emailDataSource.getEmail(args);
+
+    if (email.isVerified) {
+      // email is already verified, so we don't need to perform further checks
+      return;
+    }
 
     if (email.verificationCode !== args.code) {
       throw new InvalidVerificationCodeError(args);
@@ -147,10 +156,14 @@ export class EmailRepository implements IEmailRepository {
     safeAddress: string;
     account: string;
   }): Promise<void> {
-    return this.emailDataSource.deleteEmail(args);
+    const email = await this.emailDataSource.getEmail(args);
+    await this.emailApi.deleteEmailAddress({
+      emailAddress: email.emailAddress.value,
+    });
+    await this.emailDataSource.deleteEmail(args);
   }
 
-  async updateEmail(args: {
+  async editEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
@@ -160,7 +173,7 @@ export class EmailRepository implements IEmailRepository {
     const currentEmail = await this.emailDataSource.getEmail(args);
 
     if (newEmail.value === currentEmail.emailAddress.value) {
-      throw new EmailUpdateMatchesError(args);
+      throw new EmailEditMatchesError(args);
     }
 
     const verificationCode = this._generateCode();
@@ -186,12 +199,21 @@ export class EmailRepository implements IEmailRepository {
   }
 
   private async _sendEmailVerification(args: {
-    chainId: string;
-    safeAddress: string;
     account: string;
+    chainId: string;
     code: string;
+    emailAddress: string;
+    safeAddress: string;
   }) {
-    // TODO send email via provider
+    await this.emailApi.createMessage({
+      to: [args.emailAddress],
+      template: this.configurationService.getOrThrow(
+        'email.templates.verificationCode',
+      ),
+      subject: EmailRepository.VERIFICATION_CODE_EMAIL_SUBJECT,
+      substitutions: { verificationCode: args.code },
+    });
+
     // Update verification-sent date on a successful response
     await this.emailDataSource.setVerificationSentDate({
       ...args,

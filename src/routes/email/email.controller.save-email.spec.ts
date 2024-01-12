@@ -20,12 +20,17 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
+import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
+import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 
 describe('Email controller save email tests', () => {
   let app;
-  let safeConfigUrl;
+  let configurationService;
+  let emailApi;
   let emailDatasource;
   let networkService;
+  let safeConfigUrl;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -34,6 +39,8 @@ describe('Email controller save email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration), EmailControllerModule],
     })
+      .overrideModule(EmailApiModule)
+      .useModule(TestEmailApiModule)
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
@@ -44,8 +51,9 @@ describe('Email controller save email tests', () => {
       .useModule(TestNetworkModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
+    configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    emailApi = moduleFixture.get(IEmailApi);
     emailDatasource = moduleFixture.get(IEmailDataSource);
     networkService = moduleFixture.get(NetworkService);
 
@@ -101,6 +109,16 @@ describe('Email controller save email tests', () => {
       })
       .expect(201)
       .expect({});
+
+    expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+    expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+      subject: 'Verification code',
+      substitutions: { verificationCode: expect.any(String) },
+      template: configurationService.getOrThrow(
+        'email.templates.verificationCode',
+      ),
+      to: [emailAddress],
+    });
   });
 
   it('returns 403 is message was signed with a timestamp older than 5 minutes', async () => {
