@@ -23,7 +23,9 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import { EmailAddress } from '@/domain/email/entities/email.entity';
 
-describe('Email controller update email tests', () => {
+const verificationCodeTtlMs = 100;
+
+describe('Email controller edit email tests', () => {
   let app;
   let safeConfigUrl;
   let emailDatasource;
@@ -33,8 +35,23 @@ describe('Email controller update email tests', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
+    const defaultConfiguration = configuration();
+
+    function testConfiguration() {
+      return {
+        ...defaultConfiguration,
+        email: {
+          ...defaultConfiguration.email,
+          verificationCode: {
+            ...defaultConfiguration.email.verificationCode,
+            ttlMs: verificationCodeTtlMs,
+          },
+        },
+      };
+    }
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration), EmailControllerModule],
+      imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
@@ -63,7 +80,7 @@ describe('Email controller update email tests', () => {
     await app.close();
   });
 
-  it('updates email successfully', async () => {
+  it('edits email successfully', async () => {
     const chain = chainBuilder().build();
     const prevEmailAddress = faker.internet.email();
     const emailAddress = faker.internet.email();
@@ -106,7 +123,58 @@ describe('Email controller update email tests', () => {
       .expect({});
   });
 
-  it('should return 409 if trying to update with the same email', async () => {
+  it('should return 429 if trying to update email too often', async () => {
+    const verificationGeneratedOn = faker.date.anytime();
+    // Verification code is still valid as it is currently the same time it was generated
+    jest.setSystemTime(verificationGeneratedOn.getTime());
+
+    const chain = chainBuilder().build();
+    const prevEmailAddress = faker.internet.email();
+    const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: safe });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    emailDatasource.getEmail.mockResolvedValue({
+      emailAddress: new EmailAddress(prevEmailAddress),
+      verificationGeneratedOn: verificationGeneratedOn,
+    });
+    emailDatasource.updateEmail.mockResolvedValue();
+
+    await request(app.getHttpServer())
+      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .send({
+        emailAddress,
+        account: account.address,
+        timestamp,
+        signature,
+      })
+      .expect(429)
+      .expect({
+        statusCode: 429,
+        message: 'Cannot edit at this time',
+      });
+  });
+
+  it('should return 409 if trying to edit with the same email', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
@@ -151,7 +219,7 @@ describe('Email controller update email tests', () => {
     expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
   });
 
-  it('should return 404 if trying to update a non-existent email entry', async () => {
+  it('should return 404 if trying to edit a non-existent email entry', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();

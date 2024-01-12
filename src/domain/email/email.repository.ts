@@ -10,6 +10,7 @@ import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-v
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
 import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { EditTimespanError } from '@/domain/email/errors/email-timespan.error';
 
 @Injectable()
 export class EmailRepository implements IEmailRepository {
@@ -171,6 +172,20 @@ export class EmailRepository implements IEmailRepository {
   }): Promise<void> {
     const newEmail = new EmailAddress(args.emailAddress);
     const currentEmail = await this.emailDataSource.getEmail(args);
+
+    // Prevent subsequent edit if verification code still valid
+    if (
+      currentEmail.verificationGeneratedOn &&
+      this._isEmailVerificationCodeValid(currentEmail)
+    ) {
+      const timespanMs =
+        Date.now() - currentEmail.verificationGeneratedOn.getTime();
+      throw new EditTimespanError({
+        ...args,
+        timespanMs,
+        lockWindowMs: this.verificationCodeResendLockWindowMs,
+      });
+    }
 
     if (newEmail.value === currentEmail.emailAddress.value) {
       throw new EmailEditMatchesError(args);
