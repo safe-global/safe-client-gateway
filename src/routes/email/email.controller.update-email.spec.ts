@@ -67,9 +67,6 @@ describe('Email controller update email tests', () => {
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     emailDatasource = moduleFixture.get(IEmailDataSource);
     networkService = moduleFixture.get(NetworkService);
-    verificationCodeResendLockWindowMs = configurationService.get(
-      'email.verificationCode.resendLockWindowMs',
-    );
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
