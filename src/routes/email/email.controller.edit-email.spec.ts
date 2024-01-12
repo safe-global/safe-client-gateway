@@ -23,7 +23,7 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
 import { EmailAddress } from '@/domain/email/entities/email.entity';
 
-describe('Email controller update email tests', () => {
+describe('Email controller edit email tests', () => {
   let app;
   let safeConfigUrl;
   let emailDatasource;
@@ -63,7 +63,7 @@ describe('Email controller update email tests', () => {
     await app.close();
   });
 
-  it('updates email successfully', async () => {
+  it('edits email successfully', async () => {
     const chain = chainBuilder().build();
     const prevEmailAddress = faker.internet.email();
     const emailAddress = faker.internet.email();
@@ -106,7 +106,7 @@ describe('Email controller update email tests', () => {
       .expect({});
   });
 
-  it('should return 409 if trying to update with the same email', async () => {
+  it('should return 409 if trying to edit with the same email', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
@@ -151,7 +151,7 @@ describe('Email controller update email tests', () => {
     expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
   });
 
-  it('should return 404 if trying to update a non-existent email entry', async () => {
+  it('should return 404 if trying to edit a non-existent email entry', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
