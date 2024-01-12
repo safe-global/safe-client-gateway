@@ -83,6 +83,9 @@ export interface IEmailRepository {
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
    * @param args.account - the owner address to which we should link the email address to
+   *
+   * @throws {EditTimeframeError} - if trying to edit again within email.verificationCode.resendLockWindowMs
+   * @throws {EmailEditMatchesError} - if trying to apply edit with same email address as current one
    */
   editEmail(args: {
     chainId: string;
