@@ -171,6 +171,7 @@ export class EmailRepository implements IEmailRepository {
     const newEmail = new EmailAddress(args.emailAddress);
     const currentEmail = await this.emailDataSource.getEmail(args);
 
+    // Prevent subsequent edit if verification code still valid
     if (
       currentEmail.verificationGeneratedOn &&
       this._isEmailVerificationCodeValid(currentEmail)
