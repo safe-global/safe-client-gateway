@@ -28,7 +28,6 @@ const verificationCodeTtlMs = 100;
 describe('Email controller update email tests', () => {
   let app;
   let safeConfigUrl;
-  let verificationCodeResendLockWindowMs;
   let emailDatasource;
   let networkService;
 
