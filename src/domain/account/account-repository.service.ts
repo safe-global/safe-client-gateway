@@ -14,6 +14,8 @@ import { InvalidVerificationCodeError } from '@/domain/account/errors/invalid-ve
 import { EmailEditMatchesError } from '@/domain/account/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import * as crypto from 'crypto';
+import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
+import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
 import { EditTimespanError } from '@/domain/account/errors/email-timespan.error';
 
 @Injectable()
@@ -28,6 +30,8 @@ export class AccountRepository implements IAccountRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IEmailApi) private readonly emailApi: IEmailApi,
+    @Inject(ISubscriptionRepository)
+    private readonly subscriptionRepository: ISubscriptionRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -64,6 +68,13 @@ export class AccountRepository implements IAccountRepository {
         signer: args.signer,
         codeGenerationDate: new Date(),
         unsubscriptionToken: crypto.randomUUID(),
+      });
+      // New account registrations should be subscribed to the Account Recovery category
+      await this.subscriptionRepository.subscribe({
+        chainId: args.chainId,
+        signer: args.signer,
+        safeAddress: args.safeAddress,
+        notificationTypeKey: SubscriptionRepository.CATEGORY_ACCOUNT_RECOVERY,
       });
       await this._sendEmailVerification({
         ...args,
