@@ -27,6 +27,7 @@ import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exceptio
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
+import { EmailEditTimespanExceptionFilter } from '@/routes/email/exception-filters/email-edit-timespan.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -117,6 +118,7 @@ export class EmailController {
     OnlySafeOwnerGuard,
   )
   @UseFilters(
+    EmailEditTimespanExceptionFilter,
     EmailEditMatchesExceptionFilter,
     EmailAddressDoesNotExistExceptionFilter,
   )
