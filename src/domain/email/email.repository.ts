@@ -16,6 +16,7 @@ import { EditTimespanError } from '@/domain/email/errors/email-timespan.error';
 export class EmailRepository implements IEmailRepository {
   private readonly verificationCodeResendLockWindowMs: number;
   private readonly verificationCodeTtlMs: number;
+  private static readonly VERIFICATION_CODE_EMAIL_SUBJECT = 'Verification code';
 
   constructor(
     @Inject(IEmailDataSource)
@@ -122,6 +123,7 @@ export class EmailRepository implements IEmailRepository {
     await this._sendEmailVerification({
       ...args,
       code: email.verificationCode,
+      emailAddress: email.emailAddress.value,
     });
   }
 
@@ -212,12 +214,21 @@ export class EmailRepository implements IEmailRepository {
   }
 
   private async _sendEmailVerification(args: {
-    chainId: string;
-    safeAddress: string;
     account: string;
+    chainId: string;
     code: string;
+    emailAddress: string;
+    safeAddress: string;
   }) {
-    // TODO send email via provider
+    await this.emailApi.createMessage({
+      to: [args.emailAddress],
+      template: this.configurationService.getOrThrow(
+        'email.templates.verificationCode',
+      ),
+      subject: EmailRepository.VERIFICATION_CODE_EMAIL_SUBJECT,
+      substitutions: { verificationCode: args.code },
+    });
+
     // Update verification-sent date on a successful response
     await this.emailDataSource.setVerificationSentDate({
       ...args,

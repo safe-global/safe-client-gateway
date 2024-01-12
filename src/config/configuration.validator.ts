@@ -18,6 +18,7 @@ const configurationSchema: Schema = {
     EMAIL_API_KEY: { type: 'string' },
     EMAIL_TEMPLATE_RECOVERY_TX: { type: 'string' },
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: { type: 'string' },
+    EMAIL_TEMPLATE_VERIFICATION_CODE: { type: 'string' },
   },
   required: [
     'AUTH_TOKEN',
@@ -30,6 +31,7 @@ const configurationSchema: Schema = {
     'EMAIL_API_KEY',
     'EMAIL_TEMPLATE_RECOVERY_TX',
     'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX',
+    'EMAIL_TEMPLATE_VERIFICATION_CODE',
   ],
 };
 
