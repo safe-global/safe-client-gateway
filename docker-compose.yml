@@ -41,6 +41,8 @@ services:
       EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-changeme@example.com}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: ${EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX-example_template_unknown_recovery_tx}
+      EMAIL_TEMPLATE_RECOVERY_TX: ${EMAIL_TEMPLATE_RECOVERY_TX-example_template_recovery_tx}
+      EMAIL_TEMPLATE_VERIFICATION_CODE: ${EMAIL_TEMPLATE_VERIFICATION_CODE-example_template_verification_code}
     depends_on:
       - redis
       - db
