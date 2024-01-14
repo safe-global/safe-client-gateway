@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { flatten, groupBy } from 'lodash';
+import { groupBy } from 'lodash';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
@@ -32,40 +32,38 @@ export class QueuedItemsMapper {
     const transactionGroups = this.groupByNonce(transactions.results);
     let lastProcessedNonce = previousPageLastNonce ?? -1;
 
-    return flatten(
-      await Promise.all(
-        transactionGroups.map(async (transactionGroup) => {
-          const transactionGroupItems: QueuedItem[] = [];
-          const { nonce } = transactionGroup;
-          if (lastProcessedNonce < safe.nonce && nonce === safe.nonce) {
-            transactionGroupItems.push(new LabelQueuedItem(LabelItem.Next));
-          } else if (lastProcessedNonce <= safe.nonce && nonce > safe.nonce) {
-            transactionGroupItems.push(new LabelQueuedItem(LabelItem.Queued));
-          }
-          lastProcessedNonce = nonce;
+    return await Promise.all(
+      transactionGroups.map(async (transactionGroup) => {
+        const transactionGroupItems: QueuedItem[] = [];
+        const { nonce } = transactionGroup;
+        if (lastProcessedNonce < safe.nonce && nonce === safe.nonce) {
+          transactionGroupItems.push(new LabelQueuedItem(LabelItem.Next));
+        } else if (lastProcessedNonce <= safe.nonce && nonce > safe.nonce) {
+          transactionGroupItems.push(new LabelQueuedItem(LabelItem.Queued));
+        }
+        lastProcessedNonce = nonce;
 
-          const isEdgeGroup = nonce === nextPageFirstNonce;
-          const isSingleItemGroup = transactionGroup.transactions.length === 1;
-          const conflictFromPreviousPage = nonce === previousPageLastNonce;
-          const hasConflicts = !isSingleItemGroup || isEdgeGroup;
-          if (hasConflicts && !conflictFromPreviousPage) {
-            transactionGroupItems.push(new ConflictHeaderQueuedItem(nonce));
-          }
+        const isEdgeGroup = nonce === nextPageFirstNonce;
+        const isSingleItemGroup = transactionGroup.transactions.length === 1;
+        const conflictFromPreviousPage = nonce === previousPageLastNonce;
+        const hasConflicts = !isSingleItemGroup || isEdgeGroup;
+        if (hasConflicts && !conflictFromPreviousPage) {
+          transactionGroupItems.push(new ConflictHeaderQueuedItem(nonce));
+        }
 
-          const mappedTransactionItems = await this.getMappedTransactionGroup(
-            chainId,
-            safe,
-            hasConflicts,
-            conflictFromPreviousPage,
-            isEdgeGroup,
-            transactionGroup,
-          );
+        const mappedTransactionItems = await this.getMappedTransactionGroup(
+          chainId,
+          safe,
+          hasConflicts,
+          conflictFromPreviousPage,
+          isEdgeGroup,
+          transactionGroup,
+        );
 
-          transactionGroupItems.push(...mappedTransactionItems);
-          return transactionGroupItems;
-        }),
-      ),
-    );
+        transactionGroupItems.push(...mappedTransactionItems);
+        return transactionGroupItems;
+      }),
+    ).then((items) => items.flat());
   }
 
   private async getMappedTransactionGroup(

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { get } from 'lodash';
 import {
   CacheService,
   ICacheService,
@@ -55,7 +54,7 @@ export class CacheFirstDataSource {
     try {
       return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
-      if (get(error, 'status') === 404) {
+      if (error?.status === 404) {
         await this.cacheNotFoundError(
           args.cacheDir,
           new NetworkResponseError(error.status, error),
@@ -75,7 +74,7 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     this.loggingService.debug({ type: 'cache_hit', key, field });
     const cachedData = JSON.parse(cached);
-    if (get(cachedData, 'status') === 404) {
+    if (cachedData?.status === 404) {
       throw new NetworkResponseError(cachedData.status, cachedData.data);
     }
     return cachedData;

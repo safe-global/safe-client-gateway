@@ -13,7 +13,6 @@ import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { difference } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
@@ -115,9 +114,9 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<AssetPrice[]> {
     const pricesFromCache = await this._getTokenPricesFromCache(args);
-    const notCachedTokenPrices = difference(
-      args.tokenAddresses,
-      pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
+    const cachedTokenAddresses = pricesFromCache.flatMap(Object.keys);
+    const notCachedTokenPrices = args.tokenAddresses.filter(
+      (tokenAddress) => !cachedTokenAddresses.includes(tokenAddress),
     );
     const pricesFromNetwork = notCachedTokenPrices.length
       ? await this._getTokenPricesFromNetwork({
