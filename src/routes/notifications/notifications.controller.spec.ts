@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { range } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -54,11 +53,11 @@ describe('Notifications Controller (Unit)', () => {
     registerDeviceDtoBuilder()
       .with(
         'safeRegistrations',
-        range(4)
-          .map((i) => chainBuilder().with('chainId', i.toString()).build())
-          .map((chain) =>
-            safeRegistrationBuilder().with('chainId', chain.chainId).build(),
-          ),
+        Array.from({ length: 4 }).map((_, i) => {
+          return safeRegistrationBuilder()
+            .with('chainId', i.toString())
+            .build();
+        }),
       )
       .build();
 

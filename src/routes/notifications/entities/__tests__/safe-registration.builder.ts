@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { SafeRegistration } from '@/routes/notifications/entities/safe-registration.entity';
 
@@ -8,10 +7,14 @@ export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {
     .with('chainId', faker.string.numeric())
     .with(
       'safes',
-      range(random(5)).map(() => faker.finance.ethereumAddress()),
+      faker.helpers.multiple(() => faker.finance.ethereumAddress(), {
+        count: { min: 0, max: 5 },
+      }),
     )
     .with(
       'signatures',
-      range(random(5)).map(() => faker.string.hexadecimal({ length: 32 })),
+      faker.helpers.multiple(() => faker.string.hexadecimal({ length: 32 }), {
+        count: { min: 0, max: 5 },
+      }),
     );
 }

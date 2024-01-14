@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import {
   SafeAppAccessControl,
@@ -11,6 +10,8 @@ export function safeAppAccessControlBuilder(): IBuilder<SafeAppAccessControl> {
     .with('type', SafeAppAccessControlPolicies.DomainAllowlist)
     .with(
       'value',
-      range(random(2, 5)).map(() => faker.internet.url({ appendSlash: false })),
+      faker.helpers.multiple(() => faker.internet.url({ appendSlash: false }), {
+        count: { min: 2, max: 5 },
+      }),
     );
 }

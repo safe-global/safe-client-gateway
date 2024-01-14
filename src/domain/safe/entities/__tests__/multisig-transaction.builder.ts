@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import {
@@ -17,7 +16,9 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
     .with('blockNumber', faker.number.int())
     .with(
       'confirmations',
-      range(random(5)).map(() => confirmationBuilder().build()),
+      faker.helpers.multiple(() => confirmationBuilder().build(), {
+        count: { min: 0, max: 5 },
+      }),
     )
     .with('confirmationsRequired', faker.number.int())
     .with('data', faker.string.hexadecimal())
