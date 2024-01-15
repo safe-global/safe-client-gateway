@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { head, last } from 'lodash';
 import { MultisigTransaction as DomainMultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -490,12 +489,12 @@ export class TransactionsService {
   private getFirstTransactionNonce(
     page: Page<DomainMultisigTransaction>,
   ): number | null {
-    return head(page.results)?.nonce ?? null;
+    return page.results[0]?.nonce ?? null;
   }
 
   private getLastTransactionNonce(
     page: Page<DomainMultisigTransaction>,
   ): number | null {
-    return last(page.results)?.nonce ?? null;
+    return page.results.at(-1)?.nonce ?? null;
   }
 }
