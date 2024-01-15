@@ -1,4 +1,5 @@
 import { Email, EmailAddress } from '@/domain/email/entities/email.entity';
+import { Subscription } from '@/domain/email/entities/subscription.entity';
 
 export const IEmailDataSource = Symbol('IEmailDataSource');
 
@@ -44,6 +45,7 @@ export interface IEmailDataSource {
     account: string;
     code: string;
     codeGenerationDate: Date;
+    unsubscriptionToken: string;
   }): Promise<void>;
 
   /**
@@ -123,5 +125,63 @@ export interface IEmailDataSource {
     account: string;
     code: string;
     codeGenerationDate: Date;
+    unsubscriptionToken: string;
   }): Promise<void>;
+
+  /**
+   * Gets all the subscriptions for the account on chainId, with the specified safeAddress
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which the email address is linked to
+   * @param args.account - the owner address to which we the email address is linked to
+   */
+  getSubscriptions(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+  }): Promise<Subscription[]>;
+
+  /**
+   * Subscribes the account on chainId, with the safeAddress to a category
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address to which the email address is linked to
+   * @param args.account - the owner address to which we the email address is linked to
+   * @param args.categoryKey - the category key to subscribe to
+   *
+   * @returns The Subscriptions that were successfully subscribed to
+   */
+  subscribe(args: {
+    chainId: string;
+    safeAddress: string;
+    account: string;
+    categoryKey: string;
+  }): Promise<Subscription[]>;
+
+  /**
+   * Unsubscribes from the notification category with the provided category key.
+   *
+   * If the category key or the token are incorrect, no subscriptions are returned from this call.
+   *
+   * @param args.categoryKey - the category key to unsubscribe
+   * @param args.token - the unsubscription token (tied to a single account)
+   *
+   * @returns The Subscriptions that were successfully unsubscribed.
+   */
+  unsubscribe(args: {
+    categoryKey: string;
+    token: string;
+  }): Promise<Subscription[]>;
+
+  /**
+   * Unsubscribes from all notification categories.
+   *
+   * If the category key or the token are incorrect, no subscriptions are returned from this call.
+   *
+   * @param args.categoryKey - the category key to unsubscribe
+   * @param args.token - the unsubscription token (tied to a single account)
+   *
+   * @returns The Subscriptions that were successfully unsubscribed.
+   */
+  unsubscribeAll(args: { token: string }): Promise<Subscription[]>;
 }
