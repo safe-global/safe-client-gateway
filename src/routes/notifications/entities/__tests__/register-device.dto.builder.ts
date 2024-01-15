@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { random, range, sample } from 'lodash';
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
@@ -11,11 +10,13 @@ export function registerDeviceDtoBuilder(): IBuilder<RegisterDeviceDto> {
     .with('cloudMessagingToken', faker.string.uuid())
     .with('buildNumber', faker.string.numeric())
     .with('bundle', faker.internet.domainName())
-    .with('deviceType', sample(Object.values(DeviceType)) ?? DeviceType.Android)
+    .with('deviceType', faker.helpers.objectValue(DeviceType))
     .with('version', faker.system.semver())
     .with('timestamp', faker.date.recent().getTime().toString())
     .with(
       'safeRegistrations',
-      range(random(10)).map(() => safeRegistrationBuilder().build()),
+      faker.helpers.multiple(() => safeRegistrationBuilder().build(), {
+        count: { min: 0, max: 10 },
+      }),
     );
 }
