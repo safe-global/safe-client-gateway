@@ -553,7 +553,7 @@ describe('Messages controller', () => {
             .with('safeAppId', null)
             .with('created', messageCreationDate)
             .build(),
-        { count: { min: 0, max: 4 } },
+        { count: { min: 1, max: 4 } },
       );
       const page = pageBuilder()
         .with('previous', null)
