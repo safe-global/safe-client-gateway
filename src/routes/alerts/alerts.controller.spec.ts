@@ -536,15 +536,12 @@ describe('Alerts (Unit)', () => {
           'transactions',
           multiSendTransactions,
         );
-        const execTransaction = execTransactionEncoder()
+        const transactionAddedEvent = transactionAddedEventBuilder()
           .with('data', multiSend.encode())
           .with(
             'to',
             getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
-          );
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', execTransaction.encode())
-          .with('to', getAddress(safe.address))
+          )
           .encode();
 
         const alert = alertBuilder()
@@ -1017,15 +1014,12 @@ describe('Alerts (Unit)', () => {
         'transactions',
         multiSendTransactions,
       );
-      const execTransaction = execTransactionEncoder()
+      const transactionAddedEvent = transactionAddedEventBuilder()
         .with('data', multiSend.encode())
         .with(
           'to',
           getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
-        );
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', execTransaction.encode())
-        .with('to', getAddress(safe.address))
+        )
         .encode();
 
       const alert = alertBuilder()
@@ -1128,15 +1122,12 @@ describe('Alerts (Unit)', () => {
         'transactions',
         multiSendTransactions,
       );
-      const execTransaction = execTransactionEncoder()
+      const transactionAddedEvent = transactionAddedEventBuilder()
         .with('data', multiSend.encode())
         .with(
           'to',
           getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
-        );
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', execTransaction.encode())
-        .with('to', getAddress(safe.address))
+        )
         .encode();
 
       const log = alertLogBuilder()
