@@ -42,7 +42,7 @@ import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
-import { IEmailTemplate } from '@/domain/interfaces/email-template.interface';
+import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -70,7 +70,7 @@ describe('Alerts (Unit)', () => {
   let configurationService;
   let emailApi;
   let emailDataSource;
-  let emailTemplate;
+  let urlGenerator;
 
   describe('/alerts route enabled', () => {
     let app: INestApplication;
@@ -109,7 +109,7 @@ describe('Alerts (Unit)', () => {
       safeConfigUrl = configurationService.get('safeConfig.baseUri');
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
-      emailTemplate = moduleFixture.get(IEmailTemplate);
+      urlGenerator = moduleFixture.get(UrlGeneratorHelper);
       emailDataSource = moduleFixture.get(IEmailDataSource);
       networkService = moduleFixture.get(NetworkService);
 
@@ -208,13 +208,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [...safe.owners, owner],
+            owners: [...safe.owners, owner].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -304,13 +309,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [owners[0], owners[2]],
+            owners: [owners[0], owners[2]].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -399,13 +409,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [owners[0], newOwner, owners[2]],
+            owners: [owners[0], newOwner, owners[2]].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: safe.threshold.toString(),
           },
@@ -484,13 +499,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: safe.owners,
+            owners: safe.owners.map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -603,17 +623,22 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [
-                owners[1],
-                owners[2],
-                addOwnerWithThreshold.build().owner,
-              ],
+            owners: [
+              owners[1],
+              owners[2],
+              addOwnerWithThreshold.build().owner,
+            ].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: removeOwner.build().threshold.toString(),
           },
@@ -691,13 +716,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [...safe.owners, owner],
+            owners: [...safe.owners, owner].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -709,13 +739,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [...safe.owners, owner],
+            owners: [...safe.owners, owner].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -797,13 +832,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
-            ownersListHtml: emailTemplate.addressListToHtml({
-              chain,
-              addresses: [...safe.owners, owner],
+            owners: [...safe.owners, owner].map((address) => {
+              return {
+                address,
+                explorerUrl: urlGenerator.addressToExplorerUrl({
+                  chain,
+                  address,
+                }),
+              };
             }),
             threshold: threshold.toString(),
           },
@@ -882,7 +922,7 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
@@ -959,7 +999,7 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
@@ -972,7 +1012,7 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
               chain,
               safeAddress: safe.address,
             }),
@@ -1084,7 +1124,7 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
           }),
@@ -1194,7 +1234,7 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
           }),
@@ -1207,7 +1247,7 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
           }),
@@ -1291,13 +1331,18 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Recovery attempt',
         substitutions: {
-          webAppUrl: emailTemplate.addressToSafeWebAppUrl({
+          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
             chain,
             safeAddress: safe.address,
           }),
-          ownersListHtml: emailTemplate.addressListToHtml({
-            chain,
-            addresses: [...safe.owners, owner],
+          owners: [...safe.owners, owner].map((address) => {
+            return {
+              address,
+              explorerUrl: urlGenerator.addressToExplorerUrl({
+                chain,
+                address,
+              }),
+            };
           }),
           threshold: threshold.toString(),
         },
