@@ -489,7 +489,7 @@ export class TransactionsService {
   private getFirstTransactionNonce(
     page: Page<DomainMultisigTransaction>,
   ): number | null {
-    return page.results[0].nonce ?? null;
+    return page.results[0]?.nonce ?? null;
   }
 
   private getLastTransactionNonce(
