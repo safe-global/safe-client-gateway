@@ -76,15 +76,12 @@ export class EmailDataSource implements IEmailDataSource {
     code: string;
     codeGenerationDate: Date;
   }): Promise<void> {
-    return await this.sql.begin(async (sql) => {
-      await sql<Email[]>`
-          INSERT INTO emails.account_emails (chain_id, email_address, safe_address, account, verification_code,
-                                             verification_code_generated_on)
-          VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.account}, ${args.code},
-                  ${args.codeGenerationDate})
-          RETURNING *
-      `;
-    });
+    await this.sql<Email[]>`
+        INSERT INTO emails.account_emails (chain_id, email_address, safe_address, account, verification_code,
+                                           verification_code_generated_on)
+        VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.account}, ${args.code},
+                ${args.codeGenerationDate})
+    `;
   }
 
   async setVerificationCode(args: {
