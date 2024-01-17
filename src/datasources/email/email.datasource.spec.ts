@@ -541,7 +541,7 @@ describe('Email Datasource Tests', () => {
     expect(subscriptions).toContainEqual(subscription);
   });
 
-  it('unsubscribes to a category successfully', async () => {
+  it('unsubscribes from a category successfully', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
     const safeAddress = faker.finance.ethereumAddress();
     const emailAddress = new EmailAddress(faker.internet.email());
