@@ -85,22 +85,12 @@ export class EmailDataSource implements IEmailDataSource {
     codeGenerationDate: Date;
     unsubscriptionToken: string;
   }): Promise<void> {
-    const [email] = await this.sql<Email[]>`
+    await this.sql<Email[]>`
         INSERT INTO emails.account_emails (chain_id, email_address, safe_address, account, verification_code,
                                            verification_code_generated_on, unsubscription_token)
         VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.account}, ${args.code},
                 ${args.codeGenerationDate}, ${args.unsubscriptionToken})
         RETURNING *
-    `;
-
-    // When registering a new email address, the account_recovery subscription should be enabled by default
-    await this.sql`
-        INSERT INTO emails.account_subscriptions (account_id, subscription_id)
-        SELECT account_emails.id, subscriptions.id
-        FROM emails.subscriptions
-                 CROSS JOIN emails.account_emails
-        WHERE subscriptions.key = 'account_recovery'
-          AND account_emails.id = ${email.id};
     `;
   }
 
@@ -276,13 +266,13 @@ export class EmailDataSource implements IEmailDataSource {
     token: string;
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this.sql<Subscription[]>`DELETE
-                                     FROM emails.account_subscriptions
-                                         USING emails.account_emails, emails.subscriptions
-                                     WHERE account_emails.unsubscription_token = ${args.token}
-                                       AND subscriptions.key = ${args.categoryKey}
-                                       AND account_subscriptions.account_id = account_emails.id
-                                       AND account_subscriptions.subscription_id = subscriptions.id
-                                     RETURNING subscriptions.key, subscriptions.name`;
+                                                         FROM emails.account_subscriptions
+                                                             USING emails.account_emails, emails.subscriptions
+                                                         WHERE account_emails.unsubscription_token = ${args.token}
+                                                           AND subscriptions.key = ${args.categoryKey}
+                                                           AND account_subscriptions.account_id = account_emails.id
+                                                           AND account_subscriptions.subscription_id = subscriptions.id
+                                                         RETURNING subscriptions.key, subscriptions.name`;
     return subscriptions.map(
       (s) =>
         <DomainSubscription>{

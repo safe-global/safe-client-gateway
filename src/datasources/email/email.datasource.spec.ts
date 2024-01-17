@@ -471,7 +471,7 @@ describe('Email Datasource Tests', () => {
     ).rejects.toThrow(EmailAddressDoesNotExistError);
   });
 
-  it('subscribes to account_recovery upon registration', async () => {
+  it('Has zero subscriptions when saving new email', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
     const safeAddress = faker.finance.ethereumAddress();
     const emailAddress = new EmailAddress(faker.internet.email());
@@ -495,11 +495,7 @@ describe('Email Datasource Tests', () => {
       safeAddress,
       account,
     });
-
-    expect(actual).toContainEqual({
-      key: 'account_recovery',
-      name: 'Account Recovery',
-    });
+    expect(actual).toHaveLength(0);
   });
 
   it('subscribes to category', async () => {
@@ -665,8 +661,7 @@ describe('Email Datasource Tests', () => {
       account,
     });
     expect(result).toHaveLength(0);
-    // Length of 1 since there is a default subscription
-    expect(currentSubscriptions).toHaveLength(1);
+    expect(currentSubscriptions).toHaveLength(0);
   });
 
   it('unsubscribes from all categories successfully', async () => {
@@ -723,7 +718,7 @@ describe('Email Datasource Tests', () => {
       account,
     });
     expect(currentSubscriptions).toHaveLength(0);
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(2);
     expect(result).toContainEqual(subscriptions[0]);
     expect(result).toContainEqual(subscriptions[1]);
   });
