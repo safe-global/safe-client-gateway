@@ -143,7 +143,7 @@ describe('RedisCacheService', () => {
       `${pattern}${faker.string.alphanumeric()}`,
       `${pattern}${faker.string.alphanumeric()}`,
     ];
-    const anotherPattern = faker.string.alphanumeric();
+    const anotherPattern = faker.string.alphanumeric({ exclude: pattern });
     const value = fakeJson();
     await redisClient.hSet(anotherPattern, '', value);
     for (const key of matches) {
