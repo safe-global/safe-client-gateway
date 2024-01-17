@@ -42,14 +42,15 @@ export class TransactionPreviewMapper {
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
-      <MultisigTransaction>{
+      {
         safe: safe.address,
         to: previewTransactionDto.to,
         value: previewTransactionDto.value,
         dataDecoded,
         data: previewTransactionDto.data,
         operation: previewTransactionDto.operation,
-      },
+        // Keep type safety as only the above are available in previewTransactionDto
+      } as MultisigTransaction,
     );
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,
