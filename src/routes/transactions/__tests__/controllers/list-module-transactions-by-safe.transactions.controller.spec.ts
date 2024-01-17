@@ -150,13 +150,15 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
+    const moduleTransaction1 = moduleTransactionBuilder().build();
+    const moduleTransaction2 = moduleTransactionBuilder().build();
     const moduleTransaction = {
       count: 2,
       next: null,
       previous: null,
       results: [
-        moduleTransactionToJson(moduleTransactionBuilder().build()),
-        moduleTransactionToJson(moduleTransactionBuilder().build()),
+        moduleTransactionToJson(moduleTransaction1),
+        moduleTransactionToJson(moduleTransaction2),
       ],
     };
 
@@ -167,6 +169,49 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
-      .expect(200);
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toMatchObject({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `module_${moduleTransaction1.safe}_${moduleTransaction1.moduleTransactionId}`,
+                safeAppInfo: null,
+                timestamp: moduleTransaction1.executionDate.getTime(),
+                txStatus: expect.any(String),
+                txInfo: {
+                  type: expect.any(String),
+                },
+                executionInfo: {
+                  type: 'MODULE',
+                  address: { value: moduleTransaction1.module },
+                },
+              },
+              conflictType: 'None',
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `module_${moduleTransaction2.safe}_${moduleTransaction2.moduleTransactionId}`,
+                safeAppInfo: null,
+                timestamp: moduleTransaction2.executionDate.getTime(),
+                txStatus: expect.any(String),
+                txInfo: {
+                  type: expect.any(String),
+                },
+                executionInfo: {
+                  type: 'MODULE',
+                  address: { value: moduleTransaction2.module },
+                },
+              },
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
   });
 });
