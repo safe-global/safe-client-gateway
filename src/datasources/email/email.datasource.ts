@@ -56,7 +56,7 @@ export class EmailDataSource implements IEmailDataSource {
       );
     }
 
-    return <DomainEmail>{
+    return {
       chainId: email.chain_id.toString(),
       emailAddress: new EmailAddress(email.email_address),
       isVerified: email.verified,

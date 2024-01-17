@@ -123,11 +123,10 @@ export class QueuedItemsMapper {
     transactions: MultisigTransaction[],
   ): TransactionGroup[] {
     return Object.entries(groupBy(transactions, 'nonce')).map(
-      ([nonce, transactions]) =>
-        <TransactionGroup>{
-          nonce: Number(nonce),
-          transactions: transactions,
-        },
+      ([nonce, transactions]): TransactionGroup => ({
+        nonce: Number(nonce),
+        transactions: transactions,
+      }),
     );
   }
 }

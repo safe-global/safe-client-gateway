@@ -157,10 +157,11 @@ export class HumanDescriptionMapper {
       : null;
 
     if (safeAppInfo) {
-      fragments.push(<RichTextFragment>{
+      const fragment: RichTextFragment = {
         type: RichFragmentType.Text,
         value: `via ${safeAppInfo.name}`,
-      });
+      };
+      fragments.push(fragment);
     }
 
     return fragments;

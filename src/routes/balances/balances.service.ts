@@ -40,7 +40,7 @@ export class BalancesService {
       .filter((b) => b.fiatBalance !== null)
       .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
 
-    return <Balances>{
+    return {
       fiatTotal: getNumberString(fiatTotal),
       items: orderBy(balances, (b) => Number(b.fiatBalance), 'desc'),
     };

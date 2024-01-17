@@ -44,7 +44,7 @@ describe('AxiosNetworkService', () => {
 
     it(`get calls axios get with request`, async () => {
       const url = faker.internet.url({ appendSlash: false });
-      const request = <NetworkRequest>{
+      const request: NetworkRequest = {
         params: { some_query_param: 'query_param' },
       };
 
@@ -144,7 +144,7 @@ describe('AxiosNetworkService', () => {
     it(`post calls axios post with request`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const data = { [faker.word.sample()]: faker.string.alphanumeric() };
-      const request = <NetworkRequest>{
+      const request: NetworkRequest = {
         params: { some_query_param: 'query_param' },
       };
 

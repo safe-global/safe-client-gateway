@@ -160,11 +160,11 @@ export class TransactionsHistoryMapper {
           timezoneOffset,
         ).getTime();
       }),
-    ).map(([, transactions]) => {
+    ).map(([, transactions]): TransactionDomainGroup => {
       // The groups respect the timezone offset – this was done for grouping only.
       // The actual value of the group should be in the UTC timezone instead
       // A group should always have at least one transaction.
-      return <TransactionDomainGroup>{
+      return {
         timestamp: this.getTransactionTimestamp(transactions[0]).getTime(),
         transactions: transactions,
       };
