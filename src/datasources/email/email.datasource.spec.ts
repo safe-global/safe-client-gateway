@@ -598,6 +598,7 @@ describe('Email Datasource Tests', () => {
     });
     expect(result).toContainEqual(subscriptions[0]);
     expect(currentSubscriptions).not.toContainEqual(subscriptions[0]);
+    expect(currentSubscriptions).toContainEqual(subscriptions[1]);
   });
 
   it('unsubscribes from a non-existent category', async () => {
@@ -658,7 +659,14 @@ describe('Email Datasource Tests', () => {
       token: faker.string.uuid(),
     });
 
+    const currentSubscriptions = await target.getSubscriptions({
+      chainId,
+      safeAddress,
+      account,
+    });
     expect(result).toHaveLength(0);
+    // Length of 1 since there is a default subscription
+    expect(currentSubscriptions).toHaveLength(1);
   });
 
   it('unsubscribes from all categories successfully', async () => {
@@ -705,8 +713,7 @@ describe('Email Datasource Tests', () => {
       categoryKey: subscriptions[1].key,
     });
 
-    // Unsubscribe from one category
-    await target.unsubscribeAll({
+    const result = await target.unsubscribeAll({
       token: unsubscriptionToken,
     });
 
@@ -716,5 +723,8 @@ describe('Email Datasource Tests', () => {
       account,
     });
     expect(currentSubscriptions).toHaveLength(0);
+    expect(result).toHaveLength(3);
+    expect(result).toContainEqual(subscriptions[0]);
+    expect(result).toContainEqual(subscriptions[1]);
   });
 });

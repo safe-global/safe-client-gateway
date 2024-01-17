@@ -96,11 +96,11 @@ export class EmailDataSource implements IEmailDataSource {
     // When registering a new email address, the account_recovery subscription should be enabled by default
     await this.sql`
         INSERT INTO emails.account_subscriptions (account_id, subscription_id)
-        SELECT ae.id, s.id
-        FROM emails.subscriptions s
-                 CROSS JOIN emails.account_emails ae
-        WHERE s.key = 'account_recovery'
-          AND ae.id = ${email.id};
+        SELECT account_emails.id, subscriptions.id
+        FROM emails.subscriptions
+                 CROSS JOIN emails.account_emails
+        WHERE subscriptions.key = 'account_recovery'
+          AND account_emails.id = ${email.id};
     `;
   }
 
@@ -252,14 +252,14 @@ export class EmailDataSource implements IEmailDataSource {
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this
       .sql`INSERT INTO emails.account_subscriptions (account_id, subscription_id)
-           SELECT ae.id AS account_id,
-                  s.id  AS subscription_id
-           FROM emails.account_emails ae
-                    CROSS JOIN emails.subscriptions s
-           WHERE ae.chain_id = ${args.chainId}
-             AND ae.safe_address = ${args.safeAddress}
-             AND ae.account = ${args.account}
-             AND s.key = ${args.categoryKey}
+           SELECT account_emails.id AS account_id,
+                  subscriptions.id  AS subscription_id
+           FROM emails.account_emails
+                    CROSS JOIN emails.subscriptions
+           WHERE account_emails.chain_id = ${args.chainId}
+             AND account_emails.safe_address = ${args.safeAddress}
+             AND account_emails.account = ${args.account}
+             AND subscriptions.key = ${args.categoryKey}
            RETURNING *`;
 
     return subscriptions.map(
@@ -276,11 +276,13 @@ export class EmailDataSource implements IEmailDataSource {
     token: string;
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this.sql<Subscription[]>`DELETE
-                                                         FROM emails.account_subscriptions
-                                                             USING emails.account_emails, emails.subscriptions
-                                                         WHERE emails.subscriptions.key = ${args.categoryKey}
-                                                           AND emails.account_emails.unsubscription_token = ${args.token}
-                                                         RETURNING *`;
+                                     FROM emails.account_subscriptions
+                                         USING emails.account_emails, emails.subscriptions
+                                     WHERE account_emails.unsubscription_token = ${args.token}
+                                       AND subscriptions.key = ${args.categoryKey}
+                                       AND account_subscriptions.account_id = account_emails.id
+                                       AND account_subscriptions.subscription_id = subscriptions.id
+                                     RETURNING subscriptions.key, subscriptions.name`;
     return subscriptions.map(
       (s) =>
         <DomainSubscription>{
@@ -291,10 +293,17 @@ export class EmailDataSource implements IEmailDataSource {
   }
 
   async unsubscribeAll(args: { token: string }): Promise<DomainSubscription[]> {
-    const subscriptions = await this.sql`DELETE
-                                         FROM emails.account_subscriptions
-                                             USING emails.account_emails
-                                         WHERE emails.account_emails.unsubscription_token = ${args.token}`;
+    const subscriptions = await this.sql`
+        WITH deleted_subscriptions AS (
+            DELETE FROM emails.account_subscriptions
+                WHERE account_id = (SELECT id
+                                    FROM emails.account_emails
+                                    WHERE unsubscription_token = ${args.token})
+                RETURNING subscription_id)
+        SELECT subs.key, subs.name
+        FROM emails.subscriptions subs
+                 JOIN deleted_subscriptions deleted_subs ON subs.id = deleted_subs.subscription_id;;
+    `;
 
     return subscriptions.map(
       (s) =>
