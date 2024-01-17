@@ -600,7 +600,7 @@ describe('Email Datasource Tests', () => {
     expect(currentSubscriptions).not.toContainEqual(subscriptions[0]);
   });
 
-  it('unsubscribes to non existent category', async () => {
+  it('unsubscribes from a non-existent category', async () => {
     const chainId = faker.number.int({ max: DB_CHAIN_ID_MAX_VALUE }).toString();
     const safeAddress = faker.finance.ethereumAddress();
     const emailAddress = new EmailAddress(faker.internet.email());
