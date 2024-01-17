@@ -105,16 +105,32 @@ export class AlertsRepository implements IAlertsRepository {
   }
 
   private _decodeTransactionAdded(data: Hex) {
+    try {
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(data)
+        .flatMap((multiSend) => {
+          return this._decodeRecoveryTransaction(multiSend.data);
+        });
+    } catch {
+      return [this._decodeRecoveryTransaction(data)];
+    }
+  }
+
+  private _decodeRecoveryTransaction(data: Hex) {
     const decoded = this.safeDecoder.decodeFunctionData({ data });
 
-    if (decoded.functionName !== 'execTransaction') {
-      return [decoded];
+    const isRecoveryTransaction = [
+      'addOwnerWithThreshold',
+      'removeOwner',
+      'swapOwner',
+      'changeThreshold',
+    ].includes(decoded.functionName);
+
+    if (!isRecoveryTransaction) {
+      throw new Error('Unknown recovery transaction');
     }
 
-    const execTransactionData = decoded.args[2];
-    return this.multiSendDecoder
-      .mapMultiSendTransactions(execTransactionData)
-      .flatMap(({ data }) => this.safeDecoder.decodeFunctionData({ data }));
+    return decoded;
   }
 
   private async _mapSafeSetup(args: {
