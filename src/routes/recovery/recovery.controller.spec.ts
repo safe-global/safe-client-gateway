@@ -15,7 +15,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
-import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
@@ -29,9 +28,17 @@ describe('Recovery (Unit)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        email: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      // TODO remove RecoveryModule once they're integrated in the AppModule
-      imports: [AppModule.register(configuration), RecoveryModule],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(EmailDataSourceModule)
       .useModule(TestEmailDatasourceModule)
