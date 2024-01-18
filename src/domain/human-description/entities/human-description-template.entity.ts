@@ -65,10 +65,11 @@ export class HumanDescriptionTemplate {
 
     for (const match of this.templateMatches) {
       if ('textToken' in match.groups && match.groups.textToken !== undefined) {
-        fragments.push(<TextFragment>{
+        const textFragment: TextFragment = {
           type: ValueType.Text,
           value: match.groups.textToken,
-        });
+        };
+        fragments.push(textFragment);
       } else if (
         'typeToken' in match.groups &&
         'paramIndex' in match.groups &&

@@ -6,7 +6,6 @@ import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity'
 import { Balance } from '@/routes/balances/entities/balance.entity';
 import { Balances } from '@/routes/balances/entities/balances.entity';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
-import { Token } from '@/routes/balances/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { orderBy } from 'lodash';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
@@ -40,7 +39,7 @@ export class BalancesService {
       .filter((b) => b.fiatBalance !== null)
       .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
 
-    return <Balances>{
+    return {
       fiatTotal: getNumberString(fiatTotal),
       items: orderBy(balances, (b) => Number(b.fiatBalance), 'desc'),
     };
@@ -55,7 +54,7 @@ export class BalancesService {
       tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
 
     const tokenMetaData =
-      tokenType === TokenType.NativeToken
+      tokenAddress === null
         ? {
             decimals: nativeCurrency.decimals,
             symbol: nativeCurrency.symbol,
@@ -63,14 +62,14 @@ export class BalancesService {
             logoUri: nativeCurrency.logoUri,
           }
         : {
-            decimals: balance.token?.decimals,
-            symbol: balance.token?.symbol,
-            name: balance.token?.name,
-            logoUri: balance.token?.logoUri,
+            decimals: balance.token.decimals,
+            symbol: balance.token.symbol,
+            name: balance.token.name,
+            logoUri: balance.token.logoUri,
           };
 
-    return <Balance>{
-      tokenInfo: <Token>{
+    return {
+      tokenInfo: {
         type: tokenType,
         address: tokenAddress ?? NULL_ADDRESS,
         ...tokenMetaData,
