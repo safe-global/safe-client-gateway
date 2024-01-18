@@ -10,6 +10,7 @@ import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-v
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
 import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import * as crypto from 'crypto';
 import { EditTimespanError } from '@/domain/email/errors/email-timespan.error';
 
 @Injectable()
@@ -59,6 +60,7 @@ export class EmailRepository implements IEmailRepository {
         safeAddress: args.safeAddress,
         account: args.account,
         codeGenerationDate: new Date(),
+        unsubscriptionToken: crypto.randomUUID(),
       });
       await this._sendEmailVerification({
         ...args,
@@ -200,6 +202,7 @@ export class EmailRepository implements IEmailRepository {
       safeAddress: args.safeAddress,
       account: args.account,
       codeGenerationDate: new Date(),
+      unsubscriptionToken: crypto.randomUUID(),
     });
     await this._sendEmailVerification({
       ...args,
