@@ -231,7 +231,8 @@ export class TransactionsService {
       domainTransactions.previous,
     );
 
-    return <Page<ModuleTransaction>>{
+    return {
+      count: domainTransactions.count,
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
       results,
