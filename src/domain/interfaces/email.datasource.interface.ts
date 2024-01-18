@@ -133,7 +133,7 @@ export interface IEmailDataSource {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which the email address is linked to
-   * @param args.account - the owner address to which we the email address is linked to
+   * @param args.account - the owner address to which the email address is linked to
    */
   getSubscriptions(args: {
     chainId: string;
@@ -146,7 +146,7 @@ export interface IEmailDataSource {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which the email address is linked to
-   * @param args.account - the owner address to which we the email address is linked to
+   * @param args.account - the owner address to which we email address is linked to
    * @param args.categoryKey - the category key to subscribe to
    *
    * @returns The Subscriptions that were successfully subscribed to
