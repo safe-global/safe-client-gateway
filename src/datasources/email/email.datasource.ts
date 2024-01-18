@@ -242,14 +242,14 @@ export class EmailDataSource implements IEmailDataSource {
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this
       .sql`INSERT INTO emails.account_subscriptions (account_id, subscription_id)
-           SELECT account_emails.id AS account_id,
-                  subscriptions.id  AS subscription_id
-           FROM emails.account_emails
-                    CROSS JOIN emails.subscriptions
-           WHERE account_emails.chain_id = ${args.chainId}
-             AND account_emails.safe_address = ${args.safeAddress}
-             AND account_emails.account = ${args.account}
-             AND subscriptions.key = ${args.categoryKey}
+               (SELECT account_emails.id AS account_id,
+                       subscriptions.id  AS subscription_id
+                FROM emails.account_emails
+                         CROSS JOIN emails.subscriptions
+                WHERE account_emails.chain_id = ${args.chainId}
+                  AND account_emails.safe_address = ${args.safeAddress}
+                  AND account_emails.account = ${args.account}
+                  AND subscriptions.key = ${args.categoryKey})
            RETURNING *`;
 
     return subscriptions.map(
