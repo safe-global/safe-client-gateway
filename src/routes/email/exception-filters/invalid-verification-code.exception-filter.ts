@@ -9,7 +9,7 @@ import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-veri
 
 @Catch(InvalidVerificationCodeError)
 export class InvalidVerificationCodeExceptionFilter implements ExceptionFilter {
-  catch(exception: InvalidVerificationCodeError, host: ArgumentsHost) {
+  catch(exception: InvalidVerificationCodeError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

@@ -16,7 +16,7 @@ const emailDataSource = {
   providers: [
     {
       provide: IEmailDataSource,
-      useFactory: () => {
+      useFactory: (): any => {
         return jest.mocked(emailDataSource);
       },
     },

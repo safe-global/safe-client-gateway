@@ -63,7 +63,7 @@ describe('Transactions History Controller (Unit)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const testConfiguration = () => ({
+    const testConfiguration: typeof configuration = () => ({
       ...configuration(),
       mappings: {
         history: {

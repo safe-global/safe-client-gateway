@@ -12,7 +12,7 @@ const emailApi = {
     HttpErrorFactory,
     {
       provide: IEmailApi,
-      useFactory: () => jest.mocked(emailApi),
+      useFactory: (): any => jest.mocked(emailApi),
     },
   ],
   exports: [IEmailApi],

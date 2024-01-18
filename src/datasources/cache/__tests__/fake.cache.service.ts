@@ -9,7 +9,7 @@ export class FakeCacheService implements ICacheService {
     return this.isReady ? Promise.resolve() : Promise.reject();
   }
 
-  setReadyState(isReady: boolean) {
+  setReadyState(isReady: boolean): void {
     this.isReady = isReady;
   }
 
@@ -17,7 +17,7 @@ export class FakeCacheService implements ICacheService {
     return Object.keys(this.cache).length;
   }
 
-  clear() {
+  clear(): void {
     this.cache = {};
   }
 

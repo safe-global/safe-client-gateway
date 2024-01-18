@@ -104,7 +104,9 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private _decodeTransactionAdded(data: Hex) {
+  private _decodeTransactionAdded(
+    data: Hex,
+  ): Array<ReturnType<typeof this._decodeRecoveryTransaction>> {
     try {
       return this.multiSendDecoder
         .mapMultiSendTransactions(data)
@@ -116,7 +118,9 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private _decodeRecoveryTransaction(data: Hex) {
+  private _decodeRecoveryTransaction(
+    data: Hex,
+  ): ReturnType<typeof this.safeDecoder.decodeFunctionData> {
     const decoded = this.safeDecoder.decodeFunctionData({ data });
 
     const isRecoveryTransaction = [

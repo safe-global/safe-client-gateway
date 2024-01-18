@@ -61,7 +61,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
   }
 }
 
-export function transactionAddedEventBuilder() {
+export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<TransactionAddedEventArgs> {
   return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
     .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)

@@ -11,7 +11,7 @@ describe('PaginationDataDecorator', () => {
   @Controller()
   class TestController {
     @Get()
-    route(@PaginationDataDecorator() data: PaginationData) {
+    route(@PaginationDataDecorator() data: PaginationData): void {
       paginationData = data;
       return;
     }

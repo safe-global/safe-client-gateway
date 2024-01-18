@@ -37,7 +37,7 @@ describe('Email controller edit email tests', () => {
 
     const defaultConfiguration = configuration();
 
-    function testConfiguration() {
+    const testConfiguration: typeof configuration = () => {
       return {
         ...defaultConfiguration,
         email: {
@@ -48,7 +48,7 @@ describe('Email controller edit email tests', () => {
           },
         },
       };
-    }
+    };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],

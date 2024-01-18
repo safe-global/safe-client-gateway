@@ -6,7 +6,17 @@ export function formatRouteLogMessage(
   request: any,
   startTimeMs: number,
   detail?: string,
-) {
+): {
+  chain_id: any;
+  client_ip: any;
+  method: any;
+  response_time_ms: number;
+  route: any;
+  path: any;
+  safe_app_user_agent: any;
+  status_code: number;
+  detail: string | null;
+} {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
   const safe_app_user_agent =
     request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;

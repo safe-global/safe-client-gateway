@@ -11,7 +11,7 @@ import { ResendVerificationTimespanError } from '@/domain/email/errors/verificat
 export class ResendVerificationTimespanExceptionFilter
   implements ExceptionFilter
 {
-  catch(exception: ResendVerificationTimespanError, host: ArgumentsHost) {
+  catch(exception: ResendVerificationTimespanError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

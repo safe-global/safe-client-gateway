@@ -19,6 +19,7 @@ import { registerDeviceDtoBuilder } from '@/routes/notifications/entities/__test
 import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests__/safe-registration.builder';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication;
@@ -49,7 +50,7 @@ describe('Notifications Controller (Unit)', () => {
     await app.init();
   });
 
-  const buildInputDto = () =>
+  const buildInputDto = (): RegisterDeviceDto =>
     registerDeviceDtoBuilder()
       .with(
         'safeRegistrations',
@@ -61,7 +62,7 @@ describe('Notifications Controller (Unit)', () => {
       )
       .build();
 
-  const rejectForUrl = (url) =>
+  const rejectForUrl = (url: string): Promise<never> =>
     Promise.reject(`No matching rule for url: ${url}`);
 
   describe('POST /register/notifications', () => {
