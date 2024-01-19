@@ -1434,15 +1434,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-redis/json@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "@node-redis/json@npm:1.0.2"
-  peerDependencies:
-    "@node-redis/client": ^1.0.0
-  checksum: 580a14affef07ff4330025f4492e656e983ce67b1c0fbfaa4974052facd2c0449a6c449711b01c395f6dc11a93415cde16dfae96d23728dfc7c44a0f2179d117
-  languageName: node
-  linkType: hard
-
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -7017,7 +7008,6 @@ __metadata:
     "@nestjs/serve-static": "npm:^4.0.0"
     "@nestjs/swagger": "npm:^7.2.0"
     "@nestjs/testing": "npm:^10.3.0"
-    "@node-redis/json": "npm:^1.0.2"
     "@safe-global/safe-deployments": "npm:^1.29.0"
     "@types/express": "npm:^4.17.21"
     "@types/jest": "npm:29.5.11"
