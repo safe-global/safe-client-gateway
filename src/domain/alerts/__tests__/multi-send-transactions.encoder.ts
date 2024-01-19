@@ -24,7 +24,7 @@ class MultiSendEncoder<T extends MultiSendArgs>
   static readonly FUNCTION_SIGNATURE =
     'function multiSend(bytes memory transactions)' as const;
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([MultiSendEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -57,7 +57,7 @@ export function multiSendTransactionsEncoder(
   return concat(encodedTransactions);
 }
 
-export function multiSendEncoder() {
+export function multiSendEncoder(): MultiSendEncoder<MultiSendArgs> {
   const transactions = multiSendTransactionsEncoder([
     {
       operation: 0,

@@ -11,7 +11,7 @@ export class PostgresDatabaseShutdownHook implements OnModuleDestroy {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  async onModuleDestroy() {
+  async onModuleDestroy(): Promise<void> {
     this.loggingService.info('Closing database connection');
     // Resolves when all queries are finished and the underlying connections are closed
     await this.db.end({

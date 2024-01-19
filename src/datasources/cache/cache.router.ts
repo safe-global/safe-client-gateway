@@ -98,7 +98,10 @@ export class CacheRouter {
     );
   }
 
-  static getCollectiblesKey(args: { chainId: string; safeAddress: string }) {
+  static getCollectiblesKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
     return `${args.chainId}_${CacheRouter.COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
@@ -141,7 +144,10 @@ export class CacheRouter {
     );
   }
 
-  static getTransfersCacheKey(args: { chainId: string; safeAddress: string }) {
+  static getTransfersCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
     return `${args.chainId}_${CacheRouter.TRANSFERS_KEY}_${args.safeAddress}`;
   }
 

@@ -28,7 +28,7 @@ describe('Email controller verify email tests', () => {
     jest.useFakeTimers();
 
     const defaultTestConfiguration = configuration();
-    const testConfiguration = () => ({
+    const testConfiguration: typeof configuration = () => ({
       ...defaultTestConfiguration,
       email: {
         ...defaultTestConfiguration['email'],

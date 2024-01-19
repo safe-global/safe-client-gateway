@@ -20,17 +20,17 @@ class TestController {
   @Post('test/:chainId/:safeAddress')
   @HttpCode(200)
   @UseGuards(OnlySafeOwnerGuard)
-  async validRoute() {}
+  async validRoute(): Promise<void> {}
 
   @Post('test/invalid/chains/:chainId')
   @HttpCode(200)
   @UseGuards(OnlySafeOwnerGuard)
-  async invalidRouteWithChainId() {}
+  async invalidRouteWithChainId(): Promise<void> {}
 
   @Post('test/invalid/safes/:safeAddress')
   @HttpCode(200)
   @UseGuards(OnlySafeOwnerGuard)
-  async invalidRouteWithSafeAddress() {}
+  async invalidRouteWithSafeAddress(): Promise<void> {}
 }
 
 describe('OnlySafeOwner guard tests', () => {

@@ -11,7 +11,7 @@ import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-
 export class EmailAddressDoesNotExistExceptionFilter
   implements ExceptionFilter
 {
-  catch(exception: EmailAddressDoesNotExistError, host: ArgumentsHost) {
+  catch(exception: EmailAddressDoesNotExistError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

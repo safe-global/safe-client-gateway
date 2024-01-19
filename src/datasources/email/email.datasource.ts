@@ -225,13 +225,10 @@ export class EmailDataSource implements IEmailDataSource {
                                          WHERE chain_id = ${args.chainId}
                                            AND safe_address = ${args.safeAddress}
                                            AND account = ${args.account}`;
-    return subscriptions.map(
-      (subscription) =>
-        <DomainSubscription>{
-          key: subscription.key,
-          name: subscription.name,
-        },
-    );
+    return subscriptions.map((subscription) => ({
+      key: subscription.key,
+      name: subscription.name,
+    }));
   }
 
   async subscribe(args: {
@@ -252,13 +249,10 @@ export class EmailDataSource implements IEmailDataSource {
                   AND subscriptions.key = ${args.categoryKey})
            RETURNING *`;
 
-    return subscriptions.map(
-      (s) =>
-        <DomainSubscription>{
-          key: s.key,
-          name: s.name,
-        },
-    );
+    return subscriptions.map((s) => ({
+      key: s.key,
+      name: s.name,
+    }));
   }
 
   async unsubscribe(args: {
@@ -273,13 +267,10 @@ export class EmailDataSource implements IEmailDataSource {
                                                            AND account_subscriptions.account_id = account_emails.id
                                                            AND account_subscriptions.subscription_id = subscriptions.id
                                                          RETURNING subscriptions.key, subscriptions.name`;
-    return subscriptions.map(
-      (s) =>
-        <DomainSubscription>{
-          key: s.key,
-          name: s.name,
-        },
-    );
+    return subscriptions.map((s) => ({
+      key: s.key,
+      name: s.name,
+    }));
   }
 
   async unsubscribeAll(args: { token: string }): Promise<DomainSubscription[]> {
@@ -295,12 +286,9 @@ export class EmailDataSource implements IEmailDataSource {
                  JOIN deleted_subscriptions deleted_subs ON subs.id = deleted_subs.subscription_id;;
     `;
 
-    return subscriptions.map(
-      (s) =>
-        <DomainSubscription>{
-          key: s.key,
-          name: s.name,
-        },
-    );
+    return subscriptions.map((s) => ({
+      key: s.key,
+      name: s.name,
+    }));
   }
 }

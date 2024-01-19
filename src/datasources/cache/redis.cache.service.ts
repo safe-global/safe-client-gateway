@@ -115,7 +115,7 @@ export class RedisCacheService
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
-  private async forceQuit() {
+  private async forceQuit(): Promise<void> {
     this.loggingService.warn('Forcing Redis connection close');
     await this.client.disconnect();
     this.loggingService.warn('Redis connection closed');

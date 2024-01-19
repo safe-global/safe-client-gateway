@@ -114,7 +114,7 @@ export class AppModule implements NestModule {
     };
   }
 
-  configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer): void {
     consumer
       // The ClsMiddleware needs to be applied before the LoggerMiddleware
       // in order to generate the request ids that will be logged afterward

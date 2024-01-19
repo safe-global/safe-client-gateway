@@ -252,7 +252,7 @@ export class CoingeckoApi implements IPricesApi {
    * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
    * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
    */
-  private _getRandomNotFoundTokenPriceTtl() {
+  private _getRandomNotFoundTokenPriceTtl(): number {
     const min =
       this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
     const max =

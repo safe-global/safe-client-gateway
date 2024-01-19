@@ -9,7 +9,7 @@ import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.
 
 @Catch(EmailEditMatchesError)
 export class EmailEditMatchesExceptionFilter implements ExceptionFilter {
-  catch(exception: EmailEditMatchesError, host: ArgumentsHost) {
+  catch(exception: EmailEditMatchesError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

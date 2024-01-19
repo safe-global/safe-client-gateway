@@ -72,7 +72,7 @@ export class AxiosNetworkService implements INetworkService {
     }
   }
 
-  private logErrorResponse(error, responseTimeMs) {
+  private logErrorResponse(error, responseTimeMs): void {
     this.loggingService.debug({
       type: 'external_request',
       protocol: error.request.protocol,
