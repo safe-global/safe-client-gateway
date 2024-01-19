@@ -7,7 +7,7 @@ import {
   NetworkRequestError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import { FetchClient } from '@/datasources/network/fetch.client';
+import { FetchClient } from '@/datasources/network/network.module';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 
 const fetchClient = jest.fn() as unknown as FetchClient;
