@@ -5,7 +5,6 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { FETCH_CLIENT } from '@/datasources/network/fetch.client';
 
 describe('NetworkModule', () => {
   it(`fetch client is created with timeout and is kept alive`, async () => {
@@ -23,7 +22,7 @@ describe('NetworkModule', () => {
       ],
     }).compile();
     const app = moduleFixture.createNestApplication();
-    const fetchClient = moduleFixture.get(FETCH_CLIENT);
+    const fetchClient = moduleFixture.get('FetchClient');
     const configurationService = moduleFixture.get(IConfigurationService);
     const httpClientTimeout = configurationService.get(
       'httpClient.requestTimeout',

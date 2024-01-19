@@ -3,7 +3,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { FETCH_CLIENT, FetchClient } from '@/datasources/network/fetch.client';
+import { FetchClient } from '@/datasources/network/network.module';
 import {
   NetworkResponseError,
   NetworkRequestError,
@@ -16,7 +16,7 @@ import {
 @Injectable()
 export class FetchNetworkService implements INetworkService {
   constructor(
-    @Inject(FETCH_CLIENT)
+    @Inject('FetchClient')
     private readonly client: FetchClient,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
