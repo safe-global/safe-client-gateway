@@ -41,7 +41,7 @@ export class FetchNetworkService implements INetworkService {
   async post<T, R = NetworkResponse<T>>(
     baseUrl: string,
     data: object,
-    { params, ...options }: NetworkRequest = {},
+    { params, headers }: NetworkRequest = {},
   ): Promise<R> {
     const url = this.buildUrl(baseUrl, params);
     const startTimeMs = performance.now();
@@ -49,7 +49,10 @@ export class FetchNetworkService implements INetworkService {
       return (await this.client(url, {
         method: 'POST',
         body: JSON.stringify(data),
-        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
       })) as R;
     } catch (error) {
       this.handleError(error, performance.now() - startTimeMs);
@@ -64,7 +67,12 @@ export class FetchNetworkService implements INetworkService {
     try {
       return (await this.client(url, {
         method: 'DELETE',
-        body: JSON.stringify(data),
+        ...(data && {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }),
       })) as R;
     } catch (error) {
       this.handleError(error, performance.now() - startTimeMs);

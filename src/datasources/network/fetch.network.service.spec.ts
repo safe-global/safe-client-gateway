@@ -156,6 +156,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -178,6 +181,7 @@ describe('FetchNetworkService', () => {
           method: 'POST',
           headers: {
             test: 'value',
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
         },
@@ -197,6 +201,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -217,6 +224,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -236,6 +246,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -297,6 +310,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(url, {
         method: 'DELETE',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -317,6 +333,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(url, {
         method: 'DELETE',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
@@ -336,6 +355,9 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(url, {
         method: 'DELETE',
         body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     });
 
