@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IEmailRepository } from '@/domain/email/email.repository.interface';
+import { IAccountRepository } from '@/domain/account/account.repository.interface';
 
 @Injectable()
 export class EmailService {
   constructor(
-    @Inject(IEmailRepository) private readonly repository: IEmailRepository,
+    @Inject(IAccountRepository) private readonly repository: IAccountRepository,
   ) {}
 
   async saveEmail(args: {
@@ -13,7 +13,7 @@ export class EmailService {
     emailAddress: string;
     account: string;
   }): Promise<void> {
-    return this.repository.saveEmail(args);
+    return this.repository.saveAccount(args);
   }
 
   async resendVerification(args: {
@@ -38,7 +38,7 @@ export class EmailService {
     safeAddress: string;
     account: string;
   }): Promise<void> {
-    return this.repository.deleteEmail(args);
+    return this.repository.deleteAccount(args);
   }
 
   async editEmail(args: {

@@ -8,20 +8,20 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
-import { emailBuilder } from '@/domain/email/entities/__tests__/email.builder';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
 
 describe('Email controller verify email tests', () => {
   let app;
-  let emailDatasource;
+  let accountDataSource;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -42,8 +42,8 @@ describe('Email controller verify email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDatasourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -52,7 +52,7 @@ describe('Email controller verify email tests', () => {
       .useModule(TestNetworkModule)
       .compile();
 
-    emailDatasource = moduleFixture.get(IEmailDataSource);
+    accountDataSource = moduleFixture.get(IAccountDataSource);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -67,13 +67,13 @@ describe('Email controller verify email tests', () => {
   });
 
   it('verifies email successfully', async () => {
-    const email = emailBuilder()
+    const email = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .with('verificationGeneratedOn', new Date())
       .with('verificationSentOn', new Date())
       .build();
-    emailDatasource.getEmail.mockResolvedValue(email);
+    accountDataSource.getAccount.mockResolvedValue(email);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
@@ -87,12 +87,12 @@ describe('Email controller verify email tests', () => {
       .expect(204)
       .expect({});
 
-    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(1);
   });
 
   it('returns 204 on already verified emails', async () => {
-    const email = emailBuilder().with('isVerified', true).build();
-    emailDatasource.getEmail.mockResolvedValueOnce(email);
+    const email = accountBuilder().with('isVerified', true).build();
+    accountDataSource.getAccount.mockResolvedValueOnce(email);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
@@ -106,16 +106,16 @@ describe('Email controller verify email tests', () => {
       .expect(204)
       .expect({});
 
-    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
   });
 
   it('email verification with expired code returns 400', async () => {
-    const email = emailBuilder()
+    const email = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .with('verificationGeneratedOn', new Date())
       .build();
-    emailDatasource.getEmail.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(email);
 
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
@@ -132,15 +132,15 @@ describe('Email controller verify email tests', () => {
         statusCode: 400,
       });
 
-    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
   });
 
   it('email verification with wrong code returns 400', async () => {
-    const email = emailBuilder()
+    const email = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .build();
-    emailDatasource.getEmail.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(email);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
@@ -157,6 +157,6 @@ describe('Email controller verify email tests', () => {
         statusCode: 400,
       });
 
-    expect(emailDatasource.verifyEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
   });
 });

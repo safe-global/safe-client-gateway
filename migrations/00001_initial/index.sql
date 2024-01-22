@@ -1,8 +1,5 @@
-DROP SCHEMA IF EXISTS emails CASCADE;
-CREATE SCHEMA emails;
-
-DROP TABLE IF EXISTS emails.account_emails CASCADE;
-CREATE table emails.account_emails
+DROP TABLE IF EXISTS accounts CASCADE;
+CREATE table accounts
 (
     id                             SERIAL PRIMARY KEY,
     chain_id                       int                   NOT NULL,
@@ -17,24 +14,24 @@ CREATE table emails.account_emails
     UNIQUE (chain_id, safe_address, account)
 );
 
-DROP TABLE IF EXISTS emails.subscriptions CASCADE;
-CREATE TABLE emails.subscriptions
+DROP TABLE IF EXISTS notification_types CASCADE;
+CREATE TABLE notification_types
 (
     id   SERIAL PRIMARY KEY,
     key  TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL
 );
 
--- Add the default subscription type: account_recovery
-INSERT INTO emails.subscriptions (key, name)
+-- Add the default channel type: account_recovery
+INSERT INTO notification_types (key, name)
 VALUES ('account_recovery', 'Account Recovery');
 
-DROP TABLE IF EXISTS emails.account_subscriptions CASCADE;
-CREATE TABLE emails.account_subscriptions
+DROP TABLE IF EXISTS subscriptions CASCADE;
+CREATE TABLE subscriptions
 (
-    account_id      INT,
-    subscription_id INT,
-    FOREIGN KEY (account_id) REFERENCES emails.account_emails (id) ON DELETE CASCADE,
-    FOREIGN KEY (subscription_id) REFERENCES emails.subscriptions (id) ON DELETE CASCADE,
-    UNIQUE (account_id, subscription_id)
+    account_id        INT,
+    notification_type INT,
+    FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+    FOREIGN KEY (notification_type) REFERENCES notification_types (id) ON DELETE CASCADE,
+    UNIQUE (account_id, notification_type)
 )

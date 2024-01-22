@@ -4,7 +4,7 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-verified.error';
+import { EmailAlreadyVerifiedError } from '@/domain/account/errors/email-already-verified.error';
 import { Response } from 'express';
 
 @Catch(EmailAlreadyVerifiedError)

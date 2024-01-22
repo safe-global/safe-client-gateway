@@ -4,7 +4,7 @@ export class InvalidEmailFormatError extends Error {
   }
 }
 
-export interface Email {
+export interface Account {
   chainId: string;
   emailAddress: EmailAddress;
   isVerified: boolean;

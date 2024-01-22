@@ -5,13 +5,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
+import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
 
-@Catch(EmailAddressDoesNotExistError)
+@Catch(AccountDoesNotExistError)
 export class EmailAddressDoesNotExistExceptionFilter
   implements ExceptionFilter
 {
-  catch(exception: EmailAddressDoesNotExistError, host: ArgumentsHost): void {
+  catch(exception: AccountDoesNotExistError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

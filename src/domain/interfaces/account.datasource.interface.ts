@@ -1,9 +1,12 @@
-import { Email, EmailAddress } from '@/domain/email/entities/email.entity';
-import { Subscription } from '@/domain/email/entities/subscription.entity';
+import {
+  Account,
+  EmailAddress,
+} from '@/domain/account/entities/account.entity';
+import { Subscription } from '@/domain/account/entities/subscription.entity';
 
-export const IEmailDataSource = Symbol('IEmailDataSource');
+export const IAccountDataSource = Symbol('IAccountDataSource');
 
-export interface IEmailDataSource {
+export interface IAccountDataSource {
   /**
    * Gets the verified emails associated with a Safe address.
    *
@@ -22,11 +25,11 @@ export interface IEmailDataSource {
    * @param args.safeAddress - the Safe address to use as filter
    * @param args.account - the owner address to which link the email address is linked to
    */
-  getEmail(args: {
+  getAccount(args: {
     chainId: string;
     safeAddress: string;
     account: string;
-  }): Promise<Email>;
+  }): Promise<Account>;
 
   /**
    * Saves an email entry in the respective data source.
@@ -38,7 +41,7 @@ export interface IEmailDataSource {
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
-  saveEmail(args: {
+  saveAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: EmailAddress;
@@ -102,7 +105,7 @@ export interface IEmailDataSource {
    * @param args.safeAddress - the Safe address to which we should remove the email address from
    * @param args.account - the owner address to which we should remove the email address from
    */
-  deleteEmail(args: {
+  deleteAccount(args: {
     chainId: string;
     safeAddress: string;
     account: string;
@@ -118,7 +121,7 @@ export interface IEmailDataSource {
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
-  updateEmail(args: {
+  updateAccountEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: EmailAddress;

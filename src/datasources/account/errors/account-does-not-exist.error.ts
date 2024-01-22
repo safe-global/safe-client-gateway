@@ -1,4 +1,4 @@
-export class EmailAddressDoesNotExistError extends Error {
+export class AccountDoesNotExistError extends Error {
   readonly account: string;
 
   constructor(chainId: string, safeAddress: string, account: string) {

@@ -1,6 +1,6 @@
-export const IEmailRepository = Symbol('IEmailRepository');
+export const IAccountRepository = Symbol('IAccountRepository');
 
-export interface IEmailRepository {
+export interface IAccountRepository {
   /**
    * Gets the verified emails associated with a Safe address.
    *
@@ -13,14 +13,14 @@ export interface IEmailRepository {
   }): Promise<string[]>;
 
   /**
-   * Saves an email entry.
+   * Saves an account entry.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
    * @param args.account - the owner address to which we should link the email address to
    */
-  saveEmail(args: {
+  saveAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
@@ -64,13 +64,13 @@ export interface IEmailRepository {
   }): Promise<any>;
 
   /**
-   * Deletes an email address for a given account.
+   * Deletes an account.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should remove the email address from
    * @param args.account - the owner address to which we should remove the email address from
    */
-  deleteEmail(args: {
+  deleteAccount(args: {
     chainId: string;
     safeAddress: string;
     account: string;
@@ -84,7 +84,7 @@ export interface IEmailRepository {
    * @param args.emailAddress - the email address to store
    * @param args.account - the owner address to which we should link the email address to
    *
-   * @throws {EditTimeframeError} - if trying to edit again within email.verificationCode.resendLockWindowMs
+   * @throws {EditTimespanError} - if trying to edit again within email.verificationCode.resendLockWindowMs
    * @throws {EmailEditMatchesError} - if trying to apply edit with same email address as current one
    */
   editEmail(args: {

@@ -1,16 +1,16 @@
-import { EmailDataSource } from '@/datasources/email/email.datasource';
+import { AccountDataSource } from '@/datasources/account/account.datasource';
 import * as postgres from 'postgres';
 import { PostgresError } from 'postgres';
 import { faker } from '@faker-js/faker';
-import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
+import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
 import * as shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
-import { EmailAddress } from '@/domain/email/entities/email.entity';
+import { EmailAddress } from '@/domain/account/entities/account.entity';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
-describe('Email Datasource Tests', () => {
-  let target: EmailDataSource;
+describe('Account DataSource Tests', () => {
+  let target: AccountDataSource;
   const config = configuration();
 
   const sql = postgres({
@@ -27,11 +27,11 @@ describe('Email Datasource Tests', () => {
   });
 
   beforeEach(() => {
-    target = new EmailDataSource(sql);
+    target = new AccountDataSource(sql);
   });
 
   afterEach(async () => {
-    await sql`TRUNCATE TABLE emails.account_emails, emails.account_subscriptions CASCADE`;
+    await sql`TRUNCATE TABLE accounts, subscriptions CASCADE`;
   });
 
   afterAll(async () => {
@@ -47,7 +47,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
@@ -56,7 +56,7 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     });
-    const email = await target.getEmail({
+    const email = await target.getAccount({
       chainId: chainId.toString(),
       safeAddress,
       account,
@@ -82,7 +82,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
@@ -93,7 +93,7 @@ describe('Email Datasource Tests', () => {
     });
 
     await expect(
-      target.saveEmail({
+      target.saveAccount({
         chainId: chainId.toString(),
         safeAddress,
         emailAddress,
@@ -116,7 +116,7 @@ describe('Email Datasource Tests', () => {
     const newCodeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
@@ -125,7 +125,7 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     });
-    const savedEmail = await target.getEmail({
+    const savedEmail = await target.getAccount({
       chainId: chainId.toString(),
       safeAddress,
       account: account,
@@ -138,7 +138,7 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate: newCodeGenerationDate,
     });
 
-    const updatedEmail = await target.getEmail({
+    const updatedEmail = await target.getAccount({
       chainId: chainId.toString(),
       safeAddress,
       account: account,
@@ -158,7 +158,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId: chainId.toString(),
       safeAddress,
       emailAddress,
@@ -174,7 +174,7 @@ describe('Email Datasource Tests', () => {
       sentOn,
     });
 
-    const email = await target.getEmail({
+    const email = await target.getAccount({
       chainId: chainId.toString(),
       safeAddress,
       account: account,
@@ -198,7 +198,7 @@ describe('Email Datasource Tests', () => {
         code: newCode.toString(),
         codeGenerationDate: newCodeGenerationDate,
       }),
-    ).rejects.toThrow(EmailAddressDoesNotExistError);
+    ).rejects.toThrow(AccountDoesNotExistError);
   });
 
   it('updating email verification fails on unknown emails', async () => {
@@ -212,7 +212,7 @@ describe('Email Datasource Tests', () => {
         safeAddress,
         account: account,
       }),
-    ).rejects.toThrow(EmailAddressDoesNotExistError);
+    ).rejects.toThrow(AccountDoesNotExistError);
   });
 
   it('gets only verified email addresses associated with a given safe address', async () => {
@@ -257,7 +257,7 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     } of verifiedAccounts) {
-      await target.saveEmail({
+      await target.saveAccount({
         chainId,
         safeAddress,
         emailAddress,
@@ -279,7 +279,7 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     } of nonVerifiedAccounts) {
-      await target.saveEmail({
+      await target.saveAccount({
         chainId,
         safeAddress,
         emailAddress,
@@ -311,7 +311,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -320,19 +320,19 @@ describe('Email Datasource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     });
-    await target.deleteEmail({
+    await target.deleteAccount({
       chainId,
       safeAddress,
       account,
     });
 
     await expect(
-      target.getEmail({
+      target.getAccount({
         chainId,
         safeAddress,
         account,
       }),
-    ).rejects.toThrow(EmailAddressDoesNotExistError);
+    ).rejects.toThrow(AccountDoesNotExistError);
   });
 
   it('deleting a non-existent email throws', async () => {
@@ -341,12 +341,12 @@ describe('Email Datasource Tests', () => {
     const account = faker.finance.ethereumAddress();
 
     await expect(
-      target.deleteEmail({
+      target.deleteAccount({
         chainId,
         safeAddress,
         account,
       }),
-    ).rejects.toThrow(EmailAddressDoesNotExistError);
+    ).rejects.toThrow(AccountDoesNotExistError);
   });
 
   it('update from previously unverified emails successfully', async () => {
@@ -359,7 +359,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress: prevEmailAddress,
@@ -369,7 +369,7 @@ describe('Email Datasource Tests', () => {
       unsubscriptionToken,
     });
 
-    await target.updateEmail({
+    await target.updateAccountEmail({
       chainId,
       safeAddress,
       emailAddress,
@@ -379,7 +379,7 @@ describe('Email Datasource Tests', () => {
       unsubscriptionToken,
     });
 
-    const email = await target.getEmail({
+    const email = await target.getAccount({
       chainId,
       safeAddress,
       account,
@@ -406,7 +406,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress: prevEmailAddress,
@@ -422,7 +422,7 @@ describe('Email Datasource Tests', () => {
       account,
     });
 
-    await target.updateEmail({
+    await target.updateAccountEmail({
       chainId,
       safeAddress,
       emailAddress,
@@ -432,7 +432,7 @@ describe('Email Datasource Tests', () => {
       unsubscriptionToken,
     });
 
-    const email = await target.getEmail({
+    const email = await target.getAccount({
       chainId,
       safeAddress,
       account,
@@ -459,7 +459,7 @@ describe('Email Datasource Tests', () => {
     const unsubscriptionToken = faker.string.uuid();
 
     await expect(
-      target.updateEmail({
+      target.updateAccountEmail({
         chainId: chainId.toString(),
         safeAddress,
         emailAddress,
@@ -468,7 +468,7 @@ describe('Email Datasource Tests', () => {
         codeGenerationDate,
         unsubscriptionToken,
       }),
-    ).rejects.toThrow(EmailAddressDoesNotExistError);
+    ).rejects.toThrow(AccountDoesNotExistError);
   });
 
   it('Has zero subscriptions when saving new email', async () => {
@@ -480,7 +480,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
 
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -510,9 +510,9 @@ describe('Email Datasource Tests', () => {
       key: faker.word.sample(),
       name: faker.word.words(2),
     };
-    await sql`INSERT INTO emails.subscriptions (key, name)
+    await sql`INSERT INTO notification_types (key, name)
               VALUES (${subscription.key}, ${subscription.name})`;
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -555,10 +555,10 @@ describe('Email Datasource Tests', () => {
         name: faker.word.words(2),
       },
     ];
-    await sql`INSERT INTO emails.subscriptions (key, name)
+    await sql`INSERT INTO notification_types (key, name)
               VALUES (${subscriptions[0].key}, ${subscriptions[0].name}),
                      (${subscriptions[1].key}, ${subscriptions[1].name})`;
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -606,7 +606,7 @@ describe('Email Datasource Tests', () => {
     const codeGenerationDate = faker.date.recent();
     const unsubscriptionToken = faker.string.uuid();
     const nonExistentCategory = faker.word.sample();
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -639,7 +639,7 @@ describe('Email Datasource Tests', () => {
         name: faker.word.words(2),
       },
     ];
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
@@ -682,10 +682,10 @@ describe('Email Datasource Tests', () => {
         name: faker.word.words(2),
       },
     ];
-    await sql`INSERT INTO emails.subscriptions (key, name)
+    await sql`INSERT INTO notification_types (key, name)
               VALUES (${subscriptions[0].key}, ${subscriptions[0].name}),
                      (${subscriptions[1].key}, ${subscriptions[1].name})`;
-    await target.saveEmail({
+    await target.saveAccount({
       chainId,
       safeAddress,
       emailAddress,
