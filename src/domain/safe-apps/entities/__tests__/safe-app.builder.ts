@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { random, range } from 'lodash';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { safeAppAccessControlBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
 import { safeAppProviderBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-provider.builder';
@@ -21,6 +20,8 @@ export function safeAppBuilder(): IBuilder<SafeApp> {
     .with('developerWebsite', faker.internet.url({ appendSlash: false }))
     .with(
       'socialProfiles',
-      range(random(5)).map(() => safeAppSocialProfileBuilder().build()),
+      faker.helpers.multiple(() => safeAppSocialProfileBuilder().build(), {
+        count: { min: 0, max: 5 },
+      }),
     );
 }

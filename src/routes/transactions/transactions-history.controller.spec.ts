@@ -44,7 +44,6 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { range } from 'lodash';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 import {
@@ -64,7 +63,7 @@ describe('Transactions History Controller (Unit)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const testConfiguration = () => ({
+    const testConfiguration: typeof configuration = () => ({
       ...configuration(),
       mappings: {
         history: {
@@ -735,12 +734,13 @@ describe('Transactions History Controller (Unit)', () => {
       .get(IConfigurationService)
       .getOrThrow('mappings.history.maxNestedTransfers');
     const date = new Date();
-    // the amount of transfers is the double of the max value
-    const transfers = range(maxNestedTransfers * 2).map(
+    const transfers = faker.helpers.multiple(
       () =>
         nativeTokenTransferToJson(
           nativeTokenTransferBuilder().with('executionDate', date).build(),
         ) as Transfer,
+      // the amount of transfers is the double of the max value
+      { count: maxNestedTransfers * 2 },
     );
     const transactionHistoryData = {
       count: faker.number.int(),

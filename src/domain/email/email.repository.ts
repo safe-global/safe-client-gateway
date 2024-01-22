@@ -10,6 +10,7 @@ import { EmailAlreadyVerifiedError } from '@/domain/email/errors/email-already-v
 import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
 import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import * as crypto from 'crypto';
 import { EditTimespanError } from '@/domain/email/errors/email-timespan.error';
 
 @Injectable()
@@ -34,7 +35,7 @@ export class EmailRepository implements IEmailRepository {
     );
   }
 
-  private _generateCode() {
+  private _generateCode(): string {
     const verificationCode = codeGenerator();
     // Pads the final verification code to 6 characters
     // The generated code might have less than 6 digits so the version to be
@@ -59,6 +60,7 @@ export class EmailRepository implements IEmailRepository {
         safeAddress: args.safeAddress,
         account: args.account,
         codeGenerationDate: new Date(),
+        unsubscriptionToken: crypto.randomUUID(),
       });
       await this._sendEmailVerification({
         ...args,
@@ -200,6 +202,7 @@ export class EmailRepository implements IEmailRepository {
       safeAddress: args.safeAddress,
       account: args.account,
       codeGenerationDate: new Date(),
+      unsubscriptionToken: crypto.randomUUID(),
     });
     await this._sendEmailVerification({
       ...args,
@@ -207,7 +210,7 @@ export class EmailRepository implements IEmailRepository {
     });
   }
 
-  private _isEmailVerificationCodeValid(email: Email) {
+  private _isEmailVerificationCodeValid(email: Email): boolean {
     if (!email.verificationGeneratedOn) return false;
     const window = Date.now() - email.verificationGeneratedOn.getTime();
     return window < this.verificationCodeTtlMs;
@@ -219,7 +222,7 @@ export class EmailRepository implements IEmailRepository {
     code: string;
     emailAddress: string;
     safeAddress: string;
-  }) {
+  }): Promise<void> {
     await this.emailApi.createMessage({
       to: [args.emailAddress],
       template: this.configurationService.getOrThrow(

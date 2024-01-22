@@ -1,10 +1,7 @@
-import { decodeFunctionData, parseAbi } from 'viem';
+import { decodeFunctionData, isHex, parseAbi } from 'viem';
 import {
-  AddressFragment,
   HumanDescriptionFragment,
-  NumberFragment,
   TextFragment,
-  TokenValueFragment,
   ValueType,
 } from '@/domain/human-description/entities/human-description.entity';
 
@@ -65,10 +62,11 @@ export class HumanDescriptionTemplate {
 
     for (const match of this.templateMatches) {
       if ('textToken' in match.groups && match.groups.textToken !== undefined) {
-        fragments.push(<TextFragment>{
+        const textFragment: TextFragment = {
           type: ValueType.Text,
           value: match.groups.textToken,
-        });
+        };
+        fragments.push(textFragment);
       } else if (
         'typeToken' in match.groups &&
         'paramIndex' in match.groups &&
@@ -101,24 +99,48 @@ export class HumanDescriptionTemplate {
     index: number,
     args: readonly unknown[],
   ): HumanDescriptionFragment {
+    const value = args[index];
+
     switch (tokenType) {
-      case ValueType.TokenValue:
-        return <TokenValueFragment>{
+      case ValueType.TokenValue: {
+        if (typeof value !== 'bigint') {
+          throw Error(
+            `Invalid token type amount. tokenType=${tokenType}, amount=${value}`,
+          );
+        }
+
+        return {
           type: ValueType.TokenValue,
-          value: { amount: args[index], address: to },
+          value: { amount: value, address: to },
         };
-      case ValueType.Address:
-        return <AddressFragment>{
+      }
+      case ValueType.Address: {
+        if (!isHex(value)) {
+          throw Error(
+            `Invalid token type value. tokenType=${tokenType}, address=${value}`,
+          );
+        }
+
+        return {
           type: ValueType.Address,
-          value: args[index],
+          value,
         };
-      case ValueType.Number:
-        return <NumberFragment>{
+      }
+      case ValueType.Number: {
+        if (typeof value !== 'bigint') {
+          throw Error(
+            `Invalid token type value. tokenType=${tokenType}, address=${value}`,
+          );
+        }
+
+        return {
           type: ValueType.Number,
-          value: args[index],
+          value,
         };
-      default:
+      }
+      default: {
         throw Error(`Unknown token type ${tokenType}`);
+      }
     }
   }
 }

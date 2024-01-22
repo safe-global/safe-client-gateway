@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { random, range } from 'lodash';
 import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -62,8 +61,9 @@ describe('Messages controller', () => {
     it('Get a confirmed message with no safe app associated', async () => {
       const chain = chainBuilder().build();
       const safeApps = [];
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('confirmations', messageConfirmations)
@@ -121,9 +121,12 @@ describe('Messages controller', () => {
 
     it('Get a confirmed message with a safe app associated', async () => {
       const chain = chainBuilder().build();
-      const safeApps = range(random(2, 5)).map(() => safeAppBuilder().build());
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const safeApps = faker.helpers.multiple(() => safeAppBuilder().build(), {
+        count: { min: 2, max: 5 },
+      });
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('safeAppId', safeApps[1].id)
@@ -183,8 +186,9 @@ describe('Messages controller', () => {
     it('Get an unconfirmed message with no safe app associated', async () => {
       const chain = chainBuilder().build();
       const safeApps = [];
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('confirmations', messageConfirmations)
@@ -242,9 +246,12 @@ describe('Messages controller', () => {
 
     it('Get an unconfirmed message with a safe app associated', async () => {
       const chain = chainBuilder().build();
-      const safeApps = range(random(3, 5)).map(() => safeAppBuilder().build());
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const safeApps = faker.helpers.multiple(() => safeAppBuilder().build(), {
+        count: { min: 3, max: 5 },
+      });
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('safeAppId', safeApps[2].id)
@@ -303,8 +310,9 @@ describe('Messages controller', () => {
 
     it('should return null name and logo if the Safe App is not found', async () => {
       const chain = chainBuilder().build();
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('safeAppId', faker.number.int())
@@ -363,8 +371,9 @@ describe('Messages controller', () => {
 
     it('should return null name and logo if no safeAppId in the message', async () => {
       const chain = chainBuilder().build();
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
         .with('safeAppId', null)
@@ -448,8 +457,9 @@ describe('Messages controller', () => {
 
     it('should get a message with a date label', async () => {
       const chain = chainBuilder().build();
-      const messageConfirmations = range(random(2, 5)).map(() =>
-        messageConfirmationBuilder().build(),
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
       );
       const safe = safeBuilder()
         .with(
@@ -537,11 +547,13 @@ describe('Messages controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const messageCreationDate = faker.date.recent();
-      const messages = range(4).map(() =>
-        messageBuilder()
-          .with('safeAppId', null)
-          .with('created', messageCreationDate)
-          .build(),
+      const messages = faker.helpers.multiple(
+        () =>
+          messageBuilder()
+            .with('safeAppId', null)
+            .with('created', messageCreationDate)
+            .build(),
+        { count: { min: 1, max: 4 } },
       );
       const page = pageBuilder()
         .with('previous', null)

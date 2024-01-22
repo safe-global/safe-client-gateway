@@ -29,7 +29,6 @@ import { NotificationsModule } from '@/routes/notifications/notifications.module
 import { EstimationsModule } from '@/routes/estimations/estimations.module';
 import { MessagesModule } from '@/routes/messages/messages.module';
 import { ValidationModule } from '@/validation/validation.module';
-import { FlushModule } from '@/routes/flush/flush.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
@@ -67,7 +66,6 @@ export class AppModule implements NestModule {
           ? [AlertsControllerModule, EmailControllerModule, RecoveryModule]
           : []),
         EstimationsModule,
-        FlushModule,
         HealthModule,
         MessagesModule,
         NotificationsModule,
@@ -116,7 +114,7 @@ export class AppModule implements NestModule {
     };
   }
 
-  configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer): void {
     consumer
       // The ClsMiddleware needs to be applied before the LoggerMiddleware
       // in order to generate the request ids that will be logged afterward

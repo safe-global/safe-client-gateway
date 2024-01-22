@@ -19,7 +19,7 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     this.loggingService.info('Checking migrations');
     try {
       // Acquire lock to perform a migration.

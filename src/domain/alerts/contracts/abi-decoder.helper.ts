@@ -11,6 +11,8 @@ import {
 export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
   protected constructor(private readonly abi: TAbi) {}
 
+  // Use inferred types from viem
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   decodeEventLog<
     const abi extends Abi | readonly unknown[],
     eventName extends ContractEventName<abi> | undefined = undefined,
@@ -29,6 +31,8 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
     });
   }
 
+  // Use inferred types from viem
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   decodeFunctionData<TAbi extends Abi | readonly unknown[]>(
     args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
   ) {

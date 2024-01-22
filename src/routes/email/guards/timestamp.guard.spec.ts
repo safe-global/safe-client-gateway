@@ -15,7 +15,7 @@ class TestController {
   @Post('test')
   @HttpCode(200)
   @UseGuards(TimestampGuard(MAX_ELAPSED_TIME_MS))
-  async validRoute() {}
+  async validRoute(): Promise<void> {}
 }
 
 describe('TimestampGuard tests', () => {

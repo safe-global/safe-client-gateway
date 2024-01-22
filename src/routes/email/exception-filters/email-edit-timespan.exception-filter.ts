@@ -9,7 +9,7 @@ import { Response } from 'express';
 
 @Catch(EditTimespanError)
 export class EmailEditTimespanExceptionFilter implements ExceptionFilter {
-  catch(exception: EditTimespanError, host: ArgumentsHost) {
+  catch(exception: EditTimespanError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

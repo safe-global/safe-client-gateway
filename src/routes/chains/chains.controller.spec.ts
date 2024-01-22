@@ -140,9 +140,9 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure: network service fails', async () => {
-      networkService.get.mockRejectedValueOnce(<NetworkResponseError>{
+      networkService.get.mockRejectedValueOnce({
         status: 500,
-      });
+      } as NetworkResponseError);
 
       await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'An error occurred',
@@ -326,14 +326,14 @@ describe('Chains Controller (Unit)', () => {
         data: domainMasterCopiesResponse,
       });
       const masterCopiesResponse = [
-        <MasterCopy>{
+        {
           address: domainMasterCopiesResponse[0].address,
           version: domainMasterCopiesResponse[0].version,
-        },
-        <MasterCopy>{
+        } as MasterCopy,
+        {
           address: domainMasterCopiesResponse[1].address,
           version: domainMasterCopiesResponse[1].version,
-        },
+        } as MasterCopy,
       ];
 
       await request(app.getHttpServer())

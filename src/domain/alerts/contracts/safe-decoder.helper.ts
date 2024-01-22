@@ -7,7 +7,6 @@ const OWNER_MANAGER_ABI = parseAbi([
   'function removeOwner(address prevOwner, address owner, uint256 _threshold)',
   'function swapOwner(address prevOwner, address oldOwner, address newOwner)',
   'function changeThreshold(uint256 _threshold)',
-  // Batched owner management transactions are executed via MultiSend
   'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)',
 ]);
 

@@ -45,8 +45,6 @@ import { EstimationsValidator } from '@/domain/estimations/estimations.validator
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { MessageValidator } from '@/domain/messages/message.validator';
-import { FlushRepository } from '@/domain/flush/flush.repository';
-import { IFlushRepository } from '@/domain/flush/flush.repository.interface';
 import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
@@ -76,7 +74,6 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     { provide: IDataDecodedRepository, useClass: DataDecodedRepository },
     { provide: IDelegateRepository, useClass: DelegateRepository },
     { provide: IEstimationsRepository, useClass: EstimationsRepository },
-    { provide: IFlushRepository, useClass: FlushRepository },
     { provide: IHealthRepository, useClass: HealthRepository },
     {
       provide: IHumanDescriptionRepository,
@@ -119,7 +116,6 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     IDataDecodedRepository,
     IDelegateRepository,
     IEstimationsRepository,
-    IFlushRepository,
     IHealthRepository,
     IHumanDescriptionRepository,
     IMessagesRepository,

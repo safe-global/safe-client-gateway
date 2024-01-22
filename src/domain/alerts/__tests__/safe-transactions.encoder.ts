@@ -46,7 +46,7 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs>
   static readonly FUNCTION_SIGNATURE =
     'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)' as const;
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([ExecTransactionEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -70,7 +70,7 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs>
   }
 }
 
-export function execTransactionEncoder() {
+export function execTransactionEncoder(): ExecTransactionEncoder<ExecTransactionArgs> {
   return new ExecTransactionEncoder()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
@@ -98,7 +98,7 @@ class AddOwnerWithThresholdEncoder<T extends AddOwnerWithThresholdArgs>
   static readonly FUNCTION_SIGNATURE =
     'function addOwnerWithThreshold(address owner, uint256 _threshold)' as const;
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([AddOwnerWithThresholdEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -111,7 +111,7 @@ class AddOwnerWithThresholdEncoder<T extends AddOwnerWithThresholdArgs>
   }
 }
 
-export function addOwnerWithThresholdEncoder() {
+export function addOwnerWithThresholdEncoder(): AddOwnerWithThresholdEncoder<AddOwnerWithThresholdArgs> {
   return new AddOwnerWithThresholdEncoder()
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('threshold', faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }));
@@ -132,7 +132,7 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs>
   static readonly FUNCTION_SIGNATURE =
     'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([RemoveOwnerEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -145,7 +145,9 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs>
   }
 }
 
-export function removeOwnerEncoder(owners?: Safe['owners']) {
+export function removeOwnerEncoder(
+  owners?: Safe['owners'],
+): RemoveOwnerEncoder<RemoveOwnerArgs> {
   const owner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(owner, owners);
 
@@ -170,7 +172,7 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs>
   static readonly FUNCTION_SIGNATURE =
     'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([SwapOwnerEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -183,7 +185,9 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs>
   }
 }
 
-export function swapOwnerEncoder(owners?: Safe['owners']) {
+export function swapOwnerEncoder(
+  owners?: Safe['owners'],
+): SwapOwnerEncoder<SwapOwnerArgs> {
   const oldOwner = getAddress(faker.finance.ethereumAddress());
   const prevOwner = getPrevOwner(oldOwner, owners);
 
@@ -206,7 +210,7 @@ class ChangeThresholdEncoder<T extends ChangeThresholdArgs>
   static readonly FUNCTION_SIGNATURE =
     'function changeThreshold(uint256 _threshold)';
 
-  encode() {
+  encode(): Hex {
     const abi = parseAbi([ChangeThresholdEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
@@ -219,7 +223,7 @@ class ChangeThresholdEncoder<T extends ChangeThresholdArgs>
   }
 }
 
-export function changeThresholdEncoder() {
+export function changeThresholdEncoder(): ChangeThresholdEncoder<ChangeThresholdArgs> {
   return new ChangeThresholdEncoder().with(
     'threshold',
     faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }),

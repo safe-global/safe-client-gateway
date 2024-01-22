@@ -9,7 +9,7 @@ import { Response } from 'express';
 
 @Catch(EmailAlreadyVerifiedError)
 export class EmailAlreadyVerifiedExceptionFilter implements ExceptionFilter {
-  catch(exception: EmailAlreadyVerifiedError, host: ArgumentsHost) {
+  catch(exception: EmailAlreadyVerifiedError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

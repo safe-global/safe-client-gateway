@@ -2,6 +2,6 @@ export class CreateEmailMessageDto {
   to: string[];
   template: string;
   subject: string;
-  substitutions: Record<string, string> | null;
+  substitutions: Record<string, unknown> | null;
   emailMessageId?: string;
 }

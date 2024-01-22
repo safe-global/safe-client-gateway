@@ -15,17 +15,17 @@ class TestController {
   @Post('test/:chainId/:safeAddress')
   @HttpCode(200)
   @UseGuards(EmailRegistrationGuard)
-  async validRoute() {}
+  async validRoute(): Promise<void> {}
 
   @Post('test/invalid/chains/:chainId')
   @HttpCode(200)
   @UseGuards(EmailRegistrationGuard)
-  async invalidRouteWithChainId() {}
+  async invalidRouteWithChainId(): Promise<void> {}
 
   @Post('test/invalid/safes/:safeAddress')
   @HttpCode(200)
   @UseGuards(EmailRegistrationGuard)
-  async invalidRouteWithSafeAddress() {}
+  async invalidRouteWithSafeAddress(): Promise<void> {}
 }
 
 describe('EmailRegistration guard tests', () => {

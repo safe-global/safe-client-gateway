@@ -1,4 +1,4 @@
-import { sample } from 'lodash';
+import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
@@ -14,10 +14,7 @@ export function transferTransactionInfoBuilder(): IBuilder<TransferTransactionIn
     .with('type', TransactionInfoType.Transfer)
     .with('sender', addressInfoBuilder().build())
     .with('recipient', addressInfoBuilder().build())
-    .with(
-      'direction',
-      sample(Object.values(TransferDirection)) ?? TransferDirection.Incoming,
-    )
+    .with('direction', faker.helpers.objectValue(TransferDirection))
     .with('transferInfo', {
       ...erc20TransferBuilder().build(),
       type: TransferType.Erc20,

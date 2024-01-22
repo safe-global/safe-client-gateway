@@ -8,7 +8,7 @@ export class AlertsRouteGuard implements CanActivate {
     private readonly configurationService: IConfigurationService,
   ) {}
 
-  canActivate() {
+  canActivate(): boolean {
     return this.configurationService.getOrThrow<boolean>('features.email');
   }
 }

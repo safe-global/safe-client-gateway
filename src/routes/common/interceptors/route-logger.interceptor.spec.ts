@@ -22,12 +22,12 @@ const mockLoggingService = {
 @Controller({ path: 'test' })
 class TestController {
   @Get('server-error')
-  getServerError() {
+  getServerError(): void {
     throw new HttpException('Some 500 error', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Get('server-data-source-error')
-  getServerDataSourceError() {
+  getServerDataSourceError(): void {
     throw new DataSourceError(
       'Some DataSource error',
       HttpStatus.NOT_IMPLEMENTED,
@@ -35,22 +35,22 @@ class TestController {
   }
 
   @Get('server-error-non-http')
-  getNonHttpError() {
+  getNonHttpError(): void {
     throw new Error('Some random error');
   }
 
   @Get('client-error')
-  getClientError() {
+  getClientError(): void {
     throw new HttpException('Some 400 error', HttpStatus.METHOD_NOT_ALLOWED);
   }
 
   @Get('success')
-  getSuccess() {
+  getSuccess(): void {
     return;
   }
 
   @Get('success/:chainId')
-  getSuccessWithChainId() {
+  getSuccessWithChainId(): void {
     return;
   }
 }

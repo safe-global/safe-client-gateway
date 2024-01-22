@@ -35,7 +35,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
   static readonly EVENT_SIGNATURE =
     `event TransactionAdded(uint256 indexed queueNonce, bytes32 indexed txHash, ${TransactionAddedEventBuilder.NON_INDEXED_PARAMS})` as const;
 
-  encode() {
+  encode(): TransactionAddedEvent {
     const abi = parseAbi([TransactionAddedEventBuilder.EVENT_SIGNATURE]);
 
     const args = this.build();
@@ -52,16 +52,16 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
         queueNonce: args.queueNonce!,
         txHash: args.txHash!,
       },
-    });
+    }) as TransactionAddedEvent['topics'];
 
-    return <TransactionAddedEvent>{
+    return {
       data,
       topics,
     };
   }
 }
 
-export function transactionAddedEventBuilder() {
+export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<TransactionAddedEventArgs> {
   return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
     .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)

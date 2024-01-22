@@ -4,17 +4,17 @@ import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
 
-function configureVersioning(app: INestApplication) {
+function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
     type: VersioningType.URI,
   });
 }
 
-export function configureShutdownHooks(app: INestApplication) {
+export function configureShutdownHooks(app: INestApplication): void {
   app.enableShutdownHooks();
 }
 
-function configureSwagger(app: INestApplication) {
+function configureSwagger(app: INestApplication): void {
   const configurationService = app.get<IConfigurationService>(
     IConfigurationService,
   );
@@ -32,7 +32,7 @@ function configureSwagger(app: INestApplication) {
   });
 }
 
-function configureRequestBodyLimit(app: INestApplication) {
+function configureRequestBodyLimit(app: INestApplication): void {
   const configurationService = app.get<IConfigurationService>(
     IConfigurationService,
   );
