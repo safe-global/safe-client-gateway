@@ -9,6 +9,7 @@ import { TransactionPreview } from '@/routes/transactions/entities/transaction-p
 import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class TransactionPreviewMapper {
@@ -37,7 +38,7 @@ export class TransactionPreviewMapper {
       }
     } catch (error) {
       this.loggingService.info(
-        `Error trying to decode the input data: ${error.message}`,
+        `Error trying to decode the input data: ${asError(error).message}`,
       );
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(

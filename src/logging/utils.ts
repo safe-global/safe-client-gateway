@@ -1,3 +1,5 @@
+import { get } from 'lodash';
+
 const HEADER_IP_ADDRESS = 'X-Real-IP';
 const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';
 
@@ -34,3 +36,23 @@ export function formatRouteLogMessage(
     detail: detail ?? null,
   };
 }
+
+export const asError = (thrown: unknown): Error => {
+  if (thrown instanceof Error) {
+    return thrown;
+  }
+
+  let message: string;
+
+  if (typeof thrown === 'string') {
+    message = thrown;
+  } else {
+    try {
+      message = get(thrown, 'message') ?? JSON.stringify(thrown);
+    } catch {
+      message = String(thrown);
+    }
+  }
+
+  return new Error(message);
+};

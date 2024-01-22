@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyEmailDto {
   @ApiProperty()
-  account: string;
+  account!: string;
 
   @ApiProperty()
-  code: string;
+  code!: string;
 }

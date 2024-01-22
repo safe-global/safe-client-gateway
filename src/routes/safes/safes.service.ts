@@ -18,6 +18,7 @@ import {
   SafeState,
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 @Injectable()
 export class SafesService {
@@ -190,7 +191,12 @@ export class SafesService {
 
     const dates = txPages
       .filter(
-        <T>(page: PromiseSettledResult<T>): page is PromiseFulfilledResult<T> =>
+        (
+          page,
+        ): page is
+          | PromiseFulfilledResult<Page<MultisigTransaction>>
+          | PromiseFulfilledResult<Page<ModuleTransaction>>
+          | PromiseFulfilledResult<Page<Transfer>> =>
           page.status === 'fulfilled',
       )
       .flatMap(
