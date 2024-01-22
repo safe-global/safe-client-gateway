@@ -25,20 +25,11 @@ function fetchClientFactory(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
-    let response: Response | null = null;
     let request: URL | null = null;
+    let response: Response | null = null;
 
     try {
       request = new URL(url);
-    } catch (error) {
-      // NetworkRequestError
-      throw {
-        request: null,
-        data: error,
-      };
-    }
-
-    try {
       response = await fetch(url, {
         ...options,
         signal: AbortSignal.timeout(requestTimeout),
