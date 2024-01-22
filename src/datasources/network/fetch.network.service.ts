@@ -7,7 +7,6 @@ import { FetchClient } from '@/datasources/network/network.module';
 import {
   NetworkResponseError,
   NetworkRequestError,
-  NetworkOtherError,
 } from '@/datasources/network/entities/network.error.entity';
 
 /**
@@ -22,50 +21,47 @@ export class FetchNetworkService implements INetworkService {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  async get<T, R = NetworkResponse<T>>(
+  async get<T>(
     baseUrl: string,
     { params, ...options }: NetworkRequest = {},
-  ): Promise<R> {
+  ): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(baseUrl, params);
     const startTimeMs = performance.now();
     try {
-      return (await this.client(url, {
+      return await this.client<T>(url, {
         method: 'GET',
         ...options,
-      })) as R;
+      });
     } catch (error) {
       this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
-  async post<T, R = NetworkResponse<T>>(
+  async post<T>(
     baseUrl: string,
     data: object,
     { params, headers }: NetworkRequest = {},
-  ): Promise<R> {
+  ): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(baseUrl, params);
     const startTimeMs = performance.now();
     try {
-      return (await this.client(url, {
+      return await this.client<T>(url, {
         method: 'POST',
         body: JSON.stringify(data),
         headers: {
           'Content-Type': 'application/json',
           ...headers,
         },
-      })) as R;
+      });
     } catch (error) {
       this.handleError(error, performance.now() - startTimeMs);
     }
   }
 
-  async delete<T, R = NetworkResponse<T>>(
-    url: string,
-    data?: object,
-  ): Promise<R> {
+  async delete<T>(url: string, data?: object): Promise<NetworkResponse<T>> {
     const startTimeMs = performance.now();
     try {
-      return (await this.client(url, {
+      return await this.client<T>(url, {
         method: 'DELETE',
         ...(data && {
           headers: {
@@ -73,7 +69,7 @@ export class FetchNetworkService implements INetworkService {
           },
           body: JSON.stringify(data),
         }),
-      })) as R;
+      });
     } catch (error) {
       this.handleError(error, performance.now() - startTimeMs);
     }
@@ -94,23 +90,18 @@ export class FetchNetworkService implements INetworkService {
   private handleError(error, responseTimeMs: number): never {
     if (error.response) {
       this.logErrorResponse(error, responseTimeMs);
-      throw new NetworkResponseError(
-        error.response.status,
-        error.response.data,
-      );
-    } else if (error.request) {
-      throw new NetworkRequestError(error.request);
+      throw new NetworkResponseError(error.response.status, error.data);
     } else {
-      throw new NetworkOtherError(error.message);
+      throw new NetworkRequestError(error.request);
     }
   }
 
   private logErrorResponse(error, responseTimeMs: number): void {
     this.loggingService.debug({
       type: 'external_request',
-      protocol: error.request.protocol,
-      target_host: error.request.host,
-      path: error.request.pathname,
+      protocol: error.request?.protocol,
+      target_host: error.request?.host,
+      path: error.request?.pathname,
       request_status: error.response.status,
       detail: error.response.statusText,
       response_time_ms: responseTimeMs,

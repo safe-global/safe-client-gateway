@@ -2,7 +2,6 @@ import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
 import { ILoggingService } from '@/logging/logging.interface';
 import {
-  NetworkOtherError,
   NetworkResponseError,
   NetworkRequestError,
 } from '@/datasources/network/entities/network.error.entity';
@@ -61,20 +60,6 @@ describe('FetchNetworkService', () => {
           },
         },
       );
-    });
-
-    it(`get forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      (fetchClientMock as any).mockRejectedValueOnce(new Error('Fetch error'));
-
-      await expect(target.get(url)).rejects.toThrow(
-        new NetworkOtherError('Fetch error'),
-      );
-
-      expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
-        method: 'GET',
-      });
     });
 
     it(`get forwards response error as NetworkResponseError`, async () => {
@@ -188,25 +173,6 @@ describe('FetchNetworkService', () => {
       );
     });
 
-    it(`post forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
-      (fetchClientMock as any).mockRejectedValueOnce(new Error('Fetch error'));
-
-      await expect(target.post(url, data)).rejects.toThrow(
-        new NetworkOtherError('Fetch error'),
-      );
-
-      expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    });
-
     it(`post forwards response error as NetworkResponseError`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const data = { [faker.word.sample()]: faker.string.alphanumeric() };
@@ -294,25 +260,6 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
       expect(fetchClientMock).toHaveBeenCalledWith(url, {
         method: 'DELETE',
-      });
-    });
-
-    it(`delete forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      const data = { some_data: 'some_data' };
-      fetchClientMock.mockRejectedValueOnce(new Error('Fetch error'));
-
-      await expect(target.delete(url, data)).rejects.toThrow(
-        new NetworkOtherError('Fetch error'),
-      );
-
-      expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(url, {
-        method: 'DELETE',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
     });
 

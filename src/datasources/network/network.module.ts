@@ -2,11 +2,12 @@ import { Global, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 
 export type FetchClient = <T>(
   url: string,
   options: RequestInit,
-) => Promise<{ data: T }>;
+) => Promise<NetworkResponse<T>>;
 
 /**
  * Use this factory to create a {@link FetchClient} instance
@@ -19,35 +20,53 @@ function fetchClientFactory(
     'httpClient.requestTimeout',
   );
 
-  return async <T>(url: string, options: RequestInit): Promise<{ data: T }> => {
-    // If general error - NetworkOtherError
-    const response = await fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(requestTimeout),
-      keepalive: true,
-    });
+  // TODO: Adjust structure of NetworkRequestError/NetworkResponseError and throw here
+  return async <T>(
+    url: string,
+    options: RequestInit,
+  ): Promise<NetworkResponse<T>> => {
+    let response: Response | null = null;
+    let request: URL | null = null;
 
-    const data = await response.json().catch(() => null);
+    try {
+      request = new URL(url);
+    } catch (error) {
+      // NetworkRequestError
+      throw {
+        request: null,
+        data: error,
+      };
+    }
+
+    try {
+      response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(requestTimeout),
+        keepalive: true,
+      });
+    } catch (error) {
+      // NetworkRequestError
+      throw {
+        request,
+        data: error,
+      };
+    }
+
+    // We validate data so don't need worry about casting `null` response
+    const data = (await response.json().catch(() => null)) as T;
 
     if (!response.ok) {
-      if (!data) {
-        // Response error (no response) - NetworkRequestError
-        throw {
-          request: new URL(url),
-        };
-      } else {
-        // Response error - NetworkResponseError
-        throw {
-          response: {
-            ...response,
-            data,
-          },
-        };
-      }
+      // NetworkResponseError
+      throw {
+        request,
+        response,
+        data,
+      };
     }
 
     return {
-      data: data as T,
+      status: response.status,
+      data,
     };
   };
 }

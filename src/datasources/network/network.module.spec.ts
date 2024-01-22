@@ -5,9 +5,11 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { faker } from '@faker-js/faker';
 
 describe('NetworkModule', () => {
   it(`fetch client is created with timeout and is kept alive`, async () => {
+    // fetch response is not mocked but we are only concerned with RequestInit options
     const fetchMock = jest.fn();
     jest.spyOn(global, 'fetch').mockImplementationOnce(fetchMock);
 
@@ -29,15 +31,12 @@ describe('NetworkModule', () => {
     );
     await app.init();
 
-    try {
-      await fetchClient('', {
-        method: 'GET',
-      });
-    } catch {
-      // fetch response is not mocked but we are only concerned with RequestInit options
-    }
+    const url = faker.internet.url({ appendSlash: false });
 
-    expect(fetchMock).toHaveBeenCalledWith('', {
+    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(url, {
       method: 'GET',
       signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
       keepalive: true,
