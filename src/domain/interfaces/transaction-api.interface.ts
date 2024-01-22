@@ -79,7 +79,7 @@ export interface ITransactionApi {
     delegate: string;
     safeAddress: string;
     signature: string;
-  }): Promise<void>;
+  }): Promise<unknown>;
 
   getTransfer(transferId: string): Promise<Transfer>;
 

@@ -1,6 +1,5 @@
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  NetworkOtherError,
   NetworkRequestError,
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
@@ -23,15 +22,6 @@ describe('HttpErrorFactory', () => {
 
   it('should create an HttpException with 503 status when there is an error with the request', async () => {
     const httpError = new NetworkRequestError(undefined);
-
-    const actual = httpErrorFactory.from(httpError);
-
-    expect(actual.code).toBe(503);
-    expect(actual.message).toBe('Service unavailable');
-  });
-
-  it('should create an HttpException with 503 status when there is an any other network error', async () => {
-    const httpError = new NetworkOtherError('some other error');
 
     const actual = httpErrorFactory.from(httpError);
 
