@@ -228,7 +228,7 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<AssetPrice> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<AssetPrice>(url, {
+      const { data } = await this.networkService.get(url, {
         params: {
           vs_currencies: args.fiatCode,
           contract_addresses: args.tokenAddresses.join(','),

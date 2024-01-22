@@ -252,7 +252,7 @@ describe('FetchNetworkService', () => {
   });
 
   describe('DELETE requests', () => {
-    it(`get uses DELETE method`, async () => {
+    it(`delete uses DELETE method`, async () => {
       const url = faker.internet.url({ appendSlash: false });
 
       await target.delete(url);
