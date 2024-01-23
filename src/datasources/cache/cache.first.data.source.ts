@@ -11,7 +11,6 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { isObject } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
