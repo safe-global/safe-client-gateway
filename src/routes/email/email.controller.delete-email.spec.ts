@@ -76,35 +76,20 @@ describe('Email controller delete email tests', () => {
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
     const accountAddress = account.address;
-    // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [accountAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      .build();
+    const safeAddress = faker.finance.ethereumAddress();
     const email = emailBuilder()
       .with('account', accountAddress)
-      .with('safeAddress', safe.address)
+      .with('safeAddress', safeAddress)
       .with('chainId', chain.chainId)
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
+    const message = `email-delete-${chain.chainId}-${safeAddress}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
-        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
     emailDatasource.getEmail.mockResolvedValue(email);
     emailDatasource.deleteEmail.mockImplementation(() => Promise.resolve());
     emailApi.deleteEmailAddress.mockResolvedValue();
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .delete(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
       .send({
         account: account.address,
         timestamp: timestamp,
@@ -212,45 +197,6 @@ describe('Email controller delete email tests', () => {
       .build();
     const message = `some-action-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
     const signature = await account.signMessage({ message });
-
-    await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        account: account.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-  });
-
-  it('returns 403 if message not signed by owner', async () => {
-    const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
-    // Signer is owner of safe
-    const safe = safeBuilder()
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
-        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)

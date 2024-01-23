@@ -95,7 +95,6 @@ export class EmailController {
   @UseGuards(
     EmailDeletionGuard,
     TimestampGuard(5 * 60 * 1000), // 5 minutes
-    OnlySafeOwnerGuard,
   )
   @UseFilters(EmailAddressDoesNotExistExceptionFilter)
   @HttpCode(HttpStatus.NO_CONTENT)
