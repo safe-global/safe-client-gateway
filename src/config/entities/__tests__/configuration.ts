@@ -18,6 +18,29 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
   },
+  balances: {
+    balancesTtlSeconds: faker.number.int(),
+    providers: {
+      valk: {
+        baseUri: faker.internet.url({ appendSlash: false }),
+        apiKey: faker.string.hexadecimal({ length: 32 }),
+        chains: {
+          1: { chainName: faker.string.sample() },
+          10: { chainName: faker.string.sample() },
+          100: { chainName: faker.string.sample() },
+          1101: { chainName: faker.string.sample() },
+          1313161554: { chainName: faker.string.sample() },
+          137: { chainName: faker.string.sample() },
+          324: { chainName: faker.string.sample() },
+          42161: { chainName: faker.string.sample() },
+          42220: { chainName: faker.string.sample() },
+          43114: { chainName: faker.string.sample() },
+          56: { chainName: faker.string.sample() },
+          8453: { chainName: faker.string.sample() },
+        },
+      },
+    },
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_TEST_HOST || 'localhost',
@@ -55,6 +78,7 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     richFragments: true,
     email: true,
+    valkBalancesChainIds: [],
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
