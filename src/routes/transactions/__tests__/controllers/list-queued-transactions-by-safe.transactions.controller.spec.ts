@@ -513,7 +513,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         return Promise.resolve({ data: chainResponse, status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
-        if (!query) {
+        if (!query?.params) {
           fail('Query params not found');
         }
         expect(query.params.trusted).toBe(false);

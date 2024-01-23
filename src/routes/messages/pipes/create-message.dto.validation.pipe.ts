@@ -15,7 +15,7 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class CreateMessageDtoValidationPipe
-  implements PipeTransform<any, CreateMessageDto>
+  implements PipeTransform<unknown, CreateMessageDto>
 {
   private readonly isValid: ValidateFunction<CreateMessageDto>;
 
@@ -29,7 +29,7 @@ export class CreateMessageDtoValidationPipe
     );
   }
 
-  transform(data: any): CreateMessageDto {
+  transform(data: unknown): CreateMessageDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {

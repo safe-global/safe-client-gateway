@@ -61,7 +61,7 @@ export interface IEmailRepository {
     safeAddress: string;
     account: string;
     code: string;
-  }): Promise<any>;
+  }): Promise<void>;
 
   /**
    * Deletes an email address for a given account.

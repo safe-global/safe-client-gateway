@@ -22,7 +22,9 @@ describe('HttpErrorFactory', () => {
     const actual = httpErrorFactory.from(httpError);
 
     expect(actual.code).toBe(httpError.response.status);
-    expect(actual.message).toBe(httpError.data.message);
+    expect(actual.message).toBe(
+      (httpError.data as { message: string }).message,
+    );
   });
 
   it('should create an HttpException with 503 status when there is an error with the request URL', async () => {

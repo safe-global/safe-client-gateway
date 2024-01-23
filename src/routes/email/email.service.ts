@@ -29,7 +29,7 @@ export class EmailService {
     safeAddress: string;
     account: string;
     code: string;
-  }): Promise<any> {
+  }): Promise<void> {
     return this.repository.verifyEmailAddress(args);
   }
 

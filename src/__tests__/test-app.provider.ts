@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { DynamicModule, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import {
   AppProvider,
@@ -27,7 +27,9 @@ export class TestAppProvider extends AppProvider {
     }
   }
 
-  protected getApp(module: any): Promise<INestApplication> {
+  protected getApp(
+    module: DynamicModule | TestingModule,
+  ): Promise<INestApplication> {
     if (!(module instanceof TestingModule))
       return Promise.reject(
         `${module.constructor.name} is not a TestingModule`,

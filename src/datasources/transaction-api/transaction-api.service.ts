@@ -103,10 +103,13 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
-      const { data: dataDecoded } = await this.networkService.post(url, {
-        data: args.data,
-        to: args.to,
-      });
+      const { data: dataDecoded } = await this.networkService.post<DataDecoded>(
+        url,
+        {
+          data: args.data,
+          to: args.to,
+        },
+      );
       return dataDecoded;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -445,7 +448,7 @@ export class TransactionApi implements ITransactionApi {
   async getSafesByModule(moduleAddress: string): Promise<SafeList> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      const { data } = await this.networkService.get(url);
+      const { data } = await this.networkService.get<SafeList>(url);
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -781,12 +784,15 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<Estimation> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.address}/multisig-transactions/estimations/`;
-      const { data: estimation } = await this.networkService.post(url, {
-        to: args.getEstimationDto.to,
-        value: args.getEstimationDto.value,
-        data: args.getEstimationDto.data,
-        operation: args.getEstimationDto.operation,
-      });
+      const { data: estimation } = await this.networkService.post<Estimation>(
+        url,
+        {
+          to: args.getEstimationDto.to,
+          value: args.getEstimationDto.value,
+          data: args.getEstimationDto.data,
+          operation: args.getEstimationDto.operation,
+        },
+      );
       return estimation;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -874,7 +880,7 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<Message> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
-      const { data } = await this.networkService.post(url, {
+      const { data } = await this.networkService.post<Message>(url, {
         message: args.message,
         safeAppId: args.safeAppId,
         signature: args.signature,

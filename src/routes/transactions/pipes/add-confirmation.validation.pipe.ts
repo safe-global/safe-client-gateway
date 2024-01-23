@@ -15,7 +15,7 @@ import { AddConfirmationDto } from '@/routes/transactions/entities/add-confirmat
 
 @Injectable()
 export class AddConfirmationDtoValidationPipe
-  implements PipeTransform<any, AddConfirmationDto>
+  implements PipeTransform<unknown, AddConfirmationDto>
 {
   private readonly isValid: ValidateFunction<AddConfirmationDto>;
 
@@ -28,7 +28,7 @@ export class AddConfirmationDtoValidationPipe
       addConfirmationDtoSchema,
     );
   }
-  transform(data: any): AddConfirmationDto {
+  transform(data: unknown): AddConfirmationDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {

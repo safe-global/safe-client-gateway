@@ -10,7 +10,7 @@ export class NetworkResponseError extends Error {
   constructor(
     readonly url: URL,
     readonly response: Response,
-    readonly data?: any,
+    readonly data?: unknown,
   ) {
     super();
   }
@@ -23,7 +23,7 @@ export class NetworkResponseError extends Error {
 export class NetworkRequestError extends Error {
   constructor(
     readonly url: URL | null,
-    readonly data?: any,
+    readonly data?: unknown,
   ) {
     super();
   }

@@ -127,7 +127,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
                 faker.string.alphanumeric(),
                 faker.string.alphanumeric(),
               ])
-              .with('valueDecoded', [1, 2, 3])
+              .with('valueDecoded', [{ one: 1 }, { two: 2 }, { three: 3 }])
               .build(),
           ])
           .build(),
