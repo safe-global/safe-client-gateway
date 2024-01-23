@@ -10,18 +10,35 @@ describe('HttpErrorFactory', () => {
 
   it('should create an HttpException when there is an error with the response', async () => {
     const httpError = new NetworkResponseError(
-      faker.internet.httpStatusCode({ types: ['serverError', 'clientError'] }),
+      new URL(faker.internet.url()),
+      {
+        status: faker.internet.httpStatusCode({
+          types: ['serverError', 'clientError'],
+        }),
+      } as Response,
       { message: faker.word.words() },
     );
 
     const actual = httpErrorFactory.from(httpError);
 
-    expect(actual.code).toBe(httpError.status);
+    expect(actual.code).toBe(httpError.response.status);
     expect(actual.message).toBe(httpError.data.message);
   });
 
+  it('should create an HttpException with 503 status when there is an error with the request URL', async () => {
+    const httpError = new NetworkRequestError(null, undefined);
+
+    const actual = httpErrorFactory.from(httpError);
+
+    expect(actual.code).toBe(503);
+    expect(actual.message).toBe('Service unavailable');
+  });
+
   it('should create an HttpException with 503 status when there is an error with the request', async () => {
-    const httpError = new NetworkRequestError(undefined);
+    const httpError = new NetworkRequestError(
+      new URL(faker.internet.url()),
+      new Error('Failed to fetch'),
+    );
 
     const actual = httpErrorFactory.from(httpError);
 

@@ -25,6 +25,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('List module transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -62,9 +63,13 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    networkService.get.mockRejectedValueOnce({
-      status: 500,
-    });
+    const error = new NetworkResponseError(
+      new URL(
+        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+      ),
+      { status: 500 } as Response,
+    );
+    networkService.get.mockRejectedValueOnce(error);
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
@@ -89,9 +94,13 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       data: chainResponse,
       status: 200,
     });
-    networkService.get.mockRejectedValueOnce({
-      status: 500,
-    });
+    const error = new NetworkResponseError(
+      new URL(
+        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+      ),
+      { status: 500 } as Response,
+    );
+    networkService.get.mockRejectedValueOnce(error);
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
@@ -137,9 +146,13 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       data: chainResponse,
       status: 200,
     });
-    networkService.get.mockRejectedValueOnce({
-      status: 404,
-    });
+    const error = new NetworkResponseError(
+      new URL(
+        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+      ),
+      { status: 404 } as Response,
+    );
+    networkService.get.mockRejectedValueOnce(error);
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)

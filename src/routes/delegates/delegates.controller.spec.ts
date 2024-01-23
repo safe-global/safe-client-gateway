@@ -25,6 +25,7 @@ import { deleteDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/
 import { deleteSafeDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/delete-safe-delegate.dto.builder';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -211,12 +212,17 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/delegates/`;
+      const error = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        {
+          status: 400,
+        } as Response,
+        { message: 'Malformed body', status: 400 },
+      );
       networkService.post.mockImplementation((url) =>
-        url === `${chain.transactionService}/api/v1/delegates/`
-          ? Promise.reject({
-              data: { message: 'Malformed body', status: 400 },
-              status: 400,
-            })
+        url === transactionServiceUrl
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -238,9 +244,13 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/delegates/`;
+      const error = new NetworkResponseError(new URL(transactionServiceUrl), {
+        status: 503,
+      } as Response);
       networkService.post.mockImplementation((url) =>
-        url === `${chain.transactionService}/api/v1/delegates/`
-          ? Promise.reject({ status: 503 })
+        url === transactionServiceUrl
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -287,13 +297,17 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`;
+      const error = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        {
+          status: 400,
+        } as Response,
+        { message: 'Malformed body', status: 400 },
+      );
       networkService.delete.mockImplementation((url) =>
-        url ===
-        `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`
-          ? Promise.reject({
-              data: { message: 'Malformed body', status: 400 },
-              status: 400,
-            })
+        url === transactionServiceUrl
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -317,10 +331,14 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`;
+      const error = new NetworkResponseError(new URL(transactionServiceUrl), {
+        status: 503,
+      } as Response);
       networkService.delete.mockImplementation((url) =>
         url ===
         `${chain.transactionService}/api/v1/delegates/${deleteDelegateDto.delegate}`
-          ? Promise.reject({ status: 503 })
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -382,13 +400,17 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`;
+      const error = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        {
+          status: 400,
+        } as Response,
+        { message: 'Malformed body', status: 400 },
+      );
       networkService.delete.mockImplementation((url) =>
-        url ===
-        `${chain.transactionService}/api/v1/safes/${deleteSafeDelegateDto.safe}/delegates/${deleteSafeDelegateDto.delegate}`
-          ? Promise.reject({
-              data: { message: 'Malformed body', status: 400 },
-              status: 400,
-            })
+        url === transactionServiceUrl
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 

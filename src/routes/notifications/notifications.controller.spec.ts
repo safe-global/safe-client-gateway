@@ -100,7 +100,12 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.number.int({ min: 400, max: 499 }),
+                new URL(
+                  `${faker.internet.url({ appendSlash: false })}/api/v1/notifications/devices`,
+                ),
+                {
+                  status: faker.number.int({ min: 400, max: 499 }),
+                } as Response,
               ),
             )
           : rejectForUrl(url),
@@ -135,7 +140,12 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.number.int({ min: 500, max: 599 }),
+                new URL(
+                  `${faker.internet.url({ appendSlash: false })}/api/v1/notifications/devices`,
+                ),
+                {
+                  status: faker.number.int({ min: 500, max: 599 }),
+                } as Response,
               ),
             )
           : rejectForUrl(url),
@@ -168,7 +178,12 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.number.int({ min: 400, max: 499 }),
+                new URL(
+                  `${faker.internet.url({ appendSlash: false })}/api/v1/notifications/devices`,
+                ),
+                {
+                  status: faker.number.int({ min: 400, max: 499 }),
+                } as Response,
               ),
             )
           : rejectForUrl(url),
@@ -177,7 +192,12 @@ describe('Notifications Controller (Unit)', () => {
         url.includes(`/api/v1/notifications/devices`)
           ? Promise.reject(
               new NetworkResponseError(
-                faker.number.int({ min: 500, max: 599 }),
+                new URL(
+                  `${faker.internet.url({ appendSlash: false })}/api/v1/notifications/devices`,
+                ),
+                {
+                  status: faker.number.int({ min: 500, max: 599 }),
+                } as Response,
               ),
             )
           : rejectForUrl(url),

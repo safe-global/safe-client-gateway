@@ -4,10 +4,7 @@ import { NetworkRequest } from '@/datasources/network/entities/network.request.e
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { FetchClient } from '@/datasources/network/network.module';
-import {
-  NetworkResponseError,
-  NetworkRequestError,
-} from '@/datasources/network/entities/network.error.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client
@@ -33,7 +30,8 @@ export class FetchNetworkService implements INetworkService {
         ...options,
       });
     } catch (error) {
-      this.handleError(error, performance.now() - startTimeMs);
+      this.logErrorResponse(error, performance.now() - startTimeMs);
+      throw error;
     }
   }
 
@@ -54,7 +52,8 @@ export class FetchNetworkService implements INetworkService {
         },
       });
     } catch (error) {
-      this.handleError(error, performance.now() - startTimeMs);
+      this.logErrorResponse(error, performance.now() - startTimeMs);
+      throw error;
     }
   }
 
@@ -71,7 +70,8 @@ export class FetchNetworkService implements INetworkService {
         }),
       });
     } catch (error) {
-      this.handleError(error, performance.now() - startTimeMs);
+      this.logErrorResponse(error, performance.now() - startTimeMs);
+      throw error;
     }
   }
 
@@ -87,21 +87,16 @@ export class FetchNetworkService implements INetworkService {
     return urlObject.toString();
   }
 
-  private handleError(error: any, responseTimeMs: number): never {
-    if (error.response) {
-      this.logErrorResponse(error, responseTimeMs);
-      throw new NetworkResponseError(error.response.status, error.data);
-    } else {
-      throw new NetworkRequestError(error.request);
+  private logErrorResponse(error: unknown, responseTimeMs: number): void {
+    if (!(error instanceof NetworkResponseError)) {
+      return;
     }
-  }
 
-  private logErrorResponse(error: any, responseTimeMs: number): void {
     this.loggingService.debug({
       type: 'external_request',
-      protocol: error.request?.protocol,
-      target_host: error.request?.host,
-      path: error.request?.pathname,
+      protocol: error.url.protocol,
+      target_host: error.url.host,
+      path: error.url.pathname,
       request_status: error.response.status,
       detail: error.response.statusText,
       response_time_ms: responseTimeMs,
