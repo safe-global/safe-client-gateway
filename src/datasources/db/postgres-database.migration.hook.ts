@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import shift from 'postgres-shift';
+import * as shift from 'postgres-shift';
 import postgres from 'postgres';
 
 /**
