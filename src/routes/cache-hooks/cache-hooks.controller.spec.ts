@@ -15,16 +15,19 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
-  let authToken;
-  let safeConfigUrl;
+  let authToken: string;
+  let safeConfigUrl: string;
   let fakeCacheService: FakeCacheService;
-  let networkService;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -143,6 +146,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -166,6 +170,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/1`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', '1').build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -218,6 +223,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -270,6 +276,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -322,6 +329,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -366,6 +374,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -415,6 +424,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -464,6 +474,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -508,6 +519,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -547,6 +559,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -611,6 +624,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -653,6 +667,7 @@ describe('Post Hook Events (Unit)', () => {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
             data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
           });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
