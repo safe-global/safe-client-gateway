@@ -8,7 +8,7 @@ describe('utils tests', () => {
       get: jest.fn(),
       originalUrl: faker.system.filePath(),
       protocol: faker.internet.protocol(),
-    } as unknown as jest.MockedObjectDeep<Request>;
+    } as jest.MockedObjectDeep<Request>;
 
     const requestMock = jest.mocked(request);
 

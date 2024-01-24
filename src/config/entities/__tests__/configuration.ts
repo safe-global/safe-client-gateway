@@ -55,7 +55,6 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     richFragments: true,
     email: true,
-    trustedTokens: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {

@@ -34,7 +34,7 @@ export class UpdateMessageSignatureDtoValidationPipe
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
       if (err instanceof HttpException) {
-        Object.assign(err, { status: HttpStatus.BAD_REQUEST });
+        throw new HttpException(err.getResponse(), HttpStatus.BAD_REQUEST);
       }
       throw err;
     }
