@@ -15,12 +15,13 @@ import { faker } from '@faker-js/faker';
 import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { emailBuilder } from '@/domain/email/entities/__tests__/email.builder';
+import { INestApplication } from '@nestjs/common';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
 describe('Email controller resend verification tests', () => {
-  let app;
-  let emailDatasource;
+  let app: INestApplication;
+  let emailDatasource: jest.MockedObjectDeep<IEmailDataSource>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
