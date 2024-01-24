@@ -33,9 +33,6 @@ describe('asError', () => {
 
     const result = asError(thrown);
     expect(result).toEqual(new Error('test error'));
-
-    // If stringified:
-    expect(result).not.toEqual(new Error('{"message":"test error"}'));
   });
 
   it('should return a new Error instance with the stringified thrown value if thrown is not an instance of Error', () => {
