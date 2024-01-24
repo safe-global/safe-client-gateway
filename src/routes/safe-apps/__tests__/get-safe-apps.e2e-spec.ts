@@ -5,28 +5,34 @@ import * as request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;
   let redisClient: RedisClientType;
   const chainId = '5'; // Görli testnet
+  const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+      imports: [AppModule.register()],
+    })
+      .overrideProvider(CacheKeyPrefix)
+      .useValue(cacheKeyPrefix)
+      .compile();
 
     app = await new TestAppProvider().provide(moduleRef);
     await app.init();
     redisClient = await redisClientFactory();
   });
 
-  beforeEach(async () => {
-    await redisClient.flushAll();
+  afterAll(async () => {
+    await app.close();
+    await redisClient.quit();
   });
 
   it('GET /chains/<chainId>/safe-apps', async () => {
-    const safeAppsCacheKey = `${chainId}_safe_apps`;
+    const safeAppsCacheKey = `${cacheKeyPrefix}-${chainId}_safe_apps`;
     const safeAppsCacheField = 'undefined_undefined';
 
     await request(app.getHttpServer())
@@ -62,7 +68,7 @@ describe('Get Safe Apps e2e test', () => {
   });
 
   it('GET /chains/<chainId>/safe-apps?url=${transactionBuilderUrl}', async () => {
-    const safeAppsCacheKey = `${chainId}_safe_apps`;
+    const safeAppsCacheKey = `${cacheKeyPrefix}-${chainId}_safe_apps`;
     const transactionBuilderUrl = 'https://safe-apps.dev.5afe.dev/tx-builder';
     const safeAppsCacheField = `undefined_${transactionBuilderUrl}`;
 
@@ -95,11 +101,5 @@ describe('Get Safe Apps e2e test', () => {
       safeAppsCacheField,
     );
     expect(cacheContent).not.toBeNull();
-  });
-
-  afterAll(async () => {
-    await app.close();
-    await redisClient.flushAll();
-    await redisClient.quit();
   });
 });

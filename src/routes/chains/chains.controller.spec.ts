@@ -3,8 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule, configurationModule } from '@/app.module';
-import { ConfigurationModule } from '@/config/configuration.module';
+import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -26,6 +25,8 @@ import { Page } from '@/domain/entities/page.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -50,12 +51,12 @@ describe('Chains Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register(configuration)],
     })
+      .overrideModule(EmailDataSourceModule)
+      .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
-      .overrideModule(configurationModule)
-      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -126,8 +127,8 @@ describe('Chains Controller (Unit)', () => {
           ],
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -139,17 +140,17 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure: network service fails', async () => {
-      networkService.get.mockRejectedValueOnce(<NetworkResponseError>{
+      networkService.get.mockRejectedValueOnce({
         status: 500,
-      });
+      } as NetworkResponseError);
 
       await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'An error occurred',
         code: 500,
       });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -174,8 +175,8 @@ describe('Chains Controller (Unit)', () => {
         arguments: [],
       });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains`,
         {
           params: {
@@ -259,7 +260,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect(backboneResponse);
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -282,8 +283,8 @@ describe('Chains Controller (Unit)', () => {
           code: 400,
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
@@ -303,7 +304,7 @@ describe('Chains Controller (Unit)', () => {
           code: 502,
         });
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -325,14 +326,14 @@ describe('Chains Controller (Unit)', () => {
         data: domainMasterCopiesResponse,
       });
       const masterCopiesResponse = [
-        <MasterCopy>{
+        {
           address: domainMasterCopiesResponse[0].address,
           version: domainMasterCopiesResponse[0].version,
-        },
-        <MasterCopy>{
+        } as MasterCopy,
+        {
           address: domainMasterCopiesResponse[1].address,
           version: domainMasterCopiesResponse[1].version,
-        },
+        } as MasterCopy,
       ];
 
       await request(app.getHttpServer())
@@ -340,7 +341,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect(masterCopiesResponse);
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
@@ -363,8 +364,8 @@ describe('Chains Controller (Unit)', () => {
           code: 400,
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/1`,
         undefined,
       );
@@ -384,7 +385,7 @@ describe('Chains Controller (Unit)', () => {
           code: 502,
         });
 
-      expect(networkService.get).toBeCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );

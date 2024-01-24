@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { get } from 'lodash';
 import {
   CacheService,
   ICacheService,
@@ -12,6 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { isObject } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -50,37 +50,12 @@ export class CacheFirstDataSource {
     expireTimeSeconds?: number;
   }): Promise<T> {
     const cached = await this.cacheService.get(args.cacheDir);
-    if (cached != null) {
-      this.loggingService.debug({
-        type: 'cache_hit',
-        key: args.cacheDir.key,
-        field: args.cacheDir.field,
-      });
-      const cachedData = JSON.parse(cached);
-      if (get(cachedData, 'status') === 404) {
-        throw new NetworkResponseError(cachedData.status, cachedData.data);
-      }
-      return cachedData;
-    }
+    if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
+
     try {
-      this.loggingService.debug({
-        type: 'cache_miss',
-        key: args.cacheDir.key,
-        field: args.cacheDir.field,
-      });
-      const { data } = await this.networkService.get(
-        args.url,
-        args.networkRequest,
-      );
-      const rawJson = JSON.stringify(data);
-      await this.cacheService.set(
-        args.cacheDir,
-        rawJson,
-        args.expireTimeSeconds,
-      );
-      return data;
+      return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
-      if (get(error, 'status') === 404) {
+      if (isObject(error) && 'status' in error && error.status === 404) {
         await this.cacheNotFoundError(
           args.cacheDir,
           new NetworkResponseError(error.status, error),
@@ -89,6 +64,78 @@ export class CacheFirstDataSource {
       }
       throw error;
     }
+  }
+
+  /**
+   * Gets the data from the contents stored in the cache.
+   */
+  private _getFromCachedData<T>(
+    { key, field }: CacheDir,
+    cached: string,
+  ): Promise<T> {
+    this.loggingService.debug({ type: 'cache_hit', key, field });
+    const cachedData = JSON.parse(cached);
+    if (cachedData?.status === 404) {
+      throw new NetworkResponseError(cachedData.status, cachedData.data);
+    }
+    return cachedData;
+  }
+
+  /**
+   * Gets the data from the network and caches the result.
+   */
+  private async _getFromNetworkAndWriteCache<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+  }): Promise<T> {
+    const { key, field } = args.cacheDir;
+    this.loggingService.debug({ type: 'cache_miss', key, field });
+    const startTimeMs = Date.now();
+    const { data } = await this.networkService.get(
+      args.url,
+      args.networkRequest,
+    );
+
+    const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
+    if (shouldBeCached) {
+      await this.cacheService.set(
+        args.cacheDir,
+        JSON.stringify(data),
+        args.expireTimeSeconds,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Validates that the request is more recent than the last invalidation recorded for the item,
+   * preventing a race condition where outdated data is stored due to the request being initiated
+   * before the source communicated a change (via webhook or by other means).
+   *
+   * Returns true if (any of the following):
+   * 1. An invalidationTimeMs entry for the key received as param is *not* found in the cache.
+   * 2. An entry *is* found and contains an integer that is less than the received startTimeMs param.
+   *
+   * @param key key part of the {@link CacheDir} holding the requested item
+   * @param startTimeMs Unix epoch timestamp in ms when the request was initiated
+   * @returns true if any of the above conditions is met
+   */
+  private async _shouldBeCached(
+    key: string,
+    startTimeMs: number,
+  ): Promise<boolean> {
+    const invalidationTimeMsStr = await this.cacheService.get(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+    );
+
+    if (!invalidationTimeMsStr) return true;
+
+    const invalidationTimeMs = Number(invalidationTimeMsStr);
+    return (
+      Number.isInteger(invalidationTimeMs) && invalidationTimeMs < startTimeMs
+    );
   }
 
   /**

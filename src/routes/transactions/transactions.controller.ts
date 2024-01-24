@@ -49,7 +49,10 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @Param('id') id: string,
   ): Promise<TransactionDetails> {
-    return this.transactionsService.getById({ chainId, txId: id });
+    return this.transactionsService.getById({
+      chainId,
+      txId: id,
+    });
   }
 
   @ApiOkResponse({ type: MultisigTransactionPage })
@@ -178,15 +181,12 @@ export class TransactionsController {
   @ApiOkResponse({ type: QueuedItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
   @ApiQuery({ name: 'cursor', required: false, type: String })
-  @ApiQuery({ name: 'timezone_offset', required: false, type: String })
   @ApiQuery({ name: 'trusted', required: false, type: Boolean })
   async getTransactionQueue(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
-    timezoneOffset: number,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
@@ -196,7 +196,6 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       trusted,
-      timezoneOffset,
     });
   }
 
@@ -210,14 +209,17 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
-    timezoneOffset: number,
+    timezoneOffsetMs: number,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
-      timezoneOffset,
+      timezoneOffsetMs,
+      onlyTrusted: trusted,
     });
   }
 

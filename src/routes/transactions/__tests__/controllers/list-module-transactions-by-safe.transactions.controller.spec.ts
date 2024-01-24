@@ -12,15 +12,16 @@ import {
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { AppModule, configurationModule } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('List module transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -31,12 +32,12 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register(configuration)],
     })
+      .overrideModule(EmailDataSourceModule)
+      .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
-      .overrideModule(configurationModule)
-      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -70,8 +71,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(1);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(1);
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -94,8 +95,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 500,
       });
 
-    expect(networkService.get).toBeCalledTimes(2);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(2);
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -138,8 +139,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
         code: 404,
       });
 
-    expect(networkService.get).toBeCalledTimes(2);
-    expect(networkService.get).toBeCalledWith(
+    expect(networkService.get).toHaveBeenCalledTimes(2);
+    expect(networkService.get).toHaveBeenCalledWith(
       `${safeConfigUrl}/api/v1/chains/${chainId}`,
       undefined,
     );
@@ -149,13 +150,15 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
+    const moduleTransaction1 = moduleTransactionBuilder().build();
+    const moduleTransaction2 = moduleTransactionBuilder().build();
     const moduleTransaction = {
       count: 2,
       next: null,
       previous: null,
       results: [
-        moduleTransactionToJson(moduleTransactionBuilder().build()),
-        moduleTransactionToJson(moduleTransactionBuilder().build()),
+        moduleTransactionToJson(moduleTransaction1),
+        moduleTransactionToJson(moduleTransaction2),
       ],
     };
 
@@ -166,6 +169,49 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
-      .expect(200);
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toMatchObject({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `module_${moduleTransaction1.safe}_${moduleTransaction1.moduleTransactionId}`,
+                safeAppInfo: null,
+                timestamp: moduleTransaction1.executionDate.getTime(),
+                txStatus: expect.any(String),
+                txInfo: {
+                  type: expect.any(String),
+                },
+                executionInfo: {
+                  type: 'MODULE',
+                  address: { value: moduleTransaction1.module },
+                },
+              },
+              conflictType: 'None',
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `module_${moduleTransaction2.safe}_${moduleTransaction2.moduleTransactionId}`,
+                safeAppInfo: null,
+                timestamp: moduleTransaction2.executionDate.getTime(),
+                txStatus: expect.any(String),
+                txInfo: {
+                  type: expect.any(String),
+                },
+                executionInfo: {
+                  type: 'MODULE',
+                  address: { value: moduleTransaction2.module },
+                },
+              },
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
   });
 });

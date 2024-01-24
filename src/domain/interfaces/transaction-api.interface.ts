@@ -1,6 +1,5 @@
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { SimpleBalance } from '@/domain/balances/entities/simple-balance.entity';
 import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
@@ -28,12 +27,6 @@ export interface ITransactionApi {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]>;
-
-  getSimpleBalances(args: {
-    safeAddress: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<SimpleBalance[]>;
 
   clearLocalBalances(safeAddress: string): Promise<void>;
 
@@ -117,6 +110,8 @@ export interface ITransactionApi {
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
   }): Promise<unknown>;
+
+  getSafesByModule(moduleAddress: string): Promise<SafeList>;
 
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 

@@ -7,14 +7,15 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { AppModule, configurationModule } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
+import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -25,12 +26,12 @@ describe('Owners Controller (Unit)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register(configuration)],
     })
+      .overrideModule(EmailDataSourceModule)
+      .useModule(TestEmailDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
-      .overrideModule(configurationModule)
-      .useModule(ConfigurationModule.register(configuration))
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -87,8 +88,8 @@ describe('Owners Controller (Unit)', () => {
           code: 500,
         });
 
-      expect(networkService.get).toBeCalledTimes(1);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/${chainId}`,
         undefined,
       );
@@ -111,12 +112,12 @@ describe('Owners Controller (Unit)', () => {
           code: 500,
         });
 
-      expect(networkService.get).toBeCalledTimes(2);
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledTimes(2);
+      expect(networkService.get).toHaveBeenCalledWith(
         `${safeConfigUrl}/api/v1/chains/${chainId}`,
         undefined,
       );
-      expect(networkService.get).toBeCalledWith(
+      expect(networkService.get).toHaveBeenCalledWith(
         `${chainResponse.transactionService}/api/v1/owners/${ownerAddress}/safes/`,
         undefined,
       );
