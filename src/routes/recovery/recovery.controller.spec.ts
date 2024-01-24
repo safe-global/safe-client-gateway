@@ -20,6 +20,7 @@ import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -102,14 +103,23 @@ describe('Recovery (Unit)', () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+        ),
+        {
+          status: 400,
+        } as Response,
+        {
+          message: 'Malformed body',
+          status: 400,
+        },
+      );
 
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({
-              data: { message: 'Malformed body', status: 400 },
-              status: 400,
-            })
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -130,11 +140,19 @@ describe('Recovery (Unit)', () => {
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+        ),
+        {
+          status: statusCode,
+        } as Response,
+      );
 
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({ status: statusCode })
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 

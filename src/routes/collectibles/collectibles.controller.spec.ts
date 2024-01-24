@@ -198,14 +198,19 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionServiceError = new NetworkResponseError(400, {
-        message: 'some collectibles error',
-      });
+      const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
+      const transactionServiceError = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        { status: 400 } as Response,
+        {
+          message: 'some collectibles error',
+        },
+      );
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
-          case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
+          case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -214,9 +219,9 @@ describe('Collectibles Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
-        .expect(transactionServiceError.status)
+        .expect(transactionServiceError.response.status)
         .expect({
-          code: transactionServiceError.status,
+          code: transactionServiceError.response.status,
           message: transactionServiceError.data.message,
         });
     });
@@ -225,12 +230,15 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionServiceError = new NetworkRequestError({});
+      const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
+      const transactionServiceError = new NetworkRequestError(
+        new URL(transactionServiceUrl),
+      );
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
-          case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
+          case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
           default:
             return Promise.reject(new Error(`Could not match ${url}`));

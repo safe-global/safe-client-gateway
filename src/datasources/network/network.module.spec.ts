@@ -4,15 +4,28 @@ import { ClsModule } from 'nestjs-cls';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
-import { NetworkModule } from '@/datasources/network/network.module';
+import {
+  FetchClient,
+  NetworkModule,
+} from '@/datasources/network/network.module';
 import { faker } from '@faker-js/faker';
+import { INestApplication } from '@nestjs/common';
+import {
+  NetworkRequestError,
+  NetworkResponseError,
+} from '@/datasources/network/entities/network.error.entity';
+import { fakeJson } from '@/__tests__/faker';
 
 describe('NetworkModule', () => {
-  it(`fetch client is created with timeout and is kept alive`, async () => {
-    // fetch response is not mocked but we are only concerned with RequestInit options
-    const fetchMock = jest.fn();
-    jest.spyOn(global, 'fetch').mockImplementationOnce(fetchMock);
+  let app: INestApplication;
+  let fetchClient: FetchClient;
+  let httpClientTimeout: number;
 
+  // fetch response is not mocked but we are only concerned with RequestInit options
+  const fetchMock = jest.fn();
+  jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
+
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         NetworkModule,
@@ -23,14 +36,24 @@ describe('NetworkModule', () => {
         ConfigurationModule.register(configuration),
       ],
     }).compile();
-    const app = moduleFixture.createNestApplication();
-    const fetchClient = moduleFixture.get('FetchClient');
-    const configurationService = moduleFixture.get(IConfigurationService);
-    const httpClientTimeout = configurationService.get(
-      'httpClient.requestTimeout',
-    );
-    await app.init();
 
+    const configurationService = moduleFixture.get(IConfigurationService);
+    fetchClient = moduleFixture.get('FetchClient');
+    httpClientTimeout = configurationService.get('httpClient.requestTimeout');
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it(`fetch client is created with timeout and is kept alive`, async () => {
     const url = faker.internet.url({ appendSlash: false });
 
     await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
@@ -41,7 +64,44 @@ describe('NetworkModule', () => {
       signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
       keepalive: true,
     });
+  });
 
-    await app.close();
+  it('throws NetworkRequestError when URL is malformed', async () => {
+    // Malformed URL will throw so we need not mock fetch
+    await expect(
+      fetchClient('malformedUrl', { method: 'GET' }),
+    ).rejects.toThrow(new NetworkRequestError(null, expect.any(Error)));
+
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('throws NetworkRequestError when fetch fails', async () => {
+    const error = new Error('Fetch failed');
+    fetchMock.mockRejectedValue(error);
+
+    const url = faker.internet.url({ appendSlash: false });
+
+    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+      new NetworkRequestError(new URL(url), error),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws NetworkResponseError when response is not OK', async () => {
+    const json = fakeJson();
+    const response = {
+      ok: false,
+      json: () => Promise.resolve(json),
+    } as Response;
+    fetchMock.mockResolvedValue(response);
+
+    const url = faker.internet.url({ appendSlash: false });
+
+    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+      new NetworkResponseError(new URL(url), response, json),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
