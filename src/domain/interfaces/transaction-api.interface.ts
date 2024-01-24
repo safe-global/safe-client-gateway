@@ -129,6 +129,11 @@ export interface ITransactionApi {
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
 
+  deleteTransaction(args: {
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void>;
+
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 
   getMultisigTransactions(args: {

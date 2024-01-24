@@ -589,6 +589,20 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async deleteTransaction(args: {
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/transactions/${args.safeTxHash}`;
+      await this.networkService.delete(url, {
+        signature: args.signature,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async clearMultisigTransaction(safeTransactionHash: string): Promise<void> {
     const key = CacheRouter.getMultisigTransactionCacheKey({
       chainId: this.chainId,
