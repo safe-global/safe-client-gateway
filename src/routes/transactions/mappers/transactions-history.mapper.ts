@@ -37,7 +37,6 @@ class TransactionDomainGroup {
 @Injectable()
 export class TransactionsHistoryMapper {
   private readonly maxNestedTransfers: number;
-  private readonly isTrustedTokensEnabled: boolean;
 
   constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
@@ -48,9 +47,6 @@ export class TransactionsHistoryMapper {
   ) {
     this.maxNestedTransfers = configurationService.getOrThrow(
       'mappings.history.maxNestedTransfers',
-    );
-    this.isTrustedTokensEnabled = configurationService.getOrThrow(
-      'features.trustedTokens',
     );
   }
 
@@ -205,11 +201,9 @@ export class TransactionsHistoryMapper {
       // If we do not have a transfer with value, we do not add it to the result
       if (!transferWithValue) continue;
 
-      // TODO remove isTrustedTokensEnabled when feature is considered stable
-      const trustedTransfer =
-        this.isTrustedTokensEnabled && onlyTrusted
-          ? this.mapTrustedTransfer(transferWithValue)
-          : transferWithValue;
+      const trustedTransfer = onlyTrusted
+        ? this.mapTrustedTransfer(transferWithValue)
+        : transferWithValue;
 
       if (!trustedTransfer) continue;
       result.push(new TransactionItem(nestedTransaction));

@@ -72,7 +72,6 @@ export default () => ({
   features: {
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
-    trustedTokens: process.env.FF_TRUSTED_TOKENS?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
