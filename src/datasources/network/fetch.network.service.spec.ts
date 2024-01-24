@@ -62,6 +62,33 @@ describe('FetchNetworkService', () => {
       );
     });
 
+    it(`get should remove empty strings, null and undefined query params from the request`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const request: NetworkRequest = {
+        params: {
+          boolean: true,
+          falsy_boolean: false,
+          integer: 1,
+          falsy_integer: 0,
+          string: 'string',
+          // These should be removed
+          falsy_string: '',
+          null: null,
+          undefined: undefined,
+        },
+      };
+
+      await target.get(url, request);
+
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        `${url}/?boolean=true&falsy_boolean=false&integer=1&falsy_integer=0&string=string`,
+        {
+          method: 'GET',
+        },
+      );
+    });
+
     it(`get forwards response error as NetworkResponseError`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const error = {
