@@ -64,7 +64,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chainId}/transactions/${safeTxHash}`)
       .send(invalidDeleteTransactionDto)
-      .expect(500)
+      .expect(400)
       .expect({
         message: 'Validation failed',
         code: 42,
