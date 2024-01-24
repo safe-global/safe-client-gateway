@@ -5,14 +5,9 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { faker } from '@faker-js/faker';
 
 describe('NetworkModule', () => {
-  it(`fetch client is created with timeout and is kept alive`, async () => {
-    // fetch response is not mocked but we are only concerned with RequestInit options
-    const fetchMock = jest.fn();
-    jest.spyOn(global, 'fetch').mockImplementationOnce(fetchMock);
-
+  it(`axios client is created with timeout`, async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         NetworkModule,
@@ -24,23 +19,14 @@ describe('NetworkModule', () => {
       ],
     }).compile();
     const app = moduleFixture.createNestApplication();
-    const fetchClient = moduleFixture.get('FetchClient');
+    const axios = moduleFixture.get('AxiosClient');
     const configurationService = moduleFixture.get(IConfigurationService);
     const httpClientTimeout = configurationService.get(
       'httpClient.requestTimeout',
     );
     await app.init();
 
-    const url = faker.internet.url({ appendSlash: false });
-
-    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(url, {
-      method: 'GET',
-      signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
-      keepalive: true,
-    });
+    expect(axios.defaults.timeout).toBe(httpClientTimeout);
 
     await app.close();
   });

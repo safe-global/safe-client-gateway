@@ -135,10 +135,7 @@ describe('CoingeckoAPI', () => {
       [tokenAddress]: { [fiatCode]: price },
     };
     mockCacheService.get.mockResolvedValue(undefined);
-    mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
-      status: 200,
-    });
+    mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrice = await service.getTokenPrices({
       chainName,
@@ -183,10 +180,7 @@ describe('CoingeckoAPI', () => {
       [tokenAddress]: { [fiatCode]: price },
     };
     mockCacheService.get.mockResolvedValue(undefined);
-    mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
-      status: 200,
-    });
+    mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
@@ -240,10 +234,7 @@ describe('CoingeckoAPI', () => {
       [thirdTokenAddress]: { [fiatCode]: thirdPrice },
     };
     mockCacheService.get.mockResolvedValue(undefined);
-    mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
-      status: 200,
-    });
+    mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrice = await service.getTokenPrices({
       chainName,
@@ -340,10 +331,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({ [secondTokenAddress]: { [fiatCode]: secondPrice } }),
     );
     mockCacheService.get.mockResolvedValueOnce(undefined);
-    mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
-      status: 200,
-    });
+    mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrices = await service.getTokenPrices({
       chainName,
@@ -435,10 +423,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({ [secondTokenAddress]: { [fiatCode]: secondPrice } }),
     );
     mockCacheService.get.mockResolvedValueOnce(undefined);
-    mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
-      status: 200,
-    });
+    mockNetworkService.get.mockResolvedValue({ data: coingeckoPrice });
 
     const assetPrices = await service.getTokenPrices({
       chainName,

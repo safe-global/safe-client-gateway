@@ -48,7 +48,7 @@ describe('CacheFirstDataSource', () => {
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
-          return Promise.resolve({ data, status: 200 });
+          return Promise.resolve({ data });
         default:
           return Promise.reject(`No matching rule for url: ${url}`);
       }
@@ -81,7 +81,7 @@ describe('CacheFirstDataSource', () => {
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
-          return Promise.resolve({ data, status: 200 });
+          return Promise.resolve({ data });
         default:
           return Promise.reject(`No matching rule for url: ${url}`);
       }
@@ -113,7 +113,7 @@ describe('CacheFirstDataSource', () => {
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
-          return Promise.resolve({ data, status: 200 });
+          return Promise.resolve({ data });
         default:
           return Promise.reject(`No matching rule for url: ${url}`);
       }

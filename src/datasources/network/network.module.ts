@@ -1,65 +1,24 @@
 import { Global, Module } from '@nestjs/common';
+import axios, { Axios } from 'axios';
+import * as http from 'http';
+import * as https from 'https';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
+import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
-
-export type FetchClient = <T>(
-  url: string,
-  options: RequestInit,
-) => Promise<NetworkResponse<T>>;
 
 /**
- * Use this factory to create a {@link FetchClient} instance
- * that can be used to make HTTP requests.
+ * Use this factory to add any default parameter to the
+ * {@link Axios} instance
  */
-function fetchClientFactory(
-  configurationService: IConfigurationService,
-): FetchClient {
+function axiosFactory(configurationService: IConfigurationService): Axios {
   const requestTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
-
-  // TODO: Adjust structure of NetworkRequestError/NetworkResponseError and throw here
-  return async <T>(
-    url: string,
-    options: RequestInit,
-  ): Promise<NetworkResponse<T>> => {
-    let request: URL | null = null;
-    let response: Response | null = null;
-
-    try {
-      request = new URL(url);
-      response = await fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(requestTimeout),
-        keepalive: true,
-      });
-    } catch (error) {
-      // NetworkRequestError
-      throw {
-        request,
-        data: error,
-      };
-    }
-
-    // We validate data so don't need worry about casting `null` response
-    const data = (await response.json().catch(() => null)) as T;
-
-    if (!response.ok) {
-      // NetworkResponseError
-      throw {
-        request,
-        response,
-        data,
-      };
-    }
-
-    return {
-      status: response.status,
-      data,
-    };
-  };
+  return axios.create({
+    timeout: requestTimeout,
+    httpAgent: new http.Agent({ keepAlive: true }),
+    httpsAgent: new https.Agent({ keepAlive: true }),
+  });
 }
 
 /**
@@ -73,11 +32,11 @@ function fetchClientFactory(
 @Module({
   providers: [
     {
-      provide: 'FetchClient',
-      useFactory: fetchClientFactory,
+      provide: 'AxiosClient',
+      useFactory: axiosFactory,
       inject: [IConfigurationService],
     },
-    { provide: NetworkService, useClass: FetchNetworkService },
+    { provide: NetworkService, useClass: AxiosNetworkService },
   ],
   exports: [NetworkService],
 })
