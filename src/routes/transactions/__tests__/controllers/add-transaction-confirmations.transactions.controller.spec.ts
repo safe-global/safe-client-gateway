@@ -23,16 +23,13 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entities/add-confirmation.dto.builder';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -102,23 +99,23 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: chain });
         case getMultisigTransactionUrl:
-          return Promise.resolve({ data: transaction, status: 200 });
+          return Promise.resolve({ data: transaction });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: rejectionTxsPage, status: 200 });
+          return Promise.resolve({ data: rejectionTxsPage });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: safe });
         case getSafeAppsUrl:
-          return Promise.resolve({ data: safeApps, status: 200 });
+          return Promise.resolve({ data: safeApps });
         case getGasTokenContractUrl:
-          return Promise.resolve({ data: gasToken, status: 200 });
+          return Promise.resolve({ data: gasToken });
         case getToContractUrl:
-          return Promise.resolve({ data: contract, status: 200 });
+          return Promise.resolve({ data: contract });
         case getToTokenUrl:
-          return Promise.resolve({ data: token, status: 200 });
+          return Promise.resolve({ data: token });
         case getSafeAppsUrl:
-          return Promise.resolve({ data: safeAppsResponse, status: 200 });
+          return Promise.resolve({ data: safeAppsResponse });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -127,7 +124,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       switch (url) {
         case postConfirmationUrl:
-          return Promise.resolve({ data: {}, status: 200 });
+          return Promise.resolve();
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

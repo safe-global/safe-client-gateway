@@ -87,7 +87,7 @@ export class FetchNetworkService implements INetworkService {
     return urlObject.toString();
   }
 
-  private handleError(error: any, responseTimeMs: number): never {
+  private handleError(error, responseTimeMs: number): never {
     if (error.response) {
       this.logErrorResponse(error, responseTimeMs);
       throw new NetworkResponseError(error.response.status, error.data);
@@ -96,7 +96,7 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  private logErrorResponse(error: any, responseTimeMs: number): void {
+  private logErrorResponse(error, responseTimeMs: number): void {
     this.loggingService.debug({
       type: 'external_request',
       protocol: error.request?.protocol,

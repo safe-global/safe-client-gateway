@@ -2,13 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/configuration';
-import {
-  Controller,
-  HttpCode,
-  INestApplication,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
@@ -25,7 +19,7 @@ class TestController {
 }
 
 describe('TimestampGuard tests', () => {
-  let app: INestApplication;
+  let app;
 
   beforeEach(async () => {
     jest.useFakeTimers();

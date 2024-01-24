@@ -37,6 +37,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
+import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
@@ -46,7 +47,7 @@ export class AppModule implements NestModule {
   // Important: values read via the config factory do not take the .env file
   // into account. The .env file loading is done by the ConfigurationModule
   // which is not available at this stage.
-  static register(configFactory = configuration): DynamicModule {
+  static register(configFactory: ConfigFactory = configuration): DynamicModule {
     const isEmailFeatureEnabled = configFactory()['features']['email'];
 
     return {

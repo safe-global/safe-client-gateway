@@ -22,17 +22,14 @@ import { ValidationModule } from '@/validation/validation.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { previewTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/preview-transaction.dto.builder';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -90,20 +87,20 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: chainResponse });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse, status: 200 });
+        return Promise.resolve({ data: safeResponse });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse, status: 200 });
+        return Promise.resolve({ data: contractResponse });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
-        return Promise.resolve({ data: dataDecodedResponse, status: 200 });
+        return Promise.resolve({ data: dataDecodedResponse });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -157,10 +154,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: chainResponse });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse, status: 200 });
+        return Promise.resolve({ data: safeResponse });
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.reject({ status: 404 });
@@ -170,7 +167,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
-        return Promise.resolve({ data: dataDecodedResponse, status: 200 });
+        return Promise.resolve({ data: dataDecodedResponse });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -223,10 +220,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: chainResponse });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse, status: 200 });
+        return Promise.resolve({ data: safeResponse });
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.reject({ status: 404 });
@@ -304,20 +301,20 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: chainResponse });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse, status: 200 });
+        return Promise.resolve({ data: safeResponse });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse, status: 200 });
+        return Promise.resolve({ data: contractResponse });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation((url) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
-        return Promise.resolve({ data: dataDecodedResponse, status: 200 });
+        return Promise.resolve({ data: dataDecodedResponse });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
