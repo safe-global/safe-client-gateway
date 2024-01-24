@@ -198,9 +198,9 @@ export class TransactionsHistoryMapper {
     return nestedTransactions
       .filter((nestedTransaction) => {
         // If we do not have a transfer with value, we do not add it to the result
-        if (!this.transferHasValue(nestedTransaction)) return false;
+        if (!this.mapZeroValueTransfer(nestedTransaction)) return false;
 
-        return !onlyTrusted || this.isTrustedTransfer(nestedTransaction);
+        return !onlyTrusted || this.mapTrustedTransfer(nestedTransaction);
       })
       .map((nestedTransaction) => new TransactionItem(nestedTransaction));
   }
@@ -211,18 +211,25 @@ export class TransactionsHistoryMapper {
    *
    * @private
    */
-  private transferHasValue(transaction: Transaction): boolean {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
+  private mapZeroValueTransfer(transaction: Transaction): Transaction | null {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
 
-    return transaction.txInfo.transferInfo.value !== '0';
+    if (transaction.txInfo.transferInfo.value === '0') return null;
+    return transaction;
   }
 
-  private isTrustedTransfer(transaction: Transaction): boolean {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
+  private mapTrustedTransfer(transaction: Transaction): Transaction | null {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
 
-    return !!transaction.txInfo.transferInfo.trusted;
+    // If we have successfully retrieved the token information, and it is a
+    // trusted token, return it. Else return null
+    if (transaction.txInfo.transferInfo.trusted) {
+      return transaction;
+    } else {
+      return null;
+    }
   }
 
   private mapGroupTransactions(
