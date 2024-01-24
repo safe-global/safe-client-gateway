@@ -31,7 +31,6 @@ import { MessageStatus } from '@/routes/messages/entities/message.entity';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Messages controller', () => {
   let app: INestApplication;
@@ -778,15 +777,13 @@ describe('Messages controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      const transactionServiceUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`;
-      const error = new NetworkResponseError(
-        new URL(transactionServiceUrl),
-        { status: 400 } as Response,
-        { message: errorMessage },
-      );
       networkService.post.mockImplementation((url) =>
-        url === transactionServiceUrl
-          ? Promise.reject(error)
+        url ===
+        `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
+          ? Promise.reject({
+              status: 400,
+              data: { message: errorMessage },
+            })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -862,17 +859,13 @@ describe('Messages controller', () => {
           ? Promise.resolve({ data: chain, status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      const transactionServiceUrl = `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`;
-      const error = new NetworkResponseError(
-        new URL(transactionServiceUrl),
-        {
-          status: 400,
-        } as Response,
-        { message: errorMessage },
-      );
       networkService.post.mockImplementation((url) =>
-        url === transactionServiceUrl
-          ? Promise.reject(error)
+        url ===
+        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
+          ? Promise.reject({
+              status: 400,
+              data: { message: errorMessage },
+            })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 

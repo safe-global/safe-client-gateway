@@ -38,7 +38,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -78,10 +77,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
     networkService.get.mockImplementation((url) => {
       if (url === getChainUrl) {
-        const error = new NetworkResponseError(new URL(getChainUrl), {
-          status: 500,
-        } as Response);
-        return Promise.reject(error);
+        return Promise.reject({ status: 500 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -109,13 +105,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getChainUrl:
           return Promise.resolve({ data: chain, status: 200 });
         case getModuleTransactionUrl:
-          const error = new NetworkResponseError(
-            new URL(getModuleTransactionUrl),
-            {
-              status: 500,
-            } as Response,
-          );
-          return Promise.reject(error);
+          return Promise.reject({ status: 500 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -154,13 +144,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getSafeUrl:
           return Promise.resolve({ data: safe, status: 200 });
         case getModuleTransactionUrl:
-          const error = new NetworkResponseError(
-            new URL(getModuleTransactionUrl),
-            {
-              status: 404,
-            } as Response,
-          );
-          return Promise.reject(error);
+          return Promise.reject({ status: 404 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -273,12 +257,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
           return Promise.resolve({ data: safe, status: 200 });
-        case getTransferUrl: {
-          const error = new NetworkResponseError(new URL(getTransferUrl), {
-            status: 404,
-          } as Response);
-          return Promise.reject(error);
-        }
+        case getTransferUrl:
+          return Promise.reject({ status: 404 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -373,15 +353,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
           return Promise.resolve({ data: safe, status: 200 });
-        case getMultisigTransactionUrl: {
-          const error = new NetworkResponseError(
-            new URL(getMultisigTransactionUrl),
-            {
-              status: 404,
-            } as Response,
-          );
-          return Promise.reject(error);
-        }
+        case getMultisigTransactionUrl:
+          return Promise.reject({ status: 404 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

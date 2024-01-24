@@ -58,7 +58,6 @@ import {
   toJson as erc721TransferToJson,
 } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -108,10 +107,7 @@ describe('Transactions History Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       if (url === getChainUrl) {
-        const error = new NetworkResponseError(new URL(getChainUrl), {
-          status: 500,
-        } as Response);
-        return Promise.reject(error);
+        return Promise.reject({ status: 500 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -136,10 +132,7 @@ describe('Transactions History Controller (Unit)', () => {
         return Promise.resolve({ data: chainResponse, status: 200 });
       }
       if (url === getAllTransactions) {
-        const error = new NetworkResponseError(new URL(getAllTransactions), {
-          status: 500,
-        } as Response);
-        return Promise.reject(error);
+        return Promise.reject({ status: 500 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -663,14 +656,10 @@ describe('Transactions History Controller (Unit)', () => {
         });
       }
       if (url.includes(getContractUrl)) {
-        const error = new NetworkResponseError(
-          new URL(getContractUrl),
-          {
-            status: 404,
-          } as Response,
-          { detail: 'Not found' },
-        );
-        return Promise.reject(error);
+        return Promise.reject({
+          detail: 'Not found',
+          status: 404,
+        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });

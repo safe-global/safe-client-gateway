@@ -154,9 +154,7 @@ describe('CacheFirstDataSource', () => {
   it('should cache 404 errors coming from the network', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const expectedError = new NetworkResponseError(new URL(targetUrl), {
-      status: 404,
-    } as Response);
+    const expectedError = new NetworkResponseError(404);
     const notFoundExpireTimeSeconds = faker.number.int();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -183,9 +181,7 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
-    const expectedError = new NetworkResponseError(new URL(targetUrl), {
-      status: 404,
-    } as Response);
+    const expectedError = new NetworkResponseError(404);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -231,9 +227,7 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
-    const expectedError = new NetworkResponseError(new URL(targetUrl), {
-      status: 404,
-    } as Response);
+    const expectedError = new NetworkResponseError(404);
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -274,9 +268,7 @@ describe('CacheFirstDataSource', () => {
 
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const expectedError = new NetworkResponseError(new URL(targetUrl), {
-      status: 404,
-    } as Response);
+    const expectedError = new NetworkResponseError(404);
     const notFoundExpireTimeSeconds = faker.number.int();
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {

@@ -3,10 +3,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
-import {
-  NetworkRequestError,
-  NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
 
 export type FetchClient = <T>(
   url: string,
@@ -24,29 +20,39 @@ function fetchClientFactory(
     'httpClient.requestTimeout',
   );
 
+  // TODO: Adjust structure of NetworkRequestError/NetworkResponseError and throw here
   return async <T>(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
-    let urlObject: URL | null = null;
+    let request: URL | null = null;
     let response: Response | null = null;
 
     try {
-      urlObject = new URL(url);
+      request = new URL(url);
       response = await fetch(url, {
         ...options,
         signal: AbortSignal.timeout(requestTimeout),
         keepalive: true,
       });
     } catch (error) {
-      throw new NetworkRequestError(urlObject, error);
+      // NetworkRequestError
+      throw {
+        request,
+        data: error,
+      };
     }
 
     // We validate data so don't need worry about casting `null` response
     const data = (await response.json().catch(() => null)) as T;
 
     if (!response.ok) {
-      throw new NetworkResponseError(urlObject, response, data);
+      // NetworkResponseError
+      throw {
+        request,
+        response,
+        data,
+      };
     }
 
     return {

@@ -19,7 +19,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -84,15 +83,9 @@ describe('Owners Controller (Unit)', () => {
     it('Failure: Config API fails', async () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
-      const error = new NetworkResponseError(
-        new URL(
-          `${safeConfigUrl}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
-        ),
-        {
-          status: 500,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 500,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
@@ -117,15 +110,9 @@ describe('Owners Controller (Unit)', () => {
         data: chainResponse,
         status: 200,
       });
-      const error = new NetworkResponseError(
-        new URL(
-          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
-        ),
-        {
-          status: 500,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 500,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)

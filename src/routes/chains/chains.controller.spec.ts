@@ -146,13 +146,9 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure: network service fails', async () => {
-      const error = new NetworkResponseError(
-        new URL(`${safeConfigUrl}/v1/chains`),
-        {
-          status: 500,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 500,
+      } as NetworkResponseError);
 
       await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'An error occurred',
@@ -234,14 +230,10 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/v1/chains`),
-        {
-          status: 404,
-        } as Response,
-        { message: 'Not Found' },
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        data: { message: 'Not Found', status: 404 },
+        status: 404,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
@@ -254,13 +246,9 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/v1/chains`),
-        {
-          status: 503,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 503,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
@@ -299,13 +287,9 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure getting the chain', async () => {
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/v1/chains`),
-        {
-          status: 400,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 400,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
@@ -323,17 +307,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure getting the backbone data', async () => {
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/api/v1/about`),
-        {
-          status: 502,
-        } as Response,
-      );
       networkService.get.mockResolvedValueOnce({
         data: chainResponse,
         status: 200,
       });
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 502,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
@@ -395,13 +375,9 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure getting the chain', async () => {
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/api/v1/chains/1`),
-        {
-          status: 400,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 400,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
@@ -419,19 +395,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should fail getting the master-copies data', async () => {
-      const error = new NetworkResponseError(
-        new URL(
-          `${chainResponse.transactionService}/api/v1/about/master-copies/`,
-        ),
-        {
-          status: 502,
-        } as Response,
-      );
       networkService.get.mockResolvedValueOnce({
         data: chainResponse,
         status: 200,
       });
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 502,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
@@ -498,14 +468,10 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/v1/chains`),
-        {
-          status: 404,
-        } as Response,
-        { message: 'Not Found' },
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        data: { message: 'Not Found', status: 404 },
+        status: 404,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/about`)
@@ -518,13 +484,9 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
-      const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/v1/chains`),
-        {
-          status: 503,
-        } as Response,
-      );
-      networkService.get.mockRejectedValueOnce(error);
+      networkService.get.mockRejectedValueOnce({
+        status: 503,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/about`)
