@@ -1,4 +1,10 @@
-import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  INestApplication,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
@@ -25,7 +31,7 @@ class TestController {
 }
 
 describe('GlobalErrorFilter tests', () => {
-  let app;
+  let app: INestApplication;
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestLoggingModule, ConfigurationModule.register(configuration)],

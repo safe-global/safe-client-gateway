@@ -6,7 +6,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 describe('PaginationDataDecorator', () => {
   let app: INestApplication;
-  let paginationData;
+  let paginationData: PaginationData;
 
   @Controller()
   class TestController {
