@@ -98,7 +98,7 @@ export class ValkBalancesApi implements IBalancesApi {
   }
 
   getChainName(chainId: string): string {
-    const chainName = this.chainsConfiguration[chainId]?.chainName;
+    const chainName = this.chainsConfiguration[Number(chainId)]?.chainName;
     if (!chainName)
       throw Error(
         `Chain ${chainId} balances retrieval via Valk is not configured`,
