@@ -102,7 +102,7 @@ describe('Contracts controller', () => {
             return Promise.resolve({ data: chain, status: 200 });
           case transactionServiceUrl:
             return Promise.reject(
-              new NetworkResponseError(new URL(url), {
+              new NetworkResponseError(new URL(transactionServiceUrl), {
                 status: 503,
               } as Response),
             );

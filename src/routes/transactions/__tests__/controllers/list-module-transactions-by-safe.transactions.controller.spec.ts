@@ -64,9 +64,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const error = new NetworkResponseError(
-      new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
-      ),
+      new URL(`${safeConfigUrl}/api/v1/chains/${chainId}`),
       { status: 500 } as Response,
     );
     networkService.get.mockRejectedValueOnce(error);
@@ -96,7 +94,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     });
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
       ),
       { status: 500 } as Response,
     );
@@ -148,7 +146,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     });
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
       ),
       { status: 404 } as Response,
     );

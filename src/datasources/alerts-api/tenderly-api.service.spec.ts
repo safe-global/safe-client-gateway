@@ -108,7 +108,7 @@ describe('TenderlyApi', () => {
   it('should forward error', async () => {
     const status = faker.internet.httpStatusCode({ types: ['serverError'] });
     const error = new NetworkResponseError(
-      new URL(faker.internet.url()),
+      new URL(tenderlyBaseUri),
       {
         status,
       } as Response,

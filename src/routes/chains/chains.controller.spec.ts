@@ -147,7 +147,7 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure: network service fails', async () => {
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${safeConfigUrl}/v1/chains`),
         {
           status: 500,
         } as Response,
@@ -235,7 +235,7 @@ describe('Chains Controller (Unit)', () => {
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/v1/chains`),
         {
           status: 404,
         } as Response,
@@ -255,7 +255,7 @@ describe('Chains Controller (Unit)', () => {
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/v1/chains`),
         {
           status: 503,
         } as Response,
@@ -300,7 +300,7 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure getting the chain', async () => {
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/v1/chains`),
         {
           status: 400,
         } as Response,
@@ -324,7 +324,7 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure getting the backbone data', async () => {
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/api/v1/about`),
         {
           status: 502,
         } as Response,
@@ -396,7 +396,7 @@ describe('Chains Controller (Unit)', () => {
 
     it('Failure getting the chain', async () => {
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/api/v1/chains/1`),
         {
           status: 400,
         } as Response,
@@ -420,7 +420,9 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail getting the master-copies data', async () => {
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(
+          `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+        ),
         {
           status: 502,
         } as Response,
@@ -497,7 +499,7 @@ describe('Chains Controller (Unit)', () => {
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/v1/chains`),
         {
           status: 404,
         } as Response,
@@ -517,7 +519,7 @@ describe('Chains Controller (Unit)', () => {
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
-        new URL(`${faker.internet.url({ appendSlash: false })}/v1/chains`),
+        new URL(`${chainResponse.transactionService}/v1/chains`),
         {
           status: 503,
         } as Response,

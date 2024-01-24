@@ -408,7 +408,7 @@ describe('Balances Controller (Unit)', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const error = new NetworkResponseError(
           new URL(
-            `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
+            `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
           ),
           {
             status: 500,

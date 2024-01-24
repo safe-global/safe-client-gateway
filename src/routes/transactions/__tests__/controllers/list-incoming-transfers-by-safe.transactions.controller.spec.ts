@@ -75,7 +75,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     const safeAddress = faker.finance.ethereumAddress();
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`,
+        `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`,
       ),
       { status: 500 } as Response,
     );
@@ -108,7 +108,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     });
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       ),
       { status: 500 } as Response,
     );

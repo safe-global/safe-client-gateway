@@ -86,7 +86,7 @@ describe('Owners Controller (Unit)', () => {
       const ownerAddress = faker.finance.ethereumAddress();
       const error = new NetworkResponseError(
         new URL(
-          `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+          `${safeConfigUrl}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
         ),
         {
           status: 500,
@@ -119,7 +119,7 @@ describe('Owners Controller (Unit)', () => {
       });
       const error = new NetworkResponseError(
         new URL(
-          `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
         ),
         {
           status: 500,

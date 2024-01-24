@@ -75,7 +75,7 @@ describe('PushwooshApi', () => {
       };
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
-        new URL(faker.internet.url()),
+        new URL(pushwooshBaseUri),
         {
           status,
         } as Response,
@@ -173,7 +173,7 @@ describe('PushwooshApi', () => {
     it('should forward error', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
-        new URL(faker.internet.url()),
+        new URL(pushwooshBaseUri),
         {
           status,
         } as Response,
