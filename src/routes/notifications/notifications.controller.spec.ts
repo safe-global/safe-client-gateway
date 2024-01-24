@@ -17,7 +17,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { registerDeviceDtoBuilder } from '@/routes/notifications/entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests__/safe-registration.builder';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
 
@@ -32,7 +32,7 @@ describe('Notifications Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(AccountDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)

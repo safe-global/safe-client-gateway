@@ -14,7 +14,7 @@ export class EmailAlreadyVerifiedExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     response.status(HttpStatus.CONFLICT).json({
-      message: `Cannot verify the provided email for the provided account ${exception.account}`,
+      message: `Cannot verify the provided email for the provided account ${exception.signer}`,
       statusCode: HttpStatus.CONFLICT,
     });
   }

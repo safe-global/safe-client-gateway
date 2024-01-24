@@ -8,7 +8,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
@@ -42,7 +42,7 @@ describe('Email controller verify email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
-      .overrideModule(AccountDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
@@ -67,22 +67,22 @@ describe('Email controller verify email tests', () => {
   });
 
   it('verifies email successfully', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .with('verificationGeneratedOn', new Date())
       .with('verificationSentOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValue(email);
+    accountDataSource.getAccount.mockResolvedValue(account);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
       )
       .send({
-        account: email.account,
-        code: email.verificationCode,
+        account: account.signer,
+        code: account.verificationCode,
       })
       .expect(204)
       .expect({});
@@ -91,17 +91,17 @@ describe('Email controller verify email tests', () => {
   });
 
   it('returns 204 on already verified emails', async () => {
-    const email = accountBuilder().with('isVerified', true).build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    const account = accountBuilder().with('isVerified', true).build();
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
       )
       .send({
-        account: email.account,
-        code: email.verificationCode,
+        account: account.signer,
+        code: account.verificationCode,
       })
       .expect(204)
       .expect({});
@@ -110,21 +110,21 @@ describe('Email controller verify email tests', () => {
   });
 
   it('email verification with expired code returns 400', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .with('verificationGeneratedOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
 
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
       )
       .send({
-        account: email.account,
-        code: email.verificationCode,
+        account: account.signer,
+        code: account.verificationCode,
       })
       .expect(400)
       .expect({
@@ -136,19 +136,19 @@ describe('Email controller verify email tests', () => {
   });
 
   it('email verification with wrong code returns 400', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
 
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
         code: faker.string.numeric({ length: 6 }),
       })
       .expect(400)

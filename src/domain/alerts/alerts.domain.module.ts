@@ -9,10 +9,10 @@ import { UrlGeneratorModule } from '@/domain/alerts/urls/url-generator.module';
 
 @Module({
   imports: [
+    AccountDomainModule,
     AlertsApiModule,
     AlertsDecodersModule,
     EmailApiModule,
-    AccountDomainModule,
     UrlGeneratorModule,
   ],
   providers: [{ provide: IAlertsRepository, useClass: AlertsRepository }],

@@ -1,10 +1,10 @@
 export class AccountDoesNotExistError extends Error {
-  readonly account: string;
+  readonly signer: string;
 
-  constructor(chainId: string, safeAddress: string, account: string) {
+  constructor(chainId: string, safeAddress: string, signer: string) {
     super(
-      `Email address for account ${account} of ${safeAddress} on chain ${chainId} does not exist.`,
+      `Account for ${signer} of ${safeAddress} on chain ${chainId} does not exist.`,
     );
-    this.account = account;
+    this.signer = signer;
   }
 }

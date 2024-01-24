@@ -18,7 +18,7 @@ import {
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
@@ -93,7 +93,7 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(AccountDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
         .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
@@ -1392,7 +1392,7 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(AccountDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
         .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)

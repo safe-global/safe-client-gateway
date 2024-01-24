@@ -8,7 +8,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
@@ -40,7 +40,7 @@ describe('Email controller delete email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration), EmailControllerModule],
     })
-      .overrideModule(AccountDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
@@ -74,24 +74,24 @@ describe('Email controller delete email tests', () => {
     const chain = chainBuilder().build();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     const safeAddress = faker.finance.ethereumAddress();
-    const email = accountBuilder()
-      .with('account', accountAddress)
+    const account = accountBuilder()
+      .with('signer', signerAddress)
       .with('safeAddress', safeAddress)
       .with('chainId', chain.chainId)
       .build();
-    const message = `email-delete-${chain.chainId}-${safeAddress}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
-    accountDataSource.getAccount.mockResolvedValue(email);
+    const message = `email-delete-${chain.chainId}-${safeAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
+    accountDataSource.getAccount.mockResolvedValue(account);
     accountDataSource.deleteAccount.mockImplementation(() => Promise.resolve());
     emailApi.deleteEmailAddress.mockResolvedValue();
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
       .send({
-        account: account.address,
+        account: signer.address,
         timestamp: timestamp,
         signature: signature,
       })
@@ -213,21 +213,21 @@ describe('Email controller delete email tests', () => {
     const chain = chainBuilder().build();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const email = accountBuilder()
-      .with('account', accountAddress)
+    const account = accountBuilder()
+      .with('signer', signerAddress)
       .with('safeAddress', safe.address)
       .with('chainId', chain.chainId)
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -238,13 +238,13 @@ describe('Email controller delete email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
     emailApi.deleteEmailAddress.mockRejectedValue(new Error('Some error'));
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        account: account.address,
+        account: signer.address,
         timestamp: timestamp,
         signature: signature,
       })

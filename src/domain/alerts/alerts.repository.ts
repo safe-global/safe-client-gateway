@@ -27,7 +27,7 @@ export class AlertsRepository implements IAlertsRepository {
     @Inject(IEmailApi)
     private readonly emailApi: IEmailApi,
     @Inject(IAccountRepository)
-    private readonly emailRepository: IAccountRepository,
+    private readonly accountRepository: IAccountRepository,
     private readonly urlGenerator: UrlGeneratorHelper,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
@@ -64,7 +64,7 @@ export class AlertsRepository implements IAlertsRepository {
     // Recovery module is deployed per Safe so we can assume that it is only enabled on one
     const safeAddress = safes[0];
 
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
       chainId,
       safeAddress,
     });
@@ -214,7 +214,7 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     newSafeState: Safe;
   }): Promise<void> {
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
       chainId: args.chainId,
       safeAddress: args.newSafeState.address,
     });

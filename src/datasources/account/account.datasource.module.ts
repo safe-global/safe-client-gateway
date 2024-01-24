@@ -8,4 +8,4 @@ import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.modul
   providers: [{ provide: IAccountDataSource, useClass: AccountDataSource }],
   exports: [IAccountDataSource],
 })
-export class AccountDatasourceModule {}
+export class AccountDataSourceModule {}

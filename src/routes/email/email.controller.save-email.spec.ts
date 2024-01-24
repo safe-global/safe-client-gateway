@@ -8,7 +8,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
@@ -41,7 +41,7 @@ describe('Email controller save email tests', () => {
     })
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
-      .overrideModule(AccountDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
@@ -74,16 +74,16 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -94,13 +94,13 @@ describe('Email controller save email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    accountDataSource.saveAccount.mockResolvedValue();
+    accountDataSource.createAccount.mockResolvedValue();
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
         emailAddress: emailAddress,
-        account: account.address,
+        account: signer.address,
         timestamp: timestamp,
         signature: signature,
       })

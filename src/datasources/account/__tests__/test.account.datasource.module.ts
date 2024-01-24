@@ -4,13 +4,13 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 const accountDataSource = {
   getVerifiedAccountEmailsBySafeAddress: jest.fn(),
   getAccount: jest.fn(),
-  saveAccount: jest.fn(),
+  createAccount: jest.fn(),
   setVerificationCode: jest.fn(),
   setVerificationSentDate: jest.fn(),
   verifyEmail: jest.fn(),
   deleteAccount: jest.fn(),
   updateAccountEmail: jest.fn(),
-} as unknown as IAccountDataSource;
+} as jest.MockedObjectDeep<IAccountDataSource>;
 
 @Module({
   providers: [

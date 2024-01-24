@@ -46,22 +46,22 @@ export class AccountRepository implements IAccountRepository {
     return verificationCode.toString().padStart(6, '0');
   }
 
-  async saveAccount(args: {
+  async createAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     const email = new EmailAddress(args.emailAddress);
     const verificationCode = this._generateCode();
 
     try {
-      await this.accountDataSource.saveAccount({
+      await this.accountDataSource.createAccount({
         chainId: args.chainId,
         code: verificationCode,
         emailAddress: email,
         safeAddress: args.safeAddress,
-        account: args.account,
+        signer: args.signer,
         codeGenerationDate: new Date(),
         unsubscriptionToken: crypto.randomUUID(),
       });
@@ -70,7 +70,7 @@ export class AccountRepository implements IAccountRepository {
         code: verificationCode,
       });
     } catch (e) {
-      throw new AccountSaveError(args.chainId, args.safeAddress, args.account);
+      throw new AccountSaveError(args.chainId, args.safeAddress, args.signer);
     }
   }
 
@@ -86,7 +86,7 @@ export class AccountRepository implements IAccountRepository {
   async resendEmailVerification(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     let account = await this.accountDataSource.getAccount(args);
 
@@ -114,7 +114,7 @@ export class AccountRepository implements IAccountRepository {
       await this.accountDataSource.setVerificationCode({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        account: args.account,
+        signer: args.signer,
         code: this._generateCode(),
         codeGenerationDate: new Date(),
       });
@@ -135,7 +135,7 @@ export class AccountRepository implements IAccountRepository {
   async verifyEmailAddress(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
     code: string;
   }): Promise<void> {
     const account = await this.accountDataSource.getAccount(args);
@@ -160,7 +160,7 @@ export class AccountRepository implements IAccountRepository {
   async deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     const account = await this.accountDataSource.getAccount(args);
     await this.emailApi.deleteEmailAddress({
@@ -173,18 +173,18 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     const newEmail = new EmailAddress(args.emailAddress);
-    const currentEmail = await this.accountDataSource.getAccount(args);
+    const currentAccount = await this.accountDataSource.getAccount(args);
 
     // Prevent subsequent edit if verification code still valid
     if (
-      currentEmail.verificationGeneratedOn &&
-      this._isEmailVerificationCodeValid(currentEmail)
+      currentAccount.verificationGeneratedOn &&
+      this._isEmailVerificationCodeValid(currentAccount)
     ) {
       const timespanMs =
-        Date.now() - currentEmail.verificationGeneratedOn.getTime();
+        Date.now() - currentAccount.verificationGeneratedOn.getTime();
       throw new EditTimespanError({
         ...args,
         timespanMs,
@@ -192,7 +192,7 @@ export class AccountRepository implements IAccountRepository {
       });
     }
 
-    if (newEmail.value === currentEmail.emailAddress.value) {
+    if (newEmail.value === currentAccount.emailAddress.value) {
       throw new EmailEditMatchesError(args);
     }
 
@@ -203,7 +203,7 @@ export class AccountRepository implements IAccountRepository {
       code: verificationCode,
       emailAddress: newEmail,
       safeAddress: args.safeAddress,
-      account: args.account,
+      signer: args.signer,
       codeGenerationDate: new Date(),
       unsubscriptionToken: crypto.randomUUID(),
     });
@@ -220,7 +220,7 @@ export class AccountRepository implements IAccountRepository {
   }
 
   private async _sendEmailVerification(args: {
-    account: string;
+    signer: string;
     chainId: string;
     code: string;
     emailAddress: string;

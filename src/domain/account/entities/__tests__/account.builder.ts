@@ -11,7 +11,7 @@ export function accountBuilder(): IBuilder<Account> {
     .with('emailAddress', new EmailAddress(faker.internet.email()))
     .with('isVerified', faker.datatype.boolean())
     .with('safeAddress', faker.finance.ethereumAddress())
-    .with('account', faker.finance.ethereumAddress())
+    .with('signer', faker.finance.ethereumAddress())
     .with('verificationCode', null)
     .with('verificationGeneratedOn', null)
     .with('verificationSentOn', null);

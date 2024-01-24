@@ -8,7 +8,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AccountDatasourceModule } from '@/datasources/account/account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
@@ -41,7 +41,7 @@ describe('Email controller resend verification tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
-      .overrideModule(AccountDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
@@ -66,14 +66,14 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('resends email verification successfully', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationGeneratedOn', new Date())
       .with('verificationSentOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
     accountDataSource.getAccount.mockResolvedValueOnce({
-      ...email,
+      ...account,
       verificationCode: faker.string.numeric({ length: 6 }),
     });
 
@@ -81,30 +81,30 @@ describe('Email controller resend verification tests', () => {
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
       })
       .expect(202)
       .expect({});
   });
 
   it('triggering email resend within lock window returns 429', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationSentOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValue(email);
+    accountDataSource.getAccount.mockResolvedValue(account);
 
     // Advance timer to a time within resendLockWindowMs
     jest.advanceTimersByTime(resendLockWindowMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
       })
       .expect(429)
       .expect({
@@ -114,34 +114,34 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('triggering email resend on verified emails throws 409', async () => {
-    const email = accountBuilder().with('isVerified', true).build();
-    accountDataSource.getAccount.mockResolvedValue(email);
+    const account = accountBuilder().with('isVerified', true).build();
+    accountDataSource.getAccount.mockResolvedValue(account);
 
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
       })
       .expect(409)
       .expect({
-        message: `Cannot verify the provided email for the provided account ${email.account}`,
+        message: `Cannot verify the provided email for the provided account ${account.signer}`,
         statusCode: 409,
       });
   });
 
   it('resend email with new code', async () => {
     const newVerificationCode = faker.string.numeric({ length: 6 });
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('isVerified', false)
       .with('verificationGeneratedOn', new Date())
       .with('verificationSentOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
     accountDataSource.getAccount.mockResolvedValueOnce({
-      ...email,
+      ...account,
       verificationCode: newVerificationCode,
     });
 
@@ -149,10 +149,10 @@ describe('Email controller resend verification tests', () => {
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.safeAddress}/emails/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
       })
       .expect(202)
       .expect({});
@@ -161,24 +161,24 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('null verificationCode should return 500', async () => {
-    const email = accountBuilder()
+    const account = accountBuilder()
       .with('verificationCode', faker.string.numeric({ length: 6 }))
       .with('isVerified', false)
       .with('verificationGeneratedOn', new Date())
       .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(email);
+    accountDataSource.getAccount.mockResolvedValueOnce(account);
     accountDataSource.getAccount.mockResolvedValueOnce({
-      ...email,
+      ...account,
       verificationCode: null,
     });
 
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${email.chainId}/safes/${email.account}/emails/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${account.signer}/emails/verify-resend`,
       )
       .send({
-        account: email.account,
+        account: account.signer,
       })
       .expect(500)
       .expect({ code: 500, message: 'Internal server error' });

@@ -11,15 +11,15 @@ export class EmailService {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
-    return this.repository.saveAccount(args);
+    return this.repository.createAccount(args);
   }
 
   async resendVerification(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     return this.repository.resendEmailVerification(args);
   }
@@ -27,7 +27,7 @@ export class EmailService {
   async verifyEmailAddress(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
     code: string;
   }): Promise<any> {
     return this.repository.verifyEmailAddress(args);
@@ -36,7 +36,7 @@ export class EmailService {
   async deleteEmail(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void> {
     return this.repository.deleteAccount(args);
   }
@@ -44,7 +44,7 @@ export class EmailService {
   async editEmail(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
     emailAddress: string;
   }): Promise<void> {
     return this.repository.editEmail(args);
