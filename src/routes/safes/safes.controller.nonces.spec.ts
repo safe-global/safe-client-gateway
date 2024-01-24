@@ -8,10 +8,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -27,9 +24,9 @@ import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.em
 
 describe('Safes Controller Nonces (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl: string | undefined;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let safeConfigUrl;
+  let networkService;
+  let configurationService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -71,14 +68,11 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo, status: 200 });
+          return Promise.resolve({ data: safeInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({
-            data: multisigTransactionsPage,
-            status: 200,
-          });
+          return Promise.resolve({ data: multisigTransactionsPage });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -108,14 +102,11 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo, status: 200 });
+          return Promise.resolve({ data: safeInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({
-            data: multisigTransactionsPage,
-            status: 200,
-          });
+          return Promise.resolve({ data: multisigTransactionsPage });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -137,14 +128,11 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: chain });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo, status: 200 });
+          return Promise.resolve({ data: safeInfo });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({
-            data: multisigTransactionsPage,
-            status: 200,
-          });
+          return Promise.resolve({ data: multisigTransactionsPage });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });

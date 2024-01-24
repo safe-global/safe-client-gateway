@@ -98,7 +98,7 @@ describe('FetchNetworkService', () => {
       (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.get(url)).rejects.toThrow(
-        new NetworkResponseError(error.response.status, error.response.data),
+        new NetworkResponseError(error.response.data, error.response.status),
       );
 
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
@@ -210,7 +210,7 @@ describe('FetchNetworkService', () => {
       (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.post(url, data)).rejects.toThrow(
-        new NetworkResponseError(error.response.status, error.response.data),
+        new NetworkResponseError(error.response.data, error.response.status),
       );
 
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
@@ -300,7 +300,7 @@ describe('FetchNetworkService', () => {
       fetchClientMock.mockRejectedValueOnce(error);
 
       await expect(target.delete(url, data)).rejects.toThrow(
-        new NetworkResponseError(error.response.status, error.response.data),
+        new NetworkResponseError(error.response.data, error.response.status),
       );
 
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
