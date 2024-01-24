@@ -14,10 +14,7 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
@@ -33,8 +30,8 @@ import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.em
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let safeConfigUrl;
+  let networkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -83,9 +80,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse, status: 200 });
+            return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse, status: 200 });
+            return Promise.resolve({ data: collectiblesResponse });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -126,9 +123,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse, status: 200 });
+            return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse, status: 200 });
+            return Promise.resolve({ data: collectiblesResponse });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -170,9 +167,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse, status: 200 });
+            return Promise.resolve({ data: chainResponse });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse, status: 200 });
+            return Promise.resolve({ data: collectiblesResponse });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -198,19 +195,14 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
-      const transactionServiceError = new NetworkResponseError(
-        new URL(transactionServiceUrl),
-        { status: 400 } as Response,
-        {
-          message: 'some collectibles error',
-        },
-      );
+      const transactionServiceError = new NetworkResponseError(400, {
+        message: 'some collectibles error',
+      });
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse, status: 200 });
-          case transactionServiceUrl:
+            return Promise.resolve({ data: chainResponse });
+          case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
@@ -219,9 +211,9 @@ describe('Collectibles Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
-        .expect(transactionServiceError.response.status)
+        .expect(transactionServiceError.status)
         .expect({
-          code: transactionServiceError.response.status,
+          code: transactionServiceError.status,
           message: transactionServiceError.data.message,
         });
     });
@@ -230,15 +222,12 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
-      const transactionServiceError = new NetworkRequestError(
-        new URL(transactionServiceUrl),
-      );
+      const transactionServiceError = new NetworkRequestError({});
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse, status: 200 });
-          case transactionServiceUrl:
+            return Promise.resolve({ data: chainResponse });
+          case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
           default:
             return Promise.reject(new Error(`Could not match ${url}`));

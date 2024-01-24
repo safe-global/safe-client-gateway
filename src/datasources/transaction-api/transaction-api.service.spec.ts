@@ -187,10 +187,7 @@ describe('TransactionApi', () => {
             faker.finance.ethereumAddress(),
           ],
         };
-        mockNetworkService.get.mockResolvedValueOnce({
-          data: safesByModule,
-          status: 200,
-        });
+        mockNetworkService.get.mockResolvedValueOnce({ data: safesByModule });
 
         const actual = await service.getSafesByModule(moduleAddress);
 

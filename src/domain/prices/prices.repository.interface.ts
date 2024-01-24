@@ -6,7 +6,7 @@ export interface IPricesRepository {
   getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
-  }): Promise<number | null>;
+  }): Promise<number>;
 
   getTokenPrices(args: {
     chainName: string;

@@ -30,7 +30,7 @@ describe('ConfigApi', () => {
   const baseUri = faker.internet.url({ appendSlash: false });
   const expirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
-  let fakeConfigurationService: FakeConfigurationService;
+  let fakeConfigurationService;
   let service: ConfigApi;
 
   beforeAll(async () => {

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  HttpCode,
-  INestApplication,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -35,7 +29,7 @@ class TestController {
 }
 
 describe('EmailDeletionGuard guard tests', () => {
-  let app: INestApplication;
+  let app;
 
   const chainId = faker.string.numeric();
   const safe = faker.finance.ethereumAddress();

@@ -1,3 +1,3 @@
 export interface AssetPrice {
-  [assetName: string]: Record<string, number | null>;
+  [assetName: string]: Record<string, number>;
 }

@@ -1,7 +1,6 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { PushwooshApi } from '@/datasources/email-api/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -74,15 +73,12 @@ describe('PushwooshApi', () => {
         },
       };
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = new NetworkResponseError(
-        new URL(pushwooshBaseUri),
-        {
-          status,
-        } as Response,
-        {
+      const error = {
+        status,
+        data: {
           message: 'Unexpected error',
         },
-      );
+      };
       mockNetworkService.post.mockRejectedValueOnce(error);
 
       await expect(
@@ -172,15 +168,12 @@ describe('PushwooshApi', () => {
   describe('deleting email addresses', () => {
     it('should forward error', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = new NetworkResponseError(
-        new URL(pushwooshBaseUri),
-        {
-          status,
-        } as Response,
-        {
+      const error = {
+        status,
+        data: {
           message: 'Unexpected error',
         },
-      );
+      };
       mockNetworkService.post.mockRejectedValueOnce(error);
 
       await expect(

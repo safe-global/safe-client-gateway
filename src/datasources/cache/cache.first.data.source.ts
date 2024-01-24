@@ -11,6 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { isObject } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -54,13 +55,10 @@ export class CacheFirstDataSource {
     try {
       return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
-      if (
-        error instanceof NetworkResponseError &&
-        error.response.status === 404
-      ) {
+      if (isObject(error) && 'status' in error && error.status === 404) {
         await this.cacheNotFoundError(
           args.cacheDir,
-          error,
+          new NetworkResponseError(error.status, error),
           args.notFoundExpireTimeSeconds,
         );
       }
@@ -77,12 +75,8 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     this.loggingService.debug({ type: 'cache_hit', key, field });
     const cachedData = JSON.parse(cached);
-    if (cachedData?.response?.status === 404) {
-      throw new NetworkResponseError(
-        cachedData.url,
-        cachedData.response,
-        cachedData?.data,
-      );
+    if (cachedData?.status === 404) {
+      throw new NetworkResponseError(cachedData.status, cachedData.data);
     }
     return cachedData;
   }
@@ -153,10 +147,7 @@ export class CacheFirstDataSource {
     error: NetworkResponseError,
     notFoundExpireTimeSeconds?: number,
   ): Promise<void> {
-    return this.cacheService.set(
-      cacheDir,
-      JSON.stringify(error),
-      notFoundExpireTimeSeconds,
-    );
+    const value = JSON.stringify({ status: error.status, data: error });
+    return this.cacheService.set(cacheDir, value, notFoundExpireTimeSeconds);
   }
 }

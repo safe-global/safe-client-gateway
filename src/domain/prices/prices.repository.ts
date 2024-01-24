@@ -18,7 +18,7 @@ export class PricesRepository implements IPricesRepository {
   async getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
-  }): Promise<number | null> {
+  }): Promise<number> {
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const result = await this.coingeckoApi.getNativeCoinPrice({
       nativeCoinId: args.nativeCoinId,

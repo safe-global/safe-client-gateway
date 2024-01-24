@@ -202,7 +202,7 @@ export class CoingeckoApi implements IPricesApi {
 
     return Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
-        const validPrice = prices[tokenAddress]?.[args.fiatCode];
+        const validPrice = prices.data[tokenAddress]?.[args.fiatCode];
         const price: AssetPrice = validPrice
           ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
           : { [tokenAddress]: { [args.fiatCode]: null } };
@@ -228,7 +228,7 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<AssetPrice> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get(url, {
+      return await this.networkService.get(url, {
         params: {
           vs_currencies: args.fiatCode,
           contract_addresses: args.tokenAddresses.join(','),
@@ -239,7 +239,6 @@ export class CoingeckoApi implements IPricesApi {
           },
         }),
       });
-      return data;
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${
