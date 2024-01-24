@@ -17,8 +17,15 @@ export const tokenSchema: JSONSchemaType<Token> = {
     type: { type: 'string', enum: Object.values(TokenType) },
     trusted: { type: 'boolean' },
   },
-  // TODO: trusted should be required. Add to required fields once features.trustedTokens is removed
-  required: ['address', 'decimals', 'logoUri', 'name', 'symbol', 'type'],
+  required: [
+    'address',
+    'decimals',
+    'logoUri',
+    'name',
+    'symbol',
+    'type',
+    'trusted',
+  ],
 };
 
 export const TOKEN_PAGE_SCHEMA_ID =
