@@ -1,5 +1,10 @@
 import { ValidateFunction } from 'ajv';
-import { Injectable, PipeTransform, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  PipeTransform,
+  HttpStatus,
+  HttpException,
+} from '@nestjs/common';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import {
   ALERT_LOGS_SCHEMA_ID,
@@ -34,7 +39,9 @@ export class AlertValidationPipe implements PipeTransform<Alert> {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
-      err.status = HttpStatus.BAD_REQUEST;
+      if (err instanceof HttpException) {
+        throw new HttpException(err.getResponse(), HttpStatus.BAD_REQUEST);
+      }
       throw err;
     }
   }

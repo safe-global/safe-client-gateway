@@ -25,8 +25,8 @@ import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 class TransactionDomainGroup {
-  timestamp: number;
-  transactions: (
+  timestamp!: number;
+  transactions!: (
     | MultisigTransaction
     | ModuleTransaction
     | EthereumTransaction

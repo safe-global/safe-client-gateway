@@ -1,9 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import {
-  NetworkError,
-  NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { isObject } from 'lodash';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}
@@ -16,7 +14,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
  */
 @Injectable()
 export class HttpErrorFactory {
-  from(source: NetworkError | Error): DataSourceError {
+  from(source: unknown): DataSourceError {
     if (isNetworkResponseError(source)) {
       const errorMessage: string = source.data?.message ?? 'An error occurred';
       return new DataSourceError(errorMessage, source.status);
@@ -29,8 +27,12 @@ export class HttpErrorFactory {
   }
 }
 
-function isNetworkResponseError(
-  error: NetworkError | Error,
-): error is NetworkResponseError {
-  return 'status' in error && error.status >= 400 && error.status < 600;
+function isNetworkResponseError(error: unknown): error is NetworkResponseError {
+  return (
+    isObject(error) &&
+    'status' in error &&
+    typeof error.status === 'number' &&
+    error.status >= 400 &&
+    error.status < 600
+  );
 }

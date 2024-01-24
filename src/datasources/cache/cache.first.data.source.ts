@@ -11,6 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { isObject } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -54,7 +55,7 @@ export class CacheFirstDataSource {
     try {
       return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
-      if (error?.status === 404) {
+      if (isObject(error) && 'status' in error && error.status === 404) {
         await this.cacheNotFoundError(
           args.cacheDir,
           new NetworkResponseError(error.status, error),
