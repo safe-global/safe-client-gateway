@@ -106,16 +106,16 @@ describe('Email controller delete email tests', () => {
     const chain = chainBuilder().build();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -127,20 +127,20 @@ describe('Email controller delete email tests', () => {
       }
     });
     accountDataSource.getAccount.mockRejectedValueOnce(
-      new AccountDoesNotExistError(chain.chainId, safe.address, accountAddress),
+      new AccountDoesNotExistError(chain.chainId, safe.address, signerAddress),
     );
 
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        account: account.address,
+        account: signer.address,
         timestamp: timestamp,
         signature: signature,
       })
       .expect(404)
       .expect({
         statusCode: 404,
-        message: `No email address was found for the provided account ${accountAddress}.`,
+        message: `No email address was found for the provided signer ${signerAddress}.`,
       });
 
     expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);

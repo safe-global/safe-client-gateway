@@ -130,7 +130,7 @@ describe('Account DataSource Tests', () => {
       safeAddress,
       signer,
     });
-    await target.setVerificationCode({
+    await target.setEmailVerificationCode({
       chainId: chainId.toString(),
       safeAddress,
       signer,
@@ -171,7 +171,7 @@ describe('Account DataSource Tests', () => {
       codeGenerationDate,
       unsubscriptionToken,
     });
-    await target.setVerificationSentDate({
+    await target.setEmailVerificationSentDate({
       chainId: chainId.toString(),
       safeAddress,
       signer,
@@ -195,7 +195,7 @@ describe('Account DataSource Tests', () => {
     const newCodeGenerationDate = faker.date.recent();
 
     await expect(
-      target.setVerificationCode({
+      target.setEmailVerificationCode({
         chainId: chainId.toString(),
         safeAddress,
         signer,

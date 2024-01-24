@@ -227,16 +227,16 @@ describe('Email controller edit email tests', () => {
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -248,21 +248,21 @@ describe('Email controller edit email tests', () => {
       }
     });
     accountDataSource.getAccount.mockRejectedValue(
-      new AccountDoesNotExistError(chain.chainId, safe.address, accountAddress),
+      new AccountDoesNotExistError(chain.chainId, safe.address, signerAddress),
     );
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
         emailAddress,
-        account: account.address,
+        account: signer.address,
         timestamp,
         signature,
       })
       .expect(404)
       .expect({
         statusCode: 404,
-        message: `No email address was found for the provided account ${accountAddress}.`,
+        message: `No email address was found for the provided signer ${signerAddress}.`,
       });
     expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
   });

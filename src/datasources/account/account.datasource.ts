@@ -94,7 +94,7 @@ export class AccountDataSource implements IAccountDataSource {
     `;
   }
 
-  async setVerificationCode(args: {
+  async setEmailVerificationCode(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
@@ -118,7 +118,7 @@ export class AccountDataSource implements IAccountDataSource {
     }
   }
 
-  async setVerificationSentDate(args: {
+  async setEmailVerificationSentDate(args: {
     chainId: string;
     safeAddress: string;
     signer: string;

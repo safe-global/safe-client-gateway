@@ -111,7 +111,7 @@ export class AccountRepository implements IAccountRepository {
 
     if (!this._isEmailVerificationCodeValid(account)) {
       // Expired code. Generate new one
-      await this.accountDataSource.setVerificationCode({
+      await this.accountDataSource.setEmailVerificationCode({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         signer: args.signer,
@@ -236,7 +236,7 @@ export class AccountRepository implements IAccountRepository {
     });
 
     // Update verification-sent date on a successful response
-    await this.accountDataSource.setVerificationSentDate({
+    await this.accountDataSource.setEmailVerificationSentDate({
       ...args,
       sentOn: new Date(),
     });

@@ -62,7 +62,7 @@ export interface IAccountDataSource {
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
    */
-  setVerificationCode(args: {
+  setEmailVerificationCode(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
@@ -78,7 +78,7 @@ export interface IAccountDataSource {
    * @param args.signer - the signer/owner address of the account
    * @param args.sent_on - the verification-sent date
    */
-  setVerificationSentDate(args: {
+  setEmailVerificationSentDate(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
