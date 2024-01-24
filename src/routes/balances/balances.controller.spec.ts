@@ -22,6 +22,7 @@ import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.bui
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
 import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
 import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -405,9 +406,15 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = faker.finance.ethereumAddress();
-        networkService.get.mockImplementation(() =>
-          Promise.reject({ status: 500 }),
+        const error = new NetworkResponseError(
+          new URL(
+            `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
+          ),
+          {
+            status: 500,
+          } as Response,
         );
+        networkService.get.mockImplementation(() => Promise.reject(error));
 
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
@@ -550,14 +557,18 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = faker.finance.ethereumAddress();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
         networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse, status: 200 });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
-          ) {
-            return Promise.reject({ status: 500 });
+          } else if (url == transactionServiceUrl) {
+            const error = new NetworkResponseError(
+              new URL(transactionServiceUrl),
+              {
+                status: 500,
+              } as Response,
+            );
+            return Promise.reject(error);
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
           }

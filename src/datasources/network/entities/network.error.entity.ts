@@ -8,7 +8,8 @@ export type NetworkError = NetworkResponseError | NetworkRequestError;
  */
 export class NetworkResponseError extends Error {
   constructor(
-    readonly status: number,
+    readonly url: URL,
+    readonly response: Response,
     readonly data?: any,
   ) {
     super();
@@ -20,7 +21,10 @@ export class NetworkResponseError extends Error {
  * was never received.
  */
 export class NetworkRequestError extends Error {
-  constructor(readonly request: any) {
+  constructor(
+    readonly url: URL | null,
+    readonly data?: any,
+  ) {
     super();
   }
 }
