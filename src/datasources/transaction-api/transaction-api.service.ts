@@ -90,19 +90,11 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async clearLocalBalances(safeAddress: string): Promise<void> {
-    const balancesKey = CacheRouter.getBalancesCacheKey({
+    const key = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
-    const valkBalancesKey = CacheRouter.getValkBalancesCacheKey({
-      chainId: this.chainId,
-      safeAddress,
-    });
-    await Promise.all(
-      [balancesKey, valkBalancesKey].map((k) =>
-        this.cacheService.deleteByKey(k),
-      ),
-    );
+    await this.cacheService.deleteByKey(key);
   }
 
   async getDataDecoded(args: {

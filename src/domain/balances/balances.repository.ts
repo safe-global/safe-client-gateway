@@ -33,12 +33,27 @@ export class BalancesRepository implements IBalancesRepository {
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
     if (this.balancesApiManager.isExternalized(args.chainId)) {
-      return this.getBalancesFromBalancesApi(args);
+      return this._getBalancesFromBalancesApi(args);
     }
-    return this.getBalancesFromTransactionApi(args);
+    return this._getBalancesFromTransactionApi(args);
   }
 
-  async getBalancesFromBalancesApi(args: {
+  async clearLocalBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    if (this.balancesApiManager.isExternalized(args.chainId)) {
+      const api = this.balancesApiManager.getBalancesApi(args.chainId);
+      await api.clearBalances(args);
+    } else {
+      const api = await this.transactionApiManager.getTransactionApi(
+        args.chainId,
+      );
+      await api.clearLocalBalances(args.safeAddress);
+    }
+  }
+
+  private async _getBalancesFromBalancesApi(args: {
     chainId: string;
     safeAddress: string;
     fiatCode: string;
@@ -51,7 +66,7 @@ export class BalancesRepository implements IBalancesRepository {
     return balances;
   }
 
-  async getBalancesFromTransactionApi(args: {
+  private async _getBalancesFromTransactionApi(args: {
     chainId: string;
     safeAddress: string;
     fiatCode: string;
@@ -93,16 +108,6 @@ export class BalancesRepository implements IBalancesRepository {
         };
       }),
     );
-  }
-
-  async clearLocalBalances(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void> {
-    const api = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
-    await api.clearLocalBalances(args.safeAddress);
   }
 
   private async _getNativeCoinPrice(

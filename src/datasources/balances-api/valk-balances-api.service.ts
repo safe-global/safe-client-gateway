@@ -7,7 +7,6 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
@@ -57,19 +56,20 @@ export class ValkBalancesApi implements IBalancesApi {
   async getBalances(args: {
     chainId: string;
     safeAddress: string;
+    fiatCode: string;
   }): Promise<Balance[]> {
     try {
       const cacheDir = CacheRouter.getValkBalancesCacheDir(args);
       const chainName = this.getChainName(args.chainId);
       const url = `${this.baseUri}/balances/token/${args.safeAddress}?chain=${chainName}`;
-      const res = await this.dataSource.get<ValkBalance[]>({
+      const valkBalances = await this.dataSource.get<ValkBalance[]>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: { headers: { Authorization: `${this.apiKey}` } },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this.mapBalances(res);
+      return this.mapBalances(valkBalances, args.fiatCode);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} balances from provider: ${asError(error).message}}`,
@@ -77,24 +77,24 @@ export class ValkBalancesApi implements IBalancesApi {
     }
   }
 
-  mapBalances(valkBalances: ValkBalance[]): Balance[] {
-    const mapPrice = (prices: Record<string, number>): number => prices['USD']; // TODO: use currency
-    const mapToken = (vb: ValkBalance): BalanceToken => ({
-      name: vb.name,
-      symbol: vb.symbol,
-      decimals: vb.decimals,
-      logoUri: vb.thumbnail ?? '',
+  mapBalances(valkBalances: ValkBalance[], fiatCode: string): Balance[] {
+    return valkBalances.map((valkBalance) => {
+      const price = valkBalance.prices[fiatCode] ?? null;
+      return {
+        tokenAddress: valkBalance.token_address,
+        token: {
+          name: valkBalance.name,
+          symbol: valkBalance.symbol,
+          decimals: valkBalance.decimals,
+          logoUri: valkBalance.thumbnail ?? '',
+        },
+        balance: getNumberString(valkBalance.balance),
+        fiatBalance: getNumberString(
+          (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
+        ),
+        fiatConversion: getNumberString(price),
+      };
     });
-
-    return valkBalances.map((vb) => ({
-      tokenAddress: vb.token_address,
-      token: mapToken(vb),
-      balance: getNumberString(vb.balance),
-      fiatBalance: getNumberString(
-        (vb.balance / Math.pow(10, vb.decimals)) * mapPrice(vb.prices),
-      ),
-      fiatConversion: getNumberString(mapPrice(vb.prices)),
-    }));
   }
 
   getChainName(chainId: string): string {
@@ -106,7 +106,11 @@ export class ValkBalancesApi implements IBalancesApi {
     return chainName;
   }
 
-  clearBalances(): Promise<void> {
-    throw new Error('Method not implemented.');
+  async clearBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const key = CacheRouter.getValkBalancesCacheKey(args);
+    await this.cacheService.deleteByKey(key);
   }
 }

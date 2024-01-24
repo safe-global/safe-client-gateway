@@ -4,7 +4,8 @@ export interface IBalancesApi {
   getBalances(args: {
     chainId: string;
     safeAddress: string;
+    fiatCode: string;
   }): Promise<Balance[]>;
 
-  clearBalances(args: { safeAddress: string }): Promise<void>;
+  clearBalances(args: { chainId: string; safeAddress: string }): Promise<void>;
 }
