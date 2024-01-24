@@ -2,7 +2,7 @@ import { Balance } from '@/domain/balances/entities/balance.entity';
 
 export interface IBalancesApi {
   getBalances(args: {
-    chainName: string;
+    chainId: string;
     safeAddress: string;
   }): Promise<Balance[]>;
 

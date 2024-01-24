@@ -8,10 +8,13 @@ import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
   constructor(
+    @Inject(IBalancesApiManager)
+    private readonly balancesApiManager: IBalancesApiManager,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IConfigurationService)
@@ -23,6 +26,32 @@ export class BalancesRepository implements IBalancesRepository {
   ) {}
 
   async getBalances(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance[]> {
+    if (this.balancesApiManager.isExternalized(args.chainId)) {
+      return this.getBalancesFromBalancesApi(args);
+    }
+    return this.getBalancesFromTransactionApi(args);
+  }
+
+  async getBalancesFromBalancesApi(args: {
+    chainId: string;
+    safeAddress: string;
+    fiatCode: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
+  }): Promise<Balance[]> {
+    const api = this.balancesApiManager.getBalancesApi(args.chainId);
+    const balances = await api.getBalances(args);
+    balances.map((balance) => this.balancesValidator.validate(balance));
+    return balances;
+  }
+
+  async getBalancesFromTransactionApi(args: {
     chainId: string;
     safeAddress: string;
     fiatCode: string;

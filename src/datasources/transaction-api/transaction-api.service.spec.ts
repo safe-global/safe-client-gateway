@@ -140,9 +140,12 @@ describe('TransactionApi', () => {
 
       await service.clearLocalBalances(safeAddress);
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_balances_${safeAddress}`,
+      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_valk_balances_${safeAddress}`,
       );
       expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
     });
