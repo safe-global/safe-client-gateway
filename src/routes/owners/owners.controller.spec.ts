@@ -17,9 +17,9 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -32,8 +32,8 @@ describe('Owners Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -86,7 +86,7 @@ describe('Owners Controller (Unit)', () => {
       const ownerAddress = faker.finance.ethereumAddress();
       const error = new NetworkResponseError(
         new URL(
-          `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+          `${safeConfigUrl}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
         ),
         {
           status: 500,
@@ -119,7 +119,7 @@ describe('Owners Controller (Unit)', () => {
       });
       const error = new NetworkResponseError(
         new URL(
-          `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
         ),
         {
           status: 500,

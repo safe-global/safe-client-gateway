@@ -5,7 +5,7 @@ export class SaveEmailDto {
   emailAddress!: string;
 
   @ApiProperty()
-  account!: string;
+  signer!: string;
 
   @ApiProperty()
   timestamp!: number;

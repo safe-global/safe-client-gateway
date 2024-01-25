@@ -23,9 +23,9 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('List module transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -38,8 +38,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -64,9 +64,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
     const error = new NetworkResponseError(
-      new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
-      ),
+      new URL(`${safeConfigUrl}/api/v1/chains/${chainId}`),
       { status: 500 } as Response,
     );
     networkService.get.mockRejectedValueOnce(error);
@@ -96,7 +94,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     });
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
       ),
       { status: 500 } as Response,
     );
@@ -148,7 +146,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     });
     const error = new NetworkResponseError(
       new URL(
-        `${faker.internet.url({ appendSlash: false })}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`,
       ),
       { status: 404 } as Response,
     );

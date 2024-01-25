@@ -5,7 +5,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ResendVerificationTimespanError } from '@/domain/email/errors/verification-timeframe.error';
+import { ResendVerificationTimespanError } from '@/domain/account/errors/verification-timeframe.error';
 
 @Catch(ResendVerificationTimespanError)
 export class ResendVerificationTimespanExceptionFilter

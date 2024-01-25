@@ -17,9 +17,9 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Contracts controller', () => {
   let app: INestApplication;
@@ -32,8 +32,8 @@ describe('Contracts controller', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -102,7 +102,7 @@ describe('Contracts controller', () => {
             return Promise.resolve({ data: chain, status: 200 });
           case transactionServiceUrl:
             return Promise.reject(
-              new NetworkResponseError(new URL(url), {
+              new NetworkResponseError(new URL(transactionServiceUrl), {
                 status: 503,
               } as Response),
             );

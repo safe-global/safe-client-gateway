@@ -18,10 +18,10 @@ import {
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -72,7 +72,7 @@ function fakeTenderlySignature(args: {
 describe('Alerts (Unit)', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
-  let emailDataSource: jest.MockedObjectDeep<IEmailDataSource>;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
   let urlGenerator: UrlGeneratorHelper;
 
   describe('/alerts route enabled', () => {
@@ -96,8 +96,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(EmailDataSourceModule)
-        .useModule(TestEmailDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
+        .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(RequestScopedLoggingModule)
@@ -113,7 +113,7 @@ describe('Alerts (Unit)', () => {
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
       urlGenerator = moduleFixture.get(UrlGeneratorHelper);
-      emailDataSource = moduleFixture.get(IEmailDataSource);
+      accountDataSource = moduleFixture.get(IAccountDataSource);
       networkService = moduleFixture.get(NetworkService);
 
       app = await new TestAppProvider().provide(moduleFixture);
@@ -179,7 +179,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -283,7 +283,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -386,7 +386,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -479,7 +479,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -603,7 +603,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -699,7 +699,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -818,7 +818,7 @@ describe('Alerts (Unit)', () => {
           { email: faker.internet.email() },
           { email: faker.internet.email() },
         ];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -911,7 +911,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -991,7 +991,7 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
@@ -1116,7 +1116,7 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
@@ -1226,7 +1226,7 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
@@ -1326,7 +1326,7 @@ describe('Alerts (Unit)', () => {
         { email: faker.internet.email() },
         { email: faker.internet.email() },
       ];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
@@ -1431,8 +1431,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(EmailDataSourceModule)
-        .useModule(TestEmailDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
+        .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(RequestScopedLoggingModule)

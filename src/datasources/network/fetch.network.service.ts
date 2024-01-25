@@ -79,8 +79,8 @@ export class FetchNetworkService implements INetworkService {
     const urlObject = new URL(baseUrl);
 
     for (const [key, value] of Object.entries(params)) {
-      if (typeof value === 'string') {
-        urlObject.searchParams.append(key, value);
+      if (value != null && value !== '') {
+        urlObject.searchParams.append(key, String(value));
       }
     }
 

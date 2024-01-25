@@ -1,6 +1,6 @@
-export const IEmailRepository = Symbol('IEmailRepository');
+export const IAccountRepository = Symbol('IAccountRepository');
 
-export interface IEmailRepository {
+export interface IAccountRepository {
   /**
    * Gets the verified emails associated with a Safe address.
    *
@@ -13,18 +13,18 @@ export interface IEmailRepository {
   }): Promise<string[]>;
 
   /**
-   * Saves an email entry.
+   * Creates a new account.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to which we should store the email address
+   * @param args.safeAddress - the Safe address which we should create the account for
    * @param args.emailAddress - the email address to store
-   * @param args.account - the owner address to which we should link the email address to
+   * @param args.signer - the owner address to which we should link the account to
    */
-  saveEmail(args: {
+  createAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void>;
 
   /**
@@ -32,7 +32,7 @@ export interface IEmailRepository {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.account - the owner address to which we should link the email address to
+   * @param args.signer - the owner address to which we should link the email address to
    *
    * @throws {EmailAlreadyVerifiedError} - if the email is already verified
    * @throws {ResendVerificationTimespanError} -
@@ -42,7 +42,7 @@ export interface IEmailRepository {
   resendEmailVerification(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void>;
 
   /**
@@ -50,7 +50,7 @@ export interface IEmailRepository {
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
-   * @param args.account - the owner address to which we should link the email address to
+   * @param args.signer - the owner address to which we should link the email address to
    * @param args.code - the user-provided code to validate the email verification
    *
    * @throws {InvalidVerificationCodeError} - if the verification code does not match the expected one
@@ -59,21 +59,21 @@ export interface IEmailRepository {
   verifyEmailAddress(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
     code: string;
   }): Promise<void>;
 
   /**
-   * Deletes an email address for a given account.
+   * Deletes an account.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to which we should remove the email address from
-   * @param args.account - the owner address to which we should remove the email address from
+   * @param args.safeAddress - the Safe address of the account to be removed
+   * @param args.signer - the signer address of the account to be removed
    */
-  deleteEmail(args: {
+  deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void>;
 
   /**
@@ -82,15 +82,15 @@ export interface IEmailRepository {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
-   * @param args.account - the owner address to which we should link the email address to
+   * @param args.signer - the owner address to which we should link the email address to
    *
-   * @throws {EditTimeframeError} - if trying to edit again within email.verificationCode.resendLockWindowMs
+   * @throws {EditTimespanError} - if trying to edit again within email.verificationCode.resendLockWindowMs
    * @throws {EmailEditMatchesError} - if trying to apply edit with same email address as current one
    */
   editEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    account: string;
+    signer: string;
   }): Promise<void>;
 }
