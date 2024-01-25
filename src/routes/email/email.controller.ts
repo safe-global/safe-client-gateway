@@ -23,7 +23,7 @@ import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/except
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
 import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
-import { EmailAddressDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/email-does-not-exist.exception-filter';
+import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/acocunt-does-not-exist.exception-filter';
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
@@ -53,7 +53,7 @@ export class EmailController {
       chainId,
       emailAddress: saveEmailDto.emailAddress,
       safeAddress,
-      account: saveEmailDto.account,
+      signer: saveEmailDto.signer,
     });
   }
 
@@ -71,7 +71,7 @@ export class EmailController {
     await this.service.resendVerification({
       chainId,
       safeAddress,
-      account: resendVerificationDto.account,
+      signer: resendVerificationDto.signer,
     });
   }
 
@@ -86,7 +86,7 @@ export class EmailController {
     await this.service.verifyEmailAddress({
       chainId,
       safeAddress,
-      account: verifyEmailDto.account,
+      signer: verifyEmailDto.signer,
       code: verifyEmailDto.code,
     });
   }
@@ -96,7 +96,7 @@ export class EmailController {
     EmailDeletionGuard,
     TimestampGuard(5 * 60 * 1000), // 5 minutes
   )
-  @UseFilters(EmailAddressDoesNotExistExceptionFilter)
+  @UseFilters(AccountDoesNotExistExceptionFilter)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteEmail(
     @Param('chainId') chainId: string,
@@ -106,7 +106,7 @@ export class EmailController {
     await this.service.deleteEmail({
       chainId,
       safeAddress,
-      account: deleteEmailDto.account,
+      signer: deleteEmailDto.signer,
     });
   }
 
@@ -119,7 +119,7 @@ export class EmailController {
   @UseFilters(
     EmailEditTimespanExceptionFilter,
     EmailEditMatchesExceptionFilter,
-    EmailAddressDoesNotExistExceptionFilter,
+    AccountDoesNotExistExceptionFilter,
   )
   @HttpCode(HttpStatus.ACCEPTED)
   async editEmail(
@@ -130,7 +130,7 @@ export class EmailController {
     await this.service.editEmail({
       chainId,
       safeAddress,
-      account: editEmailDto.account,
+      signer: editEmailDto.signer,
       emailAddress: editEmailDto.emailAddress,
     });
   }

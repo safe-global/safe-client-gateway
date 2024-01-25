@@ -1,7 +1,7 @@
 import {
   EmailAddress,
   InvalidEmailFormatError,
-} from '@/domain/email/entities/email.entity';
+} from '@/domain/account/entities/account.entity';
 import { faker } from '@faker-js/faker';
 
 describe('Email entity tests', () => {
