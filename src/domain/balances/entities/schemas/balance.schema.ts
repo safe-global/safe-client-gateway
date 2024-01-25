@@ -26,6 +26,8 @@ const balanceSchema: Schema = {
     tokenAddress: { type: 'string', nullable: true, default: null },
     token: { anyOf: [{ type: 'null' }, { $ref: 'balance-token.json' }] },
     balance: { type: 'string' },
+    fiatBalance: { type: 'string', nullable: true, default: null },
+    fiatConversion: { type: 'string', nullable: true, default: null },
   },
   required: ['balance'],
 };

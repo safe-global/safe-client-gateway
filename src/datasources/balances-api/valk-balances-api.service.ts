@@ -11,7 +11,9 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 import { Inject, Injectable } from '@nestjs/common';
+import { isHex } from 'viem';
 
 export const IValkBalancesApi = Symbol('IValkBalancesApi');
 
@@ -81,12 +83,14 @@ export class ValkBalancesApi implements IBalancesApi {
     return valkBalances.map((valkBalance) => {
       const price = valkBalance.prices[fiatCode] ?? null;
       return {
-        tokenAddress: valkBalance.token_address,
+        tokenAddress: isHex(valkBalance.token_address)
+          ? valkBalance.token_address
+          : NULL_ADDRESS,
         token: {
           name: valkBalance.name,
           symbol: valkBalance.symbol,
           decimals: valkBalance.decimals,
-          logoUri: valkBalance.thumbnail ?? '',
+          logoUri: valkBalance.logo ?? '',
         },
         balance: getNumberString(valkBalance.balance),
         fiatBalance: getNumberString(

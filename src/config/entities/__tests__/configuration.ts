@@ -78,7 +78,7 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     richFragments: true,
     email: true,
-    valkBalancesChainIds: [],
+    valkBalancesChainIds: ['100'],
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
