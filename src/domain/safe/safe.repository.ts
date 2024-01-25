@@ -280,6 +280,16 @@ export class SafeRepository implements ISafeRepository {
     return this.multisigTransactionValidator.validate(multiSigTransaction);
   }
 
+  async deleteTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    return transactionService.deleteTransaction(args);
+  }
+
   async clearMultisigTransactions(args: {
     chainId: string;
     safeAddress: string;

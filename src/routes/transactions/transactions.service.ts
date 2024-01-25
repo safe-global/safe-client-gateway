@@ -175,6 +175,14 @@ export class TransactionsService {
     };
   }
 
+  async deleteTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void> {
+    return await this.safeRepository.deleteTransaction(args);
+  }
+
   async addConfirmation(args: {
     chainId: string;
     safeTxHash: string;
