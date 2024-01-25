@@ -81,7 +81,7 @@ export class ValkBalancesApi implements IBalancesApi {
 
   mapBalances(valkBalances: ValkBalance[], fiatCode: string): Balance[] {
     return valkBalances.map((valkBalance) => {
-      const price = valkBalance.prices[fiatCode] ?? null;
+      const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
       return {
         tokenAddress: isHex(valkBalance.token_address)
           ? valkBalance.token_address

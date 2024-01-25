@@ -24,7 +24,7 @@ export default () => ({
       valk: {
         baseUri:
           process.env.VALK_BASE_URI ||
-          'https://merlin-api-v1.cf/api/merlin/public/',
+          'https://merlin-api-v1.cf/api/merlin/public',
         apiKey: process.env.VALK_API_KEY,
         chains: {
           1: { chainName: 'eth' },
@@ -97,7 +97,8 @@ export default () => ({
   features: {
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
-    valkBalancesChainIds: process.env.VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    valkBalancesChainIds:
+      process.env.FF_VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
