@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DeleteEmailDto {
   @ApiProperty()
-  account!: string;
+  signer!: string;
 
   @ApiProperty()
   timestamp!: number;

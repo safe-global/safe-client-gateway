@@ -1,4 +1,4 @@
-import { EditTimespanError } from '@/domain/email/errors/email-timespan.error';
+import { EditTimespanError } from '@/domain/account/errors/email-timespan.error';
 import {
   ArgumentsHost,
   Catch,
