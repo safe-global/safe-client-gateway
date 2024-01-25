@@ -5,7 +5,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { EmailEditMatchesError } from '@/domain/email/errors/email-edit-matches.error';
+import { EmailEditMatchesError } from '@/domain/account/errors/email-edit-matches.error';
 
 @Catch(EmailEditMatchesError)
 export class EmailEditMatchesExceptionFilter implements ExceptionFilter {

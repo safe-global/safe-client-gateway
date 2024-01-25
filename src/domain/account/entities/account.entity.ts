@@ -4,12 +4,12 @@ export class InvalidEmailFormatError extends Error {
   }
 }
 
-export interface Email {
+export interface Account {
   chainId: string;
   emailAddress: EmailAddress;
   isVerified: boolean;
   safeAddress: string;
-  account: string;
+  signer: string;
   verificationCode: string | null;
   verificationGeneratedOn: Date | null;
   verificationSentOn: Date | null;
