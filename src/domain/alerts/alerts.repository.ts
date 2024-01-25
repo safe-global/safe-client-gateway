@@ -8,7 +8,7 @@ import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-d
 import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { IEmailRepository } from '@/domain/email/email.repository.interface';
+import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -26,8 +26,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly alertsApi: IAlertsApi,
     @Inject(IEmailApi)
     private readonly emailApi: IEmailApi,
-    @Inject(IEmailRepository)
-    private readonly emailRepository: IEmailRepository,
+    @Inject(IAccountRepository)
+    private readonly accountRepository: IAccountRepository,
     private readonly urlGenerator: UrlGeneratorHelper,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
@@ -64,7 +64,7 @@ export class AlertsRepository implements IAlertsRepository {
     // Recovery module is deployed per Safe so we can assume that it is only enabled on one
     const safeAddress = safes[0];
 
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
       chainId,
       safeAddress,
     });
@@ -214,7 +214,7 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     newSafeState: Safe;
   }): Promise<void> {
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
       chainId: args.chainId,
       safeAddress: args.newSafeState.address,
     });

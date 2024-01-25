@@ -19,8 +19,8 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { INestApplication } from '@nestjs/common';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Safes Controller Nonces (Unit)', () => {
   let app: INestApplication;
@@ -34,8 +34,8 @@ describe('Safes Controller Nonces (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
