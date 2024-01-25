@@ -33,6 +33,7 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
@@ -72,9 +73,13 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
-    networkService.get.mockRejectedValueOnce({
-      status: 500,
-    });
+    const error = new NetworkResponseError(
+      new URL(
+        `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`,
+      ),
+      { status: 500 } as Response,
+    );
+    networkService.get.mockRejectedValueOnce(error);
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
@@ -101,9 +106,13 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       data: chainResponse,
       status: 200,
     });
-    networkService.get.mockRejectedValueOnce({
-      status: 500,
-    });
+    const error = new NetworkResponseError(
+      new URL(
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+      ),
+      { status: 500 } as Response,
+    );
+    networkService.get.mockRejectedValueOnce(error);
 
     await request(app.getHttpServer())
       .get(

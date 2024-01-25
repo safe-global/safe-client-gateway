@@ -20,6 +20,7 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Delete Transaction - Transactions Controller (Unit', () => {
   let app: INestApplication;
@@ -117,10 +118,15 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       if (
         url === `${chain.transactionService}/api/v1/transactions/${safeTxHash}`
       ) {
-        return Promise.reject({
-          data: { message: 'Transaction not found', status: 404 },
-          status: 404,
-        });
+        return Promise.reject(
+          new NetworkResponseError(
+            new URL(safeConfigUrl),
+            {
+              status: 404,
+            } as Response,
+            { message: 'Transaction not found', status: 404 },
+          ),
+        );
       }
       fail(`No matching rule for url: ${url}`);
     });

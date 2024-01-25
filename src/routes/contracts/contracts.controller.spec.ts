@@ -17,6 +17,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
@@ -94,12 +95,17 @@ describe('Contracts controller', () => {
     it('Failure: Transaction API fails', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/contracts/${contract.address}`;
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
-          case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
-            return Promise.reject(new Error());
+          case transactionServiceUrl:
+            return Promise.reject(
+              new NetworkResponseError(new URL(transactionServiceUrl), {
+                status: 503,
+              } as Response),
+            );
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
