@@ -10,9 +10,12 @@ export interface Account {
   isVerified: boolean;
   safeAddress: string;
   signer: string;
-  verificationCode: string | null;
-  verificationGeneratedOn: Date | null;
-  verificationSentOn: Date | null;
+}
+
+export interface VerificationCode {
+  code: string;
+  generatedOn: Date;
+  sentOn: Date | null;
 }
 
 export class EmailAddress {

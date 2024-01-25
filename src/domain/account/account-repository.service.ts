@@ -2,8 +2,8 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 import { Inject, Injectable } from '@nestjs/common';
 import codeGenerator from '@/domain/account/code-generator';
 import {
-  Account,
   EmailAddress,
+  VerificationCode,
 } from '@/domain/account/entities/account.entity';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { AccountSaveError } from '@/domain/account/errors/account-save.error';
@@ -18,6 +18,7 @@ import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.rep
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
 import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -101,7 +102,7 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    let account = await this.accountDataSource.getAccount(args);
+    const account = await this.accountDataSource.getAccount(args);
 
     // If the account was already verified, we should not send out a new
     // verification code
@@ -109,10 +110,18 @@ export class AccountRepository implements IAccountRepository {
       throw new EmailAlreadyVerifiedError(args);
     }
 
+    const verificationCode: VerificationCode | null =
+      await this.accountDataSource
+        .getAccountVerificationCode(args)
+        .catch((reason) => {
+          this.loggingService.warn(reason);
+          return null;
+        });
+
     // If there's a date for when the verification was sent out,
     // check if timespan is still valid.
-    if (account.verificationSentOn) {
-      const timespanMs = Date.now() - account.verificationSentOn.getTime();
+    if (verificationCode?.sentOn) {
+      const timespanMs = Date.now() - verificationCode.sentOn.getTime();
       if (timespanMs < this.verificationCodeResendLockWindowMs) {
         throw new ResendVerificationTimespanError({
           ...args,
@@ -122,8 +131,8 @@ export class AccountRepository implements IAccountRepository {
       }
     }
 
-    if (!this._isEmailVerificationCodeValid(account)) {
-      // Expired code. Generate new one
+    if (!this._isEmailVerificationCodeValid(verificationCode)) {
+      // Expired or non-existent code. Generate new one
       await this.accountDataSource.setEmailVerificationCode({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
@@ -133,14 +142,12 @@ export class AccountRepository implements IAccountRepository {
       });
     }
 
-    account = await this.accountDataSource.getAccount(args);
-    if (!account.verificationCode) {
-      throw new InvalidVerificationCodeError(args);
-    }
+    const currentVerificationCode =
+      await this.accountDataSource.getAccountVerificationCode(args);
 
     await this._sendEmailVerification({
       ...args,
-      code: account.verificationCode,
+      code: currentVerificationCode.code,
       emailAddress: account.emailAddress.value,
     });
   }
@@ -158,16 +165,31 @@ export class AccountRepository implements IAccountRepository {
       return;
     }
 
-    if (account.verificationCode !== args.code) {
+    let verificationCode: VerificationCode;
+    try {
+      verificationCode =
+        await this.accountDataSource.getAccountVerificationCode(args);
+    } catch (e) {
+      // If we attempt to verify an email is done without a verification code in place,
+      // Send a new code to the client's email address for verification
+      this.loggingService.warn(e);
+      if (e instanceof VerificationCodeDoesNotExistError) {
+        await this.resendEmailVerification(args);
+      }
+      // throw an error to the clients informing that the email address needs to be verified with a new code
+      throw new Error('Email needs to be verified again');
+    }
+
+    if (verificationCode.code !== args.code) {
       throw new InvalidVerificationCodeError(args);
     }
 
-    if (!this._isEmailVerificationCodeValid(account)) {
+    if (!this._isEmailVerificationCodeValid(verificationCode)) {
       throw new InvalidVerificationCodeError(args);
     }
 
     // TODO: it is possible that when verifying the email address, a new code generation was triggered
-    return this.accountDataSource.verifyEmail(args);
+    await this.accountDataSource.verifyEmail(args);
   }
 
   async deleteAccount(args: {
@@ -199,33 +221,36 @@ export class AccountRepository implements IAccountRepository {
     emailAddress: string;
     signer: string;
   }): Promise<void> {
+    const account = await this.accountDataSource.getAccount(args);
     const newEmail = new EmailAddress(args.emailAddress);
-    const currentAccount = await this.accountDataSource.getAccount(args);
 
-    if (newEmail.value === currentAccount.emailAddress.value) {
+    if (newEmail.value === account.emailAddress.value) {
       throw new EmailEditMatchesError(args);
     }
 
-    const verificationCode = this._generateCode();
+    const newVerificationCode = this._generateCode();
 
     await this.accountDataSource.updateAccountEmail({
       chainId: args.chainId,
-      code: verificationCode,
+      code: newVerificationCode,
       emailAddress: newEmail,
       safeAddress: args.safeAddress,
       signer: args.signer,
       codeGenerationDate: new Date(),
       unsubscriptionToken: crypto.randomUUID(),
     });
+    // TODO if the following throws we should not throw
     await this._sendEmailVerification({
       ...args,
-      code: verificationCode,
+      code: newVerificationCode,
     });
   }
 
-  private _isEmailVerificationCodeValid(email: Account): boolean {
-    if (!email.verificationGeneratedOn) return false;
-    const window = Date.now() - email.verificationGeneratedOn.getTime();
+  private _isEmailVerificationCodeValid(
+    verificationCode: VerificationCode | null,
+  ): boolean {
+    if (!verificationCode || !verificationCode.generatedOn) return false;
+    const window = Date.now() - verificationCode.generatedOn.getTime();
     return window < this.verificationCodeTtlMs;
   }
 

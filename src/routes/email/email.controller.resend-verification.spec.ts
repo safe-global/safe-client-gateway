@@ -11,11 +11,11 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
-import { faker } from '@faker-js/faker';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -67,16 +67,18 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('resends email verification successfully', async () => {
-    const account = accountBuilder()
-      .with('isVerified', false)
-      .with('verificationGeneratedOn', new Date())
-      .with('verificationSentOn', new Date())
+    const account = accountBuilder().with('isVerified', false).build();
+    const verificationCode = verificationCodeBuilder()
+      .with('generatedOn', new Date())
+      .with('sentOn', new Date())
       .build();
     accountDataSource.getAccount.mockResolvedValueOnce(account);
-    accountDataSource.getAccount.mockResolvedValueOnce({
-      ...account,
-      verificationCode: faker.string.numeric({ length: 6 }),
-    });
+    accountDataSource.getAccountVerificationCode.mockResolvedValue(
+      verificationCode,
+    );
+    accountDataSource.setEmailVerificationSentDate.mockResolvedValueOnce(
+      verificationCode,
+    );
 
     // Advance timer by the minimum amount of time required to resend email
     jest.advanceTimersByTime(resendLockWindowMs);
@@ -89,14 +91,26 @@ describe('Email controller resend verification tests', () => {
       })
       .expect(202)
       .expect({});
+
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.getAccountVerificationCode).toHaveBeenCalledTimes(
+      2,
+    );
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it('triggering email resend within lock window returns 429', async () => {
-    const account = accountBuilder()
-      .with('isVerified', false)
-      .with('verificationSentOn', new Date())
+    const account = accountBuilder().with('isVerified', false).build();
+    const verificationCode = verificationCodeBuilder()
+      .with('generatedOn', new Date())
+      .with('sentOn', new Date())
       .build();
     accountDataSource.getAccount.mockResolvedValue(account);
+    accountDataSource.getAccountVerificationCode.mockResolvedValue(
+      verificationCode,
+    );
 
     // Advance timer to a time within resendLockWindowMs
     jest.advanceTimersByTime(resendLockWindowMs - 1);
@@ -134,17 +148,15 @@ describe('Email controller resend verification tests', () => {
   });
 
   it('resend email with new code', async () => {
-    const newVerificationCode = faker.string.numeric({ length: 6 });
-    const account = accountBuilder()
-      .with('isVerified', false)
-      .with('verificationGeneratedOn', new Date())
-      .with('verificationSentOn', new Date())
+    const account = accountBuilder().with('isVerified', false).build();
+    const verificationCode = verificationCodeBuilder()
+      .with('generatedOn', new Date())
+      .with('sentOn', new Date())
       .build();
     accountDataSource.getAccount.mockResolvedValueOnce(account);
-    accountDataSource.getAccount.mockResolvedValueOnce({
-      ...account,
-      verificationCode: newVerificationCode,
-    });
+    accountDataSource.getAccountVerificationCode.mockResolvedValueOnce(
+      verificationCode,
+    );
 
     // Advance timer so that code is considered as expired
     jest.advanceTimersByTime(ttlMs);
@@ -159,29 +171,5 @@ describe('Email controller resend verification tests', () => {
       .expect({});
 
     // TODO 3rd party mock checking that the new code was sent out (and not the old one)
-  });
-
-  it('null verificationCode should return 500', async () => {
-    const account = accountBuilder()
-      .with('verificationCode', faker.string.numeric({ length: 6 }))
-      .with('isVerified', false)
-      .with('verificationGeneratedOn', new Date())
-      .build();
-    accountDataSource.getAccount.mockResolvedValueOnce(account);
-    accountDataSource.getAccount.mockResolvedValueOnce({
-      ...account,
-      verificationCode: null,
-    });
-
-    jest.advanceTimersByTime(resendLockWindowMs);
-    await request(app.getHttpServer())
-      .put(
-        `/v1/chains/${account.chainId}/safes/${account.signer}/emails/verify-resend`,
-      )
-      .send({
-        account: account.signer,
-      })
-      .expect(500)
-      .expect({ code: 500, message: 'Internal server error' });
   });
 });

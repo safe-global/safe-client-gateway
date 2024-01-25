@@ -29,6 +29,8 @@ import {
   Account,
   EmailAddress,
 } from '@/domain/account/entities/account.entity';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 
 const verificationCodeTtlMs = 100;
 
@@ -113,10 +115,23 @@ describe('Email controller edit email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    accountDataSource.getAccount.mockResolvedValue({
-      emailAddress: new EmailAddress(prevEmailAddress),
-    } as Account);
-    accountDataSource.updateAccountEmail.mockResolvedValue();
+    accountDataSource.getAccount.mockResolvedValue(
+      accountBuilder()
+        .with('chainId', chain.chainId)
+        .with('signer', signerAddress)
+        .with('isVerified', true)
+        .with('safeAddress', safe.address)
+        .with('emailAddress', new EmailAddress(prevEmailAddress))
+        .build(),
+    );
+    accountDataSource.updateAccountEmail.mockResolvedValue(
+      accountBuilder()
+        .with('emailAddress', new EmailAddress(emailAddress))
+        .build(),
+    );
+    accountDataSource.setEmailVerificationSentDate.mockResolvedValue(
+      verificationCodeBuilder().build(),
+    );
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)

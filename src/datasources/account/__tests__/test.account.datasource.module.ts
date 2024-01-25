@@ -4,6 +4,7 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 const accountDataSource = {
   getVerifiedAccountEmailsBySafeAddress: jest.fn(),
   getAccount: jest.fn(),
+  getAccountVerificationCode: jest.fn(),
   createAccount: jest.fn(),
   setEmailVerificationCode: jest.fn(),
   setEmailVerificationSentDate: jest.fn(),
