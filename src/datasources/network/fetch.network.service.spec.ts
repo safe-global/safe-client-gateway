@@ -1,22 +1,17 @@
-import { Axios } from 'axios';
 import { faker } from '@faker-js/faker';
 import { jest } from '@jest/globals';
 import { ILoggingService } from '@/logging/logging.interface';
-import { AxiosNetworkService } from '@/datasources/network/axios.network.service';
 import {
-  NetworkOtherError,
   NetworkResponseError,
   NetworkRequestError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import { FetchClient } from '@/datasources/network/network.module';
+import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 
-const axios = {
-  get: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
-} as unknown as Axios;
+const fetchClient = jest.fn() as unknown as FetchClient;
 
-const axiosMock = jest.mocked<Axios>(axios);
+const fetchClientMock = jest.mocked<FetchClient>(fetchClient);
 
 const loggingService = {
   debug: jest.fn(),
@@ -24,46 +19,74 @@ const loggingService = {
 
 const loggingServiceMock = jest.mocked(loggingService);
 
-describe('AxiosNetworkService', () => {
-  let target: AxiosNetworkService;
+describe('FetchNetworkService', () => {
+  let target: FetchNetworkService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    target = new AxiosNetworkService(axiosMock, loggingServiceMock);
+    target = new FetchNetworkService(fetchClientMock, loggingServiceMock);
   });
 
   describe('GET requests', () => {
-    it(`get calls axios get`, async () => {
+    it(`get uses GET method`, async () => {
       const url = faker.internet.url({ appendSlash: false });
 
       await target.get(url);
 
-      expect(axiosMock.get).toHaveBeenCalledTimes(1);
-      expect(axiosMock.get).toHaveBeenCalledWith(url, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'GET',
+      });
     });
 
-    it(`get calls axios get with request`, async () => {
+    it(`get calls fetch get with request`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const request: NetworkRequest = {
         params: { some_query_param: 'query_param' },
+        headers: {
+          test: 'value',
+        },
       };
 
       await target.get(url, request);
 
-      expect(axiosMock.get).toHaveBeenCalledTimes(1);
-      expect(axiosMock.get).toHaveBeenCalledWith(url, request);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        `${url}/?some_query_param=query_param`,
+        {
+          method: 'GET',
+          headers: {
+            test: 'value',
+          },
+        },
+      );
     });
 
-    it(`get forwards unknown error as NetworkOtherError`, async () => {
+    it(`get should remove empty strings, null and undefined query params from the request`, async () => {
       const url = faker.internet.url({ appendSlash: false });
-      (axiosMock.get as any).mockRejectedValueOnce(new Error('Axios error'));
+      const request: NetworkRequest = {
+        params: {
+          boolean: true,
+          falsy_boolean: false,
+          integer: 1,
+          falsy_integer: 0,
+          string: 'string',
+          // These should be removed
+          falsy_string: '',
+          null: null,
+          undefined: undefined,
+        },
+      };
 
-      await expect(target.get(url)).rejects.toThrow(
-        new NetworkOtherError('Axios error'),
+      await target.get(url, request);
+
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        `${url}/?boolean=true&falsy_boolean=false&integer=1&falsy_integer=0&string=string`,
+        {
+          method: 'GET',
+        },
       );
-
-      expect(axiosMock.get).toHaveBeenCalledTimes(1);
-      expect(axiosMock.get).toHaveBeenCalledWith(url, undefined);
     });
 
     it(`get forwards response error as NetworkResponseError`, async () => {
@@ -72,14 +95,16 @@ describe('AxiosNetworkService', () => {
         response: { data: 'data', status: 100 },
         request: {},
       };
-      (axiosMock.get as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.get(url)).rejects.toThrow(
         new NetworkResponseError(error.response.data, error.response.status),
       );
 
-      expect(axiosMock.get).toHaveBeenCalledTimes(1);
-      expect(axiosMock.get).toHaveBeenCalledWith(url, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'GET',
+      });
     });
 
     it(`get forwards response error as NetworkRequestError`, async () => {
@@ -87,14 +112,16 @@ describe('AxiosNetworkService', () => {
       const error = {
         request: 'some error',
       };
-      (axiosMock.get as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.get(url)).rejects.toThrow(
         new NetworkRequestError(error.request),
       );
 
-      expect(axiosMock.get).toHaveBeenCalledTimes(1);
-      expect(axiosMock.get).toHaveBeenCalledWith(url, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'GET',
+      });
     });
 
     it(`get logs response error`, async () => {
@@ -108,10 +135,10 @@ describe('AxiosNetworkService', () => {
         request: {
           protocol: faker.internet.protocol(),
           host: faker.internet.domainName(),
-          path: faker.system.filePath(),
+          pathname: faker.system.filePath(),
         },
       };
-      (axiosMock.get as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.get(url)).rejects.toThrow(
         new NetworkRequestError(error.request),
@@ -122,7 +149,7 @@ describe('AxiosNetworkService', () => {
         type: 'external_request',
         protocol: error.request.protocol,
         target_host: error.request.host,
-        path: error.request.path,
+        path: error.request.pathname,
         request_status: error.response.status,
         detail: error.response.statusText,
         response_time_ms: expect.any(Number),
@@ -131,40 +158,46 @@ describe('AxiosNetworkService', () => {
   });
 
   describe('POST requests', () => {
-    it(`post calls axios post`, async () => {
+    it(`post uses POST method`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const data = { [faker.word.sample()]: faker.string.alphanumeric() };
 
       await target.post(url, data);
 
-      expect(axiosMock.post).toHaveBeenCalledTimes(1);
-      expect(axiosMock.post).toHaveBeenCalledWith(url, data, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
-    it(`post calls axios post with request`, async () => {
+    it(`post calls fetch with request`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const data = { [faker.word.sample()]: faker.string.alphanumeric() };
       const request: NetworkRequest = {
         params: { some_query_param: 'query_param' },
+        headers: {
+          test: 'value',
+        },
       };
 
       await target.post(url, data, request);
 
-      expect(axiosMock.post).toHaveBeenCalledTimes(1);
-      expect(axiosMock.post).toHaveBeenCalledWith(url, data, request);
-    });
-
-    it(`post forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
-      (axiosMock.post as any).mockRejectedValueOnce(new Error('Axios error'));
-
-      await expect(target.post(url, data)).rejects.toThrow(
-        new NetworkOtherError('Axios error'),
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        `${url}/?some_query_param=query_param`,
+        {
+          method: 'POST',
+          headers: {
+            test: 'value',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        },
       );
-
-      expect(axiosMock.post).toHaveBeenCalledTimes(1);
-      expect(axiosMock.post).toHaveBeenCalledWith(url, data, undefined);
     });
 
     it(`post forwards response error as NetworkResponseError`, async () => {
@@ -174,14 +207,20 @@ describe('AxiosNetworkService', () => {
         response: { data: 'data', status: 100 },
         request: {},
       };
-      (axiosMock.post as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.post(url, data)).rejects.toThrow(
         new NetworkResponseError(error.response.data, error.response.status),
       );
 
-      expect(axiosMock.post).toHaveBeenCalledTimes(1);
-      expect(axiosMock.post).toHaveBeenCalledWith(url, data, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
     it(`post forwards response error as NetworkRequestError`, async () => {
@@ -190,14 +229,20 @@ describe('AxiosNetworkService', () => {
       const error = {
         request: 'some error',
       };
-      (axiosMock.post as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.post(url, data)).rejects.toThrow(
         new NetworkRequestError(error.request),
       );
 
-      expect(axiosMock.post).toHaveBeenCalledTimes(1);
-      expect(axiosMock.post).toHaveBeenCalledWith(url, data, undefined);
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
     it(`post logs response error`, async () => {
@@ -211,10 +256,10 @@ describe('AxiosNetworkService', () => {
         request: {
           protocol: faker.internet.protocol(),
           host: faker.internet.domainName(),
-          path: faker.system.filePath(),
+          pathname: faker.system.filePath(),
         },
       };
-      (axiosMock.post as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.post(url, {})).rejects.toThrow(
         new NetworkRequestError(error.request),
@@ -225,7 +270,7 @@ describe('AxiosNetworkService', () => {
         type: 'external_request',
         protocol: error.request.protocol,
         target_host: error.request.host,
-        path: error.request.path,
+        path: error.request.pathname,
         request_status: error.response.status,
         detail: error.response.statusText,
         response_time_ms: expect.any(Number),
@@ -234,27 +279,15 @@ describe('AxiosNetworkService', () => {
   });
 
   describe('DELETE requests', () => {
-    it(`delete calls axios delete`, async () => {
+    it(`delete uses DELETE method`, async () => {
       const url = faker.internet.url({ appendSlash: false });
-      const data = { some_data: 'some_data' };
 
-      await target.delete(url, data);
+      await target.delete(url);
 
-      expect(axiosMock.delete).toHaveBeenCalledTimes(1);
-      expect(axiosMock.delete).toHaveBeenCalledWith(url, { data: data });
-    });
-
-    it(`delete forwards unknown error as NetworkOtherError`, async () => {
-      const url = faker.internet.url({ appendSlash: false });
-      const data = { some_data: 'some_data' };
-      axiosMock.delete.mockRejectedValueOnce(new Error('Axios error'));
-
-      await expect(target.delete(url, data)).rejects.toThrow(
-        new NetworkOtherError('Axios error'),
-      );
-
-      expect(axiosMock.delete).toHaveBeenCalledTimes(1);
-      expect(axiosMock.delete).toHaveBeenCalledWith(url, { data: data });
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(url, {
+        method: 'DELETE',
+      });
     });
 
     it(`delete forwards response error as NetworkResponseError`, async () => {
@@ -264,14 +297,20 @@ describe('AxiosNetworkService', () => {
         response: { data: 'data', status: 100 },
         request: {},
       };
-      axiosMock.delete.mockRejectedValueOnce(error);
+      fetchClientMock.mockRejectedValueOnce(error);
 
       await expect(target.delete(url, data)).rejects.toThrow(
         new NetworkResponseError(error.response.data, error.response.status),
       );
 
-      expect(axiosMock.delete).toHaveBeenCalledTimes(1);
-      expect(axiosMock.delete).toHaveBeenCalledWith(url, { data: data });
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(url, {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
     it(`delete forwards response error as NetworkRequestError`, async () => {
@@ -280,14 +319,20 @@ describe('AxiosNetworkService', () => {
       const error = {
         request: 'some error',
       };
-      axiosMock.delete.mockRejectedValueOnce(error);
+      fetchClientMock.mockRejectedValueOnce(error);
 
       await expect(target.delete(url, data)).rejects.toThrow(
         new NetworkRequestError(error.request),
       );
 
-      expect(axiosMock.delete).toHaveBeenCalledTimes(1);
-      expect(axiosMock.delete).toHaveBeenCalledWith(url, { data: data });
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(url, {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
     it(`delete logs response error`, async () => {
@@ -301,10 +346,10 @@ describe('AxiosNetworkService', () => {
         request: {
           protocol: faker.internet.protocol(),
           host: faker.internet.domainName(),
-          path: faker.system.filePath(),
+          pathname: faker.system.filePath(),
         },
       };
-      (axiosMock.delete as any).mockRejectedValueOnce(error);
+      (fetchClientMock as any).mockRejectedValueOnce(error);
 
       await expect(target.delete(url)).rejects.toThrow(
         new NetworkRequestError(error.request),
@@ -315,7 +360,7 @@ describe('AxiosNetworkService', () => {
         type: 'external_request',
         protocol: error.request.protocol,
         target_host: error.request.host,
-        path: error.request.path,
+        path: error.request.pathname,
         request_status: error.response.status,
         detail: error.response.statusText,
         response_time_ms: expect.any(Number),

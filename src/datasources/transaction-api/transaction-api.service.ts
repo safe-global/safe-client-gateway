@@ -309,7 +309,7 @@ export class TransactionApi implements ITransactionApi {
     delegate: string;
     safeAddress: string;
     signature: string;
-  }): Promise<void> {
+  }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}`;
       return await this.networkService.delete(url, {
