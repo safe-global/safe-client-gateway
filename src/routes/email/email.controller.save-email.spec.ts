@@ -14,7 +14,10 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -23,14 +26,15 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
+import { INestApplication } from '@nestjs/common';
 
 describe('Email controller save email tests', () => {
-  let app;
-  let configurationService;
-  let emailApi;
-  let accountDataSource;
-  let networkService;
-  let safeConfigUrl;
+  let app: INestApplication;
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let emailApi: jest.MockedObjectDeep<IEmailApi>;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let safeConfigUrl: string | undefined;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -87,9 +91,9 @@ describe('Email controller save email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -201,9 +205,9 @@ describe('Email controller save email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

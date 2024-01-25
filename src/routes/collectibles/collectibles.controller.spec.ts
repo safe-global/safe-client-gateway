@@ -14,7 +14,10 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
@@ -30,8 +33,8 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -80,9 +83,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse });
+            return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -123,9 +126,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse });
+            return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -167,9 +170,9 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
-            return Promise.resolve({ data: collectiblesResponse });
+            return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -201,7 +204,7 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
           default:
@@ -226,7 +229,7 @@ describe('Collectibles Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.reject(transactionServiceError);
           default:

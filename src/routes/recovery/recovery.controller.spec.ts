@@ -9,7 +9,10 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
@@ -23,7 +26,7 @@ describe('Recovery (Unit)', () => {
   let alertsUrl: string;
   let alertsAccount: string;
   let alertsProject: string;
-  let networkService;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -73,7 +76,7 @@ describe('Recovery (Unit)', () => {
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.resolve({ status: 200 })
+          ? Promise.resolve({ status: 200, data: {} })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 

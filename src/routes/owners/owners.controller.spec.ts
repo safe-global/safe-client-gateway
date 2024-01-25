@@ -9,7 +9,10 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -19,8 +22,8 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -62,9 +65,13 @@ describe('Owners Controller (Unit)', () => {
           faker.finance.ethereumAddress(),
         ],
       };
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
       networkService.get.mockResolvedValueOnce({
         data: transactionApiSafeListResponse,
+        status: 200,
       });
 
       await request(app.getHttpServer())
@@ -99,7 +106,10 @@ describe('Owners Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
       networkService.get.mockRejectedValueOnce({
         status: 500,
       });
@@ -134,9 +144,13 @@ describe('Owners Controller (Unit)', () => {
           faker.finance.ethereumAddress(),
         ],
       };
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
       networkService.get.mockResolvedValueOnce({
         data: transactionApiSafeListResponse,
+        status: 200,
       });
 
       await request(app.getHttpServer())

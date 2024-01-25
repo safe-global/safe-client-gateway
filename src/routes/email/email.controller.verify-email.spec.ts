@@ -14,14 +14,15 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
+import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
 
 describe('Email controller verify email tests', () => {
-  let app;
-  let accountDataSource;
+  let app: INestApplication;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
 
   beforeEach(async () => {
     jest.clearAllMocks();

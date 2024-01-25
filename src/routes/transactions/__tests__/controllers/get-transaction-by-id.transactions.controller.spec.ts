@@ -28,7 +28,10 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -38,8 +41,8 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -100,7 +103,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getModuleTransactionUrl:
           return Promise.reject({ status: 500 });
         default:
@@ -137,9 +140,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getModuleTransactionUrl:
           return Promise.reject({ status: 404 });
         default:
@@ -181,17 +184,18 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getModuleTransactionUrl:
           return Promise.resolve({
             data: moduleTransactionToJson(moduleTransaction),
+            status: 200,
           });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         case getModuleContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -250,9 +254,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getTransferUrl:
           return Promise.reject({ status: 404 });
         default:
@@ -289,17 +293,18 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getTransferUrl:
           return Promise.resolve({
             data: nativeTokenTransferToJson(transfer),
+            status: 200,
           });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getFromContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -345,9 +350,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getMultisigTransactionUrl:
           return Promise.reject({ status: 404 });
         default:
@@ -422,21 +427,21 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getMultisigTransactionUrl:
-          return Promise.resolve({ data: multisigToJson(tx) });
+          return Promise.resolve({ data: multisigToJson(tx), status: 200 });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: rejectionTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getGasTokenContractUrl:
-          return Promise.resolve({ data: gasToken });
+          return Promise.resolve({ data: gasToken, status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         case getToTokenUrl:
-          return Promise.resolve({ data: token });
+          return Promise.resolve({ data: token, status: 200 });
         case getSafeAppsUrl:
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -589,21 +594,21 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getMultisigTransactionUrl:
-          return Promise.resolve({ data: multisigToJson(tx) });
+          return Promise.resolve({ data: multisigToJson(tx), status: 200 });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: rejectionTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getGasTokenContractUrl:
-          return Promise.resolve({ data: gasToken });
+          return Promise.resolve({ data: gasToken, status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         case getToTokenUrl:
-          return Promise.resolve({ data: token });
+          return Promise.resolve({ data: token, status: 200 });
         case getSafeAppsUrl:
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -757,19 +762,19 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case getMultisigTransactionUrl:
-          return Promise.resolve({ data: multisigToJson(tx) });
+          return Promise.resolve({ data: multisigToJson(tx), status: 200 });
         case getMultisigTransactionsUrl:
-          return Promise.resolve({ data: rejectionTxsPage });
+          return Promise.resolve({ data: rejectionTxsPage, status: 200 });
         case getSafeUrl:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         case getGasTokenContractUrl:
-          return Promise.resolve({ data: gasToken });
+          return Promise.resolve({ data: gasToken, status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: contract });
+          return Promise.resolve({ data: contract, status: 200 });
         case getSafeAppsUrl:
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
