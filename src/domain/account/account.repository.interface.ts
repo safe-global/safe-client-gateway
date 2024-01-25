@@ -16,9 +16,9 @@ export interface IAccountRepository {
    * Creates a new account.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to which we should store the email address
+   * @param args.safeAddress - the Safe address which we should create the account for
    * @param args.emailAddress - the email address to store
-   * @param args.signer - the owner address to which we should link the email address to
+   * @param args.signer - the owner address to which we should link the account to
    */
   createAccount(args: {
     chainId: string;

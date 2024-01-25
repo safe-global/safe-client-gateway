@@ -1,7 +1,7 @@
 export class AccountSaveError extends Error {
-  constructor(chainId: string, safeAddress: string, account: string) {
+  constructor(chainId: string, safeAddress: string, signer: string) {
     super(
-      `Error while saving provided email was not saved. chainId=${chainId}, safeAddress=${safeAddress}, account=${account}`,
+      `Error while creating account. Account was not created. chainId=${chainId}, safeAddress=${safeAddress}, signer=${signer}`,
     );
   }
 }

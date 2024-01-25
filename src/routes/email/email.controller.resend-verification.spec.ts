@@ -123,7 +123,7 @@ describe('Email controller resend verification tests', () => {
         `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
       )
       .send({
-        account: account.signer,
+        signer: account.signer,
       })
       .expect(409)
       .expect({

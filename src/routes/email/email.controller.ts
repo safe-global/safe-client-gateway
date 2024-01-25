@@ -53,7 +53,7 @@ export class EmailController {
       chainId,
       emailAddress: saveEmailDto.emailAddress,
       safeAddress,
-      signer: saveEmailDto.account,
+      signer: saveEmailDto.signer,
     });
   }
 
@@ -71,7 +71,7 @@ export class EmailController {
     await this.service.resendVerification({
       chainId,
       safeAddress,
-      signer: resendVerificationDto.account,
+      signer: resendVerificationDto.signer,
     });
   }
 
@@ -86,7 +86,7 @@ export class EmailController {
     await this.service.verifyEmailAddress({
       chainId,
       safeAddress,
-      signer: verifyEmailDto.account,
+      signer: verifyEmailDto.signer,
       code: verifyEmailDto.code,
     });
   }
@@ -106,7 +106,7 @@ export class EmailController {
     await this.service.deleteEmail({
       chainId,
       safeAddress,
-      signer: deleteEmailDto.account,
+      signer: deleteEmailDto.signer,
     });
   }
 
@@ -130,7 +130,7 @@ export class EmailController {
     await this.service.editEmail({
       chainId,
       safeAddress,
-      signer: editEmailDto.account,
+      signer: editEmailDto.signer,
       emailAddress: editEmailDto.emailAddress,
     });
   }

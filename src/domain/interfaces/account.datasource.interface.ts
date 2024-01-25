@@ -99,7 +99,7 @@ export interface IAccountDataSource {
   }): Promise<void>;
 
   /**
-   * Deletes an email address for a given account.
+   * Deletes the given account.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the signer/owner
