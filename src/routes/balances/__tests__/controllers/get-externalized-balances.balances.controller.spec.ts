@@ -1,29 +1,33 @@
+import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { AppModule } from '@/app.module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { valkBalanceBuilder } from '@/datasources/balances-api/entities/__tests__/valk-balance.entity.builder';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { faker } from '@faker-js/faker';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
-import { valkBalanceBuilder } from '@/datasources/balances-api/entities/__tests__/valk-balance.entity.builder';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
-  let valkBaseUri;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let valkBaseUri: string;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -31,8 +35,8 @@ describe('Balances Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -88,9 +92,12 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
-            return Promise.resolve({ data: valkApiBalancesResponse });
+            return Promise.resolve({
+              data: valkApiBalancesResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -184,9 +191,12 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
-            return Promise.resolve({ data: valkApiBalancesResponse });
+            return Promise.resolve({
+              data: valkApiBalancesResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -230,6 +240,72 @@ describe('Balances Controller (Unit)', () => {
       expect(networkService.get.mock.calls[1][0]).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
+    });
+  });
+
+  describe('Config API Error', () => {
+    it(`500 error response`, async () => {
+      const chainId = '100';
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainName = app
+        .get(IConfigurationService)
+        .getOrThrow(`balances.providers.valk.chains.${chainId}.chainName`);
+      const error = new NetworkResponseError(
+        new URL(
+          `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
+        ),
+        {
+          status: 500,
+        } as Response,
+      );
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.reject(error);
+          case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            return Promise.resolve({ data: [], status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+        .expect(500)
+        .expect({
+          message: 'An error occurred',
+          code: 500,
+        });
+    });
+  });
+
+  describe('Valk Balances API Error', () => {
+    it(`500 error response`, async () => {
+      const chain = chainBuilder().with('chainId', '100').build();
+      const safeAddress = faker.finance.ethereumAddress();
+      const chainName = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.valk.chains.${chain.chainId}.chainName`,
+        );
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            return Promise.reject(new Error('test error'));
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/usd`)
+        .expect(503)
+        .expect({
+          message: `Error getting ${safeAddress} balances from provider: test error}`,
+          code: 503,
+        });
     });
   });
 });
