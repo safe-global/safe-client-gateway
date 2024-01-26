@@ -7,7 +7,7 @@ import { fakeJson } from '@/__tests__/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 
-const redisClientType: jest.MockedObjectDeep<RedisClientType> = {
+const redisClientType = {
   hGet: jest.fn(),
   hSet: jest.fn(),
   hDel: jest.fn(),
@@ -15,7 +15,7 @@ const redisClientType: jest.MockedObjectDeep<RedisClientType> = {
   unlink: jest.fn(),
   quit: jest.fn(),
   scanIterator: jest.fn(),
-};
+} as jest.MockedObjectDeep<RedisClientType>;
 const redisClientTypeMock = jest.mocked(redisClientType);
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
