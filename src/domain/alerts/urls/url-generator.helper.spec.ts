@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 
 const configurationServiceMock = jest.mocked(configurationService);
 

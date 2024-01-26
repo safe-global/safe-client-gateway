@@ -18,11 +18,11 @@ import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/tran
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
-} as unknown as TokenRepository);
+} as jest.MockedObjectDeep<TokenRepository>);
 
 describe('Transfer Info mapper (Unit)', () => {
   let mapper: TransferInfoMapper;

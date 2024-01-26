@@ -13,7 +13,7 @@ import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/cu
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 describe('Multisig Custom Transaction mapper (Unit)', () => {
   let mapper: CustomTransactionMapper;

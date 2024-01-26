@@ -13,29 +13,29 @@ import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.bui
 
 const dataSource = {
   get: jest.fn(),
-} as unknown as CacheFirstDataSource;
+} as jest.MockedObjectDeep<CacheFirstDataSource>;
 const mockDataSource = jest.mocked(dataSource);
 
 const cacheService = {
   deleteByKey: jest.fn(),
   set: jest.fn(),
-} as unknown as ICacheService;
+} as jest.MockedObjectDeep<ICacheService>;
 const mockCacheService = jest.mocked(cacheService);
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
 const httpErrorFactory = {
   from: jest.fn(),
-} as unknown as HttpErrorFactory;
+} as jest.MockedObjectDeep<HttpErrorFactory>;
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 const networkService = jest.mocked({
   get: jest.fn(),
   post: jest.fn(),
-}) as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>);
 const mockNetworkService = jest.mocked(networkService);
 
 describe('TransactionApi', () => {

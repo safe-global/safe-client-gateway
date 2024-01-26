@@ -8,16 +8,16 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
 describe('RedisCacheService', () => {

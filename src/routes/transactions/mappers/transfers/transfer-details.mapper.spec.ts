@@ -7,7 +7,7 @@ import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/tran
 
 const transferInfoMapper = jest.mocked({
   mapTransferInfo: jest.fn(),
-} as unknown as TransferInfoMapper);
+} as jest.MockedObjectDeep<TransferInfoMapper>);
 
 describe('TransferDetails mapper (Unit)', () => {
   let mapper: TransferDetailsMapper;

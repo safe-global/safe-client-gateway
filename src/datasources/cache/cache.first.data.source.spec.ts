@@ -8,16 +8,16 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const networkService = {
   get: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 
 const mockNetworkService = jest.mocked(networkService);
 
@@ -219,8 +219,7 @@ describe('CacheFirstDataSource', () => {
     const mockCache = jest.mocked({
       get: jest.fn(),
       set: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as ICacheService);
+    } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
       mockCache,
@@ -263,8 +262,7 @@ describe('CacheFirstDataSource', () => {
     const mockCache = jest.mocked({
       get: jest.fn(),
       set: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as ICacheService);
+    } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
       mockCache,

@@ -16,20 +16,20 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
 
   const addressInfoHelper = jest.mocked({
     getOrDefault: jest.fn(),
-  } as unknown as AddressInfoHelper);
+  } as jest.MockedObjectDeep<AddressInfoHelper>);
 
   const statusMapper = jest.mocked({
     mapTransactionStatus: jest.fn(),
-  } as unknown as ModuleTransactionStatusMapper);
+  } as jest.MockedObjectDeep<ModuleTransactionStatusMapper>);
 
   const transactionInfoMapper = jest.mocked({
     mapTransactionInfo: jest.fn(),
-  } as unknown as MultisigTransactionInfoMapper);
+  } as jest.MockedObjectDeep<MultisigTransactionInfoMapper>);
 
   const transactionDataMapper = jest.mocked({
     isTrustedDelegateCall: jest.fn(),
     buildAddressInfoIndex: jest.fn(),
-  } as unknown as TransactionDataMapper);
+  } as jest.MockedObjectDeep<TransactionDataMapper>);
 
   beforeEach(() => {
     jest.clearAllMocks();

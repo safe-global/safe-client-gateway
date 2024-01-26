@@ -10,7 +10,7 @@ import { faker } from '@faker-js/faker';
 const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 const mockNetworkService = jest.mocked(networkService);
 
 describe('PushwooshApi', () => {
