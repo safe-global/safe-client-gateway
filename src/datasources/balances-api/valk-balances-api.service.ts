@@ -6,12 +6,15 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { Balance } from '@/domain/balances/entities/balance.entity';
+import {
+  Balance,
+  Erc20Balance,
+  NativeBalance,
+} from '@/domain/balances/entities/balance.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
-import { NULL_ADDRESS } from '@/routes/common/constants';
 import { Inject, Injectable } from '@nestjs/common';
 import { isHex } from 'viem';
 
@@ -82,22 +85,42 @@ export class ValkBalancesApi implements IBalancesApi {
   mapBalances(valkBalances: ValkBalance[], fiatCode: string): Balance[] {
     return valkBalances.map((valkBalance) => {
       const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
-      return {
-        tokenAddress: isHex(valkBalance.token_address)
-          ? valkBalance.token_address
-          : NULL_ADDRESS,
-        token: {
-          name: valkBalance.name,
-          symbol: valkBalance.symbol,
-          decimals: valkBalance.decimals,
-          logoUri: valkBalance.logo ?? '',
-        },
-        balance: getNumberString(valkBalance.balance),
-        fiatBalance: getNumberString(
-          (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
-        ),
-        fiatConversion: getNumberString(price),
-      };
+      const balance = getNumberString(valkBalance.balance);
+      const fiatBalance = getNumberString(
+        (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
+      );
+      const fiatConversion = getNumberString(price);
+
+      // Valk returns a string representing the native coin (e.g.: 'eth') as
+      // token_address for native coins balances. An hex is returned for ERC20 tokens.
+      if (isHex(valkBalance.token_address)) {
+        return {
+          tokenAddress: valkBalance.token_address,
+          token: {
+            name: valkBalance.name,
+            symbol: valkBalance.symbol,
+            decimals: valkBalance.decimals,
+            logoUri: valkBalance.logo ?? '',
+          },
+          balance,
+          fiatBalance,
+          fiatConversion,
+        } as Erc20Balance & {
+          fiatBalance: string | null;
+          fiatConversion: string | null;
+        };
+      } else {
+        return {
+          tokenAddress: null,
+          token: null,
+          balance,
+          fiatBalance,
+          fiatConversion,
+        } as NativeBalance & {
+          fiatBalance: string | null;
+          fiatConversion: string | null;
+        };
+      }
     });
   }
 

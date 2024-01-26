@@ -50,25 +50,23 @@ export class BalancesService {
     nativeCurrency: NativeCurrency,
   ): Promise<Balance> {
     const tokenAddress = balance.tokenAddress;
-    const isNativeCurrency =
-      tokenAddress === null || tokenAddress === NULL_ADDRESS;
-    const tokenType = isNativeCurrency
-      ? TokenType.NativeToken
-      : TokenType.Erc20;
+    const tokenType =
+      tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
 
-    const tokenMetaData = isNativeCurrency
-      ? {
-          decimals: nativeCurrency.decimals,
-          symbol: nativeCurrency.symbol,
-          name: nativeCurrency.name,
-          logoUri: nativeCurrency.logoUri,
-        }
-      : {
-          decimals: balance.token.decimals,
-          symbol: balance.token.symbol,
-          name: balance.token.name,
-          logoUri: balance.token.logoUri,
-        };
+    const tokenMetaData =
+      tokenAddress === null
+        ? {
+            decimals: nativeCurrency.decimals,
+            symbol: nativeCurrency.symbol,
+            name: nativeCurrency.name,
+            logoUri: nativeCurrency.logoUri,
+          }
+        : {
+            decimals: balance.token.decimals,
+            symbol: balance.token.symbol,
+            name: balance.token.name,
+            logoUri: balance.token.logoUri,
+          };
 
     return {
       tokenInfo: {
@@ -83,6 +81,7 @@ export class BalancesService {
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
+    // TODO: take into consideration BalancesRepository available fiat codes.
     return this.pricesRepository.getFiatCodes();
   }
 }

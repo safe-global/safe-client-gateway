@@ -32,10 +32,9 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    if (this.balancesApiManager.isExternalized(args.chainId)) {
-      return this._getBalancesFromBalancesApi(args);
-    }
-    return this._getBalancesFromTransactionApi(args);
+    return this.balancesApiManager.isExternalized(args.chainId)
+      ? this._getBalancesFromBalancesApi(args)
+      : this._getBalancesFromTransactionApi(args);
   }
 
   async clearLocalBalances(args: {
@@ -62,8 +61,7 @@ export class BalancesRepository implements IBalancesRepository {
   }): Promise<Balance[]> {
     const api = this.balancesApiManager.getBalancesApi(args.chainId);
     const balances = await api.getBalances(args);
-    balances.map((balance) => this.balancesValidator.validate(balance));
-    return balances;
+    return balances.map((balance) => this.balancesValidator.validate(balance));
   }
 
   private async _getBalancesFromTransactionApi(args: {
