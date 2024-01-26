@@ -116,6 +116,7 @@ export default () => ({
       56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
       8453: { nativeCoin: 'ethereum', chainName: 'base' },
       84531: { nativeCoin: 'ethereum', chainName: 'base' },
+      84532: { nativeCoin: 'ethereum', chainName: 'base' },
     },
   },
   redis: {
@@ -127,7 +128,8 @@ export default () => ({
   },
   safeConfig: {
     baseUri:
-      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
+      process.env.SAFE_CONFIG_BASE_URI ||
+      'https://safe-config.staging.5afe.dev//',
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
