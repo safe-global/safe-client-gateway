@@ -5,7 +5,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
+import { CreateEmailMessageDto } from '@/domain/account/entities/create-email-message.dto.entity';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 
 @Injectable()

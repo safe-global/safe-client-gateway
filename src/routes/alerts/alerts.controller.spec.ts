@@ -18,10 +18,10 @@ import {
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -33,7 +33,10 @@ import {
   swapOwnerEncoder,
 } from '@/domain/alerts/__tests__/safe-transactions.encoder';
 import { transactionAddedEventBuilder } from '@/domain/alerts/__tests__/delay-modifier.encoder';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { getAddress } from 'viem';
@@ -67,16 +70,16 @@ function fakeTenderlySignature(args: {
 }
 
 describe('Alerts (Unit)', () => {
-  let configurationService;
-  let emailApi;
-  let emailDataSource;
-  let urlGenerator;
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let emailApi: jest.MockedObjectDeep<IEmailApi>;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
+  let urlGenerator: UrlGeneratorHelper;
 
   describe('/alerts route enabled', () => {
     let app: INestApplication;
     let signingKey: string;
-    let networkService;
-    let safeConfigUrl;
+    let networkService: jest.MockedObjectDeep<INetworkService>;
+    let safeConfigUrl: string | undefined;
 
     beforeEach(async () => {
       jest.clearAllMocks();
@@ -93,8 +96,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(EmailDataSourceModule)
-        .useModule(TestEmailDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
+        .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(RequestScopedLoggingModule)
@@ -110,7 +113,7 @@ describe('Alerts (Unit)', () => {
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
       urlGenerator = moduleFixture.get(UrlGeneratorHelper);
-      emailDataSource = moduleFixture.get(IEmailDataSource);
+      accountDataSource = moduleFixture.get(IAccountDataSource);
       networkService = moduleFixture.get(NetworkService);
 
       app = await new TestAppProvider().provide(moduleFixture);
@@ -176,18 +179,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -277,18 +283,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -377,18 +386,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -467,18 +479,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -588,18 +603,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -681,18 +699,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -797,18 +818,21 @@ describe('Alerts (Unit)', () => {
           { email: faker.internet.email() },
           { email: faker.internet.email() },
         ];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -887,18 +911,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -964,18 +991,21 @@ describe('Alerts (Unit)', () => {
           timestamp,
         });
         const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
           verifiedSignerEmails,
         );
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({ data: { safes: [safe.address] } });
+              return Promise.resolve({
+                data: { safes: [safe.address] },
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe });
+              return Promise.resolve({ data: safe, status: 200 });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
           }
@@ -1086,18 +1116,21 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ data: { safes: [safe.address] } });
+            return Promise.resolve({
+              data: { safes: [safe.address] },
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe });
+            return Promise.resolve({ data: safe, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1193,18 +1226,21 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ data: { safes: [safe.address] } });
+            return Promise.resolve({
+              data: { safes: [safe.address] },
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe });
+            return Promise.resolve({ data: safe, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1290,18 +1326,21 @@ describe('Alerts (Unit)', () => {
         { email: faker.internet.email() },
         { email: faker.internet.email() },
       ];
-      emailDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
+      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
         verifiedSignerEmails,
       );
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({ data: { safes: [safe.address] } });
+            return Promise.resolve({
+              data: { safes: [safe.address] },
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe });
+            return Promise.resolve({ data: safe, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1392,8 +1431,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(EmailDataSourceModule)
-        .useModule(TestEmailDatasourceModule)
+        .overrideModule(AccountDataSourceModule)
+        .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
         .useModule(TestCacheModule)
         .overrideModule(RequestScopedLoggingModule)

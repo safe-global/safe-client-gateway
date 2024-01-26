@@ -79,7 +79,7 @@ export interface ITransactionApi {
     delegate: string;
     safeAddress: string;
     signature: string;
-  }): Promise<void>;
+  }): Promise<unknown>;
 
   getTransfer(transferId: string): Promise<Transfer>;
 
@@ -128,6 +128,11 @@ export interface ITransactionApi {
   getMultisigTransaction(
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
+
+  deleteTransaction(args: {
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void>;
 
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 

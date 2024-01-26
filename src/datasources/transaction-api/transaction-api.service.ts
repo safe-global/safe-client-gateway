@@ -309,7 +309,7 @@ export class TransactionApi implements ITransactionApi {
     delegate: string;
     safeAddress: string;
     signature: string;
-  }): Promise<void> {
+  }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}`;
       return await this.networkService.delete(url, {
@@ -583,6 +583,20 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async deleteTransaction(args: {
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/transactions/${args.safeTxHash}`;
+      await this.networkService.delete(url, {
+        signature: args.signature,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);

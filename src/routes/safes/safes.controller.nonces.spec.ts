@@ -8,7 +8,10 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -19,14 +22,14 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { INestApplication } from '@nestjs/common';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Safes Controller Nonces (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
-  let configurationService;
+  let safeConfigUrl: string | undefined;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -34,8 +37,8 @@ describe('Safes Controller Nonces (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -68,11 +71,14 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo });
+          return Promise.resolve({ data: safeInfo, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: multisigTransactionsPage });
+          return Promise.resolve({
+            data: multisigTransactionsPage,
+            status: 200,
+          });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -102,11 +108,14 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo });
+          return Promise.resolve({ data: safeInfo, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: multisigTransactionsPage });
+          return Promise.resolve({
+            data: multisigTransactionsPage,
+            status: 200,
+          });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -128,11 +137,14 @@ describe('Safes Controller Nonces (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo });
+          return Promise.resolve({ data: safeInfo, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: multisigTransactionsPage });
+          return Promise.resolve({
+            data: multisigTransactionsPage,
+            status: 200,
+          });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });

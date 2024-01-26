@@ -9,21 +9,25 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import { omit } from 'lodash';
 import configuration from '@/config/entities/__tests__/configuration';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
   let alertsUrl: string;
   let alertsAccount: string;
   let alertsProject: string;
-  let networkService;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -40,8 +44,8 @@ describe('Recovery (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -73,7 +77,7 @@ describe('Recovery (Unit)', () => {
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.resolve({ status: 200 })
+          ? Promise.resolve({ status: 200, data: {} })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -99,14 +103,23 @@ describe('Recovery (Unit)', () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
       const chainId = faker.string.numeric();
       const safeAddress = faker.finance.ethereumAddress();
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+        ),
+        {
+          status: 400,
+        } as Response,
+        {
+          message: 'Malformed body',
+          status: 400,
+        },
+      );
 
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({
-              data: { message: 'Malformed body', status: 400 },
-              status: 400,
-            })
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
@@ -127,11 +140,19 @@ describe('Recovery (Unit)', () => {
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+        ),
+        {
+          status: statusCode,
+        } as Response,
+      );
 
       networkService.post.mockImplementation((url) =>
         url ===
         `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
-          ? Promise.reject({ status: statusCode })
+          ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 

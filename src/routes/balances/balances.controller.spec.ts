@@ -9,7 +9,10 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { faker } from '@faker-js/faker';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -17,14 +20,15 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let pricesProviderUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let pricesProviderUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -32,8 +36,8 @@ describe('Balances Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -96,13 +100,22 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-            return Promise.resolve({ data: transactionApiBalancesResponse });
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
           case `${pricesProviderUrl}/simple/price`:
-            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+            return Promise.resolve({
+              data: nativeCoinPriceProviderResponse,
+              status: 200,
+            });
           case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-            return Promise.resolve({ data: tokenPriceProviderResponse });
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -217,11 +230,17 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-            return Promise.resolve({ data: transactionApiBalancesResponse });
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
           case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-            return Promise.resolve({ data: tokenPriceProviderResponse });
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -262,11 +281,17 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-            return Promise.resolve({ data: transactionApiBalancesResponse });
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
           case `${pricesProviderUrl}/simple/price`:
-            return Promise.resolve({ data: nativeCoinPriceProviderResponse });
+            return Promise.resolve({
+              data: nativeCoinPriceProviderResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -320,11 +345,17 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-            return Promise.resolve({ data: transactionApiBalancesResponse });
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
           case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-            return Promise.resolve({ data: tokenPriceProviderResponse });
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -375,9 +406,15 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
         const safeAddress = faker.finance.ethereumAddress();
-        networkService.get.mockImplementation(() =>
-          Promise.reject({ status: 500 }),
+        const error = new NetworkResponseError(
+          new URL(
+            `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
+          ),
+          {
+            status: 500,
+          } as Response,
         );
+        networkService.get.mockImplementation(() => Promise.reject(error));
 
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
@@ -409,9 +446,12 @@ describe('Balances Controller (Unit)', () => {
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
+              return Promise.resolve({
+                data: transactionApiBalancesResponse,
+                status: 200,
+              });
             case `${pricesProviderUrl}/simple/token_price/${chainName}`:
               return Promise.reject();
             default:
@@ -466,11 +506,17 @@ describe('Balances Controller (Unit)', () => {
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain });
+              return Promise.resolve({ data: chain, status: 200 });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
-              return Promise.resolve({ data: transactionApiBalancesResponse });
+              return Promise.resolve({
+                data: transactionApiBalancesResponse,
+                status: 200,
+              });
             case `${pricesProviderUrl}/simple/token_price/${chainName}`:
-              return Promise.resolve({ data: tokenPriceProviderResponse });
+              return Promise.resolve({
+                data: tokenPriceProviderResponse,
+                status: 200,
+              });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -511,14 +557,18 @@ describe('Balances Controller (Unit)', () => {
         const chainId = '1';
         const safeAddress = faker.finance.ethereumAddress();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
         networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
-          ) {
-            return Promise.reject({ status: 500 });
+            return Promise.resolve({ data: chainResponse, status: 200 });
+          } else if (url == transactionServiceUrl) {
+            const error = new NetworkResponseError(
+              new URL(transactionServiceUrl),
+              {
+                status: 500,
+              } as Response,
+            );
+            return Promise.reject(error);
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -541,12 +591,15 @@ describe('Balances Controller (Unit)', () => {
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         networkService.get.mockImplementation((url) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse });
+            return Promise.resolve({ data: chainResponse, status: 200 });
           } else if (
             url ==
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
           ) {
-            return Promise.resolve({ data: [{ invalid: 'data' }] });
+            return Promise.resolve({
+              data: [{ invalid: 'data' }],
+              status: 200,
+            });
           } else {
             return Promise.reject(new Error(`Could not match ${url}`));
           }
@@ -572,7 +625,10 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({ data: pricesProviderFiatCodes });
+            return Promise.resolve({
+              data: pricesProviderFiatCodes,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -604,11 +660,14 @@ describe('Balances Controller (Unit)', () => {
     });
 
     it('validation error getting fiat currencies data from prices provider', async () => {
-      const pricesProviderFiatCodes = [];
+      const pricesProviderFiatCodes: Array<string> = [];
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({ data: pricesProviderFiatCodes });
+            return Promise.resolve({
+              data: pricesProviderFiatCodes,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -629,7 +688,10 @@ describe('Balances Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({ data: pricesProviderFiatCodes });
+            return Promise.resolve({
+              data: pricesProviderFiatCodes,
+              status: 200,
+            });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }

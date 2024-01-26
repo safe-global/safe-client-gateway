@@ -5,7 +5,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { InvalidVerificationCodeError } from '@/domain/email/errors/invalid-verification-code.error';
+import { InvalidVerificationCodeError } from '@/domain/account/errors/invalid-verification-code.error';
 
 @Catch(InvalidVerificationCodeError)
 export class InvalidVerificationCodeExceptionFilter implements ExceptionFilter {

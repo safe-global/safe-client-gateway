@@ -8,28 +8,35 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
-import { EmailAddressDoesNotExistError } from '@/datasources/email/errors/email-address-does-not-exist.error';
-import { EmailAddress } from '@/domain/email/entities/email.entity';
+import { INestApplication } from '@nestjs/common';
+import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
+import {
+  Account,
+  EmailAddress,
+} from '@/domain/account/entities/account.entity';
 
 const verificationCodeTtlMs = 100;
 
 describe('Email controller edit email tests', () => {
-  let app;
-  let safeConfigUrl;
-  let emailDatasource;
-  let networkService;
+  let app: INestApplication;
+  let safeConfigUrl: string;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -53,8 +60,8 @@ describe('Email controller edit email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -65,7 +72,7 @@ describe('Email controller edit email tests', () => {
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
-    emailDatasource = moduleFixture.get(IEmailDataSource);
+    accountDataSource = moduleFixture.get(IAccountDataSource);
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -99,17 +106,17 @@ describe('Email controller edit email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.getEmail.mockResolvedValue({
+    accountDataSource.getAccount.mockResolvedValue({
       emailAddress: new EmailAddress(prevEmailAddress),
-    });
-    emailDatasource.updateEmail.mockResolvedValue();
+    } as Account);
+    accountDataSource.updateAccountEmail.mockResolvedValue();
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -146,18 +153,18 @@ describe('Email controller edit email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.getEmail.mockResolvedValue({
+    accountDataSource.getAccount.mockResolvedValue({
       emailAddress: new EmailAddress(prevEmailAddress),
       verificationGeneratedOn: verificationGeneratedOn,
-    });
-    emailDatasource.updateEmail.mockResolvedValue();
+    } as Account);
+    accountDataSource.updateAccountEmail.mockResolvedValue();
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -192,16 +199,16 @@ describe('Email controller edit email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.getEmail.mockResolvedValue({
+    accountDataSource.getAccount.mockResolvedValue({
       emailAddress: new EmailAddress(emailAddress),
-    });
+    } as Account);
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -216,7 +223,7 @@ describe('Email controller edit email tests', () => {
         statusCode: 409,
         message: 'Email address matches that of the Safe owner.',
       });
-    expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
   });
 
   it('should return 404 if trying to edit a non-existent email entry', async () => {
@@ -224,48 +231,44 @@ describe('Email controller edit email tests', () => {
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.getEmail.mockRejectedValue(
-      new EmailAddressDoesNotExistError(
-        chain.chainId,
-        safe.address,
-        accountAddress,
-      ),
+    accountDataSource.getAccount.mockRejectedValue(
+      new AccountDoesNotExistError(chain.chainId, safe.address, signerAddress),
     );
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
         emailAddress,
-        account: account.address,
+        account: signer.address,
         timestamp,
         signature,
       })
       .expect(404)
       .expect({
         statusCode: 404,
-        message: `No email address was found for the provided account ${accountAddress}.`,
+        message: `No email address was found for the provided signer ${signerAddress}.`,
       });
-    expect(emailDatasource.updateEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
   });
 
   it('return 500 if updating fails in general', async () => {
@@ -287,17 +290,17 @@ describe('Email controller edit email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.getEmail.mockResolvedValue({
+    accountDataSource.getAccount.mockResolvedValue({
       emailAddress: new EmailAddress(prevEmailAddress),
-    });
-    emailDatasource.updateEmail.mockRejectedValue(new Error());
+    } as Account);
+    accountDataSource.updateAccountEmail.mockRejectedValue(new Error());
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -397,9 +400,9 @@ describe('Email controller edit email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

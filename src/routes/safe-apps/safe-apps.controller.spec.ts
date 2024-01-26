@@ -16,14 +16,17 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Safe Apps Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -31,8 +34,8 @@ describe('Safe Apps Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -77,7 +80,7 @@ describe('Safe Apps Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -136,6 +139,7 @@ describe('Safe Apps Controller (Unit)', () => {
                 },
               },
             ],
+            status: 200,
           });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
@@ -183,7 +187,7 @@ describe('Safe Apps Controller (Unit)', () => {
       networkService.get.mockImplementation((url) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse });
+          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });

@@ -132,6 +132,10 @@ export default (): ReturnType<typeof configuration> => ({
         nativeCoin: faker.string.sample(),
         chainName: faker.string.sample(),
       },
+      84532: {
+        nativeCoin: faker.string.sample(),
+        chainName: faker.string.sample(),
+      },
     },
   },
   redis: {
