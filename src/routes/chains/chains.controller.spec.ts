@@ -18,12 +18,10 @@ import {
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { masterCopyBuilder } from '@/domain/chains/entities/__tests__/master-copy.builder';
+import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
 import { Chain } from '@/domain/chains/entities/chain.entity';
-import {
-  MasterCopy as DomainMasterCopy,
-  MasterCopy,
-} from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
+import { MasterCopy } from '@/routes/chains/entities/master-copy.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -360,23 +358,23 @@ describe('Chains Controller (Unit)', () => {
         data: chainResponse,
         status: 200,
       });
-      const domainMasterCopiesResponse: DomainMasterCopy[] = [
-        masterCopyBuilder().build(),
-        masterCopyBuilder().build(),
+      const domainSingletonsResponse: Singleton[] = [
+        singletonBuilder().build(),
+        singletonBuilder().build(),
       ];
       networkService.get.mockResolvedValueOnce({
-        data: domainMasterCopiesResponse,
+        data: domainSingletonsResponse,
         status: 200,
       });
-      const masterCopiesResponse = [
+      const masterCopiesResponse: Array<MasterCopy> = [
         {
-          address: domainMasterCopiesResponse[0].address,
-          version: domainMasterCopiesResponse[0].version,
-        } as MasterCopy,
+          address: domainSingletonsResponse[0].address,
+          version: domainSingletonsResponse[0].version,
+        },
         {
-          address: domainMasterCopiesResponse[1].address,
-          version: domainMasterCopiesResponse[1].version,
-        } as MasterCopy,
+          address: domainSingletonsResponse[1].address,
+          version: domainSingletonsResponse[1].version,
+        },
       ];
 
       await request(app.getHttpServer())
@@ -389,7 +387,7 @@ describe('Chains Controller (Unit)', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+        `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
       expect(networkService.get.mock.calls[1][1]).toBe(undefined);
     });
@@ -420,9 +418,7 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail getting the master-copies data', async () => {
       const error = new NetworkResponseError(
-        new URL(
-          `${chainResponse.transactionService}/api/v1/about/master-copies/`,
-        ),
+        new URL(`${chainResponse.transactionService}/api/v1/about/singletons/`),
         {
           status: 502,
         } as Response,
@@ -446,7 +442,7 @@ describe('Chains Controller (Unit)', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+        `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
       expect(networkService.get.mock.calls[1][1]).toBe(undefined);
     });
@@ -456,12 +452,12 @@ describe('Chains Controller (Unit)', () => {
         data: chainResponse,
         status: 200,
       });
-      const domainMasterCopiesResponse = [
+      const domainSingletonsResponse = [
         { address: 1223, safe: 'error' },
-        masterCopyBuilder().build(),
+        singletonBuilder().build(),
       ];
       networkService.get.mockResolvedValueOnce({
-        data: domainMasterCopiesResponse,
+        data: domainSingletonsResponse,
         status: 200,
       });
 
