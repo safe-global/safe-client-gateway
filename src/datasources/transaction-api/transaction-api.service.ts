@@ -5,7 +5,7 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
@@ -175,10 +175,10 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getMasterCopies(): Promise<MasterCopy[]> {
+  async getSingletons(): Promise<Singleton[]> {
     try {
-      const cacheDir = CacheRouter.getMasterCopiesCacheDir(this.chainId);
-      const url = `${this.baseUrl}/api/v1/about/master-copies/`;
+      const cacheDir = CacheRouter.getSingletonsCacheDir(this.chainId);
+      const url = `${this.baseUrl}/api/v1/about/singletons/`;
       return await this.dataSource.get({
         cacheDir,
         url,

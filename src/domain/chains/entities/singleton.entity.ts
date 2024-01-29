@@ -1,4 +1,4 @@
-export interface MasterCopy {
+export interface Singleton {
   address: string;
   version: string;
   deployer: string;

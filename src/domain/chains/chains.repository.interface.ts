@@ -1,5 +1,5 @@
 import { Chain } from '@/domain/chains/entities/chain.entity';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { Page } from '@/domain/entities/page.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
@@ -26,9 +26,9 @@ export interface IChainsRepository {
   clearChain(chainId: string): Promise<void>;
 
   /**
-   * Gets the supported {@link MasterCopy} associated with {@link chainId}
+   * Gets the supported {@link Singleton} associated with {@link chainId}
    *
    * @param chainId
    */
-  getMasterCopies(chainId: string): Promise<MasterCopy[]>;
+  getSingletons(chainId: string): Promise<Singleton[]>;
 }

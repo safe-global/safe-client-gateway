@@ -116,6 +116,7 @@ export default () => ({
       56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
       8453: { nativeCoin: 'ethereum', chainName: 'base' },
       84531: { nativeCoin: 'ethereum', chainName: 'base' },
+      84532: { nativeCoin: 'ethereum', chainName: 'base' },
     },
   },
   redis: {

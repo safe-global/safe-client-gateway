@@ -31,13 +31,13 @@ export class SafeState {
   @ApiProperty({ enum: Object.values(MasterCopyVersionState) })
   readonly implementationVersionState: MasterCopyVersionState;
   @ApiProperty()
-  readonly collectiblesTag: string;
+  readonly collectiblesTag: string | null;
   @ApiProperty()
-  readonly txQueuedTag: string;
+  readonly txQueuedTag: string | null;
   @ApiProperty()
-  readonly txHistoryTag: string;
+  readonly txHistoryTag: string | null;
   @ApiProperty()
-  readonly messagesTag: string;
+  readonly messagesTag: string | null;
 
   constructor(
     address: AddressInfo,
@@ -47,10 +47,10 @@ export class SafeState {
     owners: AddressInfo[],
     implementation: AddressInfo,
     implementationVersionState: MasterCopyVersionState,
-    collectiblesTag: string,
-    txQueuedTag: string,
-    txHistoryTag: string,
-    messagesTag: string,
+    collectiblesTag: string | null,
+    txQueuedTag: string | null,
+    txHistoryTag: string | null,
+    messagesTag: string | null,
     modules: AddressInfo[] | null,
     fallbackHandler: AddressInfo | null,
     guard: AddressInfo | null,
