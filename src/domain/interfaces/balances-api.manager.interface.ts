@@ -14,7 +14,7 @@ export interface IBalancesApiManager {
 
   /**
    * Gets an {@link IBalancesApi} implementation.
-   * Each chain is associated to an implementation (i.e.: to a balances
+   * Each chain is associated with an implementation (i.e.: to a balances
    * provider) via configuration.
    *
    * @param chainId - the chain identifier to check.
