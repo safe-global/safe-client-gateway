@@ -1417,10 +1417,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('messagesTag is null if there are no messages', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1435,25 +1435,25 @@ describe('Safes Controller (Unit)', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          return Promise.resolve({ data: safeInfo });
+          return Promise.resolve({ data: safeInfo, status: 200 });
         case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo });
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
-          return Promise.resolve({ data: fallbackHandlerInfo });
+          return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: guardInfo });
+          return Promise.resolve({ data: guardInfo, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
-          return Promise.resolve({ data: collectibleTransfers });
+          return Promise.resolve({ data: collectibleTransfers, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
-          return Promise.resolve({ data: queuedTransactions });
+          return Promise.resolve({ data: queuedTransactions, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
-          return Promise.resolve({ data: moduleTransactions });
+          return Promise.resolve({ data: moduleTransactions, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
-          return Promise.resolve({ data: messages });
+          return Promise.resolve({ data: messages, status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
