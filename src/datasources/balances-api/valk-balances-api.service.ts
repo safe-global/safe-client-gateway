@@ -109,7 +109,7 @@ export class ValkBalancesApi implements IBalancesApi {
           : this._mapNativeBalance(valkBalance)),
         fiatBalance,
         fiatConversion,
-      } as Balance;
+      };
     });
   }
 
