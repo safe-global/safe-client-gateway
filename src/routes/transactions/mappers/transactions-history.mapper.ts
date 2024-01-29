@@ -197,10 +197,14 @@ export class TransactionsHistoryMapper {
 
     return nestedTransactions
       .filter((nestedTransaction): boolean => {
-        // If we do not have a transfer with value, we do not add it to the result
-        if (!this.isTransferWithVaklue(nestedTransaction)) return false;
-
-        return !onlyTrusted || this.isTrustedTransfer(nestedTransaction);
+        // We are interested in transfers that:
+        // - Have value and:
+        // - If onlyTrusted is true then it should be a trusted transfer
+        // - If onlyTrusted is false then any transfer is valid
+        return (
+          this.isTransferWithValue(nestedTransaction) &&
+          (!onlyTrusted || this.isTrustedTransfer(nestedTransaction))
+        );
       })
       .map((nestedTransaction) => new TransactionItem(nestedTransaction));
   }
@@ -211,11 +215,11 @@ export class TransactionsHistoryMapper {
    *
    * @private
    */
-  private isTransferWithVaklue(transaction: Transaction): boolean {
+  private isTransferWithValue(transaction: Transaction): boolean {
     if (!isTransferTransactionInfo(transaction.txInfo)) return true;
     if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
 
-    return transaction.txInfo.transferInfo.value !== '0';
+    return Number(transaction.txInfo.transferInfo.value) > 0;
   }
 
   private isTrustedTransfer(transaction: Transaction): boolean {
