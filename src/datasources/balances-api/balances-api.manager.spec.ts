@@ -17,7 +17,7 @@ const valkBalancesApi = {
 const valkBalancesApiMock = jest.mocked(valkBalancesApi);
 
 describe('Balances API Manager Tests', () => {
-  describe('isExternalized checks', () => {
+  describe('useExternalApi checks', () => {
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'features.valkBalancesChainIds') return ['1', '2', '3'];
     });
@@ -27,7 +27,7 @@ describe('Balances API Manager Tests', () => {
         configurationService,
         valkBalancesApiMock,
       );
-      expect(manager.isExternalized('1')).toEqual(true);
+      expect(manager.useExternalApi('1')).toEqual(true);
     });
 
     it('should return false if the chain is included in the balance-externalized chains', () => {
@@ -35,7 +35,7 @@ describe('Balances API Manager Tests', () => {
         configurationService,
         valkBalancesApiMock,
       );
-      expect(manager.isExternalized('4')).toEqual(false);
+      expect(manager.useExternalApi('4')).toEqual(false);
     });
   });
 

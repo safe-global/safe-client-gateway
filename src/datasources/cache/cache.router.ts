@@ -49,6 +49,7 @@ export class CacheRouter {
     );
   }
 
+  // TODO: remove this prefixed key if eventually only one balances provider is used
   static getValkBalancesCacheKey(args: {
     chainId: string;
     safeAddress: string;

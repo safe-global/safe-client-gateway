@@ -10,7 +10,7 @@ export interface IBalancesApiManager {
    * @param chainId - the chain identifier to check.
    * @returns true if the chain balances are externalized.
    */
-  isExternalized(chainId: string): boolean;
+  useExternalApi(chainId: string): boolean;
 
   /**
    * Gets an {@link IBalancesApi} implementation.

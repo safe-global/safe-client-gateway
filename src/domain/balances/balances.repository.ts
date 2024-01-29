@@ -32,7 +32,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    return this.balancesApiManager.isExternalized(args.chainId)
+    return this.balancesApiManager.useExternalApi(args.chainId)
       ? this._getBalancesFromBalancesApi(args)
       : this._getBalancesFromTransactionApi(args);
   }
@@ -41,7 +41,7 @@ export class BalancesRepository implements IBalancesRepository {
     chainId: string;
     safeAddress: string;
   }): Promise<void> {
-    if (this.balancesApiManager.isExternalized(args.chainId)) {
+    if (this.balancesApiManager.useExternalApi(args.chainId)) {
       const api = this.balancesApiManager.getBalancesApi(args.chainId);
       await api.clearBalances(args);
     } else {

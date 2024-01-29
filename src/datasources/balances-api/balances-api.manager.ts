@@ -20,7 +20,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.valkBalancesApi = valkBalancesApi;
   }
 
-  isExternalized(chainId: string): boolean {
+  useExternalApi(chainId: string): boolean {
     const allProvidersChainIds = this.valkBalancesChainIds;
     return allProvidersChainIds.includes(chainId);
   }
