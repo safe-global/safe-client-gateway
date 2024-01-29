@@ -1,13 +1,8 @@
-import {
-  DynamicModule,
-  INestApplication,
-  VersioningType,
-} from '@nestjs/common';
+import { INestApplication, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
-import { TestingModule } from '@nestjs/testing';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -66,22 +61,18 @@ export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
  * Each provider should have a {@link configuration} which specifies
  * the steps taken to configure the application
  */
-export abstract class AppProvider {
+export abstract class AppProvider<T> {
   protected abstract readonly configuration: ((
     app: INestApplication,
   ) => void)[];
 
-  public async provide(
-    module: DynamicModule | TestingModule,
-  ): Promise<INestApplication> {
+  public async provide(module: T): Promise<INestApplication> {
     const app = await this.getApp(module);
     this.configuration.forEach((f) => f(app));
     return app;
   }
 
-  protected abstract getApp(
-    module: DynamicModule | TestingModule,
-  ): Promise<INestApplication>;
+  protected abstract getApp(module: T): Promise<INestApplication>;
 }
 
 /**
@@ -90,13 +81,11 @@ export abstract class AppProvider {
  * This provider should be used to retrieve the actual implementation of the
  * service
  */
-export class DefaultAppProvider extends AppProvider {
+export class DefaultAppProvider<T> extends AppProvider<T> {
   protected readonly configuration: ((app: INestApplication) => void)[] =
     DEFAULT_CONFIGURATION;
 
-  protected getApp(
-    module: DynamicModule | TestingModule,
-  ): Promise<INestApplication> {
+  protected getApp(module: T): Promise<INestApplication> {
     return NestFactory.create(module);
   }
 }
