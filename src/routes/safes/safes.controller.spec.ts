@@ -549,12 +549,7 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txQueuedTag is now if there are no Multisig transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txQueuedTag is null if there are no Multisig transactions', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -601,19 +596,12 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
+          txQueuedTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
-  it('txQueuedTag is now if Multisig transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txQueuedTag is null if Multisig transactions throw', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -659,11 +647,9 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
+          txQueuedTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('collectiblesTag is computed from Ethereum transaction with executionDate date', async () => {
@@ -736,12 +722,7 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('collectiblesTag is now if there are no Ethereum transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('collectiblesTag is null if there are no Ethereum transactions', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -788,19 +769,12 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
+          collectiblesTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
-  it('collectiblesTag is now if Ethereum transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('collectiblesTag is null if Ethereum transactions throw', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -846,11 +820,9 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
+          collectiblesTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Multisig transaction with modified date', async () => {
@@ -1148,12 +1120,7 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txHistoryTag is now if there are no Multisig/Ethereum/Module transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txHistoryTag is null if there are no Multisig/Ethereum/Module transactions', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -1200,11 +1167,9 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
+          txHistoryTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Ethereum transaction if Multisig transactions throw', async () => {
@@ -1330,12 +1295,7 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txHistoryTag is now if Multisig/Ethereum/Module transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txHistoryTag is null if Multisig/Ethereum/Module transactions throw', async () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
@@ -1379,11 +1339,9 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
+          txHistoryTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('messagesTag is the latest modified timestamp', async () => {
@@ -1453,6 +1411,59 @@ describe('Safes Controller (Unit)', () => {
       .expect((response) =>
         expect(response.body).toMatchObject({
           messagesTag: '1689164946',
+        }),
+      );
+  });
+
+  it('messagesTag is null if there are no messages', async () => {
+    const chain = chainBuilder().build();
+    const masterCopies = [masterCopyBuilder().build()];
+    const masterCopyInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', masterCopyInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const collectibleTransfers = pageBuilder().build();
+    const queuedTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo });
+        case `${chain.transactionService}/api/v1/about/master-copies/`:
+          return Promise.resolve({ data: masterCopies });
+        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
+          return Promise.resolve({ data: masterCopyInfo });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          messagesTag: null,
         }),
       );
   });
