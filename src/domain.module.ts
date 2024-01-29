@@ -13,7 +13,7 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { BackboneValidator } from '@/domain/backbone/backbone.validator';
 import { ChainsValidator } from '@/domain/chains/chains.validator';
-import { MasterCopyValidator } from '@/domain/chains/master-copy.validator';
+import { SingletonValidator } from '@/domain/chains/singleton.validator';
 import { CollectiblesValidator } from '@/domain/collectibles/collectibles.validator';
 import { SafeListValidator } from '@/domain/safe/safe-list.validator';
 import { SafeValidator } from '@/domain/safe/safe.validator';
@@ -95,7 +95,7 @@ import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
     DelegateValidator,
     EstimationsValidator,
     FiatCodesValidator,
-    MasterCopyValidator,
+    SingletonValidator,
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
