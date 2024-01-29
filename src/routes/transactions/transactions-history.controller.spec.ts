@@ -1097,12 +1097,14 @@ describe('Transactions History Controller (Unit)', () => {
         erc20TransferBuilder()
           .with('tokenAddress', untrustedToken.address)
           .with('executionDate', date)
+          .with('value', faker.string.numeric({ exclude: ['0'] }))
           .build(),
       ) as Transfer,
       erc20TransferToJson(
         erc20TransferBuilder()
           .with('tokenAddress', trustedToken.address)
           .with('executionDate', date)
+          .with('value', faker.string.numeric({ exclude: ['0'] }))
           .build(),
       ) as Transfer,
     ];
