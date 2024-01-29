@@ -105,20 +105,4 @@ describe('RedisCacheService with a Key Prefix', () => {
     );
     jest.useRealTimers();
   });
-
-  it('deleting a key by pattern should use the prefix in the pattern', async () => {
-    const matches = [
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
-    ];
-    redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
-    const pattern = faker.string.alphanumeric();
-
-    await redisCacheService.deleteByKeyPattern(pattern);
-
-    expect(redisClientTypeMock.scanIterator).toHaveBeenCalledWith({
-      MATCH: `${keyPrefix}-${pattern}`,
-    });
-  });
 });

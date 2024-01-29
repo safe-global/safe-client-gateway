@@ -72,10 +72,6 @@ export class CacheRouter {
     );
   }
 
-  static getContractsCachePattern(): string {
-    return `*_${CacheRouter.CONTRACT_KEY}_*`;
-  }
-
   static getBackboneCacheDir(chainId: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.BACKBONE_KEY}`, '');
   }
@@ -305,10 +301,6 @@ export class CacheRouter {
     );
   }
 
-  static getTokensCachePattern(chainId: string): string {
-    return `${chainId}_${CacheRouter.TOKEN_KEY}_*`;
-  }
-
   static getSafesByOwnerCacheDir(args: {
     chainId: string;
     ownerAddress: string;
@@ -374,10 +366,6 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
-  static getChainsCachePattern(): string {
-    return `*_${CacheRouter.CHAIN_KEY}`;
-  }
-
   static getSafeAppsKey(chainId: string): string {
     return `${chainId}_${CacheRouter.SAFE_APPS_KEY}`;
   }
@@ -391,10 +379,6 @@ export class CacheRouter {
       `${args.chainId}_${CacheRouter.SAFE_APPS_KEY}`,
       `${args.clientUrl}_${args.url}`,
     );
-  }
-
-  static getSafeAppsCachePattern(): string {
-    return `*_${CacheRouter.SAFE_APPS_KEY}`;
   }
 
   static getNativeCoinPriceCacheDir(args: {
