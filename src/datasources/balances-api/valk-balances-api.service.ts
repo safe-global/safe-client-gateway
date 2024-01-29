@@ -6,13 +6,17 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { Balance } from '@/domain/balances/entities/balance.entity';
+import {
+  Balance,
+  Erc20Balance,
+  NativeBalance,
+} from '@/domain/balances/entities/balance.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
 import { Inject, Injectable } from '@nestjs/common';
-import { isHex } from 'viem';
+import { isAddress } from 'viem';
 
 export const IValkBalancesApi = Symbol('IValkBalancesApi');
 
@@ -92,34 +96,42 @@ export class ValkBalancesApi implements IBalancesApi {
   ): Balance[] {
     return valkBalances.map((valkBalance) => {
       const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
-      const balanceAmount = getNumberString(valkBalance.balance);
       const fiatBalance = getNumberString(
         (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
       );
       const fiatConversion = getNumberString(price);
 
-      // Valk returns a string representing the native coin (e.g.: 'eth') as
-      // token_address for native coins balances. An hex is returned for ERC20 tokens.
+      // Valk returns a string representing the native coin (e.g.: 'eth') as token_address
+      // for native coins balances. An Ethereum address is returned for ERC20 tokens.
       return {
-        ...(isHex(valkBalance.token_address)
-          ? {
-              tokenAddress: valkBalance.token_address,
-              token: {
-                name: valkBalance.name,
-                symbol: valkBalance.symbol,
-                decimals: valkBalance.decimals,
-                logoUri: valkBalance.logo ?? '',
-              },
-            }
-          : {
-              tokenAddress: null,
-              token: null,
-            }),
-        balance: balanceAmount,
+        ...(isAddress(valkBalance.token_address)
+          ? this._mapErc20Balance(valkBalance)
+          : this._mapNativeBalance(valkBalance)),
         fiatBalance,
         fiatConversion,
       } as Balance;
     });
+  }
+
+  private _mapErc20Balance(valkBalance: ValkBalance): Erc20Balance {
+    return {
+      tokenAddress: valkBalance.token_address,
+      token: {
+        name: valkBalance.name,
+        symbol: valkBalance.symbol,
+        decimals: valkBalance.decimals,
+        logoUri: valkBalance.logo ?? '',
+      },
+      balance: getNumberString(valkBalance.balance),
+    };
+  }
+
+  private _mapNativeBalance(valkBalance: ValkBalance): NativeBalance {
+    return {
+      tokenAddress: null,
+      token: null,
+      balance: getNumberString(valkBalance.balance),
+    };
   }
 
   private _getChainName(chainId: string): string {

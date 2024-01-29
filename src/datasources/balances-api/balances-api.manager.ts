@@ -25,9 +25,13 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   getBalancesApi(chainId: string): IBalancesApi {
-    if (this.valkBalancesChainIds.includes(chainId)) {
+    if (this._isSupportedByValk(chainId)) {
       return this.valkBalancesApi;
     }
     throw new Error(`Chain ID ${chainId} balances provider is not configured`);
+  }
+
+  private _isSupportedByValk(chainId: string): boolean {
+    return this.valkBalancesChainIds.includes(chainId);
   }
 }
