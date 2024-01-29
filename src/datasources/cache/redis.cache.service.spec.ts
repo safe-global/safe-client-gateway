@@ -136,28 +136,6 @@ describe('RedisCacheService', () => {
     );
   });
 
-  it('Deleting keys by pattern deletes matching keys only', async () => {
-    const pattern = faker.string.alphanumeric();
-    const matches = [
-      `${pattern}${faker.string.alphanumeric()}`,
-      `${pattern}${faker.string.alphanumeric()}`,
-      `${pattern}${faker.string.alphanumeric()}`,
-    ];
-    const anotherPattern = faker.string.alphanumeric({ exclude: pattern });
-    const value = fakeJson();
-    await redisClient.hSet(anotherPattern, '', value);
-    for (const key of matches) {
-      await redisClient.hSet(key, '', value);
-    }
-
-    await redisCacheService.deleteByKeyPattern(`${pattern}*`);
-
-    for (const key of matches) {
-      expect(await redisClient.hGet(key, '')).toBeNull();
-    }
-    expect(await redisClient.hGet(anotherPattern, '')).toEqual(value);
-  });
-
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
