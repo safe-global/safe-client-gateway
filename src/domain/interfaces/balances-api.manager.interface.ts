@@ -4,7 +4,7 @@ export const IBalancesApiManager = Symbol('IBalancesApiManager');
 
 export interface IBalancesApiManager {
   /**
-   * Determines whether an external balances provider is being used
+   * Determines whether an external balances provider is used
    * for a given chain ID.
    *
    * @param chainId - the chain identifier to check.
