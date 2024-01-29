@@ -95,12 +95,12 @@ export class AlertsRepository implements IAlertsRepository {
         decodedTransactions,
       });
 
-      this._notifySafeSetup({
+      await this._notifySafeSetup({
         chainId,
         newSafeState,
       });
     } catch {
-      this._notifyUnknownTransaction({ chainId, safeAddress, emails });
+      await this._notifyUnknownTransaction({ chainId, safeAddress, emails });
     }
   }
 
