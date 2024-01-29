@@ -196,40 +196,33 @@ export class TransactionsHistoryMapper {
     );
 
     return nestedTransactions
-      .filter((nestedTransaction) => {
+      .filter((nestedTransaction): boolean => {
         // If we do not have a transfer with value, we do not add it to the result
-        if (!this.mapZeroValueTransfer(nestedTransaction)) return false;
+        if (!this.isTransferWithVaklue(nestedTransaction)) return false;
 
-        return !onlyTrusted || this.mapTrustedTransfer(nestedTransaction);
+        return !onlyTrusted || this.isTrustedTransfer(nestedTransaction);
       })
       .map((nestedTransaction) => new TransactionItem(nestedTransaction));
   }
 
   /**
-   * Returns the transaction if it is an ERC20 transfer with value.
-   * Returns Null otherwise.
+   * Returns true if it is an ERC20 transfer with value.
+   * Returns false otherwise.
    *
    * @private
    */
-  private mapZeroValueTransfer(transaction: Transaction): Transaction | null {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
+  private isTransferWithVaklue(transaction: Transaction): boolean {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
 
-    if (transaction.txInfo.transferInfo.value === '0') return null;
-    return transaction;
+    return transaction.txInfo.transferInfo.value !== '0';
   }
 
-  private mapTrustedTransfer(transaction: Transaction): Transaction | null {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
+  private isTrustedTransfer(transaction: Transaction): boolean {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
 
-    // If we have successfully retrieved the token information, and it is a
-    // trusted token, return it. Else return null
-    if (transaction.txInfo.transferInfo.trusted) {
-      return transaction;
-    } else {
-      return null;
-    }
+    return !!transaction.txInfo.transferInfo.trusted;
   }
 
   private mapGroupTransactions(
