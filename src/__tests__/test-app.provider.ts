@@ -30,7 +30,7 @@ export class TestAppProvider<T> extends AppProvider<T> {
   protected getApp(module: T): Promise<INestApplication> {
     if (!(module instanceof TestingModule)) {
       const name =
-        typeof module === 'function' ? module.constructor.name : typeof module;
+        typeof module === 'function' ? module.constructor.name : module;
       return Promise.reject(`${name} is not a TestingModule`);
     }
     return Promise.resolve(module.createNestApplication());
