@@ -110,13 +110,12 @@ export class ValkBalancesApi implements IBalancesApi {
                 decimals: valkBalance.decimals,
                 logoUri: valkBalance.logo ?? '',
               },
-              balance: balanceAmount,
             }
           : {
               tokenAddress: null,
               token: null,
-              balance: balanceAmount,
             }),
+        balance: balanceAmount,
         fiatBalance,
         fiatConversion,
       } as Balance;
