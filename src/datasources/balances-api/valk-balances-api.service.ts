@@ -61,7 +61,7 @@ export class ValkBalancesApi implements IBalancesApi {
   }): Promise<Balance[]> {
     try {
       const cacheDir = CacheRouter.getValkBalancesCacheDir(args);
-      const chainName = this.getChainName(args.chainId);
+      const chainName = this._getChainName(args.chainId);
       const url = `${this.baseUri}/balances/token/${args.safeAddress}?chain=${chainName}`;
       const valkBalances = await this.dataSource.get<ValkBalance[]>({
         cacheDir,
@@ -70,7 +70,7 @@ export class ValkBalancesApi implements IBalancesApi {
         networkRequest: { headers: { Authorization: `${this.apiKey}` } },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this.mapBalances(valkBalances, args.fiatCode);
+      return this._mapBalances(valkBalances, args.fiatCode);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} balances from provider: ${asError(error).message}}`,
@@ -78,7 +78,18 @@ export class ValkBalancesApi implements IBalancesApi {
     }
   }
 
-  mapBalances(valkBalances: ValkBalance[], fiatCode: string): Balance[] {
+  async clearBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const key = CacheRouter.getValkBalancesCacheKey(args);
+    await this.cacheService.deleteByKey(key);
+  }
+
+  private _mapBalances(
+    valkBalances: ValkBalance[],
+    fiatCode: string,
+  ): Balance[] {
     return valkBalances.map((valkBalance) => {
       const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
       const balanceAmount = getNumberString(valkBalance.balance);
@@ -112,20 +123,12 @@ export class ValkBalancesApi implements IBalancesApi {
     });
   }
 
-  getChainName(chainId: string): string {
+  private _getChainName(chainId: string): string {
     const chainName = this.chainsConfiguration[Number(chainId)]?.chainName;
     if (!chainName)
       throw Error(
         `Chain ${chainId} balances retrieval via Valk is not configured`,
       );
     return chainName;
-  }
-
-  async clearBalances(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void> {
-    const key = CacheRouter.getValkBalancesCacheKey(args);
-    await this.cacheService.deleteByKey(key);
   }
 }
