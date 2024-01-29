@@ -42,13 +42,13 @@ describe('EmailEdit guard tests', () => {
   const emailAddress = faker.internet.email();
   const timestamp = faker.date.recent().getTime();
   const privateKey = generatePrivateKey();
-  const account = privateKeyToAccount(privateKey);
-  const accountAddress = account.address;
+  const signer = privateKeyToAccount(privateKey);
+  const signerAddress = signer.address;
   let signature: Hash;
 
   beforeAll(async () => {
-    const message = `email-edit-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
-    signature = await account.signMessage({ message });
+    const message = `email-edit-${chainId}-${safe}-${emailAddress}-${signerAddress}-${timestamp}`;
+    signature = await signer.signMessage({ message });
   });
 
   beforeEach(async () => {
@@ -80,7 +80,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/${chainId}/${safe}`)
       .send({
         emailAddress,
-        account: accountAddress,
+        signer: signerAddress,
         signature,
         timestamp,
       })
@@ -92,7 +92,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/${chainId}/${safe}`)
       .send({
         emailAddress: faker.internet.email(), // different email should have different signature
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })
@@ -108,7 +108,7 @@ describe('EmailEdit guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })
@@ -141,7 +141,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/${chainId}/${safe}`)
       .send({
         emailAddress,
-        account: accountAddress,
+        account: signerAddress,
         timestamp,
       })
       .expect(403)
@@ -160,7 +160,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
         emailAddress,
-        account: accountAddress,
+        account: signerAddress,
         signature,
       })
       .expect(403)
@@ -178,7 +178,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/invalid/chains/${chainId}`)
       .send({
         emailAddress,
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })
@@ -197,7 +197,7 @@ describe('EmailEdit guard tests', () => {
       .post(`/test/invalid/safes/${safeAddress}`)
       .send({
         emailAddress,
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })

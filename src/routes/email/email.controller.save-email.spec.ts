@@ -104,7 +104,7 @@ describe('Email controller save email tests', () => {
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
         emailAddress: emailAddress,
-        account: signer.address,
+        signer: signer.address,
         timestamp: timestamp,
         signature: signature,
       })
