@@ -6,11 +6,7 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import {
-  Balance,
-  Erc20Balance,
-  NativeBalance,
-} from '@/domain/balances/entities/balance.entity';
+import { Balance } from '@/domain/balances/entities/balance.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
@@ -85,7 +81,7 @@ export class ValkBalancesApi implements IBalancesApi {
   mapBalances(valkBalances: ValkBalance[], fiatCode: string): Balance[] {
     return valkBalances.map((valkBalance) => {
       const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
-      const balance = getNumberString(valkBalance.balance);
+      const balanceAmount = getNumberString(valkBalance.balance);
       const fiatBalance = getNumberString(
         (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
       );
@@ -93,34 +89,26 @@ export class ValkBalancesApi implements IBalancesApi {
 
       // Valk returns a string representing the native coin (e.g.: 'eth') as
       // token_address for native coins balances. An hex is returned for ERC20 tokens.
-      if (isHex(valkBalance.token_address)) {
-        return {
-          tokenAddress: valkBalance.token_address,
-          token: {
-            name: valkBalance.name,
-            symbol: valkBalance.symbol,
-            decimals: valkBalance.decimals,
-            logoUri: valkBalance.logo ?? '',
-          },
-          balance,
-          fiatBalance,
-          fiatConversion,
-        } as Erc20Balance & {
-          fiatBalance: string | null;
-          fiatConversion: string | null;
-        };
-      } else {
-        return {
-          tokenAddress: null,
-          token: null,
-          balance,
-          fiatBalance,
-          fiatConversion,
-        } as NativeBalance & {
-          fiatBalance: string | null;
-          fiatConversion: string | null;
-        };
-      }
+      return {
+        ...(isHex(valkBalance.token_address)
+          ? {
+              tokenAddress: valkBalance.token_address,
+              token: {
+                name: valkBalance.name,
+                symbol: valkBalance.symbol,
+                decimals: valkBalance.decimals,
+                logoUri: valkBalance.logo ?? '',
+              },
+              balance: balanceAmount,
+            }
+          : {
+              tokenAddress: null,
+              token: null,
+              balance: balanceAmount,
+            }),
+        fiatBalance,
+        fiatConversion,
+      } as Balance;
     });
   }
 

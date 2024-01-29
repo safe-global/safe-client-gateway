@@ -1,12 +1,12 @@
 import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
 
-export interface NativeBalance {
+interface NativeBalance {
   tokenAddress: null;
   token: null;
   balance: string;
 }
 
-export interface Erc20Balance {
+interface Erc20Balance {
   tokenAddress: string;
   token: BalanceToken;
   balance: string;
