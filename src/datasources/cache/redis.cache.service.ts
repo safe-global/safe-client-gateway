@@ -60,21 +60,27 @@ export class RedisCacheService
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(keyWithPrefix);
-    await this.set(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
-      Date.now().toString(),
-      this.defaultExpirationTimeInSeconds,
-    );
+    await this.setInvalidationTime(key);
     return result;
   }
 
   async deleteByKeyPattern(pattern: string): Promise<void> {
     const patternWithPrefix = this._prefixKey(pattern);
-    for await (const key of this.client.scanIterator({
+    for await (const keyWithPrefix of this.client.scanIterator({
       MATCH: patternWithPrefix,
     })) {
-      await this.client.unlink(key);
+      const key = this._removePrefixFromKey(keyWithPrefix);
+      await this.client.unlink(keyWithPrefix);
+      await this.setInvalidationTime(key);
     }
+  }
+
+  private setInvalidationTime(keyWithoutPrefix: string): Promise<void> {
+    return this.set(
+      new CacheDir(`invalidationTimeMs:${keyWithoutPrefix}`, ''),
+      Date.now().toString(),
+      this.defaultExpirationTimeInSeconds,
+    );
   }
 
   /**
@@ -94,6 +100,25 @@ export class RedisCacheService
     }
 
     return `${this.keyPrefix}-${key}`;
+  }
+
+  /**
+   * Removed the prefix from a key string.
+   *
+   * This function takes a key string as an input and removes the `this.keyPrefix` from it.
+   * If `this.keyPrefix` is empty, it returns the original key without any modification.
+   *
+   * @param keyWithPrefix - The key string that needs to be modified.
+   * @returns A string that is the original `keyWithPrefix` without `this.keyPrefix` and hyphen.
+   *         If `this.keyPrefix` is empty, the original `keyWithPrefix` is returned without any modification.
+   * @private
+   */
+  private _removePrefixFromKey(keyWithPrefix: string): string {
+    if (this.keyPrefix.length === 0) {
+      return keyWithPrefix;
+    }
+
+    return keyWithPrefix.replace(`${this.keyPrefix}-`, '');
   }
 
   /**

@@ -63,7 +63,6 @@ export class ConfigApi implements IConfigApi {
     await Promise.all([
       this.cacheService.deleteByKey(key),
       this.cacheService.deleteByKeyPattern(pattern),
-      // TODO: call _setInvalidationTimeForKey for each item matching the pattern
     ]);
   }
 
@@ -126,7 +125,6 @@ export class ConfigApi implements IConfigApi {
       // if a chain id is not provided, delete all the safe apps data
       const pattern = CacheRouter.getSafeAppsCachePattern();
       await this.cacheService.deleteByKeyPattern(pattern);
-      // TODO: call _setInvalidationTimeForKey for each item matching the pattern
     }
   }
 }

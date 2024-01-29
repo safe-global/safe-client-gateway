@@ -136,7 +136,9 @@ describe('RedisCacheService', () => {
     );
   });
 
-  it('Deleting keys by pattern deletes matching keys only', async () => {
+  it('Deleting keys by pattern deletes matching keys only and sets invalidationTime', async () => {
+    const startTime = Date.now();
+
     const pattern = faker.string.alphanumeric();
     const matches = [
       `${pattern}${faker.string.alphanumeric()}`,
@@ -152,8 +154,22 @@ describe('RedisCacheService', () => {
 
     await redisCacheService.deleteByKeyPattern(`${pattern}*`);
 
-    for (const key of matches) {
-      expect(await redisClient.hGet(key, '')).toBeNull();
+    for (const keyWithPrefix of matches) {
+      const key = keyWithPrefix.replace(keyPrefix, '');
+
+      const storedValue = await redisClient.hGet(keyWithPrefix, '');
+      const invalidationTime = Number(
+        await redisClient.hGet(`invalidationTimeMs:${key}`, ''),
+      );
+      const invalidationTimeTtl = await redisClient.ttl(
+        `invalidationTimeMs:${key}`,
+      );
+      expect(storedValue).toBeNull();
+      expect(invalidationTime).toBeGreaterThanOrEqual(startTime);
+      expect(invalidationTimeTtl).toBeGreaterThan(0);
+      expect(invalidationTimeTtl).toBeLessThanOrEqual(
+        defaultExpirationTimeInSeconds,
+      );
     }
     expect(await redisClient.hGet(anotherPattern, '')).toEqual(value);
   });
