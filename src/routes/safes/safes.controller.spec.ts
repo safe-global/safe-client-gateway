@@ -1438,7 +1438,7 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
+        case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: singletons, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
           return Promise.resolve({ data: singletonInfo, status: 200 });
