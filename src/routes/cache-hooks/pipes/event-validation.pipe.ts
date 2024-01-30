@@ -122,7 +122,7 @@ export class EventValidationPipe implements PipeTransform<Event> {
     );
   }
 
-  transform(value: any): Event {
+  transform(value: Event): Event {
     if (this.isWebHookEvent(value)) {
       return value;
     }

@@ -68,15 +68,6 @@ export class RedisCacheService
     return result;
   }
 
-  async deleteByKeyPattern(pattern: string): Promise<void> {
-    const patternWithPrefix = this._prefixKey(pattern);
-    for await (const key of this.client.scanIterator({
-      MATCH: patternWithPrefix,
-    })) {
-      await this.client.unlink(key);
-    }
-  }
-
   /**
    * Constructs a prefixed key string.
    *

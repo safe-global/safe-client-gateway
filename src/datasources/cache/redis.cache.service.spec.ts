@@ -8,16 +8,16 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
 describe('RedisCacheService', () => {
@@ -134,28 +134,6 @@ describe('RedisCacheService', () => {
     expect(invalidationTimeTtl).toBeLessThanOrEqual(
       defaultExpirationTimeInSeconds,
     );
-  });
-
-  it('Deleting keys by pattern deletes matching keys only', async () => {
-    const pattern = faker.string.alphanumeric();
-    const matches = [
-      `${pattern}${faker.string.alphanumeric()}`,
-      `${pattern}${faker.string.alphanumeric()}`,
-      `${pattern}${faker.string.alphanumeric()}`,
-    ];
-    const anotherPattern = faker.string.alphanumeric({ exclude: pattern });
-    const value = fakeJson();
-    await redisClient.hSet(anotherPattern, '', value);
-    for (const key of matches) {
-      await redisClient.hSet(key, '', value);
-    }
-
-    await redisCacheService.deleteByKeyPattern(`${pattern}*`);
-
-    for (const key of matches) {
-      expect(await redisClient.hGet(key, '')).toBeNull();
-    }
-    expect(await redisClient.hGet(anotherPattern, '')).toEqual(value);
   });
 
   it('When Module gets destroyed, redis connection is closed', async () => {

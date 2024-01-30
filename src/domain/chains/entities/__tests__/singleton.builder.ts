@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 
-export function masterCopyBuilder(): IBuilder<MasterCopy> {
-  return new Builder<MasterCopy>()
+export function singletonBuilder(): IBuilder<Singleton> {
+  return new Builder<Singleton>()
     .with('address', faker.finance.ethereumAddress())
     .with('version', faker.system.semver())
     .with('deployer', faker.finance.ethereumAddress())

@@ -2,7 +2,7 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class FakeCacheService implements ICacheService {
-  private cache: Record<string, Record<string, any>> = {};
+  private cache: Record<string, Record<string, string>> = {};
   private isReady: boolean = true;
 
   ping(): Promise<unknown> {
@@ -28,16 +28,6 @@ export class FakeCacheService implements ICacheService {
       Date.now().toString(),
     );
     return Promise.resolve(1);
-  }
-
-  deleteByKeyPattern(pattern: string): Promise<void> {
-    const patternRegex = RegExp(pattern.replace('*', '.*'));
-    for (const key in this.cache) {
-      if (patternRegex.test(key)) {
-        delete this.cache[key];
-      }
-    }
-    return Promise.resolve();
   }
 
   get(cacheDir: CacheDir): Promise<string | undefined> {

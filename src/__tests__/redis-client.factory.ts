@@ -5,6 +5,6 @@ export async function redisClientFactory(): Promise<RedisClientType> {
   const client: RedisClientType = createClient({
     url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
   });
-  client.connect();
+  await client.connect();
   return client;
 }

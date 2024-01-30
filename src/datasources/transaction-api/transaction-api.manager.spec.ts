@@ -10,27 +10,27 @@ import { faker } from '@faker-js/faker';
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 
 const configurationServiceMock = jest.mocked(configurationService);
 
 const configApi = {
   getChain: jest.fn(),
-} as unknown as IConfigApi;
+} as jest.MockedObjectDeep<IConfigApi>;
 
 const configApiMock = jest.mocked(configApi);
 
 const dataSource = {
   get: jest.fn(),
-} as unknown as CacheFirstDataSource;
+} as jest.MockedObjectDeep<CacheFirstDataSource>;
 
 const dataSourceMock = jest.mocked(dataSource);
 
-const cacheService = {} as unknown as ICacheService;
+const cacheService = {} as jest.MockedObjectDeep<ICacheService>;
 
-const httpErrorFactory = {} as unknown as HttpErrorFactory;
+const httpErrorFactory = {} as jest.MockedObjectDeep<HttpErrorFactory>;
 
-const networkService = {} as unknown as INetworkService;
+const networkService = {} as jest.MockedObjectDeep<INetworkService>;
 
 describe('Transaction API Manager Tests', () => {
   beforeEach(() => {

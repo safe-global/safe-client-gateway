@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 const configService = {
   get: jest.fn(),
   getOrThrow: jest.fn(),
-} as unknown as ConfigService;
+} as jest.MockedObjectDeep<ConfigService>;
 const configServiceMock = jest.mocked(configService);
 
 describe('NestConfigurationService', () => {

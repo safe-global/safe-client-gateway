@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { get } from 'lodash';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';
@@ -5,17 +6,17 @@ const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';
 
 export function formatRouteLogMessage(
   statusCode: number,
-  request: any,
+  request: Request,
   startTimeMs: number,
   detail?: string,
 ): {
-  chain_id: any;
-  client_ip: any;
-  method: any;
+  chain_id: string | null;
+  client_ip: string | null;
+  method: string;
   response_time_ms: number;
-  route: any;
-  path: any;
-  safe_app_user_agent: any;
+  route: string;
+  path: string;
+  safe_app_user_agent: string | null;
   status_code: number;
   detail: string | null;
 } {

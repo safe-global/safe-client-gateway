@@ -13,8 +13,9 @@ import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { difference } from 'lodash';
+import { difference, get } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -155,8 +156,9 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
-  private _mapProviderError(error: any): string {
-    const errorCode = error?.status?.error_code;
+  private _mapProviderError(error: unknown): string {
+    const errorCode =
+      error instanceof NetworkResponseError && get(error, 'data.error_code');
     return errorCode ? ` [status: ${errorCode}]` : '';
   }
 
@@ -228,7 +230,7 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<AssetPrice> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get(url, {
+      const { data } = await this.networkService.get<AssetPrice>(url, {
         params: {
           vs_currencies: args.fiatCode,
           contract_addresses: args.tokenAddresses.join(','),

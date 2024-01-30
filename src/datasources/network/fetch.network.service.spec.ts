@@ -1,18 +1,18 @@
 import { faker } from '@faker-js/faker';
-import { jest } from '@jest/globals';
 import { ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { FetchClient } from '@/datasources/network/network.module';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 
-const fetchClient = jest.fn() as unknown as FetchClient;
+const fetchClient = jest.fn();
 
-const fetchClientMock = jest.mocked<FetchClient>(fetchClient);
+const fetchClientMock: jest.MockedFunction<FetchClient> =
+  jest.mocked(fetchClient);
 
 const loggingService = {
   debug: jest.fn(),
-} as unknown as ILoggingService;
+} as jest.MockedObjectDeep<ILoggingService>;
 
 const loggingServiceMock = jest.mocked(loggingService);
 

@@ -57,16 +57,6 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  async clearChains(): Promise<void> {
-    const pattern = CacheRouter.getChainsCachePattern();
-    const key = CacheRouter.getChainsCacheKey();
-    await Promise.all([
-      this.cacheService.deleteByKey(key),
-      this.cacheService.deleteByKeyPattern(pattern),
-      // TODO: call _setInvalidationTimeForKey for each item matching the pattern
-    ]);
-  }
-
   async getChain(chainId: string): Promise<Chain> {
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
@@ -117,16 +107,8 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  async clearSafeApps(chainId?: string): Promise<void> {
-    if (chainId) {
-      // if a chain id is provided, delete the safe apps data for that chain id
-      const key = CacheRouter.getSafeAppsKey(chainId);
-      await this.cacheService.deleteByKey(key);
-    } else {
-      // if a chain id is not provided, delete all the safe apps data
-      const pattern = CacheRouter.getSafeAppsCachePattern();
-      await this.cacheService.deleteByKeyPattern(pattern);
-      // TODO: call _setInvalidationTimeForKey for each item matching the pattern
-    }
+  async clearSafeApps(chainId: string): Promise<void> {
+    const key = CacheRouter.getSafeAppsKey(chainId);
+    await this.cacheService.deleteByKey(key);
   }
 }

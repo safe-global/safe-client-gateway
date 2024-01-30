@@ -15,7 +15,7 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class DeleteSafeDelegateDtoValidationPipe
-  implements PipeTransform<any, DeleteSafeDelegateDto>
+  implements PipeTransform<unknown, DeleteSafeDelegateDto>
 {
   private readonly isValid: ValidateFunction<DeleteSafeDelegateDto>;
 
@@ -28,7 +28,7 @@ export class DeleteSafeDelegateDtoValidationPipe
       deleteSafeDelegateDtoSchema,
     );
   }
-  transform(data: any): DeleteSafeDelegateDto {
+  transform(data: unknown): DeleteSafeDelegateDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {

@@ -5,7 +5,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { masterCopyBuilder } from '@/domain/chains/entities/__tests__/master-copy.builder';
+import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
@@ -76,15 +76,15 @@ describe('Safes Controller (Unit)', () => {
       .with('recommendedMasterCopyVersion', masterCopyVersion)
       .build();
     const owner = faker.finance.ethereumAddress();
-    const masterCopies = [
-      masterCopyBuilder().with('version', masterCopyVersion).build(),
+    const singletons = [
+      singletonBuilder().with('version', masterCopyVersion).build(),
     ];
-    const masterCopyInfo = contractBuilder()
-      .with('address', masterCopies[0].address)
+    const singletonInfo = contractBuilder()
+      .with('address', singletons[0].address)
       .build();
     const safeInfo = safeBuilder()
       .with('owners', [owner])
-      .with('masterCopy', masterCopies[0].address)
+      .with('masterCopy', singletons[0].address)
       .with('version', masterCopyVersion)
       .build();
     const fallbackHandlerInfo = contractBuilder()
@@ -118,10 +118,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -180,9 +180,9 @@ describe('Safes Controller (Unit)', () => {
           },
         ],
         implementation: {
-          value: masterCopyInfo.address,
-          name: masterCopyInfo.displayName,
-          logoUri: masterCopyInfo.logoUri,
+          value: singletonInfo.address,
+          name: singletonInfo.displayName,
+          logoUri: singletonInfo.logoUri,
         },
         implementationVersionState: 'UP_TO_DATE',
         collectiblesTag: '1474253704',
@@ -206,10 +206,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('Version State is UNKNOWN when safe version is null', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .with('version', null)
       .build();
     const fallbackHandlerInfo = contractBuilder()
@@ -227,10 +227,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -259,10 +259,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('Version State is UNKNOWN when safe has an invalid safe version', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .with('version', 'vI.N.V.A.L.I.D')
       .build();
     const fallbackHandlerInfo = contractBuilder()
@@ -280,10 +280,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -314,10 +314,10 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder()
       .with('recommendedMasterCopyVersion', 'vI.N.V.A.L.I.D')
       .build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -334,10 +334,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -364,15 +364,15 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('Version State is UNKNOWN if master copy is not supported', async () => {
+  it('Version State is UNKNOWN if singleton is not supported', async () => {
     const chain = chainBuilder().build();
     const supportedMasterCopy = faker.finance.ethereumAddress();
-    const masterCopies = [
-      masterCopyBuilder().with('address', supportedMasterCopy).build(),
+    const singletons = [
+      singletonBuilder().with('address', supportedMasterCopy).build(),
     ];
-    const masterCopyInfo = contractBuilder().build();
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -389,10 +389,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -424,10 +424,10 @@ describe('Safes Controller (Unit)', () => {
       .with('recommendedMasterCopyVersion', '5.0.0')
       .build();
     const supportedMasterCopy = faker.finance.ethereumAddress();
-    const masterCopies = [
-      masterCopyBuilder().with('address', supportedMasterCopy).build(),
+    const singletons = [
+      singletonBuilder().with('address', supportedMasterCopy).build(),
     ];
-    const masterCopyInfo = contractBuilder().build();
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
       .with('masterCopy', supportedMasterCopy)
       .with('version', '4.0.0')
@@ -447,10 +447,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -479,10 +479,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('txQueuedTag is computed from Multisig transaction with modified date', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -498,10 +498,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -549,17 +549,12 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txQueuedTag is now if there are no Multisig transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txQueuedTag is null if there are no Multisig transactions', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -576,10 +571,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -601,24 +596,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
+          txQueuedTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
-  it('txQueuedTag is now if Multisig transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txQueuedTag is null if Multisig transactions throw', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -634,10 +622,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -659,19 +647,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txQueuedTag: Math.floor(date.getTime() / 1000).toString(),
+          txQueuedTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('collectiblesTag is computed from Ethereum transaction with executionDate date', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -706,10 +692,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -736,17 +722,12 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('collectiblesTag is now if there are no Ethereum transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('collectiblesTag is null if there are no Ethereum transactions', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -763,10 +744,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -788,24 +769,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
+          collectiblesTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
-  it('collectiblesTag is now if Ethereum transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('collectiblesTag is null if Ethereum transactions throw', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -821,10 +795,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -846,19 +820,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          collectiblesTag: Math.floor(date.getTime() / 1000).toString(),
+          collectiblesTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Multisig transaction with modified date', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -874,10 +846,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -927,10 +899,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('txHistoryTag is computed from Multisig transaction without modified date', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -946,10 +918,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1002,10 +974,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('txHistoryTag is computed from Ethereum transaction', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1020,10 +992,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1075,10 +1047,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('txHistoryTag is computed from Module transaction', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1092,10 +1064,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1148,17 +1120,12 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txHistoryTag is now if there are no Multisig/Ethereum/Module transactions', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txHistoryTag is null if there are no Multisig/Ethereum/Module transactions', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1175,10 +1142,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1200,19 +1167,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
+          txHistoryTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('txHistoryTag is computed from Ethereum transaction if Multisig transactions throw', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1226,10 +1191,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1272,10 +1237,10 @@ describe('Safes Controller (Unit)', () => {
 
   it('txHistoryTag is computed from Module transaction if Multisig/Ethereum transactions throw', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1289,10 +1254,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1330,17 +1295,12 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
-  it('txHistoryTag is now if Multisig/Ethereum/Module transactions throw', async () => {
-    jest.useFakeTimers();
-
-    const date = faker.date.anytime();
-    jest.setSystemTime(date);
-
+  it('txHistoryTag is null if Multisig/Ethereum/Module transactions throw', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1354,10 +1314,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1379,19 +1339,17 @@ describe('Safes Controller (Unit)', () => {
       .expect(200)
       .expect((response) =>
         expect(response.body).toMatchObject({
-          txHistoryTag: Math.floor(date.getTime() / 1000).toString(),
+          txHistoryTag: null,
         }),
       );
-
-    jest.useRealTimers();
   });
 
   it('messagesTag is the latest modified timestamp', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1427,10 +1385,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1457,15 +1415,68 @@ describe('Safes Controller (Unit)', () => {
       );
   });
 
+  it('messagesTag is null if there are no messages', async () => {
+    const chain = chainBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
+    const safeInfo = safeBuilder()
+      .with('masterCopy', singletonInfo.address)
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', safeInfo.fallbackHandler)
+      .build();
+    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const collectibleTransfers = pageBuilder().build();
+    const queuedTransactions = pageBuilder().build();
+    const moduleTransactions = pageBuilder().build();
+
+    const messages = pageBuilder().build();
+
+    networkService.get.mockImplementation((url) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain, status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          return Promise.resolve({ data: safeInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+          return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: guardInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
+          return Promise.resolve({ data: collectibleTransfers, status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
+          return Promise.resolve({ data: queuedTransactions, status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
+          return Promise.resolve({ data: moduleTransactions, status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+          return Promise.resolve({ data: messages, status: 200 });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeInfo.address}`)
+      .expect(200)
+      .expect((response) =>
+        expect(response.body).toMatchObject({
+          messagesTag: null,
+        }),
+      );
+  });
+
   it('modules are computed with the respective address info', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const module1 = faker.finance.ethereumAddress();
     const module2 = faker.finance.ethereumAddress();
     const module3 = faker.finance.ethereumAddress();
     const safeInfo = safeBuilder()
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .with('modules', [module1, module2, module3])
       .build();
     const moduleInfo1 = contractBuilder().with('address', module1).build();
@@ -1486,10 +1497,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${module1}`:
           return Promise.resolve({ data: moduleInfo1, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${module2}`:
@@ -1540,11 +1551,11 @@ describe('Safes Controller (Unit)', () => {
 
   it('modules are null when module collection is empty', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
       .with('modules', [])
-      .with('masterCopy', masterCopyInfo.address)
+      .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
@@ -1561,10 +1572,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1593,8 +1604,8 @@ describe('Safes Controller (Unit)', () => {
 
   it('fallback handler guard returns null if it is a null address', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
       .with('fallbackHandler', NULL_ADDRESS)
       .build();
@@ -1613,10 +1624,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1645,8 +1656,8 @@ describe('Safes Controller (Unit)', () => {
 
   it('fallback handler is serialised if there is no address info', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder().build();
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
@@ -1660,10 +1671,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
           // Return 404 for Fallback Handler Info
           return Promise.reject({ status: 404 });
@@ -1697,8 +1708,8 @@ describe('Safes Controller (Unit)', () => {
 
   it('guard returns null if it is a null address', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder().with('guard', NULL_ADDRESS).build();
     const fallbackHandlerInfo = contractBuilder().build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
@@ -1713,10 +1724,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({ data: fallbackHandlerInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
@@ -1745,8 +1756,8 @@ describe('Safes Controller (Unit)', () => {
 
   it('guard is serialised if there is no address info', async () => {
     const chain = chainBuilder().build();
-    const masterCopies = [masterCopyBuilder().build()];
-    const masterCopyInfo = contractBuilder().build();
+    const singletons = [singletonBuilder().build()];
+    const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder().build();
     const fallbackInfo = contractBuilder().build();
     const guardInfo = contractBuilder().build();
@@ -1761,10 +1772,10 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`:
           return Promise.resolve({ data: safeInfo, status: 200 });
-        case `${chain.transactionService}/api/v1/about/master-copies/`:
-          return Promise.resolve({ data: masterCopies, status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${masterCopyInfo.address}`:
-          return Promise.resolve({ data: masterCopyInfo, status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({ data: singletons, status: 200 });
+        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: singletonInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
           return Promise.resolve({ data: fallbackInfo, status: 200 });
         case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:

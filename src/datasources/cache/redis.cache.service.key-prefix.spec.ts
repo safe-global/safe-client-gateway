@@ -15,19 +15,19 @@ const redisClientType = {
   unlink: jest.fn(),
   quit: jest.fn(),
   scanIterator: jest.fn(),
-} as unknown as RedisClientType;
+} as jest.MockedObjectDeep<RedisClientType>;
 const redisClientTypeMock = jest.mocked(redisClientType);
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const configurationService = {
   getOrThrow: jest.fn(),
-} as unknown as IConfigurationService;
+} as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
 describe('RedisCacheService with a Key Prefix', () => {
@@ -104,21 +104,5 @@ describe('RedisCacheService with a Key Prefix', () => {
       defaultExpirationTimeInSeconds,
     );
     jest.useRealTimers();
-  });
-
-  it('deleting a key by pattern should use the prefix in the pattern', async () => {
-    const matches = [
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
-      faker.string.alphanumeric(),
-    ];
-    redisClientTypeMock.scanIterator = jest.fn().mockReturnValue(matches);
-    const pattern = faker.string.alphanumeric();
-
-    await redisCacheService.deleteByKeyPattern(pattern);
-
-    expect(redisClientTypeMock.scanIterator).toHaveBeenCalledWith({
-      MATCH: `${keyPrefix}-${pattern}`,
-    });
   });
 });

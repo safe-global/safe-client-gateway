@@ -95,7 +95,7 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
       .send({
-        account: signer.address,
+        signer: signer.address,
         timestamp: timestamp,
         signature: signature,
       })
@@ -137,7 +137,7 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        account: signer.address,
+        signer: signer.address,
         timestamp: timestamp,
         signature: signature,
       })
@@ -248,7 +248,7 @@ describe('Email controller delete email tests', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
       .send({
-        account: signer.address,
+        signer: signer.address,
         timestamp: timestamp,
         signature: signature,
       })

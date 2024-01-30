@@ -10,13 +10,17 @@ const accountDataSource = {
   verifyEmail: jest.fn(),
   deleteAccount: jest.fn(),
   updateAccountEmail: jest.fn(),
+  getSubscriptions: jest.fn(),
+  subscribe: jest.fn(),
+  unsubscribe: jest.fn(),
+  unsubscribeAll: jest.fn(),
 } as jest.MockedObjectDeep<IAccountDataSource>;
 
 @Module({
   providers: [
     {
       provide: IAccountDataSource,
-      useFactory: (): any => {
+      useFactory: (): jest.MockedObjectDeep<IAccountDataSource> => {
         return jest.mocked(accountDataSource);
       },
     },

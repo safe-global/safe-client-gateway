@@ -11,19 +11,18 @@ import { faker } from '@faker-js/faker';
 
 const dataSource = {
   get: jest.fn(),
-} as unknown as CacheFirstDataSource;
+} as jest.MockedObjectDeep<CacheFirstDataSource>;
 const mockDataSource = jest.mocked(dataSource);
 
 const cacheService = {
   deleteByKey: jest.fn(),
-  deleteByKeyPattern: jest.fn(),
   set: jest.fn(),
-} as unknown as ICacheService;
+} as jest.MockedObjectDeep<ICacheService>;
 const mockCacheService = jest.mocked(cacheService);
 
 const httpErrorFactory = {
   from: jest.fn(),
-} as unknown as HttpErrorFactory;
+} as jest.MockedObjectDeep<HttpErrorFactory>;
 const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
 
 describe('ConfigApi', () => {
@@ -184,27 +183,6 @@ describe('ConfigApi', () => {
 
     afterAll(() => {
       jest.useRealTimers();
-    });
-
-    it('clear chains should trigger delete on cache service', async () => {
-      await service.clearChains();
-
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith('chains');
-      expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledWith(
-        '*_chain',
-      );
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledTimes(1);
-    });
-
-    it('clear safe apps should trigger delete on cache service', async () => {
-      await service.clearSafeApps();
-
-      expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledWith(
-        '*_safe_apps',
-      );
-      expect(mockCacheService.deleteByKeyPattern).toHaveBeenCalledTimes(1);
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(0);
     });
 
     it('clear safe apps for a given chain should trigger delete on cache service', async () => {
