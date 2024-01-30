@@ -155,7 +155,11 @@ export class CacheFirstDataSource {
   ): Promise<void> {
     return this.cacheService.set(
       cacheDir,
-      JSON.stringify(error),
+      JSON.stringify({
+        data: error.data,
+        response: { status: error.response.status },
+        url: error.url,
+      }),
       notFoundExpireTimeSeconds,
     );
   }
