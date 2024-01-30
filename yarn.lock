@@ -1192,9 +1192,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/common@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "@nestjs/common@npm:10.3.0"
+"@nestjs/common@npm:^10.3.1":
+  version: 10.3.1
+  resolution: "@nestjs/common@npm:10.3.1"
   dependencies:
     iterare: "npm:1.2.1"
     tslib: "npm:2.6.2"
@@ -1209,7 +1209,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: bedb3437e6517df423526409b5a70cc33c52b557d17bd74ca12ab09a37ad5ff4ecdece44db625e3d702e21d308bc49d5419afe1752181af6aafdee3a27c9d394
+  checksum: 39b004b2cd7e2399ef9e6e3afda67a34abe1bea93360ed065423ffe2b278cf5f3a29b4bc70586de0d6051c3bb8d6b7e556fce40ba372c2bb15a01e84feaece29
   languageName: node
   linkType: hard
 
@@ -1228,9 +1228,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "@nestjs/core@npm:10.3.0"
+"@nestjs/core@npm:^10.3.1":
+  version: 10.3.1
+  resolution: "@nestjs/core@npm:10.3.1"
   dependencies:
     "@nuxtjs/opencollective": "npm:0.3.2"
     fast-safe-stringify: "npm:2.1.1"
@@ -1252,7 +1252,7 @@ __metadata:
       optional: true
     "@nestjs/websockets":
       optional: true
-  checksum: 4bdeed0f203e55b4a1edf0031df55b6bf059c1f9faf6f86ac70e08a6e279c2d494df858ea251cbef915aa0df27b6534d1baace2847a3be7853bf07c1ad3a196f
+  checksum: 397580c2009301e30a5f353862920fb3498e91aa41655ddb0474f63de2d99aff4bf9e3446322692760dff9a3b7d4453e6bcedd2db689518d3e56c6acf31fce16
   languageName: node
   linkType: hard
 
@@ -1273,9 +1273,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/platform-express@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "@nestjs/platform-express@npm:10.3.0"
+"@nestjs/platform-express@npm:^10.3.1":
+  version: 10.3.1
+  resolution: "@nestjs/platform-express@npm:10.3.1"
   dependencies:
     body-parser: "npm:1.20.2"
     cors: "npm:2.8.5"
@@ -1285,7 +1285,7 @@ __metadata:
   peerDependencies:
     "@nestjs/common": ^10.0.0
     "@nestjs/core": ^10.0.0
-  checksum: 5e802d18f779246ac5dac69df7fb293f60b3802d31f50637b08dc9055ef1b4ee2ee18b2ff1c8545894a7ca1dd570033de6fa05764365ca74cb5734ab7a923b3e
+  checksum: cfcffc6ac3f7e59f1cabcd344ef52d509378561bc3ab763bd860db3afdf0a66bede59246a9bae0ef9bbf6ec2c875fff871ebd8cade38d55ac3d70610bc83f436
   languageName: node
   linkType: hard
 
@@ -1368,9 +1368,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/testing@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "@nestjs/testing@npm:10.3.0"
+"@nestjs/testing@npm:^10.3.1":
+  version: 10.3.1
+  resolution: "@nestjs/testing@npm:10.3.1"
   dependencies:
     tslib: "npm:2.6.2"
   peerDependencies:
@@ -1383,7 +1383,7 @@ __metadata:
       optional: true
     "@nestjs/platform-express":
       optional: true
-  checksum: a6d107b4b11411ac347a6ea89a512d57c1e7cab66108f1cda061e1262c9ba96a90c982f6fe4462aed026772bf27ea3c50b1a2c69dba083bf9bc6f37e197b640d
+  checksum: 5e189e615c0d4118bcf7e65cc32cc9cbd673909d34ecdea711ea1bb2973d1d00d61282da74a72d0c19d3d620d479fda37a2dce8c6c1627353aeef4c6c36c3d96
   languageName: node
   linkType: hard
 
@@ -6997,14 +6997,14 @@ __metadata:
   dependencies:
     "@faker-js/faker": "npm:^8.3.1"
     "@nestjs/cli": "npm:^10.3.0"
-    "@nestjs/common": "npm:^10.3.0"
+    "@nestjs/common": "npm:^10.3.1"
     "@nestjs/config": "npm:^3.1.1"
-    "@nestjs/core": "npm:^10.3.0"
-    "@nestjs/platform-express": "npm:^10.3.0"
+    "@nestjs/core": "npm:^10.3.1"
+    "@nestjs/platform-express": "npm:^10.3.1"
     "@nestjs/schematics": "npm:^10.1.0"
     "@nestjs/serve-static": "npm:^4.0.0"
     "@nestjs/swagger": "npm:^7.2.0"
-    "@nestjs/testing": "npm:^10.3.0"
+    "@nestjs/testing": "npm:^10.3.1"
     "@safe-global/safe-deployments": "npm:^1.32.0"
     "@types/express": "npm:^4.17.21"
     "@types/jest": "npm:29.5.11"
