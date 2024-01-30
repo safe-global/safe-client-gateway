@@ -10,7 +10,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 const mockNetworkService = jest.mocked(networkService);
 
 describe('TenderlyApi', () => {

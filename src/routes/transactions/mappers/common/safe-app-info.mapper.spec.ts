@@ -10,14 +10,14 @@ import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 describe('SafeAppInfo mapper (Unit)', () => {
   const safeAppsRepositoryMock = jest.mocked({
     getSafeApps: jest.fn(),
-  } as unknown as SafeAppsRepository);
+  } as jest.MockedObjectDeep<SafeAppsRepository>);
 
-  const mockLoggingService = {
+  const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
     info: jest.fn(),
     debug: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-  } as unknown as ILoggingService;
+  };
 
   let mapper: SafeAppInfoMapper;
 

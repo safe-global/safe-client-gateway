@@ -3,12 +3,12 @@ import { faker } from '@faker-js/faker';
 import { ValidationErrorFactory } from '@/validation/providers/validation-error-factory';
 import { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 describe('ValidationErrorFactory', () => {
   const validationErrorFactory = new ValidationErrorFactory(mockLoggingService);

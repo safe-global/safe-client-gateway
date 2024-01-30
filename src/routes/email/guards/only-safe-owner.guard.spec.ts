@@ -17,7 +17,7 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 const safeRepository = {
   isOwner: jest.fn(),
-} as unknown as ISafeRepository;
+} as jest.MockedObjectDeep<ISafeRepository>;
 
 const safeRepositoryMock = jest.mocked(safeRepository);
 
