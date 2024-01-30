@@ -10,7 +10,7 @@ export function erc20TransferBuilder(): IBuilder<ERC20Transfer> {
     .with('to', faker.finance.ethereumAddress())
     .with('transactionHash', faker.string.hexadecimal())
     .with('tokenAddress', faker.finance.ethereumAddress())
-    .with('value', faker.string.hexadecimal())
+    .with('value', faker.string.numeric())
     .with('transferId', faker.string.sample());
 }
 
