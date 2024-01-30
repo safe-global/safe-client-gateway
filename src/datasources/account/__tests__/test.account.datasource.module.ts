@@ -16,7 +16,7 @@ const accountDataSource = {
   providers: [
     {
       provide: IAccountDataSource,
-      useFactory: (): any => {
+      useFactory: (): jest.MockedObjectDeep<IAccountDataSource> => {
         return jest.mocked(accountDataSource);
       },
     },

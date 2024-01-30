@@ -61,7 +61,7 @@ export interface IAccountRepository {
     safeAddress: string;
     signer: string;
     code: string;
-  }): Promise<any>;
+  }): Promise<void>;
 
   /**
    * Deletes an account.

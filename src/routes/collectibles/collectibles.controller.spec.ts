@@ -222,7 +222,8 @@ describe('Collectibles Controller (Unit)', () => {
         .expect(transactionServiceError.response.status)
         .expect({
           code: transactionServiceError.response.status,
-          message: transactionServiceError.data.message,
+          message: (transactionServiceError.data as { message: string })
+            .message,
         });
     });
 

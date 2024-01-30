@@ -15,7 +15,7 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class GetDelegateDtoValidationPipe
-  implements PipeTransform<any, GetDelegateDto>
+  implements PipeTransform<unknown, GetDelegateDto>
 {
   private readonly isValid: ValidateFunction<GetDelegateDto>;
 
@@ -28,7 +28,7 @@ export class GetDelegateDtoValidationPipe
       getDelegateDtoSchema,
     );
   }
-  transform(data: any): GetDelegateDto {
+  transform(data: unknown): GetDelegateDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {

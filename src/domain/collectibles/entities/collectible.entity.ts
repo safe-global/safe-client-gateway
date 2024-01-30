@@ -8,5 +8,5 @@ export interface Collectible {
   name: string | null;
   description: string | null;
   imageUri: string | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
 }

@@ -21,5 +21,5 @@ export class Collectible implements DomainCollectible {
   @ApiPropertyOptional({ type: String, nullable: true })
   imageUri!: string | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
-  metadata!: Record<string, any> | null;
+  metadata!: Record<string, unknown> | null;
 }

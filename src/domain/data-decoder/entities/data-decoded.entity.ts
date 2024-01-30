@@ -2,7 +2,7 @@ export interface DataDecodedParameter {
   name: string;
   type: string;
   value: unknown;
-  valueDecoded?: Record<string, any> | Record<string, any>[];
+  valueDecoded?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 export interface DataDecoded {
