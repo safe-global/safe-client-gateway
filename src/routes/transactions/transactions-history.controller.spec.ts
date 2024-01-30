@@ -1189,7 +1189,7 @@ describe('Transactions History Controller (Unit)', () => {
         erc20TransferBuilder()
           .with('tokenAddress', trustedToken.address)
           .with('executionDate', date)
-          .with('value', faker.string.numeric({ exclude: ['0'] }))
+          .with('value', '1')
           .build(),
       ) as Transfer,
       erc20TransferToJson(
