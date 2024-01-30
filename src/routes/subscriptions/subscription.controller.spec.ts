@@ -52,7 +52,7 @@ describe('Subscription Controller tests', () => {
     await app.close();
   });
 
-  it('deletes category successfully', async () => {
+  it('unsubscribes from a category successfully', async () => {
     const subscriptionKey = faker.word.sample();
     const subscriptionName = faker.word.sample(2);
     const token = faker.string.uuid();
