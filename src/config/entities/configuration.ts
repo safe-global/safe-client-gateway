@@ -18,6 +18,31 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
   },
+  balances: {
+    balancesTtlSeconds: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${300}`),
+    providers: {
+      valk: {
+        baseUri:
+          process.env.VALK_BASE_URI ||
+          'https://merlin-api-v1.cf/api/merlin/public',
+        apiKey: process.env.VALK_API_KEY,
+        chains: {
+          1: { chainName: 'eth' },
+          10: { chainName: 'op' },
+          100: { chainName: 'xdai' },
+          1101: { chainName: 'pze' },
+          1313161554: { chainName: 'aurora' },
+          137: { chainName: 'matic' },
+          324: { chainName: 'era' },
+          42161: { chainName: 'arb' },
+          42220: { chainName: 'celo' },
+          43114: { chainName: 'avax' },
+          56: { chainName: 'bsc' },
+          8453: { chainName: 'base' },
+        },
+      },
+    },
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_HOST || 'localhost',
@@ -72,6 +97,8 @@ export default () => ({
   features: {
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
+    valkBalancesChainIds:
+      process.env.FF_VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
