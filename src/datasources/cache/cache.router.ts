@@ -23,6 +23,7 @@ export class CacheRouter {
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly BALANCES_KEY = 'balances';
+  private static readonly VALK_BALANCES_KEY = 'valk_balances';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -46,6 +47,21 @@ export class CacheRouter {
       CacheRouter.getBalancesCacheKey(args),
       `${args.trusted}_${args.excludeSpam}`,
     );
+  }
+
+  // TODO: remove this prefixed key if eventually only one balances provider is used
+  static getValkBalancesCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.VALK_BALANCES_KEY}_${args.safeAddress}`;
+  }
+
+  static getValkBalancesCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getValkBalancesCacheKey(args), '');
   }
 
   static getSafeCacheDir(args: {

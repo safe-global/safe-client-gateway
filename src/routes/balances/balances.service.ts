@@ -81,6 +81,7 @@ export class BalancesService {
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
+    // TODO: take into consideration BalancesRepository available fiat codes.
     return this.pricesRepository.getFiatCodes();
   }
 }

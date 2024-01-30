@@ -23,14 +23,14 @@
     "test:all:cov": "jest --coverage --config ./test/jest-all.json"
   },
   "dependencies": {
-    "@nestjs/cli": "^10.2.1",
+    "@nestjs/cli": "^10.3.0",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.3.0",
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.2.0",
-    "@safe-global/safe-deployments": "^1.30.0",
+    "@safe-global/safe-deployments": "^1.32.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "lodash": "^4.17.21",
