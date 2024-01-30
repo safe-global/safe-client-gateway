@@ -10,7 +10,7 @@ import { CacheKeyPrefix } from '@/datasources/cache/constants';
 describe('Get contract e2e test', () => {
   let app: INestApplication;
   let redisClient: RedisClientType;
-  const chainId = '5'; // Görli testnet
+  const chainId = '1'; // Mainnet
   const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {

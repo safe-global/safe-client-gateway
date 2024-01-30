@@ -11,7 +11,7 @@ import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;
   let redisClient: RedisClientType;
-  const chainId = '5'; // Görli testnet
+  const chainId = '1'; // Mainnet
   const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {

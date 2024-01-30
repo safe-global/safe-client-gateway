@@ -10,7 +10,7 @@ import { CacheKeyPrefix } from '@/datasources/cache/constants';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication;
-  const chainId = '5'; // Görli testnet
+  const chainId = '1'; // Mainnet
 
   beforeAll(async () => {
     const cacheKeyPrefix = crypto.randomUUID();
