@@ -1,5 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ValkBalance } from '@/datasources/balances-api/entities/valk-balance.entity';
+import { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -11,14 +11,10 @@ import {
   Erc20Balance,
   NativeBalance,
 } from '@/domain/balances/entities/balance.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
 import { Inject, Injectable } from '@nestjs/common';
-import { isAddress } from 'viem';
-
-export const IValkBalancesApi = Symbol('IValkBalancesApi');
 
 // TODO: move to a common place
 type ChainAttributes = {
@@ -27,7 +23,7 @@ type ChainAttributes = {
 };
 
 @Injectable()
-export class ValkBalancesApi implements IBalancesApi {
+export class ZerionBalancesApi implements IBalancesApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
@@ -41,10 +37,10 @@ export class ValkBalancesApi implements IBalancesApi {
     private readonly dataSource: CacheFirstDataSource,
   ) {
     this.apiKey = this.configurationService.get<string>(
-      'balances.providers.valk.apiKey',
+      'balances.providers.zerion.apiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
-      'balances.providers.valk.baseUri',
+      'balances.providers.zerion.baseUri',
     );
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -56,7 +52,7 @@ export class ValkBalancesApi implements IBalancesApi {
       );
     this.chainsConfiguration = this.configurationService.getOrThrow<
       Record<number, ChainAttributes>
-    >('balances.providers.valk.chains');
+    >('balances.providers.zerion.chains');
   }
 
   async getBalances(args: {
@@ -65,17 +61,18 @@ export class ValkBalancesApi implements IBalancesApi {
     fiatCode: string;
   }): Promise<Balance[]> {
     try {
-      const cacheDir = CacheRouter.getValkBalancesCacheDir(args);
+      const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
-      const url = `${this.baseUri}/balances/token/${args.safeAddress}?chain=${chainName}`;
-      const valkBalances = await this.dataSource.get<ValkBalance[]>({
+      const currency = args.fiatCode.toLowerCase();
+      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency}&sort=value`;
+      const zerionBalances = await this.dataSource.get<ZerionBalance[]>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: { headers: { Authorization: `${this.apiKey}` } },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this._mapBalances(valkBalances, args.fiatCode);
+      return this._mapBalances(chainName, zerionBalances);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} balances from provider: ${asError(error).message}}`,
@@ -83,63 +80,57 @@ export class ValkBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearBalances(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void> {
-    const key = CacheRouter.getValkBalancesCacheKey(args);
-    await this.cacheService.deleteByKey(key);
-  }
-
   private _mapBalances(
-    valkBalances: ValkBalance[],
-    fiatCode: string,
+    chainName: string,
+    zerionBalances: ZerionBalance[],
   ): Balance[] {
-    return valkBalances.map((valkBalance) => {
-      const price = valkBalance.prices[fiatCode.toUpperCase()] ?? null;
-      const fiatBalance = getNumberString(
-        (valkBalance.balance / Math.pow(10, valkBalance.decimals)) * price,
+    return zerionBalances.map((zb) => {
+      const implementation = zb.attributes.fungible_info.implementations.find(
+        (implementation) => implementation.chain_id === chainName,
       );
-      const fiatConversion = getNumberString(price);
-
-      // Valk returns a string representing the native coin (e.g.: 'eth') as token_address
-      // for native coins balances. An Ethereum address is returned for ERC20 tokens.
+      const fiatBalance = '0'; // TODO:
+      const fiatConversion = '0'; // TODO:
       return {
-        ...(isAddress(valkBalance.token_address)
-          ? this._mapErc20Balance(valkBalance)
-          : this._mapNativeBalance(valkBalance)),
+        ...(implementation?.address === null
+          ? this._mapNativeBalance(zb, chainName)
+          : this._mapErc20Balance(zb, chainName)),
         fiatBalance,
         fiatConversion,
       };
     });
   }
 
-  private _mapErc20Balance(valkBalance: ValkBalance): Erc20Balance {
-    return {
-      tokenAddress: valkBalance.token_address,
-      token: {
-        name: valkBalance.name,
-        symbol: valkBalance.symbol,
-        decimals: valkBalance.decimals,
-        logoUri: valkBalance.logo ?? '',
-      },
-      balance: getNumberString(valkBalance.balance),
-    };
+  private _mapErc20Balance(
+    zerionBalance: ZerionBalance,
+    chainName: string,
+  ): Erc20Balance {
+    zerionBalance;
+    chainName;
+    throw Error('Not implemented');
   }
 
-  private _mapNativeBalance(valkBalance: ValkBalance): NativeBalance {
-    return {
-      tokenAddress: null,
-      token: null,
-      balance: getNumberString(valkBalance.balance),
-    };
+  private _mapNativeBalance(
+    zerionBalance: ZerionBalance,
+    chainName: string,
+  ): NativeBalance {
+    zerionBalance;
+    chainName;
+    throw Error('Not implemented');
+  }
+
+  async clearBalances(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const key = CacheRouter.getZerionBalancesCacheKey(args);
+    await this.cacheService.deleteByKey(key);
   }
 
   private _getChainName(chainId: string): string {
     const chainName = this.chainsConfiguration[Number(chainId)]?.chainName;
     if (!chainName)
       throw Error(
-        `Chain ${chainId} balances retrieval via Valk is not configured`,
+        `Chain ${chainId} balances retrieval via Zerion is not configured`,
       );
     return chainName;
   }

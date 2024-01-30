@@ -41,6 +41,24 @@ export default () => ({
           8453: { chainName: 'base' },
         },
       },
+      zerion: {
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        apiKey: process.env.ZERION_API_KEY,
+        chains: {
+          1: { chainName: 'ethereum' },
+          10: { chainName: 'optimism' },
+          100: { chainName: 'xdai' },
+          1101: { chainName: '' }, // TODO:
+          1313161554: { chainName: 'aurora' },
+          137: { chainName: 'polygon' },
+          324: { chainName: 'zksync-era' },
+          42161: { chainName: 'arbitrum' },
+          42220: { chainName: '' }, // TODO:
+          43114: { chainName: 'avalanche' },
+          56: { chainName: 'binance-smart-chain' },
+          8453: { chainName: 'base' },
+        },
+      },
     },
   },
   db: {
