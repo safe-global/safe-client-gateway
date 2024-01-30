@@ -41,13 +41,13 @@ describe('EmailDeletionGuard guard tests', () => {
   const safe = faker.finance.ethereumAddress();
   const timestamp = faker.date.recent().getTime();
   const privateKey = generatePrivateKey();
-  const account = privateKeyToAccount(privateKey);
-  const accountAddress = account.address;
+  const signer = privateKeyToAccount(privateKey);
+  const signerAddress = signer.address;
   let signature: Hash;
 
   beforeAll(async () => {
-    const message = `email-delete-${chainId}-${safe}-${accountAddress}-${timestamp}`;
-    signature = await account.signMessage({ message });
+    const message = `email-delete-${chainId}-${safe}-${signerAddress}-${timestamp}`;
+    signature = await signer.signMessage({ message });
   });
 
   beforeEach(async () => {
@@ -78,7 +78,7 @@ describe('EmailDeletionGuard guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
-        account: accountAddress,
+        signer: signerAddress,
         signature: signature,
         timestamp: timestamp,
       })
@@ -120,7 +120,7 @@ describe('EmailDeletionGuard guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
-        account: accountAddress,
+        account: signerAddress,
         timestamp,
       })
       .expect(403)
@@ -138,7 +138,7 @@ describe('EmailDeletionGuard guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
       .send({
-        account: accountAddress,
+        account: signerAddress,
         signature,
       })
       .expect(403)
@@ -155,7 +155,7 @@ describe('EmailDeletionGuard guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/invalid/chains/${chainId}`)
       .send({
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })
@@ -173,7 +173,7 @@ describe('EmailDeletionGuard guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/invalid/safes/${safeAddress}`)
       .send({
-        account: accountAddress,
+        account: signerAddress,
         signature,
         timestamp,
       })
