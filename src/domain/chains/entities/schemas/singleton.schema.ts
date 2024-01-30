@@ -1,11 +1,11 @@
 import { JSONSchemaType } from 'ajv';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 
-export const MASTER_COPY_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/master-copy.json';
+export const SINGLETON_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/chains/singleton.json';
 
-export const masterCopySchema: JSONSchemaType<MasterCopy> = {
-  $id: MASTER_COPY_SCHEMA_ID,
+export const singletonSchema: JSONSchemaType<Singleton> = {
+  $id: SINGLETON_SCHEMA_ID,
   type: 'object',
   properties: {
     address: { type: 'string' },

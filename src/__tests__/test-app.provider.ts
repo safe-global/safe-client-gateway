@@ -1,4 +1,4 @@
-import { DynamicModule, INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import {
   AppProvider,
@@ -13,7 +13,7 @@ import {
  *
  * If the module provided is not a {@link TestingModule}, an error is thrown
  */
-export class TestAppProvider extends AppProvider {
+export class TestAppProvider<T> extends AppProvider<T> {
   // Disables shutdown hooks for tests (they are not required)
   // Enabling this in the tests might result in a MaxListenersExceededWarning
   // as the number of listeners that this adds exceed the default
@@ -27,13 +27,9 @@ export class TestAppProvider extends AppProvider {
     }
   }
 
-  protected getApp(
-    module: DynamicModule | TestingModule,
-  ): Promise<INestApplication> {
+  protected getApp(module: T): Promise<INestApplication> {
     if (!(module instanceof TestingModule))
-      return Promise.reject(
-        `${module.constructor.name} is not a TestingModule`,
-      );
+      return Promise.reject('Provided module is not a TestingModule');
     return Promise.resolve(module.createNestApplication());
   }
 }

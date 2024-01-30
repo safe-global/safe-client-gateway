@@ -11,7 +11,6 @@ export class CacheRouter {
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIAT_CODES_KEY = 'fiat_codes';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
-  private static readonly MASTER_COPIES_KEY = 'master_copies';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
@@ -22,6 +21,7 @@ export class CacheRouter {
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
+  private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly BALANCES_KEY = 'balances';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
@@ -72,16 +72,12 @@ export class CacheRouter {
     );
   }
 
-  static getContractsCachePattern(): string {
-    return `*_${CacheRouter.CONTRACT_KEY}_*`;
-  }
-
   static getBackboneCacheDir(chainId: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.BACKBONE_KEY}`, '');
   }
 
-  static getMasterCopiesCacheDir(chainId: string): CacheDir {
-    return new CacheDir(`${chainId}_${CacheRouter.MASTER_COPIES_KEY}`, '');
+  static getSingletonsCacheDir(chainId: string): CacheDir {
+    return new CacheDir(`${chainId}_${CacheRouter.SINGLETONS_KEY}`, '');
   }
 
   static getCollectiblesCacheDir(args: {
@@ -305,10 +301,6 @@ export class CacheRouter {
     );
   }
 
-  static getTokensCachePattern(chainId: string): string {
-    return `${chainId}_${CacheRouter.TOKEN_KEY}_*`;
-  }
-
   static getSafesByOwnerCacheDir(args: {
     chainId: string;
     ownerAddress: string;
@@ -374,10 +366,6 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
-  static getChainsCachePattern(): string {
-    return `*_${CacheRouter.CHAIN_KEY}`;
-  }
-
   static getSafeAppsKey(chainId: string): string {
     return `${chainId}_${CacheRouter.SAFE_APPS_KEY}`;
   }
@@ -391,10 +379,6 @@ export class CacheRouter {
       `${args.chainId}_${CacheRouter.SAFE_APPS_KEY}`,
       `${args.clientUrl}_${args.url}`,
     );
-  }
-
-  static getSafeAppsCachePattern(): string {
-    return `*_${CacheRouter.SAFE_APPS_KEY}`;
   }
 
   static getNativeCoinPriceCacheDir(args: {
