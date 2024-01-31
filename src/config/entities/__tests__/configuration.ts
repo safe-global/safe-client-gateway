@@ -97,6 +97,7 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: true,
     valkBalancesChainIds: ['100'],
+    zerionBalancesChainIds: ['101'],
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {

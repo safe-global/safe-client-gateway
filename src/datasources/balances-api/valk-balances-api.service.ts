@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ChainAttributes } from '@/datasources/balances-api/entities/provider-chain-attributes.entity';
 import { ValkBalance } from '@/datasources/balances-api/entities/valk-balance.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -19,12 +20,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { isAddress } from 'viem';
 
 export const IValkBalancesApi = Symbol('IValkBalancesApi');
-
-// TODO: move to a common place
-type ChainAttributes = {
-  chainName: string;
-  nativeCoin?: string;
-};
 
 @Injectable()
 export class ValkBalancesApi implements IBalancesApi {

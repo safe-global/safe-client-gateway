@@ -117,6 +117,8 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     valkBalancesChainIds:
       process.env.FF_VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    zerionBalancesChainIds:
+      process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ChainAttributes } from '@/datasources/balances-api/entities/provider-chain-attributes.entity';
 import { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -11,16 +12,11 @@ import {
   Erc20Balance,
   NativeBalance,
 } from '@/domain/balances/entities/balance.entity';
+import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
 import { Inject, Injectable } from '@nestjs/common';
-
-// TODO: move to a common place
-type ChainAttributes = {
-  chainName: string;
-  nativeCoin?: string;
-};
 
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
@@ -84,38 +80,53 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainName: string,
     zerionBalances: ZerionBalance[],
   ): Balance[] {
-    return zerionBalances.map((zb) => {
-      const implementation = zb.attributes.fungible_info.implementations.find(
-        (implementation) => implementation.chain_id === chainName,
-      );
-      const fiatBalance = '0'; // TODO:
-      const fiatConversion = '0'; // TODO:
-      return {
-        ...(implementation?.address === null
-          ? this._mapNativeBalance(zb, chainName)
-          : this._mapErc20Balance(zb, chainName)),
-        fiatBalance,
-        fiatConversion,
-      };
-    });
+    return zerionBalances
+      .filter((zb) => zb.attributes.flags.displayable === true)
+      .map((zb) => {
+        const implementation = zb.attributes.fungible_info.implementations.find(
+          (implementation) => implementation.chain_id === chainName,
+        );
+        if (!implementation?.address)
+          throw Error(
+            `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
+          );
+        const { address, decimals } = implementation;
+        const fiatBalance = getNumberString(zb.attributes.value ?? 0);
+        const fiatConversion = getNumberString(zb.attributes.price);
+
+        return {
+          ...(implementation.address === null
+            ? this._mapNativeBalance(zb)
+            : this._mapErc20Balance(zb, decimals, address)),
+          fiatBalance,
+          fiatConversion,
+        };
+      });
   }
 
   private _mapErc20Balance(
     zerionBalance: ZerionBalance,
-    chainName: string,
+    decimals: number,
+    tokenAddress: string,
   ): Erc20Balance {
-    zerionBalance;
-    chainName;
-    throw Error('Not implemented');
+    return {
+      tokenAddress,
+      token: {
+        name: zerionBalance.attributes.fungible_info.name!,
+        symbol: zerionBalance.attributes.fungible_info.symbol!,
+        decimals,
+        logoUri: zerionBalance.attributes.fungible_info.icon.url ?? '',
+      },
+      balance: zerionBalance.attributes.quantity.int,
+    };
   }
 
-  private _mapNativeBalance(
-    zerionBalance: ZerionBalance,
-    chainName: string,
-  ): NativeBalance {
-    zerionBalance;
-    chainName;
-    throw Error('Not implemented');
+  private _mapNativeBalance(zerionBalance: ZerionBalance): NativeBalance {
+    return {
+      tokenAddress: null,
+      token: null,
+      balance: zerionBalance.attributes.quantity.int,
+    };
   }
 
   async clearBalances(args: {

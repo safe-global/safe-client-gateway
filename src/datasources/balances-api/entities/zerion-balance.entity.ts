@@ -6,7 +6,7 @@ interface ZerionPositionFungibleInfo {
   implementations: ZerionImplementation[];
 }
 
-interface ZerionImplementation {
+export interface ZerionImplementation {
   chain_id: string;
   address: string | null;
   decimals: number;
@@ -19,12 +19,17 @@ interface ZerionPositionQuantity {
   numeric: string;
 }
 
+interface ZerionPositionFlags {
+  displayable: boolean;
+}
+
 interface ZerionPositionAttributes {
   name: string;
   quantity: ZerionPositionQuantity;
   value: number | null;
   price: number;
   fungible_info: ZerionPositionFungibleInfo;
+  flags: ZerionPositionFlags;
 }
 
 export interface ZerionBalance {
