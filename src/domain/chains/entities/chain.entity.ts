@@ -11,6 +11,8 @@ export interface Chain {
   chainName: string;
   description: string;
   l2: boolean;
+  // TODO: Make required when deemed stable on config service
+  isTestnet?: boolean;
   shortName: string;
   rpcUri: RpcUri;
   safeAppsRpcUri: RpcUri;
