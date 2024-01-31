@@ -15,6 +15,7 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('chainName', faker.company.name())
     .with('description', faker.word.words())
     .with('l2', faker.datatype.boolean())
+    .with('isTestnet', faker.datatype.boolean())
     .with('shortName', faker.company.name())
     .with('rpcUri', rpcUriBuilder().build())
     .with('safeAppsRpcUri', rpcUriBuilder().build())
