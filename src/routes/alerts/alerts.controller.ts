@@ -22,6 +22,6 @@ export class AlertsController {
     @Body(AlertValidationPipe)
     alertPayload: Alert,
   ): Promise<void> {
-    this.alertsService.onAlert(alertPayload);
+    await this.alertsService.onAlert(alertPayload);
   }
 }
