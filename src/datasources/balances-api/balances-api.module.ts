@@ -7,6 +7,10 @@ import {
   IValkBalancesApi,
   ValkBalancesApi,
 } from '@/datasources/balances-api/valk-balances-api.service';
+import {
+  IZerionBalancesApi,
+  ZerionBalancesApi,
+} from '@/datasources/balances-api/zerion-balances-api.service';
 
 @Global()
 @Module({
@@ -15,6 +19,7 @@ import {
     HttpErrorFactory,
     { provide: IBalancesApiManager, useClass: BalancesApiManager },
     { provide: IValkBalancesApi, useClass: ValkBalancesApi },
+    { provide: IZerionBalancesApi, useClass: ZerionBalancesApi },
   ],
   exports: [IBalancesApiManager],
 })

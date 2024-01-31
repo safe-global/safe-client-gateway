@@ -18,6 +18,8 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
+export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
+
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
   private readonly apiKey: string | undefined;
@@ -65,7 +67,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: { headers: { Authorization: `${this.apiKey}` } },
+        networkRequest: { headers: { Authorization: `Basic ${this.apiKey}` } },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
       return this._mapBalances(chainName, zerionBalances);
@@ -80,33 +82,36 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainName: string,
     zerionBalances: ZerionBalance[],
   ): Balance[] {
-    return zerionBalances
-      .filter((zb) => zb.attributes.flags.displayable === true)
-      .map((zb) => {
-        const implementation = zb.attributes.fungible_info.implementations.find(
-          (implementation) => implementation.chain_id === chainName,
-        );
-        if (!implementation?.address)
-          throw Error(
-            `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
-          );
-        const { address, decimals } = implementation;
-        const fiatBalance = getNumberString(zb.attributes.value ?? 0);
-        const fiatConversion = getNumberString(zb.attributes.price);
+    try {
+      return zerionBalances
+        .filter((zb) => zb.attributes.flags.displayable === true)
+        .map((zb) => {
+          const implementation =
+            zb.attributes.fungible_info.implementations.find(
+              (implementation) => implementation.chain_id === chainName,
+            );
+          if (!implementation)
+            throw Error(
+              `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
+            );
+          const fiatBalance = getNumberString(zb.attributes.value ?? 0);
+          const fiatConversion = getNumberString(zb.attributes.price);
 
-        return {
-          ...(implementation.address === null
-            ? this._mapNativeBalance(zb)
-            : this._mapErc20Balance(zb, decimals, address)),
-          fiatBalance,
-          fiatConversion,
-        };
-      });
+          return {
+            ...(implementation.address === null
+              ? this._mapNativeBalance(zb)
+              : this._mapErc20Balance(zb, implementation.address)),
+            fiatBalance,
+            fiatConversion,
+          };
+        });
+    } catch (err) {
+      throw err;
+    }
   }
 
   private _mapErc20Balance(
     zerionBalance: ZerionBalance,
-    decimals: number,
     tokenAddress: string,
   ): Erc20Balance {
     return {
@@ -114,7 +119,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       token: {
         name: zerionBalance.attributes.fungible_info.name!,
         symbol: zerionBalance.attributes.fungible_info.symbol!,
-        decimals,
+        decimals: zerionBalance.attributes.quantity.decimals,
         logoUri: zerionBalance.attributes.fungible_info.icon.url ?? '',
       },
       balance: zerionBalance.attributes.quantity.int,

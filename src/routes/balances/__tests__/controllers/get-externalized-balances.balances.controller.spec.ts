@@ -22,12 +22,21 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import {
+  zerionAttributesBuilder,
+  zerionFungibleInfoBuilder,
+  zerionImplementationBuilder,
+  zerionQuantityBuilder,
+  zerionBalanceBuilder,
+  zerionFlagsBuilder,
+} from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let valkBaseUri: string;
+  let zerionBaseUri: string;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -48,6 +57,9 @@ describe('Balances Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     valkBaseUri = configurationService.get('balances.providers.valk.baseUri');
+    zerionBaseUri = configurationService.get(
+      'balances.providers.zerion.baseUri',
+    );
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -308,6 +320,184 @@ describe('Balances Controller (Unit)', () => {
             code: 503,
           });
       });
+    });
+  });
+
+  describe('Balances provider: Zerion', () => {
+    describe('GET /balances (externalized)', () => {
+      it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
+        const chain = chainBuilder().with('chainId', '1101').build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const currency = faker.finance.currencyCode();
+        const implementationAddress = faker.finance.ethereumAddress();
+        const testTokenIconUrl = faker.internet.url();
+        const etherIconUrl = faker.internet.url();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const zerionApiBalancesResponse = [
+          zerionBalanceBuilder()
+            .with(
+              'attributes',
+              zerionAttributesBuilder()
+                .with(
+                  'quantity',
+                  zerionQuantityBuilder()
+                    .with('int', '12000000000000000')
+                    .with('decimals', 15)
+                    .build(),
+                )
+                .with('value', 27)
+                .with('price', 1.5)
+                .with(
+                  'fungible_info',
+                  zerionFungibleInfoBuilder()
+                    .with('name', 'Test Token')
+                    .with('symbol', 'TST')
+                    .with('icon', { url: testTokenIconUrl })
+                    .with('implementations', [
+                      zerionImplementationBuilder()
+                        .with('address', implementationAddress)
+                        .with('chain_id', chainName)
+                        .build(),
+                      zerionImplementationBuilder()
+                        .with('address', faker.finance.ethereumAddress())
+                        .with('chain_id', 'avalanche')
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .with(
+                  'flags',
+                  zerionFlagsBuilder().with('displayable', true).build(),
+                )
+                .build(),
+            )
+            .build(),
+          zerionBalanceBuilder()
+            .with(
+              'attributes',
+              zerionAttributesBuilder()
+                .with(
+                  'quantity',
+                  zerionQuantityBuilder()
+                    .with('int', '25000000000000000')
+                    .with('decimals', 18)
+                    .build(),
+                )
+                .with('value', 38.085)
+                .with('price', 1523.4)
+                .with(
+                  'fungible_info',
+                  zerionFungibleInfoBuilder()
+                    .with('name', 'Ethereum')
+                    .with('symbol', 'ETH')
+                    .with('icon', { url: etherIconUrl })
+                    .with('implementations', [
+                      zerionImplementationBuilder()
+                        .with('address', null)
+                        .with('chain_id', chainName)
+                        .build(),
+                      zerionImplementationBuilder()
+                        .with('address', faker.finance.ethereumAddress())
+                        .with('chain_id', 'avalanche')
+                        .build(),
+                      zerionImplementationBuilder()
+                        .with('address', faker.finance.ethereumAddress())
+                        .with('chain_id', 'xdai')
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .with(
+                  'flags',
+                  zerionFlagsBuilder().with('displayable', true).build(),
+                )
+                .build(),
+            )
+            .build(),
+        ];
+        const apiKey = app
+          .get(IConfigurationService)
+          .getOrThrow(`balances.providers.zerion.apiKey`);
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
+              return Promise.resolve({
+                data: zerionApiBalancesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${
+              chain.chainId
+            }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toEqual({
+              fiatTotal: '65.085',
+              items: [
+                {
+                  tokenInfo: {
+                    type: 'NATIVE_TOKEN',
+                    address: NULL_ADDRESS,
+                    decimals: chain.nativeCurrency.decimals,
+                    symbol: chain.nativeCurrency.symbol,
+                    name: chain.nativeCurrency.name,
+                    logoUri: chain.nativeCurrency.logoUri,
+                  },
+                  balance: '25000000000000000',
+                  fiatBalance: '38.085',
+                  fiatConversion: '1523.4',
+                },
+                {
+                  tokenInfo: {
+                    type: 'ERC20',
+                    address: implementationAddress,
+                    decimals: 15,
+                    symbol: 'TST',
+                    name: 'Test Token',
+                    logoUri: testTokenIconUrl,
+                  },
+                  balance: '12000000000000000',
+                  fiatBalance: '27',
+                  fiatConversion: '1.5',
+                },
+              ],
+            });
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(2);
+        expect(networkService.get.mock.calls[0][0]).toBe(
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`,
+        );
+        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+          headers: { Authorization: `Basic ${apiKey}` },
+        });
+        expect(networkService.get.mock.calls[1][0]).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+      });
+
+      it.todo('returns large numbers as is (not in scientific notation)');
+    });
+
+    describe('Config API Error', () => {
+      it.todo(`500 error response`);
+    });
+
+    describe('Zerion Balances API Error', () => {
+      it.todo(`500 error response`);
     });
   });
 });

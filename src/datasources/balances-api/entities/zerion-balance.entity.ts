@@ -1,4 +1,4 @@
-interface ZerionPositionFungibleInfo {
+export interface ZerionFungibleInfo {
   name: string | null;
   symbol: string | null;
   description: string | null;
@@ -12,28 +12,28 @@ export interface ZerionImplementation {
   decimals: number;
 }
 
-interface ZerionPositionQuantity {
+export interface ZerionQuantity {
   int: string;
   decimals: number;
   float: number;
   numeric: string;
 }
 
-interface ZerionPositionFlags {
+export interface ZerionFlags {
   displayable: boolean;
 }
 
-interface ZerionPositionAttributes {
+export interface ZerionAttributes {
   name: string;
-  quantity: ZerionPositionQuantity;
+  quantity: ZerionQuantity;
   value: number | null;
   price: number;
-  fungible_info: ZerionPositionFungibleInfo;
-  flags: ZerionPositionFlags;
+  fungible_info: ZerionFungibleInfo;
+  flags: ZerionFlags;
 }
 
 export interface ZerionBalance {
   type: 'positions';
   id: string;
-  attributes: ZerionPositionAttributes;
+  attributes: ZerionAttributes;
 }
