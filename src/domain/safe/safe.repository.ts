@@ -287,7 +287,16 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    return transactionService.deleteTransaction(args);
+    const { safe } = await transactionService.getMultisigTransaction(
+      args.safeTxHash,
+    );
+    await transactionService.deleteTransaction(args);
+
+    // Ensure transaction is removed from cache in case event is not received
+    Promise.all([
+      transactionService.clearMultisigTransaction(args.safeTxHash),
+      transactionService.clearMultisigTransactions(safe),
+    ]);
   }
 
   async clearMultisigTransactions(args: {
