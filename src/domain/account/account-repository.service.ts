@@ -17,6 +17,8 @@ import * as crypto from 'crypto';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
 import { EditTimespanError } from '@/domain/account/errors/email-timespan.error';
+import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -32,6 +34,7 @@ export class AccountRepository implements IAccountRepository {
     @Inject(IEmailApi) private readonly emailApi: IEmailApi,
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -173,11 +176,22 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    const account = await this.accountDataSource.getAccount(args);
-    await this.emailApi.deleteEmailAddress({
-      emailAddress: account.emailAddress.value,
-    });
-    await this.accountDataSource.deleteAccount(args);
+    try {
+      const account = await this.accountDataSource.getAccount(args);
+      // If there is an error deleting the email address,
+      // do not delete the respective account as we still need to get the email
+      // for future deletions requests
+      await this.emailApi.deleteEmailAddress({
+        emailAddress: account.emailAddress.value,
+      });
+      await this.accountDataSource.deleteAccount(args);
+    } catch (error) {
+      this.loggingService.warn(error);
+      // If there is no account, do not throw in order not to signal its existence
+      if (!(error instanceof AccountDoesNotExistError)) {
+        throw error;
+      }
+    }
   }
 
   async editEmail(args: {
