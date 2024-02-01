@@ -13,4 +13,4 @@ async function bootstrap(): Promise<void> {
   await app.listen(applicationPort);
 }
 
-bootstrap();
+void bootstrap();
