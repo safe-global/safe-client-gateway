@@ -3,6 +3,7 @@ import { ChainAttributes } from '@/datasources/balances-api/entities/provider-ch
 import {
   ZerionAttributes,
   ZerionBalance,
+  ZerionBalances,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -66,14 +67,14 @@ export class ZerionBalancesApi implements IBalancesApi {
       const chainName = this._getChainName(args.chainId);
       const currency = args.fiatCode.toLowerCase();
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency}&sort=value`;
-      const zerionBalances = await this.dataSource.get<ZerionBalance[]>({
+      const { data } = await this.dataSource.get<ZerionBalances>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: { headers: { Authorization: `Basic ${this.apiKey}` } },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this._mapBalances(chainName, zerionBalances);
+      return this._mapBalances(chainName, data);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} balances from provider: ${asError(error).message}}`,

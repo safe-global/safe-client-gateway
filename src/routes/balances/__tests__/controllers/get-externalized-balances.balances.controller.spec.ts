@@ -29,6 +29,7 @@ import {
   zerionQuantityBuilder,
   zerionBalanceBuilder,
   zerionFlagsBuilder,
+  zerionBalancesBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
 
 describe('Balances Controller (Unit)', () => {
@@ -355,49 +356,51 @@ describe('Balances Controller (Unit)', () => {
             zerionImplementationBuilder().build(),
           ])
           .build();
-        const zerionApiBalancesResponse = [
-          zerionBalanceBuilder()
-            .with(
-              'attributes',
-              zerionAttributesBuilder()
-                .with(
-                  'quantity',
-                  zerionQuantityBuilder()
-                    .with('int', '12000000000000000')
-                    .with('decimals', 15)
-                    .build(),
-                )
-                .with('value', 20.002)
-                .with('price', 10.1)
-                .with('fungible_info', erc20TokenFungibleInfo)
-                .with(
-                  'flags',
-                  zerionFlagsBuilder().with('displayable', true).build(),
-                )
-                .build(),
-            )
-            .build(),
-          zerionBalanceBuilder()
-            .with(
-              'attributes',
-              zerionAttributesBuilder()
-                .with(
-                  'quantity',
-                  zerionQuantityBuilder()
-                    .with('int', '25000000000000000')
-                    .build(),
-                )
-                .with('value', 100.001)
-                .with('price', 5.05)
-                .with('fungible_info', nativeCoinFungibleInfo)
-                .with(
-                  'flags',
-                  zerionFlagsBuilder().with('displayable', true).build(),
-                )
-                .build(),
-            )
-            .build(),
-        ];
+        const zerionApiBalancesResponse = zerionBalancesBuilder()
+          .with('data', [
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with(
+                    'quantity',
+                    zerionQuantityBuilder()
+                      .with('int', '12000000000000000')
+                      .with('decimals', 15)
+                      .build(),
+                  )
+                  .with('value', 20.002)
+                  .with('price', 10.1)
+                  .with('fungible_info', erc20TokenFungibleInfo)
+                  .with(
+                    'flags',
+                    zerionFlagsBuilder().with('displayable', true).build(),
+                  )
+                  .build(),
+              )
+              .build(),
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with(
+                    'quantity',
+                    zerionQuantityBuilder()
+                      .with('int', '25000000000000000')
+                      .build(),
+                  )
+                  .with('value', 100.001)
+                  .with('price', 5.05)
+                  .with('fungible_info', nativeCoinFungibleInfo)
+                  .with(
+                    'flags',
+                    zerionFlagsBuilder().with('displayable', true).build(),
+                  )
+                  .build(),
+              )
+              .build(),
+          ])
+          .build();
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
@@ -490,49 +493,51 @@ describe('Balances Controller (Unit)', () => {
             zerionImplementationBuilder().build(),
           ])
           .build();
-        const zerionApiBalancesResponse = [
-          zerionBalanceBuilder()
-            .with(
-              'attributes',
-              zerionAttributesBuilder()
-                .with(
-                  'quantity',
-                  zerionQuantityBuilder()
-                    .with('int', '12000000000000000')
-                    .with('decimals', 15)
-                    .build(),
-                )
-                .with('value', 20000000000000000)
-                .with('price', 10.1)
-                .with('fungible_info', erc20TokenFungibleInfo)
-                .with(
-                  'flags',
-                  zerionFlagsBuilder().with('displayable', true).build(),
-                )
-                .build(),
-            )
-            .build(),
-          zerionBalanceBuilder()
-            .with(
-              'attributes',
-              zerionAttributesBuilder()
-                .with(
-                  'quantity',
-                  zerionQuantityBuilder()
-                    .with('int', '25000000000000000')
-                    .build(),
-                )
-                .with('value', 100000000000000000)
-                .with('price', 5.05)
-                .with('fungible_info', nativeCoinFungibleInfo)
-                .with(
-                  'flags',
-                  zerionFlagsBuilder().with('displayable', true).build(),
-                )
-                .build(),
-            )
-            .build(),
-        ];
+        const zerionApiBalancesResponse = zerionBalancesBuilder()
+          .with('data', [
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with(
+                    'quantity',
+                    zerionQuantityBuilder()
+                      .with('int', '12000000000000000')
+                      .with('decimals', 15)
+                      .build(),
+                  )
+                  .with('value', 20000000000000000)
+                  .with('price', 10.1)
+                  .with('fungible_info', erc20TokenFungibleInfo)
+                  .with(
+                    'flags',
+                    zerionFlagsBuilder().with('displayable', true).build(),
+                  )
+                  .build(),
+              )
+              .build(),
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with(
+                    'quantity',
+                    zerionQuantityBuilder()
+                      .with('int', '25000000000000000')
+                      .build(),
+                  )
+                  .with('value', 100000000000000000)
+                  .with('price', 5.05)
+                  .with('fungible_info', nativeCoinFungibleInfo)
+                  .with(
+                    'flags',
+                    zerionFlagsBuilder().with('displayable', true).build(),
+                  )
+                  .build(),
+              )
+              .build(),
+          ])
+          .build();
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
@@ -623,7 +628,10 @@ describe('Balances Controller (Unit)', () => {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.reject(error);
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
-              return Promise.resolve({ data: [], status: 200 });
+              return Promise.resolve({
+                data: zerionBalancesBuilder().with('data', []).build(),
+                status: 200,
+              });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
           }

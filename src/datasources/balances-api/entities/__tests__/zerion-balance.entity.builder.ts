@@ -1,12 +1,13 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '../../../../__tests__/builder';
 import {
-  ZerionBalance,
-  ZerionImplementation,
   ZerionAttributes,
-  ZerionFungibleInfo,
-  ZerionQuantity,
+  ZerionBalance,
+  ZerionBalances,
   ZerionFlags,
+  ZerionFungibleInfo,
+  ZerionImplementation,
+  ZerionQuantity,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {
@@ -58,4 +59,13 @@ export function zerionBalanceBuilder(): IBuilder<ZerionBalance> {
     .with('type', 'positions')
     .with('id', faker.string.sample())
     .with('attributes', zerionAttributesBuilder().build());
+}
+
+export function zerionBalancesBuilder(): IBuilder<ZerionBalances> {
+  return new Builder<ZerionBalances>().with(
+    'data',
+    Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, () =>
+      zerionBalanceBuilder().build(),
+    ),
+  );
 }

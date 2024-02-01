@@ -42,3 +42,7 @@ export interface ZerionBalance {
   id: string;
   attributes: ZerionAttributes;
 }
+
+export interface ZerionBalances {
+  data: ZerionBalance[];
+}
