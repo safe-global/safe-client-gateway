@@ -1,3 +1,8 @@
+/**
+ * These interfaces map Zerion responses for the list of wallet's fungible positions.
+ * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
+ */
+
 export interface ZerionFungibleInfo {
   name: string | null;
   symbol: string | null;

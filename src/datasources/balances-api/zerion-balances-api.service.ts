@@ -1,6 +1,9 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ChainAttributes } from '@/datasources/balances-api/entities/provider-chain-attributes.entity';
-import { ZerionBalance } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import {
+  ZerionAttributes,
+  ZerionBalance,
+} from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -97,8 +100,8 @@ export class ZerionBalancesApi implements IBalancesApi {
 
         return {
           ...(implementation.address === null
-            ? this._mapNativeBalance(zb)
-            : this._mapErc20Balance(zb, implementation.address)),
+            ? this._mapNativeBalance(zb.attributes)
+            : this._mapErc20Balance(zb.attributes, implementation.address)),
           fiatBalance,
           fiatConversion,
         };
@@ -106,26 +109,29 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   private _mapErc20Balance(
-    zerionBalance: ZerionBalance,
+    zerionBalanceAttributes: ZerionAttributes,
     tokenAddress: string,
   ): Erc20Balance {
+    const { fungible_info, quantity } = zerionBalanceAttributes;
     return {
       tokenAddress,
       token: {
-        name: zerionBalance.attributes.fungible_info.name!,
-        symbol: zerionBalance.attributes.fungible_info.symbol!,
-        decimals: zerionBalance.attributes.quantity.decimals,
-        logoUri: zerionBalance.attributes.fungible_info.icon.url ?? '',
+        name: fungible_info.name!,
+        symbol: fungible_info.symbol!,
+        decimals: quantity.decimals,
+        logoUri: fungible_info.icon.url ?? '',
       },
-      balance: zerionBalance.attributes.quantity.int,
+      balance: quantity.int,
     };
   }
 
-  private _mapNativeBalance(zerionBalance: ZerionBalance): NativeBalance {
+  private _mapNativeBalance(
+    zerionBalanceAttributes: ZerionAttributes,
+  ): NativeBalance {
     return {
       tokenAddress: null,
       token: null,
-      balance: zerionBalance.attributes.quantity.int,
+      balance: zerionBalanceAttributes.quantity.int,
     };
   }
 
