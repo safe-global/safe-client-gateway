@@ -20,6 +20,7 @@ import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -33,6 +34,7 @@ export class SafeRepository implements ISafeRepository {
     private readonly transferValidator: TransferValidator,
     private readonly moduleTransactionValidator: ModuleTransactionValidator,
     private readonly creationTransactionValidator: CreationTransactionValidator,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async getSafe(args: { chainId: string; address: string }): Promise<Safe> {
@@ -296,7 +298,11 @@ export class SafeRepository implements ISafeRepository {
     Promise.all([
       transactionService.clearMultisigTransaction(args.safeTxHash),
       transactionService.clearMultisigTransactions(safe),
-    ]);
+    ]).catch(() => {
+      this.loggingService.warn(
+        'Failed to immediately clear deleted transaction from cache',
+      );
+    });
   }
 
   async clearMultisigTransactions(args: {
