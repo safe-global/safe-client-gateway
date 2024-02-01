@@ -46,7 +46,6 @@ export default (): ReturnType<typeof configuration> => ({
           1: { chainName: faker.string.sample() },
           10: { chainName: faker.string.sample() },
           100: { chainName: faker.string.sample() },
-          1101: { chainName: faker.string.sample() },
           1313161554: { chainName: faker.string.sample() },
           137: { chainName: faker.string.sample() },
           324: { chainName: faker.string.sample() },
@@ -97,7 +96,7 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: true,
     valkBalancesChainIds: ['100'],
-    zerionBalancesChainIds: ['1101'],
+    zerionBalancesChainIds: ['137'],
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {

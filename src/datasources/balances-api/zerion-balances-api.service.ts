@@ -82,32 +82,27 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainName: string,
     zerionBalances: ZerionBalance[],
   ): Balance[] {
-    try {
-      return zerionBalances
-        .filter((zb) => zb.attributes.flags.displayable === true)
-        .map((zb) => {
-          const implementation =
-            zb.attributes.fungible_info.implementations.find(
-              (implementation) => implementation.chain_id === chainName,
-            );
-          if (!implementation)
-            throw Error(
-              `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
-            );
-          const fiatBalance = getNumberString(zb.attributes.value ?? 0);
-          const fiatConversion = getNumberString(zb.attributes.price);
+    return zerionBalances
+      .filter((zb) => zb.attributes.flags.displayable === true)
+      .map((zb) => {
+        const implementation = zb.attributes.fungible_info.implementations.find(
+          (implementation) => implementation.chain_id === chainName,
+        );
+        if (!implementation)
+          throw Error(
+            `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
+          );
+        const fiatBalance = getNumberString(zb.attributes.value ?? 0);
+        const fiatConversion = getNumberString(zb.attributes.price);
 
-          return {
-            ...(implementation.address === null
-              ? this._mapNativeBalance(zb)
-              : this._mapErc20Balance(zb, implementation.address)),
-            fiatBalance,
-            fiatConversion,
-          };
-        });
-    } catch (err) {
-      throw err;
-    }
+        return {
+          ...(implementation.address === null
+            ? this._mapNativeBalance(zb)
+            : this._mapErc20Balance(zb, implementation.address)),
+          fiatBalance,
+          fiatConversion,
+        };
+      });
   }
 
   private _mapErc20Balance(

@@ -31,6 +31,8 @@ export default () => ({
           10: { chainName: 'op' },
           100: { chainName: 'xdai' },
           1101: { chainName: 'pze' },
+          // 11155111 (Sepolia) is not available on Valk
+          // 11155111: { chainName: '' },
           1313161554: { chainName: 'aurora' },
           137: { chainName: 'matic' },
           324: { chainName: 'era' },
@@ -48,12 +50,15 @@ export default () => ({
           1: { chainName: 'ethereum' },
           10: { chainName: 'optimism' },
           100: { chainName: 'xdai' },
-          1101: { chainName: '' }, // TODO:
+          // 1101 (Polygon zkEVM) is not available on Zerion
+          // 1101: { chainName: '' },
+          // 11155111 (Sepolia) is not available on Zerion
+          // 11155111: { chainName: '' },
           1313161554: { chainName: 'aurora' },
           137: { chainName: 'polygon' },
           324: { chainName: 'zksync-era' },
           42161: { chainName: 'arbitrum' },
-          42220: { chainName: '' }, // TODO:
+          42220: { chainName: 'celo' },
           43114: { chainName: 'avalanche' },
           56: { chainName: 'binance-smart-chain' },
           8453: { chainName: 'base' },
