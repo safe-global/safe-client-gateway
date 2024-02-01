@@ -76,8 +76,12 @@ export class CacheRouter {
   static getZerionBalancesCacheDir(args: {
     chainId: string;
     safeAddress: string;
+    fiatCode: string;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getZerionBalancesCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getZerionBalancesCacheKey(args),
+      args.fiatCode,
+    );
   }
 
   static getSafeCacheDir(args: {
