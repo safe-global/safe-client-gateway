@@ -66,12 +66,19 @@ export class ZerionBalancesApi implements IBalancesApi {
       const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
       const currency = args.fiatCode.toLowerCase();
-      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency}&sort=value`;
+      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
       const { data } = await this.dataSource.get<ZerionBalances>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: { headers: { Authorization: `Basic ${this.apiKey}` } },
+        networkRequest: {
+          headers: { Authorization: `Basic ${this.apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            currency,
+            sort: 'value',
+          },
+        },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
       return this._mapBalances(chainName, data);
@@ -87,7 +94,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     zerionBalances: ZerionBalance[],
   ): Balance[] {
     return zerionBalances
-      .filter((zb) => zb.attributes.flags.displayable === true)
+      .filter((zb) => zb.attributes.flags.displayable)
       .map((zb) => {
         const implementation = zb.attributes.fungible_info.implementations.find(
           (implementation) => implementation.chain_id === chainName,
@@ -96,7 +103,8 @@ export class ZerionBalancesApi implements IBalancesApi {
           throw Error(
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
-        const fiatBalance = getNumberString(zb.attributes.value ?? 0);
+        const { value } = zb.attributes;
+        const fiatBalance = value ? getNumberString(value) : null;
         const fiatConversion = getNumberString(zb.attributes.price);
 
         return {

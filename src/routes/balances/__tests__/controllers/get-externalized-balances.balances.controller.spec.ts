@@ -408,7 +408,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
               return Promise.resolve({
                 data: zerionApiBalancesResponse,
                 status: 200,
@@ -459,10 +459,15 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0]).toBe(
-          `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`,
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
         expect(networkService.get.mock.calls[0][1]).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            currency: currency.toLowerCase(),
+            sort: 'value',
+          },
         });
         expect(networkService.get.mock.calls[1][0]).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -545,7 +550,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
               return Promise.resolve({
                 data: zerionApiBalancesResponse,
                 status: 200,
@@ -596,10 +601,15 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0]).toBe(
-          `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`,
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
         expect(networkService.get.mock.calls[0][1]).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            currency: currency.toLowerCase(),
+            sort: 'value',
+          },
         });
         expect(networkService.get.mock.calls[1][0]).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -612,9 +622,6 @@ describe('Balances Controller (Unit)', () => {
         const chainId = zerionChainIds[0];
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.zerion.chains.${chainId}.chainName`);
         const error = new NetworkResponseError(
           new URL(
             `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/${currency}`,
@@ -627,7 +634,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.reject(error);
-            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
               return Promise.resolve({
                 data: zerionBalancesBuilder().with('data', []).build(),
                 status: 200,
@@ -654,16 +661,11 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions?filter[chain_ids]=${chainName}&currency=${currency.toLowerCase()}&sort=value`:
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
               return Promise.reject(new Error('test error'));
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
