@@ -176,4 +176,165 @@ describe('Owners Controller (Unit)', () => {
         });
     });
   });
+
+  describe('GET all safes by owner address', () => {
+    it('Success', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric({ exclude: [chainId1] });
+
+      const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain2 = chainBuilder().with('chainId', chainId2).build();
+
+      const safesOnChain1 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      const safesOnChain2 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+
+      networkService.get.mockImplementation((url: string) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: {
+                results: [chain1, chain2],
+              },
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId1}`: {
+            return Promise.resolve({
+              data: chain1,
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId2}`: {
+            return Promise.resolve({
+              data: chain2,
+              status: 200,
+            });
+          }
+
+          case `${chain1.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain1 },
+              status: 200,
+            });
+          }
+
+          case `${chain2.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain2 },
+              status: 200,
+            });
+          }
+
+          default: {
+            fail(`Unexpected URL: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect({
+          [chainId1]: safesOnChain1,
+          [chainId2]: safesOnChain2,
+        });
+    });
+
+    it('Failure: Config API fails', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      networkService.get.mockImplementation((url: string) => {
+        if (url === `${safeConfigUrl}/api/v1/chains`) {
+          const error = new NetworkResponseError(
+            new URL(`${safeConfigUrl}/api/v1/chains`),
+            {
+              status: 500,
+            } as Response,
+          );
+          return Promise.reject(error);
+        }
+        fail(`Unexpected URL: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(500)
+        .expect({
+          message: 'An error occurred',
+          code: 500,
+        });
+
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
+        `${safeConfigUrl}/api/v1/chains`,
+        { params: { limit: undefined, offset: undefined } },
+      );
+    });
+
+    it('Failure: data validation fails', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const chainId = faker.string.numeric();
+
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      const safesOnChain = [
+        faker.finance.ethereumAddress(),
+        faker.number.int(),
+        faker.finance.ethereumAddress(),
+      ];
+
+      networkService.get.mockImplementation((url: string) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: {
+                results: [chain],
+              },
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
+            return Promise.resolve({
+              data: chain,
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain },
+              status: 200,
+            });
+          }
+
+          default: {
+            fail(`Unexpected URL: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(500)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
+    });
+  });
 });

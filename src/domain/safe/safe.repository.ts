@@ -21,6 +21,7 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -35,6 +36,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly moduleTransactionValidator: ModuleTransactionValidator,
     private readonly creationTransactionValidator: CreationTransactionValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   async getSafe(args: { chainId: string; address: string }): Promise<Safe> {
@@ -369,6 +372,32 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return this.safeListValidator.validate(safeList);
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: string;
+  }): Promise<{ [chainId: string]: Array<string> }> {
+    const { results } = await this.chainsRepository.getChains();
+    const allSafeLists = await Promise.all(
+      results.map(async ({ chainId }) => {
+        const safeList = await this.getSafesByOwner({
+          chainId,
+          ownerAddress: args.ownerAddress,
+        });
+
+        return {
+          chainId,
+          safeList,
+        };
+      }),
+    );
+
+    return allSafeLists.reduce((acc, { chainId, safeList }) => {
+      return {
+        ...acc,
+        [chainId]: safeList.safes,
+      };
+    }, {});
   }
 
   async getLastTransactionSortedByNonce(args: {
