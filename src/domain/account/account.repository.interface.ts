@@ -84,7 +84,6 @@ export interface IAccountRepository {
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the email address to
    *
-   * @throws {EditTimespanError} - if trying to edit again within email.verificationCode.resendLockWindowMs
    * @throws {EmailEditMatchesError} - if trying to apply edit with same email address as current one
    */
   editEmail(args: {

@@ -16,7 +16,6 @@ import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import * as crypto from 'crypto';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
-import { EditTimespanError } from '@/domain/account/errors/email-timespan.error';
 import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
@@ -202,20 +201,6 @@ export class AccountRepository implements IAccountRepository {
   }): Promise<void> {
     const newEmail = new EmailAddress(args.emailAddress);
     const currentAccount = await this.accountDataSource.getAccount(args);
-
-    // Prevent subsequent edit if verification code still valid
-    if (
-      currentAccount.verificationGeneratedOn &&
-      this._isEmailVerificationCodeValid(currentAccount)
-    ) {
-      const timespanMs =
-        Date.now() - currentAccount.verificationGeneratedOn.getTime();
-      throw new EditTimespanError({
-        ...args,
-        timespanMs,
-        lockWindowMs: this.verificationCodeResendLockWindowMs,
-      });
-    }
 
     if (newEmail.value === currentAccount.emailAddress.value) {
       throw new EmailEditMatchesError(args);
