@@ -106,7 +106,7 @@ describe('Email controller delete email tests', () => {
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
   });
 
-  it("returns 404 if trying to deleting an email that doesn't exist", async () => {
+  it("returns 204 if trying to deleting an email that doesn't exist", async () => {
     const chain = chainBuilder().build();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
@@ -141,11 +141,8 @@ describe('Email controller delete email tests', () => {
         timestamp: timestamp,
         signature: signature,
       })
-      .expect(404)
-      .expect({
-        statusCode: 404,
-        message: `No email address was found for the provided signer ${signerAddress}.`,
-      });
+      .expect(204)
+      .expect({});
 
     expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
