@@ -117,8 +117,8 @@ export class ZerionBalancesApi implements IBalancesApi {
     return {
       tokenAddress,
       token: {
-        name: fungible_info.name!,
-        symbol: fungible_info.symbol!,
+        name: fungible_info.name ?? '',
+        symbol: fungible_info.symbol ?? '',
         decimals: quantity.decimals,
         logoUri: fungible_info.icon.url ?? '',
       },
