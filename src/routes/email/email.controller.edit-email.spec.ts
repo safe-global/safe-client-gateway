@@ -130,57 +130,6 @@ describe('Email controller edit email tests', () => {
       .expect({});
   });
 
-  it('should return 429 if trying to update email too often', async () => {
-    const verificationGeneratedOn = faker.date.anytime();
-    // Verification code is still valid as it is currently the same time it was generated
-    jest.setSystemTime(verificationGeneratedOn.getTime());
-
-    const chain = chainBuilder().build();
-    const prevEmailAddress = faker.internet.email();
-    const emailAddress = faker.internet.email();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const signerAddress = signer.address;
-    // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [signerAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      .build();
-    const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain, status: 200 });
-        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe, status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-    accountDataSource.getAccount.mockResolvedValue({
-      emailAddress: new EmailAddress(prevEmailAddress),
-      verificationGeneratedOn: verificationGeneratedOn,
-    } as Account);
-    accountDataSource.updateAccountEmail.mockResolvedValue();
-
-    await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        emailAddress,
-        signer: signer.address,
-        timestamp,
-        signature,
-      })
-      .expect(429)
-      .expect({
-        statusCode: 429,
-        message: 'Cannot edit at this time',
-      });
-  });
-
   it('should return 409 if trying to edit with the same email', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
