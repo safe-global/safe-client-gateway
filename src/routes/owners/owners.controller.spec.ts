@@ -182,10 +182,17 @@ describe('Owners Controller (Unit)', () => {
       const ownerAddress = faker.finance.ethereumAddress();
 
       const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric({ exclude: [chainId1] });
 
       const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain2 = chainBuilder().with('chainId', chainId2).build();
 
-      const safesOnChain = [
+      const safesOnChain1 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      const safesOnChain2 = [
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
         faker.finance.ethereumAddress(),
@@ -196,7 +203,7 @@ describe('Owners Controller (Unit)', () => {
           case `${safeConfigUrl}/api/v1/chains`: {
             return Promise.resolve({
               data: {
-                results: [chain1],
+                results: [chain1, chain2],
               },
               status: 200,
             });
@@ -209,9 +216,23 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
+          case `${safeConfigUrl}/api/v1/chains/${chainId2}`: {
+            return Promise.resolve({
+              data: chain2,
+              status: 200,
+            });
+          }
+
           case `${chain1.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
             return Promise.resolve({
-              data: { safes: safesOnChain },
+              data: { safes: safesOnChain1 },
+              status: 200,
+            });
+          }
+
+          case `${chain2.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain2 },
               status: 200,
             });
           }
@@ -226,7 +247,8 @@ describe('Owners Controller (Unit)', () => {
         .get(`/v1/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId1]: safesOnChain,
+          [chainId1]: safesOnChain1,
+          [chainId2]: safesOnChain2,
         });
     });
 
@@ -264,9 +286,9 @@ describe('Owners Controller (Unit)', () => {
     it('Failure: data validation fails', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
 
-      const chainId1 = faker.string.numeric();
+      const chainId = faker.string.numeric();
 
-      const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain = chainBuilder().with('chainId', chainId).build();
 
       const safesOnChain = [
         faker.finance.ethereumAddress(),
@@ -279,20 +301,20 @@ describe('Owners Controller (Unit)', () => {
           case `${safeConfigUrl}/api/v1/chains`: {
             return Promise.resolve({
               data: {
-                results: [chain1],
+                results: [chain],
               },
               status: 200,
             });
           }
 
-          case `${safeConfigUrl}/api/v1/chains/${chainId1}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
             return Promise.resolve({
-              data: chain1,
+              data: chain,
               status: 200,
             });
           }
 
-          case `${chain1.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+          case `${chain.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
             return Promise.resolve({
               data: { safes: safesOnChain },
               status: 200,
