@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
+import { Email } from '@/routes/email/entities/email.entity';
 
 @Injectable()
 export class EmailService {
@@ -48,5 +49,14 @@ export class EmailService {
     emailAddress: string;
   }): Promise<void> {
     return this.repository.editEmail(args);
+  }
+
+  async getEmail(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<Email> {
+    const account = await this.repository.getAccount(args);
+    return new Email(account.emailAddress.value, account.isVerified);
   }
 }
