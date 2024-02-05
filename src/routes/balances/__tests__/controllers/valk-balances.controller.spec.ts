@@ -96,7 +96,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            case `${valkBaseUri}/balances/token/${safeAddress}`:
               return Promise.resolve({
                 data: valkApiBalancesResponse,
                 status: 200,
@@ -162,10 +162,11 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0]).toBe(
-          `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`,
+          `${valkBaseUri}/balances/token/${safeAddress}`,
         );
         expect(networkService.get.mock.calls[0][1]).toStrictEqual({
           headers: { Authorization: apiKey },
+          params: { chain: chainName },
         });
         expect(networkService.get.mock.calls[1][0]).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -195,7 +196,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            case `${valkBaseUri}/balances/token/${safeAddress}`:
               return Promise.resolve({
                 data: valkApiBalancesResponse,
                 status: 200,
@@ -235,10 +236,11 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0]).toBe(
-          `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`,
+          `${valkBaseUri}/balances/token/${safeAddress}`,
         );
         expect(networkService.get.mock.calls[0][1]).toStrictEqual({
           headers: { Authorization: apiKey },
+          params: { chain: chainName },
         });
         expect(networkService.get.mock.calls[1][0]).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -250,9 +252,6 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chainId = valkChainIds[0];
         const safeAddress = faker.finance.ethereumAddress();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.valk.chains.${chainId}.chainName`);
         const error = new NetworkResponseError(
           new URL(
             `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
@@ -265,7 +264,7 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.reject(error);
-            case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            case `${valkBaseUri}/balances/token/${safeAddress}`:
               return Promise.resolve({ data: [], status: 200 });
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -286,16 +285,11 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chain = chainBuilder().with('chainId', valkChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.valk.chains.${chain.chainId}.chainName`,
-          );
         networkService.get.mockImplementation((url) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
-            case `${valkBaseUri}/balances/token/${safeAddress}?chain=${chainName}`:
+            case `${valkBaseUri}/balances/token/${safeAddress}`:
               return Promise.reject(new Error('test error'));
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
