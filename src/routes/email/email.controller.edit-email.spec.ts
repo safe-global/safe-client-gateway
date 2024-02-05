@@ -30,7 +30,6 @@ import {
   EmailAddress,
 } from '@/domain/account/entities/account.entity';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
-import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 
 const verificationCodeTtlMs = 100;
 
@@ -129,9 +128,6 @@ describe('Email controller edit email tests', () => {
         .with('emailAddress', new EmailAddress(emailAddress))
         .build(),
     );
-    accountDataSource.setEmailVerificationSentDate.mockResolvedValue(
-      verificationCodeBuilder().build(),
-    );
 
     await request(app.getHttpServer())
       .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
@@ -143,6 +139,35 @@ describe('Email controller edit email tests', () => {
       })
       .expect(202)
       .expect({});
+
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledWith({
+      chainId: chain.chainId,
+      emailAddress: new EmailAddress(emailAddress),
+      safeAddress: safe.address,
+      signer: signerAddress,
+      unsubscriptionToken: expect.any(String),
+    });
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledWith({
+      chainId: chain.chainId,
+      code: expect.any(String),
+      signer: signerAddress,
+      safeAddress: safe.address,
+      codeGenerationDate: expect.any(Date),
+    });
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.setEmailVerificationSentDate).toHaveBeenCalledWith(
+      {
+        chainId: chain.chainId,
+        safeAddress: safe.address,
+        signer: signerAddress,
+        sentOn: expect.any(Date),
+      },
+    );
+    // TODO: validate that `IEmailApi.createMessage` is triggered with the correct code
   });
 
   it('should return 409 if trying to edit with the same email', async () => {
@@ -187,7 +212,12 @@ describe('Email controller edit email tests', () => {
         statusCode: 409,
         message: 'Email address matches that of the Safe owner.',
       });
+
     expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 
   it('should return 404 if trying to edit a non-existent email entry', async () => {
@@ -232,7 +262,12 @@ describe('Email controller edit email tests', () => {
         statusCode: 404,
         message: `No email address was found for the provided signer ${signerAddress}.`,
       });
+
     expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 
   it('return 500 if updating fails in general', async () => {
@@ -279,6 +314,12 @@ describe('Email controller edit email tests', () => {
         code: 500,
         message: 'Internal server error',
       });
+
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 
   it('returns 403 is message was signed with a timestamp older than 5 minutes', async () => {
@@ -313,6 +354,12 @@ describe('Email controller edit email tests', () => {
         error: 'Forbidden',
         statusCode: 403,
       });
+
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 
   it('returns 403 on wrong message signature', async () => {
@@ -345,6 +392,12 @@ describe('Email controller edit email tests', () => {
         error: 'Forbidden',
         statusCode: 403,
       });
+
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 
   it('returns 403 if message not signed by owner', async () => {
@@ -386,5 +439,11 @@ describe('Email controller edit email tests', () => {
         error: 'Forbidden',
         statusCode: 403,
       });
+
+    expect(accountDataSource.updateAccountEmail).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.setEmailVerificationCode).toHaveBeenCalledTimes(0);
+    expect(
+      accountDataSource.setEmailVerificationSentDate,
+    ).toHaveBeenCalledTimes(0);
   });
 });

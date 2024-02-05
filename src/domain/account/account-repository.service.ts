@@ -232,12 +232,17 @@ export class AccountRepository implements IAccountRepository {
 
     await this.accountDataSource.updateAccountEmail({
       chainId: args.chainId,
-      code: newVerificationCode,
       emailAddress: newEmail,
       safeAddress: args.safeAddress,
       signer: args.signer,
-      codeGenerationDate: new Date(),
       unsubscriptionToken: crypto.randomUUID(),
+    });
+    await this.accountDataSource.setEmailVerificationCode({
+      chainId: args.chainId,
+      code: newVerificationCode,
+      signer: args.signer,
+      codeGenerationDate: new Date(),
+      safeAddress: args.safeAddress,
     });
     // TODO if the following throws we should not throw
     await this._sendEmailVerification({
@@ -272,7 +277,9 @@ export class AccountRepository implements IAccountRepository {
 
     // Update verification-sent date on a successful response
     await this.accountDataSource.setEmailVerificationSentDate({
-      ...args,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      signer: args.signer,
       sentOn: new Date(),
     });
   }

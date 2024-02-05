@@ -2,7 +2,6 @@ import {
   Account,
   EmailAddress,
   VerificationCode,
-  VerificationCode as DomainVerificationCode,
 } from '@/domain/account/entities/account.entity';
 import { Subscription } from '@/domain/account/entities/subscription.entity';
 
@@ -37,7 +36,7 @@ export interface IAccountDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<DomainVerificationCode>;
+  }): Promise<VerificationCode>;
 
   /**
    * Creates a new account entry
@@ -104,7 +103,7 @@ export interface IAccountDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<Account>;
+  }): Promise<void>;
 
   /**
    * Deletes the given account.
@@ -134,8 +133,6 @@ export interface IAccountDataSource {
     safeAddress: string;
     emailAddress: EmailAddress;
     signer: string;
-    code: string;
-    codeGenerationDate: Date;
     unsubscriptionToken: string;
   }): Promise<Account>;
 

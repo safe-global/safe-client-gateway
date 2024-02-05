@@ -160,12 +160,12 @@ export class AccountDataSource implements IAccountDataSource {
   }): Promise<DomainVerificationCode> {
     const [verificationCode] = await this.sql<VerificationCode[]>`
         INSERT INTO verification_codes (account_id, code, generated_on)
-        SELECT id, ${args.code}, ${args.codeGenerationDate}
-        FROM accounts
-        WHERE chain_id = ${args.chainId}
-          AND safe_address = ${args.safeAddress}
-          AND signer = ${args.signer}
-          AND verified = false
+            (SELECT id, ${args.code}, ${args.codeGenerationDate}
+             FROM accounts
+             WHERE chain_id = ${args.chainId}
+               AND safe_address = ${args.safeAddress}
+               AND signer = ${args.signer}
+               AND verified = false)
         ON CONFLICT (account_id)
             DO UPDATE SET code         = ${args.code},
                           generated_on = ${args.codeGenerationDate}
@@ -214,8 +214,8 @@ export class AccountDataSource implements IAccountDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<DomainAccount> {
-    const verifiedAccount = await this.sql.begin(async (sql) => {
+  }): Promise<void> {
+    await this.sql.begin(async (sql) => {
       const [verifiedAccount] = await sql<Account[]>`UPDATE accounts
                                                      SET verified = true
                                                      WHERE chain_id = ${args.chainId}
@@ -236,14 +236,6 @@ export class AccountDataSource implements IAccountDataSource {
 
       return verifiedAccount;
     });
-
-    return {
-      chainId: verifiedAccount.chain_id.toString(),
-      emailAddress: new EmailAddress(verifiedAccount.email_address),
-      isVerified: verifiedAccount.verified,
-      safeAddress: verifiedAccount.safe_address,
-      signer: verifiedAccount.signer,
-    };
   }
 
   async deleteAccount(args: {
