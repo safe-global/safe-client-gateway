@@ -66,12 +66,15 @@ export class ValkBalancesApi implements IBalancesApi {
     try {
       const cacheDir = CacheRouter.getValkBalancesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
-      const url = `${this.baseUri}/balances/token/${args.safeAddress}?chain=${chainName}`;
+      const url = `${this.baseUri}/balances/token/${args.safeAddress}`;
       const valkBalances = await this.dataSource.get<ValkBalance[]>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: { headers: { Authorization: `${this.apiKey}` } },
+        networkRequest: {
+          headers: { Authorization: `${this.apiKey}` },
+          params: { chain: chainName },
+        },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
       return this._mapBalances(valkBalances, args.fiatCode);

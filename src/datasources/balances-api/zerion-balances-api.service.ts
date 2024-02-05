@@ -79,7 +79,7 @@ export class ZerionBalancesApi implements IBalancesApi {
           headers: { Authorization: `Basic ${this.apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
-            currency,
+            currency: currency,
             sort: 'value',
           },
         },
