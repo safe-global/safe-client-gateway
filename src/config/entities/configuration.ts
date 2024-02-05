@@ -29,16 +29,39 @@ export default () => ({
         chains: {
           1: { chainName: 'eth' },
           10: { chainName: 'op' },
+          56: { chainName: 'bsc' },
           100: { chainName: 'xdai' },
-          1101: { chainName: 'pze' },
-          1313161554: { chainName: 'aurora' },
           137: { chainName: 'matic' },
           324: { chainName: 'era' },
+          1101: { chainName: 'pze' },
+          8453: { chainName: 'base' },
           42161: { chainName: 'arb' },
           42220: { chainName: 'celo' },
           43114: { chainName: 'avax' },
-          56: { chainName: 'bsc' },
+          // 11155111 (Sepolia) is not available on Valk
+          // 11155111: { chainName: '' },
+          1313161554: { chainName: 'aurora' },
+        },
+      },
+      zerion: {
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        apiKey: process.env.ZERION_API_KEY,
+        chains: {
+          1: { chainName: 'ethereum' },
+          10: { chainName: 'optimism' },
+          56: { chainName: 'binance-smart-chain' },
+          100: { chainName: 'xdai' },
+          137: { chainName: 'polygon' },
+          324: { chainName: 'zksync-era' },
+          // 1101 (Polygon zkEVM) is not available on Zerion
+          // 1101: { chainName: '' },
           8453: { chainName: 'base' },
+          42161: { chainName: 'arbitrum' },
+          42220: { chainName: 'celo' },
+          43114: { chainName: 'avalanche' },
+          // 11155111 (Sepolia) is not available on Zerion
+          // 11155111: { chainName: '' },
+          1313161554: { chainName: 'aurora' },
         },
       },
     },
@@ -99,6 +122,8 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     valkBalancesChainIds:
       process.env.FF_VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    zerionBalancesChainIds:
+      process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

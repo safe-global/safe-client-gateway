@@ -28,6 +28,7 @@ describe('Balances Controller (Unit)', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let valkBaseUri: string;
+  let valkChainIds: string[];
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -48,6 +49,7 @@ describe('Balances Controller (Unit)', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     valkBaseUri = configurationService.get('balances.providers.valk.baseUri');
+    valkChainIds = configurationService.get('features.valkBalancesChainIds');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -61,7 +63,7 @@ describe('Balances Controller (Unit)', () => {
   describe('Balances provider: Valk', () => {
     describe('GET /balances (externalized)', () => {
       it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
-        const chain = chainBuilder().with('chainId', '100').build();
+        const chain = chainBuilder().with('chainId', valkChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
         const valkApiBalancesResponse = [
@@ -171,7 +173,7 @@ describe('Balances Controller (Unit)', () => {
       });
 
       it('returns large numbers as is (not in scientific notation)', async () => {
-        const chain = chainBuilder().with('chainId', '100').build();
+        const chain = chainBuilder().with('chainId', valkChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
         const valkApiBalancesResponse = [
@@ -246,7 +248,7 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Config API Error', () => {
       it(`500 error response`, async () => {
-        const chainId = '100';
+        const chainId = valkChainIds[0];
         const safeAddress = faker.finance.ethereumAddress();
         const chainName = app
           .get(IConfigurationService)
@@ -282,7 +284,7 @@ describe('Balances Controller (Unit)', () => {
 
     describe('Valk Balances API Error', () => {
       it(`500 error response`, async () => {
-        const chain = chainBuilder().with('chainId', '100').build();
+        const chain = chainBuilder().with('chainId', valkChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const chainName = app
           .get(IConfigurationService)
