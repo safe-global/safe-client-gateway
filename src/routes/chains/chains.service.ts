@@ -55,6 +55,7 @@ export class ChainsService {
           chain.theme,
           chain.ensRegistryAddress,
           chain.isTestnet,
+          chain.chainLogoUri,
         ),
     );
 
@@ -86,6 +87,7 @@ export class ChainsService {
       result.theme,
       result.ensRegistryAddress,
       result.isTestnet,
+      result.chainLogoUri,
     );
   }
 

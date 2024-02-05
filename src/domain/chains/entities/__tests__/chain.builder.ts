@@ -14,6 +14,7 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('chainId', faker.string.numeric())
     .with('chainName', faker.company.name())
     .with('description', faker.word.words())
+    .with('chainLogoUri', faker.internet.url({ appendSlash: false }))
     .with('l2', faker.datatype.boolean())
     .with('isTestnet', faker.datatype.boolean())
     .with('shortName', faker.company.name())
