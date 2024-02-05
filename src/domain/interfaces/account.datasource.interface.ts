@@ -25,6 +25,8 @@ export interface IAccountDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the account
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   getAccount(args: {
     chainId: string;
@@ -98,6 +100,8 @@ export interface IAccountDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the signer/owner
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   verifyEmail(args: {
     chainId: string;
@@ -111,6 +115,8 @@ export interface IAccountDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the signer/owner
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   deleteAccount(args: {
     chainId: string;
@@ -127,6 +133,8 @@ export interface IAccountDataSource {
    * @param args.signer - the signer/owner address of the account
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
+   *
+   * @throws {AccountDoesNotExistError}
    */
   updateAccountEmail(args: {
     chainId: string;
