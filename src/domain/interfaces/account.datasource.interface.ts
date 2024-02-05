@@ -1,6 +1,7 @@
 import {
   Account,
   EmailAddress,
+  VerificationCode,
 } from '@/domain/account/entities/account.entity';
 import { Subscription } from '@/domain/account/entities/subscription.entity';
 
@@ -31,6 +32,12 @@ export interface IAccountDataSource {
     signer: string;
   }): Promise<Account>;
 
+  getAccountVerificationCode(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<VerificationCode>;
+
   /**
    * Creates a new account entry
    *
@@ -49,7 +56,7 @@ export interface IAccountDataSource {
     code: string;
     codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void>;
+  }): Promise<[Account, VerificationCode]>;
 
   /**
    * Sets the verification code for an account.
@@ -68,7 +75,7 @@ export interface IAccountDataSource {
     signer: string;
     code: string;
     codeGenerationDate: Date;
-  }): Promise<void>;
+  }): Promise<VerificationCode>;
 
   /**
    * Sets the verification date for an email entry.
@@ -83,7 +90,7 @@ export interface IAccountDataSource {
     safeAddress: string;
     signer: string;
     sentOn: Date;
-  }): Promise<void>;
+  }): Promise<VerificationCode>;
 
   /**
    * Verifies the email address for an account of a Safe.
@@ -109,7 +116,7 @@ export interface IAccountDataSource {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<void>;
+  }): Promise<Account>;
 
   /**
    * Updates the email address of an account.
@@ -126,10 +133,8 @@ export interface IAccountDataSource {
     safeAddress: string;
     emailAddress: EmailAddress;
     signer: string;
-    code: string;
-    codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void>;
+  }): Promise<Account>;
 
   /**
    * Gets all the subscriptions for the account on chainId, with the specified safeAddress.

@@ -89,7 +89,7 @@ describe('Email controller delete email tests', () => {
     const message = `email-delete-${chain.chainId}-${safeAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
     accountDataSource.getAccount.mockResolvedValue(account);
-    accountDataSource.deleteAccount.mockImplementation(() => Promise.resolve());
+    accountDataSource.deleteAccount.mockResolvedValue(account);
     emailApi.deleteEmailAddress.mockResolvedValue();
 
     await request(app.getHttpServer())
