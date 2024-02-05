@@ -24,7 +24,7 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
 import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { INestApplication } from '@nestjs/common';
-import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
+import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import {
   Account,
   EmailAddress,

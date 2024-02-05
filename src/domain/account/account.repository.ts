@@ -16,7 +16,7 @@ import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import * as crypto from 'crypto';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
-import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
+import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 
