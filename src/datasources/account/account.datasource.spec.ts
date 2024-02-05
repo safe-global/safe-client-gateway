@@ -31,7 +31,7 @@ describe('Account DataSource Tests', () => {
   });
 
   afterEach(async () => {
-    await sql`TRUNCATE TABLE accounts, subscriptions CASCADE`;
+    await sql`TRUNCATE TABLE accounts, notification_types, subscriptions CASCADE`;
   });
 
   afterAll(async () => {
