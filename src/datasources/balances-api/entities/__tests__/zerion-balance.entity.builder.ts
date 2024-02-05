@@ -31,7 +31,7 @@ export function zerionFungibleInfoBuilder(): IBuilder<ZerionFungibleInfo> {
 
 export function zerionQuantityBuilder(): IBuilder<ZerionQuantity> {
   return new Builder<ZerionQuantity>()
-    .with('int', faker.number.int().toString())
+    .with('int', faker.string.numeric())
     .with('decimals', faker.number.int())
     .with('float', faker.number.float())
     .with('numeric', faker.number.float().toString());
