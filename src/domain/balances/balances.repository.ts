@@ -52,6 +52,10 @@ export class BalancesRepository implements IBalancesRepository {
     }
   }
 
+  getFiatCodes(): string[] {
+    return this.balancesApiManager.getFiatCodes();
+  }
+
   private async _getBalancesFromBalancesApi(args: {
     chainId: string;
     safeAddress: string;

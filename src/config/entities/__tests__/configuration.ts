@@ -38,6 +38,17 @@ export default (): ReturnType<typeof configuration> => ({
           56: { chainName: faker.string.sample() },
           8453: { chainName: faker.string.sample() },
         },
+        currencies: Array.from(
+          new Set([
+            ...Array.from(
+              { length: faker.number.int({ min: 2, max: 5 }) },
+              () => faker.finance.currencyCode(),
+            ),
+            'ETH',
+            'EUR',
+            'USD',
+          ]),
+        ),
       },
       zerion: {
         baseUri: faker.internet.url({ appendSlash: false }),
@@ -55,6 +66,18 @@ export default (): ReturnType<typeof configuration> => ({
           56: { chainName: faker.string.sample() },
           8453: { chainName: faker.string.sample() },
         },
+        currencies: Array.from(
+          new Set([
+            ...Array.from(
+              { length: faker.number.int({ min: 2, max: 5 }) },
+              () => faker.finance.currencyCode().toLowerCase(),
+            ),
+            'btc',
+            'eth',
+            'eur',
+            'usd',
+          ]),
+        ),
       },
     },
   },

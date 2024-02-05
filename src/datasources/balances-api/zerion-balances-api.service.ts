@@ -31,6 +31,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly fiatCodes: string[];
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -55,6 +56,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     this.chainsConfiguration = this.configurationService.getOrThrow<
       Record<number, ChainAttributes>
     >('balances.providers.zerion.chains');
+    this.fiatCodes = this.configurationService
+      .getOrThrow<string[]>('balances.providers.zerion.currencies')
+      .map((currency) => currency.toUpperCase());
   }
 
   async getBalances(args: {
@@ -115,6 +119,10 @@ export class ZerionBalancesApi implements IBalancesApi {
           fiatConversion,
         };
       });
+  }
+
+  getFiatCodes(): string[] {
+    return this.fiatCodes;
   }
 
   private _mapErc20Balance(

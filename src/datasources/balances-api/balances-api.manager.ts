@@ -4,6 +4,7 @@ import { IZerionBalancesApi } from '@/datasources/balances-api/zerion-balances-a
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { intersection } from 'lodash';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -47,6 +48,12 @@ export class BalancesApiManager implements IBalancesApiManager {
       return this.zerionBalancesApi;
     }
     throw new Error(`Chain ID ${chainId} balances provider is not configured`);
+  }
+
+  getFiatCodes(): string[] {
+    const valkFiatCodes = this.valkBalancesApi.getFiatCodes();
+    const zerionFiatCodes = this.zerionBalancesApi.getFiatCodes();
+    return intersection(valkFiatCodes, zerionFiatCodes).sort();
   }
 
   private _isSupportedByValk(chainId: string): boolean {
