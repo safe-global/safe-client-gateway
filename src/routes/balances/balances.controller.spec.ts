@@ -621,9 +621,9 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/supported-fiat-codes', () => {
     it('should return the ordered list of supported fiat codes', async () => {
-      // Test configuration of available currencies for Valk is ['ETH', 'EUR', 'USD']
-      // Test configuration of available currencies for Zerion is ['btc', 'eth', 'eur', 'usd']
-      // So BalancesApiManager available currencies should be ['ETH', 'EUR', 'USD']
+      // Test configuration of available currencies for Valk includes ['ETH', 'EUR', 'USD']
+      // Test configuration of available currencies for Zerion includes ['btc', 'eth', 'eur', 'usd']
+      // So BalancesApiManager available currencies should include ['ETH', 'EUR', 'USD']
       const pricesProviderFiatCodes = ['eur', 'usd'];
       networkService.get.mockImplementation((url) => {
         switch (url) {
