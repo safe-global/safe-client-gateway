@@ -8,4 +8,6 @@ export interface IBalancesApi {
   }): Promise<Balance[]>;
 
   clearBalances(args: { chainId: string; safeAddress: string }): Promise<void>;
+
+  getFiatCodes(): string[];
 }

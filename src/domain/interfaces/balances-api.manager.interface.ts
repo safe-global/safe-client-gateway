@@ -21,4 +21,10 @@ export interface IBalancesApiManager {
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
   getBalancesApi(chainId: string): IBalancesApi;
+
+  /**
+   * Gets the list of supported fiat codes.
+   * @returns an alphabetically ordered list of uppercase strings representing the supported fiat codes.
+   */
+  getFiatCodes(): string[];
 }

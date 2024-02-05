@@ -28,6 +28,7 @@ export class ValkBalancesApi implements IBalancesApi {
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly fiatCodes: string[];
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -52,6 +53,9 @@ export class ValkBalancesApi implements IBalancesApi {
     this.chainsConfiguration = this.configurationService.getOrThrow<
       Record<number, ChainAttributes>
     >('balances.providers.valk.chains');
+    this.fiatCodes = this.configurationService
+      .getOrThrow<string[]>('balances.providers.valk.currencies')
+      .map((currency) => currency.toUpperCase());
   }
 
   async getBalances(args: {
@@ -84,6 +88,10 @@ export class ValkBalancesApi implements IBalancesApi {
   }): Promise<void> {
     const key = CacheRouter.getValkBalancesCacheKey(args);
     await this.cacheService.deleteByKey(key);
+  }
+
+  getFiatCodes(): string[] {
+    return this.fiatCodes;
   }
 
   private _mapBalances(

@@ -12,6 +12,7 @@ const configurationServiceMock = jest.mocked(configurationService);
 const valkBalancesApi = {
   getBalances: jest.fn(),
   clearBalances: jest.fn(),
+  getFiatCodes: jest.fn(),
 } as IBalancesApi;
 
 const valkBalancesApiMock = jest.mocked(valkBalancesApi);
@@ -19,17 +20,21 @@ const valkBalancesApiMock = jest.mocked(valkBalancesApi);
 const zerionBalancesApi = {
   getBalances: jest.fn(),
   clearBalances: jest.fn(),
+  getFiatCodes: jest.fn(),
 } as IBalancesApi;
 
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  configurationServiceMock.getOrThrow.mockImplementation((key) => {
+    if (key === 'features.valkBalancesChainIds') return ['1', '2', '3'];
+    if (key === 'features.zerionBalancesChainIds') return ['4', '5', '6'];
+  });
+});
+
 describe('Balances API Manager Tests', () => {
   describe('useExternalApi checks', () => {
-    configurationServiceMock.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.valkBalancesChainIds') return ['1', '2', '3'];
-      if (key === 'features.zerionBalancesChainIds') return ['4', '5', '6'];
-    });
-
     it('should return true if the chain is included in the balance-externalized chains', () => {
       const manager = new BalancesApiManager(
         configurationService,
@@ -51,11 +56,6 @@ describe('Balances API Manager Tests', () => {
   });
 
   describe('getBalancesApi checks', () => {
-    configurationServiceMock.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.valkBalancesChainIds') return ['1', '2', '3'];
-      if (key === 'features.zerionBalancesChainIds') return ['4', '5', '6'];
-    });
-
     it('should return the Valk API', () => {
       const manager = new BalancesApiManager(
         configurationService,
@@ -81,6 +81,25 @@ describe('Balances API Manager Tests', () => {
         zerionBalancesApiMock,
       );
       expect(() => manager.getBalancesApi('100')).toThrow();
+    });
+  });
+
+  describe('getFiatCodes checks', () => {
+    it('should return the intersection of all providers supported currencies', () => {
+      valkBalancesApiMock.getFiatCodes.mockReturnValue([
+        'USD',
+        'BTC',
+        'EUR',
+        'ETH',
+      ]);
+      zerionBalancesApiMock.getFiatCodes.mockReturnValue(['EUR', 'GBP', 'ETH']);
+      const manager = new BalancesApiManager(
+        configurationService,
+        valkBalancesApiMock,
+        zerionBalancesApiMock,
+      );
+
+      expect(manager.getFiatCodes()).toStrictEqual(['ETH', 'EUR']);
     });
   });
 });
