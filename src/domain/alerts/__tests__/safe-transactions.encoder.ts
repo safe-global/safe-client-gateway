@@ -24,6 +24,57 @@ function getPrevOwner(ownerToRemove: Hex, owners?: Safe['owners']): Hex {
     : getAddress(owners[ownerIndex - 1]);
 }
 
+// setup
+
+type SetupArgs = {
+  owners: Hex[];
+  threshold: bigint;
+  to: Hex;
+  data: Hex;
+  fallbackHandler: Hex;
+  paymentToken: Hex;
+  payment: bigint;
+  paymentReceiver: Hex;
+};
+
+class SetupEncoder<T extends SetupArgs> extends Builder<T> implements IEncoder {
+  static readonly FUNCTION_SIGNATURE =
+    'function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address paymentReceiver)';
+
+  encode(): Hex {
+    const abi = parseAbi([SetupEncoder.FUNCTION_SIGNATURE]);
+
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'setup',
+      args: [
+        args.owners,
+        args.threshold,
+        args.to,
+        args.data,
+        args.fallbackHandler,
+        args.paymentToken,
+        args.payment,
+        args.paymentReceiver,
+      ],
+    });
+  }
+}
+
+export function setupEncoder(): SetupEncoder<SetupArgs> {
+  return new SetupEncoder()
+    .with('owners', [getAddress(faker.finance.ethereumAddress())])
+    .with('threshold', BigInt(1))
+    .with('to', getAddress(faker.finance.ethereumAddress()))
+    .with('data', '0x')
+    .with('fallbackHandler', ZERO_ADDRESS)
+    .with('paymentToken', ZERO_ADDRESS)
+    .with('payment', BigInt(0))
+    .with('paymentReceiver', ZERO_ADDRESS);
+}
+
 // execTransaction
 
 type ExecTransactionArgs = {
