@@ -24,13 +24,13 @@ export class MultiSendDecoder {
 
   mapMultiSendTransactions(multiSendData: Hex): Array<{
     operation: number;
-    to: string;
+    to: Hex;
     value: bigint;
     data: Hex;
   }> {
     const mapped: Array<{
       operation: number;
-      to: string;
+      to: Hex;
       value: bigint;
       data: Hex;
     }> = [];

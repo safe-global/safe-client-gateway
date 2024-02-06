@@ -3,6 +3,7 @@ import { Hex } from 'viem/types/misc';
 import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
 import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
 
 export interface RelayPayload {
   chainId: string;
@@ -17,6 +18,7 @@ export class LimitAddressesMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly safeContract: SafeContractHelper,
     private readonly erc20Contract: Erc20ContractHelper,
+    private readonly multiSendDecoder: MultiSendDecoder,
   ) {}
 
   getLimitAddresses(relayPayload: RelayPayload): Hex[] {
@@ -24,7 +26,12 @@ export class LimitAddressesMapper {
       return [relayPayload.to];
     }
 
-    // TODO Handle Multisend
+    const multiSendSafeAddress = this.getSafeAddressFromMultiSend(
+      relayPayload.data,
+    );
+    if (multiSendSafeAddress) {
+      return [multiSendSafeAddress];
+    }
 
     // TODO Handle create proxy with nonce
 
@@ -69,4 +76,31 @@ export class LimitAddressesMapper {
     const isCancellation = execTransaction.data === '0x';
     return isCancellation || this.safeContract.isCall(execTransaction.data);
   }
+
+  private getSafeAddressFromMultiSend = (data: Hex): Hex | null => {
+    // Decode transactions within MultiSend
+    const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+
+    // Every transaction is a valid execTransaction
+    const isEveryValid = transactions.every((transaction) => {
+      return this.isValidExecTransactionCall(transaction.to, transaction.data);
+    });
+
+    if (!isEveryValid) {
+      return null;
+    }
+
+    const firstRecipient = transactions[0].to;
+
+    // Every transaction is 'self' (the Safe)
+    const isSameRecipient = transactions.every((transaction) => {
+      return transaction.to === firstRecipient;
+    });
+
+    if (!isSameRecipient) {
+      return null;
+    }
+
+    return firstRecipient;
+  };
 }
