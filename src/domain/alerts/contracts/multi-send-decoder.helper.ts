@@ -1,6 +1,6 @@
+import { AbiDecoder } from '@/domain/alerts/contracts/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import {
-  decodeFunctionData,
   getAddress,
   Hex,
   hexToBigInt,
@@ -10,17 +10,21 @@ import {
   slice,
 } from 'viem';
 
-@Injectable()
-export class MultiSendDecoder {
-  private readonly abi = parseAbi([
-    'function multiSend(bytes memory transactions)',
-  ]);
+const MULTISEND_ABI = parseAbi([
+  'function multiSend(bytes memory transactions)',
+]);
 
+@Injectable()
+export class MultiSendDecoder extends AbiDecoder<typeof MULTISEND_ABI> {
   // uint8 operation, address to, value uint256, dataLength uint256, bytes data
   private static readonly OPERATION_SIZE = 1;
   private static readonly TO_SIZE = 20;
   private static readonly VALUE_SIZE = 32;
   private static readonly DATA_LENGTH_SIZE = 32;
+
+  constructor() {
+    super(MULTISEND_ABI);
+  }
 
   mapMultiSendTransactions(multiSendData: Hex): Array<{
     operation: number;
@@ -35,10 +39,7 @@ export class MultiSendDecoder {
       data: Hex;
     }> = [];
 
-    const multiSend = decodeFunctionData({
-      abi: this.abi,
-      data: multiSendData,
-    });
+    const multiSend = this.decodeFunctionData({ data: multiSendData });
 
     const transactions = multiSend.args[0];
     const transactionsSize = size(transactions);

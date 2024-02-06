@@ -38,4 +38,18 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
   ) {
     return _decodeFunctionData({ ...args, abi: this.abi });
   }
+
+  isFunctionCall(args: {
+    functionName: ContractEventName<TAbi>;
+    data: Hex;
+  }): boolean {
+    try {
+      const { functionName } = this.decodeFunctionData({
+        data: args.data,
+      });
+      return functionName === args.functionName;
+    } catch {
+      return false;
+    }
+  }
 }

@@ -17,75 +17,172 @@ describe('SafeDecoder', () => {
     target = new SafeDecoder();
   });
 
-  it('decodes an addOwnerWithThreshold function call correctly', () => {
-    const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-    const args = addOwnerWithThreshold.build();
-    const data = addOwnerWithThreshold.encode();
+  describe('decodeFunctionData', () => {
+    it('decodes an addOwnerWithThreshold function call correctly', () => {
+      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+      const args = addOwnerWithThreshold.build();
+      const data = addOwnerWithThreshold.encode();
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'addOwnerWithThreshold',
-      args: [args.owner, args.threshold],
+      expect(target.decodeFunctionData({ data })).toEqual({
+        functionName: 'addOwnerWithThreshold',
+        args: [args.owner, args.threshold],
+      });
+    });
+
+    it('decodes a removeOwner function call correctly', () => {
+      const removeOwner = removeOwnerEncoder();
+      const args = removeOwner.build();
+      const data = removeOwner.encode();
+
+      expect(target.decodeFunctionData({ data })).toEqual({
+        functionName: 'removeOwner',
+        args: [args.prevOwner, args.owner, args.threshold],
+      });
+    });
+
+    it('decodes a swapOwner function call correctly', () => {
+      const swapOwner = swapOwnerEncoder();
+      const args = swapOwner.build();
+      const data = swapOwner.encode();
+
+      expect(target.decodeFunctionData({ data })).toEqual({
+        functionName: 'swapOwner',
+        args: [args.prevOwner, args.oldOwner, args.newOwner],
+      });
+    });
+
+    it('decodes a changeThreshold function call correctly', () => {
+      const changeThreshold = changeThresholdEncoder();
+      const args = changeThreshold.build();
+      const data = changeThreshold.encode();
+
+      expect(target.decodeFunctionData({ data })).toEqual({
+        functionName: 'changeThreshold',
+        args: [args.threshold],
+      });
+    });
+
+    it('decodes an execTransaction function call correctly', () => {
+      const execTransaction = execTransactionEncoder();
+      const args = execTransaction.build();
+      const data = execTransaction.encode();
+
+      expect(target.decodeFunctionData({ data })).toEqual({
+        functionName: 'execTransaction',
+        args: [
+          args.to,
+          args.value,
+          args.data,
+          args.operation,
+          args.safeTxGas,
+          args.baseGas,
+          args.gasPrice,
+          args.gasToken,
+          args.refundReceiver,
+          args.signatures,
+        ],
+      });
+    });
+
+    it('throws if the function call cannot be decoded', () => {
+      const data = faker.string.hexadecimal({ length: 138 }) as Hex;
+
+      expect(() => target.decodeFunctionData({ data })).toThrow();
     });
   });
 
-  it('decodes a removeOwner function call correctly', () => {
-    const removeOwner = removeOwnerEncoder();
-    const args = removeOwner.build();
-    const data = removeOwner.encode();
+  describe('isCall', () => {
+    describe('addOwnerWithThreshold', () => {
+      it('returns true if data is an addOwnerWithThreshold call', () => {
+        const data = addOwnerWithThresholdEncoder().encode();
+        expect(
+          target.isFunctionCall({
+            functionName: 'addOwnerWithThreshold',
+            data,
+          }),
+        ).toBe(true);
+      });
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'removeOwner',
-      args: [args.prevOwner, args.owner, args.threshold],
+      it('returns false if data is not an addOwnerWithThreshold call', () => {
+        const data = removeOwnerEncoder().encode();
+        expect(
+          target.isFunctionCall({
+            functionName: 'addOwnerWithThreshold',
+            data,
+          }),
+        ).toBe(false);
+      });
     });
-  });
 
-  it('decodes a swapOwner function call correctly', () => {
-    const swapOwner = swapOwnerEncoder();
-    const args = swapOwner.build();
-    const data = swapOwner.encode();
+    describe('removeOwner', () => {
+      it('returns true if data is a removeOwner call', () => {
+        const data = removeOwnerEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'removeOwner', data }),
+        ).toBe(true);
+      });
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'swapOwner',
-      args: [args.prevOwner, args.oldOwner, args.newOwner],
+      it('returns false if data is not a removeOwner call', () => {
+        const data = addOwnerWithThresholdEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'removeOwner', data }),
+        ).toBe(false);
+      });
     });
-  });
 
-  it('decodes a changeThreshold function call correctly', () => {
-    const changeThreshold = changeThresholdEncoder();
-    const args = changeThreshold.build();
-    const data = changeThreshold.encode();
+    describe('swapOwner', () => {
+      it('returns true if data is a swapOwner call', () => {
+        const data = swapOwnerEncoder().encode();
+        expect(target.isFunctionCall({ functionName: 'swapOwner', data })).toBe(
+          true,
+        );
+      });
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'changeThreshold',
-      args: [args.threshold],
+      it('returns false if data is not a swapOwner call', () => {
+        const data = addOwnerWithThresholdEncoder().encode();
+        expect(target.isFunctionCall({ functionName: 'swapOwner', data })).toBe(
+          false,
+        );
+      });
     });
-  });
 
-  it('decodes an execTransaction function call correctly', () => {
-    const execTransaction = execTransactionEncoder();
-    const args = execTransaction.build();
-    const data = execTransaction.encode();
+    describe('changeThreshold', () => {
+      it('returns true if data is a changeThreshold call', () => {
+        const data = changeThresholdEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'changeThreshold', data }),
+        ).toBe(true);
+      });
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'execTransaction',
-      args: [
-        args.to,
-        args.value,
-        args.data,
-        args.operation,
-        args.safeTxGas,
-        args.baseGas,
-        args.gasPrice,
-        args.gasToken,
-        args.refundReceiver,
-        args.signatures,
-      ],
+      it('returns false if data is not a changeThreshold call', () => {
+        const data = addOwnerWithThresholdEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'changeThreshold', data }),
+        ).toBe(false);
+      });
     });
-  });
 
-  it('throws if the function call cannot be decoded', () => {
-    const data = faker.string.hexadecimal({ length: 138 }) as Hex;
+    describe('execTransaction', () => {
+      it('returns true if data is an execTransaction call', () => {
+        const data = execTransactionEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'execTransaction', data }),
+        ).toBe(true);
+      });
 
-    expect(() => target.decodeFunctionData({ data })).toThrow();
+      it('returns false if data is not an execTransaction call', () => {
+        const data = addOwnerWithThresholdEncoder().encode();
+        expect(
+          target.isFunctionCall({ functionName: 'execTransaction', data }),
+        ).toBe(false);
+      });
+    });
+
+    it('returns false if the functionName is not in the ABI', () => {
+      const data = addOwnerWithThresholdEncoder().encode();
+      expect(
+        target.isFunctionCall({ functionName: 'invalidFunction', data }),
+      ).toBe(false);
+    });
   });
 });

@@ -26,12 +26,10 @@ export class LimitAddressesMapper {
       return [relayPayload.to];
     }
 
-    // Invalid MultiSend transactions will not return an address
-    const multiSendSafeAddress = this.getSafeAddressFromMultiSend(
-      relayPayload.data,
-    );
-    if (multiSendSafeAddress) {
-      return [multiSendSafeAddress];
+    if (this.isMultiSend(relayPayload.data)) {
+      // Validity of MultiSend is part of address retrieval
+      const safeAddress = this.getSafeAddressFromMultiSend(relayPayload.data);
+      return [safeAddress];
     }
 
     // TODO Handle create proxy with nonce
@@ -78,7 +76,14 @@ export class LimitAddressesMapper {
     return isCancellation || this.safeContract.isCall(execTransaction.data);
   }
 
-  private getSafeAddressFromMultiSend = (data: Hex): Hex | null => {
+  private isMultiSend(data: Hex): boolean {
+    return this.multiSendDecoder.isFunctionCall({
+      functionName: 'multiSend',
+      data,
+    });
+  }
+
+  private getSafeAddressFromMultiSend = (data: Hex): Hex => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
@@ -88,7 +93,7 @@ export class LimitAddressesMapper {
     });
 
     if (!isEveryValid) {
-      return null;
+      throw Error('Invalid MultiSend transactions');
     }
 
     const firstRecipient = transactions[0].to;
@@ -99,7 +104,7 @@ export class LimitAddressesMapper {
     });
 
     if (!isSameRecipient) {
-      return null;
+      throw Error('MultiSend transactions target different addresses');
     }
 
     return firstRecipient;
