@@ -26,6 +26,7 @@ export class LimitAddressesMapper {
       return [relayPayload.to];
     }
 
+    // Invalid MultiSend transactions will not return an address
     const multiSendSafeAddress = this.getSafeAddressFromMultiSend(
       relayPayload.data,
     );
