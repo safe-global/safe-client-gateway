@@ -5,6 +5,7 @@ import {
   ZerionBalance,
   ZerionBalances,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { ZerionCollectibles } from '@/datasources/balances-api/entities/zerion-collectible.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -95,8 +96,34 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
   }
 
-  async getCollectibles(): Promise<Page<Collectible>> {
-    throw new Error('Method not implemented.');
+  async getCollectibles(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<Page<Collectible>> {
+    // TODO: add pagination
+    try {
+      const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
+      const chainName = this._getChainName(args.chainId);
+      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+      const zerionCollectibles = await this.dataSource.get<ZerionCollectibles>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          headers: { Authorization: `${this.apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: '-floor_price', // TODO: extract to var/configuration
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+      return this._mapCollectibles(zerionCollectibles);
+    } catch (error) {
+      throw new DataSourceError(
+        `Error getting ${args.safeAddress} collectibles from provider: ${asError(error).message}}`,
+      );
+    }
   }
 
   async clearCollectibles(): Promise<void> {
@@ -177,5 +204,28 @@ export class ZerionBalancesApi implements IBalancesApi {
         `Chain ${chainId} balances retrieval via Zerion is not configured`,
       );
     return chainName;
+  }
+
+  private _mapCollectibles(
+    zerionCollectibles: ZerionCollectibles,
+  ): Page<Collectible> {
+    // const collectibles: Collectible[] = zerionCollectibles.data.map((zc) => ({
+    //   address: zc.attributes.nft_info.contract_address,
+    //   tokenName: zc.attributes.nft_info.name,
+    //   tokenSymbol: zc.attributes.nft_info.name,
+    //   logoUri: zc.attributes.collection_info?.content?.icon,
+    //   id: zc.attributes.nft_info.token_id,
+    //   uri: zc.attributes.nft_info.content.preview?.url,
+    //   name: zc.attributes.collection_info?.name,
+    //   description: zc.attributes.collection_info?.description,
+    //   metadata: zc.attributes.nft_info.content,
+    // }));
+
+    return {
+      count: zerionCollectibles.data.length, // TODO: count and pagination
+      next: null,
+      previous: null,
+      results: [],
+    };
   }
 }
