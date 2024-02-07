@@ -110,7 +110,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
-          headers: { Authorization: `${this.apiKey}` },
+          headers: { Authorization: `Basic ${this.apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
             sort: '-floor_price', // TODO: extract to var/configuration
@@ -209,23 +209,22 @@ export class ZerionBalancesApi implements IBalancesApi {
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectibles,
   ): Page<Collectible> {
-    // const collectibles: Collectible[] = zerionCollectibles.data.map((zc) => ({
-    //   address: zc.attributes.nft_info.contract_address,
-    //   tokenName: zc.attributes.nft_info.name,
-    //   tokenSymbol: zc.attributes.nft_info.name,
-    //   logoUri: zc.attributes.collection_info?.content?.icon,
-    //   id: zc.attributes.nft_info.token_id,
-    //   uri: zc.attributes.nft_info.content.preview?.url,
-    //   name: zc.attributes.collection_info?.name,
-    //   description: zc.attributes.collection_info?.description,
-    //   metadata: zc.attributes.nft_info.content,
-    // }));
-
     return {
       count: zerionCollectibles.data.length, // TODO: count and pagination
       next: null,
       previous: null,
-      results: [],
+      results: zerionCollectibles.data.map((zc) => ({
+        address: zc.attributes.nft_info.contract_address,
+        description: zc.attributes.collection_info?.description ?? '',
+        id: zc.attributes.nft_info.token_id,
+        imageUri: zc.attributes.nft_info.content?.preview?.url ?? '',
+        logoUri: zc.attributes.collection_info?.content?.icon.url ?? '',
+        metadata: zc.attributes.nft_info.content,
+        name: zc.attributes.collection_info?.name ?? '',
+        tokenName: zc.attributes.nft_info.name ?? '',
+        tokenSymbol: zc.attributes.nft_info.name ?? '',
+        uri: zc.attributes.nft_info.content?.preview?.url ?? '',
+      })),
     };
   }
 }

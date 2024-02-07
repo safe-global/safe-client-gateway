@@ -8,7 +8,10 @@ export interface ZerionCollectionInfo {
 }
 
 export interface ZerionNFTInfo {
-  content: { preview: { url: string } | null; detail: { url: string } | null };
+  content: {
+    preview: { url: string } | null;
+    detail: { url: string } | null;
+  } | null;
   contract_address: string;
   flags: { is_spam: boolean } | null;
   interface: string | null;
