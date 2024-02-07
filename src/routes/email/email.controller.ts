@@ -18,12 +18,10 @@ import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
 import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
-import { ResendVerificationDto } from '@/routes/email/entities/resend-verification-dto.entity';
 import { EmailAlreadyVerifiedExceptionFilter } from '@/routes/email/exception-filters/email-already-verified.exception-filter';
 import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/exception-filters/resend-verification-timespan-error.exception-filter';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
-import { DeleteEmailDto } from '@/routes/email/entities/delete-email-dto.entity';
 import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/acocunt-does-not-exist.exception-filter';
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
@@ -77,7 +75,7 @@ export class EmailController {
     });
   }
 
-  @Put('verify-resend')
+  @Post(':signer/verify-resend')
   @UseFilters(
     EmailAlreadyVerifiedExceptionFilter,
     ResendVerificationTimespanExceptionFilter,
@@ -86,32 +84,33 @@ export class EmailController {
   async resendVerification(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body() resendVerificationDto: ResendVerificationDto,
+    @Param('signer') signer: string,
   ): Promise<void> {
     await this.service.resendVerification({
       chainId,
       safeAddress,
-      signer: resendVerificationDto.signer,
+      signer,
     });
   }
 
-  @Put('verify')
+  @Put(':signer/verify')
   @UseFilters(InvalidVerificationCodeExceptionFilter)
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyEmailAddress(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
+    @Param('signer') signer: string,
     @Body() verifyEmailDto: VerifyEmailDto,
   ): Promise<void> {
     await this.service.verifyEmailAddress({
       chainId,
       safeAddress,
-      signer: verifyEmailDto.signer,
+      signer,
       code: verifyEmailDto.code,
     });
   }
 
-  @Delete('')
+  @Delete(':signer')
   @UseGuards(
     EmailDeletionGuard,
     TimestampGuard(5 * 60 * 1000), // 5 minutes
@@ -121,16 +120,16 @@ export class EmailController {
   async deleteEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body() deleteEmailDto: DeleteEmailDto,
+    @Param('signer') signer: string,
   ): Promise<void> {
     await this.service.deleteEmail({
       chainId,
       safeAddress,
-      signer: deleteEmailDto.signer,
+      signer,
     });
   }
 
-  @Put('')
+  @Put(':signer')
   @UseGuards(
     EmailEditGuard,
     TimestampGuard(5 * 60 * 1000), // 5 minutes
@@ -144,12 +143,13 @@ export class EmailController {
   async editEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
+    @Param('signer') signer: string,
     @Body() editEmailDto: EditEmailDto,
   ): Promise<void> {
     await this.service.editEmail({
       chainId,
       safeAddress,
-      signer: editEmailDto.signer,
+      signer,
       emailAddress: editEmailDto.emailAddress,
     });
   }

@@ -41,8 +41,8 @@ export class EmailRegistrationGuard implements CanActivate {
     const safe = request.params['safeAddress'];
     const emailAddress = request.body['emailAddress'];
     const signer = request.body['signer'];
-    const signature = request.body['signature'];
-    const timestamp = request.body['timestamp'];
+    const signature = request.headers['safe-wallet-signature'];
+    const timestamp = request.headers['safe-wallet-signature-timestamp'];
 
     // Required fields
     if (
