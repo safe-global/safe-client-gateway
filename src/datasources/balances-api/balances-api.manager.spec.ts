@@ -12,6 +12,8 @@ const configurationServiceMock = jest.mocked(configurationService);
 const valkBalancesApi = {
   getBalances: jest.fn(),
   clearBalances: jest.fn(),
+  getCollectibles: jest.fn(),
+  clearCollectibles: jest.fn(),
   getFiatCodes: jest.fn(),
 } as IBalancesApi;
 
@@ -20,6 +22,8 @@ const valkBalancesApiMock = jest.mocked(valkBalancesApi);
 const zerionBalancesApi = {
   getBalances: jest.fn(),
   clearBalances: jest.fn(),
+  getCollectibles: jest.fn(),
+  clearCollectibles: jest.fn(),
   getFiatCodes: jest.fn(),
 } as IBalancesApi;
 

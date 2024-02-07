@@ -12,7 +12,9 @@ import {
   Erc20Balance,
   NativeBalance,
 } from '@/domain/balances/entities/balance.entity';
+import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
+import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
@@ -91,6 +93,14 @@ export class ValkBalancesApi implements IBalancesApi {
   }): Promise<void> {
     const key = CacheRouter.getValkBalancesCacheKey(args);
     await this.cacheService.deleteByKey(key);
+  }
+
+  async getCollectibles(): Promise<Page<Collectible>> {
+    throw new Error('Method not implemented.');
+  }
+
+  async clearCollectibles(): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 
   getFiatCodes(): string[] {
