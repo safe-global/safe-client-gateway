@@ -27,6 +27,10 @@ import { Request, Response } from 'express';
  */
 @Injectable()
 export class RouteLoggerInterceptor implements NestInterceptor {
+  private readonly PRE_EXECUTION_LOGGING_ROUTE = '/v1/hooks/events';
+  private readonly PRE_EXECUTION_LOGGING_DETAIL = 'pre-execution-log';
+  private readonly PRE_EXECUTION_LOGGING_STATUS = 202;
+
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
@@ -37,6 +41,8 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     const httpContext = context.switchToHttp();
     const request = httpContext.getRequest();
     const response = httpContext.getResponse();
+
+    this.onPreExecution(request, startTimeMs);
 
     return next.handle().pipe(
       tap({
@@ -93,5 +99,18 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     this.loggingService.info(
       formatRouteLogMessage(response.statusCode, request, startTimeMs),
     );
+  }
+
+  private onPreExecution(request: Request, startTimeMs: number): void {
+    if (request.route.path === this.PRE_EXECUTION_LOGGING_ROUTE) {
+      this.loggingService.info(
+        formatRouteLogMessage(
+          this.PRE_EXECUTION_LOGGING_STATUS,
+          request,
+          startTimeMs,
+          this.PRE_EXECUTION_LOGGING_DETAIL,
+        ),
+      );
+    }
   }
 }
