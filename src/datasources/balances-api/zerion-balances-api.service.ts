@@ -213,18 +213,20 @@ export class ZerionBalancesApi implements IBalancesApi {
       count: zerionCollectibles.data.length, // TODO: count and pagination
       next: null,
       previous: null,
-      results: zerionCollectibles.data.map((zc) => ({
-        address: zc.attributes.nft_info.contract_address,
-        description: zc.attributes.collection_info?.description ?? '',
-        id: zc.attributes.nft_info.token_id,
-        imageUri: zc.attributes.nft_info.content?.preview?.url ?? '',
-        logoUri: zc.attributes.collection_info?.content?.icon.url ?? '',
-        metadata: zc.attributes.nft_info.content,
-        name: zc.attributes.collection_info?.name ?? '',
-        tokenName: zc.attributes.nft_info.name ?? '',
-        tokenSymbol: zc.attributes.nft_info.name ?? '',
-        uri: zc.attributes.nft_info.content?.preview?.url ?? '',
-      })),
+      results: zerionCollectibles.data.map(
+        ({ attributes: { nft_info, collection_info } }) => ({
+          address: nft_info.contract_address,
+          tokenName: nft_info.name ?? '',
+          tokenSymbol: nft_info.name ?? '',
+          logoUri: collection_info?.content?.icon.url ?? '',
+          id: nft_info.token_id,
+          uri: nft_info.content?.detail?.url ?? null,
+          name: collection_info?.name ?? null,
+          description: collection_info?.description ?? null,
+          imageUri: nft_info.content?.preview?.url ?? '',
+          metadata: nft_info.content,
+        }),
+      ),
     };
   }
 }

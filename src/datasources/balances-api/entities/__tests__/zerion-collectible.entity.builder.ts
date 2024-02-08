@@ -10,6 +10,10 @@ import { faker } from '@faker-js/faker';
 
 export function zerionNFTInfoBuilder(): IBuilder<ZerionNFTInfo> {
   return new Builder<ZerionNFTInfo>()
+    .with('content', {
+      preview: { url: faker.internet.url({ appendSlash: true }) },
+      detail: { url: faker.internet.url({ appendSlash: true }) },
+    })
     .with('contract_address', faker.finance.ethereumAddress())
     .with('flags', { is_spam: faker.datatype.boolean() })
     .with('interface', faker.string.alphanumeric())
