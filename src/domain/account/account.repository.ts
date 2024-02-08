@@ -2,6 +2,7 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 import { Inject, Injectable } from '@nestjs/common';
 import codeGenerator from '@/domain/account/code-generator';
 import {
+  Account,
   EmailAddress,
   VerificationCode,
 } from '@/domain/account/entities/account.entity';
@@ -51,6 +52,14 @@ export class AccountRepository implements IAccountRepository {
     // The generated code might have less than 6 digits so the version to be
     // validated against should account with the leading zeroes
     return verificationCode.toString().padStart(6, '0');
+  }
+
+  async getAccount(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<Account> {
+    return this.accountDataSource.getAccount(args);
   }
 
   async createAccount(args: {
