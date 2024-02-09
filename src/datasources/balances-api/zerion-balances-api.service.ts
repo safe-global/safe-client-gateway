@@ -36,6 +36,9 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: string[];
 
+  private static readonly collectiblesSorting = '-floor_price';
+  private static readonly defaultPageSize = 10;
+
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
@@ -96,11 +99,21 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
   }
 
+  /**
+   * NOTE: Zerion does not support limit & offset parameters.
+   *
+   * It uses a "size" query param for the page size, and an "after" parameter for the offset.
+   * "size" is an integer which could be mapped to "limit", but "after" is a custom identifier.
+   *
+   * Since this setup does not align well with the CGW API, this function requests all the items,
+   * sorted by floor price, and paginates the response items internally.
+   */
   async getCollectibles(args: {
     chainId: string;
     safeAddress: string;
+    limit?: number;
+    offset?: number;
   }): Promise<Page<Collectible>> {
-    // TODO: add pagination
     try {
       const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
@@ -113,12 +126,12 @@ export class ZerionBalancesApi implements IBalancesApi {
           headers: { Authorization: `Basic ${this.apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
-            sort: '-floor_price', // TODO: extract to var/configuration
+            sort: ZerionBalancesApi.collectiblesSorting,
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this._mapCollectibles(zerionCollectibles);
+      return this._mapCollectibles(zerionCollectibles, args.limit, args.offset);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} collectibles from provider: ${asError(error).message}}`,
@@ -208,25 +221,29 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectibles,
+    limit?: number,
+    offset?: number,
   ): Page<Collectible> {
+    const start = offset ?? 0;
+    const end = start + (limit ?? ZerionBalancesApi.defaultPageSize);
+    const items = zerionCollectibles.data.slice(start, end);
+
     return {
-      count: zerionCollectibles.data.length, // TODO: count and pagination
-      next: null,
-      previous: null,
-      results: zerionCollectibles.data.map(
-        ({ attributes: { nft_info, collection_info } }) => ({
-          address: nft_info.contract_address,
-          tokenName: nft_info.name ?? '',
-          tokenSymbol: nft_info.name ?? '',
-          logoUri: collection_info?.content?.icon.url ?? '',
-          id: nft_info.token_id,
-          uri: nft_info.content?.detail?.url ?? null,
-          name: collection_info?.name ?? null,
-          description: collection_info?.description ?? null,
-          imageUri: nft_info.content?.preview?.url ?? '',
-          metadata: nft_info.content,
-        }),
-      ),
+      count: zerionCollectibles.data.length,
+      next: null, // TODO:
+      previous: null, // TODO:
+      results: items.map(({ attributes: { nft_info, collection_info } }) => ({
+        address: nft_info.contract_address,
+        tokenName: nft_info.name ?? '',
+        tokenSymbol: nft_info.name ?? '',
+        logoUri: collection_info?.content?.icon.url ?? '',
+        id: nft_info.token_id,
+        uri: nft_info.content?.detail?.url ?? null,
+        name: collection_info?.name ?? null,
+        description: collection_info?.description ?? null,
+        imageUri: nft_info.content?.preview?.url ?? '',
+        metadata: nft_info.content,
+      })),
     };
   }
 }
