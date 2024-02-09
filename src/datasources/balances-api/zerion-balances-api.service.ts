@@ -111,7 +111,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainId: string;
     safeAddress: string;
     limit?: number;
-    offset?: number;
+    offset?: number; // TODO: allow string
   }): Promise<Page<Collectible>> {
     try {
       const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
@@ -288,5 +288,15 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     }
     return zerionUrl.toString();
+  }
+
+  private _mapToZerionPagination(
+    limit: number,
+    offset: number | string,
+  ): [size: number, after: string | null] {
+    if (!offset) {
+      return [limit, null];
+    }
+    return [limit, Buffer.from(`"${offset}"`, 'utf8').toString('base64')];
   }
 }
