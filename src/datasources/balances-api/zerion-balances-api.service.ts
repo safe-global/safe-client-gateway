@@ -112,26 +112,34 @@ export class ZerionBalancesApi implements IBalancesApi {
     chainId: string;
     safeAddress: string;
     limit?: number;
-    offset?: number;
+    offset?: number; // TODO: allow string
   }): Promise<Page<Collectible>> {
     try {
       const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+      let size = ZerionBalancesApi.defaultPageSize;
+      let after = null;
+      if (args.limit && args.offset) {
+        [size, after] = this._mapToZerionPagination(args.limit, args.offset);
+      }
+      const params = {
+        'filter[chain_ids]': chainName,
+        sort: ZerionBalancesApi.collectiblesSorting,
+        'page[size]': size,
+        ...(after && { 'page[after]': after }),
+      };
       const zerionCollectibles = await this.dataSource.get<ZerionCollectibles>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
           headers: { Authorization: `Basic ${this.apiKey}` },
-          params: {
-            'filter[chain_ids]': chainName,
-            sort: ZerionBalancesApi.collectiblesSorting,
-          },
+          params,
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this._mapCollectibles(zerionCollectibles, args.limit, args.offset);
+      return this._mapCollectibles(zerionCollectibles);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} collectibles from provider: ${asError(error).message}}`,
@@ -221,29 +229,35 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectibles,
-    limit?: number,
-    offset?: number,
   ): Page<Collectible> {
-    const start = offset ?? 0;
-    const end = start + (limit ?? ZerionBalancesApi.defaultPageSize);
-    const items = zerionCollectibles.data.slice(start, end);
-
     return {
       count: zerionCollectibles.data.length,
-      next: null, // TODO:
-      previous: null, // TODO:
-      results: items.map(({ attributes: { nft_info, collection_info } }) => ({
-        address: nft_info.contract_address,
-        tokenName: nft_info.name ?? '',
-        tokenSymbol: nft_info.name ?? '',
-        logoUri: collection_info?.content?.icon.url ?? '',
-        id: nft_info.token_id,
-        uri: nft_info.content?.detail?.url ?? null,
-        name: collection_info?.name ?? null,
-        description: collection_info?.description ?? null,
-        imageUri: nft_info.content?.preview?.url ?? '',
-        metadata: nft_info.content,
-      })),
+      next: zerionCollectibles.links.next,
+      previous: null,
+      results: zerionCollectibles.data.map(
+        ({ attributes: { nft_info, collection_info } }) => ({
+          address: nft_info.contract_address,
+          tokenName: nft_info.name ?? '',
+          tokenSymbol: nft_info.name ?? '',
+          logoUri: collection_info?.content?.icon.url ?? '',
+          id: nft_info.token_id,
+          uri: nft_info.content?.detail?.url ?? null,
+          name: collection_info?.name ?? null,
+          description: collection_info?.description ?? null,
+          imageUri: nft_info.content?.preview?.url ?? '',
+          metadata: nft_info.content,
+        }),
+      ),
     };
+  }
+
+  private _mapToZerionPagination(
+    limit: number,
+    offset: number | string,
+  ): [size: number, after: string | null] {
+    if (!offset) {
+      return [limit, null];
+    }
+    return [limit, Buffer.from(`"${offset}"`, 'utf8').toString('base64')];
   }
 }

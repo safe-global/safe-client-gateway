@@ -36,4 +36,8 @@ export interface ZerionCollectible {
 
 export interface ZerionCollectibles {
   data: ZerionCollectible[];
+  links: {
+    self: string | null;
+    next: string | null;
+  };
 }

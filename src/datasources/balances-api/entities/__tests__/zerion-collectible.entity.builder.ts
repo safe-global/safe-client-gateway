@@ -49,10 +49,15 @@ export function zerionCollectibleBuilder(): IBuilder<ZerionCollectible> {
 }
 
 export function zerionCollectiblesBuilder(): IBuilder<ZerionCollectibles> {
-  return new Builder<ZerionCollectibles>().with(
-    'data',
-    Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, () =>
-      zerionCollectibleBuilder().build(),
-    ),
-  );
+  return new Builder<ZerionCollectibles>()
+    .with(
+      'data',
+      Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, () =>
+        zerionCollectibleBuilder().build(),
+      ),
+    )
+    .with('links', {
+      self: faker.internet.url({ appendSlash: true }),
+      next: `${faker.internet.url({ appendSlash: true })}?page%5Bafter%5D=IjUwIg%3D%3D&page%5Bsize%5D=50`,
+    });
 }

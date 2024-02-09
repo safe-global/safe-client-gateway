@@ -143,7 +143,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(({ body }) => {
             expect(body).toMatchObject({
               count: zerionApiCollectiblesResponse.data.length,
-              next: null,
+              next: expect.any(String), // TODO: check page[size] and page[after] are mapped to limit and offset
               previous: null,
               results: [
                 {
@@ -235,7 +235,11 @@ describe('Zerion Collectibles Controller', () => {
         );
         expect(networkService.get.mock.calls[0][1]).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
-          params: { 'filter[chain_ids]': chainName, sort: '-floor_price' },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: '-floor_price',
+            'page[size]': 10,
+          },
         });
       });
     });
