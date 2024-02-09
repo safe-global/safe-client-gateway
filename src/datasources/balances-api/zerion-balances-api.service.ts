@@ -147,8 +147,12 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearCollectibles(): Promise<void> {
-    throw new Error('Method not implemented.');
+  async clearCollectibles(args: {
+    chainId: string;
+    safeAddress: string;
+  }): Promise<void> {
+    const key = CacheRouter.getZerionCollectiblesCacheKey(args);
+    await this.cacheService.deleteByKey(key);
   }
 
   private _mapBalances(
