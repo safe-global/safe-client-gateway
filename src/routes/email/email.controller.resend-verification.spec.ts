@@ -83,12 +83,9 @@ describe('Email controller resend verification tests', () => {
     // Advance timer by the minimum amount of time required to resend email
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
-      .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
+      .post(
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .send({
-        account: account.signer,
-      })
       .expect(202)
       .expect({});
 
@@ -115,12 +112,9 @@ describe('Email controller resend verification tests', () => {
     // Advance timer to a time within resendLockWindowMs
     jest.advanceTimersByTime(resendLockWindowMs - 1);
     await request(app.getHttpServer())
-      .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
+      .post(
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .send({
-        account: account.signer,
-      })
       .expect(429)
       .expect({
         message: 'Verification cannot be resent at this time',
@@ -134,12 +128,9 @@ describe('Email controller resend verification tests', () => {
 
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
-      .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
+      .post(
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .send({
-        signer: account.signer,
-      })
       .expect(409)
       .expect({
         message: `Cannot verify the provided email for the provided account ${account.signer}`,
@@ -161,12 +152,9 @@ describe('Email controller resend verification tests', () => {
     // Advance timer so that code is considered as expired
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
-      .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify-resend`,
+      .post(
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .send({
-        account: account.signer,
-      })
       .expect(202)
       .expect({});
 

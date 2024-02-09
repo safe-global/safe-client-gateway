@@ -130,12 +130,13 @@ describe('Email controller edit email tests', () => {
     );
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        signer: signer.address,
-        timestamp,
-        signature,
       })
       .expect(202)
       .expect({});
@@ -200,12 +201,13 @@ describe('Email controller edit email tests', () => {
     } as Account);
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        signer: signer.address,
-        timestamp,
-        signature,
       })
       .expect(409)
       .expect({
@@ -250,12 +252,13 @@ describe('Email controller edit email tests', () => {
     );
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        signer: signer.address,
-        timestamp,
-        signature,
       })
       .expect(404)
       .expect({
@@ -302,12 +305,13 @@ describe('Email controller edit email tests', () => {
     accountDataSource.updateAccountEmail.mockRejectedValue(new Error());
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        signer: signer.address,
-        timestamp,
-        signature,
       })
       .expect(500)
       .expect({
@@ -341,12 +345,13 @@ describe('Email controller edit email tests', () => {
     jest.advanceTimersByTime(5 * 60 * 1000);
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: account.address,
-        timestamp,
-        signature,
       })
       .expect(403)
       .expect({
@@ -379,12 +384,13 @@ describe('Email controller edit email tests', () => {
     const signature = await account.signMessage({ message });
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: account.address,
-        timestamp,
-        signature,
       })
       .expect(403)
       .expect({
@@ -426,12 +432,13 @@ describe('Email controller edit email tests', () => {
     });
 
     await request(app.getHttpServer())
-      .put(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .put(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: account.address,
-        timestamp,
-        signature,
       })
       .expect(403)
       .expect({

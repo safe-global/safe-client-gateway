@@ -19,11 +19,11 @@ import { verifyMessage } from 'viem';
  * (where ${} represents placeholder values for the respective data)
  *
  * To use this guard, the route should have:
- * - the 'chainId' declared as a parameter
- * - the 'safeAddress' declared as a parameter
- * - the 'signer' as part of the JSON body (top level)
- * - the 'signature' as part of the JSON body (top level) - see message format to be signed
- * - the 'timestamp' as part of the JSON body (top level)
+ * - the 'chainId' as part of the path parameters
+ * - the 'safeAddress' as part of the path parameters
+ * - the 'signer' as part of the path parameters
+ * - the 'Safe-Wallet-Signature' header set to the signature
+ * - the 'Safe-Wallet-Signature-Timestamp' header set to the signature timestamp
  */
 @Injectable()
 export class EmailDeletionGuard implements CanActivate {
@@ -38,9 +38,9 @@ export class EmailDeletionGuard implements CanActivate {
 
     const chainId = request.params['chainId'];
     const safe = request.params['safeAddress'];
-    const signer = request.body['signer'];
-    const signature = request.body['signature'];
-    const timestamp = request.body['timestamp'];
+    const signer = request.params['signer'];
+    const signature = request.headers['safe-wallet-signature'];
+    const timestamp = request.headers['safe-wallet-signature-timestamp'];
 
     // Required fields
     if (!chainId || !safe || !signature || !signer || !timestamp) return false;

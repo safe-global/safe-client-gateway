@@ -93,12 +93,11 @@ describe('Email controller delete email tests', () => {
     emailApi.deleteEmailAddress.mockResolvedValue();
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
-      .send({
-        signer: signer.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${account.signer}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(204)
       .expect({});
 
@@ -135,12 +134,11 @@ describe('Email controller delete email tests', () => {
     );
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        signer: signer.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(204)
       .expect({});
 
@@ -166,12 +164,11 @@ describe('Email controller delete email tests', () => {
     jest.advanceTimersByTime(5 * 60 * 1000);
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        account: account.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -196,12 +193,11 @@ describe('Email controller delete email tests', () => {
     const signature = await account.signMessage({ message });
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        account: account.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -243,12 +239,11 @@ describe('Email controller delete email tests', () => {
     emailApi.deleteEmailAddress.mockRejectedValue(new Error('Some error'));
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        signer: signer.address,
-        timestamp: timestamp,
-        signature: signature,
-      })
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.signer}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(500)
       .expect({ code: 500, message: 'Internal server error' });
 

@@ -79,10 +79,9 @@ describe('Email controller verify email tests', () => {
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify`,
       )
       .send({
-        account: account.signer,
         code: verificationCode.code,
       })
       .expect(204)
@@ -98,10 +97,9 @@ describe('Email controller verify email tests', () => {
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify`,
       )
       .send({
-        account: account.signer,
         code: faker.string.numeric({ length: 6 }),
       })
       .expect(204)
@@ -124,7 +122,7 @@ describe('Email controller verify email tests', () => {
     jest.advanceTimersByTime(ttlMs);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify`,
       )
       .send({
         account: account.signer,
@@ -150,7 +148,7 @@ describe('Email controller verify email tests', () => {
     jest.advanceTimersByTime(ttlMs - 1);
     await request(app.getHttpServer())
       .put(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/verify`,
+        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify`,
       )
       .send({
         account: account.signer,
