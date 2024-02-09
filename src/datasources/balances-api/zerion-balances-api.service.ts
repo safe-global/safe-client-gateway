@@ -23,6 +23,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
@@ -105,14 +106,13 @@ export class ZerionBalancesApi implements IBalancesApi {
    * It uses a "size" query param for the page size, and an "after" parameter for the offset.
    * "size" is an integer which could be mapped to "limit", but "after" is a custom identifier.
    *
-   * Since this setup does not align well with the CGW API, this function requests all the items,
-   * sorted by floor price, and paginates the response items internally.
+   * Since this setup does not align well with the CGW API, it is needed to encode/decode these parameters.
    */
   async getCollectibles(args: {
     chainId: string;
     safeAddress: string;
     limit?: number;
-    offset?: number; // TODO: allow string
+    offset?: number;
   }): Promise<Page<Collectible>> {
     try {
       const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
@@ -121,7 +121,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       let size = ZerionBalancesApi.defaultPageSize;
       let after = null;
       if (args.limit && args.offset) {
-        [size, after] = this._mapToZerionPagination(args.limit, args.offset);
+        [size, after] = this._encodeZerionPagination(args.limit, args.offset);
       }
       const params = {
         'filter[chain_ids]': chainName,
@@ -230,9 +230,10 @@ export class ZerionBalancesApi implements IBalancesApi {
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectibles,
   ): Page<Collectible> {
+    console.log(test);
     return {
       count: zerionCollectibles.data.length,
-      next: zerionCollectibles.links.next,
+      next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
       previous: null,
       results: zerionCollectibles.data.map(
         ({ attributes: { nft_info, collection_info } }) => ({
@@ -251,13 +252,30 @@ export class ZerionBalancesApi implements IBalancesApi {
     };
   }
 
-  private _mapToZerionPagination(
+  private _encodeZerionPagination(
     limit: number,
-    offset: number | string,
+    offset: number,
   ): [size: number, after: string | null] {
     if (!offset) {
       return [limit, null];
     }
     return [limit, Buffer.from(`"${offset}"`, 'utf8').toString('base64')];
+  }
+
+  private _decodeZerionPagination(url: string): string {
+    const fromUrl = new URL(url);
+    const size = Number(fromUrl.searchParams.get('page[size]') ?? NaN);
+    const after = Number(
+      Buffer.from(fromUrl.searchParams.get('page[after]') ?? '0', 'base64')
+        .toString('utf8')
+        .replace(/"/g, ''),
+    );
+
+    const paginationData = new PaginationData(size, after);
+
+    const cursorData = `limit=${paginationData.limit}&offset=${paginationData.offset}`;
+    const newUrl = new URL(fromUrl);
+    newUrl.searchParams.set('cursor', cursorData);
+    return newUrl.toString();
   }
 }

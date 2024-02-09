@@ -96,8 +96,13 @@ export class CacheRouter {
   static getZerionCollectiblesCacheDir(args: {
     chainId: string;
     safeAddress: string;
+    limit?: number;
+    offset?: number;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getZerionCollectiblesCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getZerionCollectiblesCacheKey(args),
+      `${args.limit}_${args.offset}`,
+    );
   }
 
   static getSafeCacheDir(args: {
