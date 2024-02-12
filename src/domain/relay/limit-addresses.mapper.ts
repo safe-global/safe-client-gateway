@@ -118,19 +118,21 @@ export class LimitAddressesMapper {
   };
 
   private isValidCreateProxyWithNonce(chainId: string, data: Hex): boolean {
-    const isCreateProxyWithNonce = this.proxyFactoryDecoder.isFunctionCall({
-      functionName: 'createProxyWithNonce',
-      data,
-    });
+    let singleton: string | null = null;
 
-    if (!isCreateProxyWithNonce) {
+    try {
+      const decoded = this.proxyFactoryDecoder.decodeFunctionData({
+        data,
+      });
+
+      if (decoded.functionName !== 'createProxyWithNonce') {
+        return false;
+      }
+
+      singleton = decoded.args[0];
+    } catch (e) {
       return false;
     }
-
-    const decoded = this.proxyFactoryDecoder.decodeFunctionData({
-      data,
-    });
-    const singleton = decoded.args[0];
 
     const safeL1Deployment = getSafeSingletonDeployment({
       version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
