@@ -1,4 +1,3 @@
-import { capitalize } from 'lodash';
 import {
   Abi,
   ContractEventName,
