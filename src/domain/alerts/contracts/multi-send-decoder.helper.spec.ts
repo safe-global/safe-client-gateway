@@ -47,26 +47,15 @@ describe('MultiSendDecoder', () => {
     });
   });
 
-  describe('isCall', () => {
+  describe('isMultiSend', () => {
     it('returns true if data is a multiSend call', () => {
       const data = multiSendEncoder().encode();
-      expect(target.isFunctionCall({ functionName: 'multiSend', data })).toBe(
-        true,
-      );
+      expect(target.isMultiSend(data)).toBe(true);
     });
 
     it('returns false if data is not a multiSend call', () => {
       const data = addOwnerWithThresholdEncoder().encode();
-      expect(target.isFunctionCall({ functionName: 'multiSend', data })).toBe(
-        false,
-      );
-    });
-
-    it('returns false if the functionName is not in the ABI', () => {
-      const data = multiSendEncoder().encode();
-      expect(
-        target.isFunctionCall({ functionName: 'invalidFunction', data }),
-      ).toBe(false);
+      expect(target.isMultiSend(data)).toBe(false);
     });
   });
 });

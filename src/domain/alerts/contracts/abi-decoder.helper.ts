@@ -39,7 +39,8 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
     return _decodeFunctionData({ ...args, abi: this.abi });
   }
 
-  isFunctionCall(args: {
+  // TODO: Don't expose this but generate is{FunctionName} helpers instead
+  _isFunctionCall(args: {
     functionName: ContractEventName<TAbi>;
     data: Hex;
   }): boolean {

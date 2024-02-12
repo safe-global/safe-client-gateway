@@ -37,7 +37,7 @@ export class LimitAddressesMapper {
       return [relayPayload.to];
     }
 
-    if (this.isMultiSend(relayPayload.data)) {
+    if (this.multiSendDecoder.isMultiSend(relayPayload.data)) {
       // Validity of MultiSend is part of address retrieval
       const safeAddress = this.getSafeAddressFromMultiSend(relayPayload.data);
       return [safeAddress];
@@ -91,13 +91,6 @@ export class LimitAddressesMapper {
     return isCancellation || this.safeContract.isCall(execTransaction.data);
   }
 
-  private isMultiSend(data: Hex): boolean {
-    return this.multiSendDecoder.isFunctionCall({
-      functionName: 'multiSend',
-      data,
-    });
-  }
-
   private getSafeAddressFromMultiSend = (data: Hex): Hex => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
@@ -113,7 +106,6 @@ export class LimitAddressesMapper {
 
     const firstRecipient = transactions[0].to;
 
-    // Every transaction is 'self' (the Safe)
     const isSameRecipient = transactions.every((transaction) => {
       return transaction.to === firstRecipient;
     });
