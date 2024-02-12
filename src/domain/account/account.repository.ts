@@ -62,6 +62,14 @@ export class AccountRepository implements IAccountRepository {
     return this.accountDataSource.getAccount(args);
   }
 
+  getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<Account[]> {
+    return this.accountDataSource.getAccounts(args);
+  }
+
   async createAccount(args: {
     chainId: string;
     safeAddress: string;
@@ -95,15 +103,6 @@ export class AccountRepository implements IAccountRepository {
     } catch (e) {
       throw new AccountSaveError(args.chainId, args.safeAddress, args.signer);
     }
-  }
-
-  async getVerifiedEmailsBySafeAddress(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<string[]> {
-    const emails =
-      await this.accountDataSource.getVerifiedAccountEmailsBySafeAddress(args);
-    return emails.map(({ email }) => email);
   }
 
   async resendEmailVerification(args: {

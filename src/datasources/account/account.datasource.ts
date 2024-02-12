@@ -37,21 +37,6 @@ interface Subscription {
 export class AccountDataSource implements IAccountDataSource {
   constructor(@Inject('DB_INSTANCE') private readonly sql: postgres.Sql) {}
 
-  async getVerifiedAccountEmailsBySafeAddress(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<{ email: string }[]> {
-    const emails = await this.sql<{ email_address: string }[]>`
-        SELECT email_address
-        FROM accounts
-        WHERE chain_id = ${args.chainId}
-          AND safe_address = ${args.safeAddress}
-          AND verified is true
-        ORDER by id`;
-
-    return emails.map((email) => ({ email: email.email_address }));
-  }
-
   async getAccount(args: {
     chainId: string;
     safeAddress: string;
@@ -76,7 +61,32 @@ export class AccountDataSource implements IAccountDataSource {
       isVerified: account.verified,
       safeAddress: account.safe_address,
       signer: account.signer,
+      unsubscriptionToken: account.unsubscription_token,
     };
+  }
+
+  async getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<DomainAccount[]> {
+    const onlyVerifiedQuery = this.sql`AND verified = true`;
+    const accounts = await this.sql<Account[]>`SELECT *
+                                               FROM accounts
+                                               WHERE chain_id = ${args.chainId}
+                                                 AND safe_address = ${args.safeAddress}
+                                                   ${args.onlyVerified ? onlyVerifiedQuery : this.sql``};`;
+
+    return accounts.map((account) => {
+      return {
+        chainId: account.chain_id.toString(),
+        emailAddress: new EmailAddress(account.email_address),
+        isVerified: account.verified,
+        safeAddress: account.safe_address,
+        signer: account.signer,
+        unsubscriptionToken: account.unsubscription_token,
+      };
+    });
   }
 
   async getAccountVerificationCode(args: {
@@ -142,6 +152,7 @@ export class AccountDataSource implements IAccountDataSource {
         isVerified: createdAccount.verified,
         safeAddress: createdAccount.safe_address,
         signer: createdAccount.signer,
+        unsubscriptionToken: createdAccount.unsubscription_token,
       },
       {
         code: verificationCode.code,
@@ -263,6 +274,7 @@ export class AccountDataSource implements IAccountDataSource {
       isVerified: deletedAccount.verified,
       safeAddress: deletedAccount.safe_address,
       signer: deletedAccount.signer,
+      unsubscriptionToken: deletedAccount.unsubscription_token,
     };
   }
 
@@ -295,6 +307,7 @@ export class AccountDataSource implements IAccountDataSource {
       isVerified: updatedAccount.verified,
       safeAddress: updatedAccount.safe_address,
       signer: updatedAccount.signer,
+      unsubscriptionToken: updatedAccount.unsubscription_token,
     };
   }
 
