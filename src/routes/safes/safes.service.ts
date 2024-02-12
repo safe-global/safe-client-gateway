@@ -20,9 +20,15 @@ import {
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { getAddress } from 'viem';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafesService {
+  private readonly maxOverviews: number;
+
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
@@ -31,7 +37,14 @@ export class SafesService {
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: MessagesRepository,
-  ) {}
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IConfigurationService) configurationService: IConfigurationService,
+  ) {
+    this.maxOverviews = configurationService.getOrThrow(
+      'mappings.safe.maxOverviews',
+    );
+  }
 
   async getSafeInfo(args: {
     chainId: string;
@@ -112,12 +125,77 @@ export class SafesService {
     );
   }
 
+  async getSafeOverview(args: {
+    currency: string;
+    addresses: Array<{ chainId: string; address: string }>;
+    trusted: boolean;
+    excludeSpam: boolean;
+    walletAddress?: string;
+  }): Promise<Array<SafeOverview>> {
+    const limitedSafes = args.addresses.slice(0, this.maxOverviews);
+
+    return Promise.all(
+      limitedSafes.map(async ({ chainId, address }) => {
+        const [safe, balances] = await Promise.all([
+          this.safeRepository.getSafe({
+            chainId,
+            address,
+          }),
+          this.balancesRepository.getBalances({
+            chainId,
+            safeAddress: address,
+            trusted: args.trusted,
+            fiatCode: args.currency,
+            excludeSpam: args.excludeSpam,
+          }),
+        ]);
+        const queue = await this.safeRepository.getTransactionQueue({
+          chainId,
+          safe,
+        });
+
+        const fiatBalance = balances
+          .filter((b) => b.fiatBalance !== null)
+          .reduce((acc, b) => acc + Number(b.fiatBalance), 0);
+
+        const awaitingConfirmation = args.walletAddress
+          ? this.computeAwaitingConfirmation({
+              transactions: queue.results,
+              walletAddress: args.walletAddress,
+            })
+          : null;
+
+        return new SafeOverview(
+          new AddressInfo(safe.address),
+          chainId,
+          safe.threshold,
+          safe.owners.map((ownerAddress) => new AddressInfo(ownerAddress)),
+          getNumberString(fiatBalance),
+          queue.count ?? 0,
+          awaitingConfirmation,
+        );
+      }),
+    );
+  }
+
   public async getNonces(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<SafeNonces> {
     const nonce = await this.safeRepository.getNonces(args);
     return new SafeNonces(nonce);
+  }
+
+  private computeAwaitingConfirmation(args: {
+    transactions: Array<MultisigTransaction>;
+    walletAddress: string;
+  }): number {
+    return args.transactions.reduce((acc, { confirmations }) => {
+      const isConfirmed = !!confirmations?.some((confirmation) => {
+        return confirmation.owner === args.walletAddress;
+      });
+      return isConfirmed ? acc - 1 : acc;
+    }, args.transactions.length);
   }
 
   private toUnixTimestampInSecondsOrNull(date: Date | null): string | null {
