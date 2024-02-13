@@ -64,7 +64,10 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
 export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<TransactionAddedEventArgs> {
   return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
-    .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with(
+      'txHash',
+      faker.string.hexadecimal({ length: 64, casing: 'lower' }) as Hex,
+    )
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
     .with('data', '0x')
