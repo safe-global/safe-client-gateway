@@ -3,7 +3,7 @@ import { encodeFunctionData, getAddress, Hex, parseAbi } from 'viem';
 
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
-import { setupEncoder } from '@/domain/contracts/contracts/safe-encoder.builder';
+import { setupEncoder } from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
 
 // createProxyWithNonce
 

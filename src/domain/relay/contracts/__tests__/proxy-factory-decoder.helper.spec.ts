@@ -1,7 +1,7 @@
 import { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
-import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/proxy-factory-encoder.builder';
+import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/proxy-factory-encoder.builder';
 
 describe('ProxyFactoryDecoder', () => {
   let target: ProxyFactoryDecoder;
