@@ -46,6 +46,8 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
 import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { EmailAddress } from '@/domain/account/entities/account.entity';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -178,10 +180,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -207,8 +212,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -282,10 +287,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -311,8 +319,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -385,10 +393,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -414,8 +425,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -478,10 +489,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -507,8 +521,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -602,10 +616,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -631,8 +648,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -698,10 +715,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -727,8 +747,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -814,13 +834,17 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [
-          { email: faker.internet.email() },
-          { email: faker.internet.email() },
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
         ];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -846,8 +870,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -910,10 +934,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -939,8 +966,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -990,10 +1017,13 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -1019,8 +1049,8 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -1115,10 +1145,13 @@ describe('Alerts (Unit)', () => {
         alert,
         timestamp,
       });
-      const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1144,8 +1177,8 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
+      const expectedTargetEmailAddresses = verifiedAccounts.map(
+        ({ emailAddress }) => emailAddress.value,
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -1225,10 +1258,13 @@ describe('Alerts (Unit)', () => {
         alert,
         timestamp,
       });
-      const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1254,8 +1290,8 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
+      const expectedTargetEmailAddresses = verifiedAccounts.map(
+        ({ emailAddress }) => emailAddress.value,
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
@@ -1322,13 +1358,17 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       // Multiple emails
-      const verifiedSignerEmails = [
-        { email: faker.internet.email() },
-        { email: faker.internet.email() },
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
       ];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1354,8 +1394,8 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
+      const expectedTargetEmailAddresses = verifiedAccounts.map(
+        ({ emailAddress }) => emailAddress.value,
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {

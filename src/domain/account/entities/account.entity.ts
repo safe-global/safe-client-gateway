@@ -10,6 +10,7 @@ export interface Account {
   isVerified: boolean;
   safeAddress: string;
   signer: string;
+  unsubscriptionToken: string;
 }
 
 export interface VerificationCode {

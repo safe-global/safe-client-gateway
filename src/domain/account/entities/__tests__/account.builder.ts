@@ -11,5 +11,6 @@ export function accountBuilder(): IBuilder<Account> {
     .with('emailAddress', new EmailAddress(faker.internet.email()))
     .with('isVerified', faker.datatype.boolean())
     .with('safeAddress', faker.finance.ethereumAddress())
-    .with('signer', faker.finance.ethereumAddress());
+    .with('signer', faker.finance.ethereumAddress())
+    .with('unsubscriptionToken', faker.string.uuid());
 }

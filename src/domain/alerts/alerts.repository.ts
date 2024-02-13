@@ -64,12 +64,13 @@ export class AlertsRepository implements IAlertsRepository {
     // Recovery module is deployed per Safe so we can assume that it is only enabled on one
     const safeAddress = safes[0];
 
-    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
+    const verifiedAccounts = await this.accountRepository.getAccounts({
       chainId,
       safeAddress,
+      onlyVerified: true,
     });
 
-    if (emails.length === 0) {
+    if (verifiedAccounts.length === 0) {
       this.loggingService.debug(
         `An alert for a Safe with no associated emails was received. moduleAddress=${moduleAddress}, safeAddress=${safeAddress}`,
       );
@@ -100,7 +101,14 @@ export class AlertsRepository implements IAlertsRepository {
         newSafeState,
       });
     } catch {
-      await this._notifyUnknownTransaction({ chainId, safeAddress, emails });
+      const emails = verifiedAccounts.map(
+        (account) => account.emailAddress.value,
+      );
+      await this._notifyUnknownTransaction({
+        chainId,
+        safeAddress,
+        emails,
+      });
     }
   }
 
@@ -214,12 +222,13 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     newSafeState: Safe;
   }): Promise<void> {
-    const emails = await this.accountRepository.getVerifiedEmailsBySafeAddress({
+    const verifiedAccounts = await this.accountRepository.getAccounts({
       chainId: args.chainId,
       safeAddress: args.newSafeState.address,
+      onlyVerified: true,
     });
 
-    if (!emails.length) {
+    if (!verifiedAccounts.length) {
       this.loggingService.debug(
         `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.newSafeState.address}`,
       );
@@ -242,6 +251,9 @@ export class AlertsRepository implements IAlertsRepository {
       };
     });
 
+    const emails = verifiedAccounts.map(
+      (account) => account.emailAddress.value,
+    );
     return this.emailApi.createMessage({
       to: emails,
       template: this.configurationService.getOrThrow<string>(
