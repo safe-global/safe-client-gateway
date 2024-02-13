@@ -42,7 +42,7 @@ describe('GelatoApi', () => {
 
       const count = faker.number.int();
 
-      fakeCacheService.set(cacheDir, count.toString());
+      await fakeCacheService.set(cacheDir, count.toString());
 
       const result = await target.getRelayCount({
         chainId,

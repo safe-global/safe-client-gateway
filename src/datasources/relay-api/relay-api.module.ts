@@ -7,7 +7,7 @@ import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
   providers: [
     {
       provide: 'GelatoRelayClient',
-      useFactory: () => new GelatoRelay(),
+      useFactory: (): GelatoRelay => new GelatoRelay(),
     },
     { provide: IRelayApi, useClass: GelatoApi },
   ],
