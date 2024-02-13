@@ -3,13 +3,13 @@ import { Hex } from 'viem/types/misc';
 import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
 import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
 import {
   getSafeSingletonDeployment,
   getSafeL2SingletonDeployment,
 } from '@safe-global/safe-deployments';
-import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 
 export interface RelayPayload {
   chainId: string;

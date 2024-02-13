@@ -31,8 +31,8 @@ import {
   execTransactionEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/domain/alerts/__tests__/safe-transactions.encoder';
-import { transactionAddedEventBuilder } from '@/domain/alerts/__tests__/delay-modifier.encoder';
+} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
+import { transactionAddedEventBuilder } from '@/domain/alerts/contracts/__tests__/delay-modifier-encoder.builder';
 import {
   INetworkService,
   NetworkService,
@@ -44,7 +44,7 @@ import { getMultiSendCallOnlyDeployment } from '@safe-global/safe-deployments';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
+} from '@/domain/contracts/contracts/__tests__/multi-send-encoder.builder';
 import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { EmailAddress } from '@/domain/account/entities/account.entity';

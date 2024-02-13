@@ -1,6 +1,6 @@
 import { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
-import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -8,7 +8,7 @@ import {
   removeOwnerEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/domain/alerts/__tests__/safe-transactions.encoder';
+} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
 
 describe('SafeDecoder', () => {
   let target: SafeDecoder;

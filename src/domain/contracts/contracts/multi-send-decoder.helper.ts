@@ -1,4 +1,4 @@
-import { AbiDecoder } from '@/domain/alerts/contracts/abi-decoder.helper';
+import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import {
   getAddress,
