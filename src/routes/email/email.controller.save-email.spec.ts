@@ -120,11 +120,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         signer: signer.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(201)
       .expect({});
@@ -166,11 +166,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -198,11 +198,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -239,11 +239,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({

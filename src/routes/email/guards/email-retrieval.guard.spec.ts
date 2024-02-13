@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Delete,
-  INestApplication,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -13,28 +8,28 @@ import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { Hash } from 'viem';
-import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
+import { EmailRetrievalGuard } from '@/routes/email/guards/email-retrieval.guard';
 
 @Controller()
 class TestController {
-  @Delete('test/:chainId/:safeAddress/:signer')
-  @UseGuards(EmailDeletionGuard)
+  @Get('test/:chainId/:safeAddress/:signer')
+  @UseGuards(EmailRetrievalGuard)
   async validRoute(): Promise<void> {}
 
-  @Delete('test/invalid/1/chains/:safeAddress/:signer')
-  @UseGuards(EmailDeletionGuard)
-  async invalidRouteWithoutChainId(): Promise<void> {}
+  @Get('test/invalid/1/:chainId/:safeAddress')
+  @UseGuards(EmailRetrievalGuard)
+  async invalidRouteWithoutSigner(): Promise<void> {}
 
-  @Delete('test/invalid/2/:chainId/:signer')
-  @UseGuards(EmailDeletionGuard)
+  @Get('test/invalid/2/:chainId/:signer')
+  @UseGuards(EmailRetrievalGuard)
   async invalidRouteWithoutSafeAddress(): Promise<void> {}
 
-  @Delete('test/invalid/3/:chainId/:safeAddress/')
-  @UseGuards(EmailDeletionGuard)
-  async invalidRouteWithoutSigner(): Promise<void> {}
+  @Get('test/invalid/3/:safeAddress/:signer')
+  @UseGuards(EmailRetrievalGuard)
+  async invalidRouteWithoutChainId(): Promise<void> {}
 }
 
-describe('EmailDeletionGuard guard tests', () => {
+describe('EmailRetrievalGuard tests', () => {
   let app: INestApplication;
 
   const chainId = faker.string.numeric();
@@ -42,11 +37,10 @@ describe('EmailDeletionGuard guard tests', () => {
   const timestamp = faker.date.recent().getTime();
   const privateKey = generatePrivateKey();
   const signer = privateKeyToAccount(privateKey);
-  const signerAddress = signer.address;
   let signature: Hash;
 
   beforeAll(async () => {
-    const message = `email-delete-${chainId}-${safe}-${signerAddress}-${timestamp}`;
+    const message = `email-retrieval-${chainId}-${safe}-${signer.address}-${timestamp}`;
     signature = await signer.signMessage({ message });
   });
 
@@ -63,78 +57,42 @@ describe('EmailDeletionGuard guard tests', () => {
     await app.close();
   });
 
+  it('returns 403 if Safe-Wallet-Signature is missing', async () => {
+    await request(app.getHttpServer())
+      .get(`/test/${chainId}/${safe}/${signer.address}`)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
+  });
+
+  it('returns 403 if Safe-Wallet-Signature-Timestamp is missing', async () => {
+    await request(app.getHttpServer())
+      .get(`/test/${chainId}/${safe}/${signer.address}`)
+      .set('Safe-Wallet-Signature', signature)
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
+  });
+
   it('returns 200 on a valid signature', async () => {
     await request(app.getHttpServer())
-      .delete(`/test/${chainId}/${safe}/${signer.address}`)
+      .get(`/test/${chainId}/${safe}/${signer.address}`)
       .set('Safe-Wallet-Signature', signature)
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .send({
-        signer: signerAddress,
-      })
       .expect(200);
   });
 
   it('returns 403 on an invalid signature', async () => {
-    const invalidSignature = await signer.signMessage({
-      message: 'some invalid message',
-    });
-
     await request(app.getHttpServer())
-      .delete(`/test/${chainId}/${safe}/${signer.address}`)
-      .set('Safe-Wallet-Signature', invalidSignature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-  });
-
-  it('returns 403 if the signature is missing from payload', async () => {
-    await request(app.getHttpServer())
-      .delete(`/test/${chainId}/${safe}/${signer.address}`)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-  });
-
-  it('returns 403 if the timestamp is missing from payload', async () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
-
-    await request(app.getHttpServer())
-      .delete(`/test/${chainId}/${safeAddress}/${signer.address}`)
-      .set('Safe-Wallet-Signature', signature)
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-  });
-
-  it('returns 403 on routes without chain id', async () => {
-    await request(app.getHttpServer())
-      .delete(`/test/invalid/1/chains/${safe}/${signer.address}`)
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-  });
-
-  it('returns 403 on routes without safe address', async () => {
-    await request(app.getHttpServer())
-      .delete(`/test/invalid/2/${chainId}/${signer.address}`)
-      .set('Safe-Wallet-Signature', signature)
+      .get(`/test/${chainId}/${safe}/${signer}`)
+      .set('Safe-Wallet-Signature', faker.string.sample(32))
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(403)
       .expect({
@@ -145,10 +103,39 @@ describe('EmailDeletionGuard guard tests', () => {
   });
 
   it('returns 403 on routes without signer', async () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = faker.finance.ethereumAddress();
+
     await request(app.getHttpServer())
-      .delete(`/test/invalid/3/${chainId}/${safe}/`)
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .get(`/test/invalid/1/${chainId}/${safeAddress}`)
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
+  });
+
+  it('returns 403 on routes without safe address', async () => {
+    const chainId = faker.string.numeric();
+    const signer = faker.finance.ethereumAddress();
+
+    await request(app.getHttpServer())
+      .get(`/test/invalid/2/${chainId}/${signer}`)
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
+  });
+
+  it('returns 403 on routes without chain id', async () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const signer = faker.finance.ethereumAddress();
+
+    await request(app.getHttpServer())
+      .get(`/test/invalid/3/${safeAddress}/${signer}`)
       .expect(403)
       .expect({
         message: 'Forbidden resource',

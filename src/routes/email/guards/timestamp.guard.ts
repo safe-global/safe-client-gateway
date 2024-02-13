@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Type, mixin } from '@nestjs/common';
+import { CanActivate, ExecutionContext, mixin, Type } from '@nestjs/common';
 
 /**
  * Returns a guard mixin that can be used to check if a 'timestamp'
@@ -13,7 +13,7 @@ export const TimestampGuard = (maxElapsedTimeMs: number): Type<CanActivate> => {
     canActivate(context: ExecutionContext): boolean {
       const request = context.switchToHttp().getRequest();
 
-      const timestampRaw = request.body['timestamp'];
+      const timestampRaw = request.headers['safe-wallet-signature-timestamp'];
       const timestamp = parseInt(timestampRaw);
       if (isNaN(timestamp)) return false;
 

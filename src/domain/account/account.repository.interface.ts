@@ -1,16 +1,19 @@
+import { Account } from '@/domain/account/entities/account.entity';
+
 export const IAccountRepository = Symbol('IAccountRepository');
 
 export interface IAccountRepository {
-  /**
-   * Gets the verified emails associated with a Safe address.
-   *
-   * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to use as filter
-   */
-  getVerifiedEmailsBySafeAddress(args: {
+  getAccount(args: {
     chainId: string;
     safeAddress: string;
-  }): Promise<string[]>;
+    signer: string;
+  }): Promise<Account>;
+
+  getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<Account[]>;
 
   /**
    * Creates a new account.

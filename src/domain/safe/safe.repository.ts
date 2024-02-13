@@ -377,6 +377,8 @@ export class SafeRepository implements ISafeRepository {
   async getAllSafesByOwner(args: {
     ownerAddress: string;
   }): Promise<{ [chainId: string]: Array<string> }> {
+    // Note: does not take pagination into account but we do not support
+    // enough chains for it to be an issue
     const { results } = await this.chainsRepository.getChains();
     const allSafeLists = await Promise.all(
       results.map(async ({ chainId }) => {

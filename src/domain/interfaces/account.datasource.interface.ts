@@ -9,17 +9,6 @@ export const IAccountDataSource = Symbol('IAccountDataSource');
 
 export interface IAccountDataSource {
   /**
-   * Gets the verified emails associated with a Safe address.
-   *
-   * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to use as filter
-   */
-  getVerifiedAccountEmailsBySafeAddress(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<{ email: string }[]>;
-
-  /**
    * Gets the account associated with a signer/owner of a Safe for a specific chain.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
@@ -33,6 +22,20 @@ export interface IAccountDataSource {
     safeAddress: string;
     signer: string;
   }): Promise<Account>;
+
+  /**
+   * Gets all accounts associated with a Safe address for a specific chain
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address of the account
+   * @param args.onlyVerified - if set to true, returns only verified emails.
+   * Else, returns all emails.
+   */
+  getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<Account[]>;
 
   getAccountVerificationCode(args: {
     chainId: string;
