@@ -6,6 +6,7 @@ import { AlertsDecodersModule } from '@/domain/alerts/alerts-decoders.module';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { AccountDomainModule } from '@/domain/account/account.domain.module';
 import { UrlGeneratorModule } from '@/domain/alerts/urls/url-generator.module';
+import { SubscriptionDomainModule } from '@/domain/subscriptions/subscription.domain.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UrlGeneratorModule } from '@/domain/alerts/urls/url-generator.module';
     AlertsApiModule,
     AlertsDecodersModule,
     EmailApiModule,
+    SubscriptionDomainModule,
     UrlGeneratorModule,
   ],
   providers: [{ provide: IAlertsRepository, useClass: AlertsRepository }],
