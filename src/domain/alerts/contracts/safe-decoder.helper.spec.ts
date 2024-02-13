@@ -6,6 +6,7 @@ import {
   changeThresholdEncoder,
   execTransactionEncoder,
   removeOwnerEncoder,
+  setupEncoder,
   swapOwnerEncoder,
 } from '@/domain/alerts/__tests__/safe-transactions.encoder';
 
@@ -15,6 +16,26 @@ describe('SafeDecoder', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     target = new SafeDecoder();
+  });
+
+  it('decodes a setup function call correctly', () => {
+    const setup = setupEncoder();
+    const args = setup.build();
+    const data = setup.encode();
+
+    expect(target.decodeFunctionData({ data })).toEqual({
+      functionName: 'setup',
+      args: [
+        args.owners,
+        args.threshold,
+        args.to,
+        args.data,
+        args.fallbackHandler,
+        args.paymentToken,
+        args.payment,
+        args.paymentReceiver,
+      ],
+    });
   });
 
   it('decodes an addOwnerWithThreshold function call correctly', () => {

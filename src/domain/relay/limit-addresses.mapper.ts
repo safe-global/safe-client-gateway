@@ -4,6 +4,12 @@ import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.hel
 import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
+import {
+  getSafeSingletonDeployment,
+  getSafeL2SingletonDeployment,
+} from '@safe-global/safe-deployments';
+import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
 
 export interface RelayPayload {
   chainId: string;
@@ -14,14 +20,19 @@ export interface RelayPayload {
 
 @Injectable()
 export class LimitAddressesMapper {
+  // TODO: Abstract with that from SafeContractHelper
+  private static SUPPORTED_SAFE_VERSION = '1.3.0';
+
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly safeContract: SafeContractHelper,
     private readonly erc20Contract: Erc20ContractHelper,
+    private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
+    private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
   ) {}
 
-  getLimitAddresses(relayPayload: RelayPayload): Hex[] {
+  getLimitAddresses(relayPayload: RelayPayload): readonly Hex[] {
     if (this.isValidExecTransactionCall(relayPayload.to, relayPayload.data)) {
       return [relayPayload.to];
     }
@@ -32,7 +43,11 @@ export class LimitAddressesMapper {
       return [safeAddress];
     }
 
-    // TODO Handle create proxy with nonce
+    if (
+      this.isValidCreateProxyWithNonce(relayPayload.chainId, relayPayload.data)
+    ) {
+      return this.getOwnersFromCreateProxyWithNonce(relayPayload.data);
+    }
 
     throw Error('Cannot get limit addresses – Invalid transfer');
   }
@@ -101,4 +116,59 @@ export class LimitAddressesMapper {
 
     return firstRecipient;
   };
+
+  private isValidCreateProxyWithNonce(chainId: string, data: Hex): boolean {
+    let singleton: string | null = null;
+
+    try {
+      const decoded = this.proxyFactoryDecoder.decodeFunctionData({
+        data,
+      });
+
+      if (decoded.functionName !== 'createProxyWithNonce') {
+        return false;
+      }
+
+      singleton = decoded.args[0];
+    } catch (e) {
+      return false;
+    }
+
+    const safeL1Deployment = getSafeSingletonDeployment({
+      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      network: chainId,
+    });
+    const safeL2Deployment = getSafeL2SingletonDeployment({
+      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      network: chainId,
+    });
+
+    const isL1Singleton =
+      safeL1Deployment?.networkAddresses[chainId] === singleton;
+    const isL2Singleton =
+      safeL2Deployment?.networkAddresses[chainId] === singleton;
+
+    return isL1Singleton || isL2Singleton;
+  }
+
+  private getOwnersFromCreateProxyWithNonce(data: Hex): readonly Hex[] {
+    const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
+      data,
+    });
+
+    if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
+      throw Error('Not a createProxyWithNonce call');
+    }
+
+    const initializer = decodedProxyFactory.args[1];
+    const decodedSafe = this.safeDecoder.decodeFunctionData({
+      data: initializer,
+    });
+
+    if (decodedSafe.functionName !== 'setup') {
+      throw Error('Not a setup call');
+    }
+
+    return decodedSafe.args[0];
+  }
 }
