@@ -84,7 +84,7 @@ describe('Alerts (Unit)', () => {
     let safeConfigUrl: string | undefined;
 
     beforeEach(async () => {
-      jest.clearAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -1457,7 +1457,7 @@ describe('Alerts (Unit)', () => {
     let signingKey: string;
 
     beforeEach(async () => {
-      jest.clearAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({

@@ -26,7 +26,7 @@ describe('Email controller verify email tests', () => {
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const defaultTestConfiguration = configuration();

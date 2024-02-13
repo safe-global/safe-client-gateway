@@ -39,7 +39,7 @@ describe('Balances Controller (Unit)', () => {
   let zerionChainIds: string[];
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],

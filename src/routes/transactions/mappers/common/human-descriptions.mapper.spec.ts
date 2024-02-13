@@ -48,7 +48,7 @@ describe('Human descriptions mapper (Unit)', () => {
   let transaction: MultisigTransaction;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
     chainId = faker.string.numeric();

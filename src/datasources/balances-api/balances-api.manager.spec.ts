@@ -26,7 +26,7 @@ const zerionBalancesApi = {
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
     if (key === 'features.valkBalancesChainIds') return ['1', '2', '3'];
     if (key === 'features.zerionBalancesChainIds') return ['4', '5', '6'];

@@ -24,7 +24,7 @@ describe('Email controller resend verification tests', () => {
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const defaultTestConfiguration = configuration();
@@ -147,6 +147,9 @@ describe('Email controller resend verification tests', () => {
     accountDataSource.getAccount.mockResolvedValueOnce(account);
     accountDataSource.getAccountVerificationCode.mockResolvedValueOnce(
       verificationCode,
+    );
+    accountDataSource.getAccountVerificationCode.mockResolvedValueOnce(
+      verificationCodeBuilder().build(),
     );
 
     // Advance timer so that code is considered as expired

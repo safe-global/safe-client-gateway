@@ -14,7 +14,7 @@ describe('SafeDecoder', () => {
   let target: SafeDecoder;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new SafeDecoder();
   });
 

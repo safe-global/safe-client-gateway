@@ -19,7 +19,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
   let mapper: CustomTransactionMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new CustomTransactionMapper(addressInfoHelper);
   });
 

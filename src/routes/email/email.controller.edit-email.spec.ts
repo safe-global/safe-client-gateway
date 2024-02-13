@@ -39,7 +39,7 @@ describe('Email controller edit email tests', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const defaultConfiguration = configuration();

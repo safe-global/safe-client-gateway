@@ -24,7 +24,7 @@ describe('Subscription Controller tests', () => {
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

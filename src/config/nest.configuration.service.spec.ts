@@ -12,7 +12,7 @@ describe('NestConfigurationService', () => {
   let target: NestConfigurationService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new NestConfigurationService(configServiceMock);
   });
 

@@ -46,7 +46,7 @@ describe('TransactionApi', () => {
   let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     defaultExpirationTimeInSeconds = faker.number.int();
     notFoundExpireTimeSeconds = faker.number.int();

@@ -22,7 +22,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   let mapper: SafeAppInfoMapper;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new SafeAppInfoMapper(safeAppsRepositoryMock, mockLoggingService);
   });
 

@@ -36,7 +36,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
   let fakeCacheService: FakeCacheService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],

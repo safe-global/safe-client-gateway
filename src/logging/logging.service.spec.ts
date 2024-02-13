@@ -29,7 +29,7 @@ describe('RequestScopedLoggingService', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {
       switch (key) {
         case 'about.version':

@@ -30,7 +30,7 @@ describe('Recovery (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
