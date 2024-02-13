@@ -26,7 +26,7 @@ describe('CacheFirstDataSource', () => {
   let fakeCacheService: FakeCacheService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
     fakeCacheService = new FakeCacheService();
     cacheFirstDataSource = new CacheFirstDataSource(

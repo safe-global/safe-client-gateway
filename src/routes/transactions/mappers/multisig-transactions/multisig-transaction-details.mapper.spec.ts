@@ -43,7 +43,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new MultisigTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,

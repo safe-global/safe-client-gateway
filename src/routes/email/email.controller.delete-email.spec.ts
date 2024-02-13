@@ -38,7 +38,7 @@ describe('Email controller delete email tests', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

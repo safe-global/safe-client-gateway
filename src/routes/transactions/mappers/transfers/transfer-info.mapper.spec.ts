@@ -28,7 +28,7 @@ describe('Transfer Info mapper (Unit)', () => {
   let mapper: TransferInfoMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new TransferInfoMapper(tokenRepository, addressInfoHelper);
   });
 

@@ -40,7 +40,7 @@ describe('Email controller save email tests', () => {
   let safeConfigUrl: string | undefined;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

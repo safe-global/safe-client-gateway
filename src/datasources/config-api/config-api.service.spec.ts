@@ -46,7 +46,7 @@ describe('ConfigApi', () => {
   });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     service = new ConfigApi(
       dataSource,
       mockCacheService,

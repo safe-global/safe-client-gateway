@@ -29,7 +29,7 @@ describe('Transaction Data Mapper (Unit)', () => {
   let mapper: TransactionDataMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new TransactionDataMapper(
       addressInfoHelper,
       contractsRepository,

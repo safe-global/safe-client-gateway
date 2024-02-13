@@ -7,7 +7,7 @@ describe('DelayModifierDecoder', () => {
   let target: DelayModifierDecoder;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new DelayModifierDecoder();
   });
 

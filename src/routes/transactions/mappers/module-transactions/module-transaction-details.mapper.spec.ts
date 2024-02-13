@@ -32,7 +32,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
   } as jest.MockedObjectDeep<TransactionDataMapper>);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new ModuleTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,

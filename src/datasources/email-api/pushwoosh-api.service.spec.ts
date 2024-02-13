@@ -24,7 +24,7 @@ describe('PushwooshApi', () => {
   let pushwooshFromName: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     pushwooshApplicationCode = faker.string.alphanumeric();
     pushwooshApiKey = faker.string.hexadecimal({ length: 32 });

@@ -35,7 +35,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionDetailsMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
