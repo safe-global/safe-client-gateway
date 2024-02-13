@@ -727,10 +727,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@faker-js/faker@npm:^8.3.1":
-  version: 8.3.1
-  resolution: "@faker-js/faker@npm:8.3.1"
-  checksum: 66b25cb82af907ff127767b54a5d6e95919c8051cd2de9131a6f5dd45dc539ebfbafad66e590e603e347e4c411f0f83c28e70043024af66faebba49d9868c263
+"@faker-js/faker@npm:^8.4.1":
+  version: 8.4.1
+  resolution: "@faker-js/faker@npm:8.4.1"
+  checksum: 5983c2ea64f26055ad6648de748878e11ebe2fb751e3c7435ae141cdffabc2dccfe4c4f49da69a3d2add71e21b415c683ac5fba196fab0d5ed6779fbec436c80
   languageName: node
   linkType: hard
 
@@ -7118,7 +7118,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "safe-client-gateway@workspace:."
   dependencies:
-    "@faker-js/faker": "npm:^8.3.1"
+    "@faker-js/faker": "npm:^8.4.1"
     "@nestjs/cli": "npm:^10.3.1"
     "@nestjs/common": "npm:^10.3.1"
     "@nestjs/config": "npm:^3.1.1"
