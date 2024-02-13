@@ -1,6 +1,7 @@
 import {
   Abi,
   ContractEventName,
+  ContractFunctionName,
   DecodeEventLogParameters,
   DecodeFunctionDataParameters,
   Hex,
@@ -37,5 +38,20 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
     args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
   ) {
     return _decodeFunctionData({ ...args, abi: this.abi });
+  }
+
+  // TODO: Don't expose this but generate is{FunctionName} helpers instead
+  _isFunctionCall(args: {
+    functionName: ContractFunctionName<TAbi>;
+    data: Hex;
+  }): boolean {
+    try {
+      const { functionName } = this.decodeFunctionData({
+        data: args.data,
+      });
+      return functionName === args.functionName;
+    } catch {
+      return false;
+    }
   }
 }

@@ -15,10 +15,10 @@ import {
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {
-  let mapper: MultiSendDecoder;
+  let target: MultiSendDecoder;
 
   beforeEach(() => {
-    mapper = new MultiSendDecoder();
+    target = new MultiSendDecoder();
   });
 
   describe('mapMultiSendTransactions', () => {
@@ -43,7 +43,19 @@ describe('MultiSendDecoder', () => {
         .with('transactions', encodedTransactions)
         .encode();
 
-      expect(mapper.mapMultiSendTransactions(data)).toStrictEqual(transactions);
+      expect(target.mapMultiSendTransactions(data)).toStrictEqual(transactions);
+    });
+  });
+
+  describe('isMultiSend', () => {
+    it('returns true if data is a multiSend call', () => {
+      const data = multiSendEncoder().encode();
+      expect(target.isMultiSend(data)).toBe(true);
+    });
+
+    it('returns false if data is not a multiSend call', () => {
+      const data = addOwnerWithThresholdEncoder().encode();
+      expect(target.isMultiSend(data)).toBe(false);
     });
   });
 });
