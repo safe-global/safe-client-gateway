@@ -238,24 +238,37 @@ export class AlertsRepository implements IAlertsRepository {
     accountsToNotify: Account[];
   }): Promise<void> {
     const chain = await this.chainRepository.getChain(args.chainId);
-
     const webAppUrl = this.urlGenerator.addressToSafeWebAppUrl({
       chain,
       safeAddress: args.safeAddress,
     });
 
-    const emails = args.accountsToNotify.map(
-      (account) => account.emailAddress.value,
-    );
-    return this.emailApi.createMessage({
-      to: emails,
-      template: this.configurationService.getOrThrow<string>(
-        'email.templates.unknownRecoveryTx',
-      ),
-      subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
-      substitutions: {
-        webAppUrl,
-      },
+    const emailActions = args.accountsToNotify.map((account) => {
+      const unsubscriptionUrl = this.urlGenerator.unsubscriptionSafeWebAppUrl({
+        unsubscriptionToken: account.unsubscriptionToken,
+      });
+      return this.emailApi.createMessage({
+        to: [account.emailAddress.value],
+        template: this.configurationService.getOrThrow<string>(
+          'email.templates.unknownRecoveryTx',
+        ),
+        subject: AlertsRepository.UNKNOWN_TX_EMAIL_SUBJECT,
+        substitutions: {
+          webAppUrl,
+          unsubscriptionUrl,
+        },
+      });
+    });
+
+    await Promise.allSettled(emailActions).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const signer = args.accountsToNotify.at(index)?.signer;
+          this.loggingService.warn(
+            `Error sending email to user with account ${signer}, for safe ${args.safeAddress} on chain ${args.chainId}`,
+          );
+        }
+      });
     });
   }
 
@@ -280,20 +293,34 @@ export class AlertsRepository implements IAlertsRepository {
       };
     });
 
-    const emails = args.accountsToNotify.map(
-      (account) => account.emailAddress.value,
-    );
-    return this.emailApi.createMessage({
-      to: emails,
-      template: this.configurationService.getOrThrow<string>(
-        'email.templates.recoveryTx',
-      ),
-      subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
-      substitutions: {
-        webAppUrl,
-        owners,
-        threshold: args.newSafeState.threshold.toString(),
-      },
+    const emailActions = args.accountsToNotify.map((account) => {
+      const unsubscriptionUrl = this.urlGenerator.unsubscriptionSafeWebAppUrl({
+        unsubscriptionToken: account.unsubscriptionToken,
+      });
+      return this.emailApi.createMessage({
+        to: [account.emailAddress.value],
+        template: this.configurationService.getOrThrow<string>(
+          'email.templates.recoveryTx',
+        ),
+        subject: AlertsRepository.RECOVERY_TX_EMAIL_SUBJECT,
+        substitutions: {
+          webAppUrl,
+          owners,
+          threshold: args.newSafeState.threshold.toString(),
+          unsubscriptionUrl,
+        },
+      });
+    });
+
+    await Promise.allSettled(emailActions).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const signer = args.accountsToNotify.at(index)?.signer;
+          this.loggingService.warn(
+            `Error sending email to user with account ${signer}, for safe ${args.newSafeState.address} on chain ${args.chainId}`,
+          );
+        }
+      });
     });
   }
 }
