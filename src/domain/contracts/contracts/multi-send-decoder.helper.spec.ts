@@ -1,17 +1,17 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/domain/alerts/__tests__/safe-transactions.encoder';
+} from '@/domain/contracts/contracts/safe-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
+} from '@/domain/contracts/contracts/multi-send-encoder.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {

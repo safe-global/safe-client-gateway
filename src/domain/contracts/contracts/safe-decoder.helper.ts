@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { parseAbi } from 'viem';
-import { AbiDecoder } from '@/domain/alerts/contracts/abi-decoder.helper';
+import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 
 const SAFE_ABI = parseAbi([
   'function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address paymentReceiver)',
