@@ -1,8 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { GelatoRelay } from '@gelatonetwork/relay-sdk';
+import {
+  NetworkService,
+  INetworkService,
+} from '@/datasources/network/network.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { RelayPayload } from '@/domain/relay/limit-addresses.mapper';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   CacheService,
   ICacheService,
@@ -20,14 +23,20 @@ export class GelatoApi implements IRelayApi {
    */
   private static GAS_LIMIT_BUFFER = BigInt(150_000);
 
+  private readonly baseUri: string;
+
   constructor(
-    @Inject('GelatoRelayClient')
-    private readonly relayClient: GelatoRelay,
+    @Inject(NetworkService)
+    private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    private readonly httpErrorFactory: HttpErrorFactory,
+  ) {
+    this.baseUri =
+      this.configurationService.getOrThrow<string>('relay.baseUri');
+  }
 
   async getRelayCount(args: {
     chainId: string;
@@ -38,26 +47,13 @@ export class GelatoApi implements IRelayApi {
     return currentCount ? parseInt(currentCount) : 0;
   }
 
-  async relay(args: RelayPayload): Promise<{ taskId: string }> {
-    const apiKey = this.configurationService.getOrThrow<string>(
-      `gelato.apiKey.${args.chainId}`,
-    );
-
-    const gasLimit = args.gasLimit
-      ? this.getRelayGasLimit(args.gasLimit)
-      : undefined;
-
-    const relayResponse = await this.relayClient.sponsoredCall(
-      {
-        chainId: BigInt(args.chainId),
-        data: args.data,
-        target: args.to,
-      },
-      apiKey,
-      {
-        gasLimit,
-      },
-    );
+  async relay(args: {
+    chainId: string;
+    to: string;
+    data: string;
+    gasLimit?: string;
+  }): Promise<{ taskId: string }> {
+    const relayResponse = await this.sponsoredCall(args);
 
     await this.incrementRelayCount({
       chainId: args.chainId,
@@ -70,8 +66,35 @@ export class GelatoApi implements IRelayApi {
     return relayResponse;
   }
 
-  private getRelayGasLimit(gasLimit: bigint): bigint {
-    return gasLimit + GelatoApi.GAS_LIMIT_BUFFER;
+  private async sponsoredCall(args: {
+    chainId: string;
+    to: string;
+    data: string;
+    gasLimit?: string;
+  }): Promise<{ taskId: string }> {
+    const sponsorApiKey = this.configurationService.getOrThrow<string>(
+      `gelato.apiKey.${args.chainId}`,
+    );
+
+    try {
+      const url = `${this.baseUri}/relays/v2/sponsored-call`;
+      const { data } = await this.networkService.post<{ taskId: string }>(url, {
+        sponsorApiKey,
+        chainId: args.chainId,
+        target: args.to,
+        data: args.data,
+        ...(args.gasLimit && {
+          gasLimit: this.getRelayGasLimit(args.gasLimit),
+        }),
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  private getRelayGasLimit(gasLimit: string): string {
+    return (BigInt(gasLimit) + GelatoApi.GAS_LIMIT_BUFFER).toString();
   }
 
   private async incrementRelayCount(args: {

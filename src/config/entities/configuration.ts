@@ -195,6 +195,8 @@ export default () => ({
     port: process.env.REDIS_PORT || '6379',
   },
   relay: {
+    baseUri:
+      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
   },
   safeConfig: {
