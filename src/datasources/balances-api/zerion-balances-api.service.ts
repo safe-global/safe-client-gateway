@@ -23,7 +23,6 @@ import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { asError } from '@/logging/utils';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
@@ -118,16 +117,12 @@ export class ZerionBalancesApi implements IBalancesApi {
       const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
       const chainName = this._getChainName(args.chainId);
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
-      let size = ZerionBalancesApi.defaultPageSize;
-      let after = null;
-      if (args.limit && args.offset) {
-        [size, after] = this._encodeZerionPagination(args.limit, args.offset);
-      }
+      const pageAfter = this._encodeZerionPageOffset(args.offset);
       const params = {
         'filter[chain_ids]': chainName,
         sort: ZerionBalancesApi.collectiblesSorting,
-        'page[size]': size,
-        ...(after && { 'page[after]': after }),
+        'page[size]': args.limit,
+        ...(pageAfter && { 'page[after]': pageAfter }),
       };
       const zerionCollectibles = await this.dataSource.get<ZerionCollectibles>({
         cacheDir,
@@ -234,7 +229,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectibles,
   ): Page<Collectible> {
-    console.log(test);
     return {
       count: zerionCollectibles.data.length,
       next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
@@ -256,30 +250,42 @@ export class ZerionBalancesApi implements IBalancesApi {
     };
   }
 
-  private _encodeZerionPagination(
-    limit: number,
-    offset: number,
-  ): [size: number, after: string | null] {
-    if (!offset) {
-      return [limit, null];
-    }
-    return [limit, Buffer.from(`"${offset}"`, 'utf8').toString('base64')];
+  /**
+   * Zerion represents cursor offsets by base64 string
+   * contained within double quotation marks.
+   *
+   * @param offset number representing the offset
+   * @returns base64 string representing the offset
+   */
+  private _encodeZerionPageOffset(offset?: number): string | null {
+    return offset
+      ? Buffer.from(`"${offset}"`, 'utf8').toString('base64')
+      : null;
   }
 
+  /**
+   * Zerion uses page[size] as pagination limit.
+   * Zerion uses page[after] as pagination offset, which is a
+   * base64 string contained within double quotation marks.
+   *
+   * @param url Zerion-formatted string representing an URL
+   * @returns URL string optionally containing "limit" and "offset" query params
+   */
   private _decodeZerionPagination(url: string): string {
-    const fromUrl = new URL(url);
-    const size = Number(fromUrl.searchParams.get('page[size]') ?? NaN);
-    const after = Number(
-      Buffer.from(fromUrl.searchParams.get('page[after]') ?? '0', 'base64')
-        .toString('utf8')
-        .replace(/"/g, ''),
-    );
+    const zerionUrl = new URL(url);
+    const size = zerionUrl.searchParams.get('page[size]');
+    const after = zerionUrl.searchParams.get('page[after]');
 
-    const paginationData = new PaginationData(size, after);
-
-    const cursorData = `limit=${paginationData.limit}&offset=${paginationData.offset}`;
-    const newUrl = new URL(fromUrl);
-    newUrl.searchParams.set('cursor', cursorData);
-    return newUrl.toString();
+    const resultUrl = new URL(zerionUrl);
+    if (size) resultUrl.searchParams.set('limit', size);
+    if (after) {
+      resultUrl.searchParams.set(
+        'offset',
+        Buffer.from(after ?? '0', 'base64')
+          .toString('utf8')
+          .replace(/"/g, ''),
+      );
+    }
+    return resultUrl.toString();
   }
 }

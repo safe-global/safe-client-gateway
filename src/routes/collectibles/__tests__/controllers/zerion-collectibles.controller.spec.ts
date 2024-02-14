@@ -143,7 +143,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(({ body }) => {
             expect(body).toMatchObject({
               count: zerionApiCollectiblesResponse.data.length,
-              next: expect.any(String), // TODO: check page[size] and page[after] are mapped to limit and offset
+              next: expect.any(String),
               previous: null,
               results: [
                 {
@@ -238,7 +238,202 @@ describe('Zerion Collectibles Controller', () => {
           params: {
             'filter[chain_ids]': chainName,
             sort: '-floor_price',
-            'page[size]': 10,
+            'page[size]': 20,
+          },
+        });
+      });
+      it('successfully maps pagination option (no limit)', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const inputPaginationCursor = `cursor=${encodeURIComponent(`&offset=10`)}`;
+        const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=20&page%5Bafter%5D=IjMwIg==`;
+        const expectedNext = `${encodeURIComponent(`limit=20&offset=30`)}`;
+        const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
+          .with('data', [
+            zerionCollectibleBuilder().build(),
+            zerionCollectibleBuilder().build(),
+          ])
+          .with('links', {
+            next: zerionNext,
+            self: faker.internet.url({ appendSlash: false }),
+          })
+          .build();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const apiKey = app
+          .get(IConfigurationService)
+          .getOrThrow(`balances.providers.zerion.apiKey`);
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
+              return Promise.resolve({
+                data: zerionApiCollectiblesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v2/chains/${chain.chainId}/safes/${safeAddress}/collectibles?${inputPaginationCursor}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toMatchObject({
+              count: zerionApiCollectiblesResponse.data.length,
+              next: expect.stringContaining(expectedNext),
+              previous: null,
+              results: expect.any(Array),
+            });
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls[0][0]).toBe(
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
+        );
+        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+          headers: { Authorization: `Basic ${apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: '-floor_price',
+            'page[size]': 20,
+            'page[after]': 'IjEwIg==',
+          },
+        });
+      });
+
+      it('successfully maps pagination option (no offset)', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const paginationLimit = 4;
+        const inputPaginationCursor = `cursor=${encodeURIComponent(`limit=${paginationLimit}`)}`;
+        const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=4&page%5Bafter%5D=IjQi`;
+        const expectedNext = `${encodeURIComponent(`limit=${paginationLimit}&offset=4`)}`;
+        const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
+          .with('data', [
+            zerionCollectibleBuilder().build(),
+            zerionCollectibleBuilder().build(),
+          ])
+          .with('links', {
+            next: zerionNext,
+            self: faker.internet.url({ appendSlash: false }),
+          })
+          .build();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const apiKey = app
+          .get(IConfigurationService)
+          .getOrThrow(`balances.providers.zerion.apiKey`);
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
+              return Promise.resolve({
+                data: zerionApiCollectiblesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v2/chains/${chain.chainId}/safes/${safeAddress}/collectibles?${inputPaginationCursor}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toMatchObject({
+              count: zerionApiCollectiblesResponse.data.length,
+              next: expect.stringContaining(expectedNext),
+              previous: null,
+              results: expect.any(Array),
+            });
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls[0][0]).toBe(
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
+        );
+        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+          headers: { Authorization: `Basic ${apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: '-floor_price',
+            'page[size]': paginationLimit,
+          },
+        });
+      });
+
+      it('successfully maps pagination option (both limit and offset)', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const paginationLimit = 4;
+        const inputPaginationCursor = `cursor=${encodeURIComponent(`limit=${paginationLimit}&offset=20`)}`;
+        const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=4&page%5Bafter%5D=IjMwIg==`;
+        const expectedNext = `${encodeURIComponent(`limit=${paginationLimit}&offset=30`)}`;
+        const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
+          .with('data', [
+            zerionCollectibleBuilder().build(),
+            zerionCollectibleBuilder().build(),
+          ])
+          .with('links', {
+            next: zerionNext,
+            self: faker.internet.url({ appendSlash: false }),
+          })
+          .build();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const apiKey = app
+          .get(IConfigurationService)
+          .getOrThrow(`balances.providers.zerion.apiKey`);
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
+              return Promise.resolve({
+                data: zerionApiCollectiblesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v2/chains/${chain.chainId}/safes/${safeAddress}/collectibles?${inputPaginationCursor}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toMatchObject({
+              count: zerionApiCollectiblesResponse.data.length,
+              next: expect.stringContaining(expectedNext),
+              previous: null,
+              results: expect.any(Array),
+            });
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls[0][0]).toBe(
+          `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
+        );
+        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+          headers: { Authorization: `Basic ${apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: '-floor_price',
+            'page[size]': paginationLimit,
+            'page[after]': 'IjIwIg==',
           },
         });
       });
