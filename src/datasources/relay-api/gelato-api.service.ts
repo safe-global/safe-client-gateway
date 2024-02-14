@@ -64,7 +64,7 @@ export class GelatoApi implements IRelayApi {
       address: args.to,
     }).catch((error) => {
       // If we fail to increment count, we should not fail the relay
-      this.loggingService.info(error.message);
+      this.loggingService.warn(error.message);
     });
 
     return relayResponse;
@@ -78,9 +78,9 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     address: string;
   }): Promise<void> {
-    const cacheDir = CacheRouter.getRelayCacheDir(args);
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
     return this.cacheService.set(cacheDir, incremented.toString());
   }
 }

@@ -12,7 +12,7 @@ const mockGelatoClient = jest.mocked({
 } as jest.MockedObjectDeep<InstanceType<typeof GelatoRelay>>);
 
 const mockLoggingService = {
-  info: jest.fn(),
+  warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 describe('GelatoApi', () => {
@@ -39,7 +39,6 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress();
       const cacheDir = new CacheDir(`${chainId}_relay_${address}`, '');
-
       const count = faker.number.int();
 
       await fakeCacheService.set(cacheDir, count.toString());
@@ -72,9 +71,7 @@ describe('GelatoApi', () => {
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
       const taskId = faker.string.alphanumeric();
-
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
-
       mockGelatoClient.sponsoredCall.mockResolvedValue({ taskId });
 
       const result = await target.relay({
@@ -103,7 +100,6 @@ describe('GelatoApi', () => {
       const data = faker.string.hexadecimal() as Hex;
       const gasLimit = faker.number.bigInt();
       const apiKey = faker.string.sample();
-
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
 
       await target.relay({
@@ -141,13 +137,10 @@ describe('GelatoApi', () => {
     });
 
     it('should increment the count after relaying', async () => {
-      const setSpy = jest.spyOn(fakeCacheService, 'set');
-
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
-
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
 
       await target.relay({
@@ -156,22 +149,22 @@ describe('GelatoApi', () => {
         data,
       });
 
-      expect(setSpy).toHaveBeenCalledWith(
+      const currentCount = await fakeCacheService.get(
         new CacheDir(`${chainId}_relay_${address}`, ''),
-        '1',
       );
+      expect(currentCount).toEqual('1');
     });
 
     it('should not fail the relay if incrementing the count fails', async () => {
-      const setSpy = jest.spyOn(fakeCacheService, 'set');
-
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
-
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
-      setSpy.mockRejectedValue(new Error('Setting cache threw an error'));
+      // Incremeting the cache throws
+      jest
+        .spyOn(fakeCacheService, 'set')
+        .mockRejectedValue(new Error('Setting cache threw an error'));
 
       await expect(
         target.relay({
