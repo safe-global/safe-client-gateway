@@ -11,11 +11,12 @@ import {
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 
+// TODO: Coerce DTO to match RelayPayload
 export interface RelayPayload {
   chainId: string;
   data: Hex;
   to: Hex;
-  gasLimit: bigint;
+  gasLimit?: bigint;
 }
 
 @Injectable()

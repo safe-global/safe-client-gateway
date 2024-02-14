@@ -19,6 +19,7 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly RELAY_KEY = 'relay';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
@@ -400,6 +401,17 @@ export class CacheRouter {
 
   static getChainCacheDir(chainId: string): CacheDir {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
+  }
+
+  static getRelayKey(args: { chainId: string; address: string }): string {
+    return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
+  }
+
+  static getRelayCacheDir(args: {
+    chainId: string;
+    address: string;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getRelayKey(args), '');
   }
 
   static getSafeAppsKey(chainId: string): string {
