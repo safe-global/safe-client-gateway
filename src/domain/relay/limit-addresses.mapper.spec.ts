@@ -406,7 +406,6 @@ describe('LimitAddressesMapper', () => {
       const chainId = '1';
       const version = '1.3.0';
       const safe = safeBuilder().build();
-      const safeAddress = getAddress(safe.address);
       const transactions = [
         execTransactionEncoder().encode(),
         // Native ERC-20 transfer
