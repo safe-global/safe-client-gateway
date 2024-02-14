@@ -1,17 +1,19 @@
-import { Builder } from '@/__tests__/builder';
-import { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
-import { Hex, parseAbi, encodeFunctionData, getAddress } from 'viem';
+import { encodeFunctionData, getAddress, Hex, parseAbi } from 'viem';
+
+import { IEncoder } from '@/__tests__/encoder-builder';
+import { Builder } from '@/__tests__/builder';
+import { setupEncoder } from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
 
 // createProxyWithNonce
 
-type CreateProxyWithNonce = {
+type CreateProxyWithNonceArgs = {
   singleton: Hex;
   initializer: Hex;
   saltNonce: bigint;
 };
 
-class CreateProxyWithNonceEncoder<T extends CreateProxyWithNonce>
+class SetupEncoder<T extends CreateProxyWithNonceArgs>
   extends Builder<T>
   implements IEncoder
 {
@@ -19,7 +21,7 @@ class CreateProxyWithNonceEncoder<T extends CreateProxyWithNonce>
     'function createProxyWithNonce(address _singleton, bytes memory initializer, uint256 saltNonce)';
 
   encode(): Hex {
-    const abi = parseAbi([CreateProxyWithNonceEncoder.FUNCTION_SIGNATURE]);
+    const abi = parseAbi([SetupEncoder.FUNCTION_SIGNATURE]);
 
     const args = this.build();
 
@@ -31,9 +33,10 @@ class CreateProxyWithNonceEncoder<T extends CreateProxyWithNonce>
   }
 }
 
-export function createProxyWithNonceEncoder(): CreateProxyWithNonceEncoder<CreateProxyWithNonce> {
-  return new CreateProxyWithNonceEncoder()
+export function createProxyWithNonceEncoder(): SetupEncoder<CreateProxyWithNonceArgs> {
+  const initializer = setupEncoder().encode();
+  return new SetupEncoder()
     .with('singleton', getAddress(faker.finance.ethereumAddress()))
-    .with('initializer', faker.string.hexadecimal() as Hex)
+    .with('initializer', initializer)
     .with('saltNonce', faker.number.bigInt());
 }
