@@ -88,6 +88,10 @@ export default (): ReturnType<typeof configuration> => ({
       database: process.env.POSTGRES_TEST_DB || 'test-db',
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+      ssl: {
+        enabled: false,
+        rejectUnauthorized: false,
+      },
     },
   },
   email: {
