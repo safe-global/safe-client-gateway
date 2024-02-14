@@ -409,8 +409,8 @@ describe('LimitAddressesMapper', () => {
       const safeAddress = getAddress(safe.address);
       const transactions = [
         execTransactionEncoder().encode(),
-        // Native currency to self
-        execTransactionEncoder().with('to', safeAddress).encode(),
+        // Native ERC-20 transfer
+        erc20TransferEncoder().encode(),
       ].map((data) => ({
         operation: faker.number.int({ min: 0, max: 1 }),
         data,
@@ -427,12 +427,13 @@ describe('LimitAddressesMapper', () => {
       // Official mastercopy
       mockSafeRepository.getSafe.mockResolvedValue(safe);
 
-      const expectedLimitAddresses = await target.getLimitAddresses({
-        chainId,
-        data,
-        to: getAddress(to),
-      });
-      expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to: getAddress(to),
+        }),
+      ).rejects.toThrow('Invalid MultiSend transactions');
     });
 
     it('should throw when the mastercopy is not official', async () => {
