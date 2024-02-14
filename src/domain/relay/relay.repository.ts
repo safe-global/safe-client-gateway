@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import {
-  LimitAddressesMapper,
-  RelayPayload,
-} from '@/domain/relay/limit-addresses.mapper';
+import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 // TODO: Move to error folder and create exception filter
@@ -35,7 +32,12 @@ export class RelayRepository {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
 
-  async relay(relayPayload: RelayPayload): Promise<{ taskId: string }> {
+  async relay(relayPayload: {
+    chainId: string;
+    to: string;
+    data: string;
+    gasLimit?: string;
+  }): Promise<{ taskId: string }> {
     const relayAddresses =
       this.limitAddressesMapper.getLimitAddresses(relayPayload);
     for (const address of relayAddresses) {

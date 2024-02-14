@@ -10,14 +10,7 @@ import {
   getSafeL2SingletonDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
-
-// TODO: Coerce DTO to match RelayPayload
-export interface RelayPayload {
-  chainId: string;
-  data: Hex;
-  to: Hex;
-  gasLimit?: bigint;
-}
+import { isHex } from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -33,7 +26,16 @@ export class LimitAddressesMapper {
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
   ) {}
 
-  getLimitAddresses(relayPayload: RelayPayload): readonly Hex[] {
+  getLimitAddresses(relayPayload: {
+    chainId: string;
+    to: string;
+    data: string;
+  }): readonly Hex[] {
+    if (!isHex(relayPayload.to) || !isHex(relayPayload.data)) {
+      // TODO: Add test coverage once https://github.com/safe-global/safe-client-gateway/pull/1144 is merged
+      throw Error('Invalid recipient or calldata provided');
+    }
+
     if (this.isValidExecTransactionCall(relayPayload.to, relayPayload.data)) {
       return [relayPayload.to];
     }
