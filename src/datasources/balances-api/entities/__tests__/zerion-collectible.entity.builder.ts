@@ -49,6 +49,12 @@ export function zerionCollectibleBuilder(): IBuilder<ZerionCollectible> {
 }
 
 export function zerionCollectiblesBuilder(): IBuilder<ZerionCollectibles> {
+  const limit = faker.number.int({ min: 1 });
+  const offset = Buffer.from(
+    `"${faker.number.int({ min: 1 })}"`,
+    'utf8',
+  ).toString('base64');
+
   return new Builder<ZerionCollectibles>()
     .with(
       'data',
@@ -57,7 +63,8 @@ export function zerionCollectiblesBuilder(): IBuilder<ZerionCollectibles> {
       ),
     )
     .with('links', {
-      self: faker.internet.url({ appendSlash: true }),
-      next: `${faker.internet.url({ appendSlash: true })}?page%5Bafter%5D=IjUwIg%3D%3D&page%5Bsize%5D=50`,
+      next: `${faker.internet.url()}?${encodeURIComponent(
+        `page[after]=${offset}&page[size]=${limit}`,
+      )}`,
     });
 }

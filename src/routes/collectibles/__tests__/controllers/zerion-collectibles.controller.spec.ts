@@ -253,10 +253,7 @@ describe('Zerion Collectibles Controller', () => {
             zerionCollectibleBuilder().build(),
             zerionCollectibleBuilder().build(),
           ])
-          .with('links', {
-            next: zerionNext,
-            self: faker.internet.url({ appendSlash: false }),
-          })
+          .with('links', { next: zerionNext })
           .build();
         const chainName = app
           .get(IConfigurationService)
@@ -319,10 +316,7 @@ describe('Zerion Collectibles Controller', () => {
             zerionCollectibleBuilder().build(),
             zerionCollectibleBuilder().build(),
           ])
-          .with('links', {
-            next: zerionNext,
-            self: faker.internet.url({ appendSlash: false }),
-          })
+          .with('links', { next: zerionNext })
           .build();
         const chainName = app
           .get(IConfigurationService)
@@ -384,10 +378,7 @@ describe('Zerion Collectibles Controller', () => {
             zerionCollectibleBuilder().build(),
             zerionCollectibleBuilder().build(),
           ])
-          .with('links', {
-            next: zerionNext,
-            self: faker.internet.url({ appendSlash: false }),
-          })
+          .with('links', { next: zerionNext })
           .build();
         const chainName = app
           .get(IConfigurationService)

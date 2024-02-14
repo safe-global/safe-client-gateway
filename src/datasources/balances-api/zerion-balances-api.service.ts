@@ -5,7 +5,10 @@ import {
   ZerionBalance,
   ZerionBalances,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
-import { ZerionCollectibles } from '@/datasources/balances-api/entities/zerion-collectible.entity';
+import {
+  ZerionCollectible,
+  ZerionCollectibles,
+} from '@/datasources/balances-api/entities/zerion-collectible.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -37,7 +40,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly fiatCodes: string[];
 
   private static readonly collectiblesSorting = '-floor_price';
-  private static readonly defaultPageSize = 10;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -103,7 +105,7 @@ export class ZerionBalancesApi implements IBalancesApi {
    * NOTE: Zerion does not support limit & offset parameters.
    *
    * It uses a "size" query param for the page size, and an "after" parameter for the offset.
-   * "size" is an integer which could be mapped to "limit", but "after" is a custom identifier.
+   * "size" is an integer which could be mapped to "limit", but "after" is a base64-encoded string.
    *
    * Since this setup does not align well with the CGW API, it is needed to encode/decode these parameters.
    */
@@ -124,6 +126,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         'page[size]': args.limit,
         ...(pageAfter && { 'page[after]': pageAfter }),
       };
+
       const zerionCollectibles = await this.dataSource.get<ZerionCollectibles>({
         cacheDir,
         url,
@@ -134,7 +137,15 @@ export class ZerionBalancesApi implements IBalancesApi {
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return this._mapCollectibles(zerionCollectibles);
+
+      // TODO: Zerion does not provide the items count. Change the Page entity to make count attribute nullable.
+      // Zerion does not provide a "previous" cursor.
+      return {
+        count: zerionCollectibles.data.length,
+        next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
+        previous: null,
+        results: this._mapCollectibles(zerionCollectibles.data),
+      };
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${args.safeAddress} collectibles from provider: ${asError(error).message}}`,
@@ -227,27 +238,22 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   private _mapCollectibles(
-    zerionCollectibles: ZerionCollectibles,
-  ): Page<Collectible> {
-    return {
-      count: zerionCollectibles.data.length,
-      next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
-      previous: null,
-      results: zerionCollectibles.data.map(
-        ({ attributes: { nft_info, collection_info } }) => ({
-          address: nft_info.contract_address,
-          tokenName: nft_info.name ?? '',
-          tokenSymbol: nft_info.name ?? '',
-          logoUri: collection_info?.content?.icon.url ?? '',
-          id: nft_info.token_id,
-          uri: nft_info.content?.detail?.url ?? null,
-          name: collection_info?.name ?? null,
-          description: collection_info?.description ?? null,
-          imageUri: nft_info.content?.preview?.url ?? '',
-          metadata: nft_info.content,
-        }),
-      ),
-    };
+    zerionCollectibles: ZerionCollectible[],
+  ): Collectible[] {
+    return zerionCollectibles.map(
+      ({ attributes: { nft_info, collection_info } }) => ({
+        address: nft_info.contract_address,
+        tokenName: nft_info.name ?? '',
+        tokenSymbol: nft_info.name ?? '',
+        logoUri: collection_info?.content?.icon.url ?? '',
+        id: nft_info.token_id,
+        uri: nft_info.content?.detail?.url ?? null,
+        name: collection_info?.name ?? null,
+        description: collection_info?.description ?? null,
+        imageUri: nft_info.content?.preview?.url ?? '',
+        metadata: nft_info.content,
+      }),
+    );
   }
 
   /**
