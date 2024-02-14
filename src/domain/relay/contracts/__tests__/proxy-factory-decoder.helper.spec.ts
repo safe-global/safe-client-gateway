@@ -7,18 +7,23 @@ describe('ProxyFactoryDecoder', () => {
   let target: ProxyFactoryDecoder;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new ProxyFactoryDecoder();
   });
 
   it('decodes a createProxyWithNonce function call correctly', () => {
     const createProxyWithNonce = createProxyWithNonceEncoder();
-    const args = createProxyWithNonce.build();
     const data = createProxyWithNonce.encode();
+
+    const expectedArgs = createProxyWithNonce.build();
 
     expect(target.decodeFunctionData({ data })).toEqual({
       functionName: 'createProxyWithNonce',
-      args: [args.singleton, args.initializer, args.saltNonce],
+      args: [
+        expectedArgs.singleton,
+        expectedArgs.initializer,
+        expectedArgs.saltNonce,
+      ],
     });
   });
 
