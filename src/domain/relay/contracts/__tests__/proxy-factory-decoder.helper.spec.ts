@@ -16,7 +16,6 @@ describe('ProxyFactoryDecoder', () => {
     const data = createProxyWithNonce.encode();
 
     const expectedArgs = createProxyWithNonce.build();
-
     expect(target.decodeFunctionData({ data })).toEqual({
       functionName: 'createProxyWithNonce',
       args: [
