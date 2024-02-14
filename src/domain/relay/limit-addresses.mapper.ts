@@ -16,7 +16,7 @@ export interface RelayPayload {
   chainId: string;
   data: Hex;
   to: Hex;
-  gasLimit: bigint;
+  gasLimit?: bigint;
 }
 
 @Injectable()
