@@ -1,6 +1,6 @@
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
@@ -44,7 +44,7 @@ export interface ITransactionApi {
 
   getBackbone(): Promise<Backbone>;
 
-  getMasterCopies(): Promise<MasterCopy[]>;
+  getSingletons(): Promise<Singleton[]>;
 
   getSafe(safeAddress: string): Promise<Safe>;
 
@@ -128,6 +128,11 @@ export interface ITransactionApi {
   getMultisigTransaction(
     safeTransactionHash: string,
   ): Promise<MultisigTransaction>;
+
+  deleteTransaction(args: {
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void>;
 
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 

@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  PipeTransform,
+} from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
 import {
@@ -10,7 +15,7 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class DeleteDelegateDtoValidationPipe
-  implements PipeTransform<any, DeleteDelegateDto>
+  implements PipeTransform<unknown, DeleteDelegateDto>
 {
   private readonly isValid: ValidateFunction<DeleteDelegateDto>;
 
@@ -23,11 +28,13 @@ export class DeleteDelegateDtoValidationPipe
       deleteDelegateDtoSchema,
     );
   }
-  transform(data: any): DeleteDelegateDto {
+  transform(data: unknown): DeleteDelegateDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
-      err.status = HttpStatus.BAD_REQUEST;
+      if (err instanceof HttpException) {
+        throw new HttpException(err.getResponse(), HttpStatus.BAD_REQUEST);
+      }
       throw err;
     }
   }

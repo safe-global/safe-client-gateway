@@ -13,23 +13,27 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Contracts controller', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -57,9 +61,9 @@ describe('Contracts controller', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
-            return Promise.resolve({ data: contract });
+            return Promise.resolve({ data: contract, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -91,12 +95,17 @@ describe('Contracts controller', () => {
     it('Failure: Transaction API fails', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
+      const transactionServiceUrl = `${chain.transactionService}/api/v1/contracts/${contract.address}`;
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
-          case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
-            return Promise.reject(new Error());
+            return Promise.resolve({ data: chain, status: 200 });
+          case transactionServiceUrl:
+            return Promise.reject(
+              new NetworkResponseError(new URL(transactionServiceUrl), {
+                status: 503,
+              } as Response),
+            );
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -113,9 +122,12 @@ describe('Contracts controller', () => {
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain });
+            return Promise.resolve({ data: chain, status: 200 });
           case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
-            return Promise.resolve({ data: { ...contract, name: false } });
+            return Promise.resolve({
+              data: { ...contract, name: false },
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }

@@ -54,6 +54,8 @@ export class ChainsService {
           chain.shortName,
           chain.theme,
           chain.ensRegistryAddress,
+          chain.isTestnet,
+          chain.chainLogoUri,
         ),
     );
 
@@ -84,6 +86,8 @@ export class ChainsService {
       result.shortName,
       result.theme,
       result.ensRegistryAddress,
+      result.isTestnet,
+      result.chainLogoUri,
     );
   }
 
@@ -103,11 +107,11 @@ export class ChainsService {
   }
 
   async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
-    const result = await this.chainsRepository.getMasterCopies(chainId);
+    const result = await this.chainsRepository.getSingletons(chainId);
 
-    return result.map((masterCopy) => ({
-      address: masterCopy.address,
-      version: masterCopy.version,
+    return result.map((singleton) => ({
+      address: singleton.address,
+      version: singleton.version,
     }));
   }
 }

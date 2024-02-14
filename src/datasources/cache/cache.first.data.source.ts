@@ -54,10 +54,13 @@ export class CacheFirstDataSource {
     try {
       return await this._getFromNetworkAndWriteCache(args);
     } catch (error) {
-      if (error?.status === 404) {
+      if (
+        error instanceof NetworkResponseError &&
+        error.response.status === 404
+      ) {
         await this.cacheNotFoundError(
           args.cacheDir,
-          new NetworkResponseError(error.status, error),
+          error,
           args.notFoundExpireTimeSeconds,
         );
       }
@@ -74,8 +77,12 @@ export class CacheFirstDataSource {
   ): Promise<T> {
     this.loggingService.debug({ type: 'cache_hit', key, field });
     const cachedData = JSON.parse(cached);
-    if (cachedData?.status === 404) {
-      throw new NetworkResponseError(cachedData.status, cachedData.data);
+    if (cachedData?.response?.status === 404) {
+      throw new NetworkResponseError(
+        cachedData.url,
+        cachedData.response,
+        cachedData?.data,
+      );
     }
     return cachedData;
   }
@@ -92,7 +99,7 @@ export class CacheFirstDataSource {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: 'cache_miss', key, field });
     const startTimeMs = Date.now();
-    const { data } = await this.networkService.get(
+    const { data } = await this.networkService.get<T>(
       args.url,
       args.networkRequest,
     );
@@ -146,7 +153,14 @@ export class CacheFirstDataSource {
     error: NetworkResponseError,
     notFoundExpireTimeSeconds?: number,
   ): Promise<void> {
-    const value = JSON.stringify({ status: error.status, data: error });
-    return this.cacheService.set(cacheDir, value, notFoundExpireTimeSeconds);
+    return this.cacheService.set(
+      cacheDir,
+      JSON.stringify({
+        data: error.data,
+        response: { status: error.response.status },
+        url: error.url,
+      }),
+      notFoundExpireTimeSeconds,
+    );
   }
 }

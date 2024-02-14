@@ -1,15 +1,16 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { PushwooshApi } from '@/datasources/email-api/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
+import { CreateEmailMessageDto } from '@/domain/account/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 
 const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 const mockNetworkService = jest.mocked(networkService);
 
 describe('PushwooshApi', () => {
@@ -23,7 +24,7 @@ describe('PushwooshApi', () => {
   let pushwooshFromName: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     pushwooshApplicationCode = faker.string.alphanumeric();
     pushwooshApiKey = faker.string.hexadecimal({ length: 32 });
@@ -73,12 +74,15 @@ describe('PushwooshApi', () => {
         },
       };
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = {
-        status,
-        data: {
+      const error = new NetworkResponseError(
+        new URL(pushwooshBaseUri),
+        {
+          status,
+        } as Response,
+        {
           message: 'Unexpected error',
         },
-      };
+      );
       mockNetworkService.post.mockRejectedValueOnce(error);
 
       await expect(
@@ -168,12 +172,15 @@ describe('PushwooshApi', () => {
   describe('deleting email addresses', () => {
     it('should forward error', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = {
-        status,
-        data: {
+      const error = new NetworkResponseError(
+        new URL(pushwooshBaseUri),
+        {
+          status,
+        } as Response,
+        {
           message: 'Unexpected error',
         },
-      };
+      );
       mockNetworkService.post.mockRejectedValueOnce(error);
 
       await expect(

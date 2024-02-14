@@ -18,18 +18,18 @@ import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
-} as unknown as TokenRepository);
+} as jest.MockedObjectDeep<TokenRepository>);
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const safeAppInfoMapper = jest.mocked({
   mapSafeAppInfo: jest.fn(),
-} as unknown as SafeAppInfoMapper);
+} as jest.MockedObjectDeep<SafeAppInfoMapper>);
 
 const humanDescriptionAPI = new HumanDescriptionApi();
 const humanDescriptionRepository = new HumanDescriptionRepository(
@@ -48,7 +48,7 @@ describe('Human descriptions mapper (Unit)', () => {
   let transaction: MultisigTransaction;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
     chainId = faker.string.numeric();

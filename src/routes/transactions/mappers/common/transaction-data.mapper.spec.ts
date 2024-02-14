@@ -15,21 +15,21 @@ import { TransactionDataMapper } from '@/routes/transactions/mappers/common/tran
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 const contractsRepository = jest.mocked({
   getContract: jest.fn(),
-} as unknown as ContractsRepository);
+} as jest.MockedObjectDeep<ContractsRepository>);
 
 const dataDecodedParamHelper = jest.mocked({
   hasNestedDelegate: jest.fn(),
-} as unknown as DataDecodedParamHelper);
+} as jest.MockedObjectDeep<DataDecodedParamHelper>);
 
 describe('Transaction Data Mapper (Unit)', () => {
   let mapper: TransactionDataMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new TransactionDataMapper(
       addressInfoHelper,
       contractsRepository,

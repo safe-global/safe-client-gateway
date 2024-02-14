@@ -1,4 +1,10 @@
-import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  INestApplication,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -11,7 +17,7 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 const safeRepository = {
   isOwner: jest.fn(),
-} as unknown as ISafeRepository;
+} as jest.MockedObjectDeep<ISafeRepository>;
 
 const safeRepositoryMock = jest.mocked(safeRepository);
 
@@ -34,7 +40,7 @@ class TestController {
 }
 
 describe('OnlySafeOwner guard tests', () => {
-  let app;
+  let app: INestApplication;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -73,11 +79,11 @@ describe('OnlySafeOwner guard tests', () => {
   it('returns 200 if account is an owner of the safe', async () => {
     const chainId = faker.string.numeric();
     const safe = faker.finance.ethereumAddress();
-    const account = faker.finance.ethereumAddress();
+    const signer = faker.finance.ethereumAddress();
     safeRepositoryMock.isOwner.mockImplementation((args) => {
       if (
         args.chainId !== chainId ||
-        args.address !== account ||
+        args.address !== signer ||
         args.safeAddress !== safe
       )
         return Promise.reject();
@@ -87,7 +93,7 @@ describe('OnlySafeOwner guard tests', () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
       .send({
-        account: account,
+        signer: signer,
       })
       .expect(200);
   });

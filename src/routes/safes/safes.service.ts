@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { max } from 'lodash';
 import * as semver from 'semver';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
@@ -18,6 +18,7 @@ import {
   SafeState,
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
+import { Page } from '@/domain/entities/page.entity';
 
 @Injectable()
 export class SafesService {
@@ -35,20 +36,20 @@ export class SafesService {
     chainId: string;
     safeAddress: string;
   }): Promise<SafeState> {
-    const [safe, { recommendedMasterCopyVersion }, supportedMasterCopies] =
+    const [safe, { recommendedMasterCopyVersion }, supportedSingletons] =
       await Promise.all([
         this.safeRepository.getSafe({
           chainId: args.chainId,
           address: args.safeAddress,
         }),
         this.chainsRepository.getChain(args.chainId),
-        this.chainsRepository.getMasterCopies(args.chainId),
+        this.chainsRepository.getSingletons(args.chainId),
       ]);
 
     const versionState = this.computeVersionState(
       safe,
       recommendedMasterCopyVersion,
-      supportedMasterCopies,
+      supportedSingletons,
     );
 
     const [
@@ -99,10 +100,10 @@ export class SafesService {
       safe.owners.map((ownerAddress) => new AddressInfo(ownerAddress)),
       masterCopyInfo,
       versionState,
-      this.toUnixTimestampInSecondsOrNow(collectiblesTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(queuedTransactionTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(transactionHistoryTag).toString(),
-      this.toUnixTimestampInSecondsOrNow(messagesTag).toString(),
+      this.toUnixTimestampInSecondsOrNull(collectiblesTag),
+      this.toUnixTimestampInSecondsOrNull(queuedTransactionTag),
+      this.toUnixTimestampInSecondsOrNull(transactionHistoryTag),
+      this.toUnixTimestampInSecondsOrNull(messagesTag),
       moduleAddressesInfo,
       fallbackHandlerInfo,
       guardInfo,
@@ -118,9 +119,8 @@ export class SafesService {
     return new SafeNonces(nonce);
   }
 
-  private toUnixTimestampInSecondsOrNow(date: Date | null): number {
-    const dateValue = date ? date.valueOf() : Date.now();
-    return Math.floor(dateValue / 1000);
+  private toUnixTimestampInSecondsOrNull(date: Date | null): string | null {
+    return date ? Math.floor(date.valueOf() / 1000).toString() : null;
   }
 
   private async getCollectiblesTag(
@@ -190,7 +190,12 @@ export class SafesService {
 
     const dates = txPages
       .filter(
-        <T>(page: PromiseSettledResult<T>): page is PromiseFulfilledResult<T> =>
+        (
+          page,
+        ): page is
+          | PromiseFulfilledResult<Page<MultisigTransaction>>
+          | PromiseFulfilledResult<Page<ModuleTransaction>>
+          | PromiseFulfilledResult<Page<Transfer>> =>
           page.status === 'fulfilled',
       )
       .flatMap(
@@ -228,7 +233,7 @@ export class SafesService {
   private computeVersionState(
     safe: Safe,
     recommendedSafeVersion: string,
-    supportedMasterCopies: MasterCopy[],
+    supportedSingletons: Singleton[],
   ): MasterCopyVersionState {
     // If the safe version is null we return UNKNOWN
     if (safe.version === null) return MasterCopyVersionState.UNKNOWN;
@@ -236,11 +241,11 @@ export class SafesService {
     if (!semver.valid(safe.version)) return MasterCopyVersionState.UNKNOWN;
     if (!semver.valid(recommendedSafeVersion))
       return MasterCopyVersionState.UNKNOWN;
-    // If the master copy of this safe is not part of the collection
-    // of the supported master copies we return UNKNOWN
+    // If the singleton of this safe is not part of the collection
+    // of the supported singletons we return UNKNOWN
     if (
-      !supportedMasterCopies
-        .map((masterCopy) => masterCopy.address)
+      !supportedSingletons
+        .map((singleton) => singleton.address)
         .includes(safe.masterCopy)
     )
       return MasterCopyVersionState.UNKNOWN;

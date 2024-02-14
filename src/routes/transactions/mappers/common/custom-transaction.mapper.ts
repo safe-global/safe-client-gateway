@@ -48,7 +48,9 @@ export class CustomTransactionMapper {
       const parameter = dataDecoded.parameters?.find(
         (parameter) => parameter.name === TRANSACTIONS_PARAMETER_NAME,
       );
-      return parameter?.valueDecoded?.length ?? null;
+      return Array.isArray(parameter?.valueDecoded)
+        ? parameter.valueDecoded.length
+        : null;
     }
 
     return null;

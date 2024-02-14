@@ -1,4 +1,10 @@
-import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  INestApplication,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -29,20 +35,20 @@ class TestController {
 }
 
 describe('EmailRegistration guard tests', () => {
-  let app;
+  let app: INestApplication;
 
   const chainId = faker.string.numeric();
   const safe = faker.finance.ethereumAddress();
   const emailAddress = faker.internet.email();
   const timestamp = faker.date.recent().getTime();
   const privateKey = generatePrivateKey();
-  const account = privateKeyToAccount(privateKey);
-  const accountAddress = account.address;
+  const signer = privateKeyToAccount(privateKey);
+  const signerAddress = signer.address;
   let signature: Hash;
 
   beforeAll(async () => {
-    const message = `email-register-${chainId}-${safe}-${emailAddress}-${accountAddress}-${timestamp}`;
-    signature = await account.signMessage({ message });
+    const message = `email-register-${chainId}-${safe}-${emailAddress}-${signerAddress}-${timestamp}`;
+    signature = await signer.signMessage({ message });
   });
 
   beforeEach(async () => {
@@ -72,11 +78,11 @@ describe('EmailRegistration guard tests', () => {
   it('returns 200 on a valid signature', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        account: accountAddress,
-        signature: signature,
-        timestamp: timestamp,
+        signer: signerAddress,
       })
       .expect(200);
   });
@@ -84,11 +90,11 @@ describe('EmailRegistration guard tests', () => {
   it('returns 403 on an invalid signature', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: faker.internet.email(), // different email should have different signature
-        account: accountAddress,
-        signature,
-        timestamp,
+        account: signerAddress,
       })
       .expect(403)
       .expect({
@@ -101,10 +107,10 @@ describe('EmailRegistration guard tests', () => {
   it('returns 403 if the email address is missing from payload', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
-        account: accountAddress,
-        signature,
-        timestamp,
+        account: signerAddress,
       })
       .expect(403)
       .expect({
@@ -117,10 +123,10 @@ describe('EmailRegistration guard tests', () => {
   it('returns 403 if the account is missing from payload', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        signature,
-        timestamp,
       })
       .expect(403)
       .expect({
@@ -133,10 +139,10 @@ describe('EmailRegistration guard tests', () => {
   it('returns 403 if the signature is missing from payload', async () => {
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safe}`)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: accountAddress,
-        timestamp,
+        account: signerAddress,
       })
       .expect(403)
       .expect({
@@ -152,10 +158,10 @@ describe('EmailRegistration guard tests', () => {
 
     await request(app.getHttpServer())
       .post(`/test/${chainId}/${safeAddress}`)
+      .set('Safe-Wallet-Signature', signature)
       .send({
         emailAddress,
-        account: accountAddress,
-        signature,
+        account: signerAddress,
       })
       .expect(403)
       .expect({
@@ -170,11 +176,11 @@ describe('EmailRegistration guard tests', () => {
 
     await request(app.getHttpServer())
       .post(`/test/invalid/chains/${chainId}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: accountAddress,
-        signature,
-        timestamp,
+        account: signerAddress,
       })
       .expect(403)
       .expect({
@@ -189,11 +195,11 @@ describe('EmailRegistration guard tests', () => {
 
     await request(app.getHttpServer())
       .post(`/test/invalid/safes/${safeAddress}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress,
-        account: accountAddress,
-        signature,
-        timestamp,
+        account: signerAddress,
       })
       .expect(403)
       .expect({

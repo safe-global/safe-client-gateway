@@ -21,16 +21,19 @@ import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
@@ -68,15 +71,16 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain });
+        return Promise.resolve({ data: chain, status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
           data: { ...page, count: faker.word.words() },
+          status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe });
+        return Promise.resolve({ data: safe, status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -171,7 +175,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chainResponse, status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
@@ -181,16 +185,17 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             previous: null,
             results: transactions,
           },
+          status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse });
+        return Promise.resolve({ data: safeResponse, status: 200 });
       }
       if (url === getSafeAppsUrl) {
-        return Promise.resolve({ data: safeAppsResponse });
+        return Promise.resolve({ data: safeAppsResponse, status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse });
+        return Promise.resolve({ data: contractResponse, status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -364,7 +369,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chainResponse, status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
@@ -378,16 +383,17 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             })}/?limit=10&offset=30`,
             results: transactions,
           },
+          status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse });
+        return Promise.resolve({ data: safeResponse, status: 200 });
       }
       if (url === getSafeAppsUrl) {
-        return Promise.resolve({ data: safeAppsResponse });
+        return Promise.resolve({ data: safeAppsResponse, status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse });
+        return Promise.resolve({ data: contractResponse, status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -497,16 +503,19 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .build(),
       ) as MultisigTransaction,
     ];
-    networkService.get.mockImplementation((url: string, query) => {
+    networkService.get.mockImplementation((url, query) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse });
+        return Promise.resolve({ data: chainResponse, status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
+        if (!query?.params) {
+          fail('Query params not found');
+        }
         expect(query.params.trusted).toBe(false);
 
         return Promise.resolve({
@@ -516,16 +525,17 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             previous: null,
             results: transactions,
           },
+          status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeResponse });
+        return Promise.resolve({ data: safeResponse, status: 200 });
       }
       if (url === getSafeAppsUrl) {
-        return Promise.resolve({ data: safeAppsResponse });
+        return Promise.resolve({ data: safeAppsResponse, status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse });
+        return Promise.resolve({ data: contractResponse, status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });

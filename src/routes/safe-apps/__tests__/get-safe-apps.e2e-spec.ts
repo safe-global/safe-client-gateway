@@ -6,11 +6,12 @@ import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication;
   let redisClient: RedisClientType;
-  const chainId = '5'; // Görli testnet
+  const chainId = '1'; // Mainnet
   const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {
@@ -40,7 +41,7 @@ describe('Get Safe Apps e2e test', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toBeInstanceOf(Array);
-        body.forEach((safeApp) =>
+        body.forEach((safeApp: SafeApp) =>
           expect(safeApp).toEqual(
             expect.objectContaining({
               id: expect.any(Number),

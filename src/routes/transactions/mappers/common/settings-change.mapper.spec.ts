@@ -21,7 +21,7 @@ import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/setti
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   let mapper: SettingsChangeMapper;

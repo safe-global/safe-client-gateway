@@ -11,6 +11,7 @@ import { Inject } from '@nestjs/common/decorators';
 import { Observable, tap } from 'rxjs';
 import { formatRouteLogMessage } from '@/logging/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { Request, Response } from 'express';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests
@@ -30,7 +31,7 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const startTimeMs: number = performance.now();
 
     const httpContext = context.switchToHttp();
@@ -60,7 +61,7 @@ export class RouteLoggerInterceptor implements NestInterceptor {
    * compute the response time of the route
    * @private
    */
-  private onError(request: any, error: Error, startTimeMs: number): void {
+  private onError(request: Request, error: Error, startTimeMs: number): void {
     let statusCode;
     if (error instanceof HttpException) {
       statusCode = error.getStatus();
@@ -84,7 +85,11 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     }
   }
 
-  private onComplete(request: any, response: any, startTimeMs: number): void {
+  private onComplete(
+    request: Request,
+    response: Response,
+    startTimeMs: number,
+  ): void {
     this.loggingService.info(
       formatRouteLogMessage(response.statusCode, request, startTimeMs),
     );

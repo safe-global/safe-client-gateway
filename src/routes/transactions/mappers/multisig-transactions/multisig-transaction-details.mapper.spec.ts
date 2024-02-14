@@ -16,34 +16,34 @@ import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/m
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 const statusMapper = jest.mocked({
   mapTransactionStatus: jest.fn(),
-} as unknown as MultisigTransactionStatusMapper);
+} as jest.MockedObjectDeep<MultisigTransactionStatusMapper>);
 
 const transactionInfoMapper = jest.mocked({
   mapTransactionInfo: jest.fn(),
-} as unknown as MultisigTransactionInfoMapper);
+} as jest.MockedObjectDeep<MultisigTransactionInfoMapper>);
 
 const transactionDataMapper = jest.mocked({
   isTrustedDelegateCall: jest.fn(),
   buildAddressInfoIndex: jest.fn(),
-} as unknown as TransactionDataMapper);
+} as jest.MockedObjectDeep<TransactionDataMapper>);
 
 const safeAppInfoMapper = jest.mocked({
   mapSafeAppInfo: jest.fn(),
-} as unknown as SafeAppInfoMapper);
+} as jest.MockedObjectDeep<SafeAppInfoMapper>);
 
 const multisigExecutionDetailsMapper = jest.mocked({
   mapMultisigExecutionDetails: jest.fn(),
-} as unknown as MultisigTransactionExecutionDetailsMapper);
+} as jest.MockedObjectDeep<MultisigTransactionExecutionDetailsMapper>);
 
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new MultisigTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,

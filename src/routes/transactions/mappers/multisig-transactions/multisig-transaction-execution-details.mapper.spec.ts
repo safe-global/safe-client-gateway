@@ -17,25 +17,25 @@ import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
-} as unknown as AddressInfoHelper);
+} as jest.MockedObjectDeep<AddressInfoHelper>);
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
-} as unknown as TokenRepository);
+} as jest.MockedObjectDeep<TokenRepository>);
 
 const safeRepository = jest.mocked({
   getMultisigTransactions: jest.fn(),
-} as unknown as SafeRepository);
+} as jest.MockedObjectDeep<SafeRepository>);
 
 const loggingService = jest.mocked({
   debug: jest.fn(),
-} as unknown as ILoggingService);
+} as jest.MockedObjectDeep<ILoggingService>);
 
 describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionDetailsMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,

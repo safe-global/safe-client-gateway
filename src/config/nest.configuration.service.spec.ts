@@ -5,14 +5,14 @@ import { ConfigService } from '@nestjs/config';
 const configService = {
   get: jest.fn(),
   getOrThrow: jest.fn(),
-} as unknown as ConfigService;
+} as jest.MockedObjectDeep<ConfigService>;
 const configServiceMock = jest.mocked(configService);
 
 describe('NestConfigurationService', () => {
   let target: NestConfigurationService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new NestConfigurationService(configServiceMock);
   });
 

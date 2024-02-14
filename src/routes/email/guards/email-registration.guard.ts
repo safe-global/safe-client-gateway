@@ -11,20 +11,20 @@ import { verifyMessage } from 'viem';
  * The EmailRegistrationGuard guard should be used on routes that require
  * authenticated actions on registering email addresses.
  *
- * This guard therefore validates if the message came from the specified account.
+ * This guard therefore validates if the message came from the specified signer.
  *
  * The following message should be signed:
- * email-register-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
+ * email-register-${chainId}-${safe}-${emailAddress}-${signer}-${timestamp}
  *
  * (where ${} represents placeholder values for the respective data)
  *
  * To use this guard, the route should have:
- * - the 'chainId' declared as a parameter
- * - the 'safeAddress' declared as a parameter
+ * - the 'chainId' as part of the path parameters
+ * - the 'safeAddress' as part of the path parameters
  * - the 'emailAddress' as part of the JSON body (top level)
- * - the 'account' as part of the JSON body (top level)
- * - the 'signature' as part of the JSON body (top level) - see message format to be signed
- * - the 'timestamp' as part of the JSON body (top level)
+ * - the 'signer' as part of the JSON body (top level)
+ * - the 'Safe-Wallet-Signature' header set to the signature
+ * - the 'Safe-Wallet-Signature-Timestamp' header set to the signature timestamp
  */
 @Injectable()
 export class EmailRegistrationGuard implements CanActivate {
@@ -40,9 +40,9 @@ export class EmailRegistrationGuard implements CanActivate {
     const chainId = request.params['chainId'];
     const safe = request.params['safeAddress'];
     const emailAddress = request.body['emailAddress'];
-    const account = request.body['account'];
-    const signature = request.body['signature'];
-    const timestamp = request.body['timestamp'];
+    const signer = request.body['signer'];
+    const signature = request.headers['safe-wallet-signature'];
+    const timestamp = request.headers['safe-wallet-signature-timestamp'];
 
     // Required fields
     if (
@@ -50,16 +50,16 @@ export class EmailRegistrationGuard implements CanActivate {
       !safe ||
       !signature ||
       !emailAddress ||
-      !account ||
+      !signer ||
       !timestamp
     )
       return false;
 
-    const message = `${EmailRegistrationGuard.ACTION_PREFIX}-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}`;
+    const message = `${EmailRegistrationGuard.ACTION_PREFIX}-${chainId}-${safe}-${emailAddress}-${signer}-${timestamp}`;
 
     try {
       return await verifyMessage({
-        address: account,
+        address: signer,
         message,
         signature,
       });

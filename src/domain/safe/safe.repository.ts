@@ -20,6 +20,8 @@ import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -33,6 +35,9 @@ export class SafeRepository implements ISafeRepository {
     private readonly transferValidator: TransferValidator,
     private readonly moduleTransactionValidator: ModuleTransactionValidator,
     private readonly creationTransactionValidator: CreationTransactionValidator,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   async getSafe(args: { chainId: string; address: string }): Promise<Safe> {
@@ -280,6 +285,29 @@ export class SafeRepository implements ISafeRepository {
     return this.multisigTransactionValidator.validate(multiSigTransaction);
   }
 
+  async deleteTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const { safe } = await transactionService.getMultisigTransaction(
+      args.safeTxHash,
+    );
+    await transactionService.deleteTransaction(args);
+
+    // Ensure transaction is removed from cache in case event is not received
+    Promise.all([
+      transactionService.clearMultisigTransaction(args.safeTxHash),
+      transactionService.clearMultisigTransactions(safe),
+    ]).catch(() => {
+      this.loggingService.warn(
+        'Failed to immediately clear deleted transaction from cache',
+      );
+    });
+  }
+
   async clearMultisigTransactions(args: {
     chainId: string;
     safeAddress: string;
@@ -344,6 +372,34 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return this.safeListValidator.validate(safeList);
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: string;
+  }): Promise<{ [chainId: string]: Array<string> }> {
+    // Note: does not take pagination into account but we do not support
+    // enough chains for it to be an issue
+    const { results } = await this.chainsRepository.getChains();
+    const allSafeLists = await Promise.all(
+      results.map(async ({ chainId }) => {
+        const safeList = await this.getSafesByOwner({
+          chainId,
+          ownerAddress: args.ownerAddress,
+        });
+
+        return {
+          chainId,
+          safeList,
+        };
+      }),
+    );
+
+    return allSafeLists.reduce((acc, { chainId, safeList }) => {
+      return {
+        ...acc,
+        [chainId]: safeList.safes,
+      };
+    }, {});
   }
 
   async getLastTransactionSortedByNonce(args: {

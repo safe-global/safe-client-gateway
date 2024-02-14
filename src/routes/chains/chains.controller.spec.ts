@@ -11,31 +11,32 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { masterCopyBuilder } from '@/domain/chains/entities/__tests__/master-copy.builder';
+import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
 import { Chain } from '@/domain/chains/entities/chain.entity';
-import {
-  MasterCopy as DomainMasterCopy,
-  MasterCopy,
-} from '@/domain/chains/entities/master-copies.entity';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
+import { MasterCopy } from '@/routes/chains/entities/master-copy.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
 
-  let safeConfigUrl;
-  let name;
-  let version;
-  let buildNumber;
-  let networkService;
+  let safeConfigUrl: string;
+  let name: string;
+  let version: string;
+  let buildNumber: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
@@ -48,13 +49,13 @@ describe('Chains Controller (Unit)', () => {
   const backboneResponse: Backbone = backboneBuilder().build();
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -76,7 +77,10 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /chains', () => {
     it('Success', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainsResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainsResponse,
+        status: 200,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains')
@@ -90,7 +94,9 @@ describe('Chains Controller (Unit)', () => {
               chainId: chainsResponse.results[0].chainId,
               chainName: chainsResponse.results[0].chainName,
               description: chainsResponse.results[0].description,
+              chainLogoUri: chainsResponse.results[0].chainLogoUri,
               l2: chainsResponse.results[0].l2,
+              isTestnet: chainsResponse.results[0].isTestnet,
               shortName: chainsResponse.results[0].shortName,
               rpcUri: chainsResponse.results[0].rpcUri,
               safeAppsRpcUri: chainsResponse.results[0].safeAppsRpcUri,
@@ -109,7 +115,9 @@ describe('Chains Controller (Unit)', () => {
               chainId: chainsResponse.results[1].chainId,
               chainName: chainsResponse.results[1].chainName,
               description: chainsResponse.results[1].description,
+              chainLogoUri: chainsResponse.results[1].chainLogoUri,
               l2: chainsResponse.results[1].l2,
+              isTestnet: chainsResponse.results[1].isTestnet,
               shortName: chainsResponse.results[1].shortName,
               rpcUri: chainsResponse.results[1].rpcUri,
               safeAppsRpcUri: chainsResponse.results[1].safeAppsRpcUri,
@@ -140,9 +148,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure: network service fails', async () => {
-      networkService.get.mockRejectedValueOnce({
-        status: 500,
-      } as NetworkResponseError);
+      const error = new NetworkResponseError(
+        new URL(`${safeConfigUrl}/v1/chains`),
+        {
+          status: 500,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
         message: 'An error occurred',
@@ -167,6 +179,7 @@ describe('Chains Controller (Unit)', () => {
           ...chainsResponse,
           results: [...chainsResponse.results, { invalid: 'item' }],
         },
+        status: 200,
       });
 
       await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
@@ -196,7 +209,9 @@ describe('Chains Controller (Unit)', () => {
         chainId: chainDomain.chainId,
         chainName: chainDomain.chainName,
         description: chainDomain.description,
+        chainLogoUri: chainDomain.chainLogoUri,
         l2: chainDomain.l2,
+        isTestnet: chainDomain.isTestnet,
         nativeCurrency: chainDomain.nativeCurrency,
         transactionService: chainDomain.transactionService,
         blockExplorerUriTemplate: chainDomain.blockExplorerUriTemplate,
@@ -210,7 +225,10 @@ describe('Chains Controller (Unit)', () => {
         theme: chainDomain.theme,
         ensRegistryAddress: chainDomain.ensRegistryAddress,
       };
-      networkService.get.mockResolvedValueOnce({ data: chainDomain });
+      networkService.get.mockResolvedValueOnce({
+        data: chainDomain,
+        status: 200,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
@@ -220,10 +238,14 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
-      networkService.get.mockRejectedValueOnce({
-        data: { message: 'Not Found', status: 404 },
-        status: 404,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/v1/chains`),
+        {
+          status: 404,
+        } as Response,
+        { message: 'Not Found' },
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
@@ -236,9 +258,13 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
-      networkService.get.mockRejectedValueOnce({
-        status: 503,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/v1/chains`),
+        {
+          status: 503,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
@@ -252,8 +278,14 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /:chainId/about/backbone', () => {
     it('Success', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      networkService.get.mockResolvedValueOnce({ data: backboneResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
+      networkService.get.mockResolvedValueOnce({
+        data: backboneResponse,
+        status: 200,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
@@ -271,9 +303,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure getting the chain', async () => {
-      networkService.get.mockRejectedValueOnce({
-        status: 400,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/v1/chains`),
+        {
+          status: 400,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
@@ -291,10 +327,17 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Failure getting the backbone data', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      networkService.get.mockRejectedValueOnce({
-        status: 502,
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/api/v1/about`),
+        {
+          status: 502,
+        } as Response,
+      );
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
       });
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
@@ -317,23 +360,27 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /:chainId/about/master-copies', () => {
     it('Success', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      const domainMasterCopiesResponse: DomainMasterCopy[] = [
-        masterCopyBuilder().build(),
-        masterCopyBuilder().build(),
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
+      const domainSingletonsResponse: Singleton[] = [
+        singletonBuilder().build(),
+        singletonBuilder().build(),
       ];
       networkService.get.mockResolvedValueOnce({
-        data: domainMasterCopiesResponse,
+        data: domainSingletonsResponse,
+        status: 200,
       });
-      const masterCopiesResponse = [
+      const masterCopiesResponse: Array<MasterCopy> = [
         {
-          address: domainMasterCopiesResponse[0].address,
-          version: domainMasterCopiesResponse[0].version,
-        } as MasterCopy,
+          address: domainSingletonsResponse[0].address,
+          version: domainSingletonsResponse[0].version,
+        },
         {
-          address: domainMasterCopiesResponse[1].address,
-          version: domainMasterCopiesResponse[1].version,
-        } as MasterCopy,
+          address: domainSingletonsResponse[1].address,
+          version: domainSingletonsResponse[1].version,
+        },
       ];
 
       await request(app.getHttpServer())
@@ -346,15 +393,19 @@ describe('Chains Controller (Unit)', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+        `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
       expect(networkService.get.mock.calls[1][1]).toBe(undefined);
     });
 
     it('Failure getting the chain', async () => {
-      networkService.get.mockRejectedValueOnce({
-        status: 400,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/api/v1/chains/1`),
+        {
+          status: 400,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
@@ -372,10 +423,17 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('Should fail getting the master-copies data', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      networkService.get.mockRejectedValueOnce({
-        status: 502,
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/api/v1/about/singletons/`),
+        {
+          status: 502,
+        } as Response,
+      );
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
       });
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
@@ -390,19 +448,23 @@ describe('Chains Controller (Unit)', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0]).toBe(
-        `${chainResponse.transactionService}/api/v1/about/master-copies/`,
+        `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
       expect(networkService.get.mock.calls[1][1]).toBe(undefined);
     });
 
     it('Should return validation error', async () => {
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      const domainMasterCopiesResponse = [
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
+      const domainSingletonsResponse = [
         { address: 1223, safe: 'error' },
-        masterCopyBuilder().build(),
+        singletonBuilder().build(),
       ];
       networkService.get.mockResolvedValueOnce({
-        data: domainMasterCopiesResponse,
+        data: domainSingletonsResponse,
+        status: 200,
       });
 
       await request(app.getHttpServer())
@@ -425,7 +487,10 @@ describe('Chains Controller (Unit)', () => {
         version,
         buildNumber,
       };
-      networkService.get.mockResolvedValueOnce({ data: chainDomain });
+      networkService.get.mockResolvedValueOnce({
+        data: chainDomain,
+        status: 200,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainDomain.chainId}/about`)
@@ -435,10 +500,14 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should return not Not found', async () => {
       const chainId = faker.string.numeric();
-      networkService.get.mockRejectedValueOnce({
-        data: { message: 'Not Found', status: 404 },
-        status: 404,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/v1/chains`),
+        {
+          status: 404,
+        } as Response,
+        { message: 'Not Found' },
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/about`)
@@ -451,9 +520,13 @@ describe('Chains Controller (Unit)', () => {
 
     it('Should fail with An error occurred', async () => {
       const chainId = faker.string.numeric();
-      networkService.get.mockRejectedValueOnce({
-        status: 503,
-      });
+      const error = new NetworkResponseError(
+        new URL(`${chainResponse.transactionService}/v1/chains`),
+        {
+          status: 503,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/about`)

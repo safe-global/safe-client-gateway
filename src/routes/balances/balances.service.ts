@@ -7,7 +7,7 @@ import { Balance } from '@/routes/balances/entities/balance.entity';
 import { Balances } from '@/routes/balances/entities/balances.entity';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
-import { orderBy } from 'lodash';
+import { intersection, orderBy } from 'lodash';
 import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 
@@ -81,6 +81,13 @@ export class BalancesService {
   }
 
   async getSupportedFiatCodes(): Promise<string[]> {
-    return this.pricesRepository.getFiatCodes();
+    const balancesRepositoryFiatCodes = this.balancesRepository.getFiatCodes();
+    const pricesRepositoryFiatCodes =
+      await this.pricesRepository.getFiatCodes();
+
+    return intersection(
+      balancesRepositoryFiatCodes,
+      pricesRepositoryFiatCodes,
+    ).sort();
   }
 }

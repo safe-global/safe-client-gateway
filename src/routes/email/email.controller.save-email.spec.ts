@@ -8,14 +8,17 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { IEmailDataSource } from '@/domain/interfaces/email.datasource.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { getAddress } from 'viem';
@@ -23,17 +26,21 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
+import { INestApplication } from '@nestjs/common';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
+import { EmailAddress } from '@/domain/account/entities/account.entity';
 
 describe('Email controller save email tests', () => {
-  let app;
-  let configurationService;
-  let emailApi;
-  let emailDatasource;
-  let networkService;
-  let safeConfigUrl;
+  let app: INestApplication;
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let emailApi: jest.MockedObjectDeep<IEmailApi>;
+  let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let safeConfigUrl: string | undefined;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,8 +48,8 @@ describe('Email controller save email tests', () => {
     })
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -54,7 +61,7 @@ describe('Email controller save email tests', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     emailApi = moduleFixture.get(IEmailApi);
-    emailDatasource = moduleFixture.get(IEmailDataSource);
+    accountDataSource = moduleFixture.get(IAccountDataSource);
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -74,38 +81,50 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('owners', [accountAddress])
+      .with('owners', [signerAddress])
       // Faker generates non-checksum addresses only
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    emailDatasource.saveEmail.mockResolvedValue({
-      email: emailAddress,
-      verificationCode: faker.string.numeric(),
-    });
+    accountDataSource.createAccount.mockResolvedValue([
+      accountBuilder()
+        .with('chainId', chain.chainId)
+        .with('emailAddress', new EmailAddress(emailAddress))
+        .with('safeAddress', safe.address)
+        .with('signer', signerAddress)
+        .with('isVerified', false)
+        .build(),
+      verificationCodeBuilder().build(),
+    ]);
+    accountDataSource.subscribe.mockResolvedValue([
+      {
+        key: faker.word.sample(),
+        name: faker.word.words(2),
+      },
+    ]);
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        account: account.address,
-        timestamp: timestamp,
-        signature: signature,
+        signer: signer.address,
       })
       .expect(201)
       .expect({});
@@ -118,6 +137,12 @@ describe('Email controller save email tests', () => {
         'email.templates.verificationCode',
       ),
       to: [emailAddress],
+    });
+    expect(accountDataSource.subscribe).toHaveBeenCalledWith({
+      chainId: chain.chainId,
+      safeAddress: safe.address,
+      signer: signerAddress,
+      notificationTypeKey: 'account_recovery',
     });
   });
 
@@ -141,11 +166,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -173,11 +198,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -204,9 +229,9 @@ describe('Email controller save email tests', () => {
     networkService.get.mockImplementation((url) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: chain });
+          return Promise.resolve({ data: chain, status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-          return Promise.resolve({ data: safe });
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -214,11 +239,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({

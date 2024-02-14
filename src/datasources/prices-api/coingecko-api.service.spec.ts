@@ -11,21 +11,21 @@ import { ILoggingService } from '@/logging/logging.interface';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
-} as unknown as CacheFirstDataSource);
+} as jest.MockedObjectDeep<CacheFirstDataSource>);
 
 const mockCacheService = jest.mocked({
   deleteByKey: jest.fn(),
   get: jest.fn(),
   set: jest.fn(),
-} as unknown as ICacheService);
+} as jest.MockedObjectDeep<ICacheService>);
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
-} as unknown as INetworkService);
+} as jest.MockedObjectDeep<INetworkService>);
 
 const mockLoggingService = {
   debug: jest.fn(),
-} as unknown as ILoggingService;
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('CoingeckoAPI', () => {
   let service: CoingeckoApi;
@@ -38,7 +38,7 @@ describe('CoingeckoAPI', () => {
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('prices.baseUri', coingeckoBaseUri);
     fakeConfigurationService.set('prices.apiKey', coingeckoApiKey);

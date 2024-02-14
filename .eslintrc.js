@@ -23,5 +23,7 @@ module.exports = {
       'warn',
       { assertionStyle: 'as' },
     ],
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-floating-promises': 'warn',
   },
 };

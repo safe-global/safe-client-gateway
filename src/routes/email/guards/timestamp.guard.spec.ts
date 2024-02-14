@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/configuration';
-import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  INestApplication,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
@@ -19,7 +25,7 @@ class TestController {
 }
 
 describe('TimestampGuard tests', () => {
-  let app;
+  let app: INestApplication;
 
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -36,7 +42,7 @@ describe('TimestampGuard tests', () => {
     await app.close();
   });
 
-  it('returns 403 on empty body', async () => {
+  it('returns 403 on empty Safe-Wallet-Signature-Timestamp header', async () => {
     await request(app.getHttpServer()).post(`/test`).expect(403).expect({
       message: 'Forbidden resource',
       error: 'Forbidden',
@@ -47,9 +53,7 @@ describe('TimestampGuard tests', () => {
   it('returns 403 if timestamp is not a number', async () => {
     await request(app.getHttpServer())
       .post(`/test`)
-      .send({
-        timestamp: faker.word.sample(),
-      })
+      .set('Safe-Wallet-Signature-Timestamp', faker.word.sample())
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -64,9 +68,7 @@ describe('TimestampGuard tests', () => {
 
     await request(app.getHttpServer())
       .post(`/test`)
-      .send({
-        timestamp: timestamp,
-      })
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(200);
   });
 
@@ -76,9 +78,7 @@ describe('TimestampGuard tests', () => {
 
     await request(app.getHttpServer())
       .post(`/test`)
-      .send({
-        timestamp: timestamp,
-      })
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(403)
       .expect({
         message: 'Forbidden resource',

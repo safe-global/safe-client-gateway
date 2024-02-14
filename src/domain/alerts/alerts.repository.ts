@@ -5,10 +5,10 @@ import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
-import { SafeDecoder } from '@/domain/alerts/contracts/safe-decoder.helper';
-import { MultiSendDecoder } from '@/domain/alerts/contracts/multi-send-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import { IEmailRepository } from '@/domain/email/email.repository.interface';
+import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -26,8 +26,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly alertsApi: IAlertsApi,
     @Inject(IEmailApi)
     private readonly emailApi: IEmailApi,
-    @Inject(IEmailRepository)
-    private readonly emailRepository: IEmailRepository,
+    @Inject(IAccountRepository)
+    private readonly accountRepository: IAccountRepository,
     private readonly urlGenerator: UrlGeneratorHelper,
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly safeDecoder: SafeDecoder,
@@ -64,12 +64,13 @@ export class AlertsRepository implements IAlertsRepository {
     // Recovery module is deployed per Safe so we can assume that it is only enabled on one
     const safeAddress = safes[0];
 
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const verifiedAccounts = await this.accountRepository.getAccounts({
       chainId,
       safeAddress,
+      onlyVerified: true,
     });
 
-    if (emails.length === 0) {
+    if (verifiedAccounts.length === 0) {
       this.loggingService.debug(
         `An alert for a Safe with no associated emails was received. moduleAddress=${moduleAddress}, safeAddress=${safeAddress}`,
       );
@@ -95,12 +96,19 @@ export class AlertsRepository implements IAlertsRepository {
         decodedTransactions,
       });
 
-      this._notifySafeSetup({
+      await this._notifySafeSetup({
         chainId,
         newSafeState,
       });
     } catch {
-      this._notifyUnknownTransaction({ chainId, safeAddress, emails });
+      const emails = verifiedAccounts.map(
+        (account) => account.emailAddress.value,
+      );
+      await this._notifyUnknownTransaction({
+        chainId,
+        safeAddress,
+        emails,
+      });
     }
   }
 
@@ -214,12 +222,13 @@ export class AlertsRepository implements IAlertsRepository {
     chainId: string;
     newSafeState: Safe;
   }): Promise<void> {
-    const emails = await this.emailRepository.getVerifiedEmailsBySafeAddress({
+    const verifiedAccounts = await this.accountRepository.getAccounts({
       chainId: args.chainId,
       safeAddress: args.newSafeState.address,
+      onlyVerified: true,
     });
 
-    if (!emails.length) {
+    if (!verifiedAccounts.length) {
       this.loggingService.debug(
         `An alert log for an transaction with no verified emails associated was thrown for Safe ${args.newSafeState.address}`,
       );
@@ -242,6 +251,9 @@ export class AlertsRepository implements IAlertsRepository {
       };
     });
 
+    const emails = verifiedAccounts.map(
+      (account) => account.emailAddress.value,
+    );
     return this.emailApi.createMessage({
       to: emails,
       template: this.configurationService.getOrThrow<string>(

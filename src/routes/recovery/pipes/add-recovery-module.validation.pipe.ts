@@ -10,7 +10,7 @@ import {
 
 @Injectable()
 export class AddRecoveryModuleDtoValidationPipe
-  implements PipeTransform<any, AddRecoveryModuleDto>
+  implements PipeTransform<unknown, AddRecoveryModuleDto>
 {
   private readonly isValid: ValidateFunction<AddRecoveryModuleDto>;
 
@@ -23,7 +23,7 @@ export class AddRecoveryModuleDtoValidationPipe
       addRecoveryModuleDtoSchema,
     );
   }
-  transform(data: any): AddRecoveryModuleDto {
+  transform(data: unknown): AddRecoveryModuleDto {
     return this.genericValidator.validate(this.isValid, data);
   }
 }

@@ -8,16 +8,16 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 const networkService = {
   get: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 
 const mockNetworkService = jest.mocked(networkService);
 
@@ -26,7 +26,7 @@ describe('CacheFirstDataSource', () => {
   let fakeCacheService: FakeCacheService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
     fakeCacheService = new FakeCacheService();
     cacheFirstDataSource = new CacheFirstDataSource(
@@ -154,7 +154,9 @@ describe('CacheFirstDataSource', () => {
   it('should cache 404 errors coming from the network', async () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const expectedError = new NetworkResponseError(404);
+    const expectedError = new NetworkResponseError(new URL(targetUrl), {
+      status: 404,
+    } as Response);
     const notFoundExpireTimeSeconds = faker.number.int();
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -181,7 +183,9 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
-    const expectedError = new NetworkResponseError(404);
+    const expectedError = new NetworkResponseError(new URL(targetUrl), {
+      status: 404,
+    } as Response);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
         case targetUrl:
@@ -215,8 +219,7 @@ describe('CacheFirstDataSource', () => {
     const mockCache = jest.mocked({
       get: jest.fn(),
       set: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as ICacheService);
+    } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
       mockCache,
@@ -227,7 +230,9 @@ describe('CacheFirstDataSource', () => {
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
-    const expectedError = new NetworkResponseError(404);
+    const expectedError = new NetworkResponseError(new URL(targetUrl), {
+      status: 404,
+    } as Response);
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -257,8 +262,7 @@ describe('CacheFirstDataSource', () => {
     const mockCache = jest.mocked({
       get: jest.fn(),
       set: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as ICacheService);
+    } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
       mockCache,
@@ -268,7 +272,9 @@ describe('CacheFirstDataSource', () => {
 
     const targetUrl = faker.internet.url({ appendSlash: false });
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
-    const expectedError = new NetworkResponseError(404);
+    const expectedError = new NetworkResponseError(new URL(targetUrl), {
+      status: 404,
+    } as Response);
     const notFoundExpireTimeSeconds = faker.number.int();
     mockCache.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation((url) => {

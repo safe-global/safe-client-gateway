@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  PipeTransform,
+} from '@nestjs/common';
 import { ValidateFunction } from 'ajv';
 import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
 import {
@@ -10,7 +15,7 @@ import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
 @Injectable()
 export class GetEstimationDtoValidationPipe
-  implements PipeTransform<any, GetEstimationDto>
+  implements PipeTransform<unknown, GetEstimationDto>
 {
   private readonly isValid: ValidateFunction<GetEstimationDto>;
 
@@ -23,11 +28,13 @@ export class GetEstimationDtoValidationPipe
       getEstimationDtoSchema,
     );
   }
-  transform(data: any): GetEstimationDto {
+  transform(data: unknown): GetEstimationDto {
     try {
       return this.genericValidator.validate(this.isValid, data);
     } catch (err) {
-      err.status = HttpStatus.BAD_REQUEST;
+      if (err instanceof HttpException) {
+        throw new HttpException(err.getResponse(), HttpStatus.BAD_REQUEST);
+      }
       throw err;
     }
   }

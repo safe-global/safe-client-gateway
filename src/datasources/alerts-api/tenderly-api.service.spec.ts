@@ -5,11 +5,12 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 const networkService = {
   post: jest.fn(),
   delete: jest.fn(),
-} as unknown as INetworkService;
+} as jest.MockedObjectDeep<INetworkService>;
 const mockNetworkService = jest.mocked(networkService);
 
 describe('TenderlyApi', () => {
@@ -23,7 +24,7 @@ describe('TenderlyApi', () => {
   let tenderlyProject: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     tenderlyBaseUri = faker.internet.url({ appendSlash: false });
     tenderlyApiKey = faker.string.hexadecimal({ length: 32 });
@@ -106,12 +107,15 @@ describe('TenderlyApi', () => {
 
   it('should forward error', async () => {
     const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-    const error = {
-      status,
-      data: {
+    const error = new NetworkResponseError(
+      new URL(tenderlyBaseUri),
+      {
+        status,
+      } as Response,
+      {
         message: 'Unexpected error',
       },
-    };
+    );
     mockNetworkService.post.mockRejectedValueOnce(error);
 
     await expect(service.addContracts([])).rejects.toThrow(

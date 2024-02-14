@@ -9,27 +9,31 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { EmailDataSourceModule } from '@/datasources/email/email.datasource.module';
-import { TestEmailDatasourceModule } from '@/datasources/email/__tests__/test.email.datasource.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
-  let safeConfigUrl;
-  let networkService;
+  let safeConfigUrl: string;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(EmailDataSourceModule)
-      .useModule(TestEmailDatasourceModule)
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -62,9 +66,13 @@ describe('Owners Controller (Unit)', () => {
           faker.finance.ethereumAddress(),
         ],
       };
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
       networkService.get.mockResolvedValueOnce({
         data: transactionApiSafeListResponse,
+        status: 200,
       });
 
       await request(app.getHttpServer())
@@ -76,9 +84,15 @@ describe('Owners Controller (Unit)', () => {
     it('Failure: Config API fails', async () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
-      networkService.get.mockRejectedValueOnce({
-        status: 500,
-      });
+      const error = new NetworkResponseError(
+        new URL(
+          `${safeConfigUrl}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+        ),
+        {
+          status: 500,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
@@ -99,10 +113,19 @@ describe('Owners Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
-      networkService.get.mockRejectedValueOnce({
-        status: 500,
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
       });
+      const error = new NetworkResponseError(
+        new URL(
+          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+        ),
+        {
+          status: 500,
+        } as Response,
+      );
+      networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
@@ -134,13 +157,178 @@ describe('Owners Controller (Unit)', () => {
           faker.finance.ethereumAddress(),
         ],
       };
-      networkService.get.mockResolvedValueOnce({ data: chainResponse });
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
       networkService.get.mockResolvedValueOnce({
         data: transactionApiSafeListResponse,
+        status: 200,
       });
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
+        .expect(500)
+        .expect({
+          message: 'Validation failed',
+          code: 42,
+          arguments: [],
+        });
+    });
+  });
+
+  describe('GET all safes by owner address', () => {
+    it('Success', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric({ exclude: [chainId1] });
+
+      const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain2 = chainBuilder().with('chainId', chainId2).build();
+
+      const safesOnChain1 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      const safesOnChain2 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+
+      networkService.get.mockImplementation((url: string) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: {
+                results: [chain1, chain2],
+              },
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId1}`: {
+            return Promise.resolve({
+              data: chain1,
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId2}`: {
+            return Promise.resolve({
+              data: chain2,
+              status: 200,
+            });
+          }
+
+          case `${chain1.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain1 },
+              status: 200,
+            });
+          }
+
+          case `${chain2.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain2 },
+              status: 200,
+            });
+          }
+
+          default: {
+            fail(`Unexpected URL: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect({
+          [chainId1]: safesOnChain1,
+          [chainId2]: safesOnChain2,
+        });
+    });
+
+    it('Failure: Config API fails', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      networkService.get.mockImplementation((url: string) => {
+        if (url === `${safeConfigUrl}/api/v1/chains`) {
+          const error = new NetworkResponseError(
+            new URL(`${safeConfigUrl}/api/v1/chains`),
+            {
+              status: 500,
+            } as Response,
+          );
+          return Promise.reject(error);
+        }
+        fail(`Unexpected URL: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(500)
+        .expect({
+          message: 'An error occurred',
+          code: 500,
+        });
+
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith(
+        `${safeConfigUrl}/api/v1/chains`,
+        { params: { limit: undefined, offset: undefined } },
+      );
+    });
+
+    it('Failure: data validation fails', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const chainId = faker.string.numeric();
+
+      const chain = chainBuilder().with('chainId', chainId).build();
+
+      const safesOnChain = [
+        faker.finance.ethereumAddress(),
+        faker.number.int(),
+        faker.finance.ethereumAddress(),
+      ];
+
+      networkService.get.mockImplementation((url: string) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: {
+                results: [chain],
+              },
+              status: 200,
+            });
+          }
+
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`: {
+            return Promise.resolve({
+              data: chain,
+              status: 200,
+            });
+          }
+
+          case `${chain.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+            return Promise.resolve({
+              data: { safes: safesOnChain },
+              status: 200,
+            });
+          }
+
+          default: {
+            fail(`Unexpected URL: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
           message: 'Validation failed',

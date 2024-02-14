@@ -6,15 +6,15 @@ import { RequestScopedLoggingService } from '@/logging/logging.service';
 
 const mockClsService = jest.mocked({
   getId: jest.fn(),
-} as unknown as ClsService);
+} as jest.MockedObjectDeep<ClsService>);
 
 const mockLogger = {
   log: jest.fn(),
-} as unknown as winston.Logger;
+} as jest.MockedObjectDeep<winston.Logger>;
 
 const mockConfigurationService = jest.mocked({
   get: jest.fn(),
-} as unknown as IConfigurationService);
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('RequestScopedLoggingService', () => {
   const systemTime: Date = faker.date.recent();
@@ -29,7 +29,7 @@ describe('RequestScopedLoggingService', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {
       switch (key) {
         case 'about.version':

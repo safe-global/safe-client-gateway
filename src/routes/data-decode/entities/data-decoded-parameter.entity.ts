@@ -8,13 +8,19 @@ export class DataDecodedParameter {
   @ApiProperty()
   value: unknown;
   @ApiProperty()
-  valueDecoded?: Record<string, any> | Record<string, any>[] | undefined;
+  valueDecoded?:
+    | Record<string, unknown>
+    | Record<string, unknown>[]
+    | undefined;
 
   constructor(
     name: string,
     type: string,
     value: unknown,
-    valueDecoded: Record<string, any> | Record<string, any>[] | undefined,
+    valueDecoded:
+      | Record<string, unknown>
+      | Record<string, unknown>[]
+      | undefined,
   ) {
     this.name = name;
     this.type = type;

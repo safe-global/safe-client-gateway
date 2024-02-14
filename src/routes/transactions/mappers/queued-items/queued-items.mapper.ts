@@ -14,8 +14,8 @@ import {
 import { TransactionQueuedItem } from '@/routes/transactions/entities/queued-items/transaction-queued-item.entity';
 
 class TransactionGroup {
-  nonce: number;
-  transactions: MultisigTransaction[];
+  nonce!: number;
+  transactions!: MultisigTransaction[];
 }
 
 @Injectable()

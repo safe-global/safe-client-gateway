@@ -18,7 +18,7 @@ import { Response } from 'express';
  */
 @Catch(DataSourceError)
 export class DataSourceErrorFilter implements ExceptionFilter {
-  catch(exception: DataSourceError, host: ArgumentsHost): any {
+  catch(exception: DataSourceError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const code = exception.code ?? HttpStatus.SERVICE_UNAVAILABLE;

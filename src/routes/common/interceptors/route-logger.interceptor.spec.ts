@@ -12,12 +12,12 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 
-const mockLoggingService = {
+const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-} as unknown as ILoggingService;
+};
 
 @Controller({ path: 'test' })
 class TestController {

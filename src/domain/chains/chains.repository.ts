@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ChainsValidator } from '@/domain/chains/chains.validator';
 import { Chain } from '@/domain/chains/entities/chain.entity';
-import { MasterCopy } from '@/domain/chains/entities/master-copies.entity';
-import { MasterCopyValidator } from '@/domain/chains/master-copy.validator';
+import { Singleton } from '@/domain/chains/entities/singleton.entity';
+import { SingletonValidator } from '@/domain/chains/singleton.validator';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -15,7 +15,7 @@ export class ChainsRepository implements IChainsRepository {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly chainValidator: ChainsValidator,
-    private readonly masterCopyValidator: MasterCopyValidator,
+    private readonly singletonValidator: SingletonValidator,
   ) {}
 
   async getChain(chainId: string): Promise<Chain> {
@@ -33,12 +33,12 @@ export class ChainsRepository implements IChainsRepository {
     return page;
   }
 
-  async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
+  async getSingletons(chainId: string): Promise<Singleton[]> {
     const transactionApi =
       await this.transactionApiManager.getTransactionApi(chainId);
-    const masterCopies = await transactionApi.getMasterCopies();
-    return masterCopies.map((masterCopy) =>
-      this.masterCopyValidator.validate(masterCopy),
+    const singletons = await transactionApi.getSingletons();
+    return singletons.map((singleton) =>
+      this.singletonValidator.validate(singleton),
     );
   }
 }

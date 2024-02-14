@@ -120,7 +120,11 @@ export const chainSchema: JSONSchemaType<Chain> = {
     chainId: { type: 'string' },
     chainName: { type: 'string' },
     description: { type: 'string' },
+    // TODO: Make required when deemed stable on config service
+    chainLogoUri: { type: 'string', format: 'uri', nullable: true },
     l2: { type: 'boolean' },
+    // TODO: Make required when deemed stable on config service
+    isTestnet: { type: 'boolean', nullable: true },
     shortName: { type: 'string' },
     rpcUri: { $ref: 'rpc-uri.json' },
     safeAppsRpcUri: { $ref: 'rpc-uri.json' },
@@ -143,7 +147,9 @@ export const chainSchema: JSONSchemaType<Chain> = {
     'chainId',
     'chainName',
     'description',
+    // 'chainLogoUri',
     'l2',
+    // isTestnet,
     'shortName',
     'rpcUri',
     'safeAppsRpcUri',

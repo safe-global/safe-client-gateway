@@ -11,19 +11,19 @@ import { verifyMessage } from 'viem';
  * The EmailDeletionGuard guard should be used on routes that require
  * authenticated actions for deleting email addresses.
  *
- * This guard therefore validates if the message came from the specified account.
+ * This guard therefore validates if the message came from the specified signer.
  *
  * The following message should be signed:
- * email-delete-${chainId}-${safe}-${emailAddress}-${account}-${timestamp}
+ * email-delete-${chainId}-${safe}-${emailAddress}-${signer}-${timestamp}
  *
  * (where ${} represents placeholder values for the respective data)
  *
  * To use this guard, the route should have:
- * - the 'chainId' declared as a parameter
- * - the 'safeAddress' declared as a parameter
- * - the 'account' as part of the JSON body (top level)
- * - the 'signature' as part of the JSON body (top level) - see message format to be signed
- * - the 'timestamp' as part of the JSON body (top level)
+ * - the 'chainId' as part of the path parameters
+ * - the 'safeAddress' as part of the path parameters
+ * - the 'signer' as part of the path parameters
+ * - the 'Safe-Wallet-Signature' header set to the signature
+ * - the 'Safe-Wallet-Signature-Timestamp' header set to the signature timestamp
  */
 @Injectable()
 export class EmailDeletionGuard implements CanActivate {
@@ -38,18 +38,18 @@ export class EmailDeletionGuard implements CanActivate {
 
     const chainId = request.params['chainId'];
     const safe = request.params['safeAddress'];
-    const account = request.body['account'];
-    const signature = request.body['signature'];
-    const timestamp = request.body['timestamp'];
+    const signer = request.params['signer'];
+    const signature = request.headers['safe-wallet-signature'];
+    const timestamp = request.headers['safe-wallet-signature-timestamp'];
 
     // Required fields
-    if (!chainId || !safe || !signature || !account || !timestamp) return false;
+    if (!chainId || !safe || !signature || !signer || !timestamp) return false;
 
-    const message = `${EmailDeletionGuard.ACTION_PREFIX}-${chainId}-${safe}-${account}-${timestamp}`;
+    const message = `${EmailDeletionGuard.ACTION_PREFIX}-${chainId}-${safe}-${signer}-${timestamp}`;
 
     try {
       return await verifyMessage({
-        address: account,
+        address: signer,
         message,
         signature,
       });

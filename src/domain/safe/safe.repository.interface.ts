@@ -143,6 +143,12 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
+  deleteTransaction(args: {
+    chainId: string;
+    safeTxHash: string;
+    signature: string;
+  }): Promise<void>;
+
   getTransfer(args: { chainId: string; transferId: string }): Promise<Transfer>;
 
   getTransfers(args: {

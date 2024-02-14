@@ -25,8 +25,8 @@ import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 class TransactionDomainGroup {
-  timestamp: number;
-  transactions: (
+  timestamp!: number;
+  transactions!: (
     | MultisigTransaction
     | ModuleTransaction
     | EthereumTransaction
@@ -37,7 +37,6 @@ class TransactionDomainGroup {
 @Injectable()
 export class TransactionsHistoryMapper {
   private readonly maxNestedTransfers: number;
-  private readonly isTrustedTokensEnabled: boolean;
 
   constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
@@ -48,9 +47,6 @@ export class TransactionsHistoryMapper {
   ) {
     this.maxNestedTransfers = configurationService.getOrThrow(
       'mappings.history.maxNestedTransfers',
-    );
-    this.isTrustedTokensEnabled = configurationService.getOrThrow(
-      'features.trustedTokens',
     );
   }
 
@@ -192,56 +188,45 @@ export class TransactionsHistoryMapper {
     onlyTrusted: boolean,
   ): Promise<TransactionItem[]> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
-    const result: TransactionItem[] = [];
 
-    for (const transfer of limitedTransfers) {
-      const nestedTransaction = await this.transferMapper.mapTransfer(
-        chainId,
-        transfer,
-        safe,
-      );
+    const nestedTransactions = await Promise.all(
+      limitedTransfers.map((transfer) =>
+        this.transferMapper.mapTransfer(chainId, transfer, safe),
+      ),
+    );
 
-      const transferWithValue = this.mapZeroValueTransfer(nestedTransaction);
-      // If we do not have a transfer with value, we do not add it to the result
-      if (!transferWithValue) continue;
-
-      // TODO remove isTrustedTokensEnabled when feature is considered stable
-      const trustedTransfer =
-        this.isTrustedTokensEnabled && onlyTrusted
-          ? this.mapTrustedTransfer(transferWithValue)
-          : transferWithValue;
-
-      if (!trustedTransfer) continue;
-      result.push(new TransactionItem(nestedTransaction));
-    }
-    return result;
+    return nestedTransactions
+      .filter((nestedTransaction): boolean => {
+        // We are interested in transfers that:
+        // - Have value and:
+        // - If onlyTrusted is true then it should be a trusted transfer
+        // - If onlyTrusted is false then any transfer is valid
+        return (
+          this.isTransferWithValue(nestedTransaction) &&
+          (!onlyTrusted || this.isTrustedTransfer(nestedTransaction))
+        );
+      })
+      .map((nestedTransaction) => new TransactionItem(nestedTransaction));
   }
 
   /**
-   * Returns the transaction if it is an ERC20 transfer with value.
-   * Returns Null otherwise.
+   * Returns true if it is an ERC20 transfer with value.
+   * Returns false otherwise.
    *
    * @private
    */
-  private mapZeroValueTransfer(transaction: Transaction): Transaction | null {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
+  private isTransferWithValue(transaction: Transaction): boolean {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
 
-    if (transaction.txInfo.transferInfo.value === '0') return null;
-    return transaction;
+    return Number(transaction.txInfo.transferInfo.value) > 0;
   }
 
-  private mapTrustedTransfer(transaction: Transaction): Transaction | null {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return transaction;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return transaction;
+  private isTrustedTransfer(transaction: Transaction): boolean {
+    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
 
-    // If we have successfully retrieved the token information, and it is a
-    // trusted token, return it. Else return null
-    if (transaction.txInfo.transferInfo.trusted) {
-      return transaction;
-    } else {
-      return null;
-    }
+    return !!transaction.txInfo.transferInfo.trusted;
   }
 
   private mapGroupTransactions(
