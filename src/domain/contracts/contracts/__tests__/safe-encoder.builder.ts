@@ -280,3 +280,133 @@ export function changeThresholdEncoder(): ChangeThresholdEncoder<ChangeThreshold
     faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }),
   );
 }
+
+// enableModule
+
+type EnableModuleArgs = {
+  module: Hex;
+};
+
+class EnableModuleEncoder<T extends EnableModuleArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  static readonly FUNCTION_SIGNATURE = 'function enableModule(address module)';
+
+  encode(): Hex {
+    const abi = parseAbi([EnableModuleEncoder.FUNCTION_SIGNATURE]);
+
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'enableModule',
+      args: [args.module],
+    });
+  }
+}
+
+export function enableModuleEncoder(): EnableModuleEncoder<EnableModuleArgs> {
+  return new EnableModuleEncoder().with(
+    'module',
+    getAddress(faker.finance.ethereumAddress()),
+  );
+}
+
+// disableModule
+
+type DisableModuleArgs = {
+  prevModule: Hex;
+  module: Hex;
+};
+
+class DisableModuleEncoder<T extends DisableModuleArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  static readonly FUNCTION_SIGNATURE =
+    'function disableModule(address prevModule, address module)';
+
+  encode(): Hex {
+    const abi = parseAbi([DisableModuleEncoder.FUNCTION_SIGNATURE]);
+
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'disableModule',
+      args: [args.prevModule, args.module],
+    });
+  }
+}
+
+export function disableModuleEncoder(): DisableModuleEncoder<DisableModuleArgs> {
+  return new DisableModuleEncoder()
+    .with('prevModule', getAddress(faker.finance.ethereumAddress()))
+    .with('module', getAddress(faker.finance.ethereumAddress()));
+}
+
+// setFallbackHandler
+
+type SetFallbackHandlerArgs = {
+  handler: Hex;
+};
+
+class SetFallbackHandlerEncoder<T extends SetFallbackHandlerArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  static readonly FUNCTION_SIGNATURE =
+    'function setFallbackHandler(address handler)';
+
+  encode(): Hex {
+    const abi = parseAbi([SetFallbackHandlerEncoder.FUNCTION_SIGNATURE]);
+
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'setFallbackHandler',
+      args: [args.handler],
+    });
+  }
+}
+
+export function setFallbackHandlerEncoder(): SetFallbackHandlerEncoder<SetFallbackHandlerArgs> {
+  return new SetFallbackHandlerEncoder().with(
+    'handler',
+    getAddress(faker.finance.ethereumAddress()),
+  );
+}
+
+// setGuard
+
+type SetGuardArgs = {
+  guard: Hex;
+};
+
+class SetGuardEncoder<T extends SetGuardArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  static readonly FUNCTION_SIGNATURE = 'function setGuard(address guard)';
+
+  encode(): Hex {
+    const abi = parseAbi([SetGuardEncoder.FUNCTION_SIGNATURE]);
+
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi,
+      functionName: 'setGuard',
+      args: [args.guard],
+    });
+  }
+}
+
+export function setGuardEncoder(): SetGuardEncoder<SetGuardArgs> {
+  return new SetGuardEncoder().with(
+    'guard',
+    getAddress(faker.finance.ethereumAddress()),
+  );
+}

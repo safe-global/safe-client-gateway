@@ -39,7 +39,7 @@ export class RelayRepository {
     gasLimit?: string;
   }): Promise<{ taskId: string }> {
     const relayAddresses =
-      this.limitAddressesMapper.getLimitAddresses(relayPayload);
+      await this.limitAddressesMapper.getLimitAddresses(relayPayload);
     for (const address of relayAddresses) {
       const canRelay = await this.canRelay({
         chainId: relayPayload.chainId,

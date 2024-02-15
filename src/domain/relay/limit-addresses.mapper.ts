@@ -2,15 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
 import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
 import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
 import {
   getSafeSingletonDeployment,
   getSafeL2SingletonDeployment,
+  getMultiSendCallOnlyDeployment,
+  getMultiSendDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
-import { isHex } from 'viem';
+import { isAddress, isHex } from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -18,7 +20,8 @@ export class LimitAddressesMapper {
   private static SUPPORTED_SAFE_VERSION = '1.3.0';
 
   constructor(
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
     private readonly safeContract: SafeContractHelper,
     private readonly erc20Contract: Erc20ContractHelper,
     private readonly safeDecoder: SafeDecoder,
@@ -26,42 +29,89 @@ export class LimitAddressesMapper {
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
   ) {}
 
-  getLimitAddresses(relayPayload: {
+  async getLimitAddresses(args: {
     chainId: string;
     to: string;
     data: string;
-  }): readonly Hex[] {
-    if (!isHex(relayPayload.to) || !isHex(relayPayload.data)) {
-      // TODO: Add test coverage once https://github.com/safe-global/safe-client-gateway/pull/1144 is merged
-      throw Error('Invalid recipient or calldata provided');
+  }): Promise<readonly Hex[]> {
+    if (!isAddress(args.to)) {
+      throw Error('Invalid to provided');
     }
 
-    if (this.isValidExecTransactionCall(relayPayload.to, relayPayload.data)) {
-      return [relayPayload.to];
+    if (!isHex(args.data)) {
+      throw Error('Invalid data provided');
     }
 
-    if (this.multiSendDecoder.isMultiSend(relayPayload.data)) {
-      // Validity of MultiSend is part of address retrieval
-      const safeAddress = this.getSafeAddressFromMultiSend(relayPayload.data);
+    // Calldata matches that of execTransaction and meets validity requirements
+    if (
+      this.isValidExecTransactionCall({
+        to: args.to,
+        data: args.data,
+      })
+    ) {
+      // Safe attempting to relay is official
+      const isOfficial = await this.isOfficialMastercopy({
+        chainId: args.chainId,
+        address: args.to,
+      });
+
+      if (!isOfficial) {
+        throw Error('execTransaction via unofficial Safe mastercopy');
+      }
+
+      // Safe targeted by execTransaction will be limited
+      return [args.to];
+    }
+
+    // Calldata matches that of multiSend and is from an official MultiSend contract
+    if (this.multiSendDecoder.isMultiSend(args.data)) {
+      if (
+        !this.isOfficialMultiSendDeployment({
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw Error('multiSend via unofficial MultiSend contract');
+      }
+
+      // multiSend calldata meets the validity requirements
+      const safeAddress = this.getSafeAddressFromMultiSend(args.data);
+
+      // Safe attempting to relay is official
+      const isOfficial = await this.isOfficialMastercopy({
+        chainId: args.chainId,
+        address: safeAddress,
+      });
+
+      if (!isOfficial) {
+        throw Error('multiSend via unofficial Safe mastercopy');
+      }
+
+      // Safe targeted in batch will be limited
       return [safeAddress];
     }
 
+    // Calldata matches that of createProxyWithNonce and meets validity requirements
     if (
-      this.isValidCreateProxyWithNonce(relayPayload.chainId, relayPayload.data)
+      this.isValidCreateProxyWithNonceCall({
+        chainId: args.chainId,
+        data: args.data,
+      })
     ) {
-      return this.getOwnersFromCreateProxyWithNonce(relayPayload.data);
+      // Owners of safe-to-be-created will be limited
+      return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
 
     throw Error('Cannot get limit addresses – Invalid transfer');
   }
 
-  private isValidExecTransactionCall(to: string, data: Hex): boolean {
+  private isValidExecTransactionCall(args: { to: string; data: Hex }): boolean {
     let execTransaction: { data: Hex; to: Hex; value: bigint };
     // If transaction is an execTransaction
     try {
       execTransaction = this.safeContract.decode(
         SafeContractHelper.EXEC_TRANSACTION,
-        data,
+        args.data,
       );
     } catch (e) {
       return false;
@@ -74,13 +124,13 @@ export class LimitAddressesMapper {
         execTransaction.data,
       );
       // If the ERC20 transfer targets 'self' (the Safe), we consider it to be invalid
-      return erc20DecodedData.to !== to;
+      return erc20DecodedData.to !== args.to;
     } catch {
       // swallow exception if data is not an ERC20 transfer
     }
 
     // If a transaction does not target 'self' consider it valid
-    if (to !== execTransaction.to) {
+    if (args.to !== execTransaction.to) {
       return true;
     }
 
@@ -94,13 +144,53 @@ export class LimitAddressesMapper {
     return isCancellation || this.safeContract.isCall(execTransaction.data);
   }
 
+  private async isOfficialMastercopy(args: {
+    chainId: string;
+    address: string;
+  }): Promise<boolean> {
+    try {
+      await this.safeRepository.getSafe(args);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private isOfficialMultiSendDeployment(args: {
+    chainId: string;
+    address: string;
+  }): boolean {
+    const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
+      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      network: args.chainId,
+    });
+
+    const isCallOnly =
+      multiSendCallOnlyDeployment?.networkAddresses[args.chainId] ===
+        args.address ||
+      multiSendCallOnlyDeployment?.defaultAddress === args.address;
+
+    if (isCallOnly) {
+      return true;
+    }
+
+    const multiSendCallDeployment = getMultiSendDeployment({
+      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      network: args.chainId,
+    });
+    return (
+      multiSendCallDeployment?.networkAddresses[args.chainId] ===
+        args.address || multiSendCallDeployment?.defaultAddress === args.address
+    );
+  }
+
   private getSafeAddressFromMultiSend = (data: Hex): Hex => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
     // Every transaction is a valid execTransaction
     const isEveryValid = transactions.every((transaction) => {
-      return this.isValidExecTransactionCall(transaction.to, transaction.data);
+      return this.isValidExecTransactionCall(transaction);
     });
 
     if (!isEveryValid) {
@@ -120,12 +210,15 @@ export class LimitAddressesMapper {
     return firstRecipient;
   };
 
-  private isValidCreateProxyWithNonce(chainId: string, data: Hex): boolean {
+  private isValidCreateProxyWithNonceCall(args: {
+    chainId: string;
+    data: Hex;
+  }): boolean {
     let singleton: string | null = null;
 
     try {
       const decoded = this.proxyFactoryDecoder.decodeFunctionData({
-        data,
+        data: args.data,
       });
 
       if (decoded.functionName !== 'createProxyWithNonce') {
@@ -139,17 +232,17 @@ export class LimitAddressesMapper {
 
     const safeL1Deployment = getSafeSingletonDeployment({
       version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
-      network: chainId,
+      network: args.chainId,
     });
     const safeL2Deployment = getSafeL2SingletonDeployment({
       version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
-      network: chainId,
+      network: args.chainId,
     });
 
     const isL1Singleton =
-      safeL1Deployment?.networkAddresses[chainId] === singleton;
+      safeL1Deployment?.networkAddresses[args.chainId] === singleton;
     const isL2Singleton =
-      safeL2Deployment?.networkAddresses[chainId] === singleton;
+      safeL2Deployment?.networkAddresses[args.chainId] === singleton;
 
     return isL1Singleton || isL2Singleton;
   }
