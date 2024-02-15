@@ -72,7 +72,7 @@ describe('Zerion Collectibles Controller', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const aTokenAddress = faker.finance.ethereumAddress();
         const aNFTName = faker.string.sample();
-        const anUrl = faker.internet.url({ appendSlash: true });
+        const anUrl = faker.internet.url({ appendSlash: false });
         const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
           .with('data', [
             zerionCollectibleBuilder()

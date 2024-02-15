@@ -11,8 +11,8 @@ import { faker } from '@faker-js/faker';
 export function zerionNFTInfoBuilder(): IBuilder<ZerionNFTInfo> {
   return new Builder<ZerionNFTInfo>()
     .with('content', {
-      preview: { url: faker.internet.url({ appendSlash: true }) },
-      detail: { url: faker.internet.url({ appendSlash: true }) },
+      preview: { url: faker.internet.url({ appendSlash: false }) },
+      detail: { url: faker.internet.url({ appendSlash: false }) },
     })
     .with('contract_address', faker.finance.ethereumAddress())
     .with('flags', { is_spam: faker.datatype.boolean() })
@@ -24,8 +24,8 @@ export function zerionNFTInfoBuilder(): IBuilder<ZerionNFTInfo> {
 export function zerionCollectionInfoBuilder(): IBuilder<ZerionCollectionInfo> {
   return new Builder<ZerionCollectionInfo>()
     .with('content', {
-      icon: { url: faker.internet.url({ appendSlash: true }) },
-      banner: { url: faker.internet.url({ appendSlash: true }) },
+      icon: { url: faker.internet.url({ appendSlash: false }) },
+      banner: { url: faker.internet.url({ appendSlash: false }) },
     })
     .with('description', faker.string.alphanumeric())
     .with('name', faker.string.alphanumeric());
