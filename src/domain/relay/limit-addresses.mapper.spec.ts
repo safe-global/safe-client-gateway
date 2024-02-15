@@ -18,8 +18,9 @@ import {
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/proxy-factory-encoder.builder';
-import { Erc20Decoder } from '@/domain/contracts/contracts/erc20-decoder.helper';
+import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
+import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -42,14 +43,16 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const erc20Decoder = new Erc20Decoder();
+    const safeContractHelper = new SafeContractHelper();
+    const erc20ContractHelper = new Erc20ContractHelper();
     const safeDecoder = new SafeDecoder();
     const multiSendDecoder = new MultiSendDecoder();
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
 
     target = new LimitAddressesMapper(
       mockSafeRepository,
-      erc20Decoder,
+      safeContractHelper,
+      erc20ContractHelper,
       safeDecoder,
       multiSendDecoder,
       proxyFactoryDecoder,
