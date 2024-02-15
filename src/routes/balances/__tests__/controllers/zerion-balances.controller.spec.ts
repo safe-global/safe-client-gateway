@@ -420,8 +420,8 @@ describe('Balances Controller (Unit)', () => {
           )
           .expect(503)
           .expect({
-            message: `Error getting ${safeAddress} balances from provider: test error}`,
             code: 503,
+            message: 'Service unavailable',
           });
       });
     });
