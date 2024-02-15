@@ -659,20 +659,64 @@ describe('LimitAddressesMapper', () => {
     });
   });
 
-  it('otherwise throws an error', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
-    const safeAddress = getAddress(safe.address);
-    const data = erc20TransferEncoder().encode();
-    // Official mastercopy
-    mockSafeRepository.getSafe.mockResolvedValue(safe);
+  describe('Validation', () => {
+    it('should throw if not an execTransaction, multiSend or createProxyWithNonceCall', async () => {
+      const chainId = faker.string.numeric();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = erc20TransferEncoder().encode();
+      // Official mastercopy
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
 
-    await expect(
-      target.getLimitAddresses({
-        chainId,
-        data,
-        to: safeAddress,
-      }),
-    ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to: safeAddress,
+        }),
+      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+    });
+
+    it('should throw if the to address is not valid', async () => {
+      const chainId = faker.string.numeric();
+      const to = '0x000000000000000000000000000000000INVALID';
+      const data = erc20TransferEncoder().encode();
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid recipient or calldata provided');
+    });
+
+    it('should throw if the to address is not hexadecimal', async () => {
+      const chainId = faker.string.numeric();
+      const to = 'not hexidecimal';
+      const data = erc20TransferEncoder().encode();
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid recipient or calldata provided');
+    });
+
+    it('should throw if the calldata is not hexadecimal', async () => {
+      const chainId = faker.string.numeric();
+      const to = faker.finance.ethereumAddress();
+      const data = 'not hexadecimal';
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid recipient or calldata provided');
+    });
   });
 });

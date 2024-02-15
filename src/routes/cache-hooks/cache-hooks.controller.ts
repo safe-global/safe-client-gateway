@@ -4,6 +4,7 @@ import { CacheHooksService } from '@/routes/cache-hooks/cache-hooks.service';
 import { EventValidationPipe } from '@/routes/cache-hooks/pipes/event-validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
+import { PreExecutionLogGuard } from '@/routes/cache-hooks/guards/pre-execution.guard';
 
 @Controller({
   path: '',
@@ -13,7 +14,7 @@ import { Event } from '@/routes/cache-hooks/entities/event.entity';
 export class CacheHooksController {
   constructor(private readonly service: CacheHooksService) {}
 
-  @UseGuards(BasicAuthGuard)
+  @UseGuards(PreExecutionLogGuard, BasicAuthGuard)
   @Post('/hooks/events')
   @HttpCode(202)
   async postEvent(@Body(EventValidationPipe) event: Event): Promise<void> {

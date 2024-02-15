@@ -11,13 +11,7 @@ import {
   getMultiSendCallOnlyDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
-
-export interface RelayPayload {
-  chainId: string;
-  data: Hex;
-  to: Hex;
-  gasLimit?: bigint;
-}
+import { isAddress, isHex } from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -34,9 +28,24 @@ export class LimitAddressesMapper {
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
   ) {}
 
-  async getLimitAddresses(args: RelayPayload): Promise<readonly Hex[]> {
+  async getLimitAddresses(args: {
+    chainId: string;
+    to: string;
+    data: string;
+  }): Promise<readonly Hex[]> {
+    // Ensure that the recipient and calldata are valid
+    if (!isAddress(args.to) || !isHex(args.data)) {
+      // TODO: Add test coverage once https://github.com/safe-global/safe-client-gateway/pull/1144 is merged
+      throw Error('Invalid recipient or calldata provided');
+    }
+
     // Calldata matches that of execTransaction and meets validity requirements
-    if (this.isValidExecTransactionCall(args)) {
+    if (
+      this.isValidExecTransactionCall({
+        to: args.to,
+        data: args.data,
+      })
+    ) {
       // Safe attempting to relay is official
       const isOfficial = await this.isOfficialMastercopy({
         chainId: args.chainId,
@@ -77,7 +86,12 @@ export class LimitAddressesMapper {
     }
 
     // Calldata matches that of createProxyWithNonce and meets validity requirements
-    if (this.isValidCreateProxyWithNonceCall(args)) {
+    if (
+      this.isValidCreateProxyWithNonceCall({
+        chainId: args.chainId,
+        data: args.data,
+      })
+    ) {
       // Owners of safe-to-be-created will be limited
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }

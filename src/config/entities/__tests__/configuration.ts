@@ -88,6 +88,10 @@ export default (): ReturnType<typeof configuration> => ({
       database: process.env.POSTGRES_TEST_DB || 'test-db',
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+      ssl: {
+        enabled: false,
+        rejectUnauthorized: false,
+      },
     },
   },
   email: {
@@ -207,7 +211,10 @@ export default (): ReturnType<typeof configuration> => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
   },
-  relay: { limit: faker.number.int({ min: 1 }) },
+  relay: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    limit: faker.number.int({ min: 1 }),
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
