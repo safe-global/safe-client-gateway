@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
-import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
+import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
-import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 
 @Module({
   providers: [
