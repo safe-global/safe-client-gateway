@@ -4,18 +4,22 @@ import { Page } from '@/domain/entities/page.entity';
 
 export interface IBalancesApi {
   getBalances(args: {
-    chainId: string;
     safeAddress: string;
-    fiatCode: string;
+    fiatCode?: string;
+    chainId?: string;
+    trusted?: boolean;
+    excludeSpam?: boolean;
   }): Promise<Balance[]>;
 
   clearBalances(args: { chainId: string; safeAddress: string }): Promise<void>;
 
   getCollectibles(args: {
-    chainId: string;
     safeAddress: string;
+    chainId?: string;
     limit?: number;
     offset?: number;
+    trusted?: boolean;
+    excludeSpam?: boolean;
   }): Promise<Page<Collectible>>;
 
   clearCollectibles(args: {

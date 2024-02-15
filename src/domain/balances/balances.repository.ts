@@ -38,19 +38,12 @@ export class BalancesRepository implements IBalancesRepository {
       : this._getBalancesFromTransactionApi(args);
   }
 
-  async clearLocalBalances(args: {
+  async clearBalances(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<void> {
-    if (this.balancesApiManager.useExternalApi(args.chainId)) {
-      const api = this.balancesApiManager.getBalancesApi(args.chainId);
-      await api.clearBalances(args);
-    } else {
-      const api = await this.transactionApiManager.getTransactionApi(
-        args.chainId,
-      );
-      await api.clearLocalBalances(args.safeAddress);
-    }
+    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
+    await api.clearBalances(args);
   }
 
   getFiatCodes(): string[] {
@@ -64,7 +57,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    const api = this.balancesApiManager.getBalancesApi(args.chainId);
+    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     const balances = await api.getBalances(args);
     return balances.map((balance) => this.balancesValidator.validate(balance));
   }
@@ -77,7 +70,7 @@ export class BalancesRepository implements IBalancesRepository {
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
     const { chainId, safeAddress, fiatCode, trusted, excludeSpam } = args;
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
+    const api = await this.balancesApiManager.getBalancesApi(chainId);
     const balances = await api.getBalances({
       safeAddress,
       trusted,
