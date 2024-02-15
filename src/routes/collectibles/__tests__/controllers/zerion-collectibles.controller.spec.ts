@@ -72,7 +72,7 @@ describe('Zerion Collectibles Controller', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const aTokenAddress = faker.finance.ethereumAddress();
         const aNFTName = faker.string.sample();
-        const anUrl = faker.internet.url({ appendSlash: false });
+        const aUrl = faker.internet.url({ appendSlash: false });
         const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
           .with('data', [
             zerionCollectibleBuilder()
@@ -107,8 +107,8 @@ describe('Zerion Collectibles Controller', () => {
                     'nft_info',
                     zerionNFTInfoBuilder()
                       .with('content', {
-                        preview: { url: anUrl },
-                        detail: { url: anUrl },
+                        preview: { url: aUrl },
+                        detail: { url: aUrl },
                       })
                       .build(),
                   )
@@ -212,7 +212,7 @@ describe('Zerion Collectibles Controller', () => {
                       .collection_info?.content?.icon.url,
                   id: zerionApiCollectiblesResponse.data[2].attributes.nft_info
                     .token_id,
-                  uri: anUrl,
+                  uri: aUrl,
                   name: zerionApiCollectiblesResponse.data[2].attributes
                     .collection_info?.name,
                   description:
