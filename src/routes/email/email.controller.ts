@@ -22,7 +22,7 @@ import { EmailAlreadyVerifiedExceptionFilter } from '@/routes/email/exception-fi
 import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/exception-filters/resend-verification-timespan-error.exception-filter';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
-import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/acocunt-does-not-exist.exception-filter';
+import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/account-does-not-exist.exception-filter';
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
