@@ -211,7 +211,10 @@ export default (): ReturnType<typeof configuration> => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
   },
-  relay: { limit: faker.number.int({ min: 1 }) },
+  relay: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    limit: faker.number.int({ min: 1 }),
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

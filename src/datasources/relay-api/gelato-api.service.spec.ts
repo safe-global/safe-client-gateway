@@ -1,15 +1,23 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { GelatoApi } from '@/datasources/relay-api/gelato-api.service';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { GelatoRelay } from '@gelatonetwork/relay-sdk';
+import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Hex } from 'viem';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
-const mockGelatoClient = jest.mocked({
-  sponsoredCall: jest.fn(),
-} as jest.MockedObjectDeep<InstanceType<typeof GelatoRelay>>);
+const mockCacheService = jest.mocked({
+  get: jest.fn(),
+  set: jest.fn(),
+} as jest.MockedObjectDeep<ICacheService>);
+
+const mockNetworkService = jest.mocked({
+  post: jest.fn(),
+} as jest.MockedObjectDeep<INetworkService>);
 
 const mockLoggingService = {
   warn: jest.fn(),
@@ -18,30 +26,48 @@ const mockLoggingService = {
 describe('GelatoApi', () => {
   let target: GelatoApi;
   let fakeConfigurationService: FakeConfigurationService;
-  let fakeCacheService: FakeCacheService;
+  let baseUri: string;
+  let httpErrorFactory: HttpErrorFactory;
 
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();
-    fakeCacheService = new FakeCacheService();
+    baseUri = faker.internet.url({ appendSlash: false });
+    fakeConfigurationService.set('relay.baseUri', baseUri);
 
     target = new GelatoApi(
-      mockGelatoClient,
+      mockNetworkService,
       fakeConfigurationService,
-      fakeCacheService,
+      mockCacheService,
       mockLoggingService,
+      httpErrorFactory,
     );
+  });
+
+  it('should error if baseUri is not defined', () => {
+    const fakeConfigurationService = new FakeConfigurationService();
+    const httpErrorFactory = new HttpErrorFactory();
+
+    expect(
+      () =>
+        new GelatoApi(
+          mockNetworkService,
+          fakeConfigurationService,
+          mockCacheService,
+          mockLoggingService,
+          httpErrorFactory,
+        ),
+    ).toThrow();
   });
 
   describe('getRelayCount', () => {
     it('should return the current count from the cache', async () => {
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress();
-      const cacheDir = new CacheDir(`${chainId}_relay_${address}`, '');
       const count = faker.number.int();
-
-      await fakeCacheService.set(cacheDir, count.toString());
+      mockCacheService.get.mockResolvedValueOnce(count.toString());
 
       const result = await target.getRelayCount({
         chainId,
@@ -70,26 +96,28 @@ describe('GelatoApi', () => {
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
-      const taskId = faker.string.alphanumeric();
+      const taskId = faker.string.uuid();
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
-      mockGelatoClient.sponsoredCall.mockResolvedValue({ taskId });
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          taskId,
+        },
+      });
 
-      const result = await target.relay({
+      await target.relay({
         chainId,
         to: address,
         data,
       });
 
-      expect(result).toEqual({ taskId });
-      expect(mockGelatoClient.sponsoredCall).toHaveBeenCalledWith(
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        `${baseUri}/relays/v2/sponsored-call`,
         {
-          chainId: BigInt(chainId),
-          data,
+          sponsorApiKey: apiKey,
+          chainId,
           target: address,
-        },
-        apiKey,
-        {
-          gasLimit: undefined,
+          data,
         },
       );
     });
@@ -98,9 +126,16 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
-      const gasLimit = faker.number.bigInt();
+      const gasLimit = faker.string.numeric();
       const apiKey = faker.string.sample();
+      const taskId = faker.string.uuid();
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          taskId,
+        },
+      });
 
       await target.relay({
         chainId,
@@ -109,15 +144,14 @@ describe('GelatoApi', () => {
         gasLimit,
       });
 
-      expect(mockGelatoClient.sponsoredCall).toHaveBeenCalledWith(
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        `${baseUri}/relays/v2/sponsored-call`,
         {
-          chainId: BigInt(chainId),
-          data,
+          sponsorApiKey: apiKey,
+          chainId,
           target: address,
-        },
-        apiKey,
-        {
-          gasLimit: gasLimit + BigInt(150_000),
+          data,
+          gasLimit: (BigInt(gasLimit) + BigInt(150_000)).toString(),
         },
       );
     });
@@ -141,7 +175,14 @@ describe('GelatoApi', () => {
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
+      const taskId = faker.string.uuid();
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          taskId,
+        },
+      });
 
       await target.relay({
         chainId,
@@ -149,10 +190,11 @@ describe('GelatoApi', () => {
         data,
       });
 
-      const currentCount = await fakeCacheService.get(
+      expect(mockCacheService.set).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.set).toHaveBeenCalledWith(
         new CacheDir(`${chainId}_relay_${address}`, ''),
+        '1',
       );
-      expect(currentCount).toEqual('1');
     });
 
     it('should not fail the relay if incrementing the count fails', async () => {
@@ -160,11 +202,17 @@ describe('GelatoApi', () => {
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
+      const taskId = faker.string.uuid();
       fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
-      // Incremeting the cache throws
-      jest
-        .spyOn(fakeCacheService, 'set')
-        .mockRejectedValue(new Error('Setting cache threw an error'));
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          taskId,
+        },
+      });
+      mockCacheService.set.mockRejectedValueOnce(
+        new Error('Setting cache threw'),
+      );
 
       await expect(
         target.relay({
@@ -173,8 +221,33 @@ describe('GelatoApi', () => {
           data,
         }),
       ).resolves.not.toThrow();
+    });
 
-      expect(fakeCacheService.set).toHaveBeenCalledTimes(1);
+    it('should forward error', async () => {
+      const chainId = faker.string.numeric();
+      const address = faker.finance.ethereumAddress() as Hex;
+      const data = faker.string.hexadecimal() as Hex;
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const apiKey = faker.string.sample();
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/relays/v2/sponsored-call`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      fakeConfigurationService.set(`gelato.apiKey.${chainId}`, apiKey);
+      mockNetworkService.post.mockRejectedValueOnce(error);
+
+      await expect(
+        target.relay({
+          chainId,
+          to: address,
+          data,
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
     });
   });
 });
