@@ -10,10 +10,12 @@ import {
   IZerionBalancesApi,
   ZerionBalancesApi,
 } from '@/datasources/balances-api/zerion-balances-api.service';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 
 @Module({
   imports: [CacheFirstDataSourceModule],
   providers: [
+    HttpErrorFactory,
     { provide: IBalancesApiManager, useClass: BalancesApiManager },
     { provide: IValkBalancesApi, useClass: ValkBalancesApi },
     { provide: IZerionBalancesApi, useClass: ZerionBalancesApi },

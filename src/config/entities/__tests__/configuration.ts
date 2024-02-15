@@ -96,7 +96,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   email: {
     applicationCode: faker.string.alphanumeric(),
-    baseUri: faker.internet.url({ appendSlash: true }),
+    baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),
     fromEmail: faker.internet.email(),
     fromName: faker.person.fullName(),

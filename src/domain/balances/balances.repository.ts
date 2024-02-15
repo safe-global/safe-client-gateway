@@ -32,6 +32,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
+    // TODO: route TransactionApi balances retrieval from BalancesApiManager
     return this.balancesApiManager.useExternalApi(args.chainId)
       ? this._getBalancesFromBalancesApi(args)
       : this._getBalancesFromTransactionApi(args);
