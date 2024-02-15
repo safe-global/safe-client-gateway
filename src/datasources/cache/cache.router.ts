@@ -29,7 +29,6 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
-  private static readonly VALK_BALANCES_KEY = 'valk_balances';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
 
@@ -50,21 +49,6 @@ export class CacheRouter {
       CacheRouter.getBalancesCacheKey(args),
       `${args.trusted}_${args.excludeSpam}`,
     );
-  }
-
-  // TODO: remove this prefixed key if eventually only one balances provider is used
-  static getValkBalancesCacheKey(args: {
-    chainId: string;
-    safeAddress: string;
-  }): string {
-    return `${args.chainId}_${CacheRouter.VALK_BALANCES_KEY}_${args.safeAddress}`;
-  }
-
-  static getValkBalancesCacheDir(args: {
-    chainId: string;
-    safeAddress: string;
-  }): CacheDir {
-    return new CacheDir(CacheRouter.getValkBalancesCacheKey(args), '');
   }
 
   // TODO: remove this prefixed key if eventually only one balances provider is used
