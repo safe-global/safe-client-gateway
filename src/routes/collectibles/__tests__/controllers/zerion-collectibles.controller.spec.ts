@@ -447,8 +447,8 @@ describe('Zerion Collectibles Controller', () => {
           .get(`/v2/chains/${chain.chainId}/safes/${safeAddress}/collectibles`)
           .expect(503)
           .expect({
-            message: `Error getting ${safeAddress} collectibles from provider: test error}`,
             code: 503,
+            message: 'Service unavailable',
           });
       });
     });

@@ -15,6 +15,7 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   Balance,
   Erc20Balance,
@@ -23,15 +24,14 @@ import {
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { asError } from '@/logging/utils';
 import { Inject, Injectable } from '@nestjs/common';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
+  private static readonly collectiblesSorting = '-floor_price';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
@@ -39,13 +39,12 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: string[];
 
-  private static readonly collectiblesSorting = '-floor_price';
-
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly dataSource: CacheFirstDataSource,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -95,14 +94,13 @@ export class ZerionBalancesApi implements IBalancesApi {
       });
       return this._mapBalances(chainName, data);
     } catch (error) {
-      throw new DataSourceError(
-        `Error getting ${args.safeAddress} balances from provider: ${asError(error).message}}`,
-      );
+      throw this.httpErrorFactory.from(error);
     }
   }
 
   /**
    * NOTE: Zerion does not support limit & offset parameters.
+   * Documentation: https://developers.zerion.io/reference/listwalletnftpositions
    *
    * It uses a "size" query param for the page size, and an "after" parameter for the offset.
    * "size" is an integer which could be mapped to "limit", but "after" is a base64-encoded string.
@@ -147,9 +145,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         results: this._mapCollectibles(zerionCollectibles.data),
       };
     } catch (error) {
-      throw new DataSourceError(
-        `Error getting ${args.safeAddress} collectibles from provider: ${asError(error).message}}`,
-      );
+      throw this.httpErrorFactory.from(error);
     }
   }
 
@@ -282,16 +278,15 @@ export class ZerionBalancesApi implements IBalancesApi {
     const size = zerionUrl.searchParams.get('page[size]');
     const after = zerionUrl.searchParams.get('page[after]');
 
-    const resultUrl = new URL(zerionUrl);
-    if (size) resultUrl.searchParams.set('limit', size);
+    if (size) zerionUrl.searchParams.set('limit', size);
     if (after) {
-      resultUrl.searchParams.set(
+      zerionUrl.searchParams.set(
         'offset',
         Buffer.from(after ?? '0', 'base64')
           .toString('utf8')
           .replace(/"/g, ''),
       );
     }
-    return resultUrl.toString();
+    return zerionUrl.toString();
   }
 }
