@@ -1,20 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { parseAbi } from 'viem';
+import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
-
-const SAFE_ABI = parseAbi([
-  'function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address paymentReceiver)',
-  // Owner management
-  'function addOwnerWithThreshold(address owner, uint256 _threshold)',
-  'function removeOwner(address prevOwner, address owner, uint256 _threshold)',
-  'function swapOwner(address prevOwner, address oldOwner, address newOwner)',
-  'function changeThreshold(uint256 _threshold)',
-  'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)',
-]);
+import { Hex } from 'viem';
 
 @Injectable()
-export class SafeDecoder extends AbiDecoder<typeof SAFE_ABI> {
+export class SafeDecoder extends AbiDecoder<typeof Safe130> {
   constructor() {
-    super(SAFE_ABI);
+    super(Safe130);
+  }
+
+  isCall(data: Hex): boolean {
+    try {
+      this.decodeFunctionData({
+        data,
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

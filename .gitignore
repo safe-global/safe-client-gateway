@@ -48,3 +48,6 @@ lerna-debug.log*
 
 # Database mounted volume
 data
+
+# ABIs
+/src/abis/safe

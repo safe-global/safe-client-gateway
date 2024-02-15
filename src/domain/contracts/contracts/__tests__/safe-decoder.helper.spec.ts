@@ -104,6 +104,27 @@ describe('SafeDecoder', () => {
     });
   });
 
+  describe('isCall', () => {
+    it('returns true if the function call is of a Safe', () => {
+      [
+        setupEncoder().encode(),
+        addOwnerWithThresholdEncoder().encode(),
+        removeOwnerEncoder().encode(),
+        swapOwnerEncoder().encode(),
+        changeThresholdEncoder().encode(),
+        execTransactionEncoder().encode(),
+      ].every((data) => {
+        expect(target.isCall(data)).toBe(true);
+      });
+    });
+
+    it('returns false if the function call is not of a Safe', () => {
+      const data = faker.string.hexadecimal({ length: 138 }) as Hex;
+
+      expect(target.isCall(data)).toBe(false);
+    });
+  });
+
   it('throws if the function call cannot be decoded', () => {
     const data = faker.string.hexadecimal({ length: 138 }) as Hex;
 

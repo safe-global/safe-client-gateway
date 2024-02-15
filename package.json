@@ -7,6 +7,8 @@
     "build": "nest build",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
+    "generate-abis": "ts-node ./scripts/generate-abis.ts",
+    "postinstall": "yarn generate-abis",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
