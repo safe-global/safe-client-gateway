@@ -8,15 +8,4 @@ export class SafeDecoder extends AbiDecoder<typeof Safe130> {
   constructor() {
     super(Safe130);
   }
-
-  isCall(data: Hex): boolean {
-    try {
-      this.decodeFunctionData({
-        data,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }

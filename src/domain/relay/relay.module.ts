@@ -4,14 +4,15 @@ import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.hel
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
+import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 
 @Module({
   providers: [
     LimitAddressesMapper,
     // TODO: Look into refactoring these with `abi-decoder`
     Erc20ContractHelper,
+    SafeContractHelper,
     // TODO: Generify AlertsDecodersModule and import here
-    SafeDecoder,
     MultiSendDecoder,
     ProxyFactoryDecoder,
   ],
