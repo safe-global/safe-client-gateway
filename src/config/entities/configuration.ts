@@ -127,6 +127,7 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    relay: process.env.FF_RELAY?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -182,6 +183,9 @@ export default () => ({
     baseUri:
       process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
+    apiKey: {
+      100: process.env.GELATO_API_KEY_GNOSIS_CHAIN,
+    },
   },
   safeConfig: {
     baseUri:

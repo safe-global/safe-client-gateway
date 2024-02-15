@@ -1,24 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex } from 'viem/types/misc';
+import { RelayLimitReachedError } from '@/domain/relay/errors/relay-limit-reached.error';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 
-// TODO: Move to error folder and create exception filter
-class RelayLimitReachedError extends Error {
-  constructor(
-    readonly address: Hex,
-    readonly current: number,
-    readonly limit: number,
-  ) {
-    super(
-      `Relay limit reached for ${address} | current: ${current} | limit: ${limit}`,
-    );
-  }
-}
-
-@Injectable({})
+@Injectable()
 export class RelayRepository {
   // Number of relay requests per ttl
   private readonly limit: number;
@@ -27,7 +19,9 @@ export class RelayRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly limitAddressesMapper: LimitAddressesMapper,
+    @Inject(IRelayApi)
     private readonly relayApi: IRelayApi,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
@@ -40,6 +34,7 @@ export class RelayRepository {
   }): Promise<{ taskId: string }> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(relayPayload);
+
     for (const address of relayAddresses) {
       const canRelay = await this.canRelay({
         chainId: relayPayload.chainId,
@@ -56,7 +51,28 @@ export class RelayRepository {
       }
     }
 
-    return this.relayApi.relay(relayPayload);
+    const relayResponse = await this.relayApi.relay(relayPayload);
+
+    // If we fail to increment count, we should not fail the relay
+    await Promise.allSettled(
+      relayAddresses.map((address) => {
+        return this.incrementRelayCount({
+          chainId: relayPayload.chainId,
+          address,
+        });
+      }),
+    );
+
+    return relayResponse;
+  }
+
+  async getRelayCount(args: {
+    chainId: string;
+    address: string;
+  }): Promise<number> {
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
+    const currentCount = await this.cacheService.get(cacheDir);
+    return currentCount ? parseInt(currentCount) : 0;
   }
 
   private async canRelay(args: {
@@ -67,7 +83,13 @@ export class RelayRepository {
     return { result: currentCount < this.limit, currentCount };
   }
 
-  getRelayCount(args: { chainId: string; address: string }): Promise<number> {
-    return this.relayApi.getRelayCount(args);
+  private async incrementRelayCount(args: {
+    chainId: string;
+    address: string;
+  }): Promise<void> {
+    const currentCount = await this.getRelayCount(args);
+    const incremented = currentCount + 1;
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
+    return this.cacheService.set(cacheDir, incremented.toString());
   }
 }

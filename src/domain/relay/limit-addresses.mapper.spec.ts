@@ -66,7 +66,7 @@ describe('LimitAddressesMapper', () => {
       const safe = safeBuilder().build();
       const safeAddress = getAddress(safe.address);
       const data = execTransactionEncoder()
-        .with('to', getAddress(faker.finance.ethereumAddress()))
+        .with('value', faker.number.bigInt())
         .encode() as Hex;
       // Official mastercopy
       mockSafeRepository.getSafe.mockResolvedValue(safe);
@@ -85,7 +85,6 @@ describe('LimitAddressesMapper', () => {
       const safe = safeBuilder().build();
       const safeAddress = getAddress(safe.address);
       const data = execTransactionEncoder()
-        .with('to', getAddress(faker.finance.ethereumAddress()))
         .with('data', erc20TransferEncoder().encode())
         .encode() as Hex;
       // Official mastercopy
@@ -285,7 +284,6 @@ describe('LimitAddressesMapper', () => {
       const safe = safeBuilder().build();
       const safeAddress = getAddress(safe.address);
       const data = execTransactionEncoder()
-        .with('to', getAddress(faker.finance.ethereumAddress()))
         .with('data', execTransactionEncoder().encode())
         .encode() as Hex;
       // Official mastercopy
@@ -306,6 +304,7 @@ describe('LimitAddressesMapper', () => {
       const safeAddress = getAddress(safe.address);
       const data = execTransactionEncoder()
         .with('to', safeAddress)
+        .with('value', faker.number.bigInt())
         .encode() as Hex;
       // Official mastercopy
       mockSafeRepository.getSafe.mockRejectedValue(true);
@@ -316,7 +315,7 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('execTransaction via unofficial Safe mastercopy');
+      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
     });
 
     // transfer (execTransaction)
@@ -325,7 +324,6 @@ describe('LimitAddressesMapper', () => {
       const safe = safeBuilder().build();
       const safeAddress = getAddress(safe.address);
       const data = execTransactionEncoder()
-        .with('to', getAddress(faker.finance.ethereumAddress()))
         .with('data', erc20TransferEncoder().with('to', safeAddress).encode())
         .encode() as Hex;
       // Official mastercopy
