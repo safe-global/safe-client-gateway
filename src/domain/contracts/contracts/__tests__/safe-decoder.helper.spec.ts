@@ -1,5 +1,3 @@
-import { Hex } from 'viem';
-import { faker } from '@faker-js/faker';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,

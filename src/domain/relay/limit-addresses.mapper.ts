@@ -21,7 +21,7 @@ export interface RelayPayload {
 
 @Injectable()
 export class LimitAddressesMapper {
-  // TODO: Support all versions of Safe. This and all decoders currently use 1.3.0
+  // TODO: bstract with that from SafeContractHelper
   private static SUPPORTED_SAFE_VERSION = '1.3.0';
 
   constructor(
