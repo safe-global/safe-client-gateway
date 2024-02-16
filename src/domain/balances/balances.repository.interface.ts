@@ -17,10 +17,7 @@ export interface IBalancesRepository {
   /**
    * Clears any stored local balance data of {@link safeAddress} on {@link chainId}
    */
-  clearLocalBalances(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<void>;
+  clearBalances(args: { chainId: string; safeAddress: string }): Promise<void>;
 
   /**
    * Gets the list of supported fiat codes.

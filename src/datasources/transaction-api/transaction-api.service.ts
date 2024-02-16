@@ -6,7 +6,6 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
-import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { Delegate } from '@/domain/delegate/entities/delegate.entity';
@@ -26,7 +25,6 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
-import { Balance } from '@/domain/balances/entities/balance.entity';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -61,42 +59,6 @@ export class TransactionApi implements ITransactionApi {
       );
   }
 
-  async getBalances(args: {
-    safeAddress: string;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<Balance[]> {
-    try {
-      const cacheDir = CacheRouter.getBalancesCacheDir({
-        chainId: this.chainId,
-        ...args,
-      });
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            trusted: args.trusted,
-            exclude_spam: args.excludeSpam,
-          },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-  }
-
-  async clearLocalBalances(safeAddress: string): Promise<void> {
-    const key = CacheRouter.getBalancesCacheKey({
-      chainId: this.chainId,
-      safeAddress,
-    });
-    await this.cacheService.deleteByKey(key);
-  }
-
   async getDataDecoded(args: {
     data: string;
     to?: string;
@@ -114,46 +76,6 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
-  }
-
-  async getCollectibles(args: {
-    safeAddress: string;
-    limit?: number;
-    offset?: number;
-    trusted?: boolean;
-    excludeSpam?: boolean;
-  }): Promise<Page<Collectible>> {
-    try {
-      const cacheDir = CacheRouter.getCollectiblesCacheDir({
-        chainId: this.chainId,
-        ...args,
-      });
-      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/collectibles/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            limit: args.limit,
-            offset: args.offset,
-            trusted: args.trusted,
-            exclude_spam: args.excludeSpam,
-          },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-  }
-
-  async clearCollectibles(safeAddress: string): Promise<void> {
-    const key = CacheRouter.getCollectiblesKey({
-      chainId: this.chainId,
-      safeAddress,
-    });
-    await this.cacheService.deleteByKey(key);
   }
 
   // Important: there is no hook which invalidates this endpoint,
