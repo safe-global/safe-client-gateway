@@ -315,7 +315,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+      );
     });
 
     // transfer (execTransaction)
@@ -335,7 +337,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+      );
     });
 
     // Unofficial mastercopy
@@ -357,7 +361,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('execTransaction via unofficial Safe mastercopy');
+      ).rejects.toThrow(
+        'Safe attempting to relay is not official. Only official Safe mastercopies are supported.',
+      );
     });
   });
 
@@ -467,7 +473,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('Invalid MultiSend transactions');
+      ).rejects.toThrow(
+        'Invalid `multiSend` call. The batch is not all `execTransaction` calls to same address.',
+      );
     });
 
     it('should throw when the mastercopy is not official', async () => {
@@ -502,7 +510,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('multiSend via unofficial Safe mastercopy');
+      ).rejects.toThrow(
+        'Safe attempting to relay is not official. Only official Safe mastercopies are supported.',
+      );
     });
 
     it('should throw when the batch is to varying parties', async () => {
@@ -537,7 +547,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('MultiSend transactions target different addresses');
+      ).rejects.toThrow(
+        'Invalid `multiSend` call. The batch is not all `execTransaction` calls to same address.',
+      );
     });
 
     it('should throw for unofficial MultiSend deployments', async () => {
@@ -571,7 +583,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to,
         }),
-      ).rejects.toThrow('multiSend via unofficial MultiSend contract');
+      ).rejects.toThrow(
+        'MultiSend contract is not official. Only official MultiSend contracts are supported.',
+      );
     });
   });
 
@@ -651,7 +665,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+      );
     });
   });
 
@@ -670,7 +686,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+      );
     });
 
     it('should throw if the to address is not valid', async () => {

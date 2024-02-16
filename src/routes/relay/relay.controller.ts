@@ -4,6 +4,10 @@ import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { RelayService } from '@/routes/relay/relay.service';
 import { RelayLimitReachedExceptionFilter } from '@/domain/relay/exception-filters/relay-limit-reached.exception-filter';
 import { RelayDtoValidationPipe } from '@/routes/relay/pipes/relay.validation.pipe';
+import { InvalidMultiSendExceptionFilter } from '@/domain/relay/exception-filters/invalid-multisend.exception-filter';
+import { InvalidTransferExceptionFilter } from '@/domain/relay/exception-filters/invalid-transfer.exception-filter';
+import { UnofficialMastercopyExceptionFilter } from '@/domain/relay/exception-filters/unofficial-mastercopy.exception-filter';
+import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-filters/unofficial-multisend.error';
 
 @ApiTags('relay')
 @Controller({
@@ -14,7 +18,13 @@ export class RelayController {
   constructor(private readonly relayService: RelayService) {}
 
   @Post()
-  @UseFilters(RelayLimitReachedExceptionFilter)
+  @UseFilters(
+    RelayLimitReachedExceptionFilter,
+    InvalidMultiSendExceptionFilter,
+    InvalidTransferExceptionFilter,
+    UnofficialMastercopyExceptionFilter,
+    UnofficialMultiSendExceptionFilter,
+  )
   async relay(
     @Param('chainId') chainId: string,
     @Body(RelayDtoValidationPipe)
