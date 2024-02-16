@@ -94,6 +94,7 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: true,
     zerionBalancesChainIds: ['137'],
+    relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
@@ -184,6 +185,9 @@ export default (): ReturnType<typeof configuration> => ({
   relay: {
     baseUri: faker.internet.url({ appendSlash: false }),
     limit: faker.number.int({ min: 1 }),
+    apiKey: {
+      100: faker.string.hexadecimal({ length: 32 }),
+    },
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
