@@ -1,7 +1,7 @@
 import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import { getAddress, Hex, hexToBigInt, hexToNumber, size, slice } from 'viem';
-import MultiSendCallOnly130 from '@/dist/abis/safe/v1.3.0/MultiSendCallOnly.abi';
+import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 
 @Injectable()
 export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
