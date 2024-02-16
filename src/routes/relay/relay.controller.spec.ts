@@ -99,46 +99,58 @@ describe('Relay controller', () => {
   describe('POST /v1/chains/:chainId/relay', () => {
     describe('Relayer', () => {
       describe('execTransaction', () => {
-        it('should return 201 when sending native currency to another party', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('value', faker.number.bigInt())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
+        it.each([
+          [
+            'on the new route',
+            (chainId: string): string => `/v1/chains/${chainId}/relay`,
+          ],
+          [
+            'on the relay service route',
+            (chainId: string): string => `/v1/relay/${chainId}`,
+          ],
+        ])(
+          `should return 201 when sending native currency to another party %s`,
+          async (_: string, getRoute: (chainId: string) => string) => {
+            const chainId = faker.helpers.arrayElement(supportedChainIds);
+            const chain = chainBuilder().with('chainId', chainId).build();
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with('value', faker.number.bigInt())
+              .encode() as Hex;
+            const taskId = faker.string.uuid();
+            networkService.get.mockImplementation((url) => {
+              switch (url) {
+                case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                  return Promise.resolve({ data: chain, status: 200 });
+                case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                  // Official mastercopy
+                  return Promise.resolve({ data: safe, status: 200 });
+                default:
+                  fail(`Unexpected URL: ${url}`);
+              }
             });
-        });
+            networkService.post.mockImplementation((url) => {
+              switch (url) {
+                case `${relayUrl}/relays/v2/sponsored-call`:
+                  return Promise.resolve({ data: { taskId }, status: 200 });
+                default:
+                  fail(`Unexpected URL: ${url}`);
+              }
+            });
+
+            await request(app.getHttpServer())
+              .post(getRoute(chain.chainId))
+              .send({
+                to: safeAddress,
+                data,
+              })
+              .expect(201)
+              .expect({
+                taskId,
+              });
+          },
+        );
 
         it('should return 201 with manual gasLimit', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
@@ -1215,14 +1227,26 @@ describe('Relay controller', () => {
   });
 
   describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {
-    it('should return the limit and remaining relay attempts', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
-        .expect(200)
-        .expect({ remaining: 5, limit: 5 });
-    });
+    it.each([
+      [
+        'on the new route',
+        (chainId: string): string => `/v1/chains/${chainId}/relay`,
+      ],
+      [
+        'on the relay service route',
+        (chainId: string): string => `/v1/relay/${chainId}`,
+      ],
+    ])(
+      'should return the limit and remaining relay attempts %s',
+      async (_: string, getRoute: (chainId: string) => string) => {
+        const chainId = faker.string.numeric();
+        const safeAddress = faker.finance.ethereumAddress();
+        await request(app.getHttpServer())
+          .get(`${getRoute(chainId)}/${safeAddress}`)
+          .expect(200)
+          .expect({ remaining: 5, limit: 5 });
+      },
+    );
 
     it('should not return negative limits if more requests were made than the limit', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
