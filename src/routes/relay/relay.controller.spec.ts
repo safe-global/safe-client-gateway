@@ -33,7 +33,7 @@ import {
   setupEncoder,
   swapOwnerEncoder,
 } from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
-import { erc20TransferEncoder } from '@/domain/contracts/contracts/__tests__/erc20-encoder.builder';
+import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
