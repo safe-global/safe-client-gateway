@@ -27,7 +27,7 @@ const assetsDir = path.join(
 // Path to directory where ABIs will be written
 const outputDir = path.join(process.cwd(), 'dist', 'abis', 'safe');
 
-function main() {
+function main(): void {
   // Remove any existing ABIs
   try {
     fs.rmSync(outputDir, { recursive: true });
@@ -56,7 +56,7 @@ function main() {
       const fileName = `${contractName}.abi.ts`;
       const filePath = path.join(versionOutputDir, fileName);
 
-      // It is generally better to use the Steam API for larger files
+      // It is generally better to use the Stream API for larger files
       // but as we are storing the JSON in memory, this is likely of
       // minimal benefit. As this script runs on build, we need not
       // worry too much about performance though.
