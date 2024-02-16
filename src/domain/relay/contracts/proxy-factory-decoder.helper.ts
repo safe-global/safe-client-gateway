@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
+import ProxyFactory130 from '@/dist/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
 import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 
 @Injectable()

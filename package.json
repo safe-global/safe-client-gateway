@@ -7,7 +7,7 @@
     "build": "nest build",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
-    "generate-abis": "ts-node ./scripts/generate-abis.ts",
+    "generate-abis": "node ./scripts/generate-abis.js",
     "postinstall": "yarn generate-abis",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -93,6 +93,7 @@
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^@/dist/(.*)$": "<rootDir>/../dist/$1",
       "^@/(.*)$": "<rootDir>/../src/$1"
     },
     "globalSetup": "<rootDir>/../test/global-setup.ts"

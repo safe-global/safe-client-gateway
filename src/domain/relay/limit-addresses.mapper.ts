@@ -8,15 +8,10 @@ import {
   getSafeSingletonDeployment,
   getSafeL2SingletonDeployment,
   getMultiSendCallOnlyDeployment,
+  getMultiSendDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
-
-export interface RelayPayload {
-  chainId: string;
-  data: Hex;
-  to: Hex;
-  gasLimit?: bigint;
-}
+import { isAddress, isHex } from 'viem';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -32,9 +27,26 @@ export class LimitAddressesMapper {
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
   ) {}
 
-  async getLimitAddresses(args: RelayPayload): Promise<readonly Hex[]> {
+  async getLimitAddresses(args: {
+    chainId: string;
+    to: string;
+    data: string;
+  }): Promise<readonly Hex[]> {
+    if (!isAddress(args.to)) {
+      throw Error('Invalid to provided');
+    }
+
+    if (!isHex(args.data)) {
+      throw Error('Invalid data provided');
+    }
+
     // Calldata matches that of execTransaction and meets validity requirements
-    if (this.isValidExecTransactionCall(args)) {
+    if (
+      this.isValidExecTransactionCall({
+        to: args.to,
+        data: args.data,
+      })
+    ) {
       // Safe attempting to relay is official
       const isOfficial = await this.isOfficialMastercopy({
         chainId: args.chainId,
@@ -42,21 +54,24 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('Invalid Safe contract');
+        throw Error('execTransaction via unofficial Safe mastercopy');
       }
 
-      // Safe targetted by execTransaction will be limited
+      // Safe targeted by execTransaction will be limited
       return [args.to];
     }
 
     // Calldata matches that of multiSend and is from an official MultiSend contract
-    if (
-      this.multiSendDecoder.isMultiSend(args.data) &&
-      this.isOfficialMultiSendDeployment({
-        chainId: args.chainId,
-        address: args.to,
-      })
-    ) {
+    if (this.multiSendDecoder.isMultiSend(args.data)) {
+      if (
+        !this.isOfficialMultiSendDeployment({
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw Error('multiSend via unofficial MultiSend contract');
+      }
+
       // multiSend calldata meets the validity requirements
       const safeAddress = this.getSafeAddressFromMultiSend(args.data);
 
@@ -67,15 +82,20 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('Invalid Safe contract');
+        throw Error('multiSend via unofficial Safe mastercopy');
       }
 
-      // Safe targetted in batch will be limited
+      // Safe targeted in batch will be limited
       return [safeAddress];
     }
 
     // Calldata matches that of createProxyWithNonce and meets validity requirements
-    if (this.isValidCreateProxyWithNonceCall(args)) {
+    if (
+      this.isValidCreateProxyWithNonceCall({
+        chainId: args.chainId,
+        data: args.data,
+      })
+    ) {
       // Owners of safe-to-be-created will be limited
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
@@ -144,13 +164,27 @@ export class LimitAddressesMapper {
     chainId: string;
     address: string;
   }): boolean {
-    const multiSendDeployment = getMultiSendCallOnlyDeployment({
+    const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
+      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      network: args.chainId,
+    });
+
+    const isCallOnly =
+      multiSendCallOnlyDeployment?.networkAddresses[args.chainId] ===
+        args.address ||
+      multiSendCallOnlyDeployment?.defaultAddress === args.address;
+
+    if (isCallOnly) {
+      return true;
+    }
+
+    const multiSendCallDeployment = getMultiSendDeployment({
       version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
       network: args.chainId,
     });
     return (
-      multiSendDeployment?.networkAddresses[args.chainId] === args.address ||
-      multiSendDeployment?.defaultAddress === args.address
+      multiSendCallDeployment?.networkAddresses[args.chainId] ===
+        args.address || multiSendCallDeployment?.defaultAddress === args.address
     );
   }
 

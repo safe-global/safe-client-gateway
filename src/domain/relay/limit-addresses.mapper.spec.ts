@@ -313,7 +313,7 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Invalid Safe contract');
+      ).rejects.toThrow('execTransaction via unofficial Safe mastercopy');
     });
 
     // transfer (execTransaction)
@@ -356,7 +356,7 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Invalid Safe contract');
+      ).rejects.toThrow('execTransaction via unofficial Safe mastercopy');
     });
   });
 
@@ -384,6 +384,43 @@ describe('LimitAddressesMapper', () => {
         .with('transactions', multiSendTransactionsEncoder(transactions))
         .encode();
       const to = getMultiSendCallOnlyDeployment({
+        version,
+        network: chainId,
+      })!.networkAddresses[chainId];
+      // Official mastercopy
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+      const expectedLimitAddresses = await target.getLimitAddresses({
+        chainId,
+        data,
+        to: getAddress(to),
+      });
+      expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+    });
+
+    it('should return the limit address for valid "standard" MultiSend calls', async () => {
+      // Fixed chain ID for deployment address
+      const chainId = '1';
+      const version = '1.3.0';
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const transactions = [
+        execTransactionEncoder()
+          .with('data', addOwnerWithThresholdEncoder().encode())
+          .encode(),
+        execTransactionEncoder()
+          .with('data', changeThresholdEncoder().encode())
+          .encode(),
+      ].map((data) => ({
+        operation: faker.number.int({ min: 0, max: 1 }),
+        data,
+        to: safeAddress,
+        value: faker.number.bigInt(),
+      }));
+      const data = multiSendEncoder()
+        .with('transactions', multiSendTransactionsEncoder(transactions))
+        .encode();
+      const to = getMultiSendDeployment({
         version,
         network: chainId,
       })!.networkAddresses[chainId];
@@ -464,7 +501,7 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('Invalid Safe contract');
+      ).rejects.toThrow('multiSend via unofficial Safe mastercopy');
     });
 
     it('should throw when the batch is to varying parties', async () => {
@@ -502,45 +539,6 @@ describe('LimitAddressesMapper', () => {
       ).rejects.toThrow('MultiSend transactions target different addresses');
     });
 
-    it('should throw for non-callonly MultiSend deployments', async () => {
-      // Fixed chain ID for deployment address
-      const chainId = '1';
-      const version = '1.3.0';
-      const safe = safeBuilder().build();
-      const safeAddress = getAddress(safe.address);
-      const transactions = [
-        execTransactionEncoder()
-          .with('data', addOwnerWithThresholdEncoder().encode())
-          .encode(),
-        execTransactionEncoder()
-          .with('data', changeThresholdEncoder().encode())
-          .encode(),
-      ].map((data) => ({
-        operation: faker.number.int({ min: 0, max: 1 }),
-        data,
-        to: safeAddress,
-        value: faker.number.bigInt(),
-      }));
-      const data = multiSendEncoder()
-        .with('transactions', multiSendTransactionsEncoder(transactions))
-        .encode();
-      // Non-callonly MultiSend deployment
-      const to = getMultiSendDeployment({
-        version,
-        network: chainId,
-      })!.networkAddresses[chainId];
-      // Official mastercopy
-      mockSafeRepository.getSafe.mockResolvedValue(safe);
-
-      await expect(
-        target.getLimitAddresses({
-          chainId,
-          data,
-          to: getAddress(to),
-        }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
-    });
-
     it('should throw for unofficial MultiSend deployments', async () => {
       const chainId = faker.string.numeric();
       const safe = safeBuilder().build();
@@ -572,7 +570,7 @@ describe('LimitAddressesMapper', () => {
           data,
           to,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow('multiSend via unofficial MultiSend contract');
     });
   });
 
@@ -656,20 +654,64 @@ describe('LimitAddressesMapper', () => {
     });
   });
 
-  it('otherwise throws an error', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
-    const safeAddress = getAddress(safe.address);
-    const data = erc20TransferEncoder().encode();
-    // Official mastercopy
-    mockSafeRepository.getSafe.mockResolvedValue(safe);
+  describe('Validation', () => {
+    it('should throw if not an execTransaction, multiSend or createProxyWithNonceCall', async () => {
+      const chainId = faker.string.numeric();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = erc20TransferEncoder().encode();
+      // Official mastercopy
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
 
-    await expect(
-      target.getLimitAddresses({
-        chainId,
-        data,
-        to: safeAddress,
-      }),
-    ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to: safeAddress,
+        }),
+      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+    });
+
+    it('should throw if the to address is not valid', async () => {
+      const chainId = faker.string.numeric();
+      const to = '0x000000000000000000000000000000000INVALID';
+      const data = erc20TransferEncoder().encode();
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid to provided');
+    });
+
+    it('should throw if the to address is not hexadecimal', async () => {
+      const chainId = faker.string.numeric();
+      const to = 'not hexadecimal';
+      const data = erc20TransferEncoder().encode();
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid to provided');
+    });
+
+    it('should throw if the calldata is not hexadecimal', async () => {
+      const chainId = faker.string.numeric();
+      const to = faker.finance.ethereumAddress();
+      const data = 'not hexadecimal';
+
+      await expect(
+        target.getLimitAddresses({
+          chainId,
+          data,
+          to,
+        }),
+      ).rejects.toThrow('Invalid data provided');
+    });
   });
 });
