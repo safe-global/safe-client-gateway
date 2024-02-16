@@ -1,10 +1,21 @@
 import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
-import { getAddress, Hex, hexToBigInt, hexToNumber, size, slice } from 'viem';
-import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
+import {
+  getAddress,
+  Hex,
+  hexToBigInt,
+  hexToNumber,
+  parseAbi,
+  size,
+  slice,
+} from 'viem';
+
+const MULTISEND_ABI = parseAbi([
+  'function multiSend(bytes memory transactions)',
+]);
 
 @Injectable()
-export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
+export class MultiSendDecoder extends AbiDecoder<typeof MULTISEND_ABI> {
   // uint8 operation, address to, value uint256, dataLength uint256, bytes data
   private static readonly OPERATION_SIZE = 1;
   private static readonly TO_SIZE = 20;
@@ -12,7 +23,7 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
   private static readonly DATA_LENGTH_SIZE = 32;
 
   constructor() {
-    super(MultiSendCallOnly130);
+    super(MULTISEND_ABI);
   }
 
   mapMultiSendTransactions(multiSendData: Hex): Array<{

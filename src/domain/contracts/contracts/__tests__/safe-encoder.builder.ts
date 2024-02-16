@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress, Hex, pad } from 'viem';
-import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
+import { encodeFunctionData, getAddress, Hex, pad, parseAbi } from 'viem';
+
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
@@ -38,11 +38,16 @@ type SetupArgs = {
 };
 
 class SetupEncoder<T extends SetupArgs> extends Builder<T> implements IEncoder {
+  static readonly FUNCTION_SIGNATURE =
+    'function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address paymentReceiver)';
+
   encode(): Hex {
+    const abi = parseAbi([SetupEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'setup',
       args: [
         args.owners,
@@ -89,11 +94,16 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)' as const;
+
   encode(): Hex {
+    const abi = parseAbi([ExecTransactionEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'execTransaction',
       args: [
         args.to,
@@ -136,11 +146,16 @@ class AddOwnerWithThresholdEncoder<T extends AddOwnerWithThresholdArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function addOwnerWithThreshold(address owner, uint256 _threshold)' as const;
+
   encode(): Hex {
+    const abi = parseAbi([AddOwnerWithThresholdEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'addOwnerWithThreshold',
       args: [args.owner, args.threshold],
     });
@@ -165,11 +180,16 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
+
   encode(): Hex {
+    const abi = parseAbi([RemoveOwnerEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'removeOwner',
       args: [args.prevOwner, args.owner, args.threshold],
     });
@@ -200,11 +220,16 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
+
   encode(): Hex {
+    const abi = parseAbi([SwapOwnerEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'swapOwner',
       args: [args.prevOwner, args.oldOwner, args.newOwner],
     });
@@ -233,11 +258,16 @@ class ChangeThresholdEncoder<T extends ChangeThresholdArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function changeThreshold(uint256 _threshold)';
+
   encode(): Hex {
+    const abi = parseAbi([ChangeThresholdEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'changeThreshold',
       args: [args.threshold],
     });
@@ -261,11 +291,15 @@ class EnableModuleEncoder<T extends EnableModuleArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE = 'function enableModule(address module)';
+
   encode(): Hex {
+    const abi = parseAbi([EnableModuleEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'enableModule',
       args: [args.module],
     });
@@ -290,11 +324,16 @@ class DisableModuleEncoder<T extends DisableModuleArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function disableModule(address prevModule, address module)';
+
   encode(): Hex {
+    const abi = parseAbi([DisableModuleEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'disableModule',
       args: [args.prevModule, args.module],
     });
@@ -317,11 +356,16 @@ class SetFallbackHandlerEncoder<T extends SetFallbackHandlerArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function setFallbackHandler(address handler)';
+
   encode(): Hex {
+    const abi = parseAbi([SetFallbackHandlerEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'setFallbackHandler',
       args: [args.handler],
     });
@@ -345,11 +389,15 @@ class SetGuardEncoder<T extends SetGuardArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE = 'function setGuard(address guard)';
+
   encode(): Hex {
+    const abi = parseAbi([SetGuardEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: Safe130,
+      abi,
       functionName: 'setGuard',
       args: [args.guard],
     });
