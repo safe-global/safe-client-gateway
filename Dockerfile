@@ -8,10 +8,10 @@ WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node .yarn/patches ./.yarn/patches
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
+COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
 RUN --mount=type=cache,target=/root/.yarn yarn
 COPY --chown=node:node assets ./assets
 COPY --chown=node:node migrations ./migrations
-COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
 COPY --chown=node:node src ./src
 RUN --mount=type=cache,target=/root/.yarn yarn run build \
     && rm -rf ./node_modules \
