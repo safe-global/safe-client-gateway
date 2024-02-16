@@ -32,7 +32,7 @@ export class BalancesApiManager implements IBalancesApiManager {
       'features.zerionBalancesChainIds',
     );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
-      'safeTransaction.useVpcUrl', // TODO: move to safeBalancesApi config
+      'safeTransaction.useVpcUrl',
     );
 
     this.zerionBalancesApi = zerionBalancesApi;
