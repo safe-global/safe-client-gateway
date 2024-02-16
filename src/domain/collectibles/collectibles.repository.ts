@@ -24,7 +24,6 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Page<Collectible>> {
-    // TODO: route TransactionApi collectibles retrieval from BalancesApiManager
     const page = (await this.balancesApiManager.useExternalApi(args.chainId))
       ? await this._getCollectiblesFromBalancesApi(args)
       : await this._getCollectiblesFromTransactionApi(args);
@@ -37,15 +36,8 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     chainId: string;
     safeAddress: string;
   }): Promise<void> {
-    if (this.balancesApiManager.useExternalApi(args.chainId)) {
-      const api = await this.balancesApiManager.getBalancesApi(args.chainId);
-      await api.clearCollectibles(args);
-    } else {
-      const transactionApi = await this.transactionApiManager.getTransactionApi(
-        args.chainId,
-      );
-      await transactionApi.clearCollectibles(args.safeAddress);
-    }
+    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
+    await api.clearCollectibles(args);
   }
 
   private async _getCollectiblesFromBalancesApi(args: {
@@ -54,7 +46,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Collectible>> {
-    const api = this.balancesApiManager.getBalancesApi(args.chainId);
+    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     return api.getCollectibles(args);
   }
 
@@ -66,10 +58,8 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Page<Collectible>> {
-    const transactionApi = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
-    return transactionApi.getCollectibles({
+    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
+    return api.getCollectibles({
       safeAddress: args.safeAddress,
       limit: args.limit,
       offset: args.offset,

@@ -12,6 +12,14 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly accountDataSource: IAccountDataSource,
   ) {}
 
+  getSubscriptions(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<Subscription[]> {
+    return this.accountDataSource.getSubscriptions(args);
+  }
+
   subscribe(args: {
     chainId: string;
     safeAddress: string;

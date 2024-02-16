@@ -52,7 +52,6 @@ export class CacheRouter {
     );
   }
 
-  // TODO: remove this prefixed key if eventually only one balances provider is used
   static getZerionBalancesCacheKey(args: {
     chainId: string;
     safeAddress: string;

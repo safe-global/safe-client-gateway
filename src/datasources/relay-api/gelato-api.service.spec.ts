@@ -65,6 +65,7 @@ describe('GelatoApi', () => {
         chainId,
         to: address,
         data,
+        gasLimit: null,
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -122,6 +123,7 @@ describe('GelatoApi', () => {
           chainId,
           to: address,
           data,
+          gasLimit: null,
         }),
       ).rejects.toThrow();
     });
@@ -149,6 +151,7 @@ describe('GelatoApi', () => {
           chainId,
           to: address,
           data,
+          gasLimit: null,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
     });

@@ -99,7 +99,6 @@ describe('Relay controller', () => {
   describe('POST /v1/chains/:chainId/relay', () => {
     describe('Relayer', () => {
       describe('execTransaction', () => {
-        // execTransaction
         it('should return 201 when sending native currency to another party', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
@@ -193,13 +192,32 @@ describe('Relay controller', () => {
           );
         });
 
-        // transfer (execTransaction)
-        it('should return 201 when sending ERC-20 tokens to another party', async () => {
+        it.each([
+          [
+            'sending ERC-20 tokens to another party',
+            erc20TransferEncoder().encode(),
+          ],
+          ['cancelling a transaction', '0x' as const],
+          [
+            'making an addOwnerWithThreshold call',
+            addOwnerWithThresholdEncoder().encode(),
+          ],
+          ['making a changeThreshold call', changeThresholdEncoder().encode()],
+          ['making an enableModule call', enableModuleEncoder().encode()],
+          ['making a disableModule call', disableModuleEncoder().encode()],
+          ['making a removeOwner call', removeOwnerEncoder().encode()],
+          [
+            'making a setFallbackHandler call',
+            setFallbackHandlerEncoder().encode(),
+          ],
+          ['making a setGuard call', setGuardEncoder().encode()],
+          ['making a swapOwner call', swapOwnerEncoder().encode()],
+        ])(`should return 201 when %s`, async (_, execTransactionData) => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const safe = safeBuilder().build();
           const data = execTransactionEncoder()
-            .with('data', erc20TransferEncoder().encode())
+            .with('data', execTransactionData)
             .encode() as Hex;
           const taskId = faker.string.uuid();
           networkService.get.mockImplementation((url) => {
@@ -234,394 +252,6 @@ describe('Relay controller', () => {
             });
         });
 
-        // cancellation (execTransaction)
-        it('should return 201 when cancelling a transaction', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', '0x')
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // addOwnerWithThreshold (execTransaction)
-        it('should return 201 when making an addOwnerWithThreshold call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', addOwnerWithThresholdEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // changeThreshold (execTransaction)
-        it('should return 201 when making a changeThreshold call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', changeThresholdEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // enableModule (execTransaction)
-        it('should return 201 when making a enableModule call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', enableModuleEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // disableModule (execTransaction)
-        it('should return 201 when making a disableModule call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', disableModuleEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // removeOwner (execTransaction)
-        it('should return 201 when making a removeOwner call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', removeOwnerEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // setFallbackHandler (execTransaction)
-        it('should return 201 when making a setFallbackHandler call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', setFallbackHandlerEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // setGuard (execTransaction)
-        it('should return 201 when making a setGuard call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', setGuardEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // swapOwner (execTransaction)
-        it('should return 201 when making a swapOwner call', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
-          const chain = chainBuilder().with('chainId', chainId).build();
-          const safe = safeBuilder().build();
-          const safeAddress = getAddress(safe.address);
-          const data = execTransactionEncoder()
-            .with('to', safeAddress)
-            .with('data', swapOwnerEncoder().encode())
-            .encode() as Hex;
-          const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
-            switch (url) {
-              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                return Promise.resolve({ data: chain, status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
-                // Official mastercopy
-                return Promise.resolve({ data: safe, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-          networkService.post.mockImplementation((url) => {
-            switch (url) {
-              case `${relayUrl}/relays/v2/sponsored-call`:
-                return Promise.resolve({ data: { taskId }, status: 200 });
-              default:
-                fail(`Unexpected URL: ${url}`);
-            }
-          });
-
-          await request(app.getHttpServer())
-            .post(`/v1/chains/${chain.chainId}/relay`)
-            .send({
-              to: safeAddress,
-              data,
-            })
-            .expect(201)
-            .expect({
-              taskId,
-            });
-        });
-
-        // execTransaction (execTransaction)
         it('should return 201 calling execTransaction on a nested Safe', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
