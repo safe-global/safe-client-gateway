@@ -17,7 +17,6 @@
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
     "paths": {
-      "@/dist/*": ["dist/*"],
       "@/*": ["src/*"],
     },
     "strict": true,

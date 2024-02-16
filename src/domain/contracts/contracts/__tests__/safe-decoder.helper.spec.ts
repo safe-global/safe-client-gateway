@@ -1,3 +1,5 @@
+import { Hex } from 'viem';
+import { faker } from '@faker-js/faker';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
@@ -100,5 +102,11 @@ describe('SafeDecoder', () => {
         args.signatures,
       ],
     });
+  });
+
+  it('throws if the function call cannot be decoded', () => {
+    const data = faker.string.hexadecimal({ length: 138 }) as Hex;
+
+    expect(() => target.decodeFunctionData({ data })).toThrow();
   });
 });

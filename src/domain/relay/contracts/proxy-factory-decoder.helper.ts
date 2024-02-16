@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import ProxyFactory130 from '@/dist/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
+import { parseAbi } from 'viem';
 import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
 
+const PROXY_FACTORY_ABI = parseAbi([
+  'function createProxyWithNonce(address _singleton, bytes memory initializer, uint256 saltNonce)',
+]);
+
 @Injectable()
-export class ProxyFactoryDecoder extends AbiDecoder<typeof ProxyFactory130> {
+export class ProxyFactoryDecoder extends AbiDecoder<typeof PROXY_FACTORY_ABI> {
   constructor() {
-    super(ProxyFactory130);
+    super(PROXY_FACTORY_ABI);
   }
 }
