@@ -11,7 +11,7 @@
   },
   "coverageDirectory": "./coverage",
   "moduleNameMapper": {
-    "^@/dist/(.*)$": "<rootDir>/dist/$1",
+    "^@/abis/(.*)$": "<rootDir>/abis/$1",
     "^@/(.*)$": "<rootDir>/src/$1"
   },
   "globalSetup": "<rootDir>/test/global-setup.ts"

@@ -26,7 +26,7 @@ const assetsDir = path.join(
 );
 
 // Path to directory where ABIs will be written
-const outputDir = path.join(process.cwd(), 'dist', 'abis', 'safe');
+const outputDir = path.join(process.cwd(), 'abis', 'safe');
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function main() {
