@@ -10,7 +10,7 @@ export const relayDtoSchema: JSONSchemaType<RelayDto> = {
   properties: {
     to: { type: 'string' },
     data: { type: 'string' },
-    gasLimit: { type: 'string', nullable: true },
+    gasLimit: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },
   },
   required: ['to', 'data'],
 };

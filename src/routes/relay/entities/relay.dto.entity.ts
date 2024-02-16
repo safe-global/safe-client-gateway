@@ -8,5 +8,5 @@ export class RelayDto {
   data!: string;
 
   @ApiPropertyOptional({ type: BigInt, nullable: true })
-  gasLimit: string | undefined;
+  gasLimit!: string | null;
 }

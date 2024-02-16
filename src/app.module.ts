@@ -49,7 +49,7 @@ export class AppModule implements NestModule {
   // into account. The .env file loading is done by the ConfigurationModule
   // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
-    const { email: isEmailFeatureEnabled, relay: isRelayFeatureEnables } =
+    const { email: isEmailFeatureEnabled, relay: isRelayFeatureEnabled } =
       configFactory()['features'];
 
     return {
@@ -77,7 +77,7 @@ export class AppModule implements NestModule {
         MessagesModule,
         NotificationsModule,
         OwnersModule,
-        ...(isRelayFeatureEnables ? [RelayControllerModule] : []),
+        ...(isRelayFeatureEnabled ? [RelayControllerModule] : []),
         RootModule,
         SafeAppsModule,
         SafesModule,

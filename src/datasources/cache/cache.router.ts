@@ -1,5 +1,4 @@
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { getAddress } from 'viem';
 
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
@@ -409,8 +408,7 @@ export class CacheRouter {
   }
 
   static getRelayKey(args: { chainId: string; address: string }): string {
-    // Ensure address is checksummed to always have a consistent cache key
-    return `${args.chainId}_${CacheRouter.RELAY_KEY}_${getAddress(args.address)}`;
+    return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }
 
   static getRelayCacheDir(args: {
