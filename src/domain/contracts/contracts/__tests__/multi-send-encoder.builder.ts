@@ -6,9 +6,9 @@ import {
   encodePacked,
   getAddress,
   Hex,
+  parseAbi,
   size,
 } from 'viem';
-import MultiSendCallOnly130 from '@/dist/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 import { Builder } from '@/__tests__/builder';
 
 // multiSend
@@ -21,11 +21,16 @@ class MultiSendEncoder<T extends MultiSendArgs>
   extends Builder<T>
   implements IEncoder
 {
+  static readonly FUNCTION_SIGNATURE =
+    'function multiSend(bytes memory transactions)' as const;
+
   encode(): Hex {
+    const abi = parseAbi([MultiSendEncoder.FUNCTION_SIGNATURE]);
+
     const args = this.build();
 
     return encodeFunctionData({
-      abi: MultiSendCallOnly130,
+      abi,
       functionName: 'multiSend',
       args: [args.transactions],
     });
