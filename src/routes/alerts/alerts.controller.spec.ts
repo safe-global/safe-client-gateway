@@ -48,6 +48,7 @@ import {
 import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { EmailAddress } from '@/domain/account/entities/account.entity';
+import { subscriptionBuilder } from '@/domain/account/entities/__tests__/subscription.builder';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -76,6 +77,10 @@ describe('Alerts (Unit)', () => {
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
   let urlGenerator: UrlGeneratorHelper;
+
+  const accountRecoverySubscription = subscriptionBuilder()
+    .with('key', 'account_recovery')
+    .build();
 
   describe('/alerts route enabled', () => {
     let app: INestApplication;
@@ -187,6 +192,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          subscriptionBuilder().with('key', 'account_recovery').build(),
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -294,6 +302,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -400,6 +411,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -496,6 +510,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -623,6 +640,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -722,6 +742,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -845,6 +868,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -941,6 +967,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -1024,6 +1053,9 @@ describe('Alerts (Unit)', () => {
             .build(),
         ];
         accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -1152,6 +1184,9 @@ describe('Alerts (Unit)', () => {
           .build(),
       ];
       accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1265,6 +1300,9 @@ describe('Alerts (Unit)', () => {
           .build(),
       ];
       accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1369,6 +1407,9 @@ describe('Alerts (Unit)', () => {
           .build(),
       ];
       accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1419,6 +1460,80 @@ describe('Alerts (Unit)', () => {
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
         to: expectedTargetEmailAddresses,
       });
+    });
+
+    it('does not notify accounts not subscribed to CATEGORY_ACCOUNT_RECOVERY', async () => {
+      const chain = chainBuilder().build();
+      const delayModifier = faker.finance.ethereumAddress();
+      const safe = safeBuilder().with('modules', [delayModifier]).build();
+      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+      const transactionAddedEvent = transactionAddedEventBuilder()
+        .with('data', addOwnerWithThreshold.encode())
+        .with('to', getAddress(safe.address))
+        .encode();
+      const alert = alertBuilder()
+        .with(
+          'transaction',
+          alertTransactionBuilder()
+            .with('to', delayModifier)
+            .with('logs', [
+              alertLogBuilder()
+                .with('address', delayModifier)
+                .with('data', transactionAddedEvent.data)
+                .with('topics', transactionAddedEvent.topics)
+                .build(),
+            ])
+            .with('network', chain.chainId)
+            .build(),
+        )
+        .with('event_type', EventType.ALERT)
+        .build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert,
+        timestamp,
+      });
+      const accounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(accounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        subscriptionBuilder().build(),
+      ]);
+
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+            return Promise.resolve({
+              data: { safes: [safe.address] },
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(202)
+        .expect({});
+
+      expect(emailApi.createMessage).toHaveBeenCalledTimes(0);
     });
 
     it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
