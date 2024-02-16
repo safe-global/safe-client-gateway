@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress, Hex, parseAbi } from 'viem';
-
+import { encodeFunctionData, getAddress, Hex } from 'viem';
+import ProxyFactory130 from '@/dist/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
 import { setupEncoder } from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
@@ -17,16 +17,11 @@ class SetupEncoder<T extends CreateProxyWithNonceArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function createProxyWithNonce(address _singleton, bytes memory initializer, uint256 saltNonce)';
-
   encode(): Hex {
-    const abi = parseAbi([SetupEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: ProxyFactory130,
       functionName: 'createProxyWithNonce',
       args: [args.singleton, args.initializer, args.saltNonce],
     });
