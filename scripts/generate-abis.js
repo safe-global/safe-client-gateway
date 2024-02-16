@@ -1,5 +1,6 @@
-import * as path from 'path';
-import * as fs from 'fs';
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path');
+const fs = require('fs');
 
 /**
  * This generates const TypeScript ABIs for each asset in
@@ -27,7 +28,8 @@ const assetsDir = path.join(
 // Path to directory where ABIs will be written
 const outputDir = path.join(process.cwd(), 'dist', 'abis', 'safe');
 
-function main(): void {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function main() {
   // Remove any existing ABIs
   try {
     fs.rmSync(outputDir, { recursive: true });
