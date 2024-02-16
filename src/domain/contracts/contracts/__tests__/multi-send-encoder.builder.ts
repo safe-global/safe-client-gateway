@@ -8,7 +8,7 @@ import {
   Hex,
   size,
 } from 'viem';
-import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
+import MultiSendCallOnly130 from '@/dist/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 import { Builder } from '@/__tests__/builder';
 
 // multiSend
