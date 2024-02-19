@@ -9,6 +9,7 @@ import {
   assetPriceSchema,
 } from './entities/schemas/asset-price.schema';
 
+// TODO: remove
 @Injectable()
 export class AssetPriceValidator implements IValidator<AssetPrice> {
   private readonly isValidAssetPrice: ValidateFunction<AssetPrice>;

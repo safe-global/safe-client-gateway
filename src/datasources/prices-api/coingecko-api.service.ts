@@ -71,16 +71,20 @@ export class CoingeckoApi implements IPricesApi {
   async getNativeCoinPrice(args: {
     nativeCoinId: string;
     fiatCode: string;
-  }): Promise<AssetPrice> {
+  }): Promise<number | null> {
     try {
-      const cacheDir = CacheRouter.getNativeCoinPriceCacheDir(args);
+      const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+      const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
+        nativeCoinId: args.nativeCoinId,
+        fiatCode: lowerCaseFiatCode,
+      });
       const url = `${this.baseUrl}/simple/price`;
-      return await this.dataSource.get({
+      const result: AssetPrice = await this.dataSource.get({
         cacheDir,
         url,
         networkRequest: {
           params: {
-            vs_currencies: args.fiatCode,
+            vs_currencies: lowerCaseFiatCode,
             ids: args.nativeCoinId,
           },
           ...(this.apiKey && {
@@ -92,6 +96,7 @@ export class CoingeckoApi implements IPricesApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.pricesTtlSeconds,
       });
+      return result?.[args.nativeCoinId]?.[lowerCaseFiatCode];
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${
@@ -115,14 +120,19 @@ export class CoingeckoApi implements IPricesApi {
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]> {
-    const pricesFromCache = await this._getTokenPricesFromCache(args);
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+    const pricesFromCache = await this._getTokenPricesFromCache({
+      ...args,
+      fiatCode: lowerCaseFiatCode,
+    });
     const notCachedTokenPrices = difference(
-      args.tokenAddresses,
+      args.tokenAddresses.map((address) => address.toLowerCase()),
       pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
     );
     const pricesFromNetwork = notCachedTokenPrices.length
       ? await this._getTokenPricesFromNetwork({
           ...args,
+          fiatCode: lowerCaseFiatCode,
           tokenAddresses: notCachedTokenPrices,
         })
       : [];
