@@ -13,6 +13,10 @@ import {
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
+import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
+import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
+import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
+import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.error';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -56,7 +60,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('execTransaction via unofficial Safe mastercopy');
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted by execTransaction will be limited
@@ -71,7 +75,7 @@ export class LimitAddressesMapper {
           address: args.to,
         })
       ) {
-        throw Error('multiSend via unofficial MultiSend contract');
+        throw new UnofficialMultiSendError();
       }
 
       // multiSend calldata meets the validity requirements
@@ -84,7 +88,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('multiSend via unofficial Safe mastercopy');
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted in batch will be limited
@@ -102,7 +106,7 @@ export class LimitAddressesMapper {
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
 
-    throw Error('Cannot get limit addresses – Invalid transfer');
+    throw new InvalidTransferError();
   }
 
   private isValidExecTransactionCall(args: { to: string; data: Hex }): boolean {
@@ -194,7 +198,7 @@ export class LimitAddressesMapper {
     });
 
     if (!isEveryValid) {
-      throw Error('Invalid MultiSend transactions');
+      throw new InvalidMultiSendError();
     }
 
     const firstRecipient = transactions[0].to;
@@ -203,8 +207,9 @@ export class LimitAddressesMapper {
       return transaction.to === firstRecipient;
     });
 
+    // Transactions calls execTransaction on varying addresses
     if (!isSameRecipient) {
-      throw Error('MultiSend transactions target different addresses');
+      throw new InvalidMultiSendError();
     }
 
     return firstRecipient;
@@ -253,6 +258,7 @@ export class LimitAddressesMapper {
     });
 
     if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
+      // Should never happen but check is needed to satisfy TypeScript
       throw Error('Not a createProxyWithNonce call');
     }
 
@@ -262,6 +268,7 @@ export class LimitAddressesMapper {
     });
 
     if (decodedSafe.functionName !== 'setup') {
+      // No custom error thrown, as caller subsequently throws InvalidTransferError
       throw Error('Not a setup call');
     }
 

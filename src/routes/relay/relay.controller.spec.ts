@@ -514,10 +514,9 @@ describe('Relay controller', () => {
     });
 
     describe('Transaction validation', () => {
-      // TODO: Return a 422 when the transactions are invalid
       describe('execTransaction', () => {
         // execTransaction
-        it('should return 500 when sending native currency to self', async () => {
+        it('should return 422 when sending native currency to self', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const safe = safeBuilder().build();
@@ -544,11 +543,16 @@ describe('Relay controller', () => {
               to: safeAddress,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message:
+                'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              statusCode: 422,
+            });
         });
 
         // transfer (execTransaction)
-        it('should return 500 sending ERC-20 tokens to self', async () => {
+        it('should return 422 sending ERC-20 tokens to self', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const safe = safeBuilder().build();
@@ -577,11 +581,16 @@ describe('Relay controller', () => {
               to: safeAddress,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message:
+                'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              statusCode: 422,
+            });
         });
 
         // Unofficial mastercopy
-        it('should return 500 when the mastercopy is not official', async () => {
+        it('should return 422 when the mastercopy is not official', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const safeAddress = faker.finance.ethereumAddress();
@@ -606,12 +615,16 @@ describe('Relay controller', () => {
               to: safeAddress,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message: 'Unsupported base contract.',
+              statusCode: 422,
+            });
         });
       });
 
       describe('multiSend', () => {
-        it('should return 500 when the batch has an invalid transaction', async () => {
+        it('should return 422 when the batch has an invalid transaction', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const version = '1.3.0';
@@ -660,10 +673,15 @@ describe('Relay controller', () => {
               to,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message:
+                'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+              statusCode: 422,
+            });
         });
 
-        it('should return 500 when the mastercopy is not official', async () => {
+        it('should return 422 when the mastercopy is not official', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const version = '1.3.0';
@@ -707,10 +725,14 @@ describe('Relay controller', () => {
               to,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message: 'Unsupported base contract.',
+              statusCode: 422,
+            });
         });
 
-        it('should return 500 when the batch is to varying parties', async () => {
+        it('should return 422 when the batch is to varying parties', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const version = '1.3.0';
@@ -752,10 +774,15 @@ describe('Relay controller', () => {
               to,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message:
+                'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+              statusCode: 422,
+            });
         });
 
-        it('should return 500 for unofficial MultiSend deployments', async () => {
+        it('should return 422 for unofficial MultiSend deployments', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const safe = safeBuilder().build();
@@ -796,12 +823,16 @@ describe('Relay controller', () => {
               to,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message: 'Unofficial MultiSend contract.',
+              statusCode: 422,
+            });
         });
       });
 
       describe('createProxyWithNonce', () => {
-        it('should return 500 creating an unofficial Safe', async () => {
+        it('should return 422 creating an unofficial Safe', async () => {
           const chainId = faker.helpers.arrayElement(supportedChainIds);
           const chain = chainBuilder().with('chainId', chainId).build();
           const owners = [
@@ -829,11 +860,16 @@ describe('Relay controller', () => {
               to,
               data,
             })
-            .expect(500);
+            .expect(422)
+            .expect({
+              message:
+                'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              statusCode: 422,
+            });
         });
       });
 
-      it('should otherwise return 500', async () => {
+      it('should otherwise return 422', async () => {
         const chainId = faker.helpers.arrayElement(supportedChainIds);
         const chain = chainBuilder().with('chainId', chainId).build();
         const safe = safeBuilder().build();
@@ -857,7 +893,12 @@ describe('Relay controller', () => {
             to: safeAddress,
             data,
           })
-          .expect(500);
+          .expect(422)
+          .expect({
+            message:
+              'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+            statusCode: 422,
+          });
       });
     });
 
