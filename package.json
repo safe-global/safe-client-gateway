@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "nest build",
+    "build": "yarn generate-abis && nest build",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "generate-abis": "node ./scripts/generate-abis.js",
