@@ -5,11 +5,11 @@ import {
   ArgumentsHost,
   HttpStatus,
 } from '@nestjs/common';
-import { UnofficialMastercopyError } from '@/domain/relay/errors/unofficial-mastercopy.error';
+import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 
-@Catch(UnofficialMastercopyError)
-export class UnofficialMastercopyExceptionFilter implements ExceptionFilter {
-  catch(_: UnofficialMastercopyError, host: ArgumentsHost): void {
+@Catch(UnofficialMasterCopyError)
+export class UnofficialMasterCopyExceptionFilter implements ExceptionFilter {
+  catch(_: UnofficialMasterCopyError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

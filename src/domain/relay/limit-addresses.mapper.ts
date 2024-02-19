@@ -13,7 +13,7 @@ import {
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
-import { UnofficialMastercopyError } from '@/domain/relay/errors/unofficial-mastercopy.error';
+import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
 import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.error';
@@ -60,7 +60,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw new UnofficialMastercopyError();
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted by execTransaction will be limited
@@ -88,7 +88,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw new UnofficialMastercopyError();
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted in batch will be limited

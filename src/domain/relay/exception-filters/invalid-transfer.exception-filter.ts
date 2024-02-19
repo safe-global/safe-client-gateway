@@ -9,12 +9,12 @@ import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.err
 
 @Catch(InvalidTransferError)
 export class InvalidTransferExceptionFilter implements ExceptionFilter {
-  catch(_: InvalidTransferError, host: ArgumentsHost): void {
+  catch(error: InvalidTransferError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
     response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
-      message: 'Invalid transfer.',
+      message: error.message,
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });
   }

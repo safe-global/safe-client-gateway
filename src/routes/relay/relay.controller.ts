@@ -6,7 +6,7 @@ import { RelayLimitReachedExceptionFilter } from '@/domain/relay/exception-filte
 import { RelayDtoValidationPipe } from '@/routes/relay/pipes/relay.validation.pipe';
 import { InvalidMultiSendExceptionFilter } from '@/domain/relay/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/domain/relay/exception-filters/invalid-transfer.exception-filter';
-import { UnofficialMastercopyExceptionFilter } from '@/domain/relay/exception-filters/unofficial-mastercopy.exception-filter';
+import { UnofficialMasterCopyExceptionFilter } from '@/domain/relay/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-filters/unofficial-multisend.error';
 
 @ApiTags('relay')
@@ -22,7 +22,7 @@ export class RelayController {
     RelayLimitReachedExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
-    UnofficialMastercopyExceptionFilter,
+    UnofficialMasterCopyExceptionFilter,
     UnofficialMultiSendExceptionFilter,
   )
   async relay(

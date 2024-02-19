@@ -316,7 +316,7 @@ describe('LimitAddressesMapper', () => {
           to: safeAddress,
         }),
       ).rejects.toThrow(
-        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
       );
     });
 
@@ -338,7 +338,7 @@ describe('LimitAddressesMapper', () => {
           to: safeAddress,
         }),
       ).rejects.toThrow(
-        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
       );
     });
 
@@ -362,7 +362,7 @@ describe('LimitAddressesMapper', () => {
           to: safeAddress,
         }),
       ).rejects.toThrow(
-        'Safe attempting to relay is not official. Only official Safe mastercopies are supported.',
+        'Safe attempting to relay is not official. Only official Safe singletons are supported.',
       );
     });
   });
@@ -474,7 +474,7 @@ describe('LimitAddressesMapper', () => {
           to: getAddress(to),
         }),
       ).rejects.toThrow(
-        'Invalid `multiSend` call. The batch is not all `execTransaction` calls to same address.',
+        'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
       );
     });
 
@@ -511,7 +511,7 @@ describe('LimitAddressesMapper', () => {
           to: getAddress(to),
         }),
       ).rejects.toThrow(
-        'Safe attempting to relay is not official. Only official Safe mastercopies are supported.',
+        'Safe attempting to relay is not official. Only official Safe singletons are supported.',
       );
     });
 
@@ -548,7 +548,7 @@ describe('LimitAddressesMapper', () => {
           to: getAddress(to),
         }),
       ).rejects.toThrow(
-        'Invalid `multiSend` call. The batch is not all `execTransaction` calls to same address.',
+        'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
       );
     });
 
@@ -666,7 +666,7 @@ describe('LimitAddressesMapper', () => {
           to,
         }),
       ).rejects.toThrow(
-        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
       );
     });
   });
@@ -687,7 +687,7 @@ describe('LimitAddressesMapper', () => {
           to: safeAddress,
         }),
       ).rejects.toThrow(
-        'Invalid transfer. The proposed transfer is not an `execTransaction`, `multiSend`, or `createProxyWithNonce` call.',
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
       );
     });
 
