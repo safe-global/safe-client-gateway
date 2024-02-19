@@ -8,6 +8,7 @@ export const relayDtoSchema: JSONSchemaType<RelayDto> = {
   $id: RELAY_DTO_SCHEMA_ID,
   type: 'object',
   properties: {
+    version: { type: 'string' },
     to: { type: 'string' },
     data: { type: 'string' },
     gasLimit: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },

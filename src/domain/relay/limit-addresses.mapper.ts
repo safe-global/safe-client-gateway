@@ -20,9 +20,6 @@ import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.e
 
 @Injectable()
 export class LimitAddressesMapper {
-  // TODO: Abstract with that from SafeContractHelper
-  private static SUPPORTED_SAFE_VERSION = '1.3.0';
-
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
@@ -34,6 +31,7 @@ export class LimitAddressesMapper {
   ) {}
 
   async getLimitAddresses(args: {
+    version: string;
     chainId: string;
     to: string;
     data: string;
@@ -71,6 +69,7 @@ export class LimitAddressesMapper {
     if (this.multiSendDecoder.isMultiSend(args.data)) {
       if (
         !this.isOfficialMultiSendDeployment({
+          version: args.version,
           chainId: args.chainId,
           address: args.to,
         })
@@ -98,6 +97,7 @@ export class LimitAddressesMapper {
     // Calldata matches that of createProxyWithNonce and meets validity requirements
     if (
       this.isValidCreateProxyWithNonceCall({
+        version: args.version,
         chainId: args.chainId,
         data: args.data,
       })
@@ -161,11 +161,12 @@ export class LimitAddressesMapper {
   }
 
   private isOfficialMultiSendDeployment(args: {
+    version: string;
     chainId: string;
     address: string;
   }): boolean {
     const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
 
@@ -179,7 +180,7 @@ export class LimitAddressesMapper {
     }
 
     const multiSendCallDeployment = getMultiSendDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
     return (
@@ -216,6 +217,7 @@ export class LimitAddressesMapper {
   };
 
   private isValidCreateProxyWithNonceCall(args: {
+    version: string;
     chainId: string;
     data: Hex;
   }): boolean {
@@ -236,11 +238,11 @@ export class LimitAddressesMapper {
     }
 
     const safeL1Deployment = getSafeSingletonDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
     const safeL2Deployment = getSafeL2SingletonDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
 
