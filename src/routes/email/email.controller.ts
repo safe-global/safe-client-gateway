@@ -18,16 +18,14 @@ import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
 import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
-import { EmailAlreadyVerifiedExceptionFilter } from '@/routes/email/exception-filters/email-already-verified.exception-filter';
-import { ResendVerificationTimespanExceptionFilter } from '@/routes/email/exception-filters/resend-verification-timespan-error.exception-filter';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
-import { InvalidVerificationCodeExceptionFilter } from '@/routes/email/exception-filters/invalid-verification-code.exception-filter';
 import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/account-does-not-exist.exception-filter';
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
 import { EmailRetrievalGuard } from '@/routes/email/guards/email-retrieval.guard';
 import { Email } from '@/routes/email/entities/email.entity';
+import { UnauthenticatedExceptionFilter } from '@/routes/email/exception-filters/unauthenticated.exception-filter';
 
 @ApiTags('email')
 @Controller({
@@ -76,10 +74,7 @@ export class EmailController {
   }
 
   @Post(':signer/verify-resend')
-  @UseFilters(
-    EmailAlreadyVerifiedExceptionFilter,
-    ResendVerificationTimespanExceptionFilter,
-  )
+  @UseFilters(new UnauthenticatedExceptionFilter(HttpStatus.ACCEPTED))
   @HttpCode(HttpStatus.ACCEPTED)
   async resendVerification(
     @Param('chainId') chainId: string,
@@ -94,7 +89,7 @@ export class EmailController {
   }
 
   @Put(':signer/verify')
-  @UseFilters(InvalidVerificationCodeExceptionFilter)
+  @UseFilters(new UnauthenticatedExceptionFilter(HttpStatus.BAD_REQUEST))
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyEmailAddress(
     @Param('chainId') chainId: string,
