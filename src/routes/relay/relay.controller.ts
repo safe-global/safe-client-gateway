@@ -8,10 +8,7 @@ import { RelayDtoValidationPipe } from '@/routes/relay/pipes/relay.validation.pi
 @ApiTags('relay')
 @Controller({
   version: '1',
-  path: [
-    'relay/:chainId', // TODO: Remove after client has migrated
-    'chains/:chainId/relay',
-  ],
+  path: 'chains/:chainId/relay',
 })
 export class RelayController {
   constructor(private readonly relayService: RelayService) {}
