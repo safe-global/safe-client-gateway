@@ -34,4 +34,4 @@ COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 COPY --chown=node:node --from=base /app/assets ./assets
 COPY --chown=node:node --from=base /app/migrations ./migrations
-CMD [ "node", "dist/main.js" ]
+CMD [ "node", "dist/src/main.js" ]
