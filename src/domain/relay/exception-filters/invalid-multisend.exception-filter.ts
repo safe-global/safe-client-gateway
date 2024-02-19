@@ -9,12 +9,12 @@ import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.e
 
 @Catch(InvalidMultiSendError)
 export class InvalidMultiSendExceptionFilter implements ExceptionFilter {
-  catch(_: InvalidMultiSendError, host: ArgumentsHost): void {
+  catch(error: InvalidMultiSendError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
     response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
-      message: 'Invalid batch.',
+      message: error.message,
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });
   }

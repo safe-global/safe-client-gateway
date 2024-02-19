@@ -675,7 +675,8 @@ describe('Relay controller', () => {
             })
             .expect(422)
             .expect({
-              message: 'Invalid batch.',
+              message:
+                'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
               statusCode: 422,
             });
         });
@@ -775,7 +776,8 @@ describe('Relay controller', () => {
             })
             .expect(422)
             .expect({
-              message: 'Invalid batch.',
+              message:
+                'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
               statusCode: 422,
             });
         });
