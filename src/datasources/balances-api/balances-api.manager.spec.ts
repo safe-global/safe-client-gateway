@@ -6,6 +6,7 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
 import { faker } from '@faker-js/faker';
 
 const configurationService = {
@@ -39,6 +40,14 @@ const zerionBalancesApi = {
 
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
 
+const pricesApi = {
+  getNativeCoinPrice: jest.fn(),
+  getTokenPrices: jest.fn(),
+  getFiatCodes: jest.fn(),
+} as IPricesApi;
+
+const pricesApiMock = jest.mocked(pricesApi);
+
 beforeEach(() => {
   jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
@@ -56,6 +65,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
+        pricesApiMock,
       );
       expect(manager.useExternalApi('1')).toEqual(true);
       expect(manager.useExternalApi('3')).toEqual(true);
@@ -69,6 +79,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
+        pricesApiMock,
       );
       expect(manager.useExternalApi('4')).toEqual(false);
     });
@@ -83,6 +94,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
+        pricesApiMock,
       );
 
       const result = await manager.getBalancesApi('2');
@@ -127,6 +139,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
+        pricesApiMock,
       );
 
       const safeBalancesApi = await balancesApiManager.getBalancesApi(
@@ -158,8 +171,13 @@ describe('Balances API Manager Tests', () => {
   });
 
   describe('getFiatCodes checks', () => {
-    it('should return the intersection of all providers supported currencies', () => {
-      zerionBalancesApiMock.getFiatCodes.mockReturnValue(['EUR', 'GBP', 'ETH']);
+    it('should return the intersection of all providers supported currencies', async () => {
+      zerionBalancesApiMock.getFiatCodes.mockResolvedValue([
+        'EUR',
+        'GBP',
+        'ETH',
+      ]);
+      pricesApiMock.getFiatCodes.mockResolvedValue(['GBP']);
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -167,9 +185,12 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
+        pricesApiMock,
       );
 
-      expect(manager.getFiatCodes()).toStrictEqual(['ETH', 'EUR', 'GBP']);
+      const result = await manager.getFiatCodes();
+
+      expect(result).toStrictEqual(['GBP']);
     });
   });
 });

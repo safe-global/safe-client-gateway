@@ -10,7 +10,9 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { intersection } from 'lodash';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -18,6 +20,7 @@ export class BalancesApiManager implements IBalancesApiManager {
   private readonly zerionChainIds: string[];
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
+  private static readonly mainnetChainId: string = '1';
 
   constructor(
     @Inject(IConfigurationService)
@@ -27,6 +30,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IZerionBalancesApi) zerionBalancesApi: IBalancesApi,
+    @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
   ) {
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',
@@ -58,12 +62,15 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.cacheService,
       this.configurationService,
       this.httpErrorFactory,
+      this.coingeckoApi,
     );
     return this.safeBalancesApiMap[chainId];
   }
 
-  getFiatCodes(): string[] {
-    return this.zerionBalancesApi.getFiatCodes().sort();
+  async getFiatCodes(): Promise<string[]> {
+    const zerionFiatCodes = await this.zerionBalancesApi.getFiatCodes();
+    const safeFiatCodes = await this.coingeckoApi.getFiatCodes();
+    return intersection(zerionFiatCodes, safeFiatCodes).sort();
   }
 
   private _isSupportedByZerion(chainId: string): boolean {

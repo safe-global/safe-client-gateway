@@ -45,19 +45,6 @@ export class PricesRepository implements IPricesRepository {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    const result = await this.coingeckoApi.getFiatCodes();
-
-    const fiatCodes = this.fiatCodesValidator
-      .validate(result)
-      .map((item) => item.toUpperCase())
-      .sort();
-
-    if (!fiatCodes.includes('USD')) {
-      this.loggingService.error(
-        'USD fiat code is not supported by the Prices Provider API',
-      );
-    }
-
-    return fiatCodes;
+    return this.coingeckoApi.getFiatCodes();
   }
 }

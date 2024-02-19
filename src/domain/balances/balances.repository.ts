@@ -46,7 +46,7 @@ export class BalancesRepository implements IBalancesRepository {
     await api.clearBalances(args);
   }
 
-  getFiatCodes(): string[] {
+  async getFiatCodes(): Promise<string[]> {
     return this.balancesApiManager.getFiatCodes();
   }
 

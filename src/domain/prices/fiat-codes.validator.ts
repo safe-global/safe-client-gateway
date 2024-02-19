@@ -9,6 +9,7 @@ import {
   fiatCodesSchema,
 } from './entities/schemas/fiat-codes.schema';
 
+// TODO: remove
 @Injectable()
 export class FiatCodesValidator implements IValidator<FiatCodes> {
   private readonly isValidFiatCodes: ValidateFunction<FiatCodes>;

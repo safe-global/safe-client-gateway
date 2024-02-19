@@ -4,6 +4,7 @@ import { HttpErrorFactory } from '../errors/http-error-factory';
 import { CoingeckoApi } from './coingecko-api.service';
 import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
 
+// TODO: remove
 @Module({
   imports: [CacheFirstDataSourceModule],
   providers: [

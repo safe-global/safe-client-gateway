@@ -3,14 +3,14 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly BACKBONE_KEY = 'backbone';
-  private static readonly BALANCES_KEY = 'balances';
+  private static readonly BALANCES_KEY = 'balances'; // TODO: add'safe' prefix
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
-  private static readonly COLLECTIBLES_KEY = 'collectibles';
+  private static readonly COLLECTIBLES_KEY = 'collectibles'; // TODO: add'safe' prefix
   private static readonly CONTRACT_KEY = 'contract';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
-  private static readonly FIAT_CODES_KEY = 'fiat_codes';
+  private static readonly FIAT_CODES_KEY = 'fiat_codes'; // TODO: add'safe' prefix
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';

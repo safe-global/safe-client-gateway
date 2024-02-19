@@ -27,5 +27,5 @@ export interface IBalancesApi {
     safeAddress: string;
   }): Promise<void>;
 
-  getFiatCodes(): string[];
+  getFiatCodes(): Promise<string[]>;
 }

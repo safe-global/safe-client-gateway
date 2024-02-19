@@ -26,5 +26,5 @@ export interface IBalancesApiManager {
    * Gets the list of supported fiat codes.
    * @returns an alphabetically ordered list of uppercase strings representing the supported fiat codes.
    */
-  getFiatCodes(): string[];
+  getFiatCodes(): Promise<string[]>;
 }

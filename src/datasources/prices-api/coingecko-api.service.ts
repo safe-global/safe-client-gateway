@@ -134,7 +134,7 @@ export class CoingeckoApi implements IPricesApi {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
-      return await this.dataSource.get({
+      const result: string[] = await this.dataSource.get({
         cacheDir,
         url,
         networkRequest: {
@@ -147,6 +147,13 @@ export class CoingeckoApi implements IPricesApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
+      const fiatCodes = result.map((item) => item.toUpperCase());
+      if (!fiatCodes.includes('USD')) {
+        this.loggingService.error(
+          'USD fiat code is not supported by CoinGecko API',
+        );
+      }
+      return fiatCodes;
     } catch (error) {
       throw new DataSourceError(
         `Error getting Fiat Codes from prices provider${this._mapProviderError(

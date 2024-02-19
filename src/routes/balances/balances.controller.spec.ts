@@ -621,10 +621,13 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/supported-fiat-codes', () => {
     it('should return the ordered list of supported fiat codes', async () => {
+      const chain = chainBuilder().build();
       // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
-      const pricesProviderFiatCodes = ['eur', 'usd'];
+      const pricesProviderFiatCodes = ['usd', 'eth', 'eur'];
       networkService.get.mockImplementation((url) => {
         switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/1`:
+            return Promise.resolve({ data: chain, status: 200 });
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
             return Promise.resolve({
               data: pricesProviderFiatCodes,
@@ -638,12 +641,15 @@ describe('Balances Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['EUR', 'USD']);
+        .expect(['ETH', 'EUR', 'USD']);
     });
 
     it('should fail getting fiat currencies data from prices provider', async () => {
+      const chain = chainBuilder().build();
       networkService.get.mockImplementation((url) => {
         switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/1`:
+            return Promise.resolve({ data: chain, status: 200 });
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
             return Promise.reject(new Error());
           default:
@@ -657,54 +663,6 @@ describe('Balances Controller (Unit)', () => {
         .expect({
           code: 503,
           message: 'Error getting Fiat Codes from prices provider',
-        });
-    });
-
-    it('validation error getting fiat currencies data from prices provider', async () => {
-      const pricesProviderFiatCodes: Array<string> = [];
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({
-              data: pricesProviderFiatCodes,
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
-        });
-    });
-
-    it('validation error (2) getting fiat currencies data from prices provider', async () => {
-      const pricesProviderFiatCodes = 'notAnArray';
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({
-              data: pricesProviderFiatCodes,
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(500)
-        .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
         });
     });
   });

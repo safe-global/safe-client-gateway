@@ -83,12 +83,11 @@ describe('CoingeckoAPI', () => {
   });
 
   it('should return fiat codes (using an API key)', async () => {
-    const expectedFiatCodes = ['usd', 'eur', 'eth'];
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
+    mockCacheFirstDataSource.get.mockResolvedValue(['usd', 'eur', 'eth']);
 
     const fiatCodes = await service.getFiatCodes();
 
-    expect(fiatCodes).toBe(expectedFiatCodes);
+    expect(fiatCodes).toStrictEqual(['USD', 'EUR', 'ETH']);
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
@@ -103,8 +102,7 @@ describe('CoingeckoAPI', () => {
   });
 
   it('should return fiat codes (with no API key)', async () => {
-    const expectedFiatCodes = ['usd', 'eur', 'eth'];
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedFiatCodes);
+    mockCacheFirstDataSource.get.mockResolvedValue(['usd', 'eur', 'eth']);
     fakeConfigurationService.set('prices.apiKey', null);
     const service = new CoingeckoApi(
       fakeConfigurationService,
@@ -116,7 +114,7 @@ describe('CoingeckoAPI', () => {
 
     const fiatCodes = await service.getFiatCodes();
 
-    expect(fiatCodes).toBe(expectedFiatCodes);
+    expect(fiatCodes).toStrictEqual(['USD', 'EUR', 'ETH']);
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir('fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,

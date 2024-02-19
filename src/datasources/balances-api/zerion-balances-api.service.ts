@@ -185,7 +185,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       });
   }
 
-  getFiatCodes(): string[] {
+  async getFiatCodes(): Promise<string[]> {
     return this.fiatCodes;
   }
 
