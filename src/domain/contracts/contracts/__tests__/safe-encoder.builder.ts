@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress, Hex, pad, parseAbi } from 'viem';
-
+import { encodeFunctionData, getAddress, Hex, pad } from 'viem';
+import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
@@ -38,16 +38,11 @@ type SetupArgs = {
 };
 
 class SetupEncoder<T extends SetupArgs> extends Builder<T> implements IEncoder {
-  static readonly FUNCTION_SIGNATURE =
-    'function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address paymentReceiver)';
-
   encode(): Hex {
-    const abi = parseAbi([SetupEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'setup',
       args: [
         args.owners,
@@ -94,16 +89,11 @@ class ExecTransactionEncoder<T extends ExecTransactionArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function execTransaction(address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures)' as const;
-
   encode(): Hex {
-    const abi = parseAbi([ExecTransactionEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'execTransaction',
       args: [
         args.to,
@@ -146,16 +136,11 @@ class AddOwnerWithThresholdEncoder<T extends AddOwnerWithThresholdArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function addOwnerWithThreshold(address owner, uint256 _threshold)' as const;
-
   encode(): Hex {
-    const abi = parseAbi([AddOwnerWithThresholdEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'addOwnerWithThreshold',
       args: [args.owner, args.threshold],
     });
@@ -180,16 +165,11 @@ class RemoveOwnerEncoder<T extends RemoveOwnerArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function removeOwner(address prevOwner, address owner, uint256 _threshold)';
-
   encode(): Hex {
-    const abi = parseAbi([RemoveOwnerEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'removeOwner',
       args: [args.prevOwner, args.owner, args.threshold],
     });
@@ -220,16 +200,11 @@ class SwapOwnerEncoder<T extends SwapOwnerArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function swapOwner(address prevOwner, address oldOwner, address newOwner)';
-
   encode(): Hex {
-    const abi = parseAbi([SwapOwnerEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'swapOwner',
       args: [args.prevOwner, args.oldOwner, args.newOwner],
     });
@@ -258,16 +233,11 @@ class ChangeThresholdEncoder<T extends ChangeThresholdArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function changeThreshold(uint256 _threshold)';
-
   encode(): Hex {
-    const abi = parseAbi([ChangeThresholdEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: Safe130,
       functionName: 'changeThreshold',
       args: [args.threshold],
     });
@@ -278,5 +248,117 @@ export function changeThresholdEncoder(): ChangeThresholdEncoder<ChangeThreshold
   return new ChangeThresholdEncoder().with(
     'threshold',
     faker.number.bigInt({ min: 1, max: MAX_THRESHOLD }),
+  );
+}
+
+// enableModule
+
+type EnableModuleArgs = {
+  module: Hex;
+};
+
+class EnableModuleEncoder<T extends EnableModuleArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): Hex {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: Safe130,
+      functionName: 'enableModule',
+      args: [args.module],
+    });
+  }
+}
+
+export function enableModuleEncoder(): EnableModuleEncoder<EnableModuleArgs> {
+  return new EnableModuleEncoder().with(
+    'module',
+    getAddress(faker.finance.ethereumAddress()),
+  );
+}
+
+// disableModule
+
+type DisableModuleArgs = {
+  prevModule: Hex;
+  module: Hex;
+};
+
+class DisableModuleEncoder<T extends DisableModuleArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): Hex {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: Safe130,
+      functionName: 'disableModule',
+      args: [args.prevModule, args.module],
+    });
+  }
+}
+
+export function disableModuleEncoder(): DisableModuleEncoder<DisableModuleArgs> {
+  return new DisableModuleEncoder()
+    .with('prevModule', getAddress(faker.finance.ethereumAddress()))
+    .with('module', getAddress(faker.finance.ethereumAddress()));
+}
+
+// setFallbackHandler
+
+type SetFallbackHandlerArgs = {
+  handler: Hex;
+};
+
+class SetFallbackHandlerEncoder<T extends SetFallbackHandlerArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): Hex {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: Safe130,
+      functionName: 'setFallbackHandler',
+      args: [args.handler],
+    });
+  }
+}
+
+export function setFallbackHandlerEncoder(): SetFallbackHandlerEncoder<SetFallbackHandlerArgs> {
+  return new SetFallbackHandlerEncoder().with(
+    'handler',
+    getAddress(faker.finance.ethereumAddress()),
+  );
+}
+
+// setGuard
+
+type SetGuardArgs = {
+  guard: Hex;
+};
+
+class SetGuardEncoder<T extends SetGuardArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): Hex {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: Safe130,
+      functionName: 'setGuard',
+      args: [args.guard],
+    });
+  }
+}
+
+export function setGuardEncoder(): SetGuardEncoder<SetGuardArgs> {
+  return new SetGuardEncoder().with(
+    'guard',
+    getAddress(faker.finance.ethereumAddress()),
   );
 }

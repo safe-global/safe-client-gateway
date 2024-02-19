@@ -21,29 +21,6 @@ export default () => ({
   balances: {
     balancesTtlSeconds: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${300}`),
     providers: {
-      valk: {
-        baseUri:
-          process.env.VALK_BASE_URI ||
-          'https://merlin-api-v1.cf/api/merlin/public',
-        apiKey: process.env.VALK_API_KEY,
-        chains: {
-          1: { chainName: 'eth' },
-          10: { chainName: 'op' },
-          56: { chainName: 'bsc' },
-          100: { chainName: 'xdai' },
-          137: { chainName: 'matic' },
-          324: { chainName: 'era' },
-          1101: { chainName: 'pze' },
-          8453: { chainName: 'base' },
-          42161: { chainName: 'arb' },
-          42220: { chainName: 'celo' },
-          43114: { chainName: 'avax' },
-          // 11155111 (Sepolia) is not available on Valk
-          // 11155111: { chainName: '' },
-          1313161554: { chainName: 'aurora' },
-        },
-        currencies: ['AED', 'AUD', 'CAD', 'EUR', 'GBP', 'INR', 'USD'],
-      },
       zerion: {
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         apiKey: process.env.ZERION_API_KEY,
@@ -148,10 +125,9 @@ export default () => ({
   features: {
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
-    valkBalancesChainIds:
-      process.env.FF_VALK_BALANCES_CHAIN_IDS?.split(',') ?? [],
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    relay: process.env.FF_RELAY?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -204,7 +180,12 @@ export default () => ({
     port: process.env.REDIS_PORT || '6379',
   },
   relay: {
+    baseUri:
+      process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
+    apiKey: {
+      100: process.env.GELATO_API_KEY_GNOSIS_CHAIN,
+    },
   },
   safeConfig: {
     baseUri:

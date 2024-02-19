@@ -3,6 +3,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly BACKBONE_KEY = 'backbone';
+  private static readonly BALANCES_KEY = 'balances';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
   private static readonly COLLECTIBLES_KEY = 'collectibles';
@@ -23,14 +24,13 @@ export class CacheRouter {
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
-  private static readonly BALANCES_KEY = 'balances';
-  private static readonly VALK_BALANCES_KEY = 'valk_balances';
-  private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
+  private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
+  private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
 
   static getBalancesCacheKey(args: {
     chainId: string;
@@ -51,22 +51,6 @@ export class CacheRouter {
     );
   }
 
-  // TODO: remove this prefixed key if eventually only one balances provider is used
-  static getValkBalancesCacheKey(args: {
-    chainId: string;
-    safeAddress: string;
-  }): string {
-    return `${args.chainId}_${CacheRouter.VALK_BALANCES_KEY}_${args.safeAddress}`;
-  }
-
-  static getValkBalancesCacheDir(args: {
-    chainId: string;
-    safeAddress: string;
-  }): CacheDir {
-    return new CacheDir(CacheRouter.getValkBalancesCacheKey(args), '');
-  }
-
-  // TODO: remove this prefixed key if eventually only one balances provider is used
   static getZerionBalancesCacheKey(args: {
     chainId: string;
     safeAddress: string;
@@ -82,6 +66,25 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getZerionBalancesCacheKey(args),
       args.fiatCode,
+    );
+  }
+
+  static getZerionCollectiblesCacheKey(args: {
+    chainId: string;
+    safeAddress: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.ZERION_COLLECTIBLES_KEY}_${args.safeAddress}`;
+  }
+
+  static getZerionCollectiblesCacheDir(args: {
+    chainId: string;
+    safeAddress: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getZerionCollectiblesCacheKey(args),
+      `${args.limit}_${args.offset}`,
     );
   }
 
