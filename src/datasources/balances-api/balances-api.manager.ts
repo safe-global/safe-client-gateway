@@ -20,7 +20,6 @@ export class BalancesApiManager implements IBalancesApiManager {
   private readonly zerionChainIds: string[];
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
-  private static readonly mainnetChainId: string = '1';
 
   constructor(
     @Inject(IConfigurationService)

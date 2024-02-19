@@ -36,6 +36,7 @@ export class SafeBalancesApi implements IBalancesApi {
       );
   }
 
+  // TODO: refactor?
   async getBalances(args: {
     safeAddress: string;
     fiatCode: string;
