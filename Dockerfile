@@ -29,8 +29,9 @@ ARG BUILD_NUMBER
 ENV APPLICATION_VERSION=${VERSION} \
     APPLICATION_BUILD_NUMBER=${BUILD_NUMBER}
 
+COPY --chown=node:node --from=base /app/abis ./abis
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 COPY --chown=node:node --from=base /app/assets ./assets
 COPY --chown=node:node --from=base /app/migrations ./migrations
-CMD [ "node", "dist/main.js" ]
+CMD [ "node", "dist/src/main.js" ]
