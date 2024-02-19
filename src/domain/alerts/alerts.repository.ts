@@ -265,7 +265,7 @@ export class AlertsRepository implements IAlertsRepository {
         if (result.status === 'rejected') {
           const signer = args.accountsToNotify.at(index)?.signer;
           this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for safe ${args.safeAddress} on chain ${args.chainId}`,
+            `Error sending email to user with account ${signer}, for Safe ${args.safeAddress} on chain ${args.chainId}`,
           );
         }
       });
@@ -317,7 +317,7 @@ export class AlertsRepository implements IAlertsRepository {
         if (result.status === 'rejected') {
           const signer = args.accountsToNotify.at(index)?.signer;
           this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for safe ${args.newSafeState.address} on chain ${args.chainId}`,
+            `Error sending email to user with account ${signer}, for Safe ${args.newSafeState.address} on chain ${args.chainId}`,
           );
         }
       });
