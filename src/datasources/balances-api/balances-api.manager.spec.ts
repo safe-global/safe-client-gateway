@@ -28,7 +28,10 @@ const dataSource = {
 const dataSourceMock = jest.mocked(dataSource);
 
 const cacheService = {} as jest.MockedObjectDeep<ICacheService>;
-const httpErrorFactory = {} as jest.MockedObjectDeep<HttpErrorFactory>;
+
+const httpErrorFactory = {
+  from: jest.fn(),
+} as jest.MockedObjectDeep<HttpErrorFactory>;
 
 const zerionBalancesApi = {
   getBalances: jest.fn(),
@@ -56,35 +59,6 @@ beforeEach(() => {
 });
 
 describe('Balances API Manager Tests', () => {
-  describe('useExternalApi checks', () => {
-    it('should return true if the chain is included in the balance-externalized chains', () => {
-      const manager = new BalancesApiManager(
-        configurationService,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        zerionBalancesApiMock,
-        pricesApiMock,
-      );
-      expect(manager.useExternalApi('1')).toEqual(true);
-      expect(manager.useExternalApi('3')).toEqual(true);
-    });
-
-    it('should return false if the chain is included in the balance-externalized chains', () => {
-      const manager = new BalancesApiManager(
-        configurationService,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        zerionBalancesApiMock,
-        pricesApiMock,
-      );
-      expect(manager.useExternalApi('4')).toEqual(false);
-    });
-  });
-
   describe('getBalancesApi checks', () => {
     it('should return the Zerion API', async () => {
       const manager = new BalancesApiManager(
@@ -114,6 +88,7 @@ describe('Balances API Manager Tests', () => {
       [false, txServiceUrl],
     ])('vpcUrl is %s', async (useVpcUrl, expectedUrl) => {
       const zerionChainIds = ['1', '2', '3'];
+      const fiatCode = faker.finance.currencyCode();
       const chain = chainBuilder()
         .with('chainId', '4')
         .with('transactionService', txServiceUrl)
@@ -132,6 +107,7 @@ describe('Balances API Manager Tests', () => {
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(chain);
+      dataSourceMock.get.mockResolvedValue([]);
       const balancesApiManager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -151,6 +127,7 @@ describe('Balances API Manager Tests', () => {
 
       await safeBalancesApi.getBalances({
         safeAddress,
+        fiatCode,
         trusted,
         excludeSpam,
       });

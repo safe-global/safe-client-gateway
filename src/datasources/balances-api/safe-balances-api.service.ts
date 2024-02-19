@@ -5,6 +5,7 @@ import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
@@ -34,8 +35,10 @@ export class SafeBalancesApi implements IBalancesApi {
       );
   }
 
+  // TODO: refactor?
   async getBalances(args: {
     safeAddress: string;
+    fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
@@ -45,7 +48,7 @@ export class SafeBalancesApi implements IBalancesApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
-      return await this.dataSource.get({
+      const balances: Balance[] = await this.dataSource.get({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -57,6 +60,41 @@ export class SafeBalancesApi implements IBalancesApi {
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
+
+      const tokenAddresses = balances
+        .map((balance) => balance.tokenAddress)
+        .filter((address): address is string => address !== null);
+
+      const prices = tokenAddresses.length
+        ? await this.coingeckoApi.getTokenPrices({
+            chainId: this.chainId,
+            fiatCode: args.fiatCode,
+            tokenAddresses,
+          })
+        : [];
+
+      return await Promise.all(
+        balances.map(async (balance) => {
+          const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
+          let price: number | null;
+          if (tokenAddress === null) {
+            price = await this.coingeckoApi.getNativeCoinPrice({
+              chainId: this.chainId,
+              fiatCode: args.fiatCode,
+            });
+          } else {
+            const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
+            price =
+              found?.[tokenAddress]?.[args.fiatCode.toLowerCase()] ?? null;
+          }
+          const fiatBalance = await this._getFiatBalance(price, balance);
+          return {
+            ...balance,
+            fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
+            fiatConversion: price ? getNumberString(price) : null,
+          };
+        }),
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -112,5 +150,15 @@ export class SafeBalancesApi implements IBalancesApi {
 
   async getFiatCodes(): Promise<string[]> {
     return this.coingeckoApi.getFiatCodes();
+  }
+
+  private _getFiatBalance(
+    price: number | null,
+    balance: Balance,
+  ): number | null {
+    return price !== null
+      ? (price * Number(balance.balance)) /
+          10 ** (balance.token?.decimals ?? 18)
+      : null;
   }
 }

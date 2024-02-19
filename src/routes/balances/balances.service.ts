@@ -19,6 +19,7 @@ export class BalancesService {
     private readonly chainsRepository: IChainsRepository,
   ) {}
 
+  // TODO: move logic to repository
   async getBalances(args: {
     chainId: string;
     safeAddress: string;
@@ -29,8 +30,8 @@ export class BalancesService {
     const { chainId } = args;
     const domainBalances = await this.balancesRepository.getBalances(args);
     const { nativeCurrency } = await this.chainsRepository.getChain(chainId);
-    const balances: Balance[] = await Promise.all(
-      domainBalances.map(async (b) => this._mapBalance(b, nativeCurrency)),
+    const balances: Balance[] = domainBalances.map((balance) =>
+      this._mapBalance(balance, nativeCurrency),
     );
     const fiatTotal = balances
       .filter((b) => b.fiatBalance !== null)
@@ -42,10 +43,10 @@ export class BalancesService {
     };
   }
 
-  private async _mapBalance(
+  private _mapBalance(
     balance: DomainBalance,
     nativeCurrency: NativeCurrency,
-  ): Promise<Balance> {
+  ): Balance {
     const tokenAddress = balance.tokenAddress;
     const tokenType =
       tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;

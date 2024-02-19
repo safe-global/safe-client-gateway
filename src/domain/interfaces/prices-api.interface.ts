@@ -4,12 +4,12 @@ export const IPricesApi = Symbol('IPricesApi');
 
 export interface IPricesApi {
   getNativeCoinPrice(args: {
-    nativeCoinId: string;
+    chainId: string;
     fiatCode: string;
   }): Promise<number | null>;
 
   getTokenPrices(args: {
-    chainName: string;
+    chainId: string;
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]>;

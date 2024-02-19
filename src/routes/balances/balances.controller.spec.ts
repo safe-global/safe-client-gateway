@@ -584,38 +584,6 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
       });
-
-      it(`500 error if validation fails`, async () => {
-        const chainId = '1';
-        const safeAddress = faker.finance.ethereumAddress();
-        const chainResponse = chainBuilder().with('chainId', chainId).build();
-        networkService.get.mockImplementation((url) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-            return Promise.resolve({ data: chainResponse, status: 200 });
-          } else if (
-            url ==
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
-          ) {
-            return Promise.resolve({
-              data: [{ invalid: 'data' }],
-              status: 200,
-            });
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
-          }
-        });
-
-        await request(app.getHttpServer())
-          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-          .expect(500)
-          .expect({
-            message: 'Validation failed',
-            code: 42,
-            arguments: [],
-          });
-
-        expect(networkService.get.mock.calls.length).toBe(2);
-      });
     });
   });
 
@@ -644,7 +612,7 @@ describe('Balances Controller (Unit)', () => {
         .expect(['ETH', 'EUR', 'USD']);
     });
 
-    it('should fail getting fiat currencies data from prices provider', async () => {
+    it('should get an empty array of fiat currencies on failure', async () => {
       const chain = chainBuilder().build();
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -659,11 +627,8 @@ describe('Balances Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
-        .expect(503)
-        .expect({
-          code: 503,
-          message: 'Error getting Fiat Codes from prices provider',
-        });
+        .expect(200)
+        .expect([]);
     });
   });
 });

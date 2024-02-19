@@ -20,7 +20,6 @@ export class BalancesApiManager implements IBalancesApiManager {
   private readonly zerionChainIds: string[];
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
-  private static readonly mainnetChainId: string = '1';
 
   constructor(
     @Inject(IConfigurationService)
@@ -38,16 +37,11 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
-
     this.zerionBalancesApi = zerionBalancesApi;
   }
 
-  useExternalApi(chainId: string): boolean {
-    return this.zerionChainIds.includes(chainId);
-  }
-
   async getBalancesApi(chainId: string): Promise<IBalancesApi> {
-    if (this._isSupportedByZerion(chainId)) {
+    if (this.zerionChainIds.includes(chainId)) {
       return this.zerionBalancesApi;
     }
 
@@ -71,9 +65,5 @@ export class BalancesApiManager implements IBalancesApiManager {
     const zerionFiatCodes = await this.zerionBalancesApi.getFiatCodes();
     const safeFiatCodes = await this.coingeckoApi.getFiatCodes();
     return intersection(zerionFiatCodes, safeFiatCodes).sort();
-  }
-
-  private _isSupportedByZerion(chainId: string): boolean {
-    return this.zerionChainIds.includes(chainId);
   }
 }
