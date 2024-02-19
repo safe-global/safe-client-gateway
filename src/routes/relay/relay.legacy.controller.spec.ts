@@ -63,7 +63,7 @@ describe('Relay controller', () => {
           to: safeAddress,
           data,
         })
-        .expect(302)
+        .expect(308)
         .expect((res) => {
           expect(res.get('location')).toBe('/v1/chains/:chainId/relay');
         });
@@ -76,7 +76,7 @@ describe('Relay controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/relay/${chainId}/${safeAddress}`)
-        .expect(302)
+        .expect(301)
         .expect((res) => {
           expect(res.get('location')).toBe(
             '/v1/chains/:chainId/relay/:safeAddress',

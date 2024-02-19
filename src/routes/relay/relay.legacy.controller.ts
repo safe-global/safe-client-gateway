@@ -1,4 +1,4 @@
-import { Controller, Post, Redirect, Get } from '@nestjs/common';
+import { Controller, Post, Redirect, Get, HttpStatus } from '@nestjs/common';
 
 @Controller({
   version: '1',
@@ -6,10 +6,13 @@ import { Controller, Post, Redirect, Get } from '@nestjs/common';
 })
 export class RelayLegacyController {
   @Post()
-  @Redirect('/v1/chains/:chainId/relay')
+  @Redirect('/v1/chains/:chainId/relay', HttpStatus.PERMANENT_REDIRECT)
   relay(): void {}
 
   @Get(':safeAddress')
-  @Redirect('/v1/chains/:chainId/relay/:safeAddress')
+  @Redirect(
+    '/v1/chains/:chainId/relay/:safeAddress',
+    HttpStatus.MOVED_PERMANENTLY,
+  )
   getRelaysRemaining(): void {}
 }
