@@ -55,18 +55,21 @@ export class CoingeckoApi implements ICoingeckoApi {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
-    this.apiKey = this.configurationService.get<string>('prices.apiKey');
-    this.baseUrl =
-      this.configurationService.getOrThrow<string>('prices.baseUri');
+    this.apiKey = this.configurationService.get<string>(
+      'balances.providers.safe.prices.apiKey',
+    );
+    this.baseUrl = this.configurationService.getOrThrow<string>(
+      'balances.providers.safe.prices.baseUri',
+    );
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
     this.pricesTtlSeconds = this.configurationService.getOrThrow<number>(
-      'prices.pricesTtlSeconds',
+      'balances.providers.safe.prices.pricesTtlSeconds',
     );
     this.notFoundPriceTtlSeconds = this.configurationService.getOrThrow<number>(
-      'prices.notFoundPriceTtlSeconds',
+      'balances.providers.safe.prices.notFoundPriceTtlSeconds',
     );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
@@ -81,7 +84,7 @@ export class CoingeckoApi implements ICoingeckoApi {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       const nativeCoinId = this.configurationService.getOrThrow<string>(
-        `prices.chains.${args.chainId}.nativeCoin`,
+        `balances.providers.safe.prices.chains.${args.chainId}.nativeCoin`,
       );
       const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
         nativeCoinId,
@@ -140,7 +143,7 @@ export class CoingeckoApi implements ICoingeckoApi {
         address.toLowerCase(),
       );
       const chainName = this.configurationService.getOrThrow<string>(
-        `prices.chains.${args.chainId}.chainName`,
+        `balances.providers.safe.prices.chains.${args.chainId}.chainName`,
       );
       const pricesFromCache = await this._getTokenPricesFromCache({
         chainName,
