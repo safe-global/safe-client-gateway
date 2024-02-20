@@ -19,4 +19,12 @@ export class OwnersController {
   ): Promise<SafeList> {
     return this.ownersService.getSafesByOwner({ chainId, ownerAddress });
   }
+
+  @ApiOkResponse({ type: SafeList })
+  @Get('owners/:ownerAddress/safes')
+  async getAllSafesByOwner(
+    @Param('ownerAddress') ownerAddress: string,
+  ): Promise<{ [chainId: string]: Array<string> }> {
+    return this.ownersService.getAllSafesByOwner({ ownerAddress });
+  }
 }

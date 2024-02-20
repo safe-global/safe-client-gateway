@@ -24,7 +24,7 @@ describe('TenderlyApi', () => {
   let tenderlyProject: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     tenderlyBaseUri = faker.internet.url({ appendSlash: false });
     tenderlyApiKey = faker.string.hexadecimal({ length: 32 });

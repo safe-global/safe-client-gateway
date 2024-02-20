@@ -1,17 +1,25 @@
 DROP TABLE IF EXISTS accounts CASCADE;
 CREATE table accounts
 (
-    id                             SERIAL PRIMARY KEY,
-    chain_id                       int                   NOT NULL,
-    email_address                  text                  NOT NULL,
-    safe_address                   character varying(42) NOT NULL,
-    signer                         character varying(42) NOT NULL,
-    verified                       boolean               NOT NULL DEFAULT false,
-    verification_code              text,
-    verification_code_generated_on timestamp with time zone,
-    verification_sent_on           timestamp with time zone,
-    unsubscription_token           uuid                  NOT NULL,
+    id                   SERIAL PRIMARY KEY,
+    chain_id             int                   NOT NULL,
+    email_address        text                  NOT NULL,
+    safe_address         character varying(42) NOT NULL,
+    signer               character varying(42) NOT NULL,
+    verified             boolean               NOT NULL DEFAULT false,
+    unsubscription_token uuid                  NOT NULL,
     UNIQUE (chain_id, safe_address, signer)
+);
+
+DROP TABLE IF EXISTS verification_codes CASCADE;
+CREATE TABLE verification_codes
+(
+    account_id   INT,
+    code         text                     NOT NULL,
+    generated_on timestamp with time zone NOT NULL,
+    sent_on      timestamp with time zone,
+    FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+    UNIQUE (account_id)
 );
 
 DROP TABLE IF EXISTS notification_types CASCADE;

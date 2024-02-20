@@ -13,9 +13,9 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
  * This guard does not validate that a message came from said owner.
  *
  * To use this guard, the route should have:
- * - the 'chainId' declared as a parameter
- * - the 'safeAddress' declared as a parameter
- * - the 'signer' as part of the JSON body (top level)
+ * - the 'chainId' as part of the path parameters
+ * - the 'safeAddress' as part of the path parameters
+ * - the 'signer' as part of the path parameters or as part of the JSON body (top level)
  */
 @Injectable()
 export class OnlySafeOwnerGuard implements CanActivate {
@@ -28,7 +28,7 @@ export class OnlySafeOwnerGuard implements CanActivate {
 
     const chainId = request.params['chainId'];
     const safe = request.params['safeAddress'];
-    const signer = request.body['signer'];
+    const signer = request.params['signer'] ?? request.body['signer'];
 
     // Required fields
     if (!chainId || !safe || !signer) return false;

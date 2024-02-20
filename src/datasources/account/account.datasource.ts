@@ -1,12 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as postgres from 'postgres';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
-import { AccountDoesNotExistError } from '@/datasources/account/errors/account-does-not-exist.error';
+import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import {
   Account as DomainAccount,
   EmailAddress,
+  VerificationCode as DomainVerificationCode,
 } from '@/domain/account/entities/account.entity';
 import { Subscription as DomainSubscription } from '@/domain/account/entities/subscription.entity';
+import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 
 interface Account {
   id: number;
@@ -15,10 +17,14 @@ interface Account {
   safe_address: string;
   signer: string;
   verified: boolean;
-  verification_code: string | null;
-  verification_code_generated_on: Date | null;
-  verification_sent_on: Date | null;
   unsubscription_token: string;
+}
+
+interface VerificationCode {
+  account_id: number;
+  code: string;
+  generated_on: Date;
+  sent_on: Date | null;
 }
 
 interface Subscription {
@@ -30,21 +36,6 @@ interface Subscription {
 @Injectable()
 export class AccountDataSource implements IAccountDataSource {
   constructor(@Inject('DB_INSTANCE') private readonly sql: postgres.Sql) {}
-
-  async getVerifiedAccountEmailsBySafeAddress(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<{ email: string }[]> {
-    const emails = await this.sql<{ email_address: string }[]>`
-        SELECT email_address
-        FROM accounts
-        WHERE chain_id = ${args.chainId}
-          AND safe_address = ${args.safeAddress}
-          AND verified is true
-        ORDER by id`;
-
-    return emails.map((email) => ({ email: email.email_address }));
-  }
 
   async getAccount(args: {
     chainId: string;
@@ -70,9 +61,60 @@ export class AccountDataSource implements IAccountDataSource {
       isVerified: account.verified,
       safeAddress: account.safe_address,
       signer: account.signer,
-      verificationCode: account.verification_code,
-      verificationGeneratedOn: account.verification_code_generated_on,
-      verificationSentOn: account.verification_sent_on,
+      unsubscriptionToken: account.unsubscription_token,
+    };
+  }
+
+  async getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<DomainAccount[]> {
+    const onlyVerifiedQuery = this.sql`AND verified = true`;
+    const accounts = await this.sql<Account[]>`SELECT *
+                                               FROM accounts
+                                               WHERE chain_id = ${args.chainId}
+                                                 AND safe_address = ${args.safeAddress}
+                                                   ${args.onlyVerified ? onlyVerifiedQuery : this.sql``};`;
+
+    return accounts.map((account) => {
+      return {
+        chainId: account.chain_id.toString(),
+        emailAddress: new EmailAddress(account.email_address),
+        isVerified: account.verified,
+        safeAddress: account.safe_address,
+        signer: account.signer,
+        unsubscriptionToken: account.unsubscription_token,
+      };
+    });
+  }
+
+  async getAccountVerificationCode(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<DomainVerificationCode> {
+    const [verificationCode] = await this.sql<VerificationCode[]>`SELECT *
+                                                                  FROM verification_codes
+                                                                           inner join accounts on accounts.id = verification_codes.account_id
+                                                                  WHERE account_id = accounts.id
+                                                                    AND chain_id = ${args.chainId}
+                                                                    AND safe_address = ${args.safeAddress}
+                                                                    AND signer = ${args.signer}
+    `;
+
+    if (!verificationCode) {
+      throw new VerificationCodeDoesNotExistError(
+        args.chainId,
+        args.safeAddress,
+        args.signer,
+      );
+    }
+
+    return {
+      code: verificationCode.code,
+      generatedOn: verificationCode.generated_on,
+      sentOn: verificationCode.sent_on,
     };
   }
 
@@ -84,14 +126,40 @@ export class AccountDataSource implements IAccountDataSource {
     code: string;
     codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void> {
-    await this.sql<Account[]>`
-        INSERT INTO accounts (chain_id, email_address, safe_address, signer, verification_code,
-                              verification_code_generated_on, unsubscription_token)
-        VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer}, ${args.code},
-                ${args.codeGenerationDate}, ${args.unsubscriptionToken})
-        RETURNING *
-    `;
+  }): Promise<[DomainAccount, DomainVerificationCode]> {
+    const [createdAccount, verificationCode] = await this.sql.begin(
+      async (sql) => {
+        const [account] = await sql<Account[]>`
+            INSERT INTO accounts (chain_id, email_address, safe_address, signer, unsubscription_token)
+            VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer},
+                    ${args.unsubscriptionToken})
+            RETURNING *
+        `;
+
+        const [verificationCode] = await sql<VerificationCode[]>`
+            INSERT INTO verification_codes (account_id, code, generated_on)
+            VALUES (${account.id}, ${args.code}, ${args.codeGenerationDate})
+            RETURNING *
+        `;
+        return [account, verificationCode];
+      },
+    );
+
+    return [
+      {
+        chainId: createdAccount.chain_id.toString(),
+        emailAddress: new EmailAddress(createdAccount.email_address),
+        isVerified: createdAccount.verified,
+        safeAddress: createdAccount.safe_address,
+        signer: createdAccount.signer,
+        unsubscriptionToken: createdAccount.unsubscription_token,
+      },
+      {
+        code: verificationCode.code,
+        generatedOn: verificationCode.generated_on,
+        sentOn: verificationCode.sent_on,
+      },
+    ];
   }
 
   async setEmailVerificationCode(args: {
@@ -100,22 +168,26 @@ export class AccountDataSource implements IAccountDataSource {
     signer: string;
     code: string;
     codeGenerationDate: Date;
-  }): Promise<void> {
-    const [account] = await this.sql<Account[]>`UPDATE accounts
-                                                SET verification_code              = ${args.code},
-                                                    verification_code_generated_on = ${args.codeGenerationDate}
-                                                WHERE chain_id = ${args.chainId}
-                                                  AND safe_address = ${args.safeAddress}
-                                                  AND signer = ${args.signer}
-                                                RETURNING *`;
+  }): Promise<DomainVerificationCode> {
+    const [verificationCode] = await this.sql<VerificationCode[]>`
+        INSERT INTO verification_codes (account_id, code, generated_on)
+            (SELECT id, ${args.code}, ${args.codeGenerationDate}
+             FROM accounts
+             WHERE chain_id = ${args.chainId}
+               AND safe_address = ${args.safeAddress}
+               AND signer = ${args.signer}
+               AND verified = false)
+        ON CONFLICT (account_id)
+            DO UPDATE SET code         = ${args.code},
+                          generated_on = ${args.codeGenerationDate}
+        RETURNING *
+    `;
 
-    if (!account) {
-      throw new AccountDoesNotExistError(
-        args.chainId,
-        args.safeAddress,
-        args.signer,
-      );
-    }
+    return {
+      code: verificationCode.code,
+      generatedOn: verificationCode.generated_on,
+      sentOn: verificationCode.sent_on,
+    } as DomainVerificationCode;
   }
 
   async setEmailVerificationSentDate(args: {
@@ -123,21 +195,30 @@ export class AccountDataSource implements IAccountDataSource {
     safeAddress: string;
     signer: string;
     sentOn: Date;
-  }): Promise<void> {
-    const [account] = await this.sql<Account[]>`UPDATE accounts
-                                                SET verification_sent_on = ${args.sentOn}
-                                                WHERE chain_id = ${args.chainId}
-                                                  AND safe_address = ${args.safeAddress}
-                                                  AND signer = ${args.signer}
-                                                RETURNING *`;
-
-    if (!account) {
-      throw new AccountDoesNotExistError(
+  }): Promise<DomainVerificationCode> {
+    const [verificationCode] = await this.sql<
+      VerificationCode[]
+    >`UPDATE verification_codes
+      SET sent_on = ${args.sentOn}
+      FROM accounts
+      WHERE chain_id = ${args.chainId}
+        AND safe_address = ${args.safeAddress}
+        AND signer = ${args.signer}
+        AND account_id = accounts.id
+      RETURNING *`;
+    if (!verificationCode) {
+      throw new VerificationCodeDoesNotExistError(
         args.chainId,
         args.safeAddress,
         args.signer,
       );
     }
+
+    return {
+      code: verificationCode.code,
+      generatedOn: verificationCode.generated_on,
+      sentOn: verificationCode.sent_on,
+    };
   }
 
   async verifyEmail(args: {
@@ -145,42 +226,56 @@ export class AccountDataSource implements IAccountDataSource {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    const [account] = await this.sql<Account[]>`UPDATE accounts
-                                                SET verified          = true,
-                                                    verification_code = null
-                                                WHERE chain_id = ${args.chainId}
-                                                  AND safe_address = ${args.safeAddress}
-                                                  AND signer = ${args.signer}
-                                                RETURNING *`;
+    await this.sql.begin(async (sql) => {
+      const [verifiedAccount] = await sql<Account[]>`UPDATE accounts
+                                                     SET verified = true
+                                                     WHERE chain_id = ${args.chainId}
+                                                       AND safe_address = ${args.safeAddress}
+                                                       AND signer = ${args.signer}
+                                                     RETURNING *`;
+      if (!verifiedAccount) {
+        throw new AccountDoesNotExistError(
+          args.chainId,
+          args.safeAddress,
+          args.signer,
+        );
+      }
 
-    if (!account) {
-      throw new AccountDoesNotExistError(
-        args.chainId,
-        args.safeAddress,
-        args.signer,
-      );
-    }
+      await sql`DELETE
+                FROM verification_codes
+                WHERE account_id = ${verifiedAccount.id}`;
+
+      return verifiedAccount;
+    });
   }
 
   async deleteAccount(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<void> {
-    const [account] = await this.sql<Account[]>`DELETE
-                                                FROM accounts
-                                                WHERE chain_id = ${args.chainId}
-                                                  AND safe_address = ${args.safeAddress}
-                                                  AND signer = ${args.signer}
-                                                RETURNING *`;
-
-    if (!account) {
+  }): Promise<DomainAccount> {
+    const [deletedAccount] = await this.sql<Account[]>`DELETE
+                                                       FROM accounts
+                                                       WHERE chain_id = ${args.chainId}
+                                                         AND safe_address = ${args.safeAddress}
+                                                         AND signer = ${args.signer}
+                                                       RETURNING *`;
+    if (!deletedAccount) {
       throw new AccountDoesNotExistError(
         args.chainId,
         args.safeAddress,
         args.signer,
       );
     }
+
+    return {
+      chainId: deletedAccount.chain_id.toString(),
+      emailAddress: new EmailAddress(deletedAccount.email_address),
+      isVerified: deletedAccount.verified,
+      safeAddress: deletedAccount.safe_address,
+      signer: deletedAccount.signer,
+      unsubscriptionToken: deletedAccount.unsubscription_token,
+    };
   }
 
   async updateAccountEmail(args: {
@@ -188,28 +283,32 @@ export class AccountDataSource implements IAccountDataSource {
     safeAddress: string;
     emailAddress: EmailAddress;
     signer: string;
-    code: string;
-    codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void> {
-    const [account] = await this.sql<Account[]>`UPDATE accounts
-                                                SET email_address                  = ${args.emailAddress.value},
-                                                    verified                       = false,
-                                                    verification_code              = ${args.code},
-                                                    verification_code_generated_on = ${args.codeGenerationDate},
-                                                    unsubscription_token           = ${args.unsubscriptionToken}
-                                                WHERE chain_id = ${args.chainId}
-                                                  AND safe_address = ${args.safeAddress}
-                                                  AND signer = ${args.signer}
-                                                RETURNING *`;
-
-    if (!account) {
+  }): Promise<DomainAccount> {
+    const [updatedAccount] = await this.sql<Account[]>`UPDATE accounts
+                                                       SET email_address        = ${args.emailAddress.value},
+                                                           verified             = false,
+                                                           unsubscription_token = ${args.unsubscriptionToken}
+                                                       WHERE chain_id = ${args.chainId}
+                                                         AND safe_address = ${args.safeAddress}
+                                                         AND signer = ${args.signer}
+                                                       RETURNING *`;
+    if (!updatedAccount) {
       throw new AccountDoesNotExistError(
         args.chainId,
         args.safeAddress,
         args.signer,
       );
     }
+
+    return {
+      chainId: updatedAccount.chain_id.toString(),
+      emailAddress: new EmailAddress(updatedAccount.email_address),
+      isVerified: updatedAccount.verified,
+      safeAddress: updatedAccount.safe_address,
+      signer: updatedAccount.signer,
+      unsubscriptionToken: updatedAccount.unsubscription_token,
+    };
   }
 
   async getSubscriptions(args: {
@@ -248,7 +347,6 @@ export class AccountDataSource implements IAccountDataSource {
                   AND accounts.signer = ${args.signer}
                   AND notification_types.key = ${args.notificationTypeKey})
            RETURNING *`;
-
     return subscriptions.map((s) => ({
       key: s.key,
       name: s.name,
@@ -285,7 +383,6 @@ export class AccountDataSource implements IAccountDataSource {
         FROM notification_types subs
                  JOIN deleted_subscriptions deleted_subs ON subs.id = deleted_subs.notification_type
     `;
-
     return subscriptions.map((s) => ({
       key: s.key,
       name: s.name,

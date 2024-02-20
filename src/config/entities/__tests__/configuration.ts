@@ -21,14 +21,13 @@ export default (): ReturnType<typeof configuration> => ({
   balances: {
     balancesTtlSeconds: faker.number.int(),
     providers: {
-      valk: {
+      zerion: {
         baseUri: faker.internet.url({ appendSlash: false }),
         apiKey: faker.string.hexadecimal({ length: 32 }),
         chains: {
           1: { chainName: faker.string.sample() },
           10: { chainName: faker.string.sample() },
           100: { chainName: faker.string.sample() },
-          1101: { chainName: faker.string.sample() },
           1313161554: { chainName: faker.string.sample() },
           137: { chainName: faker.string.sample() },
           324: { chainName: faker.string.sample() },
@@ -38,6 +37,18 @@ export default (): ReturnType<typeof configuration> => ({
           56: { chainName: faker.string.sample() },
           8453: { chainName: faker.string.sample() },
         },
+        currencies: Array.from(
+          new Set([
+            ...Array.from(
+              { length: faker.number.int({ min: 2, max: 5 }) },
+              () => faker.finance.currencyCode().toLowerCase(),
+            ),
+            'btc',
+            'eth',
+            'eur',
+            'usd',
+          ]),
+        ),
       },
     },
   },
@@ -48,11 +59,15 @@ export default (): ReturnType<typeof configuration> => ({
       database: process.env.POSTGRES_TEST_DB || 'test-db',
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+      ssl: {
+        enabled: false,
+        rejectUnauthorized: false,
+      },
     },
   },
   email: {
     applicationCode: faker.string.alphanumeric(),
-    baseUri: faker.internet.url({ appendSlash: true }),
+    baseUri: faker.internet.url({ appendSlash: false }),
     apiKey: faker.string.hexadecimal({ length: 32 }),
     fromEmail: faker.internet.email(),
     fromName: faker.person.fullName(),
@@ -78,7 +93,8 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     richFragments: true,
     email: true,
-    valkBalancesChainIds: ['100'],
+    zerionBalancesChainIds: ['137'],
+    relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   log: {
@@ -166,7 +182,13 @@ export default (): ReturnType<typeof configuration> => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
   },
-  relay: { limit: faker.number.int({ min: 1 }) },
+  relay: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    limit: faker.number.int({ min: 1 }),
+    apiKey: {
+      100: faker.string.hexadecimal({ length: 32 }),
+    },
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

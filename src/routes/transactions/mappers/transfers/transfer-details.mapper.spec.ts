@@ -13,7 +13,7 @@ describe('TransferDetails mapper (Unit)', () => {
   let mapper: TransferDetailsMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mapper = new TransferDetailsMapper(transferInfoMapper);
   });
 

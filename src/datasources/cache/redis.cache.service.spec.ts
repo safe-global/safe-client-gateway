@@ -103,7 +103,7 @@ describe('RedisCacheService', () => {
       faker.string.sample(),
     );
     const value = fakeJson();
-    redisClient.hSet(cacheDir.key, cacheDir.field, value);
+    await redisClient.hSet(cacheDir.key, cacheDir.field, value);
 
     const storedValue = await redisCacheService.get(cacheDir);
 
@@ -117,7 +117,7 @@ describe('RedisCacheService', () => {
       faker.string.sample(),
     );
     const value = fakeJson();
-    redisClient.hSet(cacheDir.key, cacheDir.field, value);
+    await redisClient.hSet(cacheDir.key, cacheDir.field, value);
 
     await redisCacheService.deleteByKey(cacheDir.key);
 

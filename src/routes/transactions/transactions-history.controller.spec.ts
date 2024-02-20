@@ -66,7 +66,7 @@ describe('Transactions History Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),

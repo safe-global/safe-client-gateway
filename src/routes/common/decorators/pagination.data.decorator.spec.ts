@@ -21,7 +21,7 @@ describe('PaginationDataDecorator', () => {
   class TestModule {}
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestModule],

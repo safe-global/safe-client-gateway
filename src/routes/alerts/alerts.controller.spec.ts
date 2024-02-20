@@ -31,8 +31,8 @@ import {
   execTransactionEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/domain/alerts/__tests__/safe-transactions.encoder';
-import { transactionAddedEventBuilder } from '@/domain/alerts/__tests__/delay-modifier.encoder';
+} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
+import { transactionAddedEventBuilder } from '@/domain/alerts/contracts/__tests__/delay-modifier-encoder.builder';
 import {
   INetworkService,
   NetworkService,
@@ -44,8 +44,10 @@ import { getMultiSendCallOnlyDeployment } from '@safe-global/safe-deployments';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/alerts/__tests__/multi-send-transactions.encoder';
-import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
+} from '@/domain/contracts/contracts/__tests__/multi-send-encoder.builder';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { EmailAddress } from '@/domain/account/entities/account.entity';
+import { subscriptionBuilder } from '@/domain/account/entities/__tests__/subscription.builder';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -73,16 +75,20 @@ describe('Alerts (Unit)', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
-  let urlGenerator: UrlGeneratorHelper;
+
+  const accountRecoverySubscription = subscriptionBuilder()
+    .with('key', 'account_recovery')
+    .build();
 
   describe('/alerts route enabled', () => {
     let app: INestApplication;
     let signingKey: string;
     let networkService: jest.MockedObjectDeep<INetworkService>;
     let safeConfigUrl: string | undefined;
+    let webAppBaseUri: string | undefined;
 
     beforeEach(async () => {
-      jest.clearAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -112,10 +118,9 @@ describe('Alerts (Unit)', () => {
       safeConfigUrl = configurationService.get('safeConfig.baseUri');
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
-      urlGenerator = moduleFixture.get(UrlGeneratorHelper);
       accountDataSource = moduleFixture.get(IAccountDataSource);
       networkService = moduleFixture.get(NetworkService);
-
+      webAppBaseUri = configurationService.getOrThrow('safeWebApp.baseUri');
       app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
     });
@@ -178,10 +183,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          subscriptionBuilder().with('key', 'account_recovery').build(),
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -207,27 +218,25 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -282,10 +291,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -311,27 +326,25 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [owners[0], owners[2]].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -385,10 +398,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -414,27 +433,25 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [owners[0], newOwner, owners[2]].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: safe.threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -478,10 +495,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -507,27 +530,25 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: safe.owners.map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -602,10 +623,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -631,17 +658,14 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [
               owners[1],
               owners[2],
@@ -649,13 +673,14 @@ describe('Alerts (Unit)', () => {
             ].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: removeOwner.build().threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -698,10 +723,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -727,27 +758,25 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -757,20 +786,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -814,13 +841,20 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [
-          { email: faker.internet.email() },
-          { email: faker.internet.email() },
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
         ];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -846,32 +880,41 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+        const expectedOwners = [...safe.owners, owner].map((address) => {
+          return {
+            address,
+            explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+              '{{address}}',
+              address,
+            ),
+          };
+        });
+        expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+        expect(emailApi.createMessage).toHaveBeenCalledWith({
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
-            owners: [...safe.owners, owner].map((address) => {
-              return {
-                address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
-                  address,
-                }),
-              };
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            owners: expectedOwners,
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
           ),
-          to: expectedTargetEmailAddresses,
+          to: [verifiedAccounts[0].emailAddress.value],
+        });
+        expect(emailApi.createMessage).toHaveBeenCalledWith({
+          subject: 'Recovery attempt',
+          substitutions: {
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            owners: expectedOwners,
+            threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
+          },
+          template: configurationService.getOrThrow(
+            'email.templates.recoveryTx',
+          ),
+          to: [verifiedAccounts[1].emailAddress.value],
         });
       });
     });
@@ -910,10 +953,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -939,17 +988,15 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -990,10 +1037,16 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedSignerEmails = [{ email: faker.internet.email() }];
-        accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-          verifiedSignerEmails,
-        );
+        const verifiedAccounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
+        ];
+        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getSubscriptions.mockResolvedValue([
+          accountRecoverySubscription,
+        ]);
 
         networkService.get.mockImplementation((url) => {
           switch (url) {
@@ -1019,17 +1072,15 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-          ({ email }) => email,
+        const expectedTargetEmailAddresses = verifiedAccounts.map(
+          ({ emailAddress }) => emailAddress.value,
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1039,10 +1090,8 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1115,10 +1164,16 @@ describe('Alerts (Unit)', () => {
         alert,
         timestamp,
       });
-      const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1144,17 +1199,15 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
+      const expectedTargetEmailAddresses = verifiedAccounts.map(
+        ({ emailAddress }) => emailAddress.value,
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1225,10 +1278,16 @@ describe('Alerts (Unit)', () => {
         alert,
         timestamp,
       });
-      const verifiedSignerEmails = [{ email: faker.internet.email() }];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1254,17 +1313,15 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
+      const expectedTargetEmailAddresses = verifiedAccounts.map(
+        ({ emailAddress }) => emailAddress.value,
       );
       expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1274,10 +1331,8 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1322,13 +1377,20 @@ describe('Alerts (Unit)', () => {
         timestamp,
       });
       // Multiple emails
-      const verifiedSignerEmails = [
-        { email: faker.internet.email() },
-        { email: faker.internet.email() },
+      const verifiedAccounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
       ];
-      accountDataSource.getVerifiedAccountEmailsBySafeAddress.mockResolvedValue(
-        verifiedSignerEmails,
-      );
+      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        accountRecoverySubscription,
+      ]);
 
       networkService.get.mockImplementation((url) => {
         switch (url) {
@@ -1354,31 +1416,112 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedSignerEmails.map(
-        ({ email }) => email,
-      );
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-      expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+      const expectedOwners = [...safe.owners, owner].map((address) => {
+        return {
+          address,
+          explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+            '{{address}}',
+            address,
+          ),
+        };
+      });
+      expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+      expect(emailApi.createMessage).toHaveBeenCalledWith({
         subject: 'Recovery attempt',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
-          owners: [...safe.owners, owner].map((address) => {
-            return {
-              address,
-              explorerUrl: urlGenerator.addressToExplorerUrl({
-                chain,
-                address,
-              }),
-            };
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          owners: expectedOwners,
           threshold: threshold.toString(),
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
-        to: expectedTargetEmailAddresses,
+        to: [verifiedAccounts[0].emailAddress.value],
       });
+      expect(emailApi.createMessage).toHaveBeenCalledWith({
+        subject: 'Recovery attempt',
+        substitutions: {
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          owners: expectedOwners,
+          threshold: threshold.toString(),
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
+        },
+        template: configurationService.getOrThrow('email.templates.recoveryTx'),
+        to: [verifiedAccounts[1].emailAddress.value],
+      });
+    });
+
+    it('does not notify accounts not subscribed to CATEGORY_ACCOUNT_RECOVERY', async () => {
+      const chain = chainBuilder().build();
+      const delayModifier = faker.finance.ethereumAddress();
+      const safe = safeBuilder().with('modules', [delayModifier]).build();
+      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+      const transactionAddedEvent = transactionAddedEventBuilder()
+        .with('data', addOwnerWithThreshold.encode())
+        .with('to', getAddress(safe.address))
+        .encode();
+      const alert = alertBuilder()
+        .with(
+          'transaction',
+          alertTransactionBuilder()
+            .with('to', delayModifier)
+            .with('logs', [
+              alertLogBuilder()
+                .with('address', delayModifier)
+                .with('data', transactionAddedEvent.data)
+                .with('topics', transactionAddedEvent.topics)
+                .build(),
+            ])
+            .with('network', chain.chainId)
+            .build(),
+        )
+        .with('event_type', EventType.ALERT)
+        .build();
+      const timestamp = Date.now().toString();
+      const signature = fakeTenderlySignature({
+        signingKey,
+        alert,
+        timestamp,
+      });
+      const accounts = [
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+        accountBuilder()
+          .with('emailAddress', new EmailAddress(faker.internet.email()))
+          .with('isVerified', true)
+          .build(),
+      ];
+      accountDataSource.getAccounts.mockResolvedValue(accounts);
+      accountDataSource.getSubscriptions.mockResolvedValue([
+        subscriptionBuilder().build(),
+      ]);
+
+      networkService.get.mockImplementation((url) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+            return Promise.resolve({
+              data: { safes: [safe.address] },
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: safe, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/alerts')
+        .set('x-tenderly-signature', signature)
+        .set('date', timestamp)
+        .send(alert)
+        .expect(202)
+        .expect({});
+
+      expect(emailApi.createMessage).toHaveBeenCalledTimes(0);
     });
 
     it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
@@ -1417,7 +1560,7 @@ describe('Alerts (Unit)', () => {
     let signingKey: string;
 
     beforeEach(async () => {
-      jest.clearAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({

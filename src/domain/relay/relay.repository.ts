@@ -1,26 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex } from 'viem/types/misc';
+import { RelayLimitReachedError } from '@/domain/relay/errors/relay-limit-reached.error';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { RelayApi } from '@/domain/interfaces/relay-api.interface';
-import {
-  LimitAddressesMapper,
-  RelayPayload,
-} from '@/domain/relay/limit-addresses.mapper';
+import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { getAddress } from 'viem';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
-class RelayLimitReachedError extends Error {
-  constructor(
-    readonly address: Hex,
-    readonly current: number,
-    readonly limit: number,
-  ) {
-    super(
-      `Relay limit reached for ${address} | current: ${current} | limit: ${limit}`,
-    );
-  }
-}
-
-@Injectable({})
+@Injectable()
 export class RelayRepository {
   // Number of relay requests per ttl
   private readonly limit: number;
@@ -29,14 +21,22 @@ export class RelayRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly limitAddressesMapper: LimitAddressesMapper,
-    private readonly relayApi: RelayApi,
+    @Inject(IRelayApi)
+    private readonly relayApi: IRelayApi,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
 
-  async relay(relayPayload: RelayPayload): Promise<unknown> {
+  async relay(relayPayload: {
+    chainId: string;
+    to: string;
+    data: string;
+    gasLimit: string | null;
+  }): Promise<{ taskId: string }> {
     const relayAddresses =
-      this.limitAddressesMapper.getLimitAddresses(relayPayload);
+      await this.limitAddressesMapper.getLimitAddresses(relayPayload);
+
     for (const address of relayAddresses) {
       const canRelay = await this.canRelay({
         chainId: relayPayload.chainId,
@@ -53,7 +53,29 @@ export class RelayRepository {
       }
     }
 
-    return this.relayApi.relay(relayPayload);
+    const relayResponse = await this.relayApi.relay(relayPayload);
+
+    // If we fail to increment count, we should not fail the relay
+    for (const address of relayAddresses) {
+      await this.incrementRelayCount({
+        chainId: relayPayload.chainId,
+        address,
+      }).catch((error) => {
+        // If we fail to increment count, we should not fail the relay
+        this.loggingService.warn(error.message);
+      });
+    }
+
+    return relayResponse;
+  }
+
+  async getRelayCount(args: {
+    chainId: string;
+    address: string;
+  }): Promise<number> {
+    const cacheDir = this.getRelayCacheKey(args);
+    const currentCount = await this.cacheService.get(cacheDir);
+    return currentCount ? parseInt(currentCount) : 0;
   }
 
   private async canRelay(args: {
@@ -64,7 +86,24 @@ export class RelayRepository {
     return { result: currentCount < this.limit, currentCount };
   }
 
-  getRelayCount(args: { chainId: string; address: string }): Promise<number> {
-    return this.relayApi.getRelayCount(args);
+  private async incrementRelayCount(args: {
+    chainId: string;
+    address: string;
+  }): Promise<void> {
+    const currentCount = await this.getRelayCount(args);
+    const incremented = currentCount + 1;
+    const cacheDir = this.getRelayCacheKey(args);
+    return this.cacheService.set(cacheDir, incremented.toString());
+  }
+
+  private getRelayCacheKey(args: {
+    chainId: string;
+    address: string;
+  }): CacheDir {
+    return CacheRouter.getRelayCacheDir({
+      chainId: args.chainId,
+      // Ensure address is checksummed to always have a consistent cache key
+      address: getAddress(args.address),
+    });
   }
 }

@@ -20,7 +20,7 @@ describe('FetchNetworkService', () => {
   let target: FetchNetworkService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     target = new FetchNetworkService(fetchClientMock, loggingServiceMock);
   });
 

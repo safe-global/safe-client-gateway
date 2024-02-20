@@ -144,7 +144,7 @@ export class CacheHooksService {
       // - the incoming transfers for that safe
       case EventType.INCOMING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
+          this.balancesRepository.clearBalances({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -174,7 +174,7 @@ export class CacheHooksService {
       // - the transfers for that safe
       case EventType.OUTGOING_ETHER:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
+          this.balancesRepository.clearBalances({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -202,7 +202,7 @@ export class CacheHooksService {
       // - the incoming transfers for that safe
       case EventType.INCOMING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
+          this.balancesRepository.clearBalances({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
@@ -237,7 +237,7 @@ export class CacheHooksService {
       // - the transfers for that safe
       case EventType.OUTGOING_TOKEN:
         promises.push(
-          this.balancesRepository.clearLocalBalances({
+          this.balancesRepository.clearBalances({
             chainId: event.chainId,
             safeAddress: event.address,
           }),

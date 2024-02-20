@@ -27,6 +27,9 @@ import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { INestApplication } from '@nestjs/common';
+import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
+import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
+import { EmailAddress } from '@/domain/account/entities/account.entity';
 
 describe('Email controller save email tests', () => {
   let app: INestApplication;
@@ -37,7 +40,7 @@ describe('Email controller save email tests', () => {
   let safeConfigUrl: string | undefined;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     jest.useFakeTimers();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -98,7 +101,16 @@ describe('Email controller save email tests', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    accountDataSource.createAccount.mockResolvedValue();
+    accountDataSource.createAccount.mockResolvedValue([
+      accountBuilder()
+        .with('chainId', chain.chainId)
+        .with('emailAddress', new EmailAddress(emailAddress))
+        .with('safeAddress', safe.address)
+        .with('signer', signerAddress)
+        .with('isVerified', false)
+        .build(),
+      verificationCodeBuilder().build(),
+    ]);
     accountDataSource.subscribe.mockResolvedValue([
       {
         key: faker.word.sample(),
@@ -108,11 +120,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         signer: signer.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(201)
       .expect({});
@@ -154,11 +166,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -186,11 +198,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({
@@ -227,11 +239,11 @@ describe('Email controller save email tests', () => {
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
         account: account.address,
-        timestamp: timestamp,
-        signature: signature,
       })
       .expect(403)
       .expect({

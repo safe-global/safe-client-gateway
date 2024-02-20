@@ -49,7 +49,7 @@ describe('Chains Controller (Unit)', () => {
   const backboneResponse: Backbone = backboneBuilder().build();
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
@@ -94,7 +94,9 @@ describe('Chains Controller (Unit)', () => {
               chainId: chainsResponse.results[0].chainId,
               chainName: chainsResponse.results[0].chainName,
               description: chainsResponse.results[0].description,
+              chainLogoUri: chainsResponse.results[0].chainLogoUri,
               l2: chainsResponse.results[0].l2,
+              isTestnet: chainsResponse.results[0].isTestnet,
               shortName: chainsResponse.results[0].shortName,
               rpcUri: chainsResponse.results[0].rpcUri,
               safeAppsRpcUri: chainsResponse.results[0].safeAppsRpcUri,
@@ -113,7 +115,9 @@ describe('Chains Controller (Unit)', () => {
               chainId: chainsResponse.results[1].chainId,
               chainName: chainsResponse.results[1].chainName,
               description: chainsResponse.results[1].description,
+              chainLogoUri: chainsResponse.results[1].chainLogoUri,
               l2: chainsResponse.results[1].l2,
+              isTestnet: chainsResponse.results[1].isTestnet,
               shortName: chainsResponse.results[1].shortName,
               rpcUri: chainsResponse.results[1].rpcUri,
               safeAppsRpcUri: chainsResponse.results[1].safeAppsRpcUri,
@@ -205,7 +209,9 @@ describe('Chains Controller (Unit)', () => {
         chainId: chainDomain.chainId,
         chainName: chainDomain.chainName,
         description: chainDomain.description,
+        chainLogoUri: chainDomain.chainLogoUri,
         l2: chainDomain.l2,
+        isTestnet: chainDomain.isTestnet,
         nativeCurrency: chainDomain.nativeCurrency,
         transactionService: chainDomain.transactionService,
         blockExplorerUriTemplate: chainDomain.blockExplorerUriTemplate,

@@ -23,4 +23,9 @@ export class UrlGeneratorHelper {
       args.address,
     );
   }
+
+  // TODO: The final URL needs to be confirmed
+  unsubscriptionSafeWebAppUrl(args: { unsubscriptionToken: string }): string {
+    return `${this.webAppBaseUri}/unsubscribe?token=${args.unsubscriptionToken}`;
+  }
 }

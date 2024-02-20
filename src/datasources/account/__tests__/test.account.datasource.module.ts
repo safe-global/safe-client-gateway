@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 
 const accountDataSource = {
-  getVerifiedAccountEmailsBySafeAddress: jest.fn(),
   getAccount: jest.fn(),
+  getAccounts: jest.fn(),
+  getAccountVerificationCode: jest.fn(),
   createAccount: jest.fn(),
   setEmailVerificationCode: jest.fn(),
   setEmailVerificationSentDate: jest.fn(),

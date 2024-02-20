@@ -1,6 +1,6 @@
 # Safe Client Gateway
 
-[![Coverage Status](https://coveralls.io/repos/github/safe-global/safe-client-gateway-nest/badge.svg?branch=main)](https://coveralls.io/github/safe-global/safe-client-gateway-nest?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/safe-global/safe-client-gateway/badge.svg?branch=main)](https://coveralls.io/github/safe-global/safe-client-gateway?branch=main)
 
 ## Motivation
 
@@ -15,7 +15,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node 20.11.0 – https://nodejs.org/en/
+- Node 20.11.1 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation

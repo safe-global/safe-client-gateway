@@ -21,14 +21,22 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import {
+  multisigTransactionBuilder,
+  toJson as multisigToJson,
+} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 
 describe('Delete Transaction - Transactions Controller (Unit', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let fakeCacheService: FakeCacheService;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
@@ -46,6 +54,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    fakeCacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -75,7 +84,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
 
   it('should delete a multisig transaction', async () => {
     const chain = chainBuilder().build();
-    const safeTxHash = faker.string.hexadecimal({ length: 16 });
+    const tx = multisigTransactionBuilder().build();
     const deleteTransactionDto: DeleteTransactionDto = {
       signature: faker.string.hexadecimal({ length: 16 }),
     };
@@ -84,11 +93,18 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: chain, status: 200 });
       }
+      if (
+        url ===
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+      ) {
+        return Promise.resolve({ data: multisigToJson(tx), status: 200 });
+      }
       fail(`No matching rule for url: ${url}`);
     });
     networkService.delete.mockImplementation((url) => {
       if (
-        url === `${chain.transactionService}/api/v1/transactions/${safeTxHash}`
+        url ===
+        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
       ) {
         return Promise.resolve({ data: {}, status: 204 });
       }
@@ -96,14 +112,14 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     });
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/transactions/${safeTxHash}`)
+      .delete(`/v1/chains/${chain.chainId}/transactions/${tx.safeTxHash}`)
       .send(deleteTransactionDto)
       .expect(200);
   });
 
-  it('should forward an error from the Transaction Service', async () => {
+  it('should clear the cache after deleting a multisig transaction', async () => {
     const chain = chainBuilder().build();
-    const safeTxHash = faker.string.hexadecimal({ length: 16 });
+    const tx = multisigTransactionBuilder().build();
     const deleteTransactionDto: DeleteTransactionDto = {
       signature: faker.string.hexadecimal({ length: 16 }),
     };
@@ -112,11 +128,67 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: chain, status: 200 });
       }
+      if (
+        url ===
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+      ) {
+        return Promise.resolve({ data: multisigToJson(tx), status: 200 });
+      }
       fail(`No matching rule for url: ${url}`);
     });
     networkService.delete.mockImplementation((url) => {
       if (
-        url === `${chain.transactionService}/api/v1/transactions/${safeTxHash}`
+        url ===
+        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
+      ) {
+        return Promise.resolve({ data: {}, status: 204 });
+      }
+      fail(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .delete(`/v1/chains/${chain.chainId}/transactions/${tx.safeTxHash}`)
+      .send(deleteTransactionDto)
+      .expect(200);
+
+    await expect(
+      fakeCacheService.get(
+        new CacheDir(
+          `${chain.chainId}_multisig_transaction_${tx.safeTxHash}`,
+          '',
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      fakeCacheService.get(
+        new CacheDir(`${chain.chainId}_multisig_transactions_${tx.safe}`, ''),
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it('should forward an error from the Transaction Service', async () => {
+    const chain = chainBuilder().build();
+    const deleteTransactionDto: DeleteTransactionDto = {
+      signature: faker.string.hexadecimal({ length: 16 }),
+    };
+
+    const tx = multisigTransactionBuilder().build();
+    networkService.get.mockImplementation((url) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: chain, status: 200 });
+      }
+      if (
+        url ===
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`
+      ) {
+        return Promise.resolve({ data: multisigToJson(tx), status: 200 });
+      }
+      fail(`No matching rule for url: ${url}`);
+    });
+    networkService.delete.mockImplementation((url) => {
+      if (
+        url ===
+        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
       ) {
         return Promise.reject(
           new NetworkResponseError(
@@ -132,7 +204,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     });
 
     await request(app.getHttpServer())
-      .delete(`/v1/chains/${chain.chainId}/transactions/${safeTxHash}`)
+      .delete(`/v1/chains/${chain.chainId}/transactions/${tx.safeTxHash}`)
       .send(deleteTransactionDto)
       .expect(404)
       .expect({

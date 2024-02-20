@@ -1,6 +1,7 @@
 import {
   Account,
   EmailAddress,
+  VerificationCode,
 } from '@/domain/account/entities/account.entity';
 import { Subscription } from '@/domain/account/entities/subscription.entity';
 
@@ -8,28 +9,39 @@ export const IAccountDataSource = Symbol('IAccountDataSource');
 
 export interface IAccountDataSource {
   /**
-   * Gets the verified emails associated with a Safe address.
-   *
-   * @param args.chainId - the chain id of where the Safe is deployed
-   * @param args.safeAddress - the Safe address to use as filter
-   */
-  getVerifiedAccountEmailsBySafeAddress(args: {
-    chainId: string;
-    safeAddress: string;
-  }): Promise<{ email: string }[]>;
-
-  /**
    * Gets the account associated with a signer/owner of a Safe for a specific chain.
    *
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the account
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   getAccount(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
   }): Promise<Account>;
+
+  /**
+   * Gets all accounts associated with a Safe address for a specific chain
+   *
+   * @param args.chainId - the chain id of where the Safe is deployed
+   * @param args.safeAddress - the Safe address of the account
+   * @param args.onlyVerified - if set to true, returns only verified emails.
+   * Else, returns all emails.
+   */
+  getAccounts(args: {
+    chainId: string;
+    safeAddress: string;
+    onlyVerified: boolean;
+  }): Promise<Account[]>;
+
+  getAccountVerificationCode(args: {
+    chainId: string;
+    safeAddress: string;
+    signer: string;
+  }): Promise<VerificationCode>;
 
   /**
    * Creates a new account entry
@@ -49,7 +61,7 @@ export interface IAccountDataSource {
     code: string;
     codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void>;
+  }): Promise<[Account, VerificationCode]>;
 
   /**
    * Sets the verification code for an account.
@@ -68,7 +80,7 @@ export interface IAccountDataSource {
     signer: string;
     code: string;
     codeGenerationDate: Date;
-  }): Promise<void>;
+  }): Promise<VerificationCode>;
 
   /**
    * Sets the verification date for an email entry.
@@ -83,7 +95,7 @@ export interface IAccountDataSource {
     safeAddress: string;
     signer: string;
     sentOn: Date;
-  }): Promise<void>;
+  }): Promise<VerificationCode>;
 
   /**
    * Verifies the email address for an account of a Safe.
@@ -91,6 +103,8 @@ export interface IAccountDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the signer/owner
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   verifyEmail(args: {
     chainId: string;
@@ -104,12 +118,14 @@ export interface IAccountDataSource {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the signer/owner
    * @param args.signer - the signer/owner address of the account
+   *
+   * @throws {AccountDoesNotExistError}
    */
   deleteAccount(args: {
     chainId: string;
     safeAddress: string;
     signer: string;
-  }): Promise<void>;
+  }): Promise<Account>;
 
   /**
    * Updates the email address of an account.
@@ -120,16 +136,16 @@ export interface IAccountDataSource {
    * @param args.signer - the signer/owner address of the account
    * @param args.code - the generated code to be used to verify this email address
    * @param args.verificationGeneratedOn – the date which represents when the code was generated
+   *
+   * @throws {AccountDoesNotExistError}
    */
   updateAccountEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: EmailAddress;
     signer: string;
-    code: string;
-    codeGenerationDate: Date;
     unsubscriptionToken: string;
-  }): Promise<void>;
+  }): Promise<Account>;
 
   /**
    * Gets all the subscriptions for the account on chainId, with the specified safeAddress.

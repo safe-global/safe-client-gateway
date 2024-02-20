@@ -31,7 +31,7 @@ describe('Balances Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
@@ -621,7 +621,8 @@ describe('Balances Controller (Unit)', () => {
 
   describe('GET /balances/supported-fiat-codes', () => {
     it('should return the ordered list of supported fiat codes', async () => {
-      const pricesProviderFiatCodes = ['chf', 'gbp', 'eur', 'eth', 'afn'];
+      // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
+      const pricesProviderFiatCodes = ['eur', 'usd'];
       networkService.get.mockImplementation((url) => {
         switch (url) {
           case `${pricesProviderUrl}/simple/supported_vs_currencies`:
@@ -637,7 +638,7 @@ describe('Balances Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['AFN', 'CHF', 'ETH', 'EUR', 'GBP']);
+        .expect(['EUR', 'USD']);
     });
 
     it('should fail getting fiat currencies data from prices provider', async () => {
