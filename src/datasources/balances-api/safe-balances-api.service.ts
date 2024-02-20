@@ -8,7 +8,7 @@ import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
+import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly cacheService: ICacheService,
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    private readonly coingeckoApi: IPricesApi,
+    private readonly coingeckoApi: ICoingeckoApi,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
+import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
 import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
@@ -19,7 +19,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { asError } from '@/logging/utils';
 
 @Injectable()
-export class CoingeckoApi implements IPricesApi {
+export class CoingeckoApi implements ICoingeckoApi {
   /**
    *  Coingecko API Key header name. To be included in http requests when using a paid subscription.
    */

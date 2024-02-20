@@ -6,7 +6,7 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
+import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
 import { faker } from '@faker-js/faker';
 
 const configurationService = {
@@ -47,7 +47,7 @@ const pricesApi = {
   getNativeCoinPrice: jest.fn(),
   getTokenPrices: jest.fn(),
   getFiatCodes: jest.fn(),
-} as IPricesApi;
+} as ICoingeckoApi;
 
 const pricesApiMock = jest.mocked(pricesApi);
 
