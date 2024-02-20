@@ -15,7 +15,6 @@ export class GelatoApi implements IRelayApi {
    * buffer reduces your chance of the task cancelling before it is executed on-chain.
    * @see https://docs.gelato.network/developer-services/relay/quick-start/optional-parameters
    */
-  // TODO: Add documentationn to Swagger
   private static GAS_LIMIT_BUFFER = BigInt(150_000);
 
   private readonly baseUri: string;
