@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Hex, parseAbi, encodeFunctionData, getAddress } from 'viem';
+import { Hex, encodeFunctionData, getAddress, erc20Abi } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
 
@@ -14,16 +14,11 @@ class Erc20TransferEncoder<T extends Erc20TransferArgs>
   extends Builder<T>
   implements IEncoder
 {
-  static readonly FUNCTION_SIGNATURE =
-    'function transfer(address to, uint256 value)' as const;
-
   encode(): Hex {
-    const abi = parseAbi([Erc20TransferEncoder.FUNCTION_SIGNATURE]);
-
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: erc20Abi,
       functionName: 'transfer',
       args: [args.to, args.value],
     });

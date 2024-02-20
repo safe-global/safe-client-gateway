@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
-import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
-import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
+import { Erc20Decoder } from '@/domain/relay/contracts/erc-20-decoder.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
@@ -13,17 +12,20 @@ import {
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
+import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
+import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
+import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
+import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.error';
 
 @Injectable()
 export class LimitAddressesMapper {
-  // TODO: Abstract with that from SafeContractHelper
+  // TODO: Support all versions (decoders currently use 1.3.0 ABIs though interface is generic)
   private static SUPPORTED_SAFE_VERSION = '1.3.0';
 
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    private readonly safeContract: SafeContractHelper,
-    private readonly erc20Contract: Erc20ContractHelper,
+    private readonly erc20Decoder: Erc20Decoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
@@ -56,7 +58,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('execTransaction via unofficial Safe mastercopy');
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted by execTransaction will be limited
@@ -71,7 +73,7 @@ export class LimitAddressesMapper {
           address: args.to,
         })
       ) {
-        throw Error('multiSend via unofficial MultiSend contract');
+        throw new UnofficialMultiSendError();
       }
 
       // multiSend calldata meets the validity requirements
@@ -84,7 +86,7 @@ export class LimitAddressesMapper {
       });
 
       if (!isOfficial) {
-        throw Error('multiSend via unofficial Safe mastercopy');
+        throw new UnofficialMasterCopyError();
       }
 
       // Safe targeted in batch will be limited
@@ -102,29 +104,35 @@ export class LimitAddressesMapper {
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
 
-    throw Error('Cannot get limit addresses – Invalid transfer');
+    throw new InvalidTransferError();
   }
 
   private isValidExecTransactionCall(args: { to: string; data: Hex }): boolean {
     let execTransaction: { data: Hex; to: Hex; value: bigint };
     // If transaction is an execTransaction
     try {
-      execTransaction = this.safeContract.decode(
-        SafeContractHelper.EXEC_TRANSACTION,
-        args.data,
-      );
+      const safeDecodedData = this.safeDecoder.decodeFunctionData({
+        data: args.data,
+      });
+      if (safeDecodedData.functionName !== 'execTransaction') {
+        return false;
+      }
+      const [to, value, data] = safeDecodedData.args;
+      execTransaction = { to, value, data };
     } catch (e) {
       return false;
     }
 
     // If data of execTransaction is an ERC20 transfer
     try {
-      const erc20DecodedData = this.erc20Contract.decode(
-        Erc20ContractHelper.TRANSFER,
-        execTransaction.data,
-      );
+      const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
+        data: execTransaction.data,
+      });
       // If the ERC20 transfer targets 'self' (the Safe), we consider it to be invalid
-      return erc20DecodedData.to !== args.to;
+      return (
+        erc20DecodedData.functionName === 'transfer' &&
+        erc20DecodedData.args[0] !== args.to
+      );
     } catch {
       // swallow exception if data is not an ERC20 transfer
     }
@@ -141,7 +149,7 @@ export class LimitAddressesMapper {
     }
 
     const isCancellation = execTransaction.data === '0x';
-    return isCancellation || this.safeContract.isCall(execTransaction.data);
+    return isCancellation || this.safeDecoder.isCall(execTransaction.data);
   }
 
   private async isOfficialMastercopy(args: {
@@ -194,7 +202,7 @@ export class LimitAddressesMapper {
     });
 
     if (!isEveryValid) {
-      throw Error('Invalid MultiSend transactions');
+      throw new InvalidMultiSendError();
     }
 
     const firstRecipient = transactions[0].to;
@@ -203,8 +211,9 @@ export class LimitAddressesMapper {
       return transaction.to === firstRecipient;
     });
 
+    // Transactions calls execTransaction on varying addresses
     if (!isSameRecipient) {
-      throw Error('MultiSend transactions target different addresses');
+      throw new InvalidMultiSendError();
     }
 
     return firstRecipient;
@@ -253,6 +262,7 @@ export class LimitAddressesMapper {
     });
 
     if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
+      // Should never happen but check is needed to satisfy TypeScript
       throw Error('Not a createProxyWithNonce call');
     }
 
@@ -262,6 +272,7 @@ export class LimitAddressesMapper {
     });
 
     if (decodedSafe.functionName !== 'setup') {
+      // No custom error thrown, as caller subsequently throws InvalidTransferError
       throw Error('Not a setup call');
     }
 

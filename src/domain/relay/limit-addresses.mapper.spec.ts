@@ -1,4 +1,4 @@
-import { erc20TransferEncoder } from '@/domain/contracts/contracts/__tests__/erc20-encoder.builder';
+import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -18,9 +18,8 @@ import {
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/proxy-factory-encoder.builder';
-import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
+import { Erc20Decoder } from '@/domain/relay/contracts/erc-20-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
-import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -43,16 +42,14 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const safeContractHelper = new SafeContractHelper();
-    const erc20ContractHelper = new Erc20ContractHelper();
+    const erc20Decoder = new Erc20Decoder();
     const safeDecoder = new SafeDecoder();
     const multiSendDecoder = new MultiSendDecoder();
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
 
     target = new LimitAddressesMapper(
       mockSafeRepository,
-      safeContractHelper,
-      erc20ContractHelper,
+      erc20Decoder,
       safeDecoder,
       multiSendDecoder,
       proxyFactoryDecoder,
@@ -315,7 +312,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+      );
     });
 
     // transfer (execTransaction)
@@ -335,7 +334,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+      );
     });
 
     // Unofficial mastercopy
@@ -357,7 +358,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('execTransaction via unofficial Safe mastercopy');
+      ).rejects.toThrow(
+        'Safe attempting to relay is not official. Only official Safe singletons are supported.',
+      );
     });
   });
 
@@ -467,7 +470,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('Invalid MultiSend transactions');
+      ).rejects.toThrow(
+        'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+      );
     });
 
     it('should throw when the mastercopy is not official', async () => {
@@ -502,7 +507,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('multiSend via unofficial Safe mastercopy');
+      ).rejects.toThrow(
+        'Safe attempting to relay is not official. Only official Safe singletons are supported.',
+      );
     });
 
     it('should throw when the batch is to varying parties', async () => {
@@ -537,7 +544,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: getAddress(to),
         }),
-      ).rejects.toThrow('MultiSend transactions target different addresses');
+      ).rejects.toThrow(
+        'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+      );
     });
 
     it('should throw for unofficial MultiSend deployments', async () => {
@@ -571,7 +580,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to,
         }),
-      ).rejects.toThrow('multiSend via unofficial MultiSend contract');
+      ).rejects.toThrow(
+        'MultiSend contract is not official. Only official MultiSend contracts are supported.',
+      );
     });
   });
 
@@ -651,7 +662,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+      );
     });
   });
 
@@ -670,7 +683,9 @@ describe('LimitAddressesMapper', () => {
           data,
           to: safeAddress,
         }),
-      ).rejects.toThrow('Cannot get limit addresses – Invalid transfer');
+      ).rejects.toThrow(
+        'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+      );
     });
 
     it('should throw if the to address is not valid', async () => {
