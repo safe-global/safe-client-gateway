@@ -50,12 +50,12 @@ describe('MultiSendDecoder', () => {
   describe('isMultiSend', () => {
     it('returns true if data is a multiSend call', () => {
       const data = multiSendEncoder().encode();
-      expect(target.isMultiSend(data)).toBe(true);
+      expect(target.helpers.isMultiSend(data)).toBe(true);
     });
 
     it('returns false if data is not a multiSend call', () => {
       const data = addOwnerWithThresholdEncoder().encode();
-      expect(target.isMultiSend(data)).toBe(false);
+      expect(target.helpers.isMultiSend(data)).toBe(false);
     });
   });
 });
