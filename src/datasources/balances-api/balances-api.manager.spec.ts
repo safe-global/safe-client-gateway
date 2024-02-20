@@ -47,7 +47,7 @@ const coingeckoApi = {
   getNativeCoinPrice: jest.fn(),
   getTokenPrices: jest.fn(),
   getFiatCodes: jest.fn(),
-} as IPricesApi;
+} as ICoingeckoApi;
 
 const coingeckoApiMock = jest.mocked(coingeckoApi);
 

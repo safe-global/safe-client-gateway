@@ -8,7 +8,6 @@ import {
 } from '@/datasources/balances-api/zerion-balances-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
-import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 
 @Module({
   imports: [CacheFirstDataSourceModule],

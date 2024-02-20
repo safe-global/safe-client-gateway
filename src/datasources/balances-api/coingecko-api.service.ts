@@ -19,7 +19,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { asError } from '@/logging/utils';
 
 @Injectable()
-export class CoingeckoApi implements IPricesApi {
+export class CoingeckoApi implements ICoingeckoApi {
   /**
    *  Coingecko API Key header name. To be included in http requests when using a paid subscription.
    */
