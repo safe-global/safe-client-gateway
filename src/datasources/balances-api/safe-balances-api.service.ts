@@ -8,11 +8,7 @@ import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-<<<<<<< HEAD
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
-=======
-import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
->>>>>>> 7ed58c6c (Move PricesApi to CoingeckoApi)
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -40,7 +36,6 @@ export class SafeBalancesApi implements IBalancesApi {
       );
   }
 
-  // TODO: refactor?
   async getBalances(args: {
     safeAddress: string;
     fiatCode: string;
