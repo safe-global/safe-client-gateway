@@ -90,7 +90,7 @@ describe('CoingeckoAPI', () => {
 
     expect(fiatCodes).toStrictEqual(['USD', 'EUR', 'ETH']);
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-      cacheDir: new CacheDir('fiat_codes', ''),
+      cacheDir: new CacheDir('safe_fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {
         headers: {
@@ -117,7 +117,7 @@ describe('CoingeckoAPI', () => {
 
     expect(fiatCodes).toStrictEqual(['USD', 'EUR', 'ETH']);
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-      cacheDir: new CacheDir('fiat_codes', ''),
+      cacheDir: new CacheDir('safe_fiat_codes', ''),
       url: `${coingeckoBaseUri}/simple/supported_vs_currencies`,
       networkRequest: {},
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
