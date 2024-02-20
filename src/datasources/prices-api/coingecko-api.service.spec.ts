@@ -130,7 +130,7 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
-    const price = faker.number.float({ min: 0.01, precision: 0.01 });
+    const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
@@ -178,7 +178,7 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
-    const price = faker.number.float({ min: 0.01, precision: 0.01 });
+    const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [tokenAddress]: { [fiatCode]: price },
     };
@@ -229,11 +229,11 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
     const firstTokenAddress = faker.finance.ethereumAddress();
-    const firstPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const firstPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const secondTokenAddress = faker.finance.ethereumAddress();
-    const secondPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
-    const thirdPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const thirdPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [firstTokenAddress]: { [fiatCode]: firstPrice },
       [secondTokenAddress]: { [fiatCode]: secondPrice },
@@ -326,11 +326,11 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
     const firstTokenAddress = faker.finance.ethereumAddress();
-    const firstPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const firstPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const secondTokenAddress = faker.finance.ethereumAddress();
-    const secondPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
-    const thirdPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const thirdPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
       [firstTokenAddress]: { [fiatCode]: firstPrice },
       [thirdTokenAddress]: { [fiatCode]: thirdPrice },
@@ -421,9 +421,9 @@ describe('CoingeckoAPI', () => {
     const chainName = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
     const firstTokenAddress = faker.finance.ethereumAddress();
-    const firstPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const firstPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const secondTokenAddress = faker.finance.ethereumAddress();
-    const secondPrice = faker.number.float({ min: 0.01, precision: 0.01 });
+    const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
     const coingeckoPrice: AssetPrice = {
       [firstTokenAddress]: { [fiatCode]: firstPrice },
