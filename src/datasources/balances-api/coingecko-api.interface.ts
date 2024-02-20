@@ -1,4 +1,4 @@
-import { AssetPrice } from './entities/asset-price.entity';
+import { CoingeckoAssetPrice } from './entities/coingecko-asset-price.entity';
 
 export const ICoingeckoApi = Symbol('ICoingeckoApi');
 
@@ -12,7 +12,7 @@ export interface ICoingeckoApi {
     chainId: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]>;
+  }): Promise<CoingeckoAssetPrice[]>;
 
   getFiatCodes(): Promise<string[]>;
 }

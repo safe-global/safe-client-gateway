@@ -1,3 +1,3 @@
-export interface AssetPrice {
+export interface CoingeckoAssetPrice {
   [assetName: string]: Record<string, number | null>;
 }

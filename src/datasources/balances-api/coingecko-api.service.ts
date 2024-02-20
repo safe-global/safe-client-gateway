@@ -1,7 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+<<<<<<< HEAD
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+=======
+import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
+import { CoingeckoAssetPrice } from '@/datasources/balances-api/entities/coingecko-asset-price.entity';
+>>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -83,7 +88,11 @@ export class CoingeckoApi implements ICoingeckoApi {
         fiatCode: lowerCaseFiatCode,
       });
       const url = `${this.baseUrl}/simple/price`;
+<<<<<<< HEAD
       const result = await this.dataSource.get<AssetPrice>({
+=======
+      const result: CoingeckoAssetPrice = await this.dataSource.get({
+>>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
         cacheDir,
         url,
         networkRequest: {
@@ -118,13 +127,13 @@ export class CoingeckoApi implements ICoingeckoApi {
    * @param args.chainName Coingecko's name for the chain (see configuration)
    * @param args.tokenAddresses Array of token addresses which prices are being retrieved
    * @param args.fiatCode
-   * @returns Array of {@link AssetPrice}
+   * @returns Array of {@link CoingeckoAssetPrice}
    */
   async getTokenPrices(args: {
     chainId: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
+  }): Promise<CoingeckoAssetPrice[]> {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
@@ -200,8 +209,8 @@ export class CoingeckoApi implements ICoingeckoApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
-    const result: AssetPrice[] = [];
+  }): Promise<CoingeckoAssetPrice[]> {
+    const result: CoingeckoAssetPrice[] = [];
     for (const tokenAddress of args.tokenAddresses) {
       const cacheDir = CacheRouter.getTokenPriceCacheDir({
         ...args,
@@ -227,7 +236,7 @@ export class CoingeckoApi implements ICoingeckoApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
+  }): Promise<CoingeckoAssetPrice[]> {
     const prices = await this._requestPricesFromNetwork({
       ...args,
       tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.maxBatchSize),
@@ -236,7 +245,7 @@ export class CoingeckoApi implements ICoingeckoApi {
     return Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
         const validPrice = prices[tokenAddress]?.[args.fiatCode];
-        const price: AssetPrice = validPrice
+        const price: CoingeckoAssetPrice = validPrice
           ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
           : { [tokenAddress]: { [args.fiatCode]: null } };
         await this.cacheService.set(
@@ -258,10 +267,10 @@ export class CoingeckoApi implements ICoingeckoApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice> {
+  }): Promise<CoingeckoAssetPrice> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<AssetPrice>(url, {
+      const { data } = await this.networkService.get<CoingeckoAssetPrice>(url, {
         params: {
           vs_currencies: args.fiatCode,
           contract_addresses: args.tokenAddresses.join(','),
