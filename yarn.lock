@@ -1194,16 +1194,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cli@npm:^10.3.1":
-  version: 10.3.1
-  resolution: "@nestjs/cli@npm:10.3.1"
+"@nestjs/cli@npm:^10.3.2":
+  version: 10.3.2
+  resolution: "@nestjs/cli@npm:10.3.2"
   dependencies:
     "@angular-devkit/core": "npm:17.1.2"
     "@angular-devkit/schematics": "npm:17.1.2"
     "@angular-devkit/schematics-cli": "npm:17.1.2"
     "@nestjs/schematics": "npm:^10.0.1"
     chalk: "npm:4.1.2"
-    chokidar: "npm:3.5.3"
+    chokidar: "npm:3.6.0"
     cli-table3: "npm:0.6.3"
     commander: "npm:4.1.1"
     fork-ts-checker-webpack-plugin: "npm:9.0.2"
@@ -1230,7 +1230,7 @@ __metadata:
       optional: true
   bin:
     nest: bin/nest.js
-  checksum: bf9b25c6b7eccdf1ec313e7a176ef4861657378ce8b00ea6a108532e3be9100925f52da8f0f1c2b0bc91f02d7099940f7877c02ec7b39f412263912314e92274
+  checksum: fef0719e22fd9ed8f68f792aac10d75b9a5420395ecf9cc8614b1a8631f92d86c519ac2e798250a405ac13bdcd4747a9ef93ea294adc1f29f3e26f54e2d3fc0e
   languageName: node
   linkType: hard
 
@@ -3059,7 +3059,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:3.5.3, chokidar@npm:^3.5.3":
+"chokidar@npm:3.6.0":
+  version: 3.6.0
+  resolution: "chokidar@npm:3.6.0"
+  dependencies:
+    anymatch: "npm:~3.1.2"
+    braces: "npm:~3.0.2"
+    fsevents: "npm:~2.3.2"
+    glob-parent: "npm:~5.1.2"
+    is-binary-path: "npm:~2.1.0"
+    is-glob: "npm:~4.0.1"
+    normalize-path: "npm:~3.0.0"
+    readdirp: "npm:~3.6.0"
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  checksum: c327fb07704443f8d15f7b4a7ce93b2f0bc0e6cea07ec28a7570aa22cd51fcf0379df589403976ea956c369f25aa82d84561947e227cd925902e1751371658df
+  languageName: node
+  linkType: hard
+
+"chokidar@npm:^3.5.3":
   version: 3.5.3
   resolution: "chokidar@npm:3.5.3"
   dependencies:
@@ -7119,7 +7138,7 @@ __metadata:
   resolution: "safe-client-gateway@workspace:."
   dependencies:
     "@faker-js/faker": "npm:^8.4.1"
-    "@nestjs/cli": "npm:^10.3.1"
+    "@nestjs/cli": "npm:^10.3.2"
     "@nestjs/common": "npm:^10.3.3"
     "@nestjs/config": "npm:^3.1.1"
     "@nestjs/core": "npm:^10.3.3"
