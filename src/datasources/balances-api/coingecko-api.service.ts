@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
-import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
