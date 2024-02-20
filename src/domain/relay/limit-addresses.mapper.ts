@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
-import { Erc20ContractHelper } from '@/domain/relay/contracts/erc20-contract.helper';
-import { SafeContractHelper } from '@/domain/relay/contracts/safe-contract.helper';
+import { Erc20Decoder } from '@/domain/relay/contracts/erc-20-decoder.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
@@ -20,14 +19,13 @@ import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.e
 
 @Injectable()
 export class LimitAddressesMapper {
-  // TODO: Abstract with that from SafeContractHelper
+  // TODO: Support all versions (decoders currently use 1.3.0 ABIs though interface is generic)
   private static SUPPORTED_SAFE_VERSION = '1.3.0';
 
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    private readonly safeContract: SafeContractHelper,
-    private readonly erc20Contract: Erc20ContractHelper,
+    private readonly erc20Decoder: Erc20Decoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
@@ -113,22 +111,28 @@ export class LimitAddressesMapper {
     let execTransaction: { data: Hex; to: Hex; value: bigint };
     // If transaction is an execTransaction
     try {
-      execTransaction = this.safeContract.decode(
-        SafeContractHelper.EXEC_TRANSACTION,
-        args.data,
-      );
+      const safeDecodedData = this.safeDecoder.decodeFunctionData({
+        data: args.data,
+      });
+      if (safeDecodedData.functionName !== 'execTransaction') {
+        return false;
+      }
+      const [to, value, data] = safeDecodedData.args;
+      execTransaction = { to, value, data };
     } catch (e) {
       return false;
     }
 
     // If data of execTransaction is an ERC20 transfer
     try {
-      const erc20DecodedData = this.erc20Contract.decode(
-        Erc20ContractHelper.TRANSFER,
-        execTransaction.data,
-      );
+      const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
+        data: execTransaction.data,
+      });
       // If the ERC20 transfer targets 'self' (the Safe), we consider it to be invalid
-      return erc20DecodedData.to !== args.to;
+      return (
+        erc20DecodedData.functionName === 'transfer' &&
+        erc20DecodedData.args[0] !== args.to
+      );
     } catch {
       // swallow exception if data is not an ERC20 transfer
     }
@@ -145,7 +149,7 @@ export class LimitAddressesMapper {
     }
 
     const isCancellation = execTransaction.data === '0x';
-    return isCancellation || this.safeContract.isCall(execTransaction.data);
+    return isCancellation || this.safeDecoder.isCall(execTransaction.data);
   }
 
   private async isOfficialMastercopy(args: {
