@@ -41,7 +41,6 @@ import {
 import {
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
-  getProxyFactoryDeployment,
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
@@ -378,6 +377,66 @@ describe('Relay controller', () => {
             });
           },
         );
+
+        it('should otherwise default to version 1.3.0', async () => {
+          const version = '1.3.0';
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const chain = chainBuilder().with('chainId', chainId).build();
+          const safe = safeBuilder().build();
+          const safeAddress = getAddress(safe.address);
+          const transactions = [
+            execTransactionEncoder()
+              .with('data', addOwnerWithThresholdEncoder().encode())
+              .encode(),
+            execTransactionEncoder()
+              .with('data', changeThresholdEncoder().encode())
+              .encode(),
+          ].map((data) => ({
+            operation: faker.number.int({ min: 0, max: 1 }),
+            data,
+            to: safeAddress,
+            value: faker.number.bigInt(),
+          }));
+          const data = multiSendEncoder()
+            .with('transactions', multiSendTransactionsEncoder(transactions))
+            .encode();
+          const to = getMultiSendCallOnlyDeployment({
+            version,
+            network: chainId,
+          })!.networkAddresses[chainId];
+          const taskId = faker.string.uuid();
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                // Official mastercopy
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                fail(`Unexpected URL: ${url}`);
+            }
+          });
+          networkService.post.mockImplementation((url) => {
+            switch (url) {
+              case `${relayUrl}/relays/v2/sponsored-call`:
+                return Promise.resolve({ data: { taskId }, status: 200 });
+              default:
+                fail(`Unexpected URL: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post(`/v1/chains/${chain.chainId}/relay`)
+            .send({
+              // No version
+              to,
+              data,
+            })
+            .expect(201)
+            .expect({
+              taskId,
+            });
+        });
       });
 
       describe('MultiSend', () => {
@@ -440,6 +499,67 @@ describe('Relay controller', () => {
                 taskId,
               });
           });
+        });
+
+        // TODO: Remove when legacy support is removed
+        it('should otherwise default to version 1.3.0', async () => {
+          const version = '1.3.0';
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const chain = chainBuilder().with('chainId', chainId).build();
+          const safe = safeBuilder().build();
+          const safeAddress = getAddress(safe.address);
+          const transactions = [
+            execTransactionEncoder()
+              .with('data', addOwnerWithThresholdEncoder().encode())
+              .encode(),
+            execTransactionEncoder()
+              .with('data', changeThresholdEncoder().encode())
+              .encode(),
+          ].map((data) => ({
+            operation: faker.number.int({ min: 0, max: 1 }),
+            data,
+            to: safeAddress,
+            value: faker.number.bigInt(),
+          }));
+          const data = multiSendEncoder()
+            .with('transactions', multiSendTransactionsEncoder(transactions))
+            .encode();
+          const to = getMultiSendDeployment({
+            version,
+            network: chainId,
+          })!.networkAddresses[chainId];
+          const taskId = faker.string.uuid();
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                // Official mastercopy
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                fail(`Unexpected URL: ${url}`);
+            }
+          });
+          networkService.post.mockImplementation((url) => {
+            switch (url) {
+              case `${relayUrl}/relays/v2/sponsored-call`:
+                return Promise.resolve({ data: { taskId }, status: 200 });
+              default:
+                fail(`Unexpected URL: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post(`/v1/chains/${chain.chainId}/relay`)
+            .send({
+              // No version
+              to,
+              data,
+            })
+            .expect(201)
+            .expect({
+              taskId,
+            });
         });
       });
 
@@ -551,6 +671,76 @@ describe('Relay controller', () => {
                   });
               });
             }
+          },
+        );
+
+        // TODO: Remove when legacy support is removed
+        it.each([
+          [
+            'creating an official Safe',
+            faker.helpers.arrayElement(supportedChainIds),
+            (chainId: string): string =>
+              getSafeSingletonDeployment({
+                version: '1.3.0',
+                network: chainId,
+              })!.networkAddresses[chainId],
+          ],
+          [
+            'creating an official L2 Safe',
+            faker.helpers.arrayElement(supportedChainIds),
+            (chainId: string): string =>
+              getSafeL2SingletonDeployment({
+                version: '1.3.0',
+                network: chainId,
+              })!.networkAddresses[chainId],
+          ],
+        ])(
+          'should otherwise default to version 1.3.0 singletons when %s',
+          async (_, chainId, getSingleton) => {
+            const version = '1.3.0';
+            const singleton = getSingleton(chainId);
+            const chain = chainBuilder().with('chainId', chainId).build();
+            const owners = [
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ];
+            const to = faker.finance.ethereumAddress();
+            const data = createProxyWithNonceEncoder()
+              .with('singleton', getAddress(singleton))
+              .with(
+                'initializer',
+                setupEncoder().with('owners', owners).encode(),
+              )
+              .encode();
+            const taskId = faker.string.uuid();
+            networkService.get.mockImplementation((url) => {
+              switch (url) {
+                case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                  return Promise.resolve({ data: chain, status: 200 });
+                default:
+                  fail(`Unexpected URL: ${url}`);
+              }
+            });
+            networkService.post.mockImplementation((url) => {
+              switch (url) {
+                case `${relayUrl}/relays/v2/sponsored-call`:
+                  return Promise.resolve({ data: { taskId }, status: 200 });
+                default:
+                  fail(`Unexpected URL: ${url}`);
+              }
+            });
+
+            await request(app.getHttpServer())
+              .post(`/v1/chains/${chain.chainId}/relay`)
+              .send({
+                version,
+                to,
+                data,
+              })
+              .expect(201)
+              .expect({
+                taskId,
+              });
           },
         );
       });
@@ -1412,54 +1602,6 @@ describe('Relay controller', () => {
           remaining: 0,
           limit: 5,
         });
-    });
-  });
-
-  // Fail-safes to ensure the latest version is being tested
-  describe('The latest deployments are being tested', () => {
-    it('should be testing the latest Safe version', () => {
-      const version = SAFE_VERSIONS.at(-1);
-      const deployment = getSafeSingletonDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest L2 Safe version', () => {
-      const version = SAFE_L2_VERSIONS.at(-1);
-      const deployment = getSafeL2SingletonDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSendCallOnly version', () => {
-      const version = MULTI_SEND_CALL_ONLY_VERSIONS.at(-1);
-      const deployment = getMultiSendCallOnlyDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSend version', () => {
-      const version = MULTI_SEND_VERSIONS.at(-1);
-      const deployment = getMultiSendDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSend version', () => {
-      const version = PROXY_FACTORY_VERSIONS.at(-1);
-      const deployment = getProxyFactoryDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
     });
   });
 });

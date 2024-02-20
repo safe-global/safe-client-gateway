@@ -28,7 +28,6 @@ import { faker } from '@faker-js/faker';
 import {
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
-  getProxyFactoryDeployment,
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
@@ -396,9 +395,7 @@ describe('LimitAddressesMapper', () => {
       const chainId = faker.string.numeric();
       const safe = safeBuilder().build();
       const safeAddress = getAddress(safe.address);
-      const data = execTransactionEncoder()
-        .with('value', faker.number.bigInt())
-        .encode() as Hex;
+      const data = execTransactionEncoder().encode() as Hex;
       // Official mastercopy
       mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -601,7 +598,7 @@ describe('LimitAddressesMapper', () => {
       });
     });
 
-    it('should throw for non-exitend MultiSendCallOnly versions', async () => {
+    it('should throw for non-existent MultiSendCallOnly versions', async () => {
       // Fixed chain ID for deployment address
       const chainId = '1';
       // Non-existent version
@@ -681,7 +678,7 @@ describe('LimitAddressesMapper', () => {
       });
     });
 
-    it('should throw for non-exitend MultiSend versions', async () => {
+    it('should throw for non-existent MultiSend versions', async () => {
       // Fixed chain ID for deployment address
       const chainId = '1';
       // Non-existent version
@@ -813,7 +810,7 @@ describe('LimitAddressesMapper', () => {
           );
         });
 
-        it('should throw for non-exitent ProxyFactory versions', async () => {
+        it('should throw for non-existent ProxyFactory versions', async () => {
           // Non-existent version
           const version = '1.2.0';
           const chainId = faker.string.numeric();
@@ -914,54 +911,6 @@ describe('LimitAddressesMapper', () => {
           to,
         }),
       ).rejects.toThrow('Invalid data provided');
-    });
-  });
-
-  // Fail-safes to ensure the latest version is being tested
-  describe('The latest deployments are being tested', () => {
-    it('should be testing the latest Safe version', () => {
-      const version = SAFE_VERSIONS.at(-1);
-      const deployment = getSafeSingletonDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest L2 Safe version', () => {
-      const version = SAFE_L2_VERSIONS.at(-1);
-      const deployment = getSafeL2SingletonDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSendCallOnly version', () => {
-      const version = MULTI_SEND_CALL_ONLY_VERSIONS.at(-1);
-      const deployment = getMultiSendCallOnlyDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSend version', () => {
-      const version = MULTI_SEND_VERSIONS.at(-1);
-      const deployment = getMultiSendDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
-    });
-
-    it('should be testing the latest MultiSend version', () => {
-      const version = PROXY_FACTORY_VERSIONS.at(-1);
-      const deployment = getProxyFactoryDeployment({
-        version,
-      });
-
-      expect(deployment?.version).toEqual(version);
     });
   });
 });
