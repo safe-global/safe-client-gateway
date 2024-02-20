@@ -19,7 +19,6 @@ export class BalancesService {
     private readonly chainsRepository: IChainsRepository,
   ) {}
 
-  // TODO: move logic to repository
   async getBalances(args: {
     chainId: string;
     safeAddress: string;

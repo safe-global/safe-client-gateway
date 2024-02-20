@@ -35,7 +35,6 @@ export class SafeBalancesApi implements IBalancesApi {
       );
   }
 
-  // TODO: refactor?
   async getBalances(args: {
     safeAddress: string;
     fiatCode: string;
@@ -48,7 +47,7 @@ export class SafeBalancesApi implements IBalancesApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
-      const balances: Balance[] = await this.dataSource.get({
+      const data: Balance[] = await this.dataSource.get({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -61,40 +60,7 @@ export class SafeBalancesApi implements IBalancesApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
 
-      const tokenAddresses = balances
-        .map((balance) => balance.tokenAddress)
-        .filter((address): address is string => address !== null);
-
-      const prices = tokenAddresses.length
-        ? await this.coingeckoApi.getTokenPrices({
-            chainId: this.chainId,
-            fiatCode: args.fiatCode,
-            tokenAddresses,
-          })
-        : [];
-
-      return await Promise.all(
-        balances.map(async (balance) => {
-          const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
-          let price: number | null;
-          if (tokenAddress === null) {
-            price = await this.coingeckoApi.getNativeCoinPrice({
-              chainId: this.chainId,
-              fiatCode: args.fiatCode,
-            });
-          } else {
-            const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
-            price =
-              found?.[tokenAddress]?.[args.fiatCode.toLowerCase()] ?? null;
-          }
-          const fiatBalance = await this._getFiatBalance(price, balance);
-          return {
-            ...balance,
-            fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
-            fiatConversion: price ? getNumberString(price) : null,
-          };
-        }),
-      );
+      return this._mapBalances(data, args.fiatCode);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -150,6 +116,43 @@ export class SafeBalancesApi implements IBalancesApi {
 
   async getFiatCodes(): Promise<string[]> {
     return this.coingeckoApi.getFiatCodes();
+  }
+
+  private async _mapBalances(
+    balances: Balance[],
+    fiatCode: string,
+  ): Promise<Balance[]> {
+    const tokenAddresses = balances
+      .map((balance) => balance.tokenAddress)
+      .filter((address): address is string => address !== null);
+
+    const prices = await this.coingeckoApi.getTokenPrices({
+      chainId: this.chainId,
+      fiatCode,
+      tokenAddresses,
+    });
+
+    return await Promise.all(
+      balances.map(async (balance) => {
+        const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
+        let price: number | null;
+        if (tokenAddress === null) {
+          price = await this.coingeckoApi.getNativeCoinPrice({
+            chainId: this.chainId,
+            fiatCode,
+          });
+        } else {
+          const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
+          price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
+        }
+        const fiatBalance = await this._getFiatBalance(price, balance);
+        return {
+          ...balance,
+          fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
+          fiatConversion: price ? getNumberString(price) : null,
+        };
+      }),
+    );
   }
 
   private _getFiatBalance(
