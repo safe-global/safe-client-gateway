@@ -185,6 +185,7 @@ export default () => ({
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     apiKey: {
       100: process.env.GELATO_API_KEY_GNOSIS_CHAIN,
+      11155111: process.env.GELATO_API_KEY_SEPOLIA,
     },
   },
   safeConfig: {
