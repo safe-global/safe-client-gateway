@@ -45,7 +45,6 @@ import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/contracts/__tests__/multi-send-encoder.builder';
-import { UrlGeneratorHelper } from '@/domain/alerts/urls/url-generator.helper';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { EmailAddress } from '@/domain/account/entities/account.entity';
 import { subscriptionBuilder } from '@/domain/account/entities/__tests__/subscription.builder';
@@ -76,7 +75,6 @@ describe('Alerts (Unit)', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
-  let urlGenerator: UrlGeneratorHelper;
 
   const accountRecoverySubscription = subscriptionBuilder()
     .with('key', 'account_recovery')
@@ -87,6 +85,7 @@ describe('Alerts (Unit)', () => {
     let signingKey: string;
     let networkService: jest.MockedObjectDeep<INetworkService>;
     let safeConfigUrl: string | undefined;
+    let webAppBaseUri: string | undefined;
 
     beforeEach(async () => {
       jest.resetAllMocks();
@@ -119,10 +118,9 @@ describe('Alerts (Unit)', () => {
       safeConfigUrl = configurationService.get('safeConfig.baseUri');
       signingKey = configurationService.getOrThrow('alerts.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
-      urlGenerator = moduleFixture.get(UrlGeneratorHelper);
       accountDataSource = moduleFixture.get(IAccountDataSource);
       networkService = moduleFixture.get(NetworkService);
-
+      webAppBaseUri = configurationService.getOrThrow('safeWebApp.baseUri');
       app = await new TestAppProvider().provide(moduleFixture);
       await app.init();
     });
@@ -227,20 +225,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -337,20 +333,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [owners[0], owners[2]].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -446,20 +440,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [owners[0], newOwner, owners[2]].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: safe.threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -545,20 +537,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: safe.owners.map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -675,10 +665,7 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [
               owners[1],
               owners[2],
@@ -686,13 +673,14 @@ describe('Alerts (Unit)', () => {
             ].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: removeOwner.build().threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -777,20 +765,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -800,20 +786,18 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
             owners: [...safe.owners, owner].map((address) => {
               return {
                 address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
+                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                  '{{address}}',
                   address,
-                }),
+                ),
               };
             }),
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
@@ -896,32 +880,41 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+        const expectedOwners = [...safe.owners, owner].map((address) => {
+          return {
+            address,
+            explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+              '{{address}}',
+              address,
+            ),
+          };
+        });
+        expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+        expect(emailApi.createMessage).toHaveBeenCalledWith({
           subject: 'Recovery attempt',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
-            owners: [...safe.owners, owner].map((address) => {
-              return {
-                address,
-                explorerUrl: urlGenerator.addressToExplorerUrl({
-                  chain,
-                  address,
-                }),
-              };
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            owners: expectedOwners,
             threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.recoveryTx',
           ),
-          to: expectedTargetEmailAddresses,
+          to: [verifiedAccounts[0].emailAddress.value],
+        });
+        expect(emailApi.createMessage).toHaveBeenCalledWith({
+          subject: 'Recovery attempt',
+          substitutions: {
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            owners: expectedOwners,
+            threshold: threshold.toString(),
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
+          },
+          template: configurationService.getOrThrow(
+            'email.templates.recoveryTx',
+          ),
+          to: [verifiedAccounts[1].emailAddress.value],
         });
       });
     });
@@ -1002,10 +995,8 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1088,10 +1079,8 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1101,10 +1090,8 @@ describe('Alerts (Unit)', () => {
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
           subject: 'Malicious transaction',
           substitutions: {
-            webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-              chain,
-              safeAddress: safe.address,
-            }),
+            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
             'email.templates.unknownRecoveryTx',
@@ -1219,10 +1206,8 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1335,10 +1320,8 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1348,10 +1331,8 @@ describe('Alerts (Unit)', () => {
       expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
         subject: 'Malicious transaction',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow(
           'email.templates.unknownRecoveryTx',
@@ -1435,30 +1416,37 @@ describe('Alerts (Unit)', () => {
         .expect(202)
         .expect({});
 
-      const expectedTargetEmailAddresses = verifiedAccounts.map(
-        ({ emailAddress }) => emailAddress.value,
-      );
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-      expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+      const expectedOwners = [...safe.owners, owner].map((address) => {
+        return {
+          address,
+          explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+            '{{address}}',
+            address,
+          ),
+        };
+      });
+      expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+      expect(emailApi.createMessage).toHaveBeenCalledWith({
         subject: 'Recovery attempt',
         substitutions: {
-          webAppUrl: urlGenerator.addressToSafeWebAppUrl({
-            chain,
-            safeAddress: safe.address,
-          }),
-          owners: [...safe.owners, owner].map((address) => {
-            return {
-              address,
-              explorerUrl: urlGenerator.addressToExplorerUrl({
-                chain,
-                address,
-              }),
-            };
-          }),
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          owners: expectedOwners,
           threshold: threshold.toString(),
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
         },
         template: configurationService.getOrThrow('email.templates.recoveryTx'),
-        to: expectedTargetEmailAddresses,
+        to: [verifiedAccounts[0].emailAddress.value],
+      });
+      expect(emailApi.createMessage).toHaveBeenCalledWith({
+        subject: 'Recovery attempt',
+        substitutions: {
+          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+          owners: expectedOwners,
+          threshold: threshold.toString(),
+          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
+        },
+        template: configurationService.getOrThrow('email.templates.recoveryTx'),
+        to: [verifiedAccounts[1].emailAddress.value],
       });
     });
 
