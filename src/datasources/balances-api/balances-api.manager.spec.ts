@@ -43,13 +43,13 @@ const zerionBalancesApi = {
 
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
 
-const pricesApi = {
+const coingeckoApi = {
   getNativeCoinPrice: jest.fn(),
   getTokenPrices: jest.fn(),
   getFiatCodes: jest.fn(),
 } as ICoingeckoApi;
 
-const pricesApiMock = jest.mocked(pricesApi);
+const coingeckoApiMock = jest.mocked(coingeckoApi);
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -68,7 +68,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
-        pricesApiMock,
+        coingeckoApiMock,
       );
 
       const result = await manager.getBalancesApi('2');
@@ -115,7 +115,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
-        pricesApiMock,
+        coingeckoApiMock,
       );
 
       const safeBalancesApi = await balancesApiManager.getBalancesApi(
@@ -154,7 +154,7 @@ describe('Balances API Manager Tests', () => {
         'GBP',
         'ETH',
       ]);
-      pricesApiMock.getFiatCodes.mockResolvedValue(['GBP']);
+      coingeckoApiMock.getFiatCodes.mockResolvedValue(['GBP']);
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -162,7 +162,7 @@ describe('Balances API Manager Tests', () => {
         cacheService,
         httpErrorFactory,
         zerionBalancesApiMock,
-        pricesApiMock,
+        coingeckoApiMock,
       );
 
       const result = await manager.getFiatCodes();
