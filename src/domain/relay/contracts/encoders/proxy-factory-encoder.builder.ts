@@ -3,7 +3,7 @@ import { encodeFunctionData, getAddress, Hex } from 'viem';
 import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
-import { setupEncoder } from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
+import { setupEncoder } from '@/domain/contracts/encoders/safe-encoder.builder';
 
 // createProxyWithNonce
 

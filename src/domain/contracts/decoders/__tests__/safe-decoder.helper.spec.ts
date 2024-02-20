@@ -1,4 +1,4 @@
-import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -6,7 +6,7 @@ import {
   removeOwnerEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
+} from '@/domain/contracts/encoders/safe-encoder.builder';
 
 describe('SafeDecoder', () => {
   let target: SafeDecoder;
