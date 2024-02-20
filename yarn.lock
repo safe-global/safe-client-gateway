@@ -1361,9 +1361,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/serve-static@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "@nestjs/serve-static@npm:4.0.0"
+"@nestjs/serve-static@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@nestjs/serve-static@npm:4.0.1"
   dependencies:
     path-to-regexp: "npm:0.2.5"
   peerDependencies:
@@ -1379,7 +1379,7 @@ __metadata:
       optional: true
     fastify:
       optional: true
-  checksum: f9dde33701d05fe0309ecc4912c00b6ed81945dbeb17af13562b33406656ae6574b14397523e21c90b78292b073a510426409c08e5f6a2b88b46d73dc51faa9c
+  checksum: 7d2ed95ea67d6efbc96ff4ec3b1ace8be2846cb94b71ce59faf9183904c068649e1a356f79cf35e2769dadb261ef3a97a9d6f2c4e8aa96ece65e09ccecf03263
   languageName: node
   linkType: hard
 
@@ -7125,7 +7125,7 @@ __metadata:
     "@nestjs/core": "npm:^10.3.3"
     "@nestjs/platform-express": "npm:^10.3.3"
     "@nestjs/schematics": "npm:^10.1.0"
-    "@nestjs/serve-static": "npm:^4.0.0"
+    "@nestjs/serve-static": "npm:^4.0.1"
     "@nestjs/swagger": "npm:^7.2.0"
     "@nestjs/testing": "npm:^10.3.3"
     "@safe-global/safe-deployments": "npm:^1.32.0"
