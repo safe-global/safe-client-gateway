@@ -27,10 +27,12 @@ import { faker } from '@faker-js/faker';
 import {
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
+  getProxyFactoryDeployment,
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
 import { Hex, getAddress } from 'viem';
+import configuration from '@/config/entities/configuration';
 
 const SAFE_VERSIONS = ['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1'];
 const SAFE_L2_VERSIONS = ['1.3.0', '1.4.1'];
@@ -44,6 +46,7 @@ const mockSafeRepository = jest.mocked({
 
 describe('LimitAddressesMapper', () => {
   let target: LimitAddressesMapper;
+  const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -411,8 +414,7 @@ describe('LimitAddressesMapper', () => {
   describe('MultiSendCallOnly', () => {
     describe.each(MULTI_SEND_CALL_ONLY_VERSIONS)('v%s multiSend', (version) => {
       it('should return the limit address when entire batch is valid', async () => {
-        // Fixed chain ID for deployment address
-        const chainId = '1';
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const transactions = [
@@ -448,8 +450,7 @@ describe('LimitAddressesMapper', () => {
       });
 
       it('should throw when the batch has an invalid transaction', async () => {
-        // Fixed chain ID for deployment address
-        const chainId = '1';
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
         const safe = safeBuilder().build();
         const transactions = [
           execTransactionEncoder().encode(),
@@ -484,8 +485,7 @@ describe('LimitAddressesMapper', () => {
       });
 
       it('should throw when the mastercopy is not official', async () => {
-        // Fixed chain ID for deployment address
-        const chainId = '1';
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
         const safe = safeBuilder().build();
         const transactions = [
           execTransactionEncoder().encode(),
@@ -596,8 +596,7 @@ describe('LimitAddressesMapper', () => {
     });
 
     it('should throw for non-existent MultiSendCallOnly versions', async () => {
-      // Fixed chain ID for deployment address
-      const chainId = '1';
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
       // Non-existent version
       const version = '1.0.0';
       const safe = safeBuilder().build();
@@ -638,8 +637,7 @@ describe('LimitAddressesMapper', () => {
   describe('MultiSend', () => {
     describe.each(MULTI_SEND_VERSIONS)('v%s multiSend', (version) => {
       it('should return the limit address for valid "standard" MultiSend calls', async () => {
-        // Fixed chain ID for deployment address
-        const chainId = '1';
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const transactions = [
@@ -676,8 +674,7 @@ describe('LimitAddressesMapper', () => {
     });
 
     it('should throw for non-existent MultiSend versions', async () => {
-      // Fixed chain ID for deployment address
-      const chainId = '1';
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
       // Non-existent version
       const version = '1.0.0';
       const safe = safeBuilder().build();
@@ -722,8 +719,7 @@ describe('LimitAddressesMapper', () => {
       'v%s createProxyWithNonce',
       (version) => {
         it('should return the limit addresses when creating an official Safe', async () => {
-          // Fixed chain ID for deployment address
-          const chainId = '1';
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -736,8 +732,11 @@ describe('LimitAddressesMapper', () => {
             .with('singleton', getAddress(singleton))
             .with('initializer', setupEncoder().with('owners', owners).encode())
             .encode();
-          // ProxyFactory address (singletons are checked for official mastercopies so we need not check this)
-          const to = getAddress(faker.finance.ethereumAddress());
+          const proxyFactory = getProxyFactoryDeployment({
+            version,
+            network: chainId,
+          })!.networkAddresses[chainId];
+          const to = getAddress(proxyFactory);
 
           const expectedLimitAddresses = await target.getLimitAddresses({
             version,
@@ -750,8 +749,7 @@ describe('LimitAddressesMapper', () => {
 
         if (SAFE_L2_VERSIONS.includes(version)) {
           it('should return the limit addresses when creating an official L2 Safe', async () => {
-            // Fixed chain ID for deployment address
-            const chainId = '1';
+            const chainId = faker.helpers.arrayElement(supportedChainIds);
             const owners = [
               getAddress(faker.finance.ethereumAddress()),
               getAddress(faker.finance.ethereumAddress()),
@@ -767,8 +765,11 @@ describe('LimitAddressesMapper', () => {
                 setupEncoder().with('owners', owners).encode(),
               )
               .encode();
-            // ProxyFactory address (singletons are checked for official mastercopies so we need not check this)
-            const to = getAddress(faker.finance.ethereumAddress());
+            const proxyFactory = getProxyFactoryDeployment({
+              version,
+              network: chainId,
+            })!.networkAddresses[chainId];
+            const to = getAddress(proxyFactory);
 
             const expectedLimitAddresses = await target.getLimitAddresses({
               version,
@@ -780,8 +781,37 @@ describe('LimitAddressesMapper', () => {
           });
         }
 
+        it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const owners = [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+          ];
+          const singleton = getSafeSingletonDeployment({
+            version,
+            network: chainId,
+          })!.networkAddresses[chainId];
+          const data = createProxyWithNonceEncoder()
+            .with('singleton', getAddress(singleton))
+            .with('initializer', setupEncoder().with('owners', owners).encode())
+            .encode();
+          // Unofficial ProxyFactory
+          const to = getAddress(faker.finance.ethereumAddress());
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow(
+            'ProxyFactory contract is not official. Only official ProxyFactory contracts are supported.',
+          );
+        });
+
         it('should throw when creating an unofficial Safe', async () => {
-          const chainId = faker.string.numeric();
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -792,8 +822,11 @@ describe('LimitAddressesMapper', () => {
             .with('singleton', getAddress(singleton))
             .with('initializer', setupEncoder().with('owners', owners).encode())
             .encode();
-          // ProxyFactory address (singletons are checked for official mastercopies so we need not check this)
-          const to = getAddress(faker.finance.ethereumAddress());
+          const proxyFactory = getProxyFactoryDeployment({
+            version,
+            network: chainId,
+          })!.networkAddresses[chainId];
+          const to = getAddress(proxyFactory);
 
           await expect(
             target.getLimitAddresses({

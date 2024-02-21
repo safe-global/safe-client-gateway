@@ -8,6 +8,7 @@ import { InvalidMultiSendExceptionFilter } from '@/domain/relay/exception-filter
 import { InvalidTransferExceptionFilter } from '@/domain/relay/exception-filters/invalid-transfer.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/domain/relay/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-filters/unofficial-multisend.error';
+import { UnofficialProxyFactoryExceptionFilter } from '@/domain/relay/exception-filters/unofficial-proxy-factory.exception-filter';
 
 @ApiTags('relay')
 @Controller({
@@ -24,6 +25,7 @@ export class RelayController {
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,
     UnofficialMultiSendExceptionFilter,
+    UnofficialProxyFactoryExceptionFilter,
   )
   async relay(
     @Param('chainId') chainId: string,
