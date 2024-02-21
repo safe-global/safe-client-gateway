@@ -47,7 +47,7 @@ export class SafeBalancesApi implements IBalancesApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
-      const data: Balance[] = await this.dataSource.get({
+      const data = await this.dataSource.get<Balance[]>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
