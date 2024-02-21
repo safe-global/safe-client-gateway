@@ -16,7 +16,14 @@ import { faker } from '@faker-js/faker';
 
 describe('Relay controller', () => {
   let app: INestApplication;
-  const supportedChainIds = Object.keys(configuration().relay.apiKey);
+
+  // Remove Sepolia from tests as only >=1.3.0 are deployed there
+  const supportedChainIds = Object.keys(configuration().relay.apiKey).filter(
+    (chainId) => {
+      const sepoliaChainId = '11155111';
+      return chainId !== sepoliaChainId;
+    },
+  );
 
   beforeEach(async () => {
     jest.resetAllMocks();

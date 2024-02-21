@@ -58,7 +58,14 @@ describe('Relay controller', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let safeConfigUrl: string;
   let relayUrl: string;
-  const supportedChainIds = Object.keys(configuration().relay.apiKey);
+
+  // Remove Sepolia from tests as only >=1.3.0 are deployed there
+  const supportedChainIds = Object.keys(configuration().relay.apiKey).filter(
+    (chainId) => {
+      const sepoliaChainId = '11155111';
+      return chainId !== sepoliaChainId;
+    },
+  );
 
   beforeEach(async () => {
     jest.resetAllMocks();
