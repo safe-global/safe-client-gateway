@@ -1,8 +1,8 @@
 import { CoingeckoAssetPrice } from './entities/coingecko-asset-price.entity';
 
-export const ICoingeckoApi = Symbol('ICoingeckoApi');
+export const IPricesApi = Symbol('IPricesApi');
 
-export interface ICoingeckoApi {
+export interface IPricesApi {
   getNativeCoinPrice(args: {
     chainId: string;
     fiatCode: string;

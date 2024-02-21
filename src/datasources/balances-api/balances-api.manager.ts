@@ -10,7 +10,7 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
+import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { intersection } from 'lodash';
 
@@ -29,7 +29,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IZerionBalancesApi) zerionBalancesApi: IBalancesApi,
-    @Inject(ICoingeckoApi) private readonly coingeckoApi: ICoingeckoApi,
+    @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
   ) {
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',

@@ -8,7 +8,7 @@ import {
 } from '@/datasources/balances-api/zerion-balances-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
-import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
+import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 
 @Module({
   imports: [CacheFirstDataSourceModule],
@@ -16,7 +16,7 @@ import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interfac
     HttpErrorFactory,
     { provide: IBalancesApiManager, useClass: BalancesApiManager },
     { provide: IZerionBalancesApi, useClass: ZerionBalancesApi },
-    { provide: ICoingeckoApi, useClass: CoingeckoApi },
+    { provide: IPricesApi, useClass: CoingeckoApi },
   ],
   exports: [IBalancesApiManager],
 })

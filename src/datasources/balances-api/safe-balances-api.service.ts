@@ -8,13 +8,14 @@ import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
+import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private static readonly DEFAULT_DECIMALS = 18;
 
   constructor(
     private readonly chainId: string,
@@ -23,7 +24,7 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly cacheService: ICacheService,
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    private readonly coingeckoApi: ICoingeckoApi,
+    private readonly coingeckoApi: IPricesApi,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -161,7 +162,7 @@ export class SafeBalancesApi implements IBalancesApi {
   ): number | null {
     return price !== null
       ? (price * Number(balance.balance)) /
-          10 ** (balance.token?.decimals ?? 18)
+          10 ** (balance.token?.decimals ?? SafeBalancesApi.DEFAULT_DECIMALS)
       : null;
   }
 }

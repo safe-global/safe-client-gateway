@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ICoingeckoApi } from '@/datasources/balances-api/coingecko-api.interface';
+import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { CoingeckoAssetPrice } from '@/datasources/balances-api/entities/coingecko-asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
@@ -19,7 +19,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { asError } from '@/logging/utils';
 
 @Injectable()
-export class CoingeckoApi implements ICoingeckoApi {
+export class CoingeckoApi implements IPricesApi {
   /**
    *  Coingecko API Key header name. To be included in http requests when using a paid subscription.
    */
@@ -102,8 +102,10 @@ export class CoingeckoApi implements ICoingeckoApi {
       });
       return result?.[nativeCoinId]?.[lowerCaseFiatCode];
     } catch (error) {
+      // Error at this level are logged out, but not thrown to the upper layers.
+      // The service won't throw an error if a single coin price retrieval fails.
       this.loggingService.error(
-        `CoinGecko error while getting native coin price: ${asError(error)} `,
+        `Error while getting native coin price: ${asError(error)} `,
       );
       return null;
     }
@@ -125,16 +127,19 @@ export class CoingeckoApi implements ICoingeckoApi {
   }): Promise<CoingeckoAssetPrice[]> {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+      const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
+        address.toLowerCase(),
+      );
       const chainName = this.configurationService.getOrThrow<string>(
         `prices.chains.${args.chainId}.chainName`,
       );
       const pricesFromCache = await this._getTokenPricesFromCache({
         chainName,
-        tokenAddresses: args.tokenAddresses,
+        tokenAddresses: lowerCaseTokenAddresses,
         fiatCode: lowerCaseFiatCode,
       });
       const notCachedTokenPrices = difference(
-        args.tokenAddresses.map((address) => address.toLowerCase()),
+        lowerCaseTokenAddresses,
         pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
       );
       const pricesFromNetwork = notCachedTokenPrices.length
@@ -147,8 +152,10 @@ export class CoingeckoApi implements ICoingeckoApi {
 
       return [pricesFromCache, pricesFromNetwork].flat();
     } catch (error) {
+      // Error at this level are logged out, but not thrown to the upper layers.
+      // The service won't throw an error if a single token price retrieval fails.
       this.loggingService.error(
-        `CoinGecko error while getting token prices: ${asError(error)} `,
+        `Error while getting token prices: ${asError(error)} `,
       );
       return [];
     }
