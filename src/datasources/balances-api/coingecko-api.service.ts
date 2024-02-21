@@ -158,7 +158,7 @@ export class CoingeckoApi implements ICoingeckoApi {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
-      const result: string[] = await this.dataSource.get({
+      const result = await this.dataSource.get<string[]>({
         cacheDir,
         url,
         networkRequest: {
