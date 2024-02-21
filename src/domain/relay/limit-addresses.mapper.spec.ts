@@ -1,8 +1,8 @@
-import { erc20TransferEncoder } from '@/domain/relay/contracts/encoders/erc20-encoder.builder';
+import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/encoders/multi-send-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -14,10 +14,10 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/encoders/safe-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
-import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/encoders/proxy-factory-encoder.builder';
+import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';

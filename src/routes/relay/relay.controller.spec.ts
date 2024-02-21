@@ -32,19 +32,19 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/encoders/safe-encoder.builder';
-import { erc20TransferEncoder } from '@/domain/relay/contracts/encoders/erc20-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
+import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/encoders/multi-send-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import {
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
-import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/encoders/proxy-factory-encoder.builder';
+import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 
 describe('Relay controller', () => {
   let app: INestApplication;

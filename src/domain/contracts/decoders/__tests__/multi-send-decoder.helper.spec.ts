@@ -7,11 +7,11 @@ import {
   changeThresholdEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/encoders/safe-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/encoders/multi-send-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {
