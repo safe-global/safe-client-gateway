@@ -2,6 +2,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RelayDto {
   @ApiProperty()
+  version!: string;
+
+  @ApiProperty()
   to!: string;
 
   @ApiProperty()

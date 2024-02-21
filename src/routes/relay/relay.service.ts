@@ -20,6 +20,7 @@ export class RelayService {
     relayDto: RelayDto;
   }): Promise<{ taskId: string }> {
     return this.relayRepository.relay({
+      version: args.relayDto.version,
       chainId: args.chainId,
       to: args.relayDto.to,
       data: args.relayDto.data,
