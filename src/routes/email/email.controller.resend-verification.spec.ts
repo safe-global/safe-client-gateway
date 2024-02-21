@@ -98,7 +98,7 @@ describe('Email controller resend verification tests', () => {
     ).toHaveBeenCalledTimes(1);
   });
 
-  it('triggering email resend within lock window returns 429', async () => {
+  it('triggering email resend within lock window returns 202', async () => {
     const account = accountBuilder().with('isVerified', false).build();
     const verificationCode = verificationCodeBuilder()
       .with('generatedOn', new Date())
@@ -115,14 +115,11 @@ describe('Email controller resend verification tests', () => {
       .post(
         `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .expect(429)
-      .expect({
-        message: 'Verification cannot be resent at this time',
-        statusCode: 429,
-      });
+      .expect(202)
+      .expect('');
   });
 
-  it('triggering email resend on verified emails throws 409', async () => {
+  it('triggering email resend on verified emails returns 202', async () => {
     const account = accountBuilder().with('isVerified', true).build();
     accountDataSource.getAccount.mockResolvedValue(account);
 
@@ -131,11 +128,8 @@ describe('Email controller resend verification tests', () => {
       .post(
         `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
       )
-      .expect(409)
-      .expect({
-        message: `Cannot verify the provided email for the provided account ${account.signer}`,
-        statusCode: 409,
-      });
+      .expect(202)
+      .expect('');
   });
 
   it('resend email with new code', async () => {
