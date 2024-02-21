@@ -66,7 +66,7 @@ export class LimitAddressesMapper {
     }
 
     // Calldata matches that of multiSend and is from an official MultiSend contract
-    if (this.multiSendDecoder.isMultiSend(args.data)) {
+    if (this.multiSendDecoder.helpers.isMultiSend(args.data)) {
       if (
         !this.isOfficialMultiSendDeployment({
           chainId: args.chainId,

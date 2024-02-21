@@ -9,13 +9,55 @@ import {
   decodeFunctionData as _decodeFunctionData,
 } from 'viem';
 
-export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
-  protected constructor(private readonly abi: TAbi) {}
+type Helper<TAbi extends Abi> = `is${Capitalize<ContractFunctionName<TAbi>>}`;
+
+type Helpers<TAbi extends Abi> = {
+  [key in Helper<TAbi>]: (data: Hex) => boolean;
+};
+
+function capitalize<T extends string>(s: T): Capitalize<T> {
+  return (s.charAt(0).toUpperCase() + s.slice(1)) as Capitalize<T>;
+}
+
+export function _generateHelpers<TAbi extends Abi>(
+  abi: Readonly<TAbi>,
+): Helpers<TAbi> {
+  const helpers = {} as Helpers<TAbi>;
+
+  for (const item of abi) {
+    if (item.type !== 'function') {
+      continue;
+    }
+
+    const helperName = `is${capitalize(item.name)}` as Helper<TAbi>;
+
+    helpers[helperName] = (data: Hex): boolean => {
+      try {
+        const { functionName } = _decodeFunctionData({
+          data,
+          abi,
+        });
+        return functionName === item.name;
+      } catch {
+        return false;
+      }
+    };
+  }
+
+  return helpers;
+}
+
+export abstract class AbiDecoder<TAbi extends Abi> {
+  readonly helpers: Helpers<TAbi>;
+
+  protected constructor(private readonly abi: TAbi) {
+    this.helpers = _generateHelpers(abi);
+  }
 
   // Use inferred types from viem
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   decodeEventLog<
-    const abi extends Abi | readonly unknown[],
+    const abi extends TAbi,
     eventName extends ContractEventName<abi> | undefined = undefined,
     topics extends Hex[] = Hex[],
     data extends Hex | undefined = undefined,
@@ -34,24 +76,9 @@ export abstract class AbiDecoder<TAbi extends Abi | readonly unknown[]> {
 
   // Use inferred types from viem
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  decodeFunctionData<TAbi extends Abi | readonly unknown[]>(
+  decodeFunctionData<TAbi extends Abi>(
     args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
   ) {
     return _decodeFunctionData({ ...args, abi: this.abi });
-  }
-
-  // TODO: Don't expose this but generate is{FunctionName} helpers instead
-  _isFunctionCall(args: {
-    functionName: ContractFunctionName<TAbi>;
-    data: Hex;
-  }): boolean {
-    try {
-      const { functionName } = this.decodeFunctionData({
-        data: args.data,
-      });
-      return functionName === args.functionName;
-    } catch {
-      return false;
-    }
   }
 }

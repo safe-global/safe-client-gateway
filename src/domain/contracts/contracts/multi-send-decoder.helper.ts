@@ -76,11 +76,4 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
 
     return mapped;
   }
-
-  isMultiSend(data: `0x${string}`): boolean {
-    return this._isFunctionCall({
-      functionName: 'multiSend',
-      data,
-    });
-  }
 }
