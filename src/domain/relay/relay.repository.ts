@@ -29,6 +29,7 @@ export class RelayRepository {
   }
 
   async relay(relayPayload: {
+    version: string;
     chainId: string;
     to: string;
     data: string;
