@@ -187,6 +187,7 @@ export default (): ReturnType<typeof configuration> => ({
     limit: faker.number.int({ min: 1 }),
     apiKey: {
       100: faker.string.hexadecimal({ length: 32 }),
+      11155111: faker.string.hexadecimal({ length: 32 }),
     },
   },
   safeConfig: {
