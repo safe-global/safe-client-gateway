@@ -29,6 +29,12 @@ We use Yarn as the package manager for this project. Yarn is bundled with the pr
 corepack enable && yarn install
 ```
 
+The project requires some ABIs that are generated after install. In order to manually generate them, run:
+
+```bash
+yarn generate-abis
+```
+
 ## Running the app
 
 1. Start Redis instance. By default, it will start on port `6379` of `localhost`.
