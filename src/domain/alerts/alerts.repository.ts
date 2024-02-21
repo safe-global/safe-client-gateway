@@ -260,16 +260,20 @@ export class AlertsRepository implements IAlertsRepository {
       });
     });
 
-    await Promise.allSettled(emailActions).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const signer = args.accountsToNotify.at(index)?.signer;
-          this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for Safe ${args.safeAddress} on chain ${args.chainId}`,
-          );
-        }
+    Promise.allSettled(emailActions)
+      .then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const signer = args.accountsToNotify.at(index)?.signer;
+            this.loggingService.warn(
+              `Error sending email to user with account ${signer}, for Safe ${args.safeAddress} on chain ${args.chainId}`,
+            );
+          }
+        });
+      })
+      .catch((reason) => {
+        this.loggingService.warn(reason);
       });
-    });
   }
 
   private async _notifySafeSetup(args: {
@@ -312,15 +316,19 @@ export class AlertsRepository implements IAlertsRepository {
       });
     });
 
-    await Promise.allSettled(emailActions).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const signer = args.accountsToNotify.at(index)?.signer;
-          this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for Safe ${args.newSafeState.address} on chain ${args.chainId}`,
-          );
-        }
+    Promise.allSettled(emailActions)
+      .then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const signer = args.accountsToNotify.at(index)?.signer;
+            this.loggingService.warn(
+              `Error sending email to user with account ${signer}, for Safe ${args.newSafeState.address} on chain ${args.chainId}`,
+            );
+          }
+        });
+      })
+      .catch((reason) => {
+        this.loggingService.warn(reason);
       });
-    });
   }
 }
