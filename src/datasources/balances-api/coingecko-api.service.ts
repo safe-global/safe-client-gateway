@@ -83,7 +83,7 @@ export class CoingeckoApi implements ICoingeckoApi {
         fiatCode: lowerCaseFiatCode,
       });
       const url = `${this.baseUrl}/simple/price`;
-      const result: CoingeckoAssetPrice = await this.dataSource.get({
+      const result = await this.dataSource.get<CoingeckoAssetPrice>({
         cacheDir,
         url,
         networkRequest: {
