@@ -1,8 +1,8 @@
-import { AssetPrice } from './entities/asset-price.entity';
+import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 
-export const ICoingeckoApi = Symbol('ICoingeckoApi');
+export const IPricesApi = Symbol('IPricesApi');
 
-export interface ICoingeckoApi {
+export interface IPricesApi {
   getNativeCoinPrice(args: {
     chainId: string;
     fiatCode: string;

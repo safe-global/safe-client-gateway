@@ -3,7 +3,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { CoingeckoAssetPrice } from '@/datasources/balances-api/entities/coingecko-asset-price.entity';
+import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { sortBy } from 'lodash';
@@ -137,13 +137,8 @@ describe('CoingeckoAPI', () => {
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
-<<<<<<< HEAD
     const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
-=======
-    const price = faker.number.float({ min: 0.01, precision: 0.01 });
-    const coingeckoPrice: CoingeckoAssetPrice = {
->>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
       [tokenAddress]: { [lowerCaseFiatCode]: price },
     };
     mockCacheService.get.mockResolvedValue(undefined);
@@ -198,13 +193,8 @@ describe('CoingeckoAPI', () => {
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
-<<<<<<< HEAD
     const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
-=======
-    const price = faker.number.float({ min: 0.01, precision: 0.01 });
-    const coingeckoPrice: CoingeckoAssetPrice = {
->>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
       [tokenAddress]: { [lowerCaseFiatCode]: price },
     };
     mockCacheService.get.mockResolvedValue(undefined);
@@ -266,13 +256,8 @@ describe('CoingeckoAPI', () => {
     const secondTokenAddress = faker.finance.ethereumAddress();
     const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
-<<<<<<< HEAD
     const thirdPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
-=======
-    const thirdPrice = faker.number.float({ min: 0.01, precision: 0.01 });
-    const coingeckoPrice: CoingeckoAssetPrice = {
->>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
       [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
       [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
       [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
@@ -380,13 +365,8 @@ describe('CoingeckoAPI', () => {
     const secondTokenAddress = faker.finance.ethereumAddress();
     const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
-<<<<<<< HEAD
     const thirdPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const coingeckoPrice: AssetPrice = {
-=======
-    const thirdPrice = faker.number.float({ min: 0.01, precision: 0.01 });
-    const coingeckoPrice: CoingeckoAssetPrice = {
->>>>>>> c6bcaad0 (Move AssetPrice to CoingeckoAssetPrice)
       [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
       [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
     };
@@ -492,7 +472,7 @@ describe('CoingeckoAPI', () => {
     const secondTokenAddress = faker.finance.ethereumAddress();
     const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
-    const coingeckoPrice: CoingeckoAssetPrice = {
+    const coingeckoPrice: AssetPrice = {
       [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
     };
     mockCacheService.get.mockResolvedValueOnce(
@@ -585,7 +565,7 @@ describe('CoingeckoAPI', () => {
     const chain = chainBuilder().build();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
-    const expectedAssetPrice: CoingeckoAssetPrice = { gnosis: { eur: 98.86 } };
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     fakeConfigurationService.set(
       `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
@@ -622,7 +602,7 @@ describe('CoingeckoAPI', () => {
     const chain = chainBuilder().build();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
-    const expectedAssetPrice: CoingeckoAssetPrice = { gnosis: { eur: 98.86 } };
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     fakeConfigurationService.set(

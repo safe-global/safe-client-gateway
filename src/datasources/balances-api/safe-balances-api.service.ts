@@ -24,7 +24,7 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly cacheService: ICacheService,
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
-    private readonly coingeckoApi: ICoingeckoApi,
+    private readonly coingeckoApi: IPricesApi,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
