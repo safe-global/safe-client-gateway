@@ -5,6 +5,6 @@ export interface IRelayApi {
     chainId: string;
     to: string;
     data: string;
-    gasLimit: string | null;
+    gasLimit: bigint | null;
   }): Promise<{ taskId: string }>;
 }

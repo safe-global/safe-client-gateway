@@ -28,19 +28,19 @@ export class RelayRepository {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
 
-  async relay(relayPayload: {
+  async relay(args: {
     version: string;
     chainId: string;
     to: string;
     data: string;
-    gasLimit: string | null;
+    gasLimit: bigint | null;
   }): Promise<{ taskId: string }> {
     const relayAddresses =
-      await this.limitAddressesMapper.getLimitAddresses(relayPayload);
+      await this.limitAddressesMapper.getLimitAddresses(args);
 
     for (const address of relayAddresses) {
       const canRelay = await this.canRelay({
-        chainId: relayPayload.chainId,
+        chainId: args.chainId,
         address,
       });
       if (!canRelay.result) {
@@ -54,12 +54,12 @@ export class RelayRepository {
       }
     }
 
-    const relayResponse = await this.relayApi.relay(relayPayload);
+    const relayResponse = await this.relayApi.relay(args);
 
     // If we fail to increment count, we should not fail the relay
     for (const address of relayAddresses) {
       await this.incrementRelayCount({
-        chainId: relayPayload.chainId,
+        chainId: args.chainId,
         address,
       }).catch((error) => {
         // If we fail to increment count, we should not fail the relay

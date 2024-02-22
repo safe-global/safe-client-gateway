@@ -1158,6 +1158,33 @@ describe('Relay controller', () => {
           );
         });
 
+        it('should return 422 if the gasLimit is invalid', async () => {
+          // Version supported by all contracts
+          const version = '1.3.0';
+          const chain = chainBuilder().with('chainId', chainId).build();
+          const safe = safeBuilder().build();
+          const safeAddress = getAddress(safe.address);
+          const data = execTransactionEncoder()
+            .with('value', faker.number.bigInt())
+            .encode() as Hex;
+          const gasLimit = 'invalid';
+
+          await request(app.getHttpServer())
+            .post(`/v1/chains/${chain.chainId}/relay`)
+            .send({
+              version,
+              to: safeAddress,
+              data,
+              gasLimit,
+            })
+            .expect(422)
+            .expect({
+              message: 'Invalid gas limit provided',
+              error: 'Unprocessable Entity',
+              statusCode: 422,
+            });
+        });
+
         it('should otherwise return 422', async () => {
           // Version supported by all contracts
           const version = '1.3.0';
