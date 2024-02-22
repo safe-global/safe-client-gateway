@@ -204,7 +204,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const mockSafeAppInfo = new SafeAppInfo(
       mockSafeAppName,
       faker.internet.url(),
-      faker.internet.avatar(),
+      faker.image.avatar(),
     );
     safeAppInfoMapper.mapSafeAppInfo.mockImplementation(() =>
       Promise.resolve(mockSafeAppInfo),
