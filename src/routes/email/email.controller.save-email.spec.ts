@@ -117,6 +117,10 @@ describe('Email controller save email tests', () => {
         name: faker.word.words(2),
       },
     ]);
+    emailApi.createMessage.mockResolvedValue();
+    accountDataSource.setEmailVerificationSentDate.mockResolvedValue(
+      verificationCodeBuilder().build(),
+    );
 
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
