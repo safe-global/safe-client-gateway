@@ -127,11 +127,17 @@ export class SafeBalancesApi implements IBalancesApi {
       .map((balance) => balance.tokenAddress)
       .filter((address): address is string => address !== null);
 
-    const prices = await this.coingeckoApi.getTokenPrices({
+    const assetPrices = await this.coingeckoApi.getTokenPrices({
       chainId: this.chainId,
       fiatCode,
       tokenAddresses,
     });
+
+    const lowerCaseAssetPrices = assetPrices?.map((assetPrice) =>
+      Object.fromEntries(
+        Object.entries(assetPrice).map(([k, v]) => [k.toLowerCase(), v]),
+      ),
+    );
 
     return await Promise.all(
       balances.map(async (balance) => {
@@ -143,7 +149,9 @@ export class SafeBalancesApi implements IBalancesApi {
             fiatCode,
           });
         } else {
-          const found = prices.find((assetPrice) => assetPrice[tokenAddress]);
+          const found = lowerCaseAssetPrices.find(
+            (assetPrice) => assetPrice[tokenAddress],
+          );
           price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
         }
         const fiatBalance = await this._getFiatBalance(price, balance);
