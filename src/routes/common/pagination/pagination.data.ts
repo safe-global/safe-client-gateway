@@ -69,11 +69,11 @@ export class PaginationData {
  */
 export function buildNextPageURL(
   base: Readonly<URL | string>,
-  itemsCount: number,
+  itemsCount: number | null,
 ): Readonly<URL> | null {
   const baseUrl = new URL(base);
   const { limit, offset } = PaginationData.fromCursor(baseUrl);
-  const hasNext = limit + offset < itemsCount;
+  const hasNext = itemsCount && limit + offset < itemsCount;
   return hasNext
     ? setCursor(baseUrl, new PaginationData(limit, limit + offset))
     : null;

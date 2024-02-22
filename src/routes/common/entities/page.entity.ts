@@ -16,10 +16,11 @@ import { Page as DomainPage } from '@/domain/entities/page.entity';
  */
 export abstract class Page<T> implements DomainPage<T> {
   @ApiProperty()
-  count!: number;
   // ApiPropertyOptional without any options
   // does not work with unions with null
   // see https://github.com/nestjs/swagger/issues/2129
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  count!: number | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   next!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true })
