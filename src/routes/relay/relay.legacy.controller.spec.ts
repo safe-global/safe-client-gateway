@@ -17,14 +17,6 @@ import { faker } from '@faker-js/faker';
 describe('Relay controller', () => {
   let app: INestApplication;
 
-  // Remove Sepolia from tests as only >=1.3.0 are deployed there
-  const supportedChainIds = Object.keys(configuration().relay.apiKey).filter(
-    (chainId) => {
-      const sepoliaChainId = '11155111';
-      return chainId !== sepoliaChainId;
-    },
-  );
-
   beforeEach(async () => {
     jest.resetAllMocks();
 
@@ -58,37 +50,39 @@ describe('Relay controller', () => {
     await app.close();
   });
 
-  describe('POST /v1/chains/:chainId/relay', () => {
-    it('should return 302 and redirect to the new endpoint', async () => {
-      const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const safeAddress = faker.finance.ethereumAddress();
-      const data = faker.string.hexadecimal();
+  const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
-      await request(app.getHttpServer())
-        .post(`/v1/relay/${chainId}`)
-        .send({
-          to: safeAddress,
-          data,
-        })
-        .expect(308)
-        .expect((res) => {
-          expect(res.get('location')).toBe('/v1/chains/:chainId/relay');
-        });
+  describe.each(supportedChainIds)('Chain %s', (chainId) => {
+    describe('POST /v1/chains/:chainId/relay', () => {
+      it('should return 302 and redirect to the new endpoint', async () => {
+        const safeAddress = faker.finance.ethereumAddress();
+        const data = faker.string.hexadecimal();
+
+        await request(app.getHttpServer())
+          .post(`/v1/relay/${chainId}`)
+          .send({
+            to: safeAddress,
+            data,
+          })
+          .expect(308)
+          .expect((res) => {
+            expect(res.get('location')).toBe('/v1/chains/:chainId/relay');
+          });
+      });
     });
-  });
-  describe('GET /v1/relay/:chainId/:safeAddress', () => {
-    it('should return 302 and redirect to the new endpoint', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+    describe('GET /v1/relay/:chainId/:safeAddress', () => {
+      it('should return 302 and redirect to the new endpoint', async () => {
+        const safeAddress = faker.finance.ethereumAddress();
 
-      await request(app.getHttpServer())
-        .get(`/v1/relay/${chainId}/${safeAddress}`)
-        .expect(301)
-        .expect((res) => {
-          expect(res.get('location')).toBe(
-            '/v1/chains/:chainId/relay/:safeAddress',
-          );
-        });
+        await request(app.getHttpServer())
+          .get(`/v1/relay/${chainId}/${safeAddress}`)
+          .expect(301)
+          .expect((res) => {
+            expect(res.get('location')).toBe(
+              '/v1/chains/:chainId/relay/:safeAddress',
+            );
+          });
+      });
     });
   });
 });
