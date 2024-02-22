@@ -83,7 +83,7 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = faker.finance.ethereumAddress() as Hex;
       const data = faker.string.hexadecimal() as Hex;
-      const gasLimit = faker.string.numeric();
+      const gasLimit = faker.number.bigInt();
       const apiKey = faker.string.sample();
       const taskId = faker.string.uuid();
       fakeConfigurationService.set(`relay.apiKey.${chainId}`, apiKey);
@@ -108,7 +108,7 @@ describe('GelatoApi', () => {
           chainId,
           target: address,
           data,
-          gasLimit: (BigInt(gasLimit) + BigInt(150_000)).toString(),
+          gasLimit: (gasLimit + BigInt(150_000)).toString(),
         },
       );
     });
