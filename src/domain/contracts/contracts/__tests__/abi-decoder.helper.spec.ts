@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Hex, encodeFunctionData, parseAbi } from 'viem';
-import { _generateHelpers } from '@/domain/contracts/contracts/abi-decoder.helper';
+import { _generateHelpers } from '@/domain/contracts/decoders/abi-decoder.helper';
 
 describe('AbiDecoder', () => {
   describe('generateHelpers', () => {

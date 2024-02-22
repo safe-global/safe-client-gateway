@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
-import { Erc20Decoder } from '@/domain/relay/contracts/erc-20-decoder.helper';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
-import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import {
   getSafeSingletonDeployment,
   getSafeL2SingletonDeployment,
@@ -11,7 +11,7 @@ import {
   getMultiSendDeployment,
   getProxyFactoryDeployment,
 } from '@safe-global/safe-deployments';
-import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';

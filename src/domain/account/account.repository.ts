@@ -96,7 +96,7 @@ export class AccountRepository implements IAccountRepository {
         safeAddress: args.safeAddress,
         notificationTypeKey: SubscriptionRepository.CATEGORY_ACCOUNT_RECOVERY,
       });
-      await this._sendEmailVerification({
+      this._sendEmailVerification({
         ...args,
         code: verificationCode,
       });
@@ -153,7 +153,7 @@ export class AccountRepository implements IAccountRepository {
     const currentVerificationCode =
       await this.accountDataSource.getAccountVerificationCode(args);
 
-    await this._sendEmailVerification({
+    this._sendEmailVerification({
       ...args,
       code: currentVerificationCode.code,
       emailAddress: account.emailAddress.value,
@@ -170,7 +170,7 @@ export class AccountRepository implements IAccountRepository {
 
     if (account.isVerified) {
       // account is already verified, so we don't need to perform further checks
-      return;
+      throw new EmailAlreadyVerifiedError(args);
     }
 
     let verificationCode: VerificationCode;
@@ -252,8 +252,7 @@ export class AccountRepository implements IAccountRepository {
       codeGenerationDate: new Date(),
       safeAddress: args.safeAddress,
     });
-    // TODO if the following throws we should not throw
-    await this._sendEmailVerification({
+    this._sendEmailVerification({
       ...args,
       code: newVerificationCode,
     });
@@ -267,28 +266,46 @@ export class AccountRepository implements IAccountRepository {
     return window < this.verificationCodeTtlMs;
   }
 
-  private async _sendEmailVerification(args: {
+  /**
+   * Sends the verification email to the target {@link args.emailAddress}
+   *
+   * This function returns "immediately" so the result of this operation won't
+   * be known to the caller.
+   *
+   * @private
+   */
+  private _sendEmailVerification(args: {
     signer: string;
     chainId: string;
     code: string;
     emailAddress: string;
     safeAddress: string;
-  }): Promise<void> {
-    await this.emailApi.createMessage({
-      to: [args.emailAddress],
-      template: this.configurationService.getOrThrow(
-        'email.templates.verificationCode',
-      ),
-      subject: AccountRepository.VERIFICATION_CODE_EMAIL_SUBJECT,
-      substitutions: { verificationCode: args.code },
-    });
-
-    // Update verification-sent date on a successful response
-    await this.accountDataSource.setEmailVerificationSentDate({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      signer: args.signer,
-      sentOn: new Date(),
-    });
+  }): void {
+    this.emailApi
+      .createMessage({
+        to: [args.emailAddress],
+        template: this.configurationService.getOrThrow(
+          'email.templates.verificationCode',
+        ),
+        subject: AccountRepository.VERIFICATION_CODE_EMAIL_SUBJECT,
+        substitutions: { verificationCode: args.code },
+      })
+      .catch(() => {
+        this.loggingService.warn(`Error sending verification email.`);
+      })
+      .then(() =>
+        // Update verification-sent date on a successful response
+        this.accountDataSource.setEmailVerificationSentDate({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          signer: args.signer,
+          sentOn: new Date(),
+        }),
+      )
+      .catch(() =>
+        this.loggingService.warn(
+          'Error updating email verification sent date.',
+        ),
+      );
   }
 }

@@ -28,6 +28,7 @@ describe('Post Hook Events (Unit)', () => {
   let safeConfigUrl: string;
   let fakeCacheService: FakeCacheService;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let configurationService: IConfigurationService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -47,9 +48,9 @@ describe('Post Hook Events (Unit)', () => {
     app = moduleFixture.createNestApplication();
 
     fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
-    const configurationService = moduleFixture.get(IConfigurationService);
-    authToken = configurationService.get('auth.token');
-    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    configurationService = moduleFixture.get(IConfigurationService);
+    authToken = configurationService.getOrThrow('auth.token');
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     await app.init();
@@ -207,9 +208,13 @@ describe('Post Hook Events (Unit)', () => {
     },
   ])('$type clears balances', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.string.numeric();
+    const chainId = faker.string.numeric({
+      exclude: configurationService.getOrThrow(
+        'features.zerionBalancesChainIds',
+      ),
+    });
     const cacheDir = new CacheDir(
-      `${chainId}_balances_${safeAddress}`,
+      `${chainId}_safe_balances_${safeAddress}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(cacheDir, faker.string.alpha());
@@ -408,9 +413,13 @@ describe('Post Hook Events (Unit)', () => {
     },
   ])('$type clears safe collectibles', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.string.numeric();
+    const chainId = faker.string.numeric({
+      exclude: configurationService.getOrThrow(
+        'features.zerionBalancesChainIds',
+      ),
+    });
     const cacheDir = new CacheDir(
-      `${chainId}_collectibles_${safeAddress}`,
+      `${chainId}_safe_collectibles_${safeAddress}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(cacheDir, faker.string.alpha());

@@ -4,9 +4,9 @@ import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
-import { DelayModifierDecoder } from '@/domain/alerts/contracts/delay-modifier-decoder.helper';
-import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
-import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
+import { DelayModifierDecoder } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -260,16 +260,20 @@ export class AlertsRepository implements IAlertsRepository {
       });
     });
 
-    await Promise.allSettled(emailActions).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const signer = args.accountsToNotify.at(index)?.signer;
-          this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for Safe ${args.safeAddress} on chain ${args.chainId}`,
-          );
-        }
+    Promise.allSettled(emailActions)
+      .then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const signer = args.accountsToNotify.at(index)?.signer;
+            this.loggingService.warn(
+              `Error sending email to user with account ${signer}, for Safe ${args.safeAddress} on chain ${args.chainId}`,
+            );
+          }
+        });
+      })
+      .catch((reason) => {
+        this.loggingService.warn(reason);
       });
-    });
   }
 
   private async _notifySafeSetup(args: {
@@ -312,15 +316,19 @@ export class AlertsRepository implements IAlertsRepository {
       });
     });
 
-    await Promise.allSettled(emailActions).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const signer = args.accountsToNotify.at(index)?.signer;
-          this.loggingService.warn(
-            `Error sending email to user with account ${signer}, for Safe ${args.newSafeState.address} on chain ${args.chainId}`,
-          );
-        }
+    Promise.allSettled(emailActions)
+      .then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const signer = args.accountsToNotify.at(index)?.signer;
+            this.loggingService.warn(
+              `Error sending email to user with account ${signer}, for Safe ${args.newSafeState.address} on chain ${args.chainId}`,
+            );
+          }
+        });
+      })
+      .catch((reason) => {
+        this.loggingService.warn(reason);
       });
-    });
   }
 }

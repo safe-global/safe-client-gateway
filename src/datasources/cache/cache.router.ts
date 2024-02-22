@@ -3,14 +3,11 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly BACKBONE_KEY = 'backbone';
-  private static readonly BALANCES_KEY = 'balances';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
-  private static readonly COLLECTIBLES_KEY = 'collectibles';
   private static readonly CONTRACT_KEY = 'contract';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
-  private static readonly FIAT_CODES_KEY = 'fiat_codes';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
@@ -22,6 +19,9 @@ export class CacheRouter {
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly RELAY_KEY = 'relay';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
+  private static readonly SAFE_BALANCES_KEY = 'safe_balances';
+  private static readonly SAFE_COLLECTIBLES_KEY = 'safe_collectibles';
+  private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly TOKEN_KEY = 'token';
@@ -36,7 +36,7 @@ export class CacheRouter {
     chainId: string;
     safeAddress: string;
   }): string {
-    return `${args.chainId}_${CacheRouter.BALANCES_KEY}_${args.safeAddress}`;
+    return `${args.chainId}_${CacheRouter.SAFE_BALANCES_KEY}_${args.safeAddress}`;
   }
 
   static getBalancesCacheDir(args: {
@@ -138,7 +138,7 @@ export class CacheRouter {
     chainId: string;
     safeAddress: string;
   }): string {
-    return `${args.chainId}_${CacheRouter.COLLECTIBLES_KEY}_${args.safeAddress}`;
+    return `${args.chainId}_${CacheRouter.SAFE_COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
   static getDelegatesCacheDir(args: {
@@ -454,6 +454,6 @@ export class CacheRouter {
   }
 
   static getPriceFiatCodesCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.FIAT_CODES_KEY, '');
+    return new CacheDir(CacheRouter.SAFE_FIAT_CODES_KEY, '');
   }
 }

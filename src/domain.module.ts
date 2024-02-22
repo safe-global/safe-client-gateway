@@ -50,12 +50,7 @@ import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
-import { PricesApiModule } from '@/datasources/prices-api/prices-api.module';
-import { IPricesRepository } from '@/domain/prices/prices.repository.interface';
-import { PricesRepository } from '@/domain/prices/prices.repository';
 import { BalancesValidator } from '@/domain/balances/balances.validator';
-import { AssetPriceValidator } from '@/domain/prices/asset-price.validator';
-import { FiatCodesValidator } from '@/domain/prices/fiat-codes.validator';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
 
 @Global()
@@ -63,7 +58,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
   imports: [
     BalancesApiModule,
     ConfigApiModule,
-    PricesApiModule,
     HumanDescriptionApiModule,
     TransactionApiModule,
   ],
@@ -83,11 +77,9 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
-    { provide: IPricesRepository, useClass: PricesRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    AssetPriceValidator,
     BackboneValidator,
     ChainsValidator,
     CollectiblesValidator,
@@ -96,7 +88,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     DataDecodedValidator,
     DelegateValidator,
     EstimationsValidator,
-    FiatCodesValidator,
     SingletonValidator,
     MessageValidator,
     ModuleTransactionValidator,
@@ -122,7 +113,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     IHumanDescriptionRepository,
     IMessagesRepository,
     INotificationsRepository,
-    IPricesRepository,
     ISafeAppsRepository,
     ISafeRepository,
     ITokenRepository,
