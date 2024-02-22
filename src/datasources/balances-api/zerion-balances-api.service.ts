@@ -136,10 +136,10 @@ export class ZerionBalancesApi implements IBalancesApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
 
-      // TODO: Zerion does not provide the items count. Change this value to null when count attribute becomes nullable.
+      // Zerion does not provide the items count.
       // Zerion does not provide a "previous" cursor.
       return {
-        count: zerionCollectibles.data.length,
+        count: null,
         next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
         previous: null,
         results: this._mapCollectibles(zerionCollectibles.data),
