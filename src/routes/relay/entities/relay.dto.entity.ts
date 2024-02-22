@@ -11,7 +11,7 @@ export class RelayDto {
   data!: string;
 
   @ApiPropertyOptional({
-    type: BigInt,
+    type: String,
     nullable: true,
     description: `If specified, a gas buffer of 150k will be added on top of the expected gas usage for the transaction.
       This is for the <a href="https://docs.gelato.network/developer-services/relay/quick-start/optional-parameters" target="_blank">
