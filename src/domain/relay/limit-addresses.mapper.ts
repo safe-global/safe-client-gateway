@@ -1,16 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem/types/misc';
-import { Erc20Decoder } from '@/domain/relay/contracts/erc-20-decoder.helper';
+import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
-import { ProxyFactoryDecoder } from '@/domain/relay/contracts/proxy-factory-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import {
   getSafeSingletonDeployment,
   getSafeL2SingletonDeployment,
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
 } from '@safe-global/safe-deployments';
-import { SafeDecoder } from '@/domain/contracts/contracts/safe-decoder.helper';
+import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
@@ -19,9 +19,6 @@ import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.e
 
 @Injectable()
 export class LimitAddressesMapper {
-  // TODO: Support all versions (decoders currently use 1.3.0 ABIs though interface is generic)
-  private static SUPPORTED_SAFE_VERSION = '1.3.0';
-
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
@@ -32,6 +29,7 @@ export class LimitAddressesMapper {
   ) {}
 
   async getLimitAddresses(args: {
+    version: string;
     chainId: string;
     to: string;
     data: string;
@@ -66,9 +64,10 @@ export class LimitAddressesMapper {
     }
 
     // Calldata matches that of multiSend and is from an official MultiSend contract
-    if (this.multiSendDecoder.isMultiSend(args.data)) {
+    if (this.multiSendDecoder.helpers.isMultiSend(args.data)) {
       if (
         !this.isOfficialMultiSendDeployment({
+          version: args.version,
           chainId: args.chainId,
           address: args.to,
         })
@@ -96,6 +95,7 @@ export class LimitAddressesMapper {
     // Calldata matches that of createProxyWithNonce and meets validity requirements
     if (
       this.isValidCreateProxyWithNonceCall({
+        version: args.version,
         chainId: args.chainId,
         data: args.data,
       })
@@ -165,11 +165,12 @@ export class LimitAddressesMapper {
   }
 
   private isOfficialMultiSendDeployment(args: {
+    version: string;
     chainId: string;
     address: string;
   }): boolean {
     const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
 
@@ -183,7 +184,7 @@ export class LimitAddressesMapper {
     }
 
     const multiSendCallDeployment = getMultiSendDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
     return (
@@ -220,6 +221,7 @@ export class LimitAddressesMapper {
   };
 
   private isValidCreateProxyWithNonceCall(args: {
+    version: string;
     chainId: string;
     data: Hex;
   }): boolean {
@@ -240,11 +242,11 @@ export class LimitAddressesMapper {
     }
 
     const safeL1Deployment = getSafeSingletonDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
     const safeL2Deployment = getSafeL2SingletonDeployment({
-      version: LimitAddressesMapper.SUPPORTED_SAFE_VERSION,
+      version: args.version,
       network: args.chainId,
     });
 

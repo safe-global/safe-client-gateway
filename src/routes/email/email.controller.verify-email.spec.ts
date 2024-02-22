@@ -90,7 +90,7 @@ describe('Email controller verify email tests', () => {
     expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(1);
   });
 
-  it('returns 204 on already verified emails', async () => {
+  it('returns 400 on already verified emails', async () => {
     const account = accountBuilder().with('isVerified', true).build();
     accountDataSource.getAccount.mockResolvedValueOnce(account);
 
@@ -102,8 +102,8 @@ describe('Email controller verify email tests', () => {
       .send({
         code: faker.string.numeric({ length: 6 }),
       })
-      .expect(204)
-      .expect({});
+      .expect(400)
+      .expect('');
 
     expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
     expect(accountDataSource.getAccountVerificationCode).toHaveBeenCalledTimes(
@@ -129,10 +129,7 @@ describe('Email controller verify email tests', () => {
         code: verificationCode.code,
       })
       .expect(400)
-      .expect({
-        message: 'The provided verification code is not valid.',
-        statusCode: 400,
-      });
+      .expect('');
 
     expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
   });
@@ -155,10 +152,7 @@ describe('Email controller verify email tests', () => {
         code: faker.string.numeric({ length: 6 }),
       })
       .expect(400)
-      .expect({
-        message: 'The provided verification code is not valid.',
-        statusCode: 400,
-      });
+      .expect('');
 
     expect(accountDataSource.verifyEmail).toHaveBeenCalledTimes(0);
   });

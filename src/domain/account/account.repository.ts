@@ -170,7 +170,7 @@ export class AccountRepository implements IAccountRepository {
 
     if (account.isVerified) {
       // account is already verified, so we don't need to perform further checks
-      return;
+      throw new EmailAlreadyVerifiedError(args);
     }
 
     let verificationCode: VerificationCode;

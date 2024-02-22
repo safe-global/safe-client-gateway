@@ -1,4 +1,4 @@
-import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
+import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import { getAddress, Hex, hexToBigInt, hexToNumber, size, slice } from 'viem';
 import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
@@ -75,12 +75,5 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
     }
 
     return mapped;
-  }
-
-  isMultiSend(data: `0x${string}`): boolean {
-    return this._isFunctionCall({
-      functionName: 'multiSend',
-      data,
-    });
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
-import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
+import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 import { Hex } from 'viem';
 
 @Injectable()

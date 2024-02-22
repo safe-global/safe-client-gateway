@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { parseAbi } from 'viem';
-import { AbiDecoder } from '@/domain/contracts/contracts/abi-decoder.helper';
+import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 
 const TRANSACTION_ADDED_ABI = parseAbi([
   'event TransactionAdded(uint256 indexed queueNonce, bytes32 indexed txHash, address to, uint256 value, bytes data, uint8 operation)',

@@ -1,17 +1,17 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-import { MultiSendDecoder } from '@/domain/contracts/contracts/multi-send-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/contracts/__tests__/multi-send-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('MultiSendDecoder', () => {
@@ -50,12 +50,12 @@ describe('MultiSendDecoder', () => {
   describe('isMultiSend', () => {
     it('returns true if data is a multiSend call', () => {
       const data = multiSendEncoder().encode();
-      expect(target.isMultiSend(data)).toBe(true);
+      expect(target.helpers.isMultiSend(data)).toBe(true);
     });
 
     it('returns false if data is not a multiSend call', () => {
       const data = addOwnerWithThresholdEncoder().encode();
-      expect(target.isMultiSend(data)).toBe(false);
+      expect(target.helpers.isMultiSend(data)).toBe(false);
     });
   });
 });
