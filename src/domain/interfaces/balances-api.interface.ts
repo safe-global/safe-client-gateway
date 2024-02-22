@@ -5,7 +5,7 @@ import { Page } from '@/domain/entities/page.entity';
 export interface IBalancesApi {
   getBalances(args: {
     safeAddress: string;
-    fiatCode?: string;
+    fiatCode: string;
     chainId?: string;
     trusted?: boolean;
     excludeSpam?: boolean;
@@ -27,5 +27,5 @@ export interface IBalancesApi {
     safeAddress: string;
   }): Promise<void>;
 
-  getFiatCodes(): string[];
+  getFiatCodes(): Promise<string[]>;
 }

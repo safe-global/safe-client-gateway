@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IPricesApi } from '@/domain/interfaces/prices-api.interface';
-import { AssetPrice } from '@/domain/prices/entities/asset-price.entity';
+import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
+import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -16,6 +16,7 @@ import {
 import { difference, get } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -69,19 +70,26 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   async getNativeCoinPrice(args: {
-    nativeCoinId: string;
+    chainId: string;
     fiatCode: string;
-  }): Promise<AssetPrice> {
+  }): Promise<number | null> {
     try {
-      const cacheDir = CacheRouter.getNativeCoinPriceCacheDir(args);
+      const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+      const nativeCoinId = this.configurationService.getOrThrow<string>(
+        `prices.chains.${args.chainId}.nativeCoin`,
+      );
+      const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
+        nativeCoinId,
+        fiatCode: lowerCaseFiatCode,
+      });
       const url = `${this.baseUrl}/simple/price`;
-      return await this.dataSource.get({
+      const result = await this.dataSource.get<AssetPrice>({
         cacheDir,
         url,
         networkRequest: {
           params: {
-            vs_currencies: args.fiatCode,
-            ids: args.nativeCoinId,
+            vs_currencies: lowerCaseFiatCode,
+            ids: nativeCoinId,
           },
           ...(this.apiKey && {
             headers: {
@@ -92,12 +100,14 @@ export class CoingeckoApi implements IPricesApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.pricesTtlSeconds,
       });
+      return result?.[nativeCoinId]?.[lowerCaseFiatCode];
     } catch (error) {
-      throw new DataSourceError(
-        `Error getting ${
-          args.nativeCoinId
-        } price from provider${this._mapProviderError(error)}`,
+      // Error at this level are logged out, but not thrown to the upper layers.
+      // The service won't throw an error if a single coin price retrieval fails.
+      this.loggingService.error(
+        `Error while getting native coin price: ${asError(error)} `,
       );
+      return null;
     }
   }
 
@@ -111,30 +121,51 @@ export class CoingeckoApi implements IPricesApi {
    * @returns Array of {@link AssetPrice}
    */
   async getTokenPrices(args: {
-    chainName: string;
+    chainId: string;
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]> {
-    const pricesFromCache = await this._getTokenPricesFromCache(args);
-    const notCachedTokenPrices = difference(
-      args.tokenAddresses,
-      pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
-    );
-    const pricesFromNetwork = notCachedTokenPrices.length
-      ? await this._getTokenPricesFromNetwork({
-          ...args,
-          tokenAddresses: notCachedTokenPrices,
-        })
-      : [];
+    try {
+      const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+      const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
+        address.toLowerCase(),
+      );
+      const chainName = this.configurationService.getOrThrow<string>(
+        `prices.chains.${args.chainId}.chainName`,
+      );
+      const pricesFromCache = await this._getTokenPricesFromCache({
+        chainName,
+        tokenAddresses: lowerCaseTokenAddresses,
+        fiatCode: lowerCaseFiatCode,
+      });
+      const notCachedTokenPrices = difference(
+        lowerCaseTokenAddresses,
+        pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
+      );
+      const pricesFromNetwork = notCachedTokenPrices.length
+        ? await this._getTokenPricesFromNetwork({
+            chainName,
+            fiatCode: lowerCaseFiatCode,
+            tokenAddresses: notCachedTokenPrices,
+          })
+        : [];
 
-    return [pricesFromCache, pricesFromNetwork].flat();
+      return [pricesFromCache, pricesFromNetwork].flat();
+    } catch (error) {
+      // Error at this level are logged out, but not thrown to the upper layers.
+      // The service won't throw an error if a single token price retrieval fails.
+      this.loggingService.error(
+        `Error while getting token prices: ${asError(error)} `,
+      );
+      return [];
+    }
   }
 
   async getFiatCodes(): Promise<string[]> {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
-      return await this.dataSource.get({
+      const result = await this.dataSource.get<string[]>({
         cacheDir,
         url,
         networkRequest: {
@@ -147,12 +178,12 @@ export class CoingeckoApi implements IPricesApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
+      return result.map((item) => item.toUpperCase());
     } catch (error) {
-      throw new DataSourceError(
-        `Error getting Fiat Codes from prices provider${this._mapProviderError(
-          error,
-        )}`,
+      this.loggingService.error(
+        `CoinGecko error while getting fiat codes: ${asError(error)} `,
       );
+      return [];
     }
   }
 
