@@ -1,0 +1,22 @@
+name: Feature request
+description: Create a new issue requesting a feature
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the feature is.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: What are the feature requirements?
+    validations:
+      required: true
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional information
+      description: Add any other context about the feature here e.g. proposed API, etc.
