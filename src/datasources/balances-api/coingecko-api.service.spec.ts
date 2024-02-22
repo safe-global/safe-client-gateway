@@ -41,14 +41,20 @@ describe('CoingeckoAPI', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('prices.baseUri', coingeckoBaseUri);
-    fakeConfigurationService.set('prices.apiKey', coingeckoApiKey);
     fakeConfigurationService.set(
-      'prices.pricesTtlSeconds',
+      'balances.providers.safe.prices.baseUri',
+      coingeckoBaseUri,
+    );
+    fakeConfigurationService.set(
+      'balances.providers.safe.prices.apiKey',
+      coingeckoApiKey,
+    );
+    fakeConfigurationService.set(
+      'balances.providers.safe.prices.pricesTtlSeconds',
       pricesCacheTtlSeconds,
     );
     fakeConfigurationService.set(
-      'prices.notFoundPriceTtlSeconds',
+      'balances.providers.safe.prices.notFoundPriceTtlSeconds',
       notFoundPriceTtlSeconds,
     );
     fakeConfigurationService.set(
@@ -104,7 +110,7 @@ describe('CoingeckoAPI', () => {
 
   it('should return fiat codes (with no API key)', async () => {
     mockCacheFirstDataSource.get.mockResolvedValue(['usd', 'eur', 'eth']);
-    fakeConfigurationService.set('prices.apiKey', null);
+    fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     const service = new CoingeckoApi(
       fakeConfigurationService,
       mockCacheFirstDataSource,
@@ -141,7 +147,7 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.chainName`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
       chainName,
     );
 
@@ -181,7 +187,7 @@ describe('CoingeckoAPI', () => {
   });
 
   it('should return and cache one token price (with no API key)', async () => {
-    fakeConfigurationService.set('prices.apiKey', null);
+    fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     const chain = chainBuilder().build();
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
@@ -197,7 +203,7 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.chainName`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
       chainName,
     );
     const service = new CoingeckoApi(
@@ -257,7 +263,7 @@ describe('CoingeckoAPI', () => {
       [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
     };
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.chainName`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
       chainName,
     );
     mockCacheService.get.mockResolvedValue(undefined);
@@ -376,7 +382,7 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.chainName`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
       chainName,
     );
 
@@ -483,7 +489,7 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.chainName`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
       chainName,
     );
 
@@ -544,12 +550,12 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.set.mock.calls[0][2]).toBeGreaterThanOrEqual(
       (fakeConfigurationService.get(
-        'prices.notFoundPriceTtlSeconds',
+        'balances.providers.safe.prices.notFoundPriceTtlSeconds',
       ) as number) - CoingeckoApi.notFoundTtlRangeSeconds,
     );
     expect(mockCacheService.set.mock.calls[0][2]).toBeLessThanOrEqual(
       (fakeConfigurationService.get(
-        'prices.notFoundPriceTtlSeconds',
+        'balances.providers.safe.prices.notFoundPriceTtlSeconds',
       ) as number) + CoingeckoApi.notFoundTtlRangeSeconds,
     );
   });
@@ -562,7 +568,7 @@ describe('CoingeckoAPI', () => {
     const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.nativeCoin`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
       nativeCoinId,
     );
 
@@ -598,9 +604,9 @@ describe('CoingeckoAPI', () => {
     const lowerCaseFiatCode = fiatCode.toLowerCase();
     const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
     mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
-    fakeConfigurationService.set('prices.apiKey', null);
+    fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     fakeConfigurationService.set(
-      `prices.chains.${chain.chainId}.nativeCoin`,
+      `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
       nativeCoinId,
     );
     const service = new CoingeckoApi(

@@ -1,4 +1,4 @@
-import { AssetPrice } from './entities/asset-price.entity';
+import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 
 export const IPricesApi = Symbol('IPricesApi');
 
