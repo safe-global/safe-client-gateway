@@ -726,67 +726,69 @@ describe('LimitAddressesMapper', () => {
       describe.each(PROXY_FACTORY_VERSIONS[chainId])(
         'v%s createProxyWithNonce',
         (version) => {
-          it('should return the limit addresses when creating an official Safe', async () => {
-            const owners = [
-              getAddress(faker.finance.ethereumAddress()),
-              getAddress(faker.finance.ethereumAddress()),
-            ];
-            const singleton = getSafeSingletonDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
-            const data = createProxyWithNonceEncoder()
-              .with('singleton', getAddress(singleton))
-              .with(
-                'initializer',
-                setupEncoder().with('owners', owners).encode(),
-              )
-              .encode();
-            const proxyFactory = getProxyFactoryDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
-            const to = getAddress(proxyFactory);
+          if (SAFE_VERSIONS[chainId].includes(version)) {
+            it('should return the limit addresses when creating an official Safe', async () => {
+              const owners = [
+                getAddress(faker.finance.ethereumAddress()),
+                getAddress(faker.finance.ethereumAddress()),
+              ];
+              const singleton = getSafeSingletonDeployment({
+                version,
+                network: chainId,
+              })!.networkAddresses[chainId];
+              const data = createProxyWithNonceEncoder()
+                .with('singleton', getAddress(singleton))
+                .with(
+                  'initializer',
+                  setupEncoder().with('owners', owners).encode(),
+                )
+                .encode();
+              const proxyFactory = getProxyFactoryDeployment({
+                version,
+                network: chainId,
+              })!.networkAddresses[chainId];
+              const to = getAddress(proxyFactory);
 
-            const expectedLimitAddresses = await target.getLimitAddresses({
-              version,
-              chainId,
-              data,
-              to,
-            });
-            expect(expectedLimitAddresses).toStrictEqual(owners);
-          });
-
-          it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
-            const owners = [
-              getAddress(faker.finance.ethereumAddress()),
-              getAddress(faker.finance.ethereumAddress()),
-            ];
-            const singleton = getSafeSingletonDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
-            const data = createProxyWithNonceEncoder()
-              .with('singleton', getAddress(singleton))
-              .with(
-                'initializer',
-                setupEncoder().with('owners', owners).encode(),
-              )
-              .encode();
-            // Unofficial ProxyFactory
-            const to = getAddress(faker.finance.ethereumAddress());
-
-            await expect(
-              target.getLimitAddresses({
+              const expectedLimitAddresses = await target.getLimitAddresses({
                 version,
                 chainId,
                 data,
                 to,
-              }),
-            ).rejects.toThrow(
-              'ProxyFactory contract is not official. Only official ProxyFactory contracts are supported.',
-            );
-          });
+              });
+              expect(expectedLimitAddresses).toStrictEqual(owners);
+            });
+
+            it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
+              const owners = [
+                getAddress(faker.finance.ethereumAddress()),
+                getAddress(faker.finance.ethereumAddress()),
+              ];
+              const singleton = getSafeSingletonDeployment({
+                version,
+                network: chainId,
+              })!.networkAddresses[chainId];
+              const data = createProxyWithNonceEncoder()
+                .with('singleton', getAddress(singleton))
+                .with(
+                  'initializer',
+                  setupEncoder().with('owners', owners).encode(),
+                )
+                .encode();
+              // Unofficial ProxyFactory
+              const to = getAddress(faker.finance.ethereumAddress());
+
+              await expect(
+                target.getLimitAddresses({
+                  version,
+                  chainId,
+                  data,
+                  to,
+                }),
+              ).rejects.toThrow(
+                'ProxyFactory contract is not official. Only official ProxyFactory contracts are supported.',
+              );
+            });
+          }
 
           if (SAFE_L2_VERSIONS[chainId].includes(version)) {
             it('should return the limit addresses when creating an official L2 Safe', async () => {

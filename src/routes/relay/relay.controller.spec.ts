@@ -596,110 +596,117 @@ describe('Relay controller', () => {
           describe.each(PROXY_FACTORY_VERSIONS[chainId])(
             'v%s createProxyWithNonce',
             (version) => {
-              it('should return the limit addresses when creating an official Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
-                const owners = [
-                  getAddress(faker.finance.ethereumAddress()),
-                  getAddress(faker.finance.ethereumAddress()),
-                ];
-                const singleton = getSafeSingletonDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
-                const proxyFactory = getProxyFactoryDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
-                const to = getAddress(proxyFactory);
-                const data = createProxyWithNonceEncoder()
-                  .with('singleton', getAddress(singleton))
-                  .with(
-                    'initializer',
-                    setupEncoder().with('owners', owners).encode(),
-                  )
-                  .encode();
-                const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
-                  switch (url) {
-                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                      return Promise.resolve({ data: chain, status: 200 });
-                    default:
-                      fail(`Unexpected URL: ${url}`);
-                  }
-                });
-                networkService.post.mockImplementation((url) => {
-                  switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
-                      return Promise.resolve({ data: { taskId }, status: 200 });
-                    default:
-                      fail(`Unexpected URL: ${url}`);
-                  }
-                });
-
-                await request(app.getHttpServer())
-                  .post(`/v1/chains/${chain.chainId}/relay`)
-                  .send({
+              if (SAFE_VERSIONS[chainId].includes(version)) {
+                it('should return the limit addresses when creating an official Safe', async () => {
+                  const chain = chainBuilder().with('chainId', chainId).build();
+                  const owners = [
+                    getAddress(faker.finance.ethereumAddress()),
+                    getAddress(faker.finance.ethereumAddress()),
+                  ];
+                  const singleton = getSafeSingletonDeployment({
                     version,
-                    to,
-                    data,
-                  })
-                  .expect(201)
-                  .expect({
-                    taskId,
-                  });
-              });
-
-              it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
-                const chainId = faker.helpers.arrayElement(supportedChainIds);
-                const chain = chainBuilder().with('chainId', chainId).build();
-                const owners = [
-                  getAddress(faker.finance.ethereumAddress()),
-                  getAddress(faker.finance.ethereumAddress()),
-                ];
-                const singleton = getSafeSingletonDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
-                // Unofficial ProxyFactory
-                const to = getAddress(faker.finance.ethereumAddress());
-                const data = createProxyWithNonceEncoder()
-                  .with('singleton', getAddress(singleton))
-                  .with(
-                    'initializer',
-                    setupEncoder().with('owners', owners).encode(),
-                  )
-                  .encode();
-                const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
-                  switch (url) {
-                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                      return Promise.resolve({ data: chain, status: 200 });
-                    default:
-                      fail(`Unexpected URL: ${url}`);
-                  }
-                });
-                networkService.post.mockImplementation((url) => {
-                  switch (url) {
-                    case `${relayUrl}/relays/v2/sponsored-call`:
-                      return Promise.resolve({ data: { taskId }, status: 200 });
-                    default:
-                      fail(`Unexpected URL: ${url}`);
-                  }
-                });
-
-                await request(app.getHttpServer())
-                  .post(`/v1/chains/${chain.chainId}/relay`)
-                  .send({
+                    network: chainId,
+                  })!.networkAddresses[chainId];
+                  const proxyFactory = getProxyFactoryDeployment({
                     version,
-                    to,
-                    data,
-                  })
-                  .expect(422)
-                  .expect({
-                    message: 'Unofficial ProxyFactory contract.',
-                    statusCode: 422,
+                    network: chainId,
+                  })!.networkAddresses[chainId];
+                  const to = getAddress(proxyFactory);
+                  const data = createProxyWithNonceEncoder()
+                    .with('singleton', getAddress(singleton))
+                    .with(
+                      'initializer',
+                      setupEncoder().with('owners', owners).encode(),
+                    )
+                    .encode();
+                  const taskId = faker.string.uuid();
+                  networkService.get.mockImplementation((url) => {
+                    switch (url) {
+                      case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                        return Promise.resolve({ data: chain, status: 200 });
+                      default:
+                        fail(`Unexpected URL: ${url}`);
+                    }
                   });
-              });
+                  networkService.post.mockImplementation((url) => {
+                    switch (url) {
+                      case `${relayUrl}/relays/v2/sponsored-call`:
+                        return Promise.resolve({
+                          data: { taskId },
+                          status: 200,
+                        });
+                      default:
+                        fail(`Unexpected URL: ${url}`);
+                    }
+                  });
+
+                  await request(app.getHttpServer())
+                    .post(`/v1/chains/${chain.chainId}/relay`)
+                    .send({
+                      version,
+                      to,
+                      data,
+                    })
+                    .expect(201)
+                    .expect({
+                      taskId,
+                    });
+                });
+
+                it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
+                  const chain = chainBuilder().with('chainId', chainId).build();
+                  const owners = [
+                    getAddress(faker.finance.ethereumAddress()),
+                    getAddress(faker.finance.ethereumAddress()),
+                  ];
+                  const singleton = getSafeSingletonDeployment({
+                    version,
+                    network: chainId,
+                  })!.networkAddresses[chainId];
+                  // Unofficial ProxyFactory
+                  const to = getAddress(faker.finance.ethereumAddress());
+                  const data = createProxyWithNonceEncoder()
+                    .with('singleton', getAddress(singleton))
+                    .with(
+                      'initializer',
+                      setupEncoder().with('owners', owners).encode(),
+                    )
+                    .encode();
+                  const taskId = faker.string.uuid();
+                  networkService.get.mockImplementation((url) => {
+                    switch (url) {
+                      case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                        return Promise.resolve({ data: chain, status: 200 });
+                      default:
+                        fail(`Unexpected URL: ${url}`);
+                    }
+                  });
+                  networkService.post.mockImplementation((url) => {
+                    switch (url) {
+                      case `${relayUrl}/relays/v2/sponsored-call`:
+                        return Promise.resolve({
+                          data: { taskId },
+                          status: 200,
+                        });
+                      default:
+                        fail(`Unexpected URL: ${url}`);
+                    }
+                  });
+
+                  await request(app.getHttpServer())
+                    .post(`/v1/chains/${chain.chainId}/relay`)
+                    .send({
+                      version,
+                      to,
+                      data,
+                    })
+                    .expect(422)
+                    .expect({
+                      message: 'Unofficial ProxyFactory contract.',
+                      statusCode: 422,
+                    });
+                });
+              }
 
               if (SAFE_L2_VERSIONS[chainId].includes(version)) {
                 it('should return the limit addresses when creating an official L2 Safe', async () => {
@@ -759,7 +766,6 @@ describe('Relay controller', () => {
                 });
 
                 it('should throw when using an unofficial ProxyFactory to create an official L2 Safe', async () => {
-                  const chainId = faker.helpers.arrayElement(supportedChainIds);
                   const chain = chainBuilder().with('chainId', chainId).build();
                   const owners = [
                     getAddress(faker.finance.ethereumAddress()),
