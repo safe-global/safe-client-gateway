@@ -32,19 +32,19 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/domain/contracts/contracts/__tests__/safe-encoder.builder';
-import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/erc20-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
+import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/domain/contracts/contracts/__tests__/multi-send-encoder.builder';
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import {
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
-import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/proxy-factory-encoder.builder';
+import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 
 const SAFE_VERSIONS = ['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1'];
 const SAFE_L2_VERSIONS = ['1.3.0', '1.4.1'];
