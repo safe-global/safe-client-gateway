@@ -142,7 +142,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(200)
           .expect(({ body }) => {
             expect(body).toMatchObject({
-              count: zerionApiCollectiblesResponse.data.length,
+              count: null,
               next: expect.any(String),
               previous: null,
               results: [
@@ -282,7 +282,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(200)
           .expect(({ body }) => {
             expect(body).toMatchObject({
-              count: zerionApiCollectiblesResponse.data.length,
+              count: null,
               next: expect.stringContaining(expectedNext),
               previous: null,
               results: expect.any(Array),
@@ -345,7 +345,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(200)
           .expect(({ body }) => {
             expect(body).toMatchObject({
-              count: zerionApiCollectiblesResponse.data.length,
+              count: null,
               next: expect.stringContaining(expectedNext),
               previous: null,
               results: expect.any(Array),
@@ -407,7 +407,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(200)
           .expect(({ body }) => {
             expect(body).toMatchObject({
-              count: zerionApiCollectiblesResponse.data.length,
+              count: null,
               next: expect.stringContaining(expectedNext),
               previous: null,
               results: expect.any(Array),
