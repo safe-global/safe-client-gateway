@@ -34,7 +34,7 @@ export class GelatoApi implements IRelayApi {
     chainId: string;
     to: string;
     data: string;
-    gasLimit: string | null;
+    gasLimit: bigint | null;
   }): Promise<{ taskId: string }> {
     const sponsorApiKey = this.configurationService.getOrThrow<string>(
       `relay.apiKey.${args.chainId}`,
@@ -48,7 +48,7 @@ export class GelatoApi implements IRelayApi {
         target: args.to,
         data: args.data,
         ...(args.gasLimit && {
-          gasLimit: this.getRelayGasLimit(args.gasLimit),
+          gasLimit: this.getRelayGasLimit(args.gasLimit).toString(),
         }),
       });
       return data;
@@ -57,7 +57,7 @@ export class GelatoApi implements IRelayApi {
     }
   }
 
-  private getRelayGasLimit(gasLimit: string): string {
-    return (BigInt(gasLimit) + GelatoApi.GAS_LIMIT_BUFFER).toString();
+  private getRelayGasLimit(gasLimit: bigint): bigint {
+    return gasLimit + GelatoApi.GAS_LIMIT_BUFFER;
   }
 }

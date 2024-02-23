@@ -1,4 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { RelayRepository } from '@/domain/relay/relay.repository';
 import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -24,8 +28,25 @@ export class RelayService {
       chainId: args.chainId,
       to: args.relayDto.to,
       data: args.relayDto.data,
-      gasLimit: args.relayDto.gasLimit,
+      gasLimit: this.coerceGasLimit(args.relayDto.gasLimit),
     });
+  }
+
+  /**
+   * As AJV does not support bigint, we cannot validate it without
+   * a new keyword. To preserve type safety, it is instead validated
+   * as a string and then manually coerced.
+   */
+  private coerceGasLimit(gasLimit: RelayDto['gasLimit']): bigint | null {
+    if (!gasLimit) {
+      return null;
+    }
+
+    try {
+      return BigInt(gasLimit);
+    } catch (error) {
+      throw new UnprocessableEntityException('Invalid gas limit provided');
+    }
   }
 
   async getRelaysRemaining(args: {
