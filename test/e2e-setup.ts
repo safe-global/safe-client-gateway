@@ -19,3 +19,5 @@ process.env.POSTGRES_PASSWORD = 'postgres';
 // For E2E tests, connect to the test cache
 process.env.REDIS_HOST = '127.0.0.1';
 process.env.REDIS_PORT = '6379';
+
+process.env.OWNERS_TTL_MS = '0';
