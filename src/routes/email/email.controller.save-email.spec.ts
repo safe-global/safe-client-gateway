@@ -76,7 +76,12 @@ describe('Email controller save email tests', () => {
     await app.close();
   });
 
-  it('stores email successfully', async () => {
+  it.each([
+    // non-checksummed address
+    { safeAddress: faker.finance.ethereumAddress() },
+    // checksummed address
+    { safeAddress: getAddress(faker.finance.ethereumAddress()) },
+  ])('stores email successfully', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
     const timestamp = jest.now();
@@ -85,9 +90,8 @@ describe('Email controller save email tests', () => {
     const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
+      .with('address', safeAddress)
       .with('owners', [signerAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
     const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
@@ -105,7 +109,7 @@ describe('Email controller save email tests', () => {
       accountBuilder()
         .with('chainId', chain.chainId)
         .with('emailAddress', new EmailAddress(emailAddress))
-        .with('safeAddress', safe.address)
+        .with('safeAddress', getAddress(safe.address))
         .with('signer', signerAddress)
         .with('isVerified', false)
         .build(),
@@ -123,7 +127,7 @@ describe('Email controller save email tests', () => {
     );
 
     await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
+      .post(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
       .set('Safe-Wallet-Signature', signature)
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
@@ -142,9 +146,20 @@ describe('Email controller save email tests', () => {
       ),
       to: [emailAddress],
     });
+    expect(accountDataSource.createAccount).toHaveBeenCalledWith({
+      chainId: chain.chainId,
+      // Should always store the checksummed address
+      safeAddress: getAddress(safeAddress),
+      emailAddress: new EmailAddress(emailAddress),
+      signer: signer.address,
+      code: expect.any(String),
+      codeGenerationDate: expect.any(Date),
+      unsubscriptionToken: expect.any(String),
+    });
     expect(accountDataSource.subscribe).toHaveBeenCalledWith({
       chainId: chain.chainId,
-      safeAddress: safe.address,
+      // should be called with checksummed address
+      safeAddress: getAddress(safeAddress),
       signer: signerAddress,
       notificationTypeKey: 'account_recovery',
     });

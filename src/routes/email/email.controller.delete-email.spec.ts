@@ -74,16 +74,20 @@ describe('Email controller delete email tests', () => {
     await app.close();
   });
 
-  it('deletes email successfully', async () => {
+  it.each([
+    // non-checksummed address
+    { safeAddress: faker.finance.ethereumAddress() },
+    // checksummed address
+    { safeAddress: getAddress(faker.finance.ethereumAddress()) },
+  ])('deletes email successfully', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
     const timestamp = jest.now();
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const signerAddress = signer.address;
-    const safeAddress = faker.finance.ethereumAddress();
     const account = accountBuilder()
       .with('signer', signerAddress)
-      .with('safeAddress', safeAddress)
+      .with('safeAddress', getAddress(safeAddress))
       .with('chainId', chain.chainId)
       .build();
     const message = `email-delete-${chain.chainId}-${safeAddress}-${signerAddress}-${timestamp}`;
@@ -103,6 +107,12 @@ describe('Email controller delete email tests', () => {
 
     expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(1);
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledWith({
+      chainId: chain.chainId,
+      // Should always call with the checksummed address
+      safeAddress: getAddress(safeAddress),
+      signer: signer.address,
+    });
   });
 
   it("returns 204 if trying to deleting an email that doesn't exist", async () => {
@@ -141,6 +151,33 @@ describe('Email controller delete email tests', () => {
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(204)
       .expect({});
+
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+  });
+
+  it('returns 422 if Safe address is not a valid Ethereum address', async () => {
+    const chain = chainBuilder().build();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
+    const invalidSafeAddress = faker.word.sample();
+    const message = `email-delete-${chain.chainId}-${invalidSafeAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
+
+    await request(app.getHttpServer())
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${invalidSafeAddress}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .expect(422)
+      .expect({
+        message: `Address "${invalidSafeAddress}" is invalid.`,
+        error: 'Unprocessable Entity',
+        statusCode: 422,
+      });
 
     expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
@@ -213,14 +250,10 @@ describe('Email controller delete email tests', () => {
     const signer = privateKeyToAccount(privateKey);
     const signerAddress = signer.address;
     // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [signerAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      .build();
+    const safe = safeBuilder().with('owners', [signerAddress]).build();
     const account = accountBuilder()
       .with('signer', signerAddress)
-      .with('safeAddress', safe.address)
+      .with('safeAddress', getAddress(safe.address))
       .with('chainId', chain.chainId)
       .build();
     const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
