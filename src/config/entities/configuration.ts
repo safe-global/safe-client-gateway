@@ -174,7 +174,7 @@ export default () => ({
   },
   owners: {
     // There is no hook to invalidate the owners, so defaulting 0 disables the cache
-    ownersTtlSeconds: parseInt(process.env.OWNERS_TTL_MS ?? `${0}`),
+    ownersTtlSeconds: parseInt(process.env.OWNERS_TTL_SECONDS ?? `${0}`),
   },
   mappings: {
     history: {
