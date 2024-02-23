@@ -6,7 +6,6 @@ import {
 import { RelayRepository } from '@/domain/relay/relay.repository';
 import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 
 @Injectable()
 export class RelayService {
@@ -16,7 +15,6 @@ export class RelayService {
   constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     private readonly relayRepository: RelayRepository,
-    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
