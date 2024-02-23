@@ -44,6 +44,6 @@ describe('Get safes by owner e2e test', () => {
       });
 
     const cacheContent = await redisClient.hGet(ownerCacheKey, '');
-    expect(cacheContent).not.toBeNull();
+    expect(cacheContent).toBeNull();
   });
 });

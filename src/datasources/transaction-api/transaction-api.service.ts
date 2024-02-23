@@ -31,6 +31,7 @@ export class TransactionApi implements ITransactionApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
+  private readonly ownersExpirationTimeSeconds: number;
 
   constructor(
     private readonly chainId: string,
@@ -57,6 +58,8 @@ export class TransactionApi implements ITransactionApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.contract',
       );
+    this.ownersExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>('owners.ownersTtlSeconds');
   }
 
   async getDataDecoded(args: {
@@ -651,7 +654,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   // Important: there is no hook which invalidates this endpoint,
-  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
+  // Therefore, this data will live in cache until [ownersExpirationTimeSeconds]
   async getSafesByOwner(ownerAddress: string): Promise<SafeList> {
     try {
       const cacheDir = CacheRouter.getSafesByOwnerCacheDir({
@@ -663,7 +666,7 @@ export class TransactionApi implements ITransactionApi {
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        expireTimeSeconds: this.ownersExpirationTimeSeconds,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
