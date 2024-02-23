@@ -9,6 +9,7 @@ import {
   getSafeL2SingletonDeployment,
   getMultiSendCallOnlyDeployment,
   getMultiSendDeployment,
+  getProxyFactoryDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
 import { isAddress, isHex } from 'viem';
@@ -16,6 +17,7 @@ import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-mast
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
 import { InvalidMultiSendError } from '@/domain/relay/errors/invalid-multisend.error';
+import { UnofficialProxyFactoryError } from '@/domain/relay/errors/unofficial-proxy-factory.error';
 
 @Injectable()
 export class LimitAddressesMapper {
@@ -100,6 +102,15 @@ export class LimitAddressesMapper {
         data: args.data,
       })
     ) {
+      if (
+        !this.isOfficialProxyFactoryDeployment({
+          version: args.version,
+          chainId: args.chainId,
+          address: args.to,
+        })
+      ) {
+        throw new UnofficialProxyFactoryError();
+      }
       // Owners of safe-to-be-created will be limited
       return this.getOwnersFromCreateProxyWithNonce(args.data);
     }
@@ -219,6 +230,22 @@ export class LimitAddressesMapper {
 
     return firstRecipient;
   };
+
+  private isOfficialProxyFactoryDeployment(args: {
+    version: string;
+    chainId: string;
+    address: string;
+  }): boolean {
+    const proxyFactoryDeployment = getProxyFactoryDeployment({
+      version: args.version,
+      network: args.chainId,
+    });
+
+    return (
+      proxyFactoryDeployment?.networkAddresses[args.chainId] === args.address ||
+      proxyFactoryDeployment?.defaultAddress === args.address
+    );
+  }
 
   private isValidCreateProxyWithNonceCall(args: {
     version: string;
