@@ -143,7 +143,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -151,7 +151,7 @@ describe('Relay controller', () => {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -183,7 +183,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -191,7 +191,7 @@ describe('Relay controller', () => {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -263,7 +263,9 @@ describe('Relay controller', () => {
                         // Official mastercopy
                         return Promise.resolve({ data: safe, status: 200 });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
                   networkService.post.mockImplementation((url) => {
@@ -274,7 +276,9 @@ describe('Relay controller', () => {
                           status: 200,
                         });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
 
@@ -309,7 +313,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -317,7 +321,7 @@ describe('Relay controller', () => {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -377,7 +381,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -385,7 +389,7 @@ describe('Relay controller', () => {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -438,7 +442,7 @@ describe('Relay controller', () => {
                   // Official mastercopy
                   return Promise.resolve({ data: safe, status: 200 });
                 default:
-                  fail(`Unexpected URL: ${url}`);
+                  return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
             networkService.post.mockImplementation((url) => {
@@ -446,7 +450,7 @@ describe('Relay controller', () => {
                 case `${relayUrl}/relays/v2/sponsored-call`:
                   return Promise.resolve({ data: { taskId }, status: 200 });
                 default:
-                  fail(`Unexpected URL: ${url}`);
+                  return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
 
@@ -504,7 +508,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -512,7 +516,7 @@ describe('Relay controller', () => {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -566,7 +570,7 @@ describe('Relay controller', () => {
                   // Official mastercopy
                   return Promise.resolve({ data: safe, status: 200 });
                 default:
-                  fail(`Unexpected URL: ${url}`);
+                  return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
             networkService.post.mockImplementation((url) => {
@@ -574,7 +578,7 @@ describe('Relay controller', () => {
                 case `${relayUrl}/relays/v2/sponsored-call`:
                   return Promise.resolve({ data: { taskId }, status: 200 });
                 default:
-                  fail(`Unexpected URL: ${url}`);
+                  return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
 
@@ -625,7 +629,9 @@ describe('Relay controller', () => {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
                   networkService.post.mockImplementation((url) => {
@@ -636,7 +642,9 @@ describe('Relay controller', () => {
                           status: 200,
                         });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
 
@@ -678,7 +686,9 @@ describe('Relay controller', () => {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
                   networkService.post.mockImplementation((url) => {
@@ -689,7 +699,9 @@ describe('Relay controller', () => {
                           status: 200,
                         });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
 
@@ -737,7 +749,9 @@ describe('Relay controller', () => {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
                   networkService.post.mockImplementation((url) => {
@@ -748,7 +762,9 @@ describe('Relay controller', () => {
                           status: 200,
                         });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
 
@@ -790,7 +806,9 @@ describe('Relay controller', () => {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
                   networkService.post.mockImplementation((url) => {
@@ -801,7 +819,9 @@ describe('Relay controller', () => {
                           status: 200,
                         });
                       default:
-                        fail(`Unexpected URL: ${url}`);
+                        return Promise.reject(
+                          `No matching rule for url: ${url}`,
+                        );
                     }
                   });
 
@@ -868,7 +888,7 @@ describe('Relay controller', () => {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
               networkService.post.mockImplementation((url) => {
@@ -876,7 +896,7 @@ describe('Relay controller', () => {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
 
@@ -918,7 +938,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -956,7 +976,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -990,7 +1010,7 @@ describe('Relay controller', () => {
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1047,7 +1067,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
                 networkService.post.mockImplementation((url) => {
@@ -1058,7 +1078,7 @@ describe('Relay controller', () => {
                         status: 200,
                       });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1112,7 +1132,7 @@ describe('Relay controller', () => {
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1163,7 +1183,7 @@ describe('Relay controller', () => {
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1215,7 +1235,7 @@ describe('Relay controller', () => {
                       // Official mastercopy
                       return Promise.resolve({ data: safe, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1260,7 +1280,7 @@ describe('Relay controller', () => {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
                     default:
-                      fail(`Unexpected URL: ${url}`);
+                      return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
 
@@ -1297,7 +1317,7 @@ describe('Relay controller', () => {
                 // Official mastercopy
                 return Promise.resolve({ data: safe, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
 
@@ -1337,7 +1357,7 @@ describe('Relay controller', () => {
                     // Official mastercopy
                     return Promise.resolve({ data: safe, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
               networkService.post.mockImplementation((url) => {
@@ -1345,7 +1365,7 @@ describe('Relay controller', () => {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
 
@@ -1407,7 +1427,7 @@ describe('Relay controller', () => {
                     // Official mastercopy
                     return Promise.resolve({ data: safe, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
               networkService.post.mockImplementation((url) => {
@@ -1415,7 +1435,7 @@ describe('Relay controller', () => {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
 
@@ -1470,7 +1490,7 @@ describe('Relay controller', () => {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
               networkService.post.mockImplementation((url) => {
@@ -1478,7 +1498,7 @@ describe('Relay controller', () => {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
                   default:
-                    fail(`Unexpected URL: ${url}`);
+                    return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
 
@@ -1521,7 +1541,7 @@ describe('Relay controller', () => {
                 // Official mastercopy
                 return Promise.resolve({ data: safe, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
           networkService.post.mockImplementation((url) => {
@@ -1529,7 +1549,7 @@ describe('Relay controller', () => {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
 
@@ -1578,7 +1598,7 @@ describe('Relay controller', () => {
                 // Official mastercopy
                 return Promise.resolve({ data: safe, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
           networkService.post.mockImplementation((url) => {
@@ -1586,7 +1606,7 @@ describe('Relay controller', () => {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
 
@@ -1622,7 +1642,7 @@ describe('Relay controller', () => {
                 // Official mastercopy
                 return Promise.resolve({ data: safe, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
           networkService.post.mockImplementation((url) => {
@@ -1630,7 +1650,7 @@ describe('Relay controller', () => {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
               default:
-                fail(`Unexpected URL: ${url}`);
+                return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
 
@@ -1670,7 +1690,7 @@ describe('Relay controller', () => {
               // Official mastercopy
               return Promise.resolve({ data: safe, status: 200 });
             default:
-              fail(`Unexpected URL: ${url}`);
+              return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
         networkService.post.mockImplementation((url) => {
@@ -1678,7 +1698,7 @@ describe('Relay controller', () => {
             case `${relayUrl}/relays/v2/sponsored-call`:
               return Promise.reject(new Error('Relayer error'));
             default:
-              fail(`Unexpected URL: ${url}`);
+              return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
 
@@ -1717,7 +1737,7 @@ describe('Relay controller', () => {
               // Official mastercopy
               return Promise.resolve({ data: safe, status: 200 });
             default:
-              fail(`Unexpected URL: ${url}`);
+              return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
         networkService.post.mockImplementation((url) => {
@@ -1725,7 +1745,7 @@ describe('Relay controller', () => {
             case `${relayUrl}/relays/v2/sponsored-call`:
               return Promise.resolve({ data: { taskId }, status: 200 });
             default:
-              fail(`Unexpected URL: ${url}`);
+              return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
 

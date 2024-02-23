@@ -514,7 +514,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       }
       if (url === getMultisigTransactionsUrl) {
         if (!query?.params) {
-          fail('Query params not found');
+          return Promise.reject('Query params not found');
         }
         expect(query.params.trusted).toBe(false);
 

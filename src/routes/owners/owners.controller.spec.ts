@@ -238,7 +238,7 @@ describe('Owners Controller (Unit)', () => {
           }
 
           default: {
-            fail(`Unexpected URL: ${url}`);
+            return Promise.reject(`No matching rule for url: ${url}`);
           }
         }
       });
@@ -265,7 +265,7 @@ describe('Owners Controller (Unit)', () => {
           );
           return Promise.reject(error);
         }
-        fail(`Unexpected URL: ${url}`);
+        return Promise.reject(`No matching rule for url: ${url}`);
       });
 
       await request(app.getHttpServer())
@@ -322,7 +322,7 @@ describe('Owners Controller (Unit)', () => {
           }
 
           default: {
-            fail(`Unexpected URL: ${url}`);
+            return Promise.reject(`No matching rule for url: ${url}`);
           }
         }
       });

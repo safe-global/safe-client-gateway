@@ -99,7 +99,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ) {
         return Promise.resolve({ data: multisigToJson(tx), status: 200 });
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.delete.mockImplementation((url) => {
       if (
@@ -108,7 +108,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ) {
         return Promise.resolve({ data: {}, status: 204 });
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
 
     await request(app.getHttpServer())
@@ -134,7 +134,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ) {
         return Promise.resolve({ data: multisigToJson(tx), status: 200 });
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.delete.mockImplementation((url) => {
       if (
@@ -143,7 +143,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ) {
         return Promise.resolve({ data: {}, status: 204 });
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
 
     await request(app.getHttpServer())
@@ -183,7 +183,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ) {
         return Promise.resolve({ data: multisigToJson(tx), status: 200 });
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.delete.mockImplementation((url) => {
       if (
@@ -200,7 +200,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
           ),
         );
       }
-      fail(`No matching rule for url: ${url}`);
+      return Promise.reject(`No matching rule for url: ${url}`);
     });
 
     await request(app.getHttpServer())
