@@ -43,12 +43,14 @@ describe('TransactionApi', () => {
   let service: TransactionApi;
   let defaultExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
+  let ownersTtlSeconds: number;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
     defaultExpirationTimeInSeconds = faker.number.int();
     notFoundExpireTimeSeconds = faker.number.int();
+    ownersTtlSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
@@ -61,6 +63,9 @@ describe('TransactionApi', () => {
       }
       if (key === 'expirationTimeInSeconds.notFound.token') {
         return notFoundExpireTimeSeconds;
+      }
+      if (key === 'owners.ownersTtlSeconds') {
+        return ownersTtlSeconds;
       }
       throw Error(`Unexpected key: ${key}`);
     });

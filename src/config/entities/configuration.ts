@@ -172,6 +172,10 @@ export default () => ({
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
+  owners: {
+    // There is no hook to invalidate the owners, so defaulting 0 disables the cache
+    ownersTtlSeconds: parseInt(process.env.OWNERS_TTL_MS ?? `${0}`),
+  },
   mappings: {
     history: {
       maxNestedTransfers: parseInt(
