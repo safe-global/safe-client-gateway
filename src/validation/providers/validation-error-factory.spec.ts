@@ -36,7 +36,7 @@ describe('ValidationErrorFactory', () => {
       !('message' in response) ||
       !('arguments' in response)
     ) {
-      fail('Malformed response');
+      return Promise.reject('Malformed response');
     }
 
     expect(response.code).toBe(42);
