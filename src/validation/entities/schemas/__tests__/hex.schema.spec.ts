@@ -1,4 +1,4 @@
-import { HexSchema } from '@/validation/entities/schemas/hex.schemta';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { faker } from '@faker-js/faker';
 
 describe('HexSchema', () => {
