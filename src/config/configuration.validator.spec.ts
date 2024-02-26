@@ -17,6 +17,8 @@ describe('Configuration validator', () => {
     EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+    RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -44,6 +46,8 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_TEMPLATE_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_VERIFICATION_CODE' },
+    { key: 'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN' },
+    { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
     ({ key }) => {
@@ -70,6 +74,8 @@ describe('Configuration validator', () => {
         EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
         EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
         EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+        RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
+        RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       }),
     ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
   });

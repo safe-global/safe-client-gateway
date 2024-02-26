@@ -19,6 +19,8 @@ const configurationSchema: Schema = {
     EMAIL_TEMPLATE_RECOVERY_TX: { type: 'string' },
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: { type: 'string' },
     EMAIL_TEMPLATE_VERIFICATION_CODE: { type: 'string' },
+    RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: { type: 'string' },
+    RELAY_PROVIDER_API_KEY_SEPOLIA: { type: 'string' },
   },
   required: [
     'AUTH_TOKEN',
@@ -32,6 +34,8 @@ const configurationSchema: Schema = {
     'EMAIL_TEMPLATE_RECOVERY_TX',
     'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX',
     'EMAIL_TEMPLATE_VERIFICATION_CODE',
+    'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN',
+    'RELAY_PROVIDER_API_KEY_SEPOLIA',
   ],
 };
 
