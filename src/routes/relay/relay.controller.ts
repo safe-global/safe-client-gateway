@@ -3,12 +3,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { RelayService } from '@/routes/relay/relay.service';
 import { RelayLimitReachedExceptionFilter } from '@/domain/relay/exception-filters/relay-limit-reached.exception-filter';
-import { RelayDtoValidationPipe } from '@/routes/relay/pipes/relay.validation.pipe';
+import { ZodValidationPipe } from '@/validation/pipes/zod.validation.pipe';
 import { InvalidMultiSendExceptionFilter } from '@/domain/relay/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/domain/relay/exception-filters/invalid-transfer.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/domain/relay/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/domain/relay/exception-filters/unofficial-proxy-factory.exception-filter';
+import { RelayDtoSchema } from '@/routes/relay/entities/schemas/relay.dto.schema';
 
 @ApiTags('relay')
 @Controller({
@@ -29,7 +30,7 @@ export class RelayController {
   )
   async relay(
     @Param('chainId') chainId: string,
-    @Body(RelayDtoValidationPipe)
+    @Body(new ZodValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
   ): Promise<{ taskId: string }> {
     return this.relayService.relay({ chainId, relayDto });
