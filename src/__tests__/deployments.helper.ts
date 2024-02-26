@@ -2,11 +2,11 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 /**
- * This generates a map of chain IDs to an array of versions for a given deployment
- * from the `@safe-global/safe-deployments` package.
+ * This generates a map of contract names to chain IDs to a versions array
+ * from all deployments in the `@safe-global/safe-deployments` package.
  *
- * It is important to note that not all versions of a contract are deployed on all
- * chains and there is naming variation across versions.
+ * It is important to note that not all versions of a contract are deployed
+ * on all chains and there is naming variation across versions.
  *
  * Note: if there is a contract update, the alias mapping may need updating.
  */
@@ -49,8 +49,6 @@ const deploymentAliases = {
   ],
 };
 
-const allDeploymentAliases = Object.values(deploymentAliases).flat();
-
 // Path to directory containing JSON assets
 const assetsDir = path.join(
   process.cwd(),
@@ -61,11 +59,23 @@ const assetsDir = path.join(
   'assets',
 );
 
-function getDeploymentVersionsByChainId(
-  contractAlias: keyof typeof deploymentAliases,
-  chainId: string,
-): Array<string> {
-  const versionsByChain: Array<string> = [];
+type VersionsByChainIdByDeploymentMap = {
+  [contractAlias: string]: { [chainId: string]: string[] | undefined };
+};
+
+let versionsByDeploymentByChainIdSingleton: VersionsByChainIdByDeploymentMap | null;
+
+export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploymentMap {
+  // If previously computed, return the singleton
+  if (versionsByDeploymentByChainIdSingleton) {
+    return versionsByDeploymentByChainIdSingleton;
+  }
+
+  // Initialize map
+  versionsByDeploymentByChainIdSingleton = {};
+  for (const contractName of Object.keys(deploymentAliases)) {
+    versionsByDeploymentByChainIdSingleton[contractName] = {};
+  }
 
   // For each version...
   for (const version of fs.readdirSync(assetsDir)) {
@@ -80,29 +90,37 @@ function getDeploymentVersionsByChainId(
       // Parse the asset JSON
       const deployment = JSON.parse(assetJson);
 
-      // If there is a deployment on the given chain and the alias is known
-      if (
-        deployment.networkAddresses[chainId] &&
-        deploymentAliases[contractAlias].includes(deployment.contractName)
-      ) {
-        versionsByChain.push(deployment.version);
+      // Get the alias name
+      const name = Object.entries(deploymentAliases).find(([, aliases]) => {
+        return aliases.includes(deployment.contractName);
+      })?.[0];
+
+      if (!name) {
+        throw new Error(
+          `The ${deployment.contractName} contract alias is not known!`,
+        );
       }
-      // Else if the deployment is name is not mapped (is a new version alias)
-      else if (!allDeploymentAliases.includes(deployment.contractName)) {
-        throw new Error(`The ${test} contract alias is not known!`);
+
+      // Add the version to the map
+      for (const chainId of Object.keys(deployment.networkAddresses)) {
+        versionsByDeploymentByChainIdSingleton[name][chainId] ??= [];
+        versionsByDeploymentByChainIdSingleton[name][chainId]?.push(
+          deployment.version,
+        );
       }
     }
   }
 
-  return versionsByChain;
+  return versionsByDeploymentByChainIdSingleton;
 }
 
 export function getDeploymentVersionsByChainIds(
   contractAlias: keyof typeof deploymentAliases,
   chainIds: Array<string>,
 ): Record<string, Array<string>> {
+  const map = getVersionsByChainIdByDeploymentMap();
   return chainIds.reduce<Record<string, Array<string>>>((acc, chainId) => {
-    acc[chainId] = getDeploymentVersionsByChainId(contractAlias, chainId);
+    acc[chainId] = map[contractAlias][chainId] ?? [];
     return acc;
   }, {});
 }
