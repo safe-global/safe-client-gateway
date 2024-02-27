@@ -70,7 +70,7 @@ describe('Email controller resend verification tests', () => {
 
   it.each([
     // non-checksummed address
-    { safeAddress: faker.finance.ethereumAddress() },
+    { safeAddress: faker.finance.ethereumAddress().toLowerCase() },
     // checksummed address
     { safeAddress: getAddress(faker.finance.ethereumAddress()) },
   ])('resends email verification successfully', async ({ safeAddress }) => {

@@ -76,7 +76,7 @@ describe('Email controller delete email tests', () => {
 
   it.each([
     // non-checksummed address
-    { safeAddress: faker.finance.ethereumAddress() },
+    { safeAddress: faker.finance.ethereumAddress().toLowerCase() },
     // checksummed address
     { safeAddress: getAddress(faker.finance.ethereumAddress()) },
   ])('deletes email successfully', async ({ safeAddress }) => {
