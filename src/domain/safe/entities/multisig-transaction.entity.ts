@@ -29,6 +29,7 @@ export type MultisigTransaction = {
   nonce: number;
   operation: Operation;
   origin: string | null;
+  proposer: string | null;
   refundReceiver: string | null;
   safe: string;
   safeTxGas: number | null;

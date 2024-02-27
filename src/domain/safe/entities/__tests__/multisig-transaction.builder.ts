@@ -41,6 +41,7 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
         appendSlash: false,
       })}", "name": "${faker.word.words()}"}`,
     )
+    .with('proposer', faker.finance.ethereumAddress())
     .with('refundReceiver', faker.finance.ethereumAddress())
     .with('safe', faker.finance.ethereumAddress())
     .with('safeTxGas', faker.number.int())
