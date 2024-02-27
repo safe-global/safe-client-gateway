@@ -18,8 +18,8 @@
     "resolveJsonModule": true,
     "paths": {
       "@/abis/*": ["abis/*"],
-      "@/*": ["src/*"],
+      "@/*": ["src/*"]
     },
-    "strict": true,
-  },
+    "strict": true
+  }
 }
