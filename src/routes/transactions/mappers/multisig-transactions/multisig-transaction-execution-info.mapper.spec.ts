@@ -62,7 +62,9 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
   it('should return a MultiSigExecutionInfo with no missing signers', () => {
     const safe = safeBuilder().build();
     const proposer = faker.finance.ethereumAddress();
-    const transaction = multisigTransactionBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('proposer', proposer)
+      .build();
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
