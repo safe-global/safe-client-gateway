@@ -66,7 +66,7 @@ describe('Relay controller', () => {
           })
           .expect(308)
           .expect((res) => {
-            expect(res.get('location')).toBe('/v1/chains/:chainId/relay');
+            expect(res.get('location')).toBe(`/v1/chains/${chainId}/relay`);
           });
       });
     });
@@ -79,7 +79,7 @@ describe('Relay controller', () => {
           .expect(301)
           .expect((res) => {
             expect(res.get('location')).toBe(
-              '/v1/chains/:chainId/relay/:safeAddress',
+              `/v1/chains/${chainId}/relay/${safeAddress}`,
             );
           });
       });
