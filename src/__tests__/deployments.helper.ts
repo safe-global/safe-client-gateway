@@ -64,12 +64,11 @@ type VersionsByChainIdByDeploymentMap = {
 };
 
 export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploymentMap {
-  const versionsByDeploymentByChainIdSingleton: VersionsByChainIdByDeploymentMap =
-    {};
+  const versionsByDeploymentByChainId: VersionsByChainIdByDeploymentMap = {};
 
   // Initialize map
   for (const contractName of Object.keys(deploymentAliases)) {
-    versionsByDeploymentByChainIdSingleton[contractName] = {};
+    versionsByDeploymentByChainId[contractName] = {};
   }
 
   // For each version...
@@ -98,27 +97,23 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
 
       // Add the version to the map
       for (const chainId of Object.keys(deployment.networkAddresses)) {
-        versionsByDeploymentByChainIdSingleton[name][chainId] ??= [];
-        versionsByDeploymentByChainIdSingleton[name][chainId]?.push(
-          deployment.version,
-        );
+        versionsByDeploymentByChainId[name][chainId] ??= [];
+        versionsByDeploymentByChainId[name][chainId]?.push(deployment.version);
       }
     }
   }
 
-  return versionsByDeploymentByChainIdSingleton;
+  return versionsByDeploymentByChainId;
 }
 
-const versionsByDeploymentByChainIdSingleton =
-  getVersionsByChainIdByDeploymentMap();
+const versionsByDeploymentByChainId = getVersionsByChainIdByDeploymentMap();
 
 export function getDeploymentVersionsByChainIds(
   contractAlias: keyof typeof deploymentAliases,
   chainIds: Array<string>,
 ): Record<string, Array<string>> {
   return chainIds.reduce<Record<string, Array<string>>>((acc, chainId) => {
-    acc[chainId] =
-      versionsByDeploymentByChainIdSingleton[contractAlias][chainId] ?? [];
+    acc[chainId] = versionsByDeploymentByChainId[contractAlias][chainId] ?? [];
     return acc;
   }, {});
 }
