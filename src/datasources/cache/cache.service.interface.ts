@@ -6,7 +6,7 @@ export interface ICacheService {
   set(
     cacheDir: CacheDir,
     value: string,
-    expireTimeSeconds?: number,
+    expireTimeSeconds: number | undefined,
   ): Promise<void>;
 
   get(cacheDir: CacheDir): Promise<string | undefined>;

@@ -94,7 +94,8 @@ export class RelayRepository {
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;
     const cacheDir = this.getRelayCacheKey(args);
-    return this.cacheService.set(cacheDir, incremented.toString());
+    // TODO extract expiration time to a configurable variable
+    return this.cacheService.set(cacheDir, incremented.toString(), 60 * 60);
   }
 
   private getRelayCacheKey(args: {

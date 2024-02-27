@@ -71,6 +71,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
       expireTime,
+      'NX',
     );
   });
 
@@ -102,6 +103,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-invalidationTimeMs:${key}`,
       defaultExpirationTimeInSeconds,
+      'NX',
     );
     jest.useRealTimers();
   });

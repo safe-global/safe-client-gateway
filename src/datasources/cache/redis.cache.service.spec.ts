@@ -52,7 +52,7 @@ describe('RedisCacheService', () => {
     );
   });
 
-  it('Setting key without setting expireTimeSeconds does not store the value', async () => {
+  it('Setting key with undefined expireTimeSeconds stores the respective value', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
       faker.string.sample(),
@@ -62,7 +62,7 @@ describe('RedisCacheService', () => {
     await redisCacheService.set(cacheDir, value, undefined);
 
     const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
-    expect(storedValue).toBeNull();
+    expect(storedValue).toBe(value);
   });
 
   it('Setting key with expireTimeSeconds does store the value with the provided TTL', async () => {
