@@ -16,7 +16,7 @@ import { get } from 'lodash';
 export class HttpErrorFactory {
   from(source: unknown): DataSourceError {
     if (source instanceof NetworkResponseError) {
-      const errorMessage = get(source, 'data.message', 'An error occurred');
+      const errorMessage = this.getNetworkResponseErrorMessage(source);
       return new DataSourceError(errorMessage, source.response.status);
     } else {
       return new DataSourceError(
@@ -24,5 +24,14 @@ export class HttpErrorFactory {
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
+  }
+
+  private getNetworkResponseErrorMessage(source: NetworkResponseError): string {
+    return (
+      get(source, 'data.nonFieldErrors[0]') || // Django error
+      get(source, 'data.message') ||
+      get(source, 'response.statusText') ||
+      'An error occurred'
+    );
   }
 }
