@@ -59,8 +59,9 @@ describe('Relay controller', () => {
         const data = faker.string.hexadecimal();
 
         await request(app.getHttpServer())
-          .post(`/v1/relay/${chainId}`)
+          .post(`/v1/relay`)
           .send({
+            chainId,
             to: safeAddress,
             data,
           })
