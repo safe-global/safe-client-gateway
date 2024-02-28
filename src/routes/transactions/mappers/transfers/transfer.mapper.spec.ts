@@ -6,10 +6,6 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import {
-  TRANSFER_PREFIX,
-  TRANSACTION_ID_SEPARATOR,
-} from '@/routes/transactions/constants';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
@@ -63,7 +59,7 @@ describe('Transfer mapper (Unit)', () => {
         ).toBe(true);
         expect(actual).toEqual([
           {
-            id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
+            id: `transfer_${safe.address}_${transfer.transferId}`,
             timestamp: transfer.executionDate.getTime(),
             txStatus: TransactionStatus.Success,
             txInfo: expect.any(TransferTransactionInfo),
@@ -103,7 +99,7 @@ describe('Transfer mapper (Unit)', () => {
         ).toBe(true);
         expect(actual).toEqual([
           {
-            id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
+            id: `transfer_${safe.address}_${transfer.transferId}`,
             timestamp: transfer.executionDate.getTime(),
             txStatus: TransactionStatus.Success,
             txInfo: expect.any(TransferTransactionInfo),
@@ -143,7 +139,7 @@ describe('Transfer mapper (Unit)', () => {
           ).toBe(true);
           expect(actual).toEqual([
             {
-              id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
+              id: `transfer_${safe.address}_${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
               txInfo: expect.any(TransferTransactionInfo),
@@ -207,7 +203,7 @@ describe('Transfer mapper (Unit)', () => {
           ).toBe(true);
           expect(actual).toEqual([
             {
-              id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
+              id: `transfer_${safe.address}_${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
               txInfo: expect.any(TransferTransactionInfo),
@@ -320,7 +316,7 @@ describe('Transfer mapper (Unit)', () => {
       ).toBe(true);
       expect(actual).toEqual([
         {
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${nativeTransfer.transferId}`,
+          id: `transfer_${safe.address}_${nativeTransfer.transferId}`,
           timestamp: nativeTransfer.executionDate.getTime(),
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
@@ -328,7 +324,7 @@ describe('Transfer mapper (Unit)', () => {
           safeAppInfo: null,
         },
         expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${erc721Transfer.transferId}`,
+          id: `transfer_${safe.address}_${erc721Transfer.transferId}`,
           timestamp: erc721Transfer.executionDate.getTime(),
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
@@ -336,7 +332,7 @@ describe('Transfer mapper (Unit)', () => {
           safeAppInfo: null,
         }),
         expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${trustedErc20TransferWithValue.transferId}`,
+          id: `transfer_${safe.address}_${trustedErc20TransferWithValue.transferId}`,
           timestamp: trustedErc20TransferWithValue.executionDate.getTime(),
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
