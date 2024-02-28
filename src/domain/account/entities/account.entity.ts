@@ -8,8 +8,8 @@ export interface Account {
   chainId: string;
   emailAddress: EmailAddress;
   isVerified: boolean;
-  safeAddress: string;
-  signer: string;
+  safeAddress: `0x${string}`;
+  signer: `0x${string}`;
   unsubscriptionToken: string;
 }
 

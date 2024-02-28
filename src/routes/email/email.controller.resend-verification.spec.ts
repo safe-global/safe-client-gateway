@@ -16,6 +16,8 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -66,7 +68,12 @@ describe('Email controller resend verification tests', () => {
     await app.close();
   });
 
-  it('resends email verification successfully', async () => {
+  it.each([
+    // non-checksummed address
+    { safeAddress: faker.finance.ethereumAddress().toLowerCase() },
+    // checksummed address
+    { safeAddress: getAddress(faker.finance.ethereumAddress()) },
+  ])('resends email verification successfully', async ({ safeAddress }) => {
     const account = accountBuilder().with('isVerified', false).build();
     const verificationCode = verificationCodeBuilder()
       .with('generatedOn', new Date())
@@ -84,7 +91,7 @@ describe('Email controller resend verification tests', () => {
     jest.advanceTimersByTime(resendLockWindowMs);
     await request(app.getHttpServer())
       .post(
-        `/v1/chains/${account.chainId}/safes/${account.safeAddress}/emails/${account.signer}/verify-resend`,
+        `/v1/chains/${account.chainId}/safes/${safeAddress}/emails/${account.signer}/verify-resend`,
       )
       .expect(202)
       .expect({});
@@ -96,6 +103,12 @@ describe('Email controller resend verification tests', () => {
     expect(
       accountDataSource.setEmailVerificationSentDate,
     ).toHaveBeenCalledTimes(1);
+    expect(accountDataSource.getAccount).toHaveBeenCalledWith({
+      chainId: account.chainId,
+      // Should always call with the checksummed address
+      safeAddress: getAddress(safeAddress),
+      signer: account.signer,
+    });
   });
 
   it('triggering email resend within lock window returns 202', async () => {

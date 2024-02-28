@@ -20,6 +20,7 @@ import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repo
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -59,7 +60,13 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     signer: string;
   }): Promise<Account> {
-    return this.accountDataSource.getAccount(args);
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
+    return this.accountDataSource.getAccount({
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+    });
   }
 
   getAccounts(args: {
@@ -67,7 +74,12 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     onlyVerified: boolean;
   }): Promise<Account[]> {
-    return this.accountDataSource.getAccounts(args);
+    const safeAddress = getAddress(args.safeAddress);
+    return this.accountDataSource.getAccounts({
+      chainId: args.chainId,
+      safeAddress,
+      onlyVerified: args.onlyVerified,
+    });
   }
 
   async createAccount(args: {
@@ -78,26 +90,30 @@ export class AccountRepository implements IAccountRepository {
   }): Promise<void> {
     const email = new EmailAddress(args.emailAddress);
     const verificationCode = this._generateCode();
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
 
     try {
       await this.accountDataSource.createAccount({
         chainId: args.chainId,
         code: verificationCode,
         emailAddress: email,
-        safeAddress: args.safeAddress,
-        signer: args.signer,
+        safeAddress,
+        signer,
         codeGenerationDate: new Date(),
         unsubscriptionToken: crypto.randomUUID(),
       });
       // New account registrations should be subscribed to the Account Recovery category
       await this.subscriptionRepository.subscribe({
         chainId: args.chainId,
-        signer: args.signer,
-        safeAddress: args.safeAddress,
+        signer,
+        safeAddress,
         notificationTypeKey: SubscriptionRepository.CATEGORY_ACCOUNT_RECOVERY,
       });
       this._sendEmailVerification({
         ...args,
+        signer,
+        safeAddress,
         code: verificationCode,
       });
     } catch (e) {
@@ -110,7 +126,13 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    const account = await this.accountDataSource.getAccount(args);
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
+    const account = await this.accountDataSource.getAccount({
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+    });
 
     // If the account was already verified, we should not send out a new
     // verification code
@@ -120,7 +142,11 @@ export class AccountRepository implements IAccountRepository {
 
     const verificationCode: VerificationCode | null =
       await this.accountDataSource
-        .getAccountVerificationCode(args)
+        .getAccountVerificationCode({
+          chainId: args.chainId,
+          safeAddress,
+          signer,
+        })
         .catch((reason) => {
           this.loggingService.warn(reason);
           return null;
@@ -143,18 +169,24 @@ export class AccountRepository implements IAccountRepository {
       // Expired or non-existent code. Generate new one
       await this.accountDataSource.setEmailVerificationCode({
         chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        signer: args.signer,
+        safeAddress,
+        signer,
         code: this._generateCode(),
         codeGenerationDate: new Date(),
       });
     }
 
     const currentVerificationCode =
-      await this.accountDataSource.getAccountVerificationCode(args);
+      await this.accountDataSource.getAccountVerificationCode({
+        chainId: args.chainId,
+        safeAddress,
+        signer,
+      });
 
     this._sendEmailVerification({
-      ...args,
+      chainId: args.chainId,
+      safeAddress,
+      signer,
       code: currentVerificationCode.code,
       emailAddress: account.emailAddress.value,
     });
@@ -166,7 +198,13 @@ export class AccountRepository implements IAccountRepository {
     signer: string;
     code: string;
   }): Promise<void> {
-    const account = await this.accountDataSource.getAccount(args);
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
+    const account = await this.accountDataSource.getAccount({
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+    });
 
     if (account.isVerified) {
       // account is already verified, so we don't need to perform further checks
@@ -176,7 +214,11 @@ export class AccountRepository implements IAccountRepository {
     let verificationCode: VerificationCode;
     try {
       verificationCode =
-        await this.accountDataSource.getAccountVerificationCode(args);
+        await this.accountDataSource.getAccountVerificationCode({
+          chainId: args.chainId,
+          safeAddress,
+          signer,
+        });
     } catch (e) {
       // If we attempt to verify an email is done without a verification code in place,
       // Send a new code to the client's email address for verification
@@ -197,7 +239,11 @@ export class AccountRepository implements IAccountRepository {
     }
 
     // TODO: it is possible that when verifying the email address, a new code generation was triggered
-    await this.accountDataSource.verifyEmail(args);
+    await this.accountDataSource.verifyEmail({
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+    });
   }
 
   async deleteAccount(args: {
@@ -205,15 +251,25 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
     try {
-      const account = await this.accountDataSource.getAccount(args);
+      const account = await this.accountDataSource.getAccount({
+        chainId: args.chainId,
+        safeAddress,
+        signer,
+      });
       // If there is an error deleting the email address,
       // do not delete the respective account as we still need to get the email
       // for future deletions requests
       await this.emailApi.deleteEmailAddress({
         emailAddress: account.emailAddress.value,
       });
-      await this.accountDataSource.deleteAccount(args);
+      await this.accountDataSource.deleteAccount({
+        chainId: args.chainId,
+        safeAddress,
+        signer,
+      });
     } catch (error) {
       this.loggingService.warn(error);
       // If there is no account, do not throw in order not to signal its existence
@@ -229,7 +285,13 @@ export class AccountRepository implements IAccountRepository {
     emailAddress: string;
     signer: string;
   }): Promise<void> {
-    const account = await this.accountDataSource.getAccount(args);
+    const safeAddress = getAddress(args.safeAddress);
+    const signer = getAddress(args.signer);
+    const account = await this.accountDataSource.getAccount({
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+    });
     const newEmail = new EmailAddress(args.emailAddress);
 
     if (newEmail.value === account.emailAddress.value) {
@@ -241,19 +303,22 @@ export class AccountRepository implements IAccountRepository {
     await this.accountDataSource.updateAccountEmail({
       chainId: args.chainId,
       emailAddress: newEmail,
-      safeAddress: args.safeAddress,
-      signer: args.signer,
+      safeAddress,
+      signer,
       unsubscriptionToken: crypto.randomUUID(),
     });
     await this.accountDataSource.setEmailVerificationCode({
       chainId: args.chainId,
       code: newVerificationCode,
-      signer: args.signer,
+      signer,
       codeGenerationDate: new Date(),
-      safeAddress: args.safeAddress,
+      safeAddress,
     });
     this._sendEmailVerification({
-      ...args,
+      chainId: args.chainId,
+      safeAddress,
+      signer,
+      emailAddress: args.emailAddress,
       code: newVerificationCode,
     });
   }
@@ -275,11 +340,11 @@ export class AccountRepository implements IAccountRepository {
    * @private
    */
   private _sendEmailVerification(args: {
-    signer: string;
+    signer: `0x${string}`;
     chainId: string;
     code: string;
     emailAddress: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): void {
     this.emailApi
       .createMessage({
