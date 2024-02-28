@@ -2,7 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Hex } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 import { DelayModifierDecoder } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
@@ -49,6 +50,10 @@ export class AlertsRepository implements IAlertsRepository {
 
   async addContract(contract: AlertsRegistration): Promise<void> {
     await this.alertsApi.addContract(contract);
+  }
+
+  async deleteContract(contract: AlertsDeletion): Promise<void> {
+    await this.alertsApi.deleteContract(contract);
   }
 
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {
