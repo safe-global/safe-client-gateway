@@ -217,7 +217,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_safe_balances_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -270,7 +274,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_multisig_transactions_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -323,7 +331,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -368,7 +380,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_safe_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -422,7 +438,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_safe_collectibles_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -472,7 +492,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_transfers_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -517,7 +541,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_incoming_transfers_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -557,7 +585,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_module_transactions_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -622,7 +654,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_all_transactions_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -665,7 +701,11 @@ describe('Post Hook Events (Unit)', () => {
       `${chainId}_messages_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       address: safeAddress,
       chainId: chainId,
@@ -699,7 +739,11 @@ describe('Post Hook Events (Unit)', () => {
   ])('$type clears chain', async (payload) => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(`${chainId}_chain`, '');
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       chainId: chainId,
       ...payload,
@@ -721,7 +765,11 @@ describe('Post Hook Events (Unit)', () => {
   ])('$type clears chains', async (payload) => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(`chains`, '');
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       chainId: chainId,
       ...payload,
@@ -743,7 +791,11 @@ describe('Post Hook Events (Unit)', () => {
   ])('$type clears safe apps', async (payload) => {
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(`${chainId}_safe_apps`, '');
-    await fakeCacheService.set(cacheDir, faker.string.alpha());
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
     const data = {
       chainId: chainId,
       ...payload,

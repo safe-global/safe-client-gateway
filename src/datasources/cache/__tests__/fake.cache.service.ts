@@ -26,6 +26,7 @@ export class FakeCacheService implements ICacheService {
     await this.set(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
+      1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
     );
     return Promise.resolve(1);
   }
@@ -39,9 +40,11 @@ export class FakeCacheService implements ICacheService {
   set(
     cacheDir: CacheDir,
     value: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    expireTimeSeconds?: number,
+    expireTimeSeconds: number | undefined,
   ): Promise<void> {
+    if (!expireTimeSeconds || expireTimeSeconds <= 0) {
+      return Promise.resolve();
+    }
     const fields = this.cache[cacheDir.key];
     if (fields === undefined) {
       this.cache[cacheDir.key] = {};
