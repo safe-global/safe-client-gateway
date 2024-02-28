@@ -37,108 +37,6 @@ describe('Transfer mapper (Unit)', () => {
     mapper = new TransferMapper(transferInfoMapper);
   });
 
-  describe('mapTransfer', () => {
-    it('should map native transfers', async () => {
-      const chainId = faker.string.numeric();
-      const transfer = nativeTokenTransferBuilder().build();
-      const safe = safeBuilder().build();
-      const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-
-      const actual = await mapper.mapTransfer(chainId, transfer, safe);
-
-      expect(actual).toBeInstanceOf(Transaction);
-      expect(actual).toEqual(
-        expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-          timestamp: transfer.executionDate.getTime(),
-          txStatus: TransactionStatus.Success,
-          txInfo: expect.any(TransferTransactionInfo),
-          executionInfo: null,
-        }),
-      );
-    });
-
-    it('should map ERC721 transfers', async () => {
-      const chainId = faker.string.numeric();
-      const transfer = erc721TransferBuilder().build();
-      const safe = safeBuilder().build();
-      const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-      const token = tokenBuilder()
-        .with('address', transfer.tokenAddress)
-        .build();
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-      tokenRepository.getToken.mockResolvedValue(token);
-
-      const actual = await mapper.mapTransfer(chainId, transfer, safe);
-
-      expect(actual).toBeInstanceOf(Transaction);
-      expect(actual).toEqual(
-        expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-          timestamp: transfer.executionDate.getTime(),
-          txStatus: TransactionStatus.Success,
-          txInfo: expect.any(TransferTransactionInfo),
-          executionInfo: null,
-        }),
-      );
-    });
-
-    it.each([
-      ['trusted', true],
-      ['untrusted', false],
-    ])('should map %s ERC20 transfers', async (_, trusted) => {
-      const chainId = faker.string.numeric();
-      const transfer = erc20TransferBuilder().build();
-      const safe = safeBuilder().build();
-      const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-      const token = tokenBuilder()
-        .with('address', transfer.tokenAddress)
-        .with('trusted', trusted)
-        .build();
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-      tokenRepository.getToken.mockResolvedValue(token);
-
-      const actual = await mapper.mapTransfer(chainId, transfer, safe);
-
-      expect(actual).toBeInstanceOf(Transaction);
-      expect(actual).toEqual(
-        expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-          timestamp: transfer.executionDate.getTime(),
-          txStatus: TransactionStatus.Success,
-          txInfo: expect.any(TransferTransactionInfo),
-          executionInfo: null,
-        }),
-      );
-    });
-
-    it('should map untrusted ERC20 transfers', async () => {
-      const chainId = faker.string.numeric();
-      const transfer = erc20TransferBuilder().build();
-      const safe = safeBuilder().build();
-      const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-      const token = tokenBuilder()
-        .with('address', transfer.tokenAddress)
-        .build();
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-      tokenRepository.getToken.mockResolvedValue(token);
-
-      const actual = await mapper.mapTransfer(chainId, transfer, safe);
-
-      expect(actual).toBeInstanceOf(Transaction);
-      expect(actual).toEqual(
-        expect.objectContaining({
-          id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
-          timestamp: transfer.executionDate.getTime(),
-          txStatus: TransactionStatus.Success,
-          txInfo: expect.any(TransferTransactionInfo),
-          executionInfo: null,
-        }),
-      );
-    });
-  });
-
   describe('mapTransfers', () => {
     describe('native transfers', () => {
       it.each([
@@ -146,8 +44,10 @@ describe('Transfer mapper (Unit)', () => {
         ['without', false],
       ])(`should map transfers %s onlyTrusted flag`, async (_, onlyTrusted) => {
         const chainId = faker.string.numeric();
-        const transfer = nativeTokenTransferBuilder().build();
         const safe = safeBuilder().build();
+        const transfer = nativeTokenTransferBuilder()
+          .with('from', safe.address)
+          .build();
         const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
         addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
 
@@ -162,13 +62,14 @@ describe('Transfer mapper (Unit)', () => {
           actual.every((transaction) => transaction instanceof Transaction),
         ).toBe(true);
         expect(actual).toEqual([
-          expect.objectContaining({
+          {
             id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
             timestamp: transfer.executionDate.getTime(),
             txStatus: TransactionStatus.Success,
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
-          }),
+            safeAppInfo: null,
+          },
         ]);
       });
     });
@@ -179,8 +80,10 @@ describe('Transfer mapper (Unit)', () => {
         ['without', false],
       ])(`should map transfers %s onlyTrusted flag`, async (_, onlyTrusted) => {
         const chainId = faker.string.numeric();
-        const transfer = erc721TransferBuilder().build();
         const safe = safeBuilder().build();
+        const transfer = erc721TransferBuilder()
+          .with('from', safe.address)
+          .build();
         const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
         const token = tokenBuilder()
           .with('address', transfer.tokenAddress)
@@ -199,13 +102,14 @@ describe('Transfer mapper (Unit)', () => {
           actual.every((transaction) => transaction instanceof Transaction),
         ).toBe(true);
         expect(actual).toEqual([
-          expect.objectContaining({
+          {
             id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
             timestamp: transfer.executionDate.getTime(),
             txStatus: TransactionStatus.Success,
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
-          }),
+            safeAppInfo: null,
+          },
         ]);
       });
     });
@@ -214,8 +118,11 @@ describe('Transfer mapper (Unit)', () => {
       describe('without onlyTrusted flag', () => {
         it('should map transfers of trusted tokens with value', async () => {
           const chainId = faker.string.numeric();
-          const transfer = erc20TransferBuilder().with('value', '1').build();
           const safe = safeBuilder().build();
+          const transfer = erc20TransferBuilder()
+            .with('value', '1')
+            .with('from', safe.address)
+            .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
             .with('address', transfer.tokenAddress)
@@ -235,20 +142,24 @@ describe('Transfer mapper (Unit)', () => {
             actual.every((transaction) => transaction instanceof Transaction),
           ).toBe(true);
           expect(actual).toEqual([
-            expect.objectContaining({
+            {
               id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
-            }),
+              safeAppInfo: null,
+            },
           ]);
         });
 
         it('should map transfers of trusted tokens without value', async () => {
           const chainId = faker.string.numeric();
-          const transfer = erc20TransferBuilder().with('value', '0').build();
           const safe = safeBuilder().build();
+          const transfer = erc20TransferBuilder()
+            .with('value', '0')
+            .with('from', safe.address)
+            .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
             .with('address', transfer.tokenAddress)
@@ -271,8 +182,11 @@ describe('Transfer mapper (Unit)', () => {
       describe('with onlyTrusted flag', () => {
         it('should map transfers of trusted tokens with value', async () => {
           const chainId = faker.string.numeric();
-          const transfer = erc20TransferBuilder().with('value', '1').build();
           const safe = safeBuilder().build();
+          const transfer = erc20TransferBuilder()
+            .with('value', '1')
+            .with('from', safe.address)
+            .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
             .with('address', transfer.tokenAddress)
@@ -292,13 +206,14 @@ describe('Transfer mapper (Unit)', () => {
             actual.every((transaction) => transaction instanceof Transaction),
           ).toBe(true);
           expect(actual).toEqual([
-            expect.objectContaining({
+            {
               id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
-            }),
+              safeAppInfo: null,
+            },
           ]);
         });
 
@@ -317,8 +232,11 @@ describe('Transfer mapper (Unit)', () => {
           ],
         ])('%s', async (_, { trusted, value }) => {
           const chainId = faker.string.numeric();
-          const transfer = erc20TransferBuilder().with('value', value).build();
           const safe = safeBuilder().build();
+          const transfer = erc20TransferBuilder()
+            .with('value', value)
+            .with('from', safe.address)
+            .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
             .with('address', transfer.tokenAddress)
@@ -343,13 +261,18 @@ describe('Transfer mapper (Unit)', () => {
       const chainId = faker.string.numeric();
       const safe = safeBuilder().build();
       const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-      const nativeTransfer = nativeTokenTransferBuilder().build();
-      const erc721Transfer = erc721TransferBuilder().build();
+      const nativeTransfer = nativeTokenTransferBuilder()
+        .with('from', safe.address)
+        .build();
+      const erc721Transfer = erc721TransferBuilder()
+        .with('from', safe.address)
+        .build();
       const erc721Token = tokenBuilder()
         .with('address', erc721Transfer.tokenAddress)
         .build();
       const trustedErc20TransferWithValue = erc20TransferBuilder()
         .with('value', '1')
+        .with('from', safe.address)
         .build();
       const trustedErc20Token = tokenBuilder()
         .with('address', trustedErc20TransferWithValue.tokenAddress)
@@ -357,9 +280,11 @@ describe('Transfer mapper (Unit)', () => {
         .build();
       const trustedErc20TransferWithoutValue = erc20TransferBuilder()
         .with('value', '0')
+        .with('from', safe.address)
         .build();
       const untrustedErc20TransferWithValue = erc20TransferBuilder()
         .with('value', '1')
+        .with('from', safe.address)
         .build();
       const untrustedErc20Token = tokenBuilder()
         .with('address', trustedErc20TransferWithValue.tokenAddress)
@@ -394,19 +319,21 @@ describe('Transfer mapper (Unit)', () => {
         actual.every((transaction) => transaction instanceof Transaction),
       ).toBe(true);
       expect(actual).toEqual([
-        expect.objectContaining({
+        {
           id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${nativeTransfer.transferId}`,
           timestamp: nativeTransfer.executionDate.getTime(),
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
-        }),
+          safeAppInfo: null,
+        },
         expect.objectContaining({
           id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${erc721Transfer.transferId}`,
           timestamp: erc721Transfer.executionDate.getTime(),
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
+          safeAppInfo: null,
         }),
         expect.objectContaining({
           id: `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${trustedErc20TransferWithValue.transferId}`,
@@ -414,6 +341,7 @@ describe('Transfer mapper (Unit)', () => {
           txStatus: TransactionStatus.Success,
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
+          safeAppInfo: null,
         }),
       ]);
     });

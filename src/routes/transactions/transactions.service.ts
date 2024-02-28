@@ -269,15 +269,14 @@ export class TransactionsService {
       chainId: args.chainId,
       address: args.safeAddress,
     });
-    const results = await this.transferMapper.mapTransfers({
-      chainId: args.chainId,
-      transfers: transfers.results,
-      safe: safeInfo,
-      onlyTrusted: args.onlyTrusted,
-    });
-    const incomingTransfers = results.map(
-      (incomingTransfer) => new IncomingTransfer(incomingTransfer),
-    );
+    const results = (
+      await this.transferMapper.mapTransfers({
+        chainId: args.chainId,
+        transfers: transfers.results,
+        safe: safeInfo,
+        onlyTrusted: args.onlyTrusted,
+      })
+    ).map((incomingTransfer) => new IncomingTransfer(incomingTransfer));
 
     const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, transfers.next);
     const previousURL = cursorUrlFromLimitAndOffset(
@@ -288,7 +287,7 @@ export class TransactionsService {
     return {
       next: nextURL?.toString() ?? null,
       previous: previousURL?.toString() ?? null,
-      results: incomingTransfers,
+      results,
     };
   }
 

@@ -15,7 +15,7 @@ import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-
 export class TransferMapper {
   constructor(private readonly transferInfoMapper: TransferInfoMapper) {}
 
-  async mapTransfer(
+  private async mapTransfer(
     chainId: string,
     transfer: Transfer,
     safe: Safe,

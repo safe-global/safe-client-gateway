@@ -348,7 +348,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       });
   });
 
-  it('Should filter out non-trusted ERC20 incoming transfers', async () => {
+  it('Should filter out non-trusted ERC20 incoming transfers by default', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const erc20Transfer = erc20TransferBuilder()
