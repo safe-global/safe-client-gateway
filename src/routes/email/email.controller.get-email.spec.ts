@@ -20,6 +20,7 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { faker } from '@faker-js/faker';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
+import { getAddress } from 'viem';
 
 describe('Email controller get email tests', () => {
   let app: INestApplication;
@@ -56,24 +57,33 @@ describe('Email controller get email tests', () => {
     await app.close();
   });
 
-  it('Retrieves email if correctly authenticated', async () => {
+  it.each([
+    // non-checksummed address
+    {
+      safeAddress: faker.finance.ethereumAddress().toLowerCase(),
+    },
+    // checksummed address
+    {
+      safeAddress: getAddress(faker.finance.ethereumAddress()),
+    },
+  ])('Retrieves email if correctly authenticated', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const safe = safeBuilder().with('address', safeAddress).build();
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const timestamp = Date.now();
-    const message = `email-retrieval-${chain.chainId}-${safe.address}-${signer.address}-${timestamp}`;
+    const message = `email-retrieval-${chain.chainId}-${safeAddress}-${signer.address}-${timestamp}`;
     const signature = await signer.signMessage({ message });
     const account = accountBuilder()
       .with('signer', signer.address)
       .with('chainId', chain.chainId)
-      .with('safeAddress', safe.address)
+      .with('safeAddress', getAddress(safe.address))
       .build();
     accountDataSource.getAccount.mockResolvedValue(account);
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${signer.address}`,
       )
       .set('Safe-Wallet-Signature', signature)
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
@@ -86,7 +96,8 @@ describe('Email controller get email tests', () => {
     expect(accountDataSource.getAccount).toHaveBeenCalledTimes(1);
     expect(accountDataSource.getAccount).toHaveBeenCalledWith({
       chainId: chain.chainId.toString(),
-      safeAddress: safe.address.toString(),
+      // Should always call with the checksummed address
+      safeAddress: getAddress(safeAddress),
       signer: signer.address,
     });
   });
@@ -116,6 +127,31 @@ describe('Email controller get email tests', () => {
     expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
   });
 
+  it('returns 422 if Safe address is not a valid Ethereum address', async () => {
+    const chain = chainBuilder().build();
+    const invalidSafeAddress = faker.word.sample();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const timestamp = Date.now();
+    const message = `email-retrieval-${chain.chainId}-${invalidSafeAddress}-${signer.address}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${invalidSafeAddress}/emails/${signer.address}`,
+      )
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .expect(422)
+      .expect({
+        message: `Address "${invalidSafeAddress}" is invalid.`,
+        error: 'Unprocessable Entity',
+        statusCode: 422,
+      });
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+  });
+
   it('Returns 403 if signature expired', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
@@ -127,7 +163,7 @@ describe('Email controller get email tests', () => {
     const account = accountBuilder()
       .with('signer', signer.address)
       .with('chainId', chain.chainId)
-      .with('safeAddress', safe.address)
+      .with('safeAddress', getAddress(safe.address))
       .build();
     accountDataSource.getAccount.mockResolvedValue(account);
 

@@ -9,6 +9,7 @@ import {
 } from '@/domain/account/entities/account.entity';
 import { Subscription as DomainSubscription } from '@/domain/account/entities/subscription.entity';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
+import { getAddress } from 'viem';
 
 interface Account {
   id: number;
@@ -39,8 +40,8 @@ export class AccountDataSource implements IAccountDataSource {
 
   async getAccount(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<DomainAccount> {
     const [account] = await this.sql<Account[]>`SELECT *
                                                 FROM accounts
@@ -59,31 +60,30 @@ export class AccountDataSource implements IAccountDataSource {
       chainId: account.chain_id.toString(),
       emailAddress: new EmailAddress(account.email_address),
       isVerified: account.verified,
-      safeAddress: account.safe_address,
-      signer: account.signer,
+      safeAddress: getAddress(account.safe_address),
+      signer: getAddress(account.signer),
       unsubscriptionToken: account.unsubscription_token,
     };
   }
 
   async getAccounts(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     onlyVerified: boolean;
   }): Promise<DomainAccount[]> {
     const onlyVerifiedQuery = this.sql`AND verified = true`;
     const accounts = await this.sql<Account[]>`SELECT *
                                                FROM accounts
                                                WHERE chain_id = ${args.chainId}
-                                                 AND safe_address = ${args.safeAddress}
-                                                   ${args.onlyVerified ? onlyVerifiedQuery : this.sql``};`;
+                                                 AND safe_address = ${args.safeAddress} ${args.onlyVerified ? onlyVerifiedQuery : this.sql``};`;
 
     return accounts.map((account) => {
       return {
         chainId: account.chain_id.toString(),
         emailAddress: new EmailAddress(account.email_address),
         isVerified: account.verified,
-        safeAddress: account.safe_address,
-        signer: account.signer,
+        safeAddress: getAddress(account.safe_address),
+        signer: getAddress(account.signer),
         unsubscriptionToken: account.unsubscription_token,
       };
     });
@@ -91,8 +91,8 @@ export class AccountDataSource implements IAccountDataSource {
 
   async getAccountVerificationCode(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<DomainVerificationCode> {
     const [verificationCode] = await this.sql<VerificationCode[]>`SELECT *
                                                                   FROM verification_codes
@@ -120,9 +120,9 @@ export class AccountDataSource implements IAccountDataSource {
 
   async createAccount(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: EmailAddress;
-    signer: string;
+    signer: `0x${string}`;
     code: string;
     codeGenerationDate: Date;
     unsubscriptionToken: string;
@@ -132,14 +132,12 @@ export class AccountDataSource implements IAccountDataSource {
         const [account] = await sql<Account[]>`
             INSERT INTO accounts (chain_id, email_address, safe_address, signer, unsubscription_token)
             VALUES (${args.chainId}, ${args.emailAddress.value}, ${args.safeAddress}, ${args.signer},
-                    ${args.unsubscriptionToken})
-            RETURNING *
+                    ${args.unsubscriptionToken}) RETURNING *
         `;
 
         const [verificationCode] = await sql<VerificationCode[]>`
             INSERT INTO verification_codes (account_id, code, generated_on)
-            VALUES (${account.id}, ${args.code}, ${args.codeGenerationDate})
-            RETURNING *
+            VALUES (${account.id}, ${args.code}, ${args.codeGenerationDate}) RETURNING *
         `;
         return [account, verificationCode];
       },
@@ -150,8 +148,8 @@ export class AccountDataSource implements IAccountDataSource {
         chainId: createdAccount.chain_id.toString(),
         emailAddress: new EmailAddress(createdAccount.email_address),
         isVerified: createdAccount.verified,
-        safeAddress: createdAccount.safe_address,
-        signer: createdAccount.signer,
+        safeAddress: getAddress(createdAccount.safe_address),
+        signer: getAddress(createdAccount.signer),
         unsubscriptionToken: createdAccount.unsubscription_token,
       },
       {
@@ -164,8 +162,8 @@ export class AccountDataSource implements IAccountDataSource {
 
   async setEmailVerificationCode(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     code: string;
     codeGenerationDate: Date;
   }): Promise<DomainVerificationCode> {
@@ -176,11 +174,11 @@ export class AccountDataSource implements IAccountDataSource {
              WHERE chain_id = ${args.chainId}
                AND safe_address = ${args.safeAddress}
                AND signer = ${args.signer}
-               AND verified = false)
-        ON CONFLICT (account_id)
-            DO UPDATE SET code         = ${args.code},
-                          generated_on = ${args.codeGenerationDate}
-        RETURNING *
+               AND verified = false) ON CONFLICT (account_id)
+            DO
+        UPDATE SET code = ${args.code},
+            generated_on = ${args.codeGenerationDate}
+            RETURNING *
     `;
 
     return {
@@ -192,20 +190,19 @@ export class AccountDataSource implements IAccountDataSource {
 
   async setEmailVerificationSentDate(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     sentOn: Date;
   }): Promise<DomainVerificationCode> {
     const [verificationCode] = await this.sql<
       VerificationCode[]
     >`UPDATE verification_codes
-      SET sent_on = ${args.sentOn}
-      FROM accounts
+      SET sent_on = ${args.sentOn} FROM accounts
       WHERE chain_id = ${args.chainId}
         AND safe_address = ${args.safeAddress}
         AND signer = ${args.signer}
         AND account_id = accounts.id
-      RETURNING *`;
+          RETURNING *`;
     if (!verificationCode) {
       throw new VerificationCodeDoesNotExistError(
         args.chainId,
@@ -223,16 +220,15 @@ export class AccountDataSource implements IAccountDataSource {
 
   async verifyEmail(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<void> {
     await this.sql.begin(async (sql) => {
       const [verifiedAccount] = await sql<Account[]>`UPDATE accounts
                                                      SET verified = true
                                                      WHERE chain_id = ${args.chainId}
                                                        AND safe_address = ${args.safeAddress}
-                                                       AND signer = ${args.signer}
-                                                     RETURNING *`;
+                                                       AND signer = ${args.signer} RETURNING *`;
       if (!verifiedAccount) {
         throw new AccountDoesNotExistError(
           args.chainId,
@@ -251,15 +247,14 @@ export class AccountDataSource implements IAccountDataSource {
 
   async deleteAccount(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<DomainAccount> {
     const [deletedAccount] = await this.sql<Account[]>`DELETE
                                                        FROM accounts
                                                        WHERE chain_id = ${args.chainId}
                                                          AND safe_address = ${args.safeAddress}
-                                                         AND signer = ${args.signer}
-                                                       RETURNING *`;
+                                                         AND signer = ${args.signer} RETURNING *`;
     if (!deletedAccount) {
       throw new AccountDoesNotExistError(
         args.chainId,
@@ -272,17 +267,17 @@ export class AccountDataSource implements IAccountDataSource {
       chainId: deletedAccount.chain_id.toString(),
       emailAddress: new EmailAddress(deletedAccount.email_address),
       isVerified: deletedAccount.verified,
-      safeAddress: deletedAccount.safe_address,
-      signer: deletedAccount.signer,
+      safeAddress: getAddress(deletedAccount.safe_address),
+      signer: getAddress(deletedAccount.signer),
       unsubscriptionToken: deletedAccount.unsubscription_token,
     };
   }
 
   async updateAccountEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: EmailAddress;
-    signer: string;
+    signer: `0x${string}`;
     unsubscriptionToken: string;
   }): Promise<DomainAccount> {
     const [updatedAccount] = await this.sql<Account[]>`UPDATE accounts
@@ -291,8 +286,7 @@ export class AccountDataSource implements IAccountDataSource {
                                                            unsubscription_token = ${args.unsubscriptionToken}
                                                        WHERE chain_id = ${args.chainId}
                                                          AND safe_address = ${args.safeAddress}
-                                                         AND signer = ${args.signer}
-                                                       RETURNING *`;
+                                                         AND signer = ${args.signer} RETURNING *`;
     if (!updatedAccount) {
       throw new AccountDoesNotExistError(
         args.chainId,
@@ -305,22 +299,22 @@ export class AccountDataSource implements IAccountDataSource {
       chainId: updatedAccount.chain_id.toString(),
       emailAddress: new EmailAddress(updatedAccount.email_address),
       isVerified: updatedAccount.verified,
-      safeAddress: updatedAccount.safe_address,
-      signer: updatedAccount.signer,
+      safeAddress: getAddress(updatedAccount.safe_address),
+      signer: getAddress(updatedAccount.signer),
       unsubscriptionToken: updatedAccount.unsubscription_token,
     };
   }
 
   async getSubscriptions(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this.sql`SELECT key, name
                                          FROM notification_types
-                                                  INNER JOIN subscriptions subs
-                                                             on notification_types.id = subs.notification_type
-                                                  INNER JOIN accounts emails on emails.id = subs.account_id
+                                             INNER JOIN subscriptions subs
+                                         on notification_types.id = subs.notification_type
+                                             INNER JOIN accounts emails on emails.id = subs.account_id
                                          WHERE chain_id = ${args.chainId}
                                            AND safe_address = ${args.safeAddress}
                                            AND signer = ${args.signer}`;
@@ -332,8 +326,8 @@ export class AccountDataSource implements IAccountDataSource {
 
   async subscribe(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     notificationTypeKey: string;
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this
@@ -345,8 +339,7 @@ export class AccountDataSource implements IAccountDataSource {
                 WHERE accounts.chain_id = ${args.chainId}
                   AND accounts.safe_address = ${args.safeAddress}
                   AND accounts.signer = ${args.signer}
-                  AND notification_types.key = ${args.notificationTypeKey})
-           RETURNING *`;
+                  AND notification_types.key = ${args.notificationTypeKey}) RETURNING *`;
     return subscriptions.map((s) => ({
       key: s.key,
       name: s.name,
@@ -358,13 +351,13 @@ export class AccountDataSource implements IAccountDataSource {
     token: string;
   }): Promise<DomainSubscription[]> {
     const subscriptions = await this.sql<Subscription[]>`DELETE
-                                                         FROM subscriptions
-                                                             USING accounts, notification_types
+                                                         FROM subscriptions USING accounts, notification_types
                                                          WHERE accounts.unsubscription_token = ${args.token}
                                                            AND notification_types.key = ${args.notificationTypeKey}
                                                            AND subscriptions.account_id = accounts.id
                                                            AND subscriptions.notification_type = notification_types.id
-                                                         RETURNING notification_types.key, notification_types.name`;
+                                                             RETURNING notification_types.key
+                                                             , notification_types.name`;
     return subscriptions.map((s) => ({
       key: s.key,
       name: s.name,
@@ -374,11 +367,11 @@ export class AccountDataSource implements IAccountDataSource {
   async unsubscribeAll(args: { token: string }): Promise<DomainSubscription[]> {
     const subscriptions = await this.sql`
         WITH deleted_subscriptions AS (
-            DELETE FROM subscriptions
-                WHERE account_id = (SELECT id
-                                    FROM accounts
-                                    WHERE unsubscription_token = ${args.token})
-                RETURNING notification_type)
+        DELETE
+        FROM subscriptions
+        WHERE account_id = (SELECT id
+                            FROM accounts
+                            WHERE unsubscription_token = ${args.token}) RETURNING notification_type)
         SELECT subs.key, subs.name
         FROM notification_types subs
                  JOIN deleted_subscriptions deleted_subs ON subs.id = deleted_subs.notification_type

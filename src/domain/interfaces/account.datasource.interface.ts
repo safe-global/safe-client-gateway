@@ -19,8 +19,8 @@ export interface IAccountDataSource {
    */
   getAccount(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<Account>;
 
   /**
@@ -33,14 +33,14 @@ export interface IAccountDataSource {
    */
   getAccounts(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     onlyVerified: boolean;
   }): Promise<Account[]>;
 
   getAccountVerificationCode(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<VerificationCode>;
 
   /**
@@ -55,9 +55,9 @@ export interface IAccountDataSource {
    */
   createAccount(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: EmailAddress;
-    signer: string;
+    signer: `0x${string}`;
     code: string;
     codeGenerationDate: Date;
     unsubscriptionToken: string;
@@ -76,8 +76,8 @@ export interface IAccountDataSource {
    */
   setEmailVerificationCode(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     code: string;
     codeGenerationDate: Date;
   }): Promise<VerificationCode>;
@@ -92,8 +92,8 @@ export interface IAccountDataSource {
    */
   setEmailVerificationSentDate(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     sentOn: Date;
   }): Promise<VerificationCode>;
 
@@ -108,8 +108,8 @@ export interface IAccountDataSource {
    */
   verifyEmail(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<void>;
 
   /**
@@ -123,8 +123,8 @@ export interface IAccountDataSource {
    */
   deleteAccount(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<Account>;
 
   /**
@@ -141,9 +141,9 @@ export interface IAccountDataSource {
    */
   updateAccountEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: EmailAddress;
-    signer: string;
+    signer: `0x${string}`;
     unsubscriptionToken: string;
   }): Promise<Account>;
 
@@ -156,8 +156,8 @@ export interface IAccountDataSource {
    */
   getSubscriptions(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<Subscription[]>;
 
   /**
@@ -172,8 +172,8 @@ export interface IAccountDataSource {
    */
   subscribe(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     notificationTypeKey: string;
   }): Promise<Subscription[]>;
 
