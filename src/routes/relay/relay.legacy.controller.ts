@@ -1,17 +1,34 @@
-import { Controller, Post, Get, HttpStatus, Res, Param } from '@nestjs/common';
+import { RelayLegacyDto } from '@/routes/relay/entities/relay.legacy.dto.entity';
+import { RelayLegacyDtoValidationPipe } from '@/routes/relay/pipes/relay.legacy.validation.pipe';
+import {
+  Controller,
+  Post,
+  Get,
+  HttpStatus,
+  Res,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 @Controller({
   version: '1',
-  path: 'relay/:chainId',
+  path: 'relay',
 })
 export class RelayLegacyController {
   @Post()
-  relay(@Param('chainId') chainId: string, @Res() res: Response): void {
-    res.redirect(HttpStatus.PERMANENT_REDIRECT, `/v1/chains/${chainId}/relay`);
+  relay(
+    @Body(RelayLegacyDtoValidationPipe)
+    relayLegacyDto: RelayLegacyDto,
+    @Res() res: Response,
+  ): void {
+    res.redirect(
+      HttpStatus.PERMANENT_REDIRECT,
+      `/v1/chains/${relayLegacyDto.chainId}/relay`,
+    );
   }
 
-  @Get(':safeAddress')
+  @Get('/:chainId/:safeAddress')
   getRelaysRemaining(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
