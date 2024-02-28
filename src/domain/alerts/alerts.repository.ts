@@ -47,8 +47,8 @@ export class AlertsRepository implements IAlertsRepository {
     private readonly subscriptionRepository: ISubscriptionRepository,
   ) {}
 
-  async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
-    await this.alertsApi.addContracts(contracts);
+  async addContract(contract: AlertsRegistration): Promise<void> {
+    await this.alertsApi.addContract(contract);
   }
 
   async handleAlertLog(chainId: string, log: AlertLog): Promise<void> {

@@ -33,19 +33,17 @@ export class TenderlyApi implements IAlertsApi {
       this.configurationService.getOrThrow<string>('alerts.project');
   }
 
-  async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
+  async addContract(contract: AlertsRegistration): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v2/accounts/${this.account}/projects/${this.project}/contracts`;
+      const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/address`;
       await this.networkService.post(url, {
         headers: {
           [TenderlyApi.HEADER]: this.apiKey,
         },
         params: {
-          contracts: contracts.map((contract) => ({
-            address: contract.address,
-            display_name: contract.displayName,
-            network_id: contract.chainId,
-          })),
+          address: contract.address,
+          display_name: contract.displayName,
+          network_id: contract.chainId,
         },
       });
     } catch (error) {

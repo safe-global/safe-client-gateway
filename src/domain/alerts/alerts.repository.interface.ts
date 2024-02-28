@@ -5,10 +5,10 @@ export const IAlertsRepository = Symbol('IAlertsRepository');
 
 export interface IAlertsRepository {
   /**
-   * Adds the {@link contracts} to the Alerts provider
-   * @param contracts - the network-specific {@link AlertsRegistration} to add
+   * Adds the {@link contract} to the Alerts provider
+   * @param contract - the network-specific {@link AlertsRegistration} to add
    */
-  addContracts(contracts: Array<AlertsRegistration>): Promise<void>;
+  addContract(contract: AlertsRegistration): Promise<void>;
 
   /**
    * Parses and notifies the user about the {@link log} from the Alerts provider

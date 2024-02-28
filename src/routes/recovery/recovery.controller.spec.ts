@@ -76,7 +76,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.resolve({ status: 200, data: {} })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -105,7 +105,7 @@ describe('Recovery (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const error = new NetworkResponseError(
         new URL(
-          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`,
         ),
         {
           status: 400,
@@ -118,7 +118,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -142,7 +142,7 @@ describe('Recovery (Unit)', () => {
       });
       const error = new NetworkResponseError(
         new URL(
-          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`,
         ),
         {
           status: statusCode,
@@ -151,7 +151,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
