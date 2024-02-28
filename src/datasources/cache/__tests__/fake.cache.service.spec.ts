@@ -16,7 +16,7 @@ describe('FakeCacheService', () => {
     );
     const value = faker.string.alphanumeric();
 
-    await target.set(cacheDir, value, 0);
+    await target.set(cacheDir, value, faker.number.int());
 
     await expect(target.get(cacheDir)).resolves.toBe(value);
     expect(target.keyCount()).toBe(1);
@@ -30,7 +30,7 @@ describe('FakeCacheService', () => {
     const cacheDir = new CacheDir(key, field);
     const value = faker.string.alphanumeric();
 
-    await target.set(cacheDir, value, 0);
+    await target.set(cacheDir, value, faker.number.int());
     await target.deleteByKey(key);
 
     await expect(target.get(cacheDir)).resolves.toBe(undefined);
@@ -45,7 +45,11 @@ describe('FakeCacheService', () => {
     const actions: Promise<void>[] = [];
     for (let i = 0; i < 5; i++) {
       actions.push(
-        target.set(new CacheDir(`key${i}`, `field${i}`), `value${i}`, 0),
+        target.set(
+          new CacheDir(`key${i}`, `field${i}`),
+          `value${i}`,
+          faker.number.int(),
+        ),
       );
     }
 
