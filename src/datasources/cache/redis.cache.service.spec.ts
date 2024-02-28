@@ -36,6 +36,7 @@ describe('RedisCacheService', () => {
 
   beforeEach(async () => {
     clearAllMocks();
+    await redisClient.flushDb();
     defaultExpirationTimeInSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
@@ -143,5 +144,25 @@ describe('RedisCacheService', () => {
     await expect(redisCacheService.ping()).rejects.toThrow();
     // Connection is reopened after this test execution
     redisClient = await redisClientFactory();
+  });
+
+  it('Increments and gets the value of a key', async () => {
+    const expireTime = faker.number.int({ min: 1 });
+    const key = faker.string.alphanumeric();
+    const firstResult = await redisCacheService.incrementAndGet(
+      key,
+      expireTime,
+    );
+    expect(firstResult).toEqual(1);
+
+    const results: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      results.push(await redisCacheService.incrementAndGet(key, expireTime));
+    }
+
+    const ttl = await redisClient.ttl(key);
+    expect(results).toEqual([2, 3, 4, 5, 6]);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(expireTime);
   });
 });

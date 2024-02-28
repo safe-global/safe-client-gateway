@@ -70,6 +70,17 @@ export class RedisCacheService
     return result;
   }
 
+  async incrementAndGet(
+    cacheKey: string,
+    expireTimeSeconds: number | undefined,
+  ): Promise<number> {
+    const result = await this.client.incr(cacheKey);
+    if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
+      await this.client.expire(cacheKey, expireTimeSeconds, 'NX');
+    }
+    return result;
+  }
+
   /**
    * Constructs a prefixed key string.
    *

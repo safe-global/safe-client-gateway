@@ -58,4 +58,17 @@ describe('FakeCacheService', () => {
 
     expect(target.keyCount()).toBe(0);
   });
+
+  it('increments the value of a key', async () => {
+    const key = faker.string.alphanumeric();
+    const firstResult = await target.incrementAndGet(key, undefined);
+    expect(firstResult).toEqual(1);
+
+    const results: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      results.push(await target.incrementAndGet(key, undefined));
+    }
+
+    expect(results).toEqual([2, 3, 4, 5, 6]);
+  });
 });

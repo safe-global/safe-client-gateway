@@ -12,4 +12,9 @@ export interface ICacheService {
   get(cacheDir: CacheDir): Promise<string | undefined>;
 
   deleteByKey(key: string): Promise<number>;
+
+  incrementAndGet(
+    cacheKey: string,
+    expireTimeSeconds: number | undefined,
+  ): Promise<number>;
 }
