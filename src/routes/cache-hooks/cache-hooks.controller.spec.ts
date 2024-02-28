@@ -220,7 +220,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -277,7 +277,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -334,7 +334,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -383,7 +383,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -441,7 +441,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -495,7 +495,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -544,7 +544,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -588,7 +588,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -657,7 +657,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -704,7 +704,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       address: safeAddress,
@@ -742,7 +742,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       chainId: chainId,
@@ -768,7 +768,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       chainId: chainId,
@@ -794,7 +794,7 @@ describe('Post Hook Events (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
-      faker.number.int(),
+      faker.number.int({ min: 1 }),
     );
     const data = {
       chainId: chainId,
