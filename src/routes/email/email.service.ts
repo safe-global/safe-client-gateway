@@ -1,6 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { Email } from '@/routes/email/entities/email.entity';
+import { InvalidAddressError } from 'viem';
 
 @Injectable()
 export class EmailService {
@@ -8,13 +13,22 @@ export class EmailService {
     @Inject(IAccountRepository) private readonly repository: IAccountRepository,
   ) {}
 
+  private _mapInvalidAddressError(e: unknown): never {
+    if (e instanceof InvalidAddressError) {
+      throw new UnprocessableEntityException(e.shortMessage);
+    }
+    throw e;
+  }
+
   async saveEmail(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
     signer: string;
   }): Promise<void> {
-    return this.repository.createAccount(args);
+    return this.repository
+      .createAccount(args)
+      .catch((e) => this._mapInvalidAddressError(e));
   }
 
   async resendVerification(args: {
@@ -22,7 +36,9 @@ export class EmailService {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    return this.repository.resendEmailVerification(args);
+    return this.repository
+      .resendEmailVerification(args)
+      .catch((e) => this._mapInvalidAddressError(e));
   }
 
   async verifyEmailAddress(args: {
@@ -31,7 +47,9 @@ export class EmailService {
     signer: string;
     code: string;
   }): Promise<void> {
-    return this.repository.verifyEmailAddress(args);
+    return this.repository
+      .verifyEmailAddress(args)
+      .catch((e) => this._mapInvalidAddressError(e));
   }
 
   async deleteEmail(args: {
@@ -39,7 +57,9 @@ export class EmailService {
     safeAddress: string;
     signer: string;
   }): Promise<void> {
-    return this.repository.deleteAccount(args);
+    return this.repository
+      .deleteAccount(args)
+      .catch((e) => this._mapInvalidAddressError(e));
   }
 
   async editEmail(args: {
@@ -48,7 +68,9 @@ export class EmailService {
     signer: string;
     emailAddress: string;
   }): Promise<void> {
-    return this.repository.editEmail(args);
+    return this.repository
+      .editEmail(args)
+      .catch((e) => this._mapInvalidAddressError(e));
   }
 
   async getEmail(args: {
@@ -56,7 +78,10 @@ export class EmailService {
     safeAddress: string;
     signer: string;
   }): Promise<Email> {
-    const account = await this.repository.getAccount(args);
+    const account = await this.repository
+      .getAccount(args)
+      .catch((e) => this._mapInvalidAddressError(e));
+
     return new Email(account.emailAddress.value, account.isVerified);
   }
 }

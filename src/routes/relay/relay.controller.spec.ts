@@ -46,28 +46,30 @@ import {
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 
-// TODO: Generate these from safe-deployments package
-const SAFE_VERSIONS: Record<string, Array<string>> = {
-  '100': ['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1'],
-  '11155111': ['1.3.0', '1.4.1'],
-};
-const SAFE_L2_VERSIONS: Record<string, Array<string>> = {
-  '100': ['1.3.0', '1.4.1'],
-  '11155111': ['1.3.0', '1.4.1'],
-};
-const MULTI_SEND_CALL_ONLY_VERSIONS: Record<string, Array<string>> = {
-  '100': ['1.3.0', '1.4.1'],
-  '11155111': ['1.3.0', '1.4.1'],
-};
-const MULTI_SEND_VERSIONS: Record<string, Array<string>> = {
-  '100': ['1.1.1', '1.3.0', '1.4.1'],
-  '11155111': ['1.3.0', '1.4.1'],
-};
-const PROXY_FACTORY_VERSIONS: Record<string, Array<string>> = {
-  '100': ['1.0.0', '1.1.1', '1.3.0', '1.4.1'],
-  '11155111': ['1.3.0', '1.4.1'],
-};
+const supportedChainIds = Object.keys(configuration().relay.apiKey);
+
+const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
+  'Safe',
+  supportedChainIds,
+);
+const SAFE_L2_VERSIONS = getDeploymentVersionsByChainIds(
+  'SafeL2',
+  supportedChainIds,
+);
+const MULTI_SEND_CALL_ONLY_VERSIONS = getDeploymentVersionsByChainIds(
+  'MultiSendCallOnly',
+  supportedChainIds,
+);
+const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
+  'MultiSend',
+  supportedChainIds,
+);
+const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
+  'ProxyFactory',
+  supportedChainIds,
+);
 
 describe('Relay controller', () => {
   let app: INestApplication;
@@ -117,8 +119,6 @@ describe('Relay controller', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
   describe.each(supportedChainIds)('Chain %s', (chainId) => {
     describe('POST /v1/chains/:chainId/relay', () => {

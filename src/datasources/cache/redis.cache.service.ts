@@ -34,7 +34,7 @@ export class RedisCacheService
   async set(
     cacheDir: CacheDir,
     value: string,
-    expireTimeSeconds?: number,
+    expireTimeSeconds: number | undefined,
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return;
@@ -44,7 +44,9 @@ export class RedisCacheService
 
     try {
       await this.client.hSet(key, cacheDir.field, value);
-      await this.client.expire(key, expireTimeSeconds);
+      // NX - Set expiry only when the key has no expiry
+      // See https://redis.io/commands/expire/
+      await this.client.expire(key, expireTimeSeconds, 'NX');
     } catch (error) {
       await this.client.hDel(key, cacheDir.field);
       throw error;

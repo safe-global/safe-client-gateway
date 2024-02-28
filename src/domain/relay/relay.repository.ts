@@ -16,6 +16,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export class RelayRepository {
   // Number of relay requests per ttl
   private readonly limit: number;
+  private readonly ttlSeconds: number;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -26,6 +27,7 @@ export class RelayRepository {
     @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
+    this.ttlSeconds = configurationService.getOrThrow('relay.ttlSeconds');
   }
 
   async relay(args: {
@@ -94,7 +96,11 @@ export class RelayRepository {
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;
     const cacheDir = this.getRelayCacheKey(args);
-    return this.cacheService.set(cacheDir, incremented.toString());
+    return this.cacheService.set(
+      cacheDir,
+      incremented.toString(),
+      this.ttlSeconds,
+    );
   }
 
   private getRelayCacheKey(args: {
