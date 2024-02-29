@@ -61,12 +61,12 @@ describe('FakeCacheService', () => {
 
   it('creates a missing key and increments its value', async () => {
     const key = faker.string.alphanumeric();
-    const firstResult = await target.incrementAndGet(key, undefined);
+    const firstResult = await target.increment(key, undefined);
     expect(firstResult).toEqual(1);
 
     const results: number[] = [];
     for (let i = 0; i < 5; i++) {
-      results.push(await target.incrementAndGet(key, undefined));
+      results.push(await target.increment(key, undefined));
     }
 
     expect(results).toEqual([2, 3, 4, 5, 6]);
@@ -78,7 +78,7 @@ describe('FakeCacheService', () => {
     target.initNumericalValue(key, initialValue);
 
     for (let i = 1; i <= 5; i++) {
-      const result = await target.incrementAndGet(key, undefined);
+      const result = await target.increment(key, undefined);
       expect(result).toEqual(initialValue + i);
     }
   });

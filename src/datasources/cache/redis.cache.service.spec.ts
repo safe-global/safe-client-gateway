@@ -149,15 +149,12 @@ describe('RedisCacheService', () => {
   it('creates a missing key and increments its value', async () => {
     const expireTime = faker.number.int({ min: 1 });
     const key = faker.string.alphanumeric();
-    const firstResult = await redisCacheService.incrementAndGet(
-      key,
-      expireTime,
-    );
+    const firstResult = await redisCacheService.increment(key, expireTime);
     expect(firstResult).toEqual(1);
 
     const results: number[] = [];
     for (let i = 0; i < 5; i++) {
-      results.push(await redisCacheService.incrementAndGet(key, expireTime));
+      results.push(await redisCacheService.increment(key, expireTime));
     }
 
     const ttl = await redisClient.ttl(key);
@@ -173,7 +170,7 @@ describe('RedisCacheService', () => {
     await redisClient.set(key, initialValue, { EX: expireTime });
 
     for (let i = 1; i <= 5; i++) {
-      const result = await redisCacheService.incrementAndGet(key, undefined);
+      const result = await redisCacheService.increment(key, undefined);
       expect(result).toEqual(initialValue + i);
     }
 

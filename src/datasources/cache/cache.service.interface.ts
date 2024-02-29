@@ -13,7 +13,7 @@ export interface ICacheService {
 
   deleteByKey(key: string): Promise<number>;
 
-  incrementAndGet(
+  increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
   ): Promise<number>;

@@ -70,15 +70,16 @@ export class RedisCacheService
     return result;
   }
 
-  async incrementAndGet(
+  async increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
   ): Promise<number> {
-    const result = await this.client.incr(cacheKey);
+    const transaction = this.client.multi().incr(cacheKey);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
-      await this.client.expire(cacheKey, expireTimeSeconds, 'NX');
+      transaction.expire(cacheKey, expireTimeSeconds, 'NX');
     }
-    return result;
+    const [incrRes] = await transaction.get(cacheKey).exec();
+    return Number(incrRes);
   }
 
   /**

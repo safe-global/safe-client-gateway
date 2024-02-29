@@ -56,7 +56,7 @@ export class FakeCacheService implements ICacheService {
     return Promise.resolve();
   }
 
-  incrementAndGet(
+  increment(
     cacheKey: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     expireTimeSeconds: number | undefined,
