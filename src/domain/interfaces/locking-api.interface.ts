@@ -1,3 +1,4 @@
+import { Page } from '@/domain/entities/page.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 
@@ -8,11 +9,11 @@ export interface ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Array<Rank>>;
+  }): Promise<Page<Array<Rank>>>;
 
   getLockingHistory(args: {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Array<LockingEvent>>;
+  }): Promise<Page<Array<LockingEvent>>>;
 }

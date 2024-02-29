@@ -1,3 +1,4 @@
+import { Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
@@ -8,7 +9,7 @@ export class LockingApi implements ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Array<Rank>> {
+  }): Promise<Page<Array<Rank>>> {
     throw new Error('Method not implemented.');
   }
 
@@ -17,7 +18,7 @@ export class LockingApi implements ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Array<LockingEvent>> {
+  }): Promise<Page<Array<LockingEvent>>> {
     throw new Error('Method not implemented.');
   }
 }
