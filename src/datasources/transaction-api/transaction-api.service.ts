@@ -29,6 +29,8 @@ import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-tr
 import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
+  private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
+
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
@@ -865,11 +867,11 @@ export class TransactionApi implements ITransactionApi {
 
   private mapError(error: unknown): unknown {
     if (error instanceof NetworkResponseError) {
-      // Map Django error as "standard" error message if present
-      const djangoError = get(error.data, 'nonFieldErrors[0]');
-      if (djangoError) {
+      const errors = get(error.data, TransactionApi.ERROR_ARRAY_PATH);
+      if (errors) {
         return new NetworkResponseError(error.url, error.response, {
-          message: djangoError,
+          // We only return the first error message so as to be a string
+          message: errors[0],
         });
       }
     }

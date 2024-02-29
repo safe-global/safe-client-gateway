@@ -116,7 +116,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const data = faker.string.hexadecimal();
@@ -169,7 +169,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const getBackboneUrl = `${baseUrl}/api/v1/about`;
@@ -221,7 +221,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const getSingletonsUrl = `${baseUrl}/api/v1/about/singletons/`;
@@ -273,7 +273,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safe = safeBuilder().build();
@@ -342,7 +342,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const contract = faker.finance.ethereumAddress();
@@ -412,7 +412,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
@@ -487,7 +487,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
@@ -549,7 +549,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
@@ -615,7 +615,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
@@ -682,7 +682,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const transferId = faker.string.hexadecimal();
@@ -761,7 +761,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -889,7 +889,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -989,7 +989,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
@@ -1047,7 +1047,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const moduleAddress = faker.finance.ethereumAddress();
@@ -1100,7 +1100,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const moduleTransactionId = faker.string.hexadecimal();
@@ -1180,7 +1180,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const moduleTransaction = moduleTransactionBuilder().build();
@@ -1307,7 +1307,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const multisigTransaction = multisigTransactionBuilder().build();
@@ -1417,7 +1417,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const multisigTransaction = multisigTransactionBuilder().build();
@@ -1477,7 +1477,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
@@ -1549,7 +1549,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -1637,7 +1637,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -1730,7 +1730,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const token = tokenBuilder().build();
@@ -1795,7 +1795,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const limit = faker.number.int();
@@ -1866,7 +1866,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const owner = faker.finance.ethereumAddress();
@@ -1942,7 +1942,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
@@ -1995,7 +1995,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const uuid = faker.string.uuid();
@@ -2045,7 +2045,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const uuid = faker.string.uuid();
@@ -2109,7 +2109,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -2171,7 +2171,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const messageHash = faker.string.hexadecimal();
@@ -2242,7 +2242,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -2319,7 +2319,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -2387,7 +2387,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
@@ -2453,7 +2453,7 @@ describe('TransactionApi', () => {
 
     const errorMessage = faker.word.words();
     it.each([
-      ['Django', { nonFieldErrors: [errorMessage] }],
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const messageHash = faker.string.hexadecimal();
