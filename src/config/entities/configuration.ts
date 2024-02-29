@@ -209,4 +209,11 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  swaps: {
+    api: {
+      1: 'https://api.cow.fi/mainnet',
+      100: 'https://api.cow.fi/xdai',
+      58008: 'https://api.cow.fi/sepolia',
+    },
+  },
 });

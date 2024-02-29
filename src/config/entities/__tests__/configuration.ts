@@ -205,4 +205,11 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  swaps: {
+    api: {
+      1: faker.internet.url(),
+      100: faker.internet.url(),
+      58008: faker.internet.url(),
+    },
+  },
 });
