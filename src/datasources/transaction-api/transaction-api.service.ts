@@ -3,6 +3,7 @@ import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.sourc
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
@@ -25,6 +26,7 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -77,7 +79,7 @@ export class TransactionApi implements ITransactionApi {
       );
       return dataDecoded;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -94,7 +96,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -111,7 +113,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -129,7 +131,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -157,7 +159,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -191,7 +193,7 @@ export class TransactionApi implements ITransactionApi {
         },
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -212,7 +214,7 @@ export class TransactionApi implements ITransactionApi {
         label: args.label,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -229,7 +231,7 @@ export class TransactionApi implements ITransactionApi {
         signature: args.signature,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -246,7 +248,7 @@ export class TransactionApi implements ITransactionApi {
         signature: args.signature,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -266,7 +268,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -298,7 +300,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -344,7 +346,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -366,7 +368,7 @@ export class TransactionApi implements ITransactionApi {
         signature: args.addConfirmationDto.signedSafeTxHash,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -376,7 +378,7 @@ export class TransactionApi implements ITransactionApi {
       const { data } = await this.networkService.get<SafeList>(url);
       return data;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -398,7 +400,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -430,7 +432,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -485,7 +487,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -513,7 +515,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -527,7 +529,7 @@ export class TransactionApi implements ITransactionApi {
         signature: args.signature,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -557,7 +559,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -592,7 +594,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -620,7 +622,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -649,7 +651,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -669,7 +671,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.ownersExpirationTimeSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -692,7 +694,7 @@ export class TransactionApi implements ITransactionApi {
         signatures: args.signatures,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -701,7 +703,7 @@ export class TransactionApi implements ITransactionApi {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}`;
       await this.networkService.delete(url);
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -713,7 +715,7 @@ export class TransactionApi implements ITransactionApi {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${args.uuid}/safes/${args.safeAddress}`;
       await this.networkService.delete(url);
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -734,7 +736,7 @@ export class TransactionApi implements ITransactionApi {
       );
       return estimation;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -752,7 +754,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -780,7 +782,7 @@ export class TransactionApi implements ITransactionApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -807,7 +809,7 @@ export class TransactionApi implements ITransactionApi {
         origin: args.data.origin,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -826,7 +828,7 @@ export class TransactionApi implements ITransactionApi {
       });
       return data;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -841,7 +843,7 @@ export class TransactionApi implements ITransactionApi {
       });
       return data;
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
 
@@ -859,5 +861,18 @@ export class TransactionApi implements ITransactionApi {
       messageHash: args.messageHash,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private mapError(error: unknown): unknown {
+    if (error instanceof NetworkResponseError) {
+      // Map Django error as "standard" error message if present
+      const djangoError = get(error.data, 'nonFieldErrors[0]');
+      if (djangoError) {
+        return new NetworkResponseError(error.url, error.response, {
+          message: djangoError,
+        });
+      }
+    }
+    return error;
   }
 }
