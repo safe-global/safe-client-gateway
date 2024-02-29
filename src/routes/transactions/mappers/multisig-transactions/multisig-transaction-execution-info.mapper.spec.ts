@@ -19,6 +19,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder()
       .with('proposer', null)
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
@@ -42,6 +43,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder()
       .with('proposer', proposer)
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
@@ -65,6 +67,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder()
       .with('proposer', proposer)
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
@@ -89,6 +92,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
       .with('proposer', proposer)
       .with('confirmations', null)
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
@@ -112,6 +116,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder()
       .with('proposer', proposer)
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
@@ -137,6 +142,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const safe = safeBuilder()
       .with('owners', [proposer, faker.finance.ethereumAddress()])
       .build();
+
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
       safe,
