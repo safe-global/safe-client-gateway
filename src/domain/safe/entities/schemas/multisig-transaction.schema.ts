@@ -42,6 +42,7 @@ export const multisigTransactionSchema: Schema = {
     safeTxGas: { type: 'number', nullable: true, default: null },
     baseGas: { type: 'number', nullable: true, default: null },
     gasPrice: { type: 'string', nullable: true, default: null },
+    proposer: { type: 'string', nullable: true, default: null },
     refundReceiver: { type: 'string', nullable: true, default: null },
     nonce: { type: 'number' },
     executionDate: {
