@@ -52,6 +52,11 @@ export class TenderlyApi implements IAlertsApi {
     }
   }
 
+  /**
+   * Delete a smart contract from a Tenderly project.
+   *
+   * @see https://docs.tenderly.co/reference/api#tag/Contracts/operation/deleteContract
+   */
   async deleteContract(contract: AlertsDeletion): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/contract/${contract.chainId}/${contract.address}`;
