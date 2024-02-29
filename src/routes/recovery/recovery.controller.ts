@@ -10,8 +10,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { AddRecoveryModuleDto } from '@/routes/recovery/entities/add-recovery-module.dto.entity';
 import { RecoveryService } from '@/routes/recovery/recovery.service';
 import { AddRecoveryModuleDtoValidationPipe } from '@/routes/recovery/pipes/add-recovery-module.validation.pipe';
-import { DeleteRecoveryModuleDtoValidationPipe } from '@/routes/recovery/pipes/delete-recovery-module.validation.pipe';
-import { DeleteRecoveryModuleDto } from '@/routes/recovery/entities/delete-recovery-module.dto.entity';
 
 @ApiTags('recovery')
 @Controller({
@@ -36,16 +34,15 @@ export class RecoveryController {
     });
   }
 
-  @HttpCode(200)
-  @Delete()
+  @HttpCode(204)
+  @Delete('/:moduleAddress')
   async deleteRecoveryModule(
     @Param('chainId') chainId: string,
-    @Body(DeleteRecoveryModuleDtoValidationPipe)
-    deleteRecoveryModuleDto: DeleteRecoveryModuleDto,
+    @Param('moduleAddress') moduleAddress: string,
   ): Promise<void> {
     return this.recoveryService.deleteRecoveryModule({
       chainId,
-      deleteRecoveryModuleDto,
+      moduleAddress,
     });
   }
 }
