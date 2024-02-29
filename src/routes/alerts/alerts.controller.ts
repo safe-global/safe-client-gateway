@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Inject,
   Post,
@@ -15,7 +16,7 @@ import { TenderlySignatureGuard } from '@/routes/alerts/guards/tenderly-signatur
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Controller({
-  path: '',
+  path: '/alerts',
   version: '1',
 })
 @ApiExcludeController()
@@ -25,9 +26,15 @@ export class AlertsController {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
+  @Get()
+  @HttpCode(200)
+  verifyWebhook(): void {
+    // Tenderly requires a GET request, returning a 200 to verify a webhook exists
+  }
+
   @UseGuards(AlertsRouteGuard)
   @UseGuards(TenderlySignatureGuard)
-  @Post('/alerts')
+  @Post()
   @HttpCode(202)
   async postAlert(
     @Body(AlertValidationPipe)

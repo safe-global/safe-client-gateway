@@ -129,451 +129,999 @@ describe('Alerts (Unit)', () => {
       await app.close();
     });
 
-    it('returns 200 (OK) for valid signature/valid payload', async () => {
-      const alert = alertBuilder().build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
+    describe('GET /v1/alerts', () => {
+      it('returns 200 (OK) to verify webhook existence', async () => {
+        await request(app.getHttpServer()).get('/v1/alerts').expect(200);
       });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(202)
-        .expect({});
     });
 
-    describe('it notifies about a valid transaction attempt', () => {
-      it('notifies about addOwnerWithThreshold attempts', async () => {
+    describe('POST /v1/alerts', () => {
+      it('returns 200 (OK) for valid signature/valid payload', async () => {
+        const alert = alertBuilder().build();
+        const timestamp = Date.now().toString();
+        const signature = fakeTenderlySignature({
+          signingKey,
+          alert,
+          timestamp,
+        });
+
+        await request(app.getHttpServer())
+          .post('/v1/alerts')
+          .set('x-tenderly-signature', signature)
+          .set('date', timestamp)
+          .send(alert)
+          .expect(202)
+          .expect({});
+      });
+
+      describe('it notifies about a valid transaction attempt', () => {
+        it('notifies about addOwnerWithThreshold attempts', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+
+          const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+          const { threshold, owner } = addOwnerWithThreshold.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', addOwnerWithThreshold.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            subscriptionBuilder().with('key', 'account_recovery').build(),
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [...safe.owners, owner].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about removeOwner attempts', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const owners = [
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+          ];
+          const safe = safeBuilder()
+            .with('owners', owners)
+            .with('modules', [delayModifier])
+            .build();
+
+          const removeOwner = removeOwnerEncoder(owners).with(
+            'owner',
+            getAddress(owners[1]),
+          );
+          const { threshold } = removeOwner.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', removeOwner.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [owners[0], owners[2]].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about swapOwner attempts', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const owners = [
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+          ];
+          const safe = safeBuilder()
+            .with('owners', owners)
+            .with('modules', [delayModifier])
+            .build();
+
+          const swapOwner = swapOwnerEncoder(owners)
+            .with('oldOwner', getAddress(owners[1]))
+            .with('newOwner', getAddress(faker.finance.ethereumAddress()));
+          const { newOwner } = swapOwner.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', swapOwner.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [owners[0], newOwner, owners[2]].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: safe.threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about changeThreshold attempts', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+
+          const changeThreshold = changeThresholdEncoder();
+          const { threshold } = changeThreshold.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', changeThreshold.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: safe.owners.map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about batched owner management attempts', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const owners = [
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+            faker.finance.ethereumAddress(),
+          ];
+          const safe = safeBuilder()
+            .with('modules', [delayModifier])
+            .with('owners', owners)
+            .build();
+
+          const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+          const removeOwner = removeOwnerEncoder(safe.owners)
+            .with('owner', getAddress(owners[0]))
+            .with('threshold', faker.number.bigInt());
+          const multiSendTransactions = multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              to: getAddress(safe.address),
+              value: BigInt(0),
+              data: addOwnerWithThreshold.encode(),
+            },
+            {
+              operation: 0,
+              to: getAddress(safe.address),
+              value: BigInt(0),
+              data: removeOwner.encode(),
+            },
+          ]);
+          const multiSend = multiSendEncoder().with(
+            'transactions',
+            multiSendTransactions,
+          );
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', multiSend.encode())
+            .with(
+              'to',
+              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+            )
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [
+                owners[1],
+                owners[2],
+                addOwnerWithThreshold.build().owner,
+              ].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: removeOwner.build().threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about alerts with multiple logs', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+
+          const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+          const { threshold, owner } = addOwnerWithThreshold.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', addOwnerWithThreshold.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const log = alertLogBuilder()
+            .with('address', delayModifier)
+            .with('data', transactionAddedEvent.data)
+            .with('topics', transactionAddedEvent.topics)
+            .build();
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [log, log]) // Multiple logs
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [...safe.owners, owner].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: [...safe.owners, owner].map((address) => {
+                return {
+                  address,
+                  explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                    '{{address}}',
+                    address,
+                  ),
+                };
+              }),
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies multiple emails of a Safe for a single alert', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+
+          const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
+          const { threshold, owner } = addOwnerWithThreshold.build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            .with('data', addOwnerWithThreshold.encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedOwners = [...safe.owners, owner].map((address) => {
+            return {
+              address,
+              explorerUrl: chain.blockExplorerUriTemplate.address.replace(
+                '{{address}}',
+                address,
+              ),
+            };
+          });
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+          expect(emailApi.createMessage).toHaveBeenCalledWith({
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: expectedOwners,
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: [verifiedAccounts[0].emailAddress.value],
+          });
+          expect(emailApi.createMessage).toHaveBeenCalledWith({
+            subject: 'Recovery attempt',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              owners: expectedOwners,
+              threshold: threshold.toString(),
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.recoveryTx',
+            ),
+            to: [verifiedAccounts[1].emailAddress.value],
+          });
+        });
+      });
+
+      describe('it notifies about an invalid transaction attempt', () => {
+        it('notifies about an invalid transaction attempt', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
+            .with('data', execTransactionEncoder().encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [
+                  alertLogBuilder()
+                    .with('address', delayModifier)
+                    .with('data', transactionAddedEvent.data)
+                    .with('topics', transactionAddedEvent.topics)
+                    .build(),
+                ])
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Malicious transaction',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.unknownRecoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+
+        it('notifies about alerts with multiple logs', async () => {
+          const chain = chainBuilder().build();
+          const delayModifier = faker.finance.ethereumAddress();
+          const safe = safeBuilder().with('modules', [delayModifier]).build();
+          const transactionAddedEvent = transactionAddedEventBuilder()
+            // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
+            .with('data', execTransactionEncoder().encode())
+            .with('to', getAddress(safe.address))
+            .encode();
+
+          const log = alertLogBuilder()
+            .with('address', delayModifier)
+            .with('data', transactionAddedEvent.data)
+            .with('topics', transactionAddedEvent.topics)
+            .build();
+          const alert = alertBuilder()
+            .with(
+              'transaction',
+              alertTransactionBuilder()
+                .with('to', delayModifier)
+                .with('logs', [log, log]) // Multiple logs
+                .with('network', chain.chainId)
+                .build(),
+            )
+            .with('event_type', EventType.ALERT)
+            .build();
+          const timestamp = Date.now().toString();
+          const signature = fakeTenderlySignature({
+            signingKey,
+            alert,
+            timestamp,
+          });
+          const verifiedAccounts = [
+            accountBuilder()
+              .with('emailAddress', new EmailAddress(faker.internet.email()))
+              .with('isVerified', true)
+              .build(),
+          ];
+          accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+          accountDataSource.getSubscriptions.mockResolvedValue([
+            accountRecoverySubscription,
+          ]);
+
+          networkService.get.mockImplementation((url) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
+                return Promise.resolve({
+                  data: { safes: [safe.address] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post('/v1/alerts')
+            .set('x-tenderly-signature', signature)
+            .set('date', timestamp)
+            .send(alert)
+            .expect(202)
+            .expect({});
+
+          const expectedTargetEmailAddresses = verifiedAccounts.map(
+            ({ emailAddress }) => emailAddress.value,
+          );
+          expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
+            subject: 'Malicious transaction',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.unknownRecoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+          expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
+            subject: 'Malicious transaction',
+            substitutions: {
+              webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
+              unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
+            },
+            template: configurationService.getOrThrow(
+              'email.templates.unknownRecoveryTx',
+            ),
+            to: expectedTargetEmailAddresses,
+          });
+        });
+      });
+
+      it('notifies about a batch of a valid and an invalid transaction attempt', async () => {
         const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
-        const safe = safeBuilder().with('modules', [delayModifier]).build();
+        const owners = [
+          faker.finance.ethereumAddress(),
+          faker.finance.ethereumAddress(),
+          faker.finance.ethereumAddress(),
+        ];
+        const safe = safeBuilder()
+          .with('modules', [delayModifier])
+          .with('owners', owners)
+          .build();
 
         const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-        const { threshold, owner } = addOwnerWithThreshold.build();
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', addOwnerWithThreshold.encode())
-          .with('to', getAddress(safe.address))
-          .encode();
-
-        const alert = alertBuilder()
-          .with(
-            'transaction',
-            alertTransactionBuilder()
-              .with('to', delayModifier)
-              .with('logs', [
-                alertLogBuilder()
-                  .with('address', delayModifier)
-                  .with('data', transactionAddedEvent.data)
-                  .with('topics', transactionAddedEvent.topics)
-                  .build(),
-              ])
-              .with('network', chain.chainId)
-              .build(),
-          )
-          .with('event_type', EventType.ALERT)
-          .build();
-        const timestamp = Date.now().toString();
-        const signature = fakeTenderlySignature({
-          signingKey,
-          alert,
-          timestamp,
-        });
-        const verifiedAccounts = [
-          accountBuilder()
-            .with('emailAddress', new EmailAddress(faker.internet.email()))
-            .with('isVerified', true)
-            .build(),
-        ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-        accountDataSource.getSubscriptions.mockResolvedValue([
-          subscriptionBuilder().with('key', 'account_recovery').build(),
-        ]);
-
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain, status: 200 });
-            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({
-                data: { safes: [safe.address] },
-                status: 200,
-              });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe, status: 200 });
-            default:
-              return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        });
-
-        await request(app.getHttpServer())
-          .post('/v1/alerts')
-          .set('x-tenderly-signature', signature)
-          .set('date', timestamp)
-          .send(alert)
-          .expect(202)
-          .expect({});
-
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [...safe.owners, owner].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: threshold.toString(),
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
-      });
-
-      it('notifies about removeOwner attempts', async () => {
-        const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
-        const owners = [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ];
-        const safe = safeBuilder()
-          .with('owners', owners)
-          .with('modules', [delayModifier])
-          .build();
-
-        const removeOwner = removeOwnerEncoder(owners).with(
-          'owner',
-          getAddress(owners[1]),
-        );
-        const { threshold } = removeOwner.build();
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', removeOwner.encode())
-          .with('to', getAddress(safe.address))
-          .encode();
-
-        const alert = alertBuilder()
-          .with(
-            'transaction',
-            alertTransactionBuilder()
-              .with('to', delayModifier)
-              .with('logs', [
-                alertLogBuilder()
-                  .with('address', delayModifier)
-                  .with('data', transactionAddedEvent.data)
-                  .with('topics', transactionAddedEvent.topics)
-                  .build(),
-              ])
-              .with('network', chain.chainId)
-              .build(),
-          )
-          .with('event_type', EventType.ALERT)
-          .build();
-        const timestamp = Date.now().toString();
-        const signature = fakeTenderlySignature({
-          signingKey,
-          alert,
-          timestamp,
-        });
-        const verifiedAccounts = [
-          accountBuilder()
-            .with('emailAddress', new EmailAddress(faker.internet.email()))
-            .with('isVerified', true)
-            .build(),
-        ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-        accountDataSource.getSubscriptions.mockResolvedValue([
-          accountRecoverySubscription,
-        ]);
-
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain, status: 200 });
-            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({
-                data: { safes: [safe.address] },
-                status: 200,
-              });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe, status: 200 });
-            default:
-              return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        });
-
-        await request(app.getHttpServer())
-          .post('/v1/alerts')
-          .set('x-tenderly-signature', signature)
-          .set('date', timestamp)
-          .send(alert)
-          .expect(202)
-          .expect({});
-
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [owners[0], owners[2]].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: threshold.toString(),
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
-      });
-
-      it('notifies about swapOwner attempts', async () => {
-        const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
-        const owners = [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ];
-        const safe = safeBuilder()
-          .with('owners', owners)
-          .with('modules', [delayModifier])
-          .build();
-
-        const swapOwner = swapOwnerEncoder(owners)
-          .with('oldOwner', getAddress(owners[1]))
-          .with('newOwner', getAddress(faker.finance.ethereumAddress()));
-        const { newOwner } = swapOwner.build();
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', swapOwner.encode())
-          .with('to', getAddress(safe.address))
-          .encode();
-
-        const alert = alertBuilder()
-          .with(
-            'transaction',
-            alertTransactionBuilder()
-              .with('to', delayModifier)
-              .with('logs', [
-                alertLogBuilder()
-                  .with('address', delayModifier)
-                  .with('data', transactionAddedEvent.data)
-                  .with('topics', transactionAddedEvent.topics)
-                  .build(),
-              ])
-              .with('network', chain.chainId)
-              .build(),
-          )
-          .with('event_type', EventType.ALERT)
-          .build();
-        const timestamp = Date.now().toString();
-        const signature = fakeTenderlySignature({
-          signingKey,
-          alert,
-          timestamp,
-        });
-        const verifiedAccounts = [
-          accountBuilder()
-            .with('emailAddress', new EmailAddress(faker.internet.email()))
-            .with('isVerified', true)
-            .build(),
-        ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-        accountDataSource.getSubscriptions.mockResolvedValue([
-          accountRecoverySubscription,
-        ]);
-
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain, status: 200 });
-            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({
-                data: { safes: [safe.address] },
-                status: 200,
-              });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe, status: 200 });
-            default:
-              return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        });
-
-        await request(app.getHttpServer())
-          .post('/v1/alerts')
-          .set('x-tenderly-signature', signature)
-          .set('date', timestamp)
-          .send(alert)
-          .expect(202)
-          .expect({});
-
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [owners[0], newOwner, owners[2]].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: safe.threshold.toString(),
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
-      });
-
-      it('notifies about changeThreshold attempts', async () => {
-        const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
-        const safe = safeBuilder().with('modules', [delayModifier]).build();
-
-        const changeThreshold = changeThresholdEncoder();
-        const { threshold } = changeThreshold.build();
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', changeThreshold.encode())
-          .with('to', getAddress(safe.address))
-          .encode();
-
-        const alert = alertBuilder()
-          .with(
-            'transaction',
-            alertTransactionBuilder()
-              .with('to', delayModifier)
-              .with('logs', [
-                alertLogBuilder()
-                  .with('address', delayModifier)
-                  .with('data', transactionAddedEvent.data)
-                  .with('topics', transactionAddedEvent.topics)
-                  .build(),
-              ])
-              .with('network', chain.chainId)
-              .build(),
-          )
-          .with('event_type', EventType.ALERT)
-          .build();
-        const timestamp = Date.now().toString();
-        const signature = fakeTenderlySignature({
-          signingKey,
-          alert,
-          timestamp,
-        });
-        const verifiedAccounts = [
-          accountBuilder()
-            .with('emailAddress', new EmailAddress(faker.internet.email()))
-            .with('isVerified', true)
-            .build(),
-        ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-        accountDataSource.getSubscriptions.mockResolvedValue([
-          accountRecoverySubscription,
-        ]);
-
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain, status: 200 });
-            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({
-                data: { safes: [safe.address] },
-                status: 200,
-              });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe, status: 200 });
-            default:
-              return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        });
-
-        await request(app.getHttpServer())
-          .post('/v1/alerts')
-          .set('x-tenderly-signature', signature)
-          .set('date', timestamp)
-          .send(alert)
-          .expect(202)
-          .expect({});
-
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: safe.owners.map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: threshold.toString(),
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
-      });
-
-      it('notifies about batched owner management attempts', async () => {
-        const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
-        const owners = [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ];
-        const safe = safeBuilder()
-          .with('modules', [delayModifier])
-          .with('owners', owners)
-          .build();
-
-        const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-        const removeOwner = removeOwnerEncoder(safe.owners)
-          .with('owner', getAddress(owners[0]))
-          .with('threshold', faker.number.bigInt());
         const multiSendTransactions = multiSendTransactionsEncoder([
           {
             operation: 0,
@@ -585,7 +1133,7 @@ describe('Alerts (Unit)', () => {
             operation: 0,
             to: getAddress(safe.address),
             value: BigInt(0),
-            data: removeOwner.encode(),
+            data: execTransactionEncoder().encode(), // Invalid as not owner management call
           },
         ]);
         const multiSend = multiSendEncoder().with(
@@ -663,42 +1211,56 @@ describe('Alerts (Unit)', () => {
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
+          subject: 'Malicious transaction',
           substitutions: {
             webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [
-              owners[1],
-              owners[2],
-              addOwnerWithThreshold.build().owner,
-            ].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: removeOwner.build().threshold.toString(),
             unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
+            'email.templates.unknownRecoveryTx',
           ),
           to: expectedTargetEmailAddresses,
         });
       });
 
-      it('notifies about alerts with multiple logs', async () => {
+      it('notifies about alerts with multiple logs of a valid and a log of an invalid transaction attempt', async () => {
         const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
-        const safe = safeBuilder().with('modules', [delayModifier]).build();
+        const owners = [
+          faker.finance.ethereumAddress(),
+          faker.finance.ethereumAddress(),
+          faker.finance.ethereumAddress(),
+        ];
+        const safe = safeBuilder()
+          .with('modules', [delayModifier])
+          .with('owners', owners)
+          .build();
 
         const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-        const { threshold, owner } = addOwnerWithThreshold.build();
+        const multiSendTransactions = multiSendTransactionsEncoder([
+          {
+            operation: 0,
+            to: getAddress(safe.address),
+            value: BigInt(0),
+            data: addOwnerWithThreshold.encode(),
+          },
+          {
+            operation: 0,
+            to: getAddress(safe.address),
+            value: BigInt(0),
+            data: execTransactionEncoder().encode(), // Invalid as not owner management call
+          },
+        ]);
+        const multiSend = multiSendEncoder().with(
+          'transactions',
+          multiSendTransactions,
+        );
         const transactionAddedEvent = transactionAddedEventBuilder()
-          .with('data', addOwnerWithThreshold.encode())
-          .with('to', getAddress(safe.address))
+          .with('data', multiSend.encode())
+          .with(
+            'to',
+            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+          )
           .encode();
 
         const log = alertLogBuilder()
@@ -763,50 +1325,30 @@ describe('Alerts (Unit)', () => {
         );
         expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Recovery attempt',
+          subject: 'Malicious transaction',
           substitutions: {
             webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [...safe.owners, owner].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: threshold.toString(),
             unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
+            'email.templates.unknownRecoveryTx',
           ),
           to: expectedTargetEmailAddresses,
         });
         expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
-          subject: 'Recovery attempt',
+          subject: 'Malicious transaction',
           substitutions: {
             webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            owners: [...safe.owners, owner].map((address) => {
-              return {
-                address,
-                explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-                  '{{address}}',
-                  address,
-                ),
-              };
-            }),
-            threshold: threshold.toString(),
             unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
           },
           template: configurationService.getOrThrow(
-            'email.templates.recoveryTx',
+            'email.templates.unknownRecoveryTx',
           ),
           to: expectedTargetEmailAddresses,
         });
       });
 
-      it('notifies multiple emails of a Safe for a single alert', async () => {
+      it('notifies multiple email addresses of a Safe', async () => {
         const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
         const safe = safeBuilder().with('modules', [delayModifier]).build();
@@ -841,6 +1383,7 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
+        // Multiple emails
         const verifiedAccounts = [
           accountBuilder()
             .with('emailAddress', new EmailAddress(faker.internet.email()))
@@ -917,19 +1460,16 @@ describe('Alerts (Unit)', () => {
           to: [verifiedAccounts[1].emailAddress.value],
         });
       });
-    });
 
-    describe('it notifies about an invalid transaction attempt', () => {
-      it('notifies about an invalid transaction attempt', async () => {
+      it('does not notify accounts not subscribed to CATEGORY_ACCOUNT_RECOVERY', async () => {
         const chain = chainBuilder().build();
         const delayModifier = faker.finance.ethereumAddress();
         const safe = safeBuilder().with('modules', [delayModifier]).build();
+        const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
         const transactionAddedEvent = transactionAddedEventBuilder()
-          // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
-          .with('data', execTransactionEncoder().encode())
+          .with('data', addOwnerWithThreshold.encode())
           .with('to', getAddress(safe.address))
           .encode();
-
         const alert = alertBuilder()
           .with(
             'transaction',
@@ -953,15 +1493,19 @@ describe('Alerts (Unit)', () => {
           alert,
           timestamp,
         });
-        const verifiedAccounts = [
+        const accounts = [
+          accountBuilder()
+            .with('emailAddress', new EmailAddress(faker.internet.email()))
+            .with('isVerified', true)
+            .build(),
           accountBuilder()
             .with('emailAddress', new EmailAddress(faker.internet.email()))
             .with('isVerified', true)
             .build(),
         ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
+        accountDataSource.getAccounts.mockResolvedValue(accounts);
         accountDataSource.getSubscriptions.mockResolvedValue([
-          accountRecoverySubscription,
+          subscriptionBuilder().build(),
         ]);
 
         networkService.get.mockImplementation((url) => {
@@ -988,628 +1532,96 @@ describe('Alerts (Unit)', () => {
           .expect(202)
           .expect({});
 
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Malicious transaction',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.unknownRecoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
+        expect(emailApi.createMessage).toHaveBeenCalledTimes(0);
       });
 
-      it('notifies about alerts with multiple logs', async () => {
-        const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
-        const safe = safeBuilder().with('modules', [delayModifier]).build();
-        const transactionAddedEvent = transactionAddedEventBuilder()
-          // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
-          .with('data', execTransactionEncoder().encode())
-          .with('to', getAddress(safe.address))
-          .encode();
+      it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
+        const alert = {};
+        const timestamp = Date.now().toString();
+        const signature = fakeTenderlySignature({
+          signingKey,
+          alert: alert as Alert,
+          timestamp,
+        });
 
-        const log = alertLogBuilder()
-          .with('address', delayModifier)
-          .with('data', transactionAddedEvent.data)
-          .with('topics', transactionAddedEvent.topics)
-          .build();
-        const alert = alertBuilder()
-          .with(
-            'transaction',
-            alertTransactionBuilder()
-              .with('to', delayModifier)
-              .with('logs', [log, log]) // Multiple logs
-              .with('network', chain.chainId)
-              .build(),
-          )
-          .with('event_type', EventType.ALERT)
-          .build();
+        await request(app.getHttpServer())
+          .post('/v1/alerts')
+          .set('x-tenderly-signature', signature)
+          .set('date', timestamp)
+          .send(alert)
+          .expect(400);
+      });
+
+      it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
+        const alert = alertBuilder().build();
+        const timestamp = Date.now().toString();
+        const signature = faker.string.alphanumeric({ length: 64 });
+
+        await request(app.getHttpServer())
+          .post('/v1/alerts')
+          .set('x-tenderly-signature', signature)
+          .set('date', timestamp)
+          .send(alert)
+          .expect(403);
+      });
+    });
+
+    describe('/alerts route disabled', () => {
+      let app: INestApplication;
+      let signingKey: string;
+
+      beforeEach(async () => {
+        jest.resetAllMocks();
+
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): typeof defaultConfiguration => ({
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            email: false,
+          },
+        });
+
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule.register(testConfiguration)],
+        })
+          .overrideModule(AccountDataSourceModule)
+          .useModule(TestAccountDataSourceModule)
+          .overrideModule(CacheModule)
+          .useModule(TestCacheModule)
+          .overrideModule(RequestScopedLoggingModule)
+          .useModule(TestLoggingModule)
+          .overrideModule(NetworkModule)
+          .useModule(TestNetworkModule)
+          .compile();
+
+        app = moduleFixture.createNestApplication();
+        const configurationService = moduleFixture.get(IConfigurationService);
+        signingKey = configurationService.getOrThrow('alerts.signingKey');
+
+        await app.init();
+      });
+
+      afterAll(async () => {
+        await app.close();
+      });
+
+      it('returns 404 (Not found) for valid signature/invalid payload', async () => {
+        const alert = alertBuilder().build();
         const timestamp = Date.now().toString();
         const signature = fakeTenderlySignature({
           signingKey,
           alert,
           timestamp,
         });
-        const verifiedAccounts = [
-          accountBuilder()
-            .with('emailAddress', new EmailAddress(faker.internet.email()))
-            .with('isVerified', true)
-            .build(),
-        ];
-        accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-        accountDataSource.getSubscriptions.mockResolvedValue([
-          accountRecoverySubscription,
-        ]);
-
-        networkService.get.mockImplementation((url) => {
-          switch (url) {
-            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-              return Promise.resolve({ data: chain, status: 200 });
-            case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-              return Promise.resolve({
-                data: { safes: [safe.address] },
-                status: 200,
-              });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-              return Promise.resolve({ data: safe, status: 200 });
-            default:
-              return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        });
 
         await request(app.getHttpServer())
           .post('/v1/alerts')
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(202)
-          .expect({});
-
-        const expectedTargetEmailAddresses = verifiedAccounts.map(
-          ({ emailAddress }) => emailAddress.value,
-        );
-        expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-          subject: 'Malicious transaction',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.unknownRecoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
-        expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
-          subject: 'Malicious transaction',
-          substitutions: {
-            webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-            unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-          },
-          template: configurationService.getOrThrow(
-            'email.templates.unknownRecoveryTx',
-          ),
-          to: expectedTargetEmailAddresses,
-        });
+          .expect(404);
       });
-    });
-
-    it('notifies about a batch of a valid and an invalid transaction attempt', async () => {
-      const chain = chainBuilder().build();
-      const delayModifier = faker.finance.ethereumAddress();
-      const owners = [
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-      ];
-      const safe = safeBuilder()
-        .with('modules', [delayModifier])
-        .with('owners', owners)
-        .build();
-
-      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-      const multiSendTransactions = multiSendTransactionsEncoder([
-        {
-          operation: 0,
-          to: getAddress(safe.address),
-          value: BigInt(0),
-          data: addOwnerWithThreshold.encode(),
-        },
-        {
-          operation: 0,
-          to: getAddress(safe.address),
-          value: BigInt(0),
-          data: execTransactionEncoder().encode(), // Invalid as not owner management call
-        },
-      ]);
-      const multiSend = multiSendEncoder().with(
-        'transactions',
-        multiSendTransactions,
-      );
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', multiSend.encode())
-        .with(
-          'to',
-          getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
-        )
-        .encode();
-
-      const alert = alertBuilder()
-        .with(
-          'transaction',
-          alertTransactionBuilder()
-            .with('to', delayModifier)
-            .with('logs', [
-              alertLogBuilder()
-                .with('address', delayModifier)
-                .with('data', transactionAddedEvent.data)
-                .with('topics', transactionAddedEvent.topics)
-                .build(),
-            ])
-            .with('network', chain.chainId)
-            .build(),
-        )
-        .with('event_type', EventType.ALERT)
-        .build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
-      });
-      const verifiedAccounts = [
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-      ];
-      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-      accountDataSource.getSubscriptions.mockResolvedValue([
-        accountRecoverySubscription,
-      ]);
-
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
-          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({
-              data: { safes: [safe.address] },
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe, status: 200 });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(202)
-        .expect({});
-
-      const expectedTargetEmailAddresses = verifiedAccounts.map(
-        ({ emailAddress }) => emailAddress.value,
-      );
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(1);
-      expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-        subject: 'Malicious transaction',
-        substitutions: {
-          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-        },
-        template: configurationService.getOrThrow(
-          'email.templates.unknownRecoveryTx',
-        ),
-        to: expectedTargetEmailAddresses,
-      });
-    });
-
-    it('notifies about alerts with multiple logs of a valid and a log of an invalid transaction attempt', async () => {
-      const chain = chainBuilder().build();
-      const delayModifier = faker.finance.ethereumAddress();
-      const owners = [
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-      ];
-      const safe = safeBuilder()
-        .with('modules', [delayModifier])
-        .with('owners', owners)
-        .build();
-
-      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-      const multiSendTransactions = multiSendTransactionsEncoder([
-        {
-          operation: 0,
-          to: getAddress(safe.address),
-          value: BigInt(0),
-          data: addOwnerWithThreshold.encode(),
-        },
-        {
-          operation: 0,
-          to: getAddress(safe.address),
-          value: BigInt(0),
-          data: execTransactionEncoder().encode(), // Invalid as not owner management call
-        },
-      ]);
-      const multiSend = multiSendEncoder().with(
-        'transactions',
-        multiSendTransactions,
-      );
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', multiSend.encode())
-        .with(
-          'to',
-          getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
-        )
-        .encode();
-
-      const log = alertLogBuilder()
-        .with('address', delayModifier)
-        .with('data', transactionAddedEvent.data)
-        .with('topics', transactionAddedEvent.topics)
-        .build();
-      const alert = alertBuilder()
-        .with(
-          'transaction',
-          alertTransactionBuilder()
-            .with('to', delayModifier)
-            .with('logs', [log, log]) // Multiple logs
-            .with('network', chain.chainId)
-            .build(),
-        )
-        .with('event_type', EventType.ALERT)
-        .build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
-      });
-      const verifiedAccounts = [
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-      ];
-      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-      accountDataSource.getSubscriptions.mockResolvedValue([
-        accountRecoverySubscription,
-      ]);
-
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
-          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({
-              data: { safes: [safe.address] },
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe, status: 200 });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(202)
-        .expect({});
-
-      const expectedTargetEmailAddresses = verifiedAccounts.map(
-        ({ emailAddress }) => emailAddress.value,
-      );
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
-      expect(emailApi.createMessage).toHaveBeenNthCalledWith(1, {
-        subject: 'Malicious transaction',
-        substitutions: {
-          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-        },
-        template: configurationService.getOrThrow(
-          'email.templates.unknownRecoveryTx',
-        ),
-        to: expectedTargetEmailAddresses,
-      });
-      expect(emailApi.createMessage).toHaveBeenNthCalledWith(2, {
-        subject: 'Malicious transaction',
-        substitutions: {
-          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-        },
-        template: configurationService.getOrThrow(
-          'email.templates.unknownRecoveryTx',
-        ),
-        to: expectedTargetEmailAddresses,
-      });
-    });
-
-    it('notifies multiple email addresses of a Safe', async () => {
-      const chain = chainBuilder().build();
-      const delayModifier = faker.finance.ethereumAddress();
-      const safe = safeBuilder().with('modules', [delayModifier]).build();
-
-      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-      const { threshold, owner } = addOwnerWithThreshold.build();
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', addOwnerWithThreshold.encode())
-        .with('to', getAddress(safe.address))
-        .encode();
-
-      const alert = alertBuilder()
-        .with(
-          'transaction',
-          alertTransactionBuilder()
-            .with('to', delayModifier)
-            .with('logs', [
-              alertLogBuilder()
-                .with('address', delayModifier)
-                .with('data', transactionAddedEvent.data)
-                .with('topics', transactionAddedEvent.topics)
-                .build(),
-            ])
-            .with('network', chain.chainId)
-            .build(),
-        )
-        .with('event_type', EventType.ALERT)
-        .build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
-      });
-      // Multiple emails
-      const verifiedAccounts = [
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-      ];
-      accountDataSource.getAccounts.mockResolvedValue(verifiedAccounts);
-      accountDataSource.getSubscriptions.mockResolvedValue([
-        accountRecoverySubscription,
-      ]);
-
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
-          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({
-              data: { safes: [safe.address] },
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe, status: 200 });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(202)
-        .expect({});
-
-      const expectedOwners = [...safe.owners, owner].map((address) => {
-        return {
-          address,
-          explorerUrl: chain.blockExplorerUriTemplate.address.replace(
-            '{{address}}',
-            address,
-          ),
-        };
-      });
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(2);
-      expect(emailApi.createMessage).toHaveBeenCalledWith({
-        subject: 'Recovery attempt',
-        substitutions: {
-          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-          owners: expectedOwners,
-          threshold: threshold.toString(),
-          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[0].unsubscriptionToken}`,
-        },
-        template: configurationService.getOrThrow('email.templates.recoveryTx'),
-        to: [verifiedAccounts[0].emailAddress.value],
-      });
-      expect(emailApi.createMessage).toHaveBeenCalledWith({
-        subject: 'Recovery attempt',
-        substitutions: {
-          webAppUrl: `${webAppBaseUri}/home?safe=${chain.shortName}:${safe.address}`,
-          owners: expectedOwners,
-          threshold: threshold.toString(),
-          unsubscriptionUrl: `${webAppBaseUri}/unsubscribe?token=${verifiedAccounts[1].unsubscriptionToken}`,
-        },
-        template: configurationService.getOrThrow('email.templates.recoveryTx'),
-        to: [verifiedAccounts[1].emailAddress.value],
-      });
-    });
-
-    it('does not notify accounts not subscribed to CATEGORY_ACCOUNT_RECOVERY', async () => {
-      const chain = chainBuilder().build();
-      const delayModifier = faker.finance.ethereumAddress();
-      const safe = safeBuilder().with('modules', [delayModifier]).build();
-      const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
-      const transactionAddedEvent = transactionAddedEventBuilder()
-        .with('data', addOwnerWithThreshold.encode())
-        .with('to', getAddress(safe.address))
-        .encode();
-      const alert = alertBuilder()
-        .with(
-          'transaction',
-          alertTransactionBuilder()
-            .with('to', delayModifier)
-            .with('logs', [
-              alertLogBuilder()
-                .with('address', delayModifier)
-                .with('data', transactionAddedEvent.data)
-                .with('topics', transactionAddedEvent.topics)
-                .build(),
-            ])
-            .with('network', chain.chainId)
-            .build(),
-        )
-        .with('event_type', EventType.ALERT)
-        .build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
-      });
-      const accounts = [
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-        accountBuilder()
-          .with('emailAddress', new EmailAddress(faker.internet.email()))
-          .with('isVerified', true)
-          .build(),
-      ];
-      accountDataSource.getAccounts.mockResolvedValue(accounts);
-      accountDataSource.getSubscriptions.mockResolvedValue([
-        subscriptionBuilder().build(),
-      ]);
-
-      networkService.get.mockImplementation((url) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
-          case `${chain.transactionService}/api/v1/modules/${delayModifier}/safes/`:
-            return Promise.resolve({
-              data: { safes: [safe.address] },
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: safe, status: 200 });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(202)
-        .expect({});
-
-      expect(emailApi.createMessage).toHaveBeenCalledTimes(0);
-    });
-
-    it('returns 400 (Bad Request) for valid signature/invalid payload', async () => {
-      const alert = {};
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert: alert as Alert,
-        timestamp,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(400);
-    });
-
-    it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
-      const alert = alertBuilder().build();
-      const timestamp = Date.now().toString();
-      const signature = faker.string.alphanumeric({ length: 64 });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(403);
-    });
-  });
-
-  describe('/alerts route disabled', () => {
-    let app: INestApplication;
-    let signingKey: string;
-
-    beforeEach(async () => {
-      jest.resetAllMocks();
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-          email: false,
-        },
-      });
-
-      const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [AppModule.register(testConfiguration)],
-      })
-        .overrideModule(AccountDataSourceModule)
-        .useModule(TestAccountDataSourceModule)
-        .overrideModule(CacheModule)
-        .useModule(TestCacheModule)
-        .overrideModule(RequestScopedLoggingModule)
-        .useModule(TestLoggingModule)
-        .overrideModule(NetworkModule)
-        .useModule(TestNetworkModule)
-        .compile();
-
-      app = moduleFixture.createNestApplication();
-      const configurationService = moduleFixture.get(IConfigurationService);
-      signingKey = configurationService.getOrThrow('alerts.signingKey');
-
-      await app.init();
-    });
-
-    afterAll(async () => {
-      await app.close();
-    });
-
-    it('returns 404 (Not found) for valid signature/invalid payload', async () => {
-      const alert = alertBuilder().build();
-      const timestamp = Date.now().toString();
-      const signature = fakeTenderlySignature({
-        signingKey,
-        alert,
-        timestamp,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/alerts')
-        .set('x-tenderly-signature', signature)
-        .set('date', timestamp)
-        .send(alert)
-        .expect(404);
     });
   });
 });
