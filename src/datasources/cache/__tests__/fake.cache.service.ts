@@ -68,4 +68,8 @@ export class FakeCacheService implements ICacheService {
     }
     return Promise.resolve(this.cache[cacheKey] as number);
   }
+
+  initNumericalValue(cacheKey: string, value: number): void {
+    this.cache[cacheKey] = value;
+  }
 }
