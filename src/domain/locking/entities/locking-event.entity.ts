@@ -16,7 +16,7 @@ export type UnlockEvent = {
   type: LockType.UNLOCK;
   amount: string;
   executedAt: string;
-  unlockIndex: number;
+  unlockIndex: string;
   unlockedAt: string;
 };
 
@@ -24,5 +24,5 @@ export type WithdrawEvent = {
   type: LockType.WITHDRAW;
   amount: string;
   executedAt: string;
-  unlockIndex: number;
+  unlockIndex: string;
 };
