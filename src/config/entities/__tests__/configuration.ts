@@ -168,6 +168,7 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: true,
     zerionBalancesChainIds: ['137'],
+    locking: true,
     relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
