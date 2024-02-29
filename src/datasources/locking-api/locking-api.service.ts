@@ -9,7 +9,7 @@ export class LockingApi implements ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Array<Rank>>> {
+  }): Promise<Page<Rank>> {
     throw new Error('Method not implemented.');
   }
 
@@ -18,7 +18,7 @@ export class LockingApi implements ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Array<LockingEvent>>> {
+  }): Promise<Page<LockingEvent>> {
     throw new Error('Method not implemented.');
   }
 }

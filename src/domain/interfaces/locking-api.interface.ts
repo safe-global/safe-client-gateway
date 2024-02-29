@@ -9,11 +9,11 @@ export interface ILockingApi {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Array<Rank>>>;
+  }): Promise<Page<Rank>>;
 
   getLockingHistory(args: {
     safeAddress?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Array<LockingEvent>>>;
+  }): Promise<Page<LockingEvent>>;
 }
