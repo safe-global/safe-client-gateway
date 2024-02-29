@@ -160,6 +160,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress') safeAddress: string,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    trusted: boolean,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
     @Query('to') to?: string,
@@ -176,6 +178,7 @@ export class TransactionsController {
       value,
       tokenAddress,
       paginationData,
+      onlyTrusted: trusted,
     });
   }
 
