@@ -35,6 +35,7 @@ export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
   private static readonly collectiblesSorting = '-floor_price';
+  private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly chainsConfiguration: Record<number, ChainAttributes>;
@@ -312,7 +313,9 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   private async _isRateLimited(): Promise<boolean> {
     const current = await this.cacheService.increment(
-      CacheRouter.getZerionRateLimitCacheKey(),
+      CacheRouter.getRateLimitCacheKey(
+        ZerionBalancesApi.RATE_LIMIT_CACHE_KEY_PREFIX,
+      ),
       this.limitPeriodSeconds,
     );
     return current > this.limitCalls;

@@ -31,7 +31,7 @@ export class CacheRouter {
   private static readonly TRANSFERS_KEY = 'transfers';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
-  private static readonly ZERION_RATE_LIMIT_KEY = 'zerion_rate_limit';
+  private static readonly RATE_LIMIT_KEY = 'rate_limit';
 
   static getBalancesCacheKey(args: {
     chainId: string;
@@ -89,8 +89,8 @@ export class CacheRouter {
     );
   }
 
-  static getZerionRateLimitCacheKey(): string {
-    return CacheRouter.ZERION_RATE_LIMIT_KEY;
+  static getRateLimitCacheKey(prefix: string): string {
+    return `${prefix}_${CacheRouter.RATE_LIMIT_KEY}`;
   }
 
   static getSafeCacheDir(args: {
