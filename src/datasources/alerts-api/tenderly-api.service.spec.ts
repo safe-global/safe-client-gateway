@@ -68,38 +68,24 @@ describe('TenderlyApi', () => {
       return `${chain}:${safeAddress}:${moduleAddress}`;
     };
 
-    const contracts: Array<AlertsRegistration> = [
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: fakeDisplayName(),
-        chainId: faker.string.numeric(),
-      },
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: fakeDisplayName(),
-        chainId: faker.string.numeric(),
-      },
-      {
-        address: faker.finance.ethereumAddress(),
-        displayName: fakeDisplayName(),
-        chainId: faker.string.numeric(),
-      },
-    ];
+    const contract: AlertsRegistration = {
+      address: faker.finance.ethereumAddress(),
+      displayName: fakeDisplayName(),
+      chainId: faker.string.numeric(),
+    };
 
-    await service.addContracts(contracts);
+    await service.addContract(contract);
 
     expect(mockNetworkService.post).toHaveBeenCalledWith(
-      `${tenderlyBaseUri}/api/v2/accounts/${tenderlyAccount}/projects/${tenderlyProject}/contracts`,
+      `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
       {
         headers: {
           'X-Access-Key': tenderlyApiKey,
         },
         params: {
-          contracts: contracts.map((contract) => ({
-            address: contract.address,
-            display_name: contract.displayName,
-            network_id: contract.chainId,
-          })),
+          address: contract.address,
+          display_name: contract.displayName,
+          network_id: contract.chainId,
         },
       },
     );
@@ -118,9 +104,12 @@ describe('TenderlyApi', () => {
     );
     mockNetworkService.post.mockRejectedValueOnce(error);
 
-    await expect(service.addContracts([])).rejects.toThrow(
-      new DataSourceError('Unexpected error', status),
-    );
+    await expect(
+      service.addContract({
+        address: faker.finance.ethereumAddress(),
+        chainId: faker.string.numeric(),
+      }),
+    ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
     expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
   });
