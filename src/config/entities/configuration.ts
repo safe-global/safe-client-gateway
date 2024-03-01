@@ -213,7 +213,7 @@ export default () => ({
     api: {
       1: 'https://api.cow.fi/mainnet',
       100: 'https://api.cow.fi/xdai',
-      58008: 'https://api.cow.fi/sepolia',
+      11155111: 'https://api.cow.fi/sepolia',
     },
   },
 });

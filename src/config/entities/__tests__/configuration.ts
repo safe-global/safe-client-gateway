@@ -209,7 +209,7 @@ export default (): ReturnType<typeof configuration> => ({
     api: {
       1: faker.internet.url(),
       100: faker.internet.url(),
-      58008: faker.internet.url(),
+      11155111: faker.internet.url(),
     },
   },
 });

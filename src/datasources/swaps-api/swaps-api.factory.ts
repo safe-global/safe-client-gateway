@@ -7,7 +7,7 @@ import { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CowSwapApi } from '@/datasources/cow-swap/cowswap-api.service';
+import { CowSwapApi } from '@/datasources/swaps-api/cowswap-api.service';
 
 @Injectable()
 export class SwapsApiFactory implements ISwapsApiFactory {
@@ -25,14 +25,10 @@ export class SwapsApiFactory implements ISwapsApiFactory {
       return this.apis[chainId];
     }
 
-    const baseUrl = this.configurationService.get<string>(
+    const baseUrl = this.configurationService.getOrThrow<string>(
       `swaps.api.${chainId}`,
     );
-    if (!baseUrl) {
-      throw new Error(
-        `No registered CowSwap API instance for chain ${chainId}`,
-      );
-    }
+
     this.apis[chainId] = new CowSwapApi(
       baseUrl,
       this.networkService,
