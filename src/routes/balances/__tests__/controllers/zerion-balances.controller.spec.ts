@@ -587,6 +587,7 @@ describe('Balances Controller (Unit)', () => {
           )
           .expect(429);
 
+        // Calls expected: 'limitCalls' calls to Zerion + 1 call to ConfigApi
         expect(networkService.get.mock.calls.length).toBe(limitCalls + 1);
       });
     });
