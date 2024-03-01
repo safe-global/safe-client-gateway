@@ -13,6 +13,9 @@ import {
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 import { getAddress } from 'viem';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as process from 'process';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
@@ -20,12 +23,27 @@ describe('Account DataSource Tests', () => {
   let target: AccountDataSource;
   const config = configuration();
 
+  const isCIContext = process.env.CI?.toLowerCase() === 'true';
+
   const sql = postgres({
     host: config.db.postgres.host,
     port: parseInt(config.db.postgres.port),
     db: config.db.postgres.database,
     user: config.db.postgres.username,
     password: config.db.postgres.password,
+    // If running on a CI context (e.g.: GitHub Actions),
+    // disable certificate pinning for the test execution
+    ssl:
+      isCIContext && config.db.postgres.ssl.enabled
+        ? {}
+        : {
+            requestCert: config.db.postgres.ssl.requestCert,
+            rejectUnauthorized: config.db.postgres.ssl.rejectUnauthorized,
+            ca: fs.readFileSync(
+              path.join(__dirname, '../../../db_config/test/server.crt'),
+              'utf8',
+            ),
+          },
   });
 
   // Run any pending migration before test execution
