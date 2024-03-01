@@ -11,6 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -40,6 +41,7 @@ export class CacheFirstDataSource {
    * @param args.networkRequest - the HTTP request to be used if there is a cache miss
    * @param args.expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
    * @param args.notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
+   * @param args.isRateLimited - indicates if the call is rate-limited. If so, and the data is not already cached, an error will be thrown
    */
   async get<T>(args: {
     cacheDir: CacheDir;
@@ -47,8 +49,14 @@ export class CacheFirstDataSource {
     notFoundExpireTimeSeconds: number;
     networkRequest?: NetworkRequest;
     expireTimeSeconds?: number;
+    isRateLimited?: boolean;
   }): Promise<T> {
     const cached = await this.cacheService.get(args.cacheDir);
+    if (args.isRateLimited && cached == null) {
+      const error = new LimitReachedError();
+      this.loggingService.info(error.message);
+      throw error;
+    }
     if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
 
     try {

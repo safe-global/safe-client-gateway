@@ -173,4 +173,20 @@ describe('RedisCacheService', () => {
     expect(ttl).toBeGreaterThan(0);
     expect(ttl).toBeLessThanOrEqual(expireTime);
   });
+
+  it('increments the value of an existing key', async () => {
+    const expireTime = faker.number.int({ min: 1 });
+    const key = faker.string.alphanumeric();
+    const initialValue = faker.number.int({ min: 100 });
+    await redisClient.set(key, initialValue, { EX: expireTime });
+
+    for (let i = 1; i <= 5; i++) {
+      const result = await redisCacheService.increment(key, undefined);
+      expect(result).toEqual(initialValue + i);
+    }
+
+    const ttl = await redisClient.ttl(key);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(expireTime);
+  });
 });

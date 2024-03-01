@@ -54,8 +54,8 @@ export default () => ({
         },
       },
       zerion: {
-        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         apiKey: process.env.ZERION_API_KEY,
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         chains: {
           1: { chainName: 'ethereum' },
           10: { chainName: 'optimism' },
@@ -91,6 +91,12 @@ export default () => ({
           'try',
           'zar',
         ],
+        limitPeriodSeconds: parseInt(
+          process.env.ZERION_RATE_LIMIT_PERIOD_SECONDS ?? `${10}`,
+        ),
+        limitCalls: parseInt(
+          process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${2}`,
+        ),
       },
     },
   },
