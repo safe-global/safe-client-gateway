@@ -34,8 +34,8 @@ describe('Account DataSource Tests', () => {
     // If running on a CI context (e.g.: GitHub Actions),
     // disable certificate pinning for the test execution
     ssl:
-      isCIContext && config.db.postgres.ssl.enabled
-        ? {}
+      isCIContext || !config.db.postgres.ssl.enabled
+        ? false
         : {
             requestCert: config.db.postgres.ssl.requestCert,
             rejectUnauthorized: config.db.postgres.ssl.rejectUnauthorized,
