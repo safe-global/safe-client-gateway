@@ -16,7 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 export class LockingController {
   constructor(private readonly lockingService: LockingService) {}
 
-  @Get('/leaderboard/:safeAddress')
+  @Get('/:safeAddress/rank')
   async getRank(@Param('safeAddress') safeAddress: string): Promise<Rank> {
     return this.lockingService.getRank(safeAddress);
   }
@@ -29,7 +29,7 @@ export class LockingController {
     return this.lockingService.getLeaderboard({ routeUrl, paginationData });
   }
 
-  @Get('/history/:safeAddress')
+  @Get('/:safeAddress/history')
   async getLockingHistory(
     @Param('safeAddress') safeAddress: string,
     @RouteUrlDecorator() routeUrl: URL,
