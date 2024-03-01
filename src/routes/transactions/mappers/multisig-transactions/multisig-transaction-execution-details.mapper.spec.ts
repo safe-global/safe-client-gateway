@@ -83,6 +83,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: [],
         gasTokenInfo,
         trusted: transaction.trusted,
+        proposer: new AddressInfo(transaction.proposer!),
       }),
     );
   });
@@ -146,6 +147,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: expectedRejectors,
         gasTokenInfo: null,
         trusted: transaction.trusted,
+        proposer: new AddressInfo(transaction.proposer!),
       }),
     );
   });
@@ -211,6 +213,36 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         rejectors: expectedRejectors,
         gasTokenInfo: null,
         trusted: transaction.trusted,
+        proposer: new AddressInfo(transaction.proposer!),
+      }),
+    );
+  });
+
+  it('should return a MultisigExecutionDetails object with no proposer if not present', async () => {
+    const chainId = faker.string.numeric();
+    const safe = safeBuilder().build();
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('proposer', null)
+      .build();
+    const addressInfo = addressInfoBuilder().build();
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    safeRepository.getMultisigTransactions.mockResolvedValue(
+      pageBuilder<MultisigTransaction>().with('results', []).build(),
+    );
+    const gasTokenInfo = tokenBuilder().build();
+    tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
+
+    const actual = await mapper.mapMultisigExecutionDetails(
+      chainId,
+      transaction,
+      safe,
+    );
+
+    expect(actual).toEqual(
+      expect.objectContaining({
+        type: 'MULTISIG',
+        proposer: null,
       }),
     );
   });

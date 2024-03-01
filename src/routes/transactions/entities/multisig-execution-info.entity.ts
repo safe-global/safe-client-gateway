@@ -14,21 +14,17 @@ export class MultisigExecutionInfo extends ExecutionInfo {
   confirmationsSubmitted: number;
   @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
   missingSigners: AddressInfo[] | null;
-  @ApiProperty()
-  proposer!: AddressInfo | null;
 
   constructor(
     nonce: number,
     confirmationsRequired: number,
     confirmationsSubmitted: number,
     missingSigners: AddressInfo[] | null,
-    proposer: AddressInfo | null,
   ) {
     super(ExecutionInfoType.Multisig);
     this.nonce = nonce;
     this.confirmationsRequired = confirmationsRequired;
     this.confirmationsSubmitted = confirmationsSubmitted;
     this.missingSigners = missingSigners;
-    this.proposer = proposer;
   }
 }

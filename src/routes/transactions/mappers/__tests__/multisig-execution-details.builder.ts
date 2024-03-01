@@ -43,5 +43,6 @@ export function multisigExecutionDetailsBuilder(): IBuilder<MultisigExecutionDet
     .with('confirmations', confirmations)
     .with('rejectors', faker.helpers.arrayElements(signers, MIN_SIGNERS))
     .with('gasTokenInfo', tokenBuilder().build())
-    .with('trusted', faker.datatype.boolean());
+    .with('trusted', faker.datatype.boolean())
+    .with('proposer', signers[0]);
 }

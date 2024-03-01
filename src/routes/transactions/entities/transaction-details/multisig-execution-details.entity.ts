@@ -56,6 +56,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   gasTokenInfo: Token | null;
   @ApiProperty()
   trusted: boolean;
+  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
+  proposer!: AddressInfo | null;
 
   constructor(
     submittedAt: number,
@@ -73,6 +75,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     rejectors: AddressInfo[],
     gasTokenInfo: Token | null,
     trusted: boolean,
+    proposer: AddressInfo | null,
   ) {
     super(ExecutionDetailsType.Multisig);
     this.submittedAt = submittedAt;
@@ -90,5 +93,6 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     this.rejectors = rejectors;
     this.gasTokenInfo = gasTokenInfo;
     this.trusted = trusted;
+    this.proposer = proposer;
   }
 }

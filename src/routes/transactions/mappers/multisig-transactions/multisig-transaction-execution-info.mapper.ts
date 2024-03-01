@@ -22,7 +22,6 @@ export class MultisigTransactionExecutionInfoMapper {
       transaction.confirmationsRequired,
       transaction?.confirmations?.length || 0,
       missingSigners,
-      transaction.proposer ? new AddressInfo(transaction.proposer) : null,
     );
   }
 

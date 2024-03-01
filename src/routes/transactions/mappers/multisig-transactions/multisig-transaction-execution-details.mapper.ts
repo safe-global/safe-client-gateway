@@ -42,6 +42,9 @@ export class MultisigTransactionExecutionDetailsMapper {
               confirmation.submissionDate.getTime(),
             ),
         );
+    const proposer = transaction.proposer
+      ? new AddressInfo(transaction.proposer)
+      : null;
 
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
@@ -77,6 +80,7 @@ export class MultisigTransactionExecutionDetailsMapper {
       rejectors,
       gasTokenInfo,
       transaction.trusted,
+      proposer,
     );
   }
 
