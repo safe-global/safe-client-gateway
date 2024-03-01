@@ -41,7 +41,7 @@ export class FakeCacheService implements ICacheService {
 
   set(
     cacheDir: CacheDir,
-    value: string | number, // this changed
+    value: string | number,
     expireTimeSeconds: number | undefined,
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
