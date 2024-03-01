@@ -58,6 +58,7 @@ describe('CacheFirstDataSource', () => {
       cacheDir,
       url: targetUrl,
       notFoundExpireTimeSeconds,
+      expireTimeSeconds: faker.number.int({ min: 1 }),
     });
 
     expect(actual).toEqual(data);
@@ -77,6 +78,7 @@ describe('CacheFirstDataSource', () => {
     await fakeCacheService.set(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
+      faker.number.int({ min: 1 }),
     );
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -92,6 +94,7 @@ describe('CacheFirstDataSource', () => {
       cacheDir,
       url: targetUrl,
       notFoundExpireTimeSeconds,
+      expireTimeSeconds: faker.number.int({ min: 1 }),
     });
 
     expect(actual).toEqual(data);
@@ -109,6 +112,7 @@ describe('CacheFirstDataSource', () => {
     await fakeCacheService.set(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
+      faker.number.int({ min: 1 }),
     );
     mockNetworkService.get.mockImplementation((url) => {
       switch (url) {
@@ -124,6 +128,7 @@ describe('CacheFirstDataSource', () => {
       cacheDir,
       url: targetUrl,
       notFoundExpireTimeSeconds,
+      expireTimeSeconds: faker.number.int({ min: 1 }),
     });
 
     expect(actual).toEqual(data);
@@ -136,7 +141,7 @@ describe('CacheFirstDataSource', () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
     const rawJson = fakeJson();
-    await fakeCacheService.set(cacheDir, rawJson);
+    await fakeCacheService.set(cacheDir, rawJson, faker.number.int({ min: 1 }));
     mockNetworkService.get.mockImplementation((url) =>
       Promise.reject(`Unexpected request to ${url}`),
     );
@@ -172,6 +177,7 @@ describe('CacheFirstDataSource', () => {
         cacheDir,
         url: targetUrl,
         notFoundExpireTimeSeconds,
+        expireTimeSeconds: faker.number.int({ min: 1 }),
       }),
     ).rejects.toThrow(expectedError);
 
@@ -291,7 +297,7 @@ describe('CacheFirstDataSource', () => {
         cacheDir,
         url: targetUrl,
         notFoundExpireTimeSeconds,
-        expireTimeSeconds: faker.number.int(),
+        expireTimeSeconds: faker.number.int({ min: 1 }),
       }),
     ).rejects.toThrow(expectedError);
 

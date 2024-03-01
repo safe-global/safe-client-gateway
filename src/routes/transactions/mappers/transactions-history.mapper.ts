@@ -20,9 +20,6 @@ import { ModuleTransactionMapper } from '@/routes/transactions/mappers/module-tr
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { isTransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
-import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 class TransactionDomainGroup {
   timestamp!: number;
@@ -189,44 +186,16 @@ export class TransactionsHistoryMapper {
   ): Promise<TransactionItem[]> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
 
-    const nestedTransactions = await Promise.all(
-      limitedTransfers.map((transfer) =>
-        this.transferMapper.mapTransfer(chainId, transfer, safe),
-      ),
+    const nestedTransactions = await this.transferMapper.mapTransfers({
+      chainId,
+      transfers: limitedTransfers,
+      safe,
+      onlyTrusted,
+    });
+
+    return nestedTransactions.map(
+      (nestedTransaction) => new TransactionItem(nestedTransaction),
     );
-
-    return nestedTransactions
-      .filter((nestedTransaction): boolean => {
-        // We are interested in transfers that:
-        // - Have value and:
-        // - If onlyTrusted is true then it should be a trusted transfer
-        // - If onlyTrusted is false then any transfer is valid
-        return (
-          this.isTransferWithValue(nestedTransaction) &&
-          (!onlyTrusted || this.isTrustedTransfer(nestedTransaction))
-        );
-      })
-      .map((nestedTransaction) => new TransactionItem(nestedTransaction));
-  }
-
-  /**
-   * Returns true if it is an ERC20 transfer with value.
-   * Returns false otherwise.
-   *
-   * @private
-   */
-  private isTransferWithValue(transaction: Transaction): boolean {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
-
-    return Number(transaction.txInfo.transferInfo.value) > 0;
-  }
-
-  private isTrustedTransfer(transaction: Transaction): boolean {
-    if (!isTransferTransactionInfo(transaction.txInfo)) return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
-
-    return !!transaction.txInfo.transferInfo.trusted;
   }
 
   private mapGroupTransactions(

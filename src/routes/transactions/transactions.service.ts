@@ -257,6 +257,7 @@ export class TransactionsService {
     value?: string;
     tokenAddress?: string;
     paginationData?: PaginationData;
+    onlyTrusted: boolean;
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
@@ -268,18 +269,14 @@ export class TransactionsService {
       chainId: args.chainId,
       address: args.safeAddress,
     });
-    const results = await Promise.all(
-      transfers.results.map(
-        async (transfer) =>
-          new IncomingTransfer(
-            await this.transferMapper.mapTransfer(
-              args.chainId,
-              transfer,
-              safeInfo,
-            ),
-          ),
-      ),
-    );
+    const results = (
+      await this.transferMapper.mapTransfers({
+        chainId: args.chainId,
+        transfers: transfers.results,
+        safe: safeInfo,
+        onlyTrusted: args.onlyTrusted,
+      })
+    ).map((incomingTransfer) => new IncomingTransfer(incomingTransfer));
 
     const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, transfers.next);
     const previousURL = cursorUrlFromLimitAndOffset(

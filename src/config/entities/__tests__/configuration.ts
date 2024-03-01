@@ -190,6 +190,7 @@ export default (): ReturnType<typeof configuration> => ({
   relay: {
     baseUri: faker.internet.url({ appendSlash: false }),
     limit: faker.number.int({ min: 1 }),
+    ttlSeconds: faker.number.int(),
     apiKey: {
       100: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
