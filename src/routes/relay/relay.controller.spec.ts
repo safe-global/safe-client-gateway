@@ -1323,6 +1323,7 @@ describe('Relay controller', () => {
             })
             .expect(422)
             .expect({
+              statusCode: 422,
               code: 'custom',
               path: ['gasLimit'],
               message: 'Invalid input',
