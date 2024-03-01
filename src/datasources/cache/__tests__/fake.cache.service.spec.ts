@@ -75,7 +75,11 @@ describe('FakeCacheService', () => {
   it('increments the value of an existing key', async () => {
     const key = faker.string.alphanumeric();
     const initialValue = faker.number.int({ min: 100 });
-    target.initNumericalValue(key, initialValue);
+    await target.set(
+      new CacheDir(key, ''),
+      initialValue,
+      faker.number.int({ min: 1 }),
+    );
 
     for (let i = 1; i <= 5; i++) {
       const result = await target.increment(key, undefined);

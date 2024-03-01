@@ -41,10 +41,14 @@ export class FakeCacheService implements ICacheService {
 
   set(
     cacheDir: CacheDir,
-    value: string,
+    value: string | number, // this changed
     expireTimeSeconds: number | undefined,
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
+      return Promise.resolve();
+    }
+    if (typeof value === 'number') {
+      this.cache[cacheDir.key] = value;
       return Promise.resolve();
     }
     const fields = this.cache[cacheDir.key];
@@ -67,9 +71,5 @@ export class FakeCacheService implements ICacheService {
       this.cache[cacheKey] = ++(this.cache[cacheKey] as number);
     }
     return Promise.resolve(this.cache[cacheKey] as number);
-  }
-
-  initNumericalValue(cacheKey: string, value: number): void {
-    this.cache[cacheKey] = value;
   }
 }
