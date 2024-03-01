@@ -7,6 +7,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService } from '@/logging/logging.interface';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -153,6 +154,45 @@ describe('CacheFirstDataSource', () => {
     });
 
     expect(actual).toEqual(JSON.parse(rawJson));
+    expect(mockNetworkService.get).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the cached data without calling the underlying network interface if the request is rate limited', async () => {
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
+    const rawJson = fakeJson();
+    await fakeCacheService.set(cacheDir, rawJson, faker.number.int({ min: 1 }));
+    mockNetworkService.get.mockImplementation((url) =>
+      Promise.reject(`Unexpected request to ${url}`),
+    );
+
+    const actual = await cacheFirstDataSource.get({
+      cacheDir,
+      url: faker.internet.url({ appendSlash: false }),
+      notFoundExpireTimeSeconds,
+      isRateLimited: true,
+    });
+
+    expect(actual).toEqual(JSON.parse(rawJson));
+    expect(mockNetworkService.get).toHaveBeenCalledTimes(0);
+  });
+
+  it('should throw a LimitReachedError without calling the underlying network interface if the request is rate limited and request is not cached', async () => {
+    const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+    const notFoundExpireTimeSeconds = faker.number.int();
+    mockNetworkService.get.mockImplementation((url) =>
+      Promise.reject(`Unexpected request to ${url}`),
+    );
+
+    await expect(
+      cacheFirstDataSource.get({
+        cacheDir,
+        url: faker.internet.url({ appendSlash: false }),
+        notFoundExpireTimeSeconds,
+        isRateLimited: true,
+      }),
+    ).rejects.toThrow(new LimitReachedError());
+
     expect(mockNetworkService.get).toHaveBeenCalledTimes(0);
   });
 
