@@ -3,9 +3,10 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 
 const networkService = {
   post: jest.fn(),
@@ -60,57 +61,102 @@ describe('TenderlyApi', () => {
     ).toThrow();
   });
 
-  it('should add contracts', async () => {
-    const fakeDisplayName = (): `${string}:${string}:${string}` => {
-      const chain = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
-      const moduleAddress = faker.finance.ethereumAddress();
-      return `${chain}:${safeAddress}:${moduleAddress}`;
-    };
+  describe('addContract', () => {
+    it('should add a contract', async () => {
+      const fakeDisplayName = (): `${string}:${string}:${string}` => {
+        const chain = faker.string.numeric();
+        const safeAddress = faker.finance.ethereumAddress();
+        const moduleAddress = faker.finance.ethereumAddress();
+        return `${chain}:${safeAddress}:${moduleAddress}`;
+      };
 
-    const contract: AlertsRegistration = {
-      address: faker.finance.ethereumAddress(),
-      displayName: fakeDisplayName(),
-      chainId: faker.string.numeric(),
-    };
+      const contract: AlertsRegistration = {
+        address: faker.finance.ethereumAddress(),
+        displayName: fakeDisplayName(),
+        chainId: faker.string.numeric(),
+      };
 
-    await service.addContract(contract);
+      await service.addContract(contract);
 
-    expect(mockNetworkService.post).toHaveBeenCalledWith(
-      `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
-      {
-        headers: {
-          'X-Access-Key': tenderlyApiKey,
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
+        {
+          headers: {
+            'X-Access-Key': tenderlyApiKey,
+          },
+          params: {
+            address: contract.address,
+            display_name: contract.displayName,
+            network_id: contract.chainId,
+          },
         },
-        params: {
-          address: contract.address,
-          display_name: contract.displayName,
-          network_id: contract.chainId,
+      );
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(tenderlyBaseUri),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
         },
-      },
-    );
+      );
+      mockNetworkService.post.mockRejectedValueOnce(error);
+
+      await expect(
+        service.addContract({
+          address: faker.finance.ethereumAddress(),
+          chainId: faker.string.numeric(),
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('should forward error', async () => {
-    const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-    const error = new NetworkResponseError(
-      new URL(tenderlyBaseUri),
-      {
-        status,
-      } as Response,
-      {
-        message: 'Unexpected error',
-      },
-    );
-    mockNetworkService.post.mockRejectedValueOnce(error);
-
-    await expect(
-      service.addContract({
+  describe('deleteContract', () => {
+    it('should delete a contract', async () => {
+      const contract: AlertsDeletion = {
         address: faker.finance.ethereumAddress(),
         chainId: faker.string.numeric(),
-      }),
-    ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+      };
 
-    expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+      await service.deleteContract(contract);
+
+      expect(mockNetworkService.delete).toHaveBeenCalledWith(
+        `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/contract/${contract.chainId}/${contract.address}`,
+        {
+          headers: {
+            'X-Access-Key': tenderlyApiKey,
+          },
+        },
+      );
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(tenderlyBaseUri),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.delete.mockRejectedValueOnce(error);
+
+      await expect(
+        service.deleteContract({
+          address: faker.finance.ethereumAddress(),
+          chainId: faker.string.numeric(),
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.delete).toHaveBeenCalledTimes(1);
+    });
   });
 });

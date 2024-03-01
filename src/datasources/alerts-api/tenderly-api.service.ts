@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import {
   INetworkService,
@@ -54,6 +55,24 @@ export class TenderlyApi implements IAlertsApi {
           address: contract.address,
           display_name: contract.displayName,
           network_id: contract.chainId,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * Delete a smart contract from a Tenderly project.
+   *
+   * @see https://docs.tenderly.co/reference/api#tag/Contracts/operation/deleteContract
+   */
+  async deleteContract(contract: AlertsDeletion): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/contract/${contract.chainId}/${contract.address}`;
+      await this.networkService.delete(url, {
+        headers: {
+          [TenderlyApi.HEADER]: this.apiKey,
         },
       });
     } catch (error) {

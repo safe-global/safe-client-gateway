@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AddRecoveryModuleDto } from '@/routes/recovery/entities/add-recovery-module.dto.entity';
 import { RecoveryService } from '@/routes/recovery/recovery.service';
@@ -24,6 +31,18 @@ export class RecoveryController {
       chainId,
       safeAddress,
       addRecoveryModuleDto,
+    });
+  }
+
+  @HttpCode(204)
+  @Delete('/:moduleAddress')
+  async deleteRecoveryModule(
+    @Param('chainId') chainId: string,
+    @Param('moduleAddress') moduleAddress: string,
+  ): Promise<void> {
+    return this.recoveryService.deleteRecoveryModule({
+      chainId,
+      moduleAddress,
     });
   }
 }
