@@ -1,166 +1,79 @@
-import { JSONSchemaType } from 'ajv';
-import { BlockExplorerUriTemplate } from '@/domain/chains/entities/block-explorer-uri-template.entity';
-import { Chain } from '@/domain/chains/entities/chain.entity';
-import { GasPriceFixedEIP1559 } from '@/domain/chains/entities/gas-price-fixed-eip-1559.entity';
-import { GasPriceFixed } from '@/domain/chains/entities/gas-price-fixed.entity';
-import { GasPriceOracle } from '@/domain/chains/entities/gas-price-oracle.entity';
-import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
+import { z } from 'zod';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
-import { RpcUri } from '@/domain/chains/entities/rpc-uri.entity';
-import { Theme } from '@/domain/chains/entities/theme.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const NATIVE_CURRENCY_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/native-currency.json';
+export const NativeCurrencySchema = z.object({
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number(),
+  logoUri: z.string().url(),
+});
 
-export const nativeCurrencySchema: JSONSchemaType<NativeCurrency> = {
-  $id: NATIVE_CURRENCY_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    name: { type: 'string' },
-    symbol: { type: 'string' },
-    decimals: { type: 'number' },
-    logoUri: { type: 'string', format: 'uri' },
-  },
-  required: ['name', 'symbol', 'decimals', 'logoUri'],
-};
+export const RpcUriSchema = z.object({
+  authentication: z
+    .nativeEnum(RpcUriAuthentication)
+    .default(RpcUriAuthentication.Unknown),
+  value: z.string(),
+});
 
-export const RPC_URI_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/rpc-uri.json';
+export const BlockExplorerUriTemplateSchema = z.object({
+  address: z.string(),
+  txHash: z.string(),
+  api: z.string(),
+});
 
-export const rpcUriSchema: JSONSchemaType<RpcUri> = {
-  $id: RPC_URI_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    authentication: {
-      type: 'string',
-      default: RpcUriAuthentication.Unknown,
-      enum: Object.values(RpcUriAuthentication),
-    },
-    value: { type: 'string' },
-  },
-  required: ['authentication', 'value'],
-};
+export const ThemeSchema = z.object({
+  textColor: z.string(),
+  backgroundColor: z.string(),
+});
 
-export const BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/block-explorer-uri-template.json';
+export const GasPriceOracleSchema = z.object({
+  type: z.literal('oracle'),
+  uri: z.string().url(),
+  gasParameter: z.string(),
+  gweiFactor: z.string(),
+});
 
-export const blockExplorerUriTemplateSchema: JSONSchemaType<BlockExplorerUriTemplate> =
-  {
-    $id: BLOCK_EXPLORER_URI_TEMPLATE_SCHEMA_ID,
-    type: 'object',
-    properties: {
-      address: { type: 'string' },
-      txHash: { type: 'string' },
-      api: { type: 'string' },
-    },
-    required: ['address', 'txHash', 'api'],
-  };
+export const GasPriceFixedSchema = z.object({
+  type: z.literal('fixed'),
+  weiValue: z.string(),
+});
 
-export const THEME_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/theme.json';
+export const GasPriceFixedEip1559Schema = z.object({
+  type: z.literal('fixed1559'),
+  maxFeePerGas: z.string(),
+  maxPriorityFeePerGas: z.string(),
+});
 
-export const themeSchema: JSONSchemaType<Theme> = {
-  $id: THEME_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    textColor: { type: 'string' },
-    backgroundColor: { type: 'string' },
-  },
-  required: ['textColor', 'backgroundColor'],
-};
+export const GasPriceSchema = z.array(
+  z.union([
+    GasPriceOracleSchema,
+    GasPriceFixedSchema,
+    GasPriceFixedEip1559Schema,
+  ]),
+);
 
-export const GAS_PRICE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/gas-price.json';
-
-export const gasPriceSchema: JSONSchemaType<
-  Array<GasPriceOracle | GasPriceFixed | GasPriceFixedEIP1559>
-> = {
-  $id: GAS_PRICE_SCHEMA_ID,
-  type: 'array',
-  items: {
-    anyOf: [
-      {
-        type: 'object',
-        properties: {
-          type: { const: 'fixed', type: 'string' },
-          weiValue: { type: 'string' },
-        },
-        required: ['type', 'weiValue'],
-      },
-      {
-        type: 'object',
-        properties: {
-          type: { const: 'fixed1559', type: 'string' },
-          maxFeePerGas: { type: 'string' },
-          maxPriorityFeePerGas: { type: 'string' },
-        },
-        required: ['type', 'maxFeePerGas', 'maxPriorityFeePerGas'],
-      },
-      {
-        type: 'object',
-        properties: {
-          type: { const: 'oracle', type: 'string' },
-          uri: { type: 'string', format: 'uri' },
-          gasParameter: { type: 'string' },
-          gweiFactor: { type: 'string' },
-        },
-        required: ['type', 'uri', 'gasParameter', 'gweiFactor'],
-      },
-    ],
-  },
-};
-
-export const CHAIN_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/chains/chain.json';
-
-export const chainSchema: JSONSchemaType<Chain> = {
-  type: 'object',
-  $id: CHAIN_SCHEMA_ID,
-  properties: {
-    chainId: { type: 'string' },
-    chainName: { type: 'string' },
-    description: { type: 'string' },
-    // TODO: Make required when deemed stable on config service
-    chainLogoUri: { type: 'string', format: 'uri', nullable: true },
-    l2: { type: 'boolean' },
-    isTestnet: { type: 'boolean' },
-    shortName: { type: 'string' },
-    rpcUri: { $ref: 'rpc-uri.json' },
-    safeAppsRpcUri: { $ref: 'rpc-uri.json' },
-    publicRpcUri: { $ref: 'rpc-uri.json' },
-    blockExplorerUriTemplate: { $ref: 'block-explorer-uri-template.json' },
-    nativeCurrency: { $ref: 'native-currency.json' },
-    transactionService: { type: 'string', format: 'uri' },
-    vpcTransactionService: { type: 'string', format: 'uri' },
-    theme: { $ref: 'theme.json' },
-    gasPrice: { $ref: 'gas-price.json' },
-    ensRegistryAddress: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-      default: null,
-    },
-    disabledWallets: { type: 'array', items: { type: 'string' } },
-    features: { type: 'array', items: { type: 'string' } },
-    recommendedMasterCopyVersion: { type: 'string' },
-  },
-  required: [
-    'chainId',
-    'chainName',
-    'description',
-    // 'chainLogoUri',
-    'l2',
-    'isTestnet',
-    'shortName',
-    'rpcUri',
-    'safeAppsRpcUri',
-    'publicRpcUri',
-    'blockExplorerUriTemplate',
-    'nativeCurrency',
-    'transactionService',
-    'vpcTransactionService',
-    'theme',
-    'gasPrice',
-    'disabledWallets',
-    'features',
-    'recommendedMasterCopyVersion',
-  ],
-};
+export const ChainSchema = z.object({
+  chainId: z.string(),
+  chainName: z.string(),
+  description: z.string(),
+  // TODO: Make required when deemed stable on config service
+  chainLogoUri: z.string().url().optional(),
+  l2: z.boolean(),
+  isTestnet: z.boolean(),
+  shortName: z.string(),
+  rpcUri: RpcUriSchema,
+  safeAppsRpcUri: RpcUriSchema,
+  publicRpcUri: RpcUriSchema,
+  blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
+  nativeCurrency: NativeCurrencySchema,
+  transactionService: z.string().url(),
+  vpcTransactionService: z.string().url(),
+  theme: ThemeSchema,
+  gasPrice: GasPriceSchema,
+  ensRegistryAddress: AddressSchema,
+  disabledWallets: z.array(z.string()),
+  features: z.array(z.string()),
+  // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
+  recommendedMasterCopyVersion: z.string(),
+});

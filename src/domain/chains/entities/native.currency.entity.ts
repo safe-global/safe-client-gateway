@@ -1,6 +1,4 @@
-export interface NativeCurrency {
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoUri: string;
-}
+import { NativeCurrencySchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { z } from 'zod';
+
+export type NativeCurrency = z.infer<typeof NativeCurrencySchema>;
