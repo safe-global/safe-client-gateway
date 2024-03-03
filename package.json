@@ -32,7 +32,7 @@
     "@nestjs/platform-express": "^10.3.3",
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.2.0",
-    "@safe-global/safe-deployments": "^1.32.0",
+    "@safe-global/safe-deployments": "^1.33.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "lodash": "^4.17.21",
