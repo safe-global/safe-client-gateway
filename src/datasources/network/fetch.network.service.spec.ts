@@ -190,9 +190,35 @@ describe('FetchNetworkService', () => {
       await target.delete(url);
 
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(url, {
+      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'DELETE',
       });
+    });
+
+    it(`delete calls fetch with request`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const request: NetworkRequest = {
+        params: { some_query_param: 'query_param' },
+        headers: {
+          test: 'value',
+        },
+      };
+
+      await target.delete(url, data, request);
+
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        `${url}/?some_query_param=query_param`,
+        {
+          method: 'DELETE',
+          headers: {
+            test: 'value',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        },
+      );
     });
 
     it(`delete logs response error`, async () => {

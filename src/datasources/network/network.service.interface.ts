@@ -15,5 +15,9 @@ export interface INetworkService {
     networkRequest?: NetworkRequest,
   ): Promise<NetworkResponse<T>>;
 
-  delete<T>(url: string, data?: object): Promise<NetworkResponse<T>>;
+  delete<T>(
+    url: string,
+    data?: object,
+    networkRequest?: NetworkRequest,
+  ): Promise<NetworkResponse<T>>;
 }
