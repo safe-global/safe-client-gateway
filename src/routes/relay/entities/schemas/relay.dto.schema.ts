@@ -1,20 +1,33 @@
-import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
-import { JSONSchemaType } from 'ajv';
-
-export const RELAY_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/relay/relay.dto.json';
+import { z } from 'zod';
+import * as semver from 'semver';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 // TODO: Remove default when legacy support is removed
 const LEGACY_SUPPORTED_VERSION = '1.3.0';
 
-export const relayDtoSchema: JSONSchemaType<RelayDto> = {
-  $id: RELAY_DTO_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    version: { type: 'string', default: LEGACY_SUPPORTED_VERSION },
-    to: { type: 'string' },
-    data: { type: 'string' },
-    gasLimit: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },
-  },
-  required: ['to', 'data'],
-};
+export const RelayDtoSchema = z.object({
+  to: AddressSchema,
+  data: HexSchema,
+  version: z
+    .string()
+    .refine((value) => semver.parse(value) !== null)
+    .default(LEGACY_SUPPORTED_VERSION),
+  gasLimit: z
+    .string()
+    .optional()
+    .transform((value, ctx) => {
+      if (!value) {
+        return null;
+      }
+
+      try {
+        return BigInt(value);
+      } catch (e) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+        });
+        return z.NEVER;
+      }
+    }),
+});

@@ -42,6 +42,7 @@ import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
+import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -117,6 +118,10 @@ export class AppModule implements NestModule {
         {
           provide: APP_FILTER,
           useClass: DataSourceErrorFilter,
+        },
+        {
+          provide: APP_FILTER,
+          useClass: ZodErrorFilter,
         },
       ],
     };
