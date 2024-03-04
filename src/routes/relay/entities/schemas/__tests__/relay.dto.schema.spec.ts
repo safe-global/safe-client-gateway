@@ -12,14 +12,10 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error('RelayDtoSchema failed to validate a valid request.');
-    }
-    expect(result.data.to).toBe(relayDto.to);
-    expect(result.data.data).toBe(relayDto.data);
-    expect(result.data.version).toBe(relayDto.version);
-    expect(result.data.gasLimit).toBeNull(); // Coerced to null
+    expect(result.success && result.data.to).toBe(relayDto.to);
+    expect(result.success && result.data.data).toBe(relayDto.data);
+    expect(result.success && result.data.version).toBe(relayDto.version);
+    expect(result.success && result.data.gasLimit).toBeNull(); // Coerced to null
   });
 
   it('should validate a valid relay DTO with a gasLimit and coerce it to BigInt', () => {
@@ -32,14 +28,12 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error('RelayDtoSchema failed to validate a valid request.');
-    }
-    expect(result.data.to).toBe(relayDto.to);
-    expect(result.data.data).toBe(relayDto.data);
-    expect(result.data.version).toBe(relayDto.version);
-    expect(result.data.gasLimit).toBe(BigInt(relayDto.gasLimit)); // Coerced to BigInt
+    expect(result.success && result.data.to).toBe(relayDto.to);
+    expect(result.success && result.data.data).toBe(relayDto.data);
+    expect(result.success && result.data.version).toBe(relayDto.version);
+    expect(result.success && result.data.gasLimit).toBe(
+      BigInt(relayDto.gasLimit),
+    ); // Coerced to BigInt
   });
 
   it('should refine a non-checksummed to address', () => {
@@ -51,11 +45,7 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error('RelayDtoSchema failed to validate a valid request.');
-    }
-    expect(result.data.to).toBe(getAddress(relayDto.to));
+    expect(result.success && result.data.to).toBe(getAddress(relayDto.to));
   });
 
   it('should throw for an invalid to address', () => {
@@ -67,11 +57,7 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error('RelayDtoSchema validated an invalid request.');
-    }
-    expect(result.error.issues).toStrictEqual([
+    expect(!result.success && result.error.issues).toStrictEqual([
       { code: 'custom', message: 'Invalid input', path: ['to'] },
     ]);
   });
@@ -85,11 +71,7 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error('RelayDtoSchema validated an invalid request.');
-    }
-    expect(result.error.issues).toStrictEqual([
+    expect(!result.success && result.error.issues).toStrictEqual([
       { code: 'custom', message: 'Invalid input', path: ['data'] },
     ]);
   });
@@ -103,11 +85,7 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error('RelayDtoSchema validated an invalid request.');
-    }
-    expect(result.error.issues).toStrictEqual([
+    expect(!result.success && result.error.issues).toStrictEqual([
       { code: 'custom', message: 'Invalid input', path: ['version'] },
     ]);
   });
@@ -122,11 +100,7 @@ describe('RelayDtoSchema', () => {
 
     const result = RelayDtoSchema.safeParse(relayDto);
 
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error('RelayDtoSchema validated an invalid request.');
-    }
-    expect(result.error.issues).toStrictEqual([
+    expect(!result.success && result.error.issues).toStrictEqual([
       { code: 'custom', message: 'Invalid input', path: ['gasLimit'] },
     ]);
   });
