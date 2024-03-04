@@ -12,18 +12,18 @@ import { Inject, Injectable } from '@nestjs/common';
 export class LockingService {
   constructor(
     @Inject(ILockingRepository)
-    private readonly LockingRepository: ILockingRepository,
+    private readonly lockingRepository: ILockingRepository,
   ) {}
 
   async getRank(safeAddress: string): Promise<Rank> {
-    return this.LockingRepository.getRank(safeAddress);
+    return this.lockingRepository.getRank(safeAddress);
   }
 
   async getLeaderboard(args: {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<Rank>> {
-    const result = await this.LockingRepository.getLeaderboard(
+    const result = await this.lockingRepository.getLeaderboard(
       args.paginationData,
     );
 
@@ -46,7 +46,7 @@ export class LockingService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<LockingEvent>> {
-    const result = await this.LockingRepository.getLockingHistory(args);
+    const result = await this.lockingRepository.getLockingHistory(args);
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(
