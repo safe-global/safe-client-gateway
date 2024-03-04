@@ -52,8 +52,6 @@ import { IHumanDescriptionRepository } from '@/domain/human-description/human-de
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
 import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
-import { RankValidator } from '@/domain/locking/rank.validator';
-import { LockingEventValidator } from '@/domain/locking/locking-event.validator';
 
 @Global()
 @Module({
@@ -91,11 +89,9 @@ import { LockingEventValidator } from '@/domain/locking/locking-event.validator'
     DelegateValidator,
     EstimationsValidator,
     SingletonValidator,
-    LockingEventValidator,
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
-    RankValidator,
     SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
