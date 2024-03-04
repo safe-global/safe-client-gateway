@@ -81,13 +81,13 @@ describe('TenderlyApi', () => {
       expect(mockNetworkService.post).toHaveBeenCalledWith(
         `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
         {
+          address: contract.address,
+          display_name: contract.displayName,
+          network_id: contract.chainId,
+        },
+        {
           headers: {
             'X-Access-Key': tenderlyApiKey,
-          },
-          params: {
-            address: contract.address,
-            display_name: contract.displayName,
-            network_id: contract.chainId,
           },
         },
       );
@@ -128,6 +128,7 @@ describe('TenderlyApi', () => {
 
       expect(mockNetworkService.delete).toHaveBeenCalledWith(
         `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/contract/${contract.chainId}/${contract.address}`,
+        undefined,
         {
           headers: {
             'X-Access-Key': tenderlyApiKey,
