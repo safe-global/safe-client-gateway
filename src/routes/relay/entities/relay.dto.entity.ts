@@ -1,14 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
+import { Hex } from 'viem';
+import { RelayDtoSchema } from '@/routes/relay/entities/schemas/relay.dto.schema';
 
-export class RelayDto {
+export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   @ApiProperty()
   version!: string;
 
   @ApiProperty()
-  to!: string;
+  to!: Hex;
 
   @ApiProperty()
-  data!: string;
+  data!: Hex;
 
   @ApiPropertyOptional({
     type: String,
@@ -17,5 +20,5 @@ export class RelayDto {
       This is for the <a href="https://docs.gelato.network/developer-services/relay/quick-start/optional-parameters" target="_blank">
       Gelato Relay execution overhead</a>, reducing the chance of the task cancelling before it is executed on-chain.`,
   })
-  gasLimit!: string | null;
+  gasLimit!: bigint | null;
 }

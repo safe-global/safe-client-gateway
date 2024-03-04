@@ -172,7 +172,7 @@ describe('Relay controller', () => {
                 const chain = chainBuilder().with('chainId', chainId).build();
                 const safe = safeBuilder().build();
                 const safeAddress = getAddress(safe.address);
-                const gasLimit = faker.number.bigInt();
+                const gasLimit = faker.string.numeric({ exclude: '0' });
                 const data = execTransactionEncoder().encode() as Hex;
                 const taskId = faker.string.uuid();
                 networkService.get.mockImplementation((url) => {
@@ -201,7 +201,7 @@ describe('Relay controller', () => {
                     version,
                     to: safeAddress,
                     data,
-                    gasLimit: gasLimit.toString(),
+                    gasLimit,
                   })
                   .expect(201)
                   .expect({
@@ -1323,9 +1323,10 @@ describe('Relay controller', () => {
             })
             .expect(422)
             .expect({
-              message: 'Invalid gas limit provided',
-              error: 'Unprocessable Entity',
               statusCode: 422,
+              code: 'custom',
+              path: ['gasLimit'],
+              message: 'Invalid input',
             });
         });
 

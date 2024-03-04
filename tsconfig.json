@@ -20,6 +20,7 @@
       "@/abis/*": ["abis/*"],
       "@/*": ["src/*"]
     },
-    "strict": true
+    "strict": true,
+    "strictNullChecks": true
   }
 }
