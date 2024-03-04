@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import {
   INetworkService,
@@ -33,19 +34,45 @@ export class TenderlyApi implements IAlertsApi {
       this.configurationService.getOrThrow<string>('alerts.project');
   }
 
-  async addContracts(contracts: Array<AlertsRegistration>): Promise<void> {
+  /**
+   * Add a smart contract to a Tenderly project.
+   *
+   * Note: If a contract is unverified on both Tenderly and external providers like Etherscan,
+   * Blockscout, or Routescan, it will be added to the project as unverified. However, if the
+   * contract is verified on an external provider, Tenderly will retrieve and apply the
+   * verification, subsequently adding the verified contract to the project.
+   *
+   * @see https://docs.tenderly.co/reference/api#tag/Contracts/operation/addContractToProject
+   */
+  async addContract(contract: AlertsRegistration): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v2/accounts/${this.account}/projects/${this.project}/contracts`;
+      const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/address`;
       await this.networkService.post(url, {
         headers: {
           [TenderlyApi.HEADER]: this.apiKey,
         },
         params: {
-          contracts: contracts.map((contract) => ({
-            address: contract.address,
-            display_name: contract.displayName,
-            network_id: contract.chainId,
-          })),
+          address: contract.address,
+          display_name: contract.displayName,
+          network_id: contract.chainId,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * Delete a smart contract from a Tenderly project.
+   *
+   * @see https://docs.tenderly.co/reference/api#tag/Contracts/operation/deleteContract
+   */
+  async deleteContract(contract: AlertsDeletion): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/contract/${contract.chainId}/${contract.address}`;
+      await this.networkService.delete(url, {
+        headers: {
+          [TenderlyApi.HEADER]: this.apiKey,
         },
       });
     } catch (error) {

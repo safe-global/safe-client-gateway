@@ -52,7 +52,6 @@ import { IHumanDescriptionRepository } from '@/domain/human-description/human-de
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
 import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
-import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
 import { RankValidator } from '@/domain/locking/rank.validator';
 import { LockingEventValidator } from '@/domain/locking/locking-event.validator';
 
@@ -116,7 +115,6 @@ import { LockingEventValidator } from '@/domain/locking/locking-event.validator'
     IEstimationsRepository,
     IHealthRepository,
     IHumanDescriptionRepository,
-    ILockingRepository,
     IMessagesRepository,
     INotificationsRepository,
     ISafeAppsRepository,
