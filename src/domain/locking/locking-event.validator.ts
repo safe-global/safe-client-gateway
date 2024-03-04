@@ -1,5 +1,5 @@
 import { Page } from '@/domain/entities/page.entity';
-import { IPageValidator } from '@/domain/interfaces/validator.interface';
+import { IPageValidator } from '@/domain/interfaces/page-validator.interface';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import {
   LOCKING_EVENT_PAGE_SCHEMA_ID,

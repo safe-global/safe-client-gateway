@@ -53,10 +53,8 @@ import { HumanDescriptionRepository } from '@/domain/human-description/human-des
 import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
 import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
-import { LockingRepository } from '@/domain/locking/locking.repository';
 import { RankValidator } from '@/domain/locking/rank.validator';
 import { LockingEventValidator } from '@/domain/locking/locking-event.validator';
-import { LockingApiModule } from '@/datasources/locking-api/locking-api.module';
 
 @Global()
 @Module({
@@ -64,7 +62,6 @@ import { LockingApiModule } from '@/datasources/locking-api/locking-api.module';
     BalancesApiModule,
     ConfigApiModule,
     HumanDescriptionApiModule,
-    LockingApiModule,
     TransactionApiModule,
   ],
   providers: [
@@ -81,7 +78,6 @@ import { LockingApiModule } from '@/datasources/locking-api/locking-api.module';
       provide: IHumanDescriptionRepository,
       useClass: HumanDescriptionRepository,
     },
-    { provide: ILockingRepository, useClass: LockingRepository },
     { provide: IMessagesRepository, useClass: MessagesRepository },
     { provide: INotificationsRepository, useClass: NotificationsRepository },
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
