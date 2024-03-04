@@ -64,20 +64,19 @@ export class FetchNetworkService implements INetworkService {
   ): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(baseUrl, params);
     const startTimeMs = performance.now();
+
+    if (data) {
+      headers ??= {};
+      headers['Content-Type'] = 'application/json';
+    }
+
     try {
       return await this.client<T>(url, {
         method: 'DELETE',
-        ...((headers || data) && {
-          headers: {
-            ...(data && {
-              'Content-Type': 'application/json',
-            }),
-            ...(headers && headers),
-          },
-        }),
         ...(data && {
           body: JSON.stringify(data),
         }),
+        headers,
       });
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
