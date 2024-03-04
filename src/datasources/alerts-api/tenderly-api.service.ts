@@ -61,7 +61,6 @@ export class TenderlyApi implements IAlertsApi {
         },
       );
     } catch (error) {
-      console.log(error);
       throw this.httpErrorFactory.from(error);
     }
   }
