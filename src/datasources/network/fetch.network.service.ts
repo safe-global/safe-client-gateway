@@ -57,15 +57,25 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  async delete<T>(url: string, data?: object): Promise<NetworkResponse<T>> {
+  async delete<T>(
+    baseUrl: string,
+    data?: object,
+    { params, headers }: NetworkRequest = {},
+  ): Promise<NetworkResponse<T>> {
+    const url = this.buildUrl(baseUrl, params);
     const startTimeMs = performance.now();
     try {
       return await this.client<T>(url, {
         method: 'DELETE',
-        ...(data && {
+        ...((headers || data) && {
           headers: {
-            'Content-Type': 'application/json',
+            ...(data && {
+              'Content-Type': 'application/json',
+            }),
+            ...(headers && headers),
           },
+        }),
+        ...(data && {
           body: JSON.stringify(data),
         }),
       });
