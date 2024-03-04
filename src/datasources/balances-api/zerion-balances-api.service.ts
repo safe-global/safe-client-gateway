@@ -9,14 +9,19 @@ import {
   ZerionCollectible,
   ZerionCollectibles,
 } from '@/datasources/balances-api/entities/zerion-collectible.entity';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
+import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import {
+  INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import {
   Balance,
   Erc20Balance,
@@ -27,14 +32,14 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
-  private static readonly collectiblesSorting = '-floor_price';
+  private static readonly COLLECTIBLES_SORTING = '-floor_price';
   private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
@@ -42,7 +47,6 @@ export class ZerionBalancesApi implements IBalancesApi {
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly fiatCodes: string[];
-
   // Number of seconds for each rate-limit cycle
   private readonly limitPeriodSeconds: number;
   // Number of allowed calls on each rate-limit cycle
@@ -51,9 +55,9 @@ export class ZerionBalancesApi implements IBalancesApi {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -89,16 +93,22 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: string;
     fiatCode: string;
   }): Promise<Balance[]> {
+    const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
+    const cached = await this.cacheService.get(cacheDir);
+    if (cached != null) {
+      const { key, field } = cacheDir;
+      this.loggingService.debug({ type: 'cache_hit', key, field });
+      return JSON.parse(cached);
+    }
+
     try {
-      const isRateLimited = await this._isRateLimited();
-      const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
+      await this._checkRateLimit();
       const chainName = this._getChainName(args.chainId);
       const currency = args.fiatCode.toLowerCase();
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
-      const { data } = await this.dataSource.get<ZerionBalances>({
+      const { data } = await this._getFromNetworkAndWriteCache<ZerionBalances>({
         cacheDir,
         url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
           headers: { Authorization: `Basic ${this.apiKey}` },
           params: {
@@ -108,7 +118,6 @@ export class ZerionBalancesApi implements IBalancesApi {
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        isRateLimited: isRateLimited,
       });
       return this._mapBalances(chainName, data);
     } catch (error) {
@@ -134,28 +143,36 @@ export class ZerionBalancesApi implements IBalancesApi {
     limit?: number;
     offset?: number;
   }): Promise<Page<Collectible>> {
+    const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
+    const cached = await this.cacheService.get(cacheDir);
+    if (cached != null) {
+      const { key, field } = cacheDir;
+      this.loggingService.debug({ type: 'cache_hit', key, field });
+      return JSON.parse(cached);
+    }
+
     try {
-      const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
+      await this._checkRateLimit();
       const chainName = this._getChainName(args.chainId);
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
       const pageAfter = this._encodeZerionPageOffset(args.offset);
       const params = {
         'filter[chain_ids]': chainName,
-        sort: ZerionBalancesApi.collectiblesSorting,
+        sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
         'page[size]': args.limit,
         ...(pageAfter && { 'page[after]': pageAfter }),
       };
 
-      const zerionCollectibles = await this.dataSource.get<ZerionCollectibles>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Basic ${this.apiKey}` },
-          params,
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+      const zerionCollectibles =
+        await this._getFromNetworkAndWriteCache<ZerionCollectibles>({
+          cacheDir,
+          url,
+          networkRequest: {
+            headers: { Authorization: `Basic ${this.apiKey}` },
+            params,
+          },
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        });
 
       // Zerion does not provide the items count.
       // Zerion does not provide a "previous" cursor.
@@ -311,13 +328,36 @@ export class ZerionBalancesApi implements IBalancesApi {
     return zerionUrl.toString();
   }
 
-  private async _isRateLimited(): Promise<boolean> {
+  private async _checkRateLimit(): Promise<void> {
     const current = await this.cacheService.increment(
       CacheRouter.getRateLimitCacheKey(
         ZerionBalancesApi.RATE_LIMIT_CACHE_KEY_PREFIX,
       ),
       this.limitPeriodSeconds,
     );
-    return current > this.limitCalls;
+    if (current > this.limitCalls) throw new LimitReachedError();
+  }
+
+  /**
+   * Gets the data from the network and caches the result.
+   */
+  private async _getFromNetworkAndWriteCache<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+  }): Promise<T> {
+    const { key, field } = args.cacheDir;
+    this.loggingService.debug({ type: 'cache_miss', key, field });
+    const { data } = await this.networkService.get<T>(
+      args.url,
+      args.networkRequest,
+    );
+    await this.cacheService.set(
+      args.cacheDir,
+      JSON.stringify(data),
+      args.expireTimeSeconds,
+    );
+    return data;
   }
 }
