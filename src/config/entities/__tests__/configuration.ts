@@ -96,8 +96,8 @@ export default (): ReturnType<typeof configuration> => ({
         },
       },
       zerion: {
-        baseUri: faker.internet.url({ appendSlash: false }),
         apiKey: faker.string.hexadecimal({ length: 32 }),
+        baseUri: faker.internet.url({ appendSlash: false }),
         chains: {
           1: { chainName: faker.string.sample() },
           10: { chainName: faker.string.sample() },
@@ -123,6 +123,8 @@ export default (): ReturnType<typeof configuration> => ({
             'usd',
           ]),
         ),
+        limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
+        limitCalls: faker.number.int({ min: 1, max: 10 }),
       },
     },
   },
