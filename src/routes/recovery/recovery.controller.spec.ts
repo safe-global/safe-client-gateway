@@ -76,7 +76,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.resolve({ status: 200, data: {} })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -105,7 +105,7 @@ describe('Recovery (Unit)', () => {
       const safeAddress = faker.finance.ethereumAddress();
       const error = new NetworkResponseError(
         new URL(
-          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`,
         ),
         {
           status: 400,
@@ -118,7 +118,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -142,7 +142,7 @@ describe('Recovery (Unit)', () => {
       });
       const error = new NetworkResponseError(
         new URL(
-          `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`,
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`,
         ),
         {
           status: statusCode,
@@ -151,7 +151,7 @@ describe('Recovery (Unit)', () => {
 
       networkService.post.mockImplementation((url) =>
         url ===
-        `${alertsUrl}/api/v2/accounts/${alertsAccount}/projects/${alertsProject}/contracts`
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -159,6 +159,96 @@ describe('Recovery (Unit)', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/safes/${safeAddress}/recovery`)
         .send(addRecoveryModuleDto)
+        .expect(statusCode)
+        .expect({
+          message: 'An error occurred',
+          code: statusCode,
+        });
+    });
+  });
+
+  describe('DELETE remove recovery module for a Safe', () => {
+    it('Success', async () => {
+      const moduleAddress = faker.finance.ethereumAddress();
+      const chainId = faker.string.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+
+      networkService.delete.mockImplementation((url) =>
+        url ===
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chainId}/${moduleAddress}`
+          ? Promise.resolve({ status: 204, data: {} })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chainId}/safes/${safeAddress}/recovery/${moduleAddress}`,
+        )
+        .expect(204);
+    });
+
+    it('Should return the alerts provider error message', async () => {
+      const moduleAddress = faker.finance.ethereumAddress();
+      const chainId = faker.string.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chainId}/${moduleAddress}`,
+        ),
+        {
+          status: 400,
+        } as Response,
+        {
+          message: 'Malformed body',
+          status: 400,
+        },
+      );
+
+      networkService.delete.mockImplementation((url) =>
+        url ===
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chainId}/${moduleAddress}`
+          ? Promise.reject(error)
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chainId}/safes/${safeAddress}/recovery/${moduleAddress}`,
+        )
+        .expect(400)
+        .expect({
+          message: 'Malformed body',
+          code: 400,
+        });
+    });
+
+    it('Should fail with An error occurred', async () => {
+      const moduleAddress = faker.finance.ethereumAddress();
+      const chainId = faker.string.numeric();
+      const safeAddress = faker.finance.ethereumAddress();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const error = new NetworkResponseError(
+        new URL(
+          `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chainId}/${moduleAddress}`,
+        ),
+        {
+          status: statusCode,
+        } as Response,
+      );
+
+      networkService.delete.mockImplementation((url) =>
+        url ===
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chainId}/${moduleAddress}`
+          ? Promise.reject(error)
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chainId}/safes/${safeAddress}/recovery/${moduleAddress}`,
+        )
         .expect(statusCode)
         .expect({
           message: 'An error occurred',

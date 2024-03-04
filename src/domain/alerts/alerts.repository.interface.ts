@@ -1,14 +1,21 @@
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts.entity';
+import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
+import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
 import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 
 export const IAlertsRepository = Symbol('IAlertsRepository');
 
 export interface IAlertsRepository {
   /**
-   * Adds the {@link contracts} to the Alerts provider
-   * @param contracts - the network-specific {@link AlertsRegistration} to add
+   * Adds the {@link contract} to the Alerts provider
+   * @param contract - the network-specific {@link AlertsRegistration} to add
    */
-  addContracts(contracts: Array<AlertsRegistration>): Promise<void>;
+  addContract(contract: AlertsRegistration): Promise<void>;
+
+  /**
+   * Deletes the {@link contract} from the Alerts provider
+   * @param contract - the network-specific {@link AlertsDeletion} to add
+   */
+  deleteContract(contract: AlertsDeletion): Promise<void>;
 
   /**
    * Parses and notifies the user about the {@link log} from the Alerts provider
