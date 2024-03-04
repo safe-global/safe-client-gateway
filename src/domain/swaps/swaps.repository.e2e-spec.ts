@@ -129,7 +129,10 @@ describe('CowSwap E2E tests', () => {
     describe(`Chain ID ${chainId}`, () => {
       Object.entries(transactions).forEach(([orderId, expectedObject]) => {
         it(`Transaction ID: ${orderId}`, async () => {
-          const actual: Order = await repository.getOrder(chainId, orderId);
+          const actual: Order = await repository.getOrder(
+            chainId,
+            orderId as `0x${string}`,
+          );
 
           expect(actual).toEqual(expectedObject);
         });
