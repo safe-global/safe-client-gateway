@@ -11,7 +11,7 @@ export class SwapsRepository {
     private readonly orderValidator: OrderValidator,
   ) {}
 
-  async getOrder(chainId: string, orderUid: string): Promise<Order> {
+  async getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order> {
     const api = this.swapsApiFactory.get(chainId);
     const order = await api.getOrder(orderUid);
     return this.orderValidator.validate(order);
