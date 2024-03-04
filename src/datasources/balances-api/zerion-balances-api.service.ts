@@ -14,10 +14,8 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import {
   INetworkService,
   NetworkService,
@@ -94,32 +92,37 @@ export class ZerionBalancesApi implements IBalancesApi {
     fiatCode: string;
   }): Promise<Balance[]> {
     const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
+    const chainName = this._getChainName(args.chainId);
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
-      return JSON.parse(cached);
+      return this._mapBalances(chainName, JSON.parse(cached));
     }
 
     try {
       await this._checkRateLimit();
-      const chainName = this._getChainName(args.chainId);
-      const currency = args.fiatCode.toLowerCase();
+      const { key, field } = cacheDir;
+      this.loggingService.debug({ type: 'cache_miss', key, field });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
-      const { data } = await this._getFromNetworkAndWriteCache<ZerionBalances>({
-        cacheDir,
-        url,
-        networkRequest: {
-          headers: { Authorization: `Basic ${this.apiKey}` },
-          params: {
-            'filter[chain_ids]': chainName,
-            currency: currency,
-            sort: 'value',
-          },
+      const networkRequest = {
+        headers: { Authorization: `Basic ${this.apiKey}` },
+        params: {
+          'filter[chain_ids]': chainName,
+          currency: args.fiatCode.toLowerCase(),
+          sort: 'value',
         },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-      return this._mapBalances(chainName, data);
+      };
+      const { data } = await this.networkService.get<ZerionBalances>(
+        url,
+        networkRequest,
+      );
+      await this.cacheService.set(
+        cacheDir,
+        JSON.stringify(data.data),
+        this.defaultExpirationTimeInSeconds,
+      );
+      return this._mapBalances(chainName, data.data);
     } catch (error) {
       if (error instanceof LimitReachedError) {
         throw new DataSourceError(error.message, 429);
@@ -148,42 +151,36 @@ export class ZerionBalancesApi implements IBalancesApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
-      return JSON.parse(cached);
-    }
-
-    try {
-      await this._checkRateLimit();
-      const chainName = this._getChainName(args.chainId);
-      const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
-      const pageAfter = this._encodeZerionPageOffset(args.offset);
-      const params = {
-        'filter[chain_ids]': chainName,
-        sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
-        'page[size]': args.limit,
-        ...(pageAfter && { 'page[after]': pageAfter }),
-      };
-
-      const zerionCollectibles =
-        await this._getFromNetworkAndWriteCache<ZerionCollectibles>({
-          cacheDir,
-          url,
-          networkRequest: {
-            headers: { Authorization: `Basic ${this.apiKey}` },
-            params,
+      const data = JSON.parse(cached);
+      return this._buildCollectiblesPage(data.links.next, data.data);
+    } else {
+      try {
+        await this._checkRateLimit();
+        const chainName = this._getChainName(args.chainId);
+        const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
+        const pageAfter = this._encodeZerionPageOffset(args.offset);
+        const networkRequest = {
+          headers: { Authorization: `Basic ${this.apiKey}` },
+          params: {
+            'filter[chain_ids]': chainName,
+            sort: ZerionBalancesApi.COLLECTIBLES_SORTING,
+            'page[size]': args.limit,
+            ...(pageAfter && { 'page[after]': pageAfter }),
           },
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        });
-
-      // Zerion does not provide the items count.
-      // Zerion does not provide a "previous" cursor.
-      return {
-        count: null,
-        next: this._decodeZerionPagination(zerionCollectibles.links.next ?? ''),
-        previous: null,
-        results: this._mapCollectibles(zerionCollectibles.data),
-      };
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
+        };
+        const { data } = await this.networkService.get<ZerionCollectibles>(
+          url,
+          networkRequest,
+        );
+        await this.cacheService.set(
+          cacheDir,
+          JSON.stringify(data),
+          this.defaultExpirationTimeInSeconds,
+        );
+        return this._buildCollectiblesPage(data.links.next, data.data);
+      } catch (error) {
+        throw this.httpErrorFactory.from(error);
+      }
     }
   }
 
@@ -271,6 +268,20 @@ export class ZerionBalancesApi implements IBalancesApi {
     return chainName;
   }
 
+  private _buildCollectiblesPage(
+    next: string | null,
+    data: ZerionCollectible[],
+  ): Page<Collectible> {
+    // Zerion does not provide the items count.
+    // Zerion does not provide a "previous" cursor.
+    return {
+      count: null,
+      next: this._decodeZerionPagination(next ?? ''),
+      previous: null,
+      results: this._mapCollectibles(data),
+    };
+  }
+
   private _mapCollectibles(
     zerionCollectibles: ZerionCollectible[],
   ): Collectible[] {
@@ -336,28 +347,5 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.limitPeriodSeconds,
     );
     if (current > this.limitCalls) throw new LimitReachedError();
-  }
-
-  /**
-   * Gets the data from the network and caches the result.
-   */
-  private async _getFromNetworkAndWriteCache<T>(args: {
-    cacheDir: CacheDir;
-    url: string;
-    networkRequest?: NetworkRequest;
-    expireTimeSeconds?: number;
-  }): Promise<T> {
-    const { key, field } = args.cacheDir;
-    this.loggingService.debug({ type: 'cache_miss', key, field });
-    const { data } = await this.networkService.get<T>(
-      args.url,
-      args.networkRequest,
-    );
-    await this.cacheService.set(
-      args.cacheDir,
-      JSON.stringify(data),
-      args.expireTimeSeconds,
-    );
-    return data;
   }
 }
