@@ -109,12 +109,15 @@ export default () => ({
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       ssl: {
         enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
+        requestCert:
+          process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
         // If the value is not explicitly set to false, default should be true
         // If not false the server will reject any connection which is not authorized with the list of supplied CAs
         // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
         rejectUnauthorized:
           process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
           'false',
+        caPath: process.env.POSTGRES_SSL_CA_PATH,
       },
     },
   },

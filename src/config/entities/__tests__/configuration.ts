@@ -136,8 +136,10 @@ export default (): ReturnType<typeof configuration> => ({
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
       ssl: {
-        enabled: false,
-        rejectUnauthorized: false,
+        enabled: true,
+        requestCert: true,
+        rejectUnauthorized: true,
+        caPath: process.env.POSTGRES_SSL_CA_PATH,
       },
     },
   },
