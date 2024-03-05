@@ -235,7 +235,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         name: fungible_info.name ?? '',
         symbol: fungible_info.symbol ?? '',
         decimals: quantity.decimals,
-        logoUri: fungible_info.icon.url ?? '',
+        logoUri: fungible_info.icon?.url ?? '',
       },
       balance: quantity.int,
     };
