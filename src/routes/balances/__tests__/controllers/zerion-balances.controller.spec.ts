@@ -206,7 +206,7 @@ describe('Balances Controller (Unit)', () => {
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,
-                    logoUri: erc20TokenFungibleInfo.icon.url,
+                    logoUri: erc20TokenFungibleInfo.icon?.url,
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20.002',
@@ -252,6 +252,7 @@ describe('Balances Controller (Unit)', () => {
           ])
           .build();
         const erc20TokenFungibleInfo = zerionFungibleInfoBuilder()
+          .with('icon', null)
           .with('implementations', [
             zerionImplementationBuilder().with('chain_id', chainName).build(),
             zerionImplementationBuilder().build(),
@@ -348,7 +349,7 @@ describe('Balances Controller (Unit)', () => {
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,
-                    logoUri: erc20TokenFungibleInfo.icon.url,
+                    logoUri: '',
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20000000000000000',

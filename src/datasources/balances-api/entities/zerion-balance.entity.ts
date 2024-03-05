@@ -7,7 +7,7 @@ export interface ZerionFungibleInfo {
   name: string | null;
   symbol: string | null;
   description: string | null;
-  icon: { url: string | null };
+  icon: { url: string | null } | null;
   implementations: ZerionImplementation[];
 }
 
