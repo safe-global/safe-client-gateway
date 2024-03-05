@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import { getFunctionSelector, isHex, parseAbi } from 'viem';
+import { getFunctionSelector, parseAbi } from 'viem';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 export const abi = parseAbi([
   'function setPreSignature(bytes calldata orderUid, bool signed)',
@@ -10,7 +11,9 @@ export const abi = parseAbi([
 export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
   private readonly setPreSignatureFunctionSelector: `0x${string}`;
 
-  constructor() {
+  constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {
     super(abi);
     this.setPreSignatureFunctionSelector = getFunctionSelector(abi[0]);
   }
@@ -22,11 +25,13 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
    * @returns {`0x${string}`} the order UID or null if the data does not represent a setPreSignature transaction
    */
   getOrderUid(data: `0x${string}`): `0x${string}` | null {
-    if (!data.startsWith(this.setPreSignatureFunctionSelector)) return null;
-    const { functionName, args } = this.decodeFunctionData({ data });
-    if (functionName !== 'setPreSignature') return null;
-    if (!args || !args[0] || typeof args[0] !== 'string' || !isHex(args[0]))
+    try {
+      if (!data.startsWith(this.setPreSignatureFunctionSelector)) return null;
+      const { args } = this.decodeFunctionData({ data });
+      return args[0];
+    } catch (e) {
+      this.loggingService.debug(e);
       return null;
-    return args[0];
+    }
   }
 }
