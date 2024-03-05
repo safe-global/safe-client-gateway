@@ -1,6 +1,7 @@
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
 import {
+  decodeAbiParameters,
   encodeAbiParameters,
   encodeEventTopics,
   getAddress,
@@ -62,9 +63,13 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
 }
 
 export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<TransactionAddedEventArgs> {
+  const [checksummedTxHash] = decodeAbiParameters(
+    parseAbiParameters('bytes32 txHash'),
+    faker.string.hexadecimal({ length: 64 }) as Hex,
+  );
   return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
-    .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('txHash', checksummedTxHash)
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
     .with('data', '0x')
