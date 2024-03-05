@@ -105,7 +105,7 @@ describe('Balances Controller (Unit)', () => {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -184,19 +184,19 @@ describe('Balances Controller (Unit)', () => {
       // 4 Network calls are expected
       // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko tokens)
       expect(networkService.get.mock.calls.length).toBe(4);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[2][0]).toBe(
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chainName}`,
       );
-      expect(networkService.get.mock.calls[2][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -206,10 +206,10 @@ describe('Balances Controller (Unit)', () => {
           ].join(','),
         },
       });
-      expect(networkService.get.mock.calls[3][0]).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[3][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
       });
@@ -237,7 +237,7 @@ describe('Balances Controller (Unit)', () => {
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
       };
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -263,7 +263,7 @@ describe('Balances Controller (Unit)', () => {
         .expect(200);
 
       // trusted and exclude_spam params are passed
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           trusted,
           exclude_spam: excludeSpam,
@@ -290,7 +290,7 @@ describe('Balances Controller (Unit)', () => {
       const nativeCoinPriceProviderResponse = {
         [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
       };
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -356,7 +356,7 @@ describe('Balances Controller (Unit)', () => {
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
       };
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -402,16 +402,16 @@ describe('Balances Controller (Unit)', () => {
       // 3 Network calls are expected
       // (1. Chain data, 2. Balances, 3. Coingecko token)
       expect(networkService.get.mock.calls.length).toBe(3);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[2][0]).toBe(
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chainName}`,
       );
     });
@@ -459,7 +459,7 @@ describe('Balances Controller (Unit)', () => {
           .getOrThrow(
             `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
           );
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -521,7 +521,7 @@ describe('Balances Controller (Unit)', () => {
             `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
           );
         const tokenPriceProviderResponse = 'notAnObject';
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -576,7 +576,7 @@ describe('Balances Controller (Unit)', () => {
         const safeAddress = faker.finance.ethereumAddress();
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse, status: 200 });
           } else if (url == transactionServiceUrl) {
@@ -608,7 +608,7 @@ describe('Balances Controller (Unit)', () => {
       const chainId = '1';
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: chainResponse, status: 200 });
         } else if (
@@ -642,7 +642,7 @@ describe('Balances Controller (Unit)', () => {
       const chain = chainBuilder().build();
       // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
       const pricesProviderFiatCodes = ['usd', 'eth', 'eur'];
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -666,7 +666,7 @@ describe('Balances Controller (Unit)', () => {
       const chain = chainBuilder().build();
       // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
       const pricesProviderFiatCodes = ['USD', 'ETH'];
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({ data: chain, status: 200 });
@@ -688,7 +688,7 @@ describe('Balances Controller (Unit)', () => {
 
     it('should get an empty array of fiat currencies on failure', async () => {
       const chain = chainBuilder().build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/1`:
             return Promise.resolve({ data: chain, status: 200 });

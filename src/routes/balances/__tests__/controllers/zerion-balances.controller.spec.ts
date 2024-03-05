@@ -163,7 +163,7 @@ describe('Balances Controller (Unit)', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -217,10 +217,12 @@ describe('Balances Controller (Unit)', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(2);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -228,7 +230,7 @@ describe('Balances Controller (Unit)', () => {
             sort: 'value',
           },
         });
-        expect(networkService.get.mock.calls[1][0]).toBe(
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
         );
       });
@@ -306,7 +308,7 @@ describe('Balances Controller (Unit)', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -360,10 +362,12 @@ describe('Balances Controller (Unit)', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(2);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -371,7 +375,7 @@ describe('Balances Controller (Unit)', () => {
             sort: 'value',
           },
         });
-        expect(networkService.get.mock.calls[1][0]).toBe(
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
         );
       });
@@ -390,7 +394,7 @@ describe('Balances Controller (Unit)', () => {
             status: 500,
           } as Response,
         );
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.reject(error);
@@ -421,7 +425,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -487,7 +491,7 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -557,7 +561,7 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
