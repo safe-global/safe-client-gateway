@@ -1,9 +1,4 @@
-export interface Backbone {
-  name: string;
-  version: string;
-  api_version: string;
-  secure: boolean;
-  host: string;
-  headers: string[];
-  settings: Record<string, string>;
-}
+import { BackboneSchema } from '@/domain/backbone/entities/schemas/backbone.schema';
+import { z } from 'zod';
+
+export type Backbone = z.infer<typeof BackboneSchema>;

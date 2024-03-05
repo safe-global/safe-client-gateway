@@ -302,6 +302,39 @@ describe('Chains Controller (Unit)', () => {
       expect(networkService.get.mock.calls[1][1]).toBe(undefined);
     });
 
+    it('Validate the response', async () => {
+      const invalidResponse = { invalid: 'value' };
+      networkService.get.mockResolvedValueOnce({
+        data: chainResponse,
+        status: 200,
+      });
+      networkService.get.mockResolvedValueOnce({
+        data: invalidResponse,
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .get('/v1/chains/1/about/backbone')
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['name'],
+          message: 'Required',
+        });
+
+      expect(networkService.get).toHaveBeenCalledTimes(2);
+      expect(networkService.get.mock.calls[0][0]).toBe(
+        `${safeConfigUrl}/api/v1/chains/1`,
+      );
+      expect(networkService.get.mock.calls[1][0]).toBe(
+        `${chainResponse.transactionService}/api/v1/about`,
+      );
+      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+    });
+
     it('Failure getting the chain', async () => {
       const error = new NetworkResponseError(
         new URL(`${chainResponse.transactionService}/v1/chains`),
