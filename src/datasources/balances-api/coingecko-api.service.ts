@@ -23,18 +23,15 @@ export class CoingeckoApi implements IPricesApi {
   /**
    *  Coingecko API Key header name. To be included in http requests when using a paid subscription.
    */
-  private static readonly pricesProviderHeader: string = 'x-cg-pro-api-key';
-
+  private static readonly COINGECKO_API_HEADER: string = 'x-cg-pro-api-key';
   /**
    * Coingecko API maximum amount of token addresses being requested in the same call.
    */
-  private static readonly maxBatchSize: number = 100;
-
+  private static readonly MAX_BATCH_SIZE: number = 100;
   /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */
-  static readonly notFoundTtlRangeSeconds: number = 60 * 60 * 24;
-
+  static readonly NOT_FOUND_TTL_RANGE_SECONDS: number = 60 * 60 * 24;
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly pricesTtlSeconds: number;
@@ -96,7 +93,7 @@ export class CoingeckoApi implements IPricesApi {
           },
           ...(this.apiKey && {
             headers: {
-              [CoingeckoApi.pricesProviderHeader]: this.apiKey,
+              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
             },
           }),
         },
@@ -174,7 +171,7 @@ export class CoingeckoApi implements IPricesApi {
         networkRequest: {
           ...(this.apiKey && {
             headers: {
-              [CoingeckoApi.pricesProviderHeader]: this.apiKey,
+              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
             },
           }),
         },
@@ -233,7 +230,7 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<AssetPrice[]> {
     const prices = await this._requestPricesFromNetwork({
       ...args,
-      tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.maxBatchSize),
+      tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
     });
 
     return Promise.all(
@@ -271,7 +268,7 @@ export class CoingeckoApi implements IPricesApi {
         },
         ...(this.apiKey && {
           headers: {
-            [CoingeckoApi.pricesProviderHeader]: this.apiKey,
+            [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
           },
         }),
       });
@@ -291,9 +288,9 @@ export class CoingeckoApi implements IPricesApi {
    */
   private _getRandomNotFoundTokenPriceTtl(): number {
     const min =
-      this.notFoundPriceTtlSeconds - CoingeckoApi.notFoundTtlRangeSeconds;
+      this.notFoundPriceTtlSeconds - CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS;
     const max =
-      this.notFoundPriceTtlSeconds + CoingeckoApi.notFoundTtlRangeSeconds;
+      this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS;
     return Math.floor(Math.random() * (max - min) + min);
   }
 }
