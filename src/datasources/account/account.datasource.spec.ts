@@ -13,9 +13,8 @@ import {
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 import { getAddress } from 'viem';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as process from 'process';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const DB_CHAIN_ID_MAX_VALUE = 2147483647;
 
@@ -39,8 +38,8 @@ describe('Account DataSource Tests', () => {
         : {
             requestCert: config.db.postgres.ssl.requestCert,
             rejectUnauthorized: config.db.postgres.ssl.rejectUnauthorized,
-            ca: fs.readFileSync(
-              path.join(__dirname, '../../../db_config/test/server.crt'),
+            ca: readFileSync(
+              join(__dirname, '../../../db_config/test/server.crt'),
               'utf8',
             ),
           },

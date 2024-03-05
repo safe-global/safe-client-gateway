@@ -58,7 +58,22 @@ yarn run start:prod
 
 ## Test
 
-```bash
+The unit test suite contains tests that require a database connection.
+This project provides a `db-test` container which also validates the support for SSL connections.
+To start the container, make sure that the key for the self-signed certificate
+has the right permissions.
+
+```shell
+# disallow any access to world or group
+chmod 0600 db_config/test/server.key
+```
+
+With the right permissions set on the `server.key` file we can now start the `db-test` container:
+
+```shell
+# start the db-test container
+docker compose up -d db-test
+
 # unit tests
 yarn run test
 
