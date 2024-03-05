@@ -157,7 +157,7 @@ describe('Alerts (Unit)', () => {
       describe('it notifies about a valid transaction attempt', () => {
         it('notifies about addOwnerWithThreshold attempts', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
 
           const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
@@ -254,7 +254,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about removeOwner attempts', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
             faker.finance.ethereumAddress(),
             faker.finance.ethereumAddress(),
@@ -362,7 +362,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about swapOwner attempts', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
             faker.finance.ethereumAddress(),
             faker.finance.ethereumAddress(),
@@ -469,7 +469,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about changeThreshold attempts', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
 
           const changeThreshold = changeThresholdEncoder();
@@ -566,7 +566,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about batched owner management attempts', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
             faker.finance.ethereumAddress(),
             faker.finance.ethereumAddress(),
@@ -698,7 +698,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about alerts with multiple logs', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
 
           const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
@@ -815,7 +815,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies multiple emails of a Safe for a single alert', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
 
           const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
@@ -929,7 +929,7 @@ describe('Alerts (Unit)', () => {
       describe('it notifies about an invalid transaction attempt', () => {
         it('notifies about an invalid transaction attempt', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
           const transactionAddedEvent = transactionAddedEventBuilder()
             // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
@@ -1014,7 +1014,7 @@ describe('Alerts (Unit)', () => {
 
         it('notifies about alerts with multiple logs', async () => {
           const chain = chainBuilder().build();
-          const delayModifier = faker.finance.ethereumAddress();
+          const delayModifier = getAddress(faker.finance.ethereumAddress());
           const safe = safeBuilder().with('modules', [delayModifier]).build();
           const transactionAddedEvent = transactionAddedEventBuilder()
             // Invalid as a) not "direct" owner management or b) batched owner management(s) within MultiSend
@@ -1110,7 +1110,7 @@ describe('Alerts (Unit)', () => {
 
       it('notifies about a batch of a valid and an invalid transaction attempt', async () => {
         const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
+        const delayModifier = getAddress(faker.finance.ethereumAddress());
         const owners = [
           faker.finance.ethereumAddress(),
           faker.finance.ethereumAddress(),
@@ -1225,7 +1225,7 @@ describe('Alerts (Unit)', () => {
 
       it('notifies about alerts with multiple logs of a valid and a log of an invalid transaction attempt', async () => {
         const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
+        const delayModifier = getAddress(faker.finance.ethereumAddress());
         const owners = [
           faker.finance.ethereumAddress(),
           faker.finance.ethereumAddress(),
@@ -1350,7 +1350,7 @@ describe('Alerts (Unit)', () => {
 
       it('notifies multiple email addresses of a Safe', async () => {
         const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
+        const delayModifier = getAddress(faker.finance.ethereumAddress());
         const safe = safeBuilder().with('modules', [delayModifier]).build();
 
         const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
@@ -1463,7 +1463,7 @@ describe('Alerts (Unit)', () => {
 
       it('does not notify accounts not subscribed to CATEGORY_ACCOUNT_RECOVERY', async () => {
         const chain = chainBuilder().build();
-        const delayModifier = faker.finance.ethereumAddress();
+        const delayModifier = getAddress(faker.finance.ethereumAddress());
         const safe = safeBuilder().with('modules', [delayModifier]).build();
         const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
         const transactionAddedEvent = transactionAddedEventBuilder()
@@ -1549,7 +1549,15 @@ describe('Alerts (Unit)', () => {
           .set('x-tenderly-signature', signature)
           .set('date', timestamp)
           .send(alert)
-          .expect(400);
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'invalid_type',
+            expected: 'string',
+            received: 'undefined',
+            path: ['id'],
+            message: 'Required',
+          });
       });
 
       it('returns 403 (Forbidden) for invalid signature/valid payload', async () => {
