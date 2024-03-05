@@ -551,12 +551,12 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set.mock.calls[0][2]).toBeGreaterThanOrEqual(
       (fakeConfigurationService.get(
         'balances.providers.safe.prices.notFoundPriceTtlSeconds',
-      ) as number) - CoingeckoApi.notFoundTtlRangeSeconds,
+      ) as number) - CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
     );
     expect(mockCacheService.set.mock.calls[0][2]).toBeLessThanOrEqual(
       (fakeConfigurationService.get(
         'balances.providers.safe.prices.notFoundPriceTtlSeconds',
-      ) as number) + CoingeckoApi.notFoundTtlRangeSeconds,
+      ) as number) + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
     );
   });
 
