@@ -21,7 +21,7 @@ import { verifyMessage } from 'viem';
  * To use this guard, the route should have:
  * - the 'chainId' as part of the path parameters
  * - the 'safeAddress' as part of the path parameters
- * - the 'moduleAddress' as part of the JSON body (top level)
+ * - the 'moduleAddress' as part of the path parameters
  * - the 'signer' as part of the JSON body (top level)
  * - the 'Safe-Wallet-Signature' header set to the signature
  * - the 'Safe-Wallet-Signature-Timestamp' header set to the signature timestamp
