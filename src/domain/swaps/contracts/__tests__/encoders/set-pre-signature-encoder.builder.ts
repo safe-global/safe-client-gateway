@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, Hex } from 'viem';
+import {  encodeFunctionData, Hex, keccak256,  toBytes } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { abi } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
@@ -28,7 +28,7 @@ export function setPreSignatureEncoder(): SetPreSignatureEncoder<SetPreSignature
   return new SetPreSignatureEncoder()
     .with(
       'orderUid',
-      faker.string.hexadecimal({ length: 112 }) as `0x${string}`,
+      keccak256(toBytes(faker.string.hexadecimal({ length: 112 }))),
     )
     .with('signed', faker.datatype.boolean());
 }
