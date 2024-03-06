@@ -276,7 +276,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     // Zerion does not provide a "previous" cursor.
     return {
       count: null,
-      next: this._decodeZerionPagination(next ?? ''),
+      next: next ? this._decodeZerionPagination(next) : null,
       previous: null,
       results: this._mapCollectibles(data),
     };
