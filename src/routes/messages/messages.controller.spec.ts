@@ -803,17 +803,20 @@ describe('Messages controller', () => {
     it('should get a validation error', async () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
+      const createMessageDto = messageBuilder().build();
+      createMessageDto.message = faker.number.int();
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder().with('message', faker.number.int()).build(),
-        )
-        .expect(400)
+        .send(createMessageDto)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'object',
+          received: 'number',
+          path: ['message'],
+          message: 'Expected object, received number',
         });
     });
   });
