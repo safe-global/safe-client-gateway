@@ -8,11 +8,7 @@ describe('AddressSchema', () => {
 
     const result = AddressSchema.safeParse(value);
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error('AddressSchema failed to validate a valid address.');
-    }
-    expect(result.data).toBe(value);
+    expect(result.success && result.data).toBe(value);
   });
 
   it('should not validate a non-address', () => {
@@ -28,10 +24,6 @@ describe('AddressSchema', () => {
 
     const result = AddressSchema.safeParse(value);
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error('AddressSchema failed to validate a valid address.');
-    }
-    expect(result.data).toBe(getAddress(value));
+    expect(result.success && result.data).toBe(getAddress(value));
   });
 });

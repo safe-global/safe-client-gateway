@@ -37,12 +37,29 @@ describe('Balances Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
   let zerionChainIds: string[];
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      balances: {
+        ...defaultConfiguration.balances,
+        providers: {
+          ...defaultConfiguration.balances.providers,
+          zerion: {
+            ...defaultConfiguration.balances.providers.zerion,
+            limitCalls: 5,
+            limitPeriodSeconds: 2,
+          },
+        },
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
@@ -54,12 +71,12 @@ describe('Balances Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
-    safeConfigUrl = configurationService.get('safeConfig.baseUri');
-    zerionBaseUri = configurationService.get(
+    configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
     );
-    zerionChainIds = configurationService.get(
+    zerionChainIds = configurationService.getOrThrow(
       'features.zerionBalancesChainIds',
     );
     networkService = moduleFixture.get(NetworkService);
@@ -189,7 +206,7 @@ describe('Balances Controller (Unit)', () => {
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,
-                    logoUri: erc20TokenFungibleInfo.icon.url,
+                    logoUri: erc20TokenFungibleInfo.icon?.url,
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20.002',
@@ -235,6 +252,7 @@ describe('Balances Controller (Unit)', () => {
           ])
           .build();
         const erc20TokenFungibleInfo = zerionFungibleInfoBuilder()
+          .with('icon', null)
           .with('implementations', [
             zerionImplementationBuilder().with('chain_id', chainName).build(),
             zerionImplementationBuilder().build(),
@@ -331,7 +349,7 @@ describe('Balances Controller (Unit)', () => {
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,
-                    logoUri: erc20TokenFungibleInfo.icon.url,
+                    logoUri: '',
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20000000000000000',
@@ -423,6 +441,155 @@ describe('Balances Controller (Unit)', () => {
             code: 503,
             message: 'Service unavailable',
           });
+      });
+    });
+
+    describe('Rate Limit error', () => {
+      it('does not trigger a rate-limit error', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const currency = faker.finance.currencyCode();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
+          .with('implementations', [
+            zerionImplementationBuilder()
+              .with('address', null)
+              .with('chain_id', chainName)
+              .build(),
+          ])
+          .build();
+        const erc20TokenFungibleInfo = zerionFungibleInfoBuilder()
+          .with('implementations', [
+            zerionImplementationBuilder().with('chain_id', chainName).build(),
+          ])
+          .build();
+        const zerionApiBalancesResponse = zerionBalancesBuilder()
+          .with('data', [
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with('fungible_info', erc20TokenFungibleInfo)
+                  .build(),
+              )
+              .build(),
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with('fungible_info', nativeCoinFungibleInfo)
+                  .build(),
+              )
+              .build(),
+          ])
+          .build();
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
+              return Promise.resolve({
+                data: zerionApiBalancesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${currency}`,
+          )
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toEqual({
+              fiatTotal: expect.any(String),
+              items: expect.any(Array),
+            });
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(2);
+      });
+
+      it('triggers a rate-limit error', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = faker.finance.ethereumAddress();
+        const chainName = app
+          .get(IConfigurationService)
+          .getOrThrow(
+            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+          );
+        const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
+          .with('implementations', [
+            zerionImplementationBuilder()
+              .with('address', null)
+              .with('chain_id', chainName)
+              .build(),
+          ])
+          .build();
+        const erc20TokenFungibleInfo = zerionFungibleInfoBuilder()
+          .with('implementations', [
+            zerionImplementationBuilder().with('chain_id', chainName).build(),
+          ])
+          .build();
+        const zerionApiBalancesResponse = zerionBalancesBuilder()
+          .with('data', [
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with('fungible_info', erc20TokenFungibleInfo)
+                  .build(),
+              )
+              .build(),
+            zerionBalanceBuilder()
+              .with(
+                'attributes',
+                zerionAttributesBuilder()
+                  .with('fungible_info', nativeCoinFungibleInfo)
+                  .build(),
+              )
+              .build(),
+          ])
+          .build();
+        networkService.get.mockImplementation((url) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
+            case `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`:
+              return Promise.resolve({
+                data: zerionApiBalancesResponse,
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        const limitCalls = configurationService.getOrThrow<number>(
+          'balances.providers.zerion.limitCalls',
+        );
+        for (let i = 0; i < limitCalls; i++) {
+          await request(app.getHttpServer())
+            .get(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${crypto.randomUUID()}`,
+            )
+            .expect(200);
+        }
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${crypto.randomUUID()}`,
+          )
+          .expect(429);
+
+        // Calls expected: 'limitCalls' calls to Zerion + 1 call to ConfigApi
+        expect(networkService.get.mock.calls.length).toBe(limitCalls + 1);
       });
     });
   });

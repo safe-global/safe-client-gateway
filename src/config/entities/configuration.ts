@@ -54,8 +54,8 @@ export default () => ({
         },
       },
       zerion: {
-        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         apiKey: process.env.ZERION_API_KEY,
+        baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         chains: {
           1: { chainName: 'ethereum' },
           10: { chainName: 'optimism' },
@@ -91,6 +91,12 @@ export default () => ({
           'try',
           'zar',
         ],
+        limitPeriodSeconds: parseInt(
+          process.env.ZERION_RATE_LIMIT_PERIOD_SECONDS ?? `${10}`,
+        ),
+        limitCalls: parseInt(
+          process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${2}`,
+        ),
       },
     },
   },
@@ -103,12 +109,15 @@ export default () => ({
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       ssl: {
         enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
+        requestCert:
+          process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
         // If the value is not explicitly set to false, default should be true
         // If not false the server will reject any connection which is not authorized with the list of supplied CAs
         // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
         rejectUnauthorized:
           process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
           'false',
+        caPath: process.env.POSTGRES_SSL_CA_PATH,
       },
     },
   },
@@ -159,6 +168,7 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
+    locking: process.env.FF_LOCKING?.toLowerCase() === 'true',
     relay: process.env.FF_RELAY?.toLowerCase() === 'true',
   },
   httpClient: {
@@ -208,5 +218,12 @@ export default () => ({
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
+  },
+  swaps: {
+    api: {
+      1: 'https://api.cow.fi/mainnet',
+      100: 'https://api.cow.fi/xdai',
+      11155111: 'https://api.cow.fi/sepolia',
+    },
   },
 });

@@ -47,16 +47,19 @@ export class TenderlyApi implements IAlertsApi {
   async addContract(contract: AlertsRegistration): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/address`;
-      await this.networkService.post(url, {
-        headers: {
-          [TenderlyApi.HEADER]: this.apiKey,
-        },
-        params: {
+      await this.networkService.post(
+        url,
+        {
           address: contract.address,
           display_name: contract.displayName,
           network_id: contract.chainId,
         },
-      });
+        {
+          headers: {
+            [TenderlyApi.HEADER]: this.apiKey,
+          },
+        },
+      );
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -70,7 +73,7 @@ export class TenderlyApi implements IAlertsApi {
   async deleteContract(contract: AlertsDeletion): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/account/${this.account}/project/${this.project}/contract/${contract.chainId}/${contract.address}`;
-      await this.networkService.delete(url, {
+      await this.networkService.delete(url, undefined, {
         headers: {
           [TenderlyApi.HEADER]: this.apiKey,
         },

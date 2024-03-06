@@ -42,6 +42,7 @@ import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
+import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 
 @Module({})
@@ -50,8 +51,11 @@ export class AppModule implements NestModule {
   // into account. The .env file loading is done by the ConfigurationModule
   // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
-    const { email: isEmailFeatureEnabled, relay: isRelayFeatureEnabled } =
-      configFactory()['features'];
+    const {
+      email: isEmailFeatureEnabled,
+      locking: isLockingFeatureEnabled,
+      relay: isRelayFeatureEnabled,
+    } = configFactory()['features'];
 
     return {
       module: AppModule,
@@ -75,6 +79,7 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
+        ...(isLockingFeatureEnabled ? [LockingModule] : []),
         MessagesModule,
         NotificationsModule,
         OwnersModule,

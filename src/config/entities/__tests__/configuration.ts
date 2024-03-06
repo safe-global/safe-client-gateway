@@ -96,8 +96,8 @@ export default (): ReturnType<typeof configuration> => ({
         },
       },
       zerion: {
-        baseUri: faker.internet.url({ appendSlash: false }),
         apiKey: faker.string.hexadecimal({ length: 32 }),
+        baseUri: faker.internet.url({ appendSlash: false }),
         chains: {
           1: { chainName: faker.string.sample() },
           10: { chainName: faker.string.sample() },
@@ -123,6 +123,8 @@ export default (): ReturnType<typeof configuration> => ({
             'usd',
           ]),
         ),
+        limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
+        limitCalls: faker.number.int({ min: 1, max: 10 }),
       },
     },
   },
@@ -134,8 +136,10 @@ export default (): ReturnType<typeof configuration> => ({
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
       ssl: {
-        enabled: false,
-        rejectUnauthorized: false,
+        enabled: true,
+        requestCert: true,
+        rejectUnauthorized: true,
+        caPath: process.env.POSTGRES_SSL_CA_PATH,
       },
     },
   },
@@ -168,6 +172,7 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: true,
     zerionBalancesChainIds: ['137'],
+    locking: true,
     relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
@@ -204,5 +209,12 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
+  },
+  swaps: {
+    api: {
+      1: faker.internet.url(),
+      100: faker.internet.url(),
+      11155111: faker.internet.url(),
+    },
   },
 });

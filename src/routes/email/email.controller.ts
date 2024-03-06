@@ -15,7 +15,7 @@ import { EmailService } from '@/routes/email/email.service';
 import { EmailRegistrationGuard } from '@/routes/email/guards/email-registration.guard';
 import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
-import { OnlySafeOwnerGuard } from '@/routes/email/guards/only-safe-owner.guard';
+import { OnlySafeOwnerGuard } from '@/routes/common/guards/only-safe-owner.guard';
 import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
