@@ -35,7 +35,6 @@ import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.val
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { TokenValidator } from '@/domain/tokens/token.validator';
-import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
@@ -82,7 +81,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     BackboneValidator,
     CollectiblesValidator,
     ContractsValidator,
-    CreationTransactionValidator,
     DataDecodedValidator,
     DelegateValidator,
     EstimationsValidator,

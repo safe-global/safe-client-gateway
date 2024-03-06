@@ -1,26 +1,13 @@
-import { Schema } from 'ajv';
+import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { z } from 'zod';
 
-export const CREATION_TRANSACTION_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/safe/creation-transaction.json';
-
-export const creationTransactionSchema: Schema = {
-  $id: CREATION_TRANSACTION_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    created: { type: 'string', isDate: true },
-    creator: { type: 'string' },
-    transactionHash: { type: 'string' },
-    factoryAddress: { type: 'string' },
-    masterCopy: { type: 'string', nullable: true },
-    setupData: { type: 'string', nullable: true },
-    dataDecoded: {
-      oneOf: [
-        {
-          $ref: '../data-decoded/data-decoded.json',
-        },
-        { type: 'null' },
-      ],
-    },
-  },
-  required: ['created', 'creator', 'transactionHash'],
-};
+export const CreationTransactionSchema = z.object({
+  created: z.coerce.date(),
+  creator: AddressSchema,
+  transactionHash: z.string(),
+  factoryAddress: AddressSchema,
+  masterCopy: AddressSchema.nullable(),
+  setupData: z.string().nullable(),
+  dataDecoded: DataDecodedSchema.nullable(),
+});
