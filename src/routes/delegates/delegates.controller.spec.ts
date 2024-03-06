@@ -179,8 +179,15 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${faker.string.numeric()}/delegates/`)
         .send(omit(createDelegateDto, 'signature'))
-        .expect(400)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['signature'],
+          message: 'Required',
+        });
     });
 
     it('Success with safe undefined', async () => {
