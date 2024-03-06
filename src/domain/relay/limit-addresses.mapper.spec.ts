@@ -343,7 +343,7 @@ describe('LimitAddressesMapper', () => {
                 to: safeAddress,
               }),
             ).rejects.toThrow(
-              'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
             );
           });
 
@@ -368,7 +368,7 @@ describe('LimitAddressesMapper', () => {
                 to: safeAddress,
               }),
             ).rejects.toThrow(
-              'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
             );
           });
 
@@ -882,7 +882,7 @@ describe('LimitAddressesMapper', () => {
                 to,
               }),
             ).rejects.toThrow(
-              'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
             );
           });
 
@@ -912,7 +912,7 @@ describe('LimitAddressesMapper', () => {
                 to,
               }),
             ).rejects.toThrow(
-              'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
             );
 
             expect(PROXY_FACTORY_VERSIONS[chainId].includes(version)).toBe(
@@ -940,7 +940,7 @@ describe('LimitAddressesMapper', () => {
             to: safeAddress,
           }),
         ).rejects.toThrow(
-          'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
         );
       });
 
