@@ -34,6 +34,7 @@ describe('Recovery (Unit)', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    jest.useFakeTimers();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -70,6 +71,10 @@ describe('Recovery (Unit)', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('POST add recovery module for a Safe', () => {
@@ -119,7 +124,7 @@ describe('Recovery (Unit)', () => {
       const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now() - (5 * 60 * 1000 + 1); // 5m + 1ms
+      const timestamp = jest.now();
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
@@ -135,13 +140,14 @@ describe('Recovery (Unit)', () => {
         return Promise.reject(`No matching rule for url: ${url}`);
       });
 
+      jest.advanceTimersByTime(5 * 60 * 1000);
+
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(403);
@@ -175,7 +181,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(403);
@@ -217,7 +222,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(500)
@@ -270,7 +274,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         });
     });
@@ -320,7 +323,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         });
     });
@@ -362,7 +364,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(204);
@@ -374,7 +375,7 @@ describe('Recovery (Unit)', () => {
       const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now() - (5 * 60 * 1000 + 1); // 5m + 1ms
+      const timestamp = jest.now();
       const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
@@ -396,6 +397,8 @@ describe('Recovery (Unit)', () => {
           : Promise.reject(`No matching rule for url: ${url}`),
       );
 
+      jest.advanceTimersByTime(5 * 60 * 1000);
+
       await request(app.getHttpServer())
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
@@ -403,7 +406,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(403);
@@ -444,7 +446,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(403);
@@ -497,7 +498,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(400)
@@ -553,7 +553,6 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(statusCode);

@@ -9,7 +9,7 @@ import { verifyMessage } from 'viem';
 
 /**
  * The EnableRecoveryAlertsGuard guard should be used on routes that require
- * authenticated actions for adding recovery contracts.
+ * authenticated actions for enabling recovery alerts.
  *
  * This guard therefore validates if the message came from the specified signer.
  *
