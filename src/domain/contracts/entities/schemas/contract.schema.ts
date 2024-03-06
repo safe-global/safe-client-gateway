@@ -1,18 +1,11 @@
-import { Schema } from 'ajv';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { z } from 'zod';
 
-export const CONTRACT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/contracts/contract.json';
-
-export const contractSchema: Schema = {
-  $id: CONTRACT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    address: { type: 'string' },
-    name: { type: 'string' },
-    displayName: { type: 'string' },
-    logoUri: { type: 'string', nullable: true, default: null },
-    contractAbi: { type: 'object', nullable: true, default: null },
-    trustedForDelegateCall: { type: 'boolean' },
-  },
-  required: ['address', 'name', 'displayName', 'trustedForDelegateCall'],
-};
+export const ContractSchema = z.object({
+  address: AddressSchema,
+  name: z.string(),
+  displayName: z.string(),
+  logoUri: z.string().nullable(),
+  contractAbi: z.record(z.unknown()).nullable(),
+  trustedForDelegateCall: z.boolean(),
+});
