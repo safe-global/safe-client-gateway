@@ -37,7 +37,7 @@ import { ProposeTransactionDtoValidationPipe } from '@/routes/transactions/pipes
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { DeleteTransactionSchema } from '@/routes/transactions/entities/schemas/delete-transaction.dto.schema';
+import { DeleteTransactionDtoSchema } from '@/routes/transactions/entities/schemas/delete-transaction.dto.schema';
 
 @ApiTags('transactions')
 @Controller({
@@ -99,7 +99,7 @@ export class TransactionsController {
   async deleteTransaction(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
-    @Body(new ValidationPipe(DeleteTransactionSchema))
+    @Body(new ValidationPipe(DeleteTransactionDtoSchema))
     deleteTransactionDto: DeleteTransactionDto,
   ): Promise<void> {
     return this.transactionsService.deleteTransaction({

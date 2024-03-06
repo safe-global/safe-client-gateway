@@ -1,3 +1,3 @@
 import { z } from 'zod';
 
-export const DeleteTransactionSchema = z.object({ signature: z.string() });
+export const DeleteTransactionDtoSchema = z.object({ signature: z.string() });
