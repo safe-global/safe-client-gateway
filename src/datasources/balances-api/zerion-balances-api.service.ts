@@ -32,6 +32,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { getAddress } from 'viem';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -287,7 +288,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Collectible[] {
     return zerionCollectibles.map(
       ({ attributes: { nft_info, collection_info } }) => ({
-        address: nft_info.contract_address,
+        address: getAddress(nft_info.contract_address),
         tokenName: nft_info.name ?? '',
         tokenSymbol: nft_info.name ?? '',
         logoUri: collection_info?.content?.icon.url ?? '',

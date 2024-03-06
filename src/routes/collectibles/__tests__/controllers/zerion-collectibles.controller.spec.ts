@@ -25,6 +25,7 @@ import {
   zerionCollectiblesBuilder,
   zerionNFTInfoBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-collectible.entity.builder';
+import { getAddress } from 'viem';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication;
@@ -147,7 +148,7 @@ describe('Zerion Collectibles Controller', () => {
               previous: null,
               results: [
                 {
-                  address: aTokenAddress,
+                  address: getAddress(aTokenAddress),
                   tokenName:
                     zerionApiCollectiblesResponse.data[0].attributes.nft_info
                       .name,
@@ -174,9 +175,10 @@ describe('Zerion Collectibles Controller', () => {
                       .content,
                 },
                 {
-                  address:
+                  address: getAddress(
                     zerionApiCollectiblesResponse.data[1].attributes.nft_info
                       .contract_address,
+                  ),
                   tokenName: aNFTName,
                   tokenSymbol:
                     zerionApiCollectiblesResponse.data[1].attributes.nft_info
@@ -201,9 +203,10 @@ describe('Zerion Collectibles Controller', () => {
                       .content,
                 },
                 {
-                  address:
+                  address: getAddress(
                     zerionApiCollectiblesResponse.data[2].attributes.nft_info
                       .contract_address,
+                  ),
                   tokenSymbol:
                     zerionApiCollectiblesResponse.data[2].attributes.nft_info
                       .name,
