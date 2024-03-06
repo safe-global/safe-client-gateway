@@ -5,7 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { verifyMessage } from 'viem';
+import { getAddress, verifyMessage } from 'viem';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 /**
  * The DisableRecoveryAlertsGuard guard should be used on routes that require
@@ -29,6 +30,7 @@ import { verifyMessage } from 'viem';
 @Injectable()
 export class DisableRecoveryAlertsGuard implements CanActivate {
   constructor(
+    @Inject(ISafeRepository) private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
@@ -58,11 +60,23 @@ export class DisableRecoveryAlertsGuard implements CanActivate {
     const message = `${DisableRecoveryAlertsGuard.ACTION_PREFIX}-${chainId}-${safeAddress}-${moduleAddress}-${signer}-${timestamp}`;
 
     try {
-      return await verifyMessage({
+      await verifyMessage({
         address: signer,
         message,
         signature,
       });
+    } catch (e) {
+      this.loggingService.debug(e);
+      return false;
+    }
+
+    try {
+      const { safes } = await this.safeRepository.getSafesByModule({
+        chainId,
+        moduleAddress,
+      });
+
+      return safes.some((safe) => getAddress(safe) === getAddress(safeAddress));
     } catch (e) {
       this.loggingService.debug(e);
       return false;
