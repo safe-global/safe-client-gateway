@@ -111,6 +111,20 @@ describe('Locking (Unit)', () => {
         });
     });
 
+    it('should validate the Safe address in URL', async () => {
+      const safeAddress = faker.string.alphanumeric();
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/${safeAddress}/history`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          path: [],
+          message: 'Invalid input',
+        });
+    });
+
     it('should validate the response', async () => {
       const safeAddress = faker.finance.ethereumAddress();
       const invalidLockingHistory = [{ invalid: 'value' }];
