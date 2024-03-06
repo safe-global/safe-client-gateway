@@ -1,16 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
-import { DelegateValidator } from '@/domain/delegate/delegate.validator';
 import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { DelegateSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly delegateValidator: DelegateValidator,
   ) {}
 
   async getDelegates(args: {
@@ -33,7 +32,7 @@ export class DelegateRepository implements IDelegateRepository {
       offset: args.offset,
     });
 
-    page?.results.map((result) => this.delegateValidator.validate(result));
+    page?.results.map((result) => DelegateSchema.parse(result));
     return page;
   }
 
