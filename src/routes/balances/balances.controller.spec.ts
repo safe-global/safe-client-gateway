@@ -23,6 +23,7 @@ import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balanc
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -74,12 +75,12 @@ describe('Balances Controller (Unit)', () => {
           .with('token', null)
           .build(),
         balanceBuilder()
-          .with('tokenAddress', tokenAddress)
+          .with('tokenAddress', getAddress(tokenAddress))
           .with('balance', '4000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
         balanceBuilder()
-          .with('tokenAddress', secondTokenAddress)
+          .with('tokenAddress', getAddress(secondTokenAddress))
           .with('balance', '3000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
@@ -155,7 +156,9 @@ describe('Balances Controller (Unit)', () => {
             {
               tokenInfo: {
                 type: 'ERC20',
-                address: transactionApiBalancesResponse[1].tokenAddress,
+                address: transactionApiBalancesResponse[1].tokenAddress
+                  ? getAddress(transactionApiBalancesResponse[1].tokenAddress)
+                  : transactionApiBalancesResponse[1].tokenAddress,
                 decimals: 17,
                 symbol: transactionApiBalancesResponse[1].token?.symbol,
                 name: transactionApiBalancesResponse[1].token?.name,
@@ -168,7 +171,9 @@ describe('Balances Controller (Unit)', () => {
             {
               tokenInfo: {
                 type: 'ERC20',
-                address: transactionApiBalancesResponse[2].tokenAddress,
+                address: transactionApiBalancesResponse[2].tokenAddress
+                  ? getAddress(transactionApiBalancesResponse[2].tokenAddress)
+                  : transactionApiBalancesResponse[2].tokenAddress,
                 decimals: 17,
                 symbol: transactionApiBalancesResponse[2].token?.symbol,
                 name: transactionApiBalancesResponse[2].token?.name,
@@ -221,7 +226,7 @@ describe('Balances Controller (Unit)', () => {
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder()
-          .with('tokenAddress', tokenAddress)
+          .with('tokenAddress', getAddress(tokenAddress))
           .with('balance', '4000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
@@ -342,7 +347,7 @@ describe('Balances Controller (Unit)', () => {
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder()
-          .with('tokenAddress', tokenAddress)
+          .with('tokenAddress', getAddress(tokenAddress))
           .with('balance', '40000000000000000000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
@@ -386,7 +391,9 @@ describe('Balances Controller (Unit)', () => {
             {
               tokenInfo: {
                 type: 'ERC20',
-                address: transactionApiBalancesResponse[0].tokenAddress,
+                address: transactionApiBalancesResponse[0].tokenAddress
+                  ? getAddress(transactionApiBalancesResponse[0].tokenAddress)
+                  : transactionApiBalancesResponse[0].tokenAddress,
                 decimals: 17,
                 symbol: transactionApiBalancesResponse[0].token?.symbol,
                 name: transactionApiBalancesResponse[0].token?.name,
@@ -449,7 +456,7 @@ describe('Balances Controller (Unit)', () => {
         const tokenAddress = faker.finance.ethereumAddress();
         const transactionApiBalancesResponse = [
           balanceBuilder()
-            .with('tokenAddress', tokenAddress)
+            .with('tokenAddress', getAddress(tokenAddress))
             .with('balance', '40000000000000000000000000000000000')
             .with('token', balanceTokenBuilder().with('decimals', 17).build())
             .build(),
@@ -488,7 +495,9 @@ describe('Balances Controller (Unit)', () => {
               {
                 tokenInfo: {
                   type: 'ERC20',
-                  address: transactionApiBalancesResponse[0].tokenAddress,
+                  address: transactionApiBalancesResponse[0].tokenAddress
+                    ? getAddress(transactionApiBalancesResponse[0].tokenAddress)
+                    : transactionApiBalancesResponse[0].tokenAddress,
                   decimals: 17,
                   symbol: transactionApiBalancesResponse[0].token?.symbol,
                   name: transactionApiBalancesResponse[0].token?.name,
@@ -507,7 +516,7 @@ describe('Balances Controller (Unit)', () => {
       it(`should return a 0-balance when a validation error happens`, async () => {
         const chain = chainBuilder().with('chainId', '10').build();
         const safeAddress = faker.finance.ethereumAddress();
-        const tokenAddress = faker.finance.ethereumAddress();
+        const tokenAddress = getAddress(faker.finance.ethereumAddress());
         const transactionApiBalancesResponse = [
           balanceBuilder()
             .with('tokenAddress', tokenAddress)
@@ -553,7 +562,9 @@ describe('Balances Controller (Unit)', () => {
               {
                 tokenInfo: {
                   type: 'ERC20',
-                  address: transactionApiBalancesResponse[0].tokenAddress,
+                  address: transactionApiBalancesResponse[0].tokenAddress
+                    ? getAddress(transactionApiBalancesResponse[0].tokenAddress)
+                    : transactionApiBalancesResponse[0].tokenAddress,
                   decimals: 17,
                   symbol: transactionApiBalancesResponse[0].token?.symbol,
                   name: transactionApiBalancesResponse[0].token?.name,
@@ -604,7 +615,7 @@ describe('Balances Controller (Unit)', () => {
       });
     });
 
-    it(`500 error if validation fails`, async () => {
+    it(`422 error if validation fails`, async () => {
       const chainId = '1';
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
@@ -626,11 +637,14 @@ describe('Balances Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-        .expect(500)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'null',
+          message: 'Required',
+          path: ['tokenAddress'],
+          received: 'undefined',
         });
 
       expect(networkService.get.mock.calls.length).toBe(3);
