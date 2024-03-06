@@ -231,7 +231,9 @@ describe('Chains Controller (Unit)', () => {
         shortName: chainDomain.shortName,
         theme: chainDomain.theme,
         // Validation checksums address
-        ensRegistryAddress: getAddress(chainDomain.ensRegistryAddress),
+        ensRegistryAddress: chainDomain.ensRegistryAddress
+          ? getAddress(chainDomain.ensRegistryAddress)
+          : chainDomain.ensRegistryAddress,
       };
       networkService.get.mockResolvedValueOnce({
         data: chainDomain,
