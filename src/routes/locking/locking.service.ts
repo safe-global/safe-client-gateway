@@ -42,7 +42,7 @@ export class LockingService {
   }
 
   async getLockingHistory(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<LockingEvent>> {
