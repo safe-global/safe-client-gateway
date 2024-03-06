@@ -1,5 +1,22 @@
 import { Schema } from 'ajv';
+import { z } from 'zod';
 
+export const DataDecodedParameterSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  // z.unknown() makes the property optional but it should be defined
+  value: z.custom<Required<unknown>>((value) => value !== undefined),
+  valueDecoded: z
+    .union([z.record(z.unknown()), z.array(z.record(z.unknown()))])
+    .optional(),
+});
+
+export const DataDecodedSchema = z.object({
+  method: z.string(),
+  parameters: z.array(DataDecodedParameterSchema).nullable(),
+});
+
+// TODO: Remove after creation, module, multisig and transaction type are migrated to zod
 export const DATA_DECODED_PARAMETER_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/data-decoded/data-decoded-parameter.json';
 
