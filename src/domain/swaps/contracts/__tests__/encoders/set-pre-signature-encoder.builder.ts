@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import {  encodeFunctionData, Hex, keccak256,  toBytes } from 'viem';
+import { encodeFunctionData, Hex, keccak256, toBytes } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
 import { abi } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
