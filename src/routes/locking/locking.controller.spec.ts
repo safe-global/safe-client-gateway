@@ -26,6 +26,7 @@ import {
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -89,7 +90,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/all-events/${safeAddress}`:
+          case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -121,7 +122,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/all-events/${safeAddress}`:
+          case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -149,7 +150,7 @@ describe('Locking (Unit)', () => {
       const errorMessage = faker.word.words();
       networkService.get.mockImplementation((url) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/all-events/${safeAddress}`:
+          case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.reject(
               new NetworkResponseError(
                 new URL(`${lockingBaseUri}/v1/locking/${safeAddress}/history`),
