@@ -11,6 +11,7 @@ import {
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
 } from '@/domain/locking/entities/__tests__/locking-event.builder';
+import { getAddress } from 'viem';
 
 const networkService = {
   get: jest.fn(),
@@ -45,7 +46,7 @@ describe('LockingApi', () => {
 
   describe('getLockingHistory', () => {
     it('should get locking history', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const lockingHistoryPage = pageBuilder()
         .with('results', [
           lockEventItemBuilder().build(),
@@ -72,7 +73,7 @@ describe('LockingApi', () => {
     });
 
     it('should forward pagination queries', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const limit = faker.number.int();
       const offset = faker.number.int();
       const lockingHistoryPage = pageBuilder()
@@ -101,7 +102,7 @@ describe('LockingApi', () => {
     });
 
     it('should forward error', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(`${lockingBaseUri}/api/v1/all-events/${safeAddress}`),

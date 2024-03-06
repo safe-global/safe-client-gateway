@@ -9,6 +9,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { z } from 'zod';
 
 @ApiTags('locking')
 @Controller({
@@ -34,7 +35,7 @@ export class LockingController {
   @Get('/:safeAddress/history')
   async getLockingHistory(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
+    safeAddress: z.infer<typeof AddressSchema>,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<LockingEvent>> {
