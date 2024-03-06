@@ -71,7 +71,7 @@ export const ChainSchema = z.object({
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
-  ensRegistryAddress: AddressSchema,
+  ensRegistryAddress: AddressSchema.nullable(),
   disabledWallets: z.array(z.string()),
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
