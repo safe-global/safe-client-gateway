@@ -31,7 +31,7 @@ export class LockingRepository implements ILockingRepository {
   }
 
   async getLockingHistory(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     offset?: number;
     limit?: number;
   }): Promise<Page<LockingEvent>> {

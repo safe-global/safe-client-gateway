@@ -34,7 +34,7 @@ export class LockingApi implements ILockingApi {
   }
 
   async getLockingHistory(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<LockingEvent>> {
