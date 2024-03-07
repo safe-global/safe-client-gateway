@@ -201,10 +201,10 @@ export class TransactionApi implements ITransactionApi {
 
   async postDelegate(args: {
     safeAddress: string | null;
-    delegate?: string;
-    delegator?: string;
-    signature?: string;
-    label?: string;
+    delegate: string;
+    delegator: string;
+    signature: string;
+    label: string;
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;

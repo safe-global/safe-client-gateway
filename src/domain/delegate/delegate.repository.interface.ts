@@ -17,10 +17,10 @@ export interface IDelegateRepository {
   postDelegate(args: {
     chainId: string;
     safeAddress: string | null;
-    delegate?: string;
-    delegator?: string;
-    signature?: string;
-    label?: string;
+    delegate: string;
+    delegator: string;
+    signature: string;
+    label: string;
   }): Promise<void>;
 
   deleteDelegate(args: {
