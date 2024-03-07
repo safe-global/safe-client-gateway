@@ -5,7 +5,7 @@ export const ContractSchema = z.object({
   address: AddressSchema,
   name: z.string(),
   displayName: z.string(),
-  logoUri: z.string().nullable(),
-  contractAbi: z.record(z.unknown()).nullable(),
+  logoUri: z.string().optional().nullable().default(null),
+  contractAbi: z.record(z.unknown()).optional().nullable().default(null),
   trustedForDelegateCall: z.boolean(),
 });
