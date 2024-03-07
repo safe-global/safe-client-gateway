@@ -7,7 +7,7 @@ export const CreationTransactionSchema = z.object({
   creator: AddressSchema,
   transactionHash: z.string(),
   factoryAddress: AddressSchema,
-  masterCopy: AddressSchema.optional().nullable().default(null),
-  setupData: z.string().optional().nullable().default(null),
-  dataDecoded: DataDecodedSchema.optional().nullable().default(null),
+  masterCopy: AddressSchema.nullish().default(null),
+  setupData: z.string().nullish().default(null),
+  dataDecoded: DataDecodedSchema.nullish().default(null),
 });
