@@ -4,7 +4,7 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { ZodError } from 'zod';
+import { ZodError, ZodIssue } from 'zod';
 import { Response } from 'express';
 
 /**
@@ -20,9 +20,17 @@ export class ZodErrorFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
+    const error = this.mapZodErrorResponse(exception);
+
     response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      ...exception.issues[0],
+      ...error,
     });
+  }
+
+  private mapZodErrorResponse(exception: ZodError): ZodIssue {
+    return exception.issues[0].code === 'invalid_union'
+      ? this.mapZodErrorResponse(exception.issues[0].unionErrors[0])
+      : exception.issues[0];
   }
 }

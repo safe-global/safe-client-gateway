@@ -12,7 +12,7 @@ export interface ILockingApi {
   }): Promise<Page<Rank>>;
 
   getLockingHistory(args: {
-    safeAddress?: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<LockingEvent>>;

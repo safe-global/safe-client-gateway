@@ -28,6 +28,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication;
@@ -182,11 +183,17 @@ describe('Chains Controller (Unit)', () => {
         status: 200,
       });
 
-      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      await request(app.getHttpServer())
+        .get('/v1/chains')
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['chainId'],
+          message: 'Required',
+        });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith(
@@ -223,7 +230,10 @@ describe('Chains Controller (Unit)', () => {
         safeAppsRpcUri: chainDomain.safeAppsRpcUri,
         shortName: chainDomain.shortName,
         theme: chainDomain.theme,
-        ensRegistryAddress: chainDomain.ensRegistryAddress,
+        // Validation checksums address
+        ensRegistryAddress: chainDomain.ensRegistryAddress
+          ? getAddress(chainDomain.ensRegistryAddress)
+          : chainDomain.ensRegistryAddress,
       };
       networkService.get.mockResolvedValueOnce({
         data: chainDomain,

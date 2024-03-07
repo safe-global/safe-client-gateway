@@ -5,8 +5,11 @@ import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorato
 import { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { LockingService } from '@/routes/locking/locking.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { z } from 'zod';
 
 @ApiTags('locking')
 @Controller({
@@ -31,7 +34,8 @@ export class LockingController {
 
   @Get('/:safeAddress/history')
   async getLockingHistory(
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: z.infer<typeof AddressSchema>,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<Page<LockingEvent>> {

@@ -178,6 +178,10 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
   },
+  locking: {
+    // TODO: Add fallback value and requirement validation
+    baseUri: process.env.LOCKING_PROVIDER_API_BASE_URI || '',
+  },
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
