@@ -5,12 +5,10 @@ export const DataDecodedParameterSchema = z.object({
   name: z.string(),
   type: z.string(),
   // z.unknown() makes the property optional but it should be defined
-  value: z.custom<Required<unknown>>((value) => value !== undefined),
+  value: z.custom<Required<unknown>>(),
   valueDecoded: z
     .union([z.record(z.unknown()), z.array(z.record(z.unknown()))])
-    .optional()
-    .nullable()
-    .default(null),
+    .optional(),
 });
 
 export const DataDecodedSchema = z.object({
