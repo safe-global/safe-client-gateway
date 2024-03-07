@@ -1,89 +1,57 @@
-import {
-  LockEvent,
-  LockType,
-  LockingEvent,
-  UnlockEvent,
-  WithdrawEvent,
-} from '@/domain/locking/entities/locking-event.entity';
-import { JSONSchemaType } from 'ajv';
-import { Page } from '@/routes/common/entities/page.entity';
+import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { z } from 'zod';
 
-const LOCK_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/locking/lock-event.json';
+export const enum LockingEventType {
+  LOCKED = 'LOCKED',
+  UNLOCKED = 'UNLOCKED',
+  WITHDRAWN = 'WITHDRAWN',
+}
 
-const lockEventSchema: JSONSchemaType<LockEvent> = {
-  $id: LOCK_EVENT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    type: { type: 'string', const: LockType.LOCK },
-    amount: { type: 'string' },
-    executedAt: { type: 'string' },
-  },
-  required: ['type', 'amount', 'executedAt'],
-};
+const LockEventSchema = z.object({
+  executionDate: z.coerce.date(),
+  transactionHash: HexSchema,
+  holder: AddressSchema,
+  amount: NumericStringSchema,
+  logIndex: NumericStringSchema,
+});
 
-const UNLOCK_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/locking/unlock-event.json';
+export const LockEventItemSchema = LockEventSchema.extend({
+  eventType: z.literal(LockingEventType.LOCKED),
+});
 
-const unlockEventSchema: JSONSchemaType<UnlockEvent> = {
-  $id: UNLOCK_EVENT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    type: { type: 'string', const: LockType.UNLOCK },
-    amount: { type: 'string' },
-    executedAt: { type: 'string' },
-    unlockIndex: { type: 'string' },
-    unlockedAt: { type: 'string' },
-  },
-  required: ['type', 'amount', 'executedAt', 'unlockIndex', 'unlockedAt'],
-};
+const UnlockEventSchema = z.object({
+  executionDate: z.coerce.date(),
+  transactionHash: HexSchema,
+  holder: AddressSchema,
+  amount: NumericStringSchema,
+  logIndex: NumericStringSchema,
+  unlockIndex: NumericStringSchema,
+});
 
-const WITHDRAW_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/locking/withdraw-event.json';
+export const UnlockEventItemSchema = UnlockEventSchema.extend({
+  eventType: z.literal(LockingEventType.UNLOCKED),
+});
 
-const withdrawEventSchema: JSONSchemaType<WithdrawEvent> = {
-  $id: WITHDRAW_EVENT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    type: { type: 'string', const: LockType.WITHDRAW },
-    amount: { type: 'string' },
-    executedAt: { type: 'string' },
-    unlockIndex: { type: 'string' },
-  },
-  required: ['type', 'amount', 'executedAt', 'unlockIndex'],
-};
+const WithdrawEventSchema = z.object({
+  executionDate: z.coerce.date(),
+  transactionHash: HexSchema,
+  holder: AddressSchema,
+  amount: NumericStringSchema,
+  logIndex: NumericStringSchema,
+  unlockIndex: NumericStringSchema,
+});
 
-const LOCKING_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/locking/locking-event.json';
+export const WithdrawEventItemSchema = WithdrawEventSchema.extend({
+  eventType: z.literal(LockingEventType.WITHDRAWN),
+});
 
-const lockingEventSchema: JSONSchemaType<LockingEvent> = {
-  $id: LOCKING_EVENT_SCHEMA_ID,
-  type: 'object',
-  discriminator: { propertyName: 'type' },
-  oneOf: [lockEventSchema, unlockEventSchema, withdrawEventSchema],
-};
+export const LockingEventSchema = z.discriminatedUnion('eventType', [
+  LockEventItemSchema,
+  UnlockEventItemSchema,
+  WithdrawEventItemSchema,
+]);
 
-export const LOCKING_EVENT_PAGE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/locking/locking-event-page.json';
-
-// TODO: Use buildPageSchema when types are fixed
-export const lockingEventPageSchema: JSONSchemaType<Page<LockingEvent>> = {
-  $id: LOCKING_EVENT_PAGE_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    count: {
-      oneOf: [{ type: 'number' }, { type: 'null', nullable: true }],
-      default: null,
-    },
-    next: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-      default: null,
-    },
-    previous: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-      default: null,
-    },
-    results: { type: 'array', items: lockingEventSchema },
-  },
-  required: ['results'],
-};
+export const LockingEventPageSchema = buildZodPageSchema(LockingEventSchema);

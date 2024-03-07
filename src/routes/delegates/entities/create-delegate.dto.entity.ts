@@ -1,12 +1,16 @@
+import { CreateDelegateDtoSchema } from '@/routes/delegates/entities/schemas/create-delegate.dto.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class CreateDelegateDto {
+export class CreateDelegateDto
+  implements z.infer<typeof CreateDelegateDtoSchema>
+{
   @ApiPropertyOptional()
-  safe?: string;
+  safe?: `0x${string}`;
   @ApiProperty()
-  delegate!: string;
+  delegate!: `0x${string}`;
   @ApiProperty()
-  delegator!: string;
+  delegator!: `0x${string}`;
   @ApiProperty()
   signature!: string;
   @ApiProperty()

@@ -6,6 +6,10 @@ import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-databas
 import * as fs from 'fs';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
+  const caPath = configurationService.get<string>('db.postgres.ssl.caPath');
+  const ca: string | undefined =
+    caPath && caPath.length > 0 ? fs.readFileSync(caPath, 'utf8') : undefined;
+
   const sslConfig = configurationService.getOrThrow('db.postgres.ssl.enabled')
     ? {
         requestCert: configurationService.getOrThrow(
@@ -14,10 +18,7 @@ function dbFactory(configurationService: IConfigurationService): postgres.Sql {
         rejectUnauthorized: configurationService.getOrThrow(
           'db.postgres.ssl.rejectUnauthorized',
         ),
-        ca: fs.readFileSync(
-          configurationService.getOrThrow('db.postgres.ssl.caPath'),
-          'utf8',
-        ),
+        ca,
       }
     : false;
   return postgres({

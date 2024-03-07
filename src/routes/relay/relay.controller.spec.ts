@@ -952,7 +952,7 @@ describe('Relay controller', () => {
                   .expect(422)
                   .expect({
                     message:
-                      'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
                     statusCode: 422,
                   });
               });
@@ -990,7 +990,7 @@ describe('Relay controller', () => {
                   .expect(422)
                   .expect({
                     message:
-                      'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
                     statusCode: 422,
                   });
               });
@@ -1294,7 +1294,7 @@ describe('Relay controller', () => {
                   .expect(422)
                   .expect({
                     message:
-                      'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
                     statusCode: 422,
                   });
               });
@@ -1359,7 +1359,7 @@ describe('Relay controller', () => {
             .expect(422)
             .expect({
               message:
-                'Invalid transfer. The proposed transfer is not an execTransaction, multiSend, or createProxyWithNonce call.',
+                'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
               statusCode: 422,
             });
         });
