@@ -117,6 +117,62 @@ describe('Estimations Controller (Unit)', () => {
     });
   });
 
+  it('should validate the response', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const estimation = { invalid: 'value' };
+    const lastTransaction = multisigTransactionBuilder().build();
+    networkService.get.mockImplementation((url) => {
+      const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      if (url === chainsUrl) {
+        return Promise.resolve({ data: chain, status: 200 });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe, status: 200 });
+      }
+      if (url === multisigTransactionsUrl) {
+        return Promise.resolve({
+          data: pageBuilder()
+            .with('count', 1)
+            .with('results', [multisigTransactionToJson(lastTransaction)])
+            .build(),
+          status: 200,
+        });
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+    networkService.post.mockImplementation((url) => {
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/estimations/`;
+      return url === estimationsUrl
+        ? Promise.resolve({ data: estimation, status: 200 })
+        : Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .post(
+        `/v2/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/estimations`,
+      )
+      .send(
+        new GetEstimationDto(
+          faker.finance.ethereumAddress(),
+          faker.string.numeric(),
+          faker.string.hexadecimal({ length: 32 }),
+          0,
+        ),
+      )
+      .expect(422)
+      .expect({
+        statusCode: 422,
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'undefined',
+        path: ['safeTxGas'],
+        message: 'Required',
+      });
+  });
+
   it('Should get a validation error', async () => {
     const getEstimationDto = new GetEstimationDto(
       faker.finance.ethereumAddress(),

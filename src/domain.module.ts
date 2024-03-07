@@ -40,7 +40,6 @@ import { INotificationsRepository } from '@/domain/notifications/notifications.r
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
 import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
-import { EstimationsValidator } from '@/domain/estimations/estimations.validator';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { MessageValidator } from '@/domain/messages/message.validator';
@@ -85,7 +84,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     CreationTransactionValidator,
     DataDecodedValidator,
     DelegateValidator,
-    EstimationsValidator,
     SingletonValidator,
     MessageValidator,
     ModuleTransactionValidator,
