@@ -8,12 +8,18 @@ export const DataDecodedParameterSchema = z.object({
   value: z.custom<Required<unknown>>((value) => value !== undefined),
   valueDecoded: z
     .union([z.record(z.unknown()), z.array(z.record(z.unknown()))])
-    .optional(),
+    .optional()
+    .nullable()
+    .default(null),
 });
 
 export const DataDecodedSchema = z.object({
   method: z.string(),
-  parameters: z.array(DataDecodedParameterSchema).nullable(),
+  parameters: z
+    .array(DataDecodedParameterSchema)
+    .optional()
+    .nullable()
+    .default(null),
 });
 
 // TODO: Remove after creation, module, multisig and transaction type are migrated to zod
