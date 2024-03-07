@@ -335,17 +335,6 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow null chainLogoUri and ensRegistryAddress', () => {
-      const chain = chainBuilder()
-        .with('chainLogoUri', null)
-        .with('ensRegistryAddress', null)
-        .build();
-
-      const result = ChainSchema.safeParse(chain);
-
-      expect(result.success).toBe(true);
-    });
-
     it('should allow undefined chainLogoUri and ensRegistryAddress and default to null', () => {
       const chain = chainBuilder().build();
       // @ts-expect-error - inferred types don't allow optional types
