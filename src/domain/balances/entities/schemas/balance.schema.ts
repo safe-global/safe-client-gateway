@@ -21,8 +21,8 @@ export const Erc20BalanceSchema = z.object({
 });
 
 const FiatSchema = z.object({
-  fiatBalance: z.string().nullable(),
-  fiatConversion: z.string().nullable(),
+  fiatBalance: z.string().optional().nullable().default(null),
+  fiatConversion: z.string().optional().nullable().default(null),
 });
 
 export const BalanceSchema = z.union([
