@@ -57,7 +57,6 @@ export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
   description: z.string(),
-  // TODO: Make required when deemed stable on config service
   chainLogoUri: z.string().url().nullish().default(null),
   l2: z.boolean(),
   isTestnet: z.boolean(),
