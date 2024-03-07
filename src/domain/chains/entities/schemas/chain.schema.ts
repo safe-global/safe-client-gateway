@@ -46,7 +46,7 @@ export const GasPriceFixedEip1559Schema = z.object({
 });
 
 export const GasPriceSchema = z.array(
-  z.union([
+  z.discriminatedUnion('type', [
     GasPriceOracleSchema,
     GasPriceFixedSchema,
     GasPriceFixedEip1559Schema,
@@ -71,7 +71,7 @@ export const ChainSchema = z.object({
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
-  ensRegistryAddress: AddressSchema.nullable(),
+  ensRegistryAddress: AddressSchema.optional().nullable().default(null),
   disabledWallets: z.array(z.string()),
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
