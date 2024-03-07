@@ -5,7 +5,7 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
 

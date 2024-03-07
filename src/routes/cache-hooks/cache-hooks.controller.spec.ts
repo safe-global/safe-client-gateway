@@ -21,6 +21,7 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
@@ -182,7 +183,29 @@ describe('Post Hook Events (Unit)', () => {
       .post(`/hooks/events`)
       .set('Authorization', `Basic ${authToken}`)
       .send(data)
-      .expect(400);
+      .expect(422)
+      .expect({
+        statusCode: 422,
+        code: 'invalid_union_discriminator',
+        options: [
+          'CHAIN_UPDATE',
+          'DELETED_MULTISIG_TRANSACTION',
+          'EXECUTED_MULTISIG_TRANSACTION',
+          'INCOMING_ETHER',
+          'INCOMING_TOKEN',
+          'MESSAGE_CREATED',
+          'MODULE_TRANSACTION',
+          'NEW_CONFIRMATION',
+          'MESSAGE_CONFIRMATION',
+          'OUTGOING_ETHER',
+          'OUTGOING_TOKEN',
+          'PENDING_MULTISIG_TRANSACTION',
+          'SAFE_APPS_UPDATE',
+        ],
+        path: ['type'],
+        message:
+          "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'SAFE_APPS_UPDATE'",
+      });
   });
 
   it.each([
@@ -214,7 +237,7 @@ describe('Post Hook Events (Unit)', () => {
       ),
     });
     const cacheDir = new CacheDir(
-      `${chainId}_safe_balances_${safeAddress}`,
+      `${chainId}_safe_balances_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -271,7 +294,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_multisig_transactions_${safeAddress}`,
+      `${chainId}_multisig_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -377,7 +400,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_safe_${safeAddress}`,
+      `${chainId}_safe_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -435,7 +458,7 @@ describe('Post Hook Events (Unit)', () => {
       ),
     });
     const cacheDir = new CacheDir(
-      `${chainId}_safe_collectibles_${safeAddress}`,
+      `${chainId}_safe_collectibles_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -489,7 +512,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_transfers_${safeAddress}`,
+      `${chainId}_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -538,7 +561,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_incoming_transfers_${safeAddress}`,
+      `${chainId}_incoming_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -582,7 +605,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_module_transactions_${safeAddress}`,
+      `${chainId}_module_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -651,7 +674,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_all_transactions_${safeAddress}`,
+      `${chainId}_all_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -698,7 +721,7 @@ describe('Post Hook Events (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
     const cacheDir = new CacheDir(
-      `${chainId}_messages_${safeAddress}`,
+      `${chainId}_messages_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(

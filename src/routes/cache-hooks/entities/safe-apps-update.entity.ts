@@ -1,7 +1,4 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { SafeAppsUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/safe-apps-update.schema';
+import { z } from 'zod';
 
-export interface SafeAppsUpdate
-  extends Omit<EventPayload<EventType.SAFE_APPS_UPDATE>, 'address'> {}
+export type SafeAppsUpdate = z.infer<typeof SafeAppsUpdateEventSchema>;

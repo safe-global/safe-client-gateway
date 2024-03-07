@@ -1,19 +1,10 @@
-import { JSONSchemaType } from 'ajv';
-import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
-import { PendingTransaction } from '@/routes/cache-hooks/entities/pending-transaction.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const PENDING_TRANSACTION_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/pending-transaction.json';
-
-export const pendingTransactionEventSchema: JSONSchemaType<PendingTransaction> =
-  {
-    $id: PENDING_TRANSACTION_EVENT_SCHEMA_ID,
-    type: 'object',
-    properties: {
-      address: { type: 'string' },
-      chainId: { type: 'string' },
-      type: { type: 'string', const: EventType.PENDING_MULTISIG_TRANSACTION },
-      safeTxHash: { type: 'string' },
-    },
-    required: ['address', 'chainId', 'type', 'safeTxHash'],
-  };
+export const PendingTransactionEventSchema = z.object({
+  type: z.literal(EventType.PENDING_MULTISIG_TRANSACTION),
+  address: AddressSchema,
+  chainId: z.string(),
+  safeTxHash: z.string(),
+});

@@ -1,10 +1,6 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ExecutedTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/executed-transaction.schema';
+import { z } from 'zod';
 
-export interface ExecutedTransaction
-  extends EventPayload<EventType.EXECUTED_MULTISIG_TRANSACTION> {
-  safeTxHash: string;
-  txHash: string;
-}
+export type ExecutedTransaction = z.infer<
+  typeof ExecutedTransactionEventSchema
+>;

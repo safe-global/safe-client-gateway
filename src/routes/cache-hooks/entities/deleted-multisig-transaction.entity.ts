@@ -1,9 +1,6 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { DeletedMultisigTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/deleted-multisig-transaction.schema';
+import { z } from 'zod';
 
-export interface DeletedMultisigTransaction
-  extends EventPayload<EventType.DELETED_MULTISIG_TRANSACTION> {
-  safeTxHash: string;
-}
+export type DeletedMultisigTransaction = z.infer<
+  typeof DeletedMultisigTransactionEventSchema
+>;

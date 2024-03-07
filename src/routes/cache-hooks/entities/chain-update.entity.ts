@@ -1,7 +1,4 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ChainUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/chain-update.schema';
+import { z } from 'zod';
 
-export interface ChainUpdate
-  extends Omit<EventPayload<EventType.CHAIN_UPDATE>, 'address'> {}
+export type ChainUpdate = z.infer<typeof ChainUpdateEventSchema>;
