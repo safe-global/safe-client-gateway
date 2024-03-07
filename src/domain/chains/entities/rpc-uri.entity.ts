@@ -1,6 +1,4 @@
-import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
+import { z } from 'zod';
+import { RpcUriSchema } from '@/domain/chains/entities/schemas/chain.schema';
 
-export interface RpcUri {
-  authentication: RpcUriAuthentication;
-  value: string;
-}
+export type RpcUri = z.infer<typeof RpcUriSchema>;
