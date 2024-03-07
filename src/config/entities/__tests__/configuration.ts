@@ -136,8 +136,10 @@ export default (): ReturnType<typeof configuration> => ({
       username: process.env.POSTGRES_TEST_USER || 'postgres',
       password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
       ssl: {
-        enabled: false,
-        rejectUnauthorized: false,
+        enabled: true,
+        requestCert: true,
+        rejectUnauthorized: true,
+        caPath: process.env.POSTGRES_SSL_CA_PATH,
       },
     },
   },
@@ -174,6 +176,9 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
+  locking: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',

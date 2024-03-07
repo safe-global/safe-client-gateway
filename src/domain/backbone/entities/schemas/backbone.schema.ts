@@ -6,6 +6,6 @@ export const BackboneSchema = z.object({
   api_version: z.string(),
   secure: z.boolean(),
   host: z.string(),
-  headers: z.array(z.string()),
-  settings: z.record(z.unknown()),
+  headers: z.array(z.string()).optional(),
+  settings: z.record(z.unknown()).optional(),
 });

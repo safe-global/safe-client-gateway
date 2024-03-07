@@ -74,6 +74,7 @@ describe('Zerion Collectibles Controller', () => {
         const aNFTName = faker.string.sample();
         const aUrl = faker.internet.url({ appendSlash: false });
         const zerionApiCollectiblesResponse = zerionCollectiblesBuilder()
+          .with('links', { next: null })
           .with('data', [
             zerionCollectibleBuilder()
               .with(
@@ -143,7 +144,7 @@ describe('Zerion Collectibles Controller', () => {
           .expect(({ body }) => {
             expect(body).toMatchObject({
               count: null,
-              next: expect.any(String),
+              next: null,
               previous: null,
               results: [
                 {

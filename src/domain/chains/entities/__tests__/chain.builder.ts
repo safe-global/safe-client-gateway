@@ -31,7 +31,10 @@ export function chainBuilder(): IBuilder<Chain> {
       gasPriceFixedEIP1559Builder().build(),
       gasPriceOracleBuilder().build(),
     ])
-    .with('ensRegistryAddress', faker.finance.ethereumAddress())
+    .with(
+      'ensRegistryAddress',
+      faker.finance.ethereumAddress() as `0x${string}`,
+    )
     .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
     .with('features', [faker.word.sample(), faker.word.sample()])
     .with('recommendedMasterCopyVersion', faker.system.semver());

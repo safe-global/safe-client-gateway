@@ -5,8 +5,10 @@ import {
   encodeEventTopics,
   getAddress,
   Hex,
+  keccak256,
   parseAbi,
   parseAbiParameters,
+  toBytes,
 } from 'viem';
 import { Builder } from '@/__tests__/builder';
 
@@ -64,7 +66,10 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
 export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<TransactionAddedEventArgs> {
   return new TransactionAddedEventBuilder()
     .with('queueNonce', faker.number.bigInt())
-    .with('txHash', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with(
+      'txHash',
+      keccak256(toBytes(faker.string.hexadecimal({ length: 64 }))),
+    )
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', BigInt(0))
     .with('data', '0x')

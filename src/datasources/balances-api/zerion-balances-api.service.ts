@@ -235,7 +235,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         name: fungible_info.name ?? '',
         symbol: fungible_info.symbol ?? '',
         decimals: quantity.decimals,
-        logoUri: fungible_info.icon.url ?? '',
+        logoUri: fungible_info.icon?.url ?? '',
       },
       balance: quantity.int,
     };
@@ -276,7 +276,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     // Zerion does not provide a "previous" cursor.
     return {
       count: null,
-      next: this._decodeZerionPagination(next ?? ''),
+      next: next ? this._decodeZerionPagination(next) : null,
       previous: null,
       results: this._mapCollectibles(data),
     };
