@@ -641,10 +641,10 @@ describe('Balances Controller (Unit)', () => {
         .expect({
           statusCode: 422,
           code: 'invalid_type',
-          expected: 'null',
-          message: 'Required',
-          path: ['tokenAddress'],
+          expected: 'string',
           received: 'undefined',
+          path: ['balance'],
+          message: 'Required',
         });
 
       expect(networkService.get.mock.calls.length).toBe(3);

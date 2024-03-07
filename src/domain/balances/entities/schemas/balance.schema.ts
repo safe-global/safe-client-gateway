@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const NativeBalanceSchema = z.object({
-  tokenAddress: z.null(),
-  token: z.null(),
+  // Likely `null` but for safety we allow optional defaulting
+  tokenAddress: z.null().optional().default(null),
+  token: z.null().optional().default(null),
   balance: z.string(),
 });
 
