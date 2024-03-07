@@ -13,11 +13,7 @@ export const DataDecodedParameterSchema = z.object({
 
 export const DataDecodedSchema = z.object({
   method: z.string(),
-  parameters: z
-    .array(DataDecodedParameterSchema)
-    .optional()
-    .nullable()
-    .default(null),
+  parameters: z.array(DataDecodedParameterSchema).nullish().default(null),
 });
 
 // TODO: Remove after creation, module, multisig and transaction type are migrated to zod
