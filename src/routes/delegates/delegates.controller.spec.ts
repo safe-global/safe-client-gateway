@@ -190,9 +190,9 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Success with safe undefined', async () => {
+    it('Success with null safe', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
-      createDelegateDto.safe = undefined;
+      createDelegateDto.safe = null;
       const chain = chainBuilder().build();
       networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`

@@ -16,7 +16,7 @@ export interface IDelegateRepository {
 
   postDelegate(args: {
     chainId: string;
-    safeAddress?: string;
+    safeAddress: string | null;
     delegate?: string;
     delegator?: string;
     signature?: string;

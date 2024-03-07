@@ -42,7 +42,7 @@ export interface ITransactionApi {
   }): Promise<Page<Delegate>>;
 
   postDelegate(args: {
-    safeAddress?: string;
+    safeAddress: string | null;
     delegate?: string;
     delegator?: string;
     signature?: string;

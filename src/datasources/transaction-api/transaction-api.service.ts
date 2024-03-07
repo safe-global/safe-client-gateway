@@ -200,7 +200,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async postDelegate(args: {
-    safeAddress?: string;
+    safeAddress: string | null;
     delegate?: string;
     delegator?: string;
     signature?: string;

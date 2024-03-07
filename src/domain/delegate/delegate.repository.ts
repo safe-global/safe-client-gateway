@@ -39,7 +39,7 @@ export class DelegateRepository implements IDelegateRepository {
 
   async postDelegate(args: {
     chainId: string;
-    safeAddress?: string;
+    safeAddress: string | null;
     delegate?: string;
     delegator?: string;
     signature?: string;
