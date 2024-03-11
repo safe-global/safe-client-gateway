@@ -1,18 +1,12 @@
-import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
+import {
+  BalanceSchema,
+  Erc20BalanceSchema,
+  NativeBalanceSchema,
+} from '@/domain/balances/entities/schemas/balance.schema';
+import { z } from 'zod';
 
-export interface NativeBalance {
-  tokenAddress: null;
-  token: null;
-  balance: string;
-}
+export type NativeBalance = z.infer<typeof NativeBalanceSchema>;
 
-export interface Erc20Balance {
-  tokenAddress: string;
-  token: BalanceToken;
-  balance: string;
-}
+export type Erc20Balance = z.infer<typeof Erc20BalanceSchema>;
 
-export type Balance = (NativeBalance | Erc20Balance) & {
-  fiatBalance: string | null;
-  fiatConversion: string | null;
-};
+export type Balance = z.infer<typeof BalanceSchema>;

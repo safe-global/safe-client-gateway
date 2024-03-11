@@ -176,6 +176,9 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
+  locking: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',

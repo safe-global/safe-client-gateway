@@ -26,6 +26,7 @@ import { deleteSafeDelegateDtoBuilder } from '@/routes/delegates/entities/__test
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -58,7 +59,7 @@ describe('Delegates controller', () => {
 
   describe('GET delegates for a Safe', () => {
     it('Success', async () => {
-      const safe = faker.finance.ethereumAddress();
+      const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
         .with('count', 2)
@@ -86,7 +87,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should return a validation error', async () => {
-      const safe = faker.finance.ethereumAddress();
+      const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
         .with('count', 2)
@@ -109,11 +110,14 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
-        .expect(500)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'boolean',
+          path: ['label'],
+          message: 'Expected string, received boolean',
         });
     });
 
@@ -179,13 +183,20 @@ describe('Delegates controller', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${faker.string.numeric()}/delegates/`)
         .send(omit(createDelegateDto, 'signature'))
-        .expect(400)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['signature'],
+          message: 'Required',
+        });
     });
 
-    it('Success with safe undefined', async () => {
+    it('Success with null safe', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
-      createDelegateDto.safe = undefined;
+      createDelegateDto.safe = null;
       const chain = chainBuilder().build();
       networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -354,7 +365,7 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Should get a validation error', async () => {
+    it('Should get a validation error if wrong signature type', async () => {
       const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
 
@@ -363,8 +374,35 @@ describe('Delegates controller', () => {
           `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
         .send({ ...deleteDelegateDto, signature: faker.number.int() })
-        .expect(400)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'number',
+          path: ['signature'],
+          message: 'Expected string, received number',
+        });
+    });
+
+    it('Should get a validation error if a required field is missing', async () => {
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+        )
+        .send(omit(deleteDelegateDto, 'delegator'))
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['delegator'],
+          message: 'Required',
+        });
     });
   });
 

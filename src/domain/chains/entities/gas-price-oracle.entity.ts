@@ -1,8 +1,4 @@
-import { GasPrice } from '@/domain/chains/entities/gas-price.entity';
+import { z } from 'zod';
+import { GasPriceOracleSchema } from '@/domain/chains/entities/schemas/chain.schema';
 
-export interface GasPriceOracle extends GasPrice {
-  type: 'oracle';
-  uri: string;
-  gasParameter: string;
-  gweiFactor: string;
-}
+export type GasPriceOracle = z.infer<typeof GasPriceOracleSchema>;
