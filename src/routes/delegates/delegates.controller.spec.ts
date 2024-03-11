@@ -190,9 +190,9 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Success with safe undefined', async () => {
+    it('Success with null safe', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
-      createDelegateDto.safe = undefined;
+      createDelegateDto.safe = null;
       const chain = chainBuilder().build();
       networkService.get.mockImplementation((url) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
@@ -361,7 +361,7 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Should get a validation error', async () => {
+    it('Should get a validation error if wrong signature type', async () => {
       const deleteDelegateDto = deleteDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
 
@@ -370,8 +370,35 @@ describe('Delegates controller', () => {
           `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
         )
         .send({ ...deleteDelegateDto, signature: faker.number.int() })
-        .expect(400)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'number',
+          path: ['signature'],
+          message: 'Expected string, received number',
+        });
+    });
+
+    it('Should get a validation error if a required field is missing', async () => {
+      const deleteDelegateDto = deleteDelegateDtoBuilder().build();
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/delegates/${deleteDelegateDto.delegate}`,
+        )
+        .send(omit(deleteDelegateDto, 'delegator'))
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['delegator'],
+          message: 'Required',
+        });
     });
   });
 
