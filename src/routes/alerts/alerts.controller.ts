@@ -9,11 +9,12 @@ import {
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Alert } from '@/routes/alerts/entities/alert.dto.entity';
-import { AlertValidationPipe } from '@/routes/alerts/pipes/alert-validation.pipe';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AlertsService } from '@/routes/alerts/alerts.service';
 import { AlertsRouteGuard } from '@/routes/alerts/guards/alerts-route.guard';
 import { TenderlySignatureGuard } from '@/routes/alerts/guards/tenderly-signature.guard';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { AlertSchema } from '@/routes/alerts/entities/schemas/alerts.schema';
 
 @Controller({
   path: '/alerts',
@@ -37,7 +38,7 @@ export class AlertsController {
   @Post()
   @HttpCode(202)
   async postAlert(
-    @Body(AlertValidationPipe)
+    @Body(new ValidationPipe(AlertSchema))
     alertPayload: Alert,
   ): Promise<void> {
     // TODO: we return immediately but we should consider a pub/sub system to tackle received alerts

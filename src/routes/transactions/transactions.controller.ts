@@ -31,7 +31,7 @@ import { TransactionDetails } from '@/routes/transactions/entities/transaction-d
 import { TransactionItemPage } from '@/routes/transactions/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
-import { AddConfirmationDtoValidationPipe } from '@/routes/transactions/pipes/add-confirmation.validation.pipe';
+import { AddConfirmationDtoSchema } from '@/routes/transactions/entities/schemas/add-confirmation.dto.schema';
 import { PreviewTransactionDtoValidationPipe } from '@/routes/transactions/pipes/preview-transaction.validation.pipe';
 import { ProposeTransactionDtoValidationPipe } from '@/routes/transactions/pipes/propose-transaction.dto.validation.pipe';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
@@ -138,7 +138,7 @@ export class TransactionsController {
   async addConfirmation(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
-    @Body(AddConfirmationDtoValidationPipe)
+    @Body(new ValidationPipe(AddConfirmationDtoSchema))
     addConfirmationDto: AddConfirmationDto,
   ): Promise<TransactionDetails> {
     return this.transactionsService.addConfirmation({
