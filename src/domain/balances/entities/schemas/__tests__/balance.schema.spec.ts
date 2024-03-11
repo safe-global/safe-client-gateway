@@ -177,7 +177,7 @@ describe('Balances schema', () => {
           {
             code: 'invalid_union',
             unionErrors: [
-              // @ts-expect-error - inferred types don't allow optional fields
+              // @ts-expect-error - unionError is missing some properties (zod-based error)
               {
                 issues: [
                   {
@@ -190,7 +190,7 @@ describe('Balances schema', () => {
                 ],
                 name: 'ZodError',
               },
-              // @ts-expect-error - inferred types don't allow optional fields
+              // @ts-expect-error - unionError is missing some properties (zod-based error)
               {
                 issues: [
                   {
@@ -250,7 +250,7 @@ describe('Balances schema', () => {
           {
             code: 'invalid_union',
             unionErrors: [
-              // @ts-expect-error - inferred types don't allow optional fields
+              // @ts-expect-error - unionError is missing some properties (zod-based error)
               {
                 issues: [
                   {
@@ -263,7 +263,7 @@ describe('Balances schema', () => {
                 ],
                 name: 'ZodError',
               },
-              // @ts-expect-error - inferred types don't allow optional fields
+              // @ts-expect-error - unionError is missing some properties (zod-based error)
               {
                 issues: [
                   {
