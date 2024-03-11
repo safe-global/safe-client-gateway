@@ -18,16 +18,16 @@ export class FetchNetworkService implements INetworkService {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  async get<T>(
-    baseUrl: string,
-    { params, ...options }: NetworkRequest = {},
-  ): Promise<NetworkResponse<T>> {
-    const url = this.buildUrl(baseUrl, params);
+  async get<T>(args: {
+    url: string;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    const url = this.buildUrl(args.url, args.networkRequest?.params);
     const startTimeMs = performance.now();
     try {
       return await this.client<T>(url, {
         method: 'GET',
-        ...options,
+        headers: args.networkRequest?.headers,
       });
     } catch (error) {
       this.logErrorResponse(error, performance.now() - startTimeMs);
@@ -35,20 +35,20 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  async post<T>(
-    baseUrl: string,
-    data: object,
-    { params, headers }: NetworkRequest = {},
-  ): Promise<NetworkResponse<T>> {
-    const url = this.buildUrl(baseUrl, params);
+  async post<T>(args: {
+    url: string;
+    data: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    const url = this.buildUrl(args.url, args.networkRequest?.params);
     const startTimeMs = performance.now();
     try {
       return await this.client<T>(url, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(args.data),
         headers: {
           'Content-Type': 'application/json',
-          ...headers,
+          ...(args.networkRequest?.headers ?? {}),
         },
       });
     } catch (error) {
@@ -57,15 +57,17 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  async delete<T>(
-    baseUrl: string,
-    data?: object,
-    { params, headers }: NetworkRequest = {},
-  ): Promise<NetworkResponse<T>> {
-    const url = this.buildUrl(baseUrl, params);
+  async delete<T>(args: {
+    url: string;
+    data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    const url = this.buildUrl(args.url, args.networkRequest?.params);
     const startTimeMs = performance.now();
 
-    if (data) {
+    let headers = args.networkRequest?.headers;
+
+    if (args.data) {
       headers ??= {};
       headers['Content-Type'] = 'application/json';
     }
@@ -73,8 +75,8 @@ export class FetchNetworkService implements INetworkService {
     try {
       return await this.client<T>(url, {
         method: 'DELETE',
-        ...(data && {
-          body: JSON.stringify(data),
+        ...(args.data && {
+          body: JSON.stringify(args.data),
         }),
         headers,
       });

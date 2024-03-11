@@ -32,6 +32,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { getAddress } from 'viem';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -113,10 +114,10 @@ export class ZerionBalancesApi implements IBalancesApi {
           sort: 'value',
         },
       };
-      const { data } = await this.networkService.get<ZerionBalances>(
+      const { data } = await this.networkService.get<ZerionBalances>({
         url,
         networkRequest,
-      );
+      });
       await this.cacheService.set(
         cacheDir,
         JSON.stringify(data.data),
@@ -168,10 +169,10 @@ export class ZerionBalancesApi implements IBalancesApi {
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
         };
-        const { data } = await this.networkService.get<ZerionCollectibles>(
+        const { data } = await this.networkService.get<ZerionCollectibles>({
           url,
           networkRequest,
-        );
+        });
         await this.cacheService.set(
           cacheDir,
           JSON.stringify(data),
@@ -230,7 +231,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Erc20Balance {
     const { fungible_info, quantity } = zerionBalanceAttributes;
     return {
-      tokenAddress,
+      tokenAddress: getAddress(tokenAddress),
       token: {
         name: fungible_info.name ?? '',
         symbol: fungible_info.symbol ?? '',
@@ -287,7 +288,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Collectible[] {
     return zerionCollectibles.map(
       ({ attributes: { nft_info, collection_info } }) => ({
-        address: nft_info.contract_address,
+        address: getAddress(nft_info.contract_address),
         tokenName: nft_info.name ?? '',
         tokenSymbol: nft_info.name ?? '',
         logoUri: collection_info?.content?.icon.url ?? '',

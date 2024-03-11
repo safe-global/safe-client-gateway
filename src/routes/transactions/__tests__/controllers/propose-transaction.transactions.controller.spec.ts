@@ -86,7 +86,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();
     const gasToken = tokenBuilder().build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -119,7 +119,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       switch (url) {
         case proposeTransactionUrl:

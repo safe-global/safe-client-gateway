@@ -68,7 +68,7 @@ describe('Safes Controller Nonces (Unit)', () => {
       )
       .build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -105,7 +105,7 @@ describe('Safes Controller Nonces (Unit)', () => {
       )
       .build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -134,7 +134,7 @@ describe('Safes Controller Nonces (Unit)', () => {
     const safeInfo = safeBuilder().build();
     const multisigTransactionsPage = pageBuilder().with('results', []).build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });

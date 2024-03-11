@@ -45,25 +45,29 @@ export class PushwooshApi implements IEmailApi {
   ): Promise<void> {
     try {
       const url = `${this.baseUri}/json/1.3/createEmailMessage`;
-      await this.networkService.post(url, {
-        request: {
-          application: this.applicationCode, // application code, should exist on Pushwoosh
-          auth: this.apiKey,
-          notifications: [
-            {
-              send_date: 'now',
-              email_template: createEmailMessageDto.template, // template code, should exist on Pushwoosh
-              devices: createEmailMessageDto.to,
-              use_auto_registration: true, // auto-register email addresses while sending
-              subject: [{ default: createEmailMessageDto.subject }],
-              dynamic_content_placeholders: createEmailMessageDto.substitutions, // key-value template substitutions
-              from: { name: this.fromName, email: this.fromEmail },
-              // optional unique identifier to avoid messages duplication
-              ...(createEmailMessageDto.emailMessageId && {
-                transactionId: createEmailMessageDto.emailMessageId,
-              }),
-            },
-          ],
+      await this.networkService.post({
+        url,
+        data: {
+          request: {
+            application: this.applicationCode, // application code, should exist on Pushwoosh
+            auth: this.apiKey,
+            notifications: [
+              {
+                send_date: 'now',
+                email_template: createEmailMessageDto.template, // template code, should exist on Pushwoosh
+                devices: createEmailMessageDto.to,
+                use_auto_registration: true, // auto-register email addresses while sending
+                subject: [{ default: createEmailMessageDto.subject }],
+                dynamic_content_placeholders:
+                  createEmailMessageDto.substitutions, // key-value template substitutions
+                from: { name: this.fromName, email: this.fromEmail },
+                // optional unique identifier to avoid messages duplication
+                ...(createEmailMessageDto.emailMessageId && {
+                  transactionId: createEmailMessageDto.emailMessageId,
+                }),
+              },
+            ],
+          },
         },
       });
     } catch (error) {
@@ -74,10 +78,13 @@ export class PushwooshApi implements IEmailApi {
   async deleteEmailAddress(args: { emailAddress: string }): Promise<void> {
     try {
       const url = `${this.baseUri}/json/1.3/deleteEmail`;
-      await this.networkService.post(url, {
-        request: {
-          application: this.applicationCode,
-          email: args.emailAddress,
+      await this.networkService.post({
+        url,
+        data: {
+          request: {
+            application: this.applicationCode,
+            email: args.emailAddress,
+          },
         },
       });
     } catch (error) {

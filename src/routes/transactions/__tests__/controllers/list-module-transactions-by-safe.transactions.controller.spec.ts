@@ -78,10 +78,9 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       });
 
     expect(networkService.get).toHaveBeenCalledTimes(1);
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${safeConfigUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
+    });
   });
 
   it('Failure: Transaction API fails', async () => {
@@ -109,10 +108,9 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       });
 
     expect(networkService.get).toHaveBeenCalledTimes(2);
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${safeConfigUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
+    });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -161,10 +159,9 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       });
 
     expect(networkService.get).toHaveBeenCalledTimes(2);
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${safeConfigUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
+    });
   });
 
   it('Get module transaction successfully', async () => {

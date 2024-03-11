@@ -1,12 +1,4 @@
-export interface Collectible {
-  address: string;
-  tokenName: string;
-  tokenSymbol: string;
-  logoUri: string;
-  id: string;
-  uri: string | null;
-  name: string | null;
-  description: string | null;
-  imageUri: string | null;
-  metadata: Record<string, unknown> | null;
-}
+import { CollectibleSchema } from '@/domain/collectibles/entities/schemas/collectible.schema';
+import { z } from 'zod';
+
+export type Collectible = z.infer<typeof CollectibleSchema>;

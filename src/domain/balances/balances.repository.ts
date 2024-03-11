@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { BalancesValidator } from '@/domain/balances/balances.validator';
+import { BalanceSchema } from '@/domain/balances/entities/schemas/balance.schema';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 
 @Injectable()
@@ -9,7 +9,6 @@ export class BalancesRepository implements IBalancesRepository {
   constructor(
     @Inject(IBalancesApiManager)
     private readonly balancesApiManager: IBalancesApiManager,
-    private readonly balancesValidator: BalancesValidator,
   ) {}
 
   async getBalances(args: {
@@ -21,7 +20,7 @@ export class BalancesRepository implements IBalancesRepository {
   }): Promise<Balance[]> {
     const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     const balances = await api.getBalances(args);
-    return balances.map((balance) => this.balancesValidator.validate(balance));
+    return balances.map((balance) => BalanceSchema.parse(balance));
   }
 
   async clearBalances(args: {

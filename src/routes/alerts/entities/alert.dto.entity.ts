@@ -1,16 +1,25 @@
-export class AlertLog {
-  address!: string;
+import {
+  AlertLogSchema,
+  AlertSchema,
+  AlertTransactionSchema,
+} from '@/routes/alerts/entities/schemas/alerts.schema';
+import { z } from 'zod';
+
+export class AlertLog implements z.infer<typeof AlertLogSchema> {
+  address!: `0x${string}`;
   topics!: Array<string>;
   data!: string;
 }
 
-export class AlertTransaction {
+export class AlertTransaction
+  implements z.infer<typeof AlertTransactionSchema>
+{
   network!: string;
   block_hash!: string;
   block_number!: number;
   hash!: string;
-  from!: string;
-  to!: string;
+  from!: `0x${string}`;
+  to!: `0x${string}`;
   logs!: Array<AlertLog>;
   input!: string;
   value!: string;
@@ -28,7 +37,7 @@ export enum EventType {
   TEST = 'TEST',
 }
 
-export class Alert {
+export class Alert implements z.infer<typeof AlertSchema> {
   id!: string;
   event_type!: EventType;
   transaction!: AlertTransaction;
