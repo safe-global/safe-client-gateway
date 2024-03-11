@@ -30,6 +30,7 @@ import {
   zerionFlagsBuilder,
   zerionBalancesBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
+import { getAddress } from 'viem';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -202,7 +203,11 @@ describe('Balances Controller (Unit)', () => {
                 {
                   tokenInfo: {
                     type: 'ERC20',
-                    address: erc20TokenFungibleInfo.implementations[0].address,
+                    address: erc20TokenFungibleInfo.implementations[0].address
+                      ? getAddress(
+                          erc20TokenFungibleInfo.implementations[0].address,
+                        )
+                      : erc20TokenFungibleInfo.implementations[0].address,
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,
@@ -345,7 +350,11 @@ describe('Balances Controller (Unit)', () => {
                 {
                   tokenInfo: {
                     type: 'ERC20',
-                    address: erc20TokenFungibleInfo.implementations[0].address,
+                    address: erc20TokenFungibleInfo.implementations[0].address
+                      ? getAddress(
+                          erc20TokenFungibleInfo.implementations[0].address,
+                        )
+                      : erc20TokenFungibleInfo.implementations[0].address,
                     decimals: 15,
                     symbol: erc20TokenFungibleInfo.symbol,
                     name: erc20TokenFungibleInfo.name,

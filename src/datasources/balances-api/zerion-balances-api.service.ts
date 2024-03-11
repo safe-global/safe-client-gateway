@@ -32,6 +32,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { getAddress } from 'viem';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -230,7 +231,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Erc20Balance {
     const { fungible_info, quantity } = zerionBalanceAttributes;
     return {
-      tokenAddress,
+      tokenAddress: getAddress(tokenAddress),
       token: {
         name: fungible_info.name ?? '',
         symbol: fungible_info.symbol ?? '',
