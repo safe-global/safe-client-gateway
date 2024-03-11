@@ -5,7 +5,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
-  receiver: AddressSchema.optional().nullable().default(null),
+  receiver: AddressSchema.nullish().default(null),
   sellAmount: NumericStringSchema,
   buyAmount: NumericStringSchema,
   validTo: z.number(),
@@ -26,12 +26,9 @@ export const OrderSchema = z.object({
     z.literal('eip1271'),
   ]),
   signature: z.string(),
-  from: AddressSchema.optional().nullable().default(null),
-  quoteId: z.number().optional().nullable().default(null),
-  creationDate: z
-    .string()
-    .datetime()
-    .transform((arg) => new Date(arg)),
+  from: AddressSchema.nullish().default(null),
+  quoteId: z.number().nullish().default(null),
+  creationDate: z.coerce.date(),
   class: z.union([
     z.literal('market'),
     z.literal('limit'),
@@ -39,7 +36,7 @@ export const OrderSchema = z.object({
   ]),
   owner: AddressSchema,
   uid: z.string(),
-  availableBalance: NumericStringSchema.optional().nullable().default(null),
+  availableBalance: NumericStringSchema.nullish().default(null),
   executedSellAmount: NumericStringSchema,
   executedSellAmountBeforeFees: NumericStringSchema,
   executedBuyAmount: NumericStringSchema,
@@ -56,13 +53,12 @@ export const OrderSchema = z.object({
   isLiquidityOrder: z.boolean(),
   ethflowData: z
     .object({
-      refundTxHash: z.string().optional().nullable().default(null),
+      refundTxHash: z.string().nullish().default(null),
       userValidTo: z.number(),
     })
-    .optional()
-    .nullable()
+    .nullish()
     .default(null),
-  onchainUser: AddressSchema.optional().nullable().default(null),
+  onchainUser: AddressSchema.nullish().default(null),
   onchainOrderData: z
     .object({
       sender: AddressSchema,
@@ -72,13 +68,11 @@ export const OrderSchema = z.object({
           z.literal('ValidToTooFarInFuture'),
           z.literal('PreValidationError'),
         ])
-        .optional()
-        .nullable()
+        .nullish()
         .default(null),
     })
-    .optional()
-    .nullable()
+    .nullish()
     .default(null),
-  executedSurplusFee: NumericStringSchema.optional().nullable().default(null),
-  fullAppData: z.string().optional().nullable().default(null),
+  executedSurplusFee: NumericStringSchema.nullish().default(null),
+  fullAppData: z.string().nullish().default(null),
 });
