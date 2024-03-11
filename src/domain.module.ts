@@ -18,7 +18,6 @@ import { SafeValidator } from '@/domain/safe/safe.validator';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { ContractsValidator } from '@/domain/contracts/contracts.validator';
-import { DelegateValidator } from '@/domain/delegate/delegate.validator';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from '@/domain/delegate/delegate.repository';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
@@ -82,7 +81,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     ContractsValidator,
     CreationTransactionValidator,
     DataDecodedValidator,
-    DelegateValidator,
     EstimationsValidator,
     SingletonValidator,
     MessageValidator,
