@@ -7,11 +7,11 @@ export const CollectibleSchema = z.object({
   tokenSymbol: z.string(),
   logoUri: z.string(),
   id: z.string(),
-  // AJV remnant - do not use format: 'uri' as it fails on some payloads that should be considered valid
+  // Don't enforce URL validation as some payloads otherwise fail
   uri: z.string().nullish().default(null),
   name: z.string().nullish().default(null),
   description: z.string().nullish().default(null),
-  // AJV remnant - do not use format: 'uri' as it fails on some payloads that should be considered valid
+  // Don't enforce URL validation as some payloads otherwise fail
   imageUri: z.string().nullish().default(null),
   metadata: z.record(z.unknown()).nullish().default(null),
 });
