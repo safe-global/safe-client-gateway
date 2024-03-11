@@ -23,7 +23,6 @@ import { messageBuilder } from '@/domain/messages/entities/__tests__/message.bui
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
-import { getAddress } from 'viem';
 
 const dataSource = {
   get: jest.fn(),
@@ -474,11 +473,9 @@ describe('TransactionApi', () => {
       });
 
       await service.postDelegate({
-        safeAddress: getAddress(delegate.safe!),
-        delegate: getAddress(delegate.delegate),
-        delegator: getAddress(delegate.delegator),
+        ...delegate,
+        safeAddress: delegate.safe!,
         signature,
-        label: delegate.label,
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
@@ -512,11 +509,9 @@ describe('TransactionApi', () => {
 
       await expect(
         service.postDelegate({
-          safeAddress: getAddress(delegate.safe!),
-          delegate: getAddress(delegate.delegate),
-          delegator: getAddress(delegate.delegator),
+          ...delegate,
+          safeAddress: delegate.safe!,
           signature,
-          label: delegate.label,
         }),
       ).rejects.toThrow(expected);
 
