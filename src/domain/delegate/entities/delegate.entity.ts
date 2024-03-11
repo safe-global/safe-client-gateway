@@ -1,6 +1,4 @@
-export interface Delegate {
-  safe: string | null;
-  delegate: string;
-  delegator: string;
-  label: string;
-}
+import { DelegateSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
+import { z } from 'zod';
+
+export type Delegate = z.infer<typeof DelegateSchema>;

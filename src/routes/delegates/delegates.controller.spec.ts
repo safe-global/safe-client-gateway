@@ -26,6 +26,7 @@ import { deleteSafeDelegateDtoBuilder } from '@/routes/delegates/entities/__test
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Delegates controller', () => {
   let app: INestApplication;
@@ -58,7 +59,7 @@ describe('Delegates controller', () => {
 
   describe('GET delegates for a Safe', () => {
     it('Success', async () => {
-      const safe = faker.finance.ethereumAddress();
+      const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
         .with('count', 2)
@@ -86,7 +87,7 @@ describe('Delegates controller', () => {
     });
 
     it('Should return a validation error', async () => {
-      const safe = faker.finance.ethereumAddress();
+      const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
         .with('count', 2)
@@ -109,11 +110,14 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
-        .expect(500)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'boolean',
+          path: ['label'],
+          message: 'Expected string, received boolean',
         });
     });
 
