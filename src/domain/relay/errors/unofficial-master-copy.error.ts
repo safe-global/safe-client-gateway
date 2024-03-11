@@ -1,10 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { UnprocessableEntityException } from '@nestjs/common';
 
-export class UnofficialMasterCopyError extends HttpException {
+export class UnofficialMasterCopyError extends UnprocessableEntityException {
   constructor() {
     super(
       'Safe attempting to relay is not official. Only official Safe singletons are supported.',
-      HttpStatus.UNPROCESSABLE_ENTITY,
     );
   }
 }

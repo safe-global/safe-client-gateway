@@ -1,10 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { UnprocessableEntityException } from '@nestjs/common';
 
-export class UnofficialProxyFactoryError extends HttpException {
+export class UnofficialProxyFactoryError extends UnprocessableEntityException {
   constructor() {
     super(
       'ProxyFactory contract is not official. Only official ProxyFactory contracts are supported.',
-      HttpStatus.UNPROCESSABLE_ENTITY,
     );
   }
 }

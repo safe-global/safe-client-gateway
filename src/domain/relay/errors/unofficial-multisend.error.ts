@@ -1,10 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { UnprocessableEntityException } from '@nestjs/common';
 
-export class UnofficialMultiSendError extends HttpException {
+export class UnofficialMultiSendError extends UnprocessableEntityException {
   constructor() {
     super(
       'MultiSend contract is not official. Only official MultiSend contracts are supported.',
-      HttpStatus.UNPROCESSABLE_ENTITY,
     );
   }
 }
