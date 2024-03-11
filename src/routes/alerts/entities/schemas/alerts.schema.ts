@@ -1,82 +1,34 @@
-import { JSONSchemaType } from 'ajv';
-import {
-  AlertLog,
-  AlertTransaction,
-  Alert,
-  EventType,
-} from '@/routes/alerts/entities/alert.dto.entity';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const ALERT_LOGS_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/alerts/alert-logs.json';
+export const AlertLogSchema = z.object({
+  address: AddressSchema,
+  topics: z.array(z.string()),
+  data: z.string(),
+});
 
-export const alertLogsSchema: JSONSchemaType<Array<AlertLog>> = {
-  $id: ALERT_LOGS_SCHEMA_ID,
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      address: { type: 'string' },
-      topics: { type: 'array', items: { type: 'string' } },
-      data: { type: 'string' },
-    },
-    required: ['address', 'topics', 'data'],
-  },
-};
+export const AlertTransactionSchema = z.object({
+  network: z.string(),
+  block_hash: z.string(),
+  block_number: z.number(),
+  hash: z.string(),
+  from: AddressSchema,
+  to: AddressSchema,
+  logs: z.array(AlertLogSchema),
+  input: z.string(),
+  value: z.string(),
+  nonce: z.string(),
+  gas: z.string(),
+  gas_used: z.string(),
+  cumulative_gas_used: z.string(),
+  gas_price: z.string(),
+  gas_tip_cap: z.string(),
+  gas_fee_cap: z.string(),
+});
 
-export const ALERT_TRANSACTION_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/alerts/alert-transaction.json';
-
-export const alertTransactionSchema: JSONSchemaType<AlertTransaction> = {
-  $id: ALERT_TRANSACTION_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    network: { type: 'string' },
-    block_hash: { type: 'string' },
-    block_number: { type: 'number' },
-    hash: { type: 'string' },
-    from: { type: 'string' },
-    to: { type: 'string' },
-    logs: { $ref: 'alert-logs.json' },
-    input: { type: 'string' },
-    value: { type: 'string' },
-    nonce: { type: 'string' },
-    gas: { type: 'string' },
-    gas_used: { type: 'string' },
-    cumulative_gas_used: { type: 'string' },
-    gas_price: { type: 'string' },
-    gas_tip_cap: { type: 'string' },
-    gas_fee_cap: { type: 'string' },
-  },
-  required: [
-    'network',
-    'block_hash',
-    'block_number',
-    'hash',
-    'from',
-    'to',
-    'logs',
-    'input',
-    'value',
-    'nonce',
-    'gas',
-    'gas_used',
-    'cumulative_gas_used',
-    'gas_price',
-    'gas_tip_cap',
-    'gas_fee_cap',
-  ],
-};
-
-export const ALERT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/alerts/alert.json';
-
-export const alertSchema: JSONSchemaType<Alert> = {
-  $id: ALERT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    id: { type: 'string' },
-    event_type: { type: 'string', enum: Object.values(EventType) },
-    transaction: { $ref: 'alert-transaction.json' },
-  },
-  required: ['id', 'event_type', 'transaction'],
-};
+export const AlertSchema = z.object({
+  id: z.string(),
+  event_type: z.nativeEnum(EventType),
+  transaction: AlertTransactionSchema,
+});
