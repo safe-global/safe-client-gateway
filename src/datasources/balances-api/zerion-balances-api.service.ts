@@ -288,7 +288,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Collectible[] {
     return zerionCollectibles.map(
       ({ attributes: { nft_info, collection_info } }) => ({
-        address: nft_info.contract_address,
+        address: getAddress(nft_info.contract_address),
         tokenName: nft_info.name ?? '',
         tokenSymbol: nft_info.name ?? '',
         logoUri: collection_info?.content?.icon.url ?? '',
