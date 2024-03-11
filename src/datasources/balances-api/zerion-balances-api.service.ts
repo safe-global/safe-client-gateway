@@ -114,10 +114,10 @@ export class ZerionBalancesApi implements IBalancesApi {
           sort: 'value',
         },
       };
-      const { data } = await this.networkService.get<ZerionBalances>(
+      const { data } = await this.networkService.get<ZerionBalances>({
         url,
         networkRequest,
-      );
+      });
       await this.cacheService.set(
         cacheDir,
         JSON.stringify(data.data),
@@ -169,10 +169,10 @@ export class ZerionBalancesApi implements IBalancesApi {
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
         };
-        const { data } = await this.networkService.get<ZerionCollectibles>(
+        const { data } = await this.networkService.get<ZerionCollectibles>({
           url,
           networkRequest,
-        );
+        });
         await this.cacheService.set(
           cacheDir,
           JSON.stringify(data),

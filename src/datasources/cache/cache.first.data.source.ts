@@ -99,10 +99,10 @@ export class CacheFirstDataSource {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: 'cache_miss', key, field });
     const startTimeMs = Date.now();
-    const { data } = await this.networkService.get<T>(
-      args.url,
-      args.networkRequest,
-    );
+    const { data } = await this.networkService.get<T>({
+      url: args.url,
+      networkRequest: args.networkRequest,
+    });
 
     const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
     if (shouldBeCached) {

@@ -88,7 +88,7 @@ describe('Locking (Unit)', () => {
         .with('previous', null)
         .with('next', null)
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
@@ -134,7 +134,7 @@ describe('Locking (Unit)', () => {
         .with('previous', null)
         .with('next', null)
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
@@ -162,7 +162,7 @@ describe('Locking (Unit)', () => {
         types: ['clientError', 'serverError'],
       });
       const errorMessage = faker.word.words();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.reject(

@@ -40,10 +40,13 @@ export class LockingApi implements ILockingApi {
   }): Promise<Page<LockingEvent>> {
     try {
       const url = `${this.baseUri}/api/v1/all-events/${args.safeAddress}`;
-      const { data } = await this.networkService.get<Page<LockingEvent>>(url, {
-        params: {
-          limit: args.limit,
-          offset: args.offset,
+      const { data } = await this.networkService.get<Page<LockingEvent>>({
+        url,
+        networkRequest: {
+          params: {
+            limit: args.limit,
+            offset: args.offset,
+          },
         },
       });
       return data;

@@ -91,7 +91,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         .build(),
     ];
     const rejectionTxsPage = pageBuilder().with('results', []).build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -123,7 +123,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       switch (url) {
         case postConfirmationUrl:

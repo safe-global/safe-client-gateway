@@ -261,16 +261,19 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<AssetPrice> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<AssetPrice>(url, {
-        params: {
-          vs_currencies: args.fiatCode,
-          contract_addresses: args.tokenAddresses.join(','),
-        },
-        ...(this.apiKey && {
-          headers: {
-            [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+      const { data } = await this.networkService.get<AssetPrice>({
+        url,
+        networkRequest: {
+          params: {
+            vs_currencies: args.fiatCode,
+            contract_addresses: args.tokenAddresses.join(','),
           },
-        }),
+          ...(this.apiKey && {
+            headers: {
+              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+            },
+          }),
+        },
       });
       return data;
     } catch (error) {

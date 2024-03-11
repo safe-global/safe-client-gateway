@@ -68,15 +68,15 @@ describe('GelatoApi', () => {
         gasLimit: null,
       });
 
-      expect(mockNetworkService.post).toHaveBeenCalledWith(
-        `${baseUri}/relays/v2/sponsored-call`,
-        {
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${baseUri}/relays/v2/sponsored-call`,
+        data: {
           sponsorApiKey: apiKey,
           chainId,
           target: address,
           data,
         },
-      );
+      });
     });
 
     it('should add a gas buffer if a gas limit is provided', async () => {
@@ -101,16 +101,16 @@ describe('GelatoApi', () => {
         gasLimit,
       });
 
-      expect(mockNetworkService.post).toHaveBeenCalledWith(
-        `${baseUri}/relays/v2/sponsored-call`,
-        {
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${baseUri}/relays/v2/sponsored-call`,
+        data: {
           sponsorApiKey: apiKey,
           chainId,
           target: address,
           data,
           gasLimit: (gasLimit + BigInt(150_000)).toString(),
         },
-      );
+      });
     });
 
     it('should throw if there is no API key preset', async () => {

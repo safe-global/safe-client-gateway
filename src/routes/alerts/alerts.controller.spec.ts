@@ -201,7 +201,7 @@ describe('Alerts (Unit)', () => {
             subscriptionBuilder().with('key', 'account_recovery').build(),
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -309,7 +309,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -416,7 +416,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -513,7 +513,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -641,7 +641,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -741,7 +741,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -863,7 +863,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -971,7 +971,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1055,7 +1055,7 @@ describe('Alerts (Unit)', () => {
             accountRecoverySubscription,
           ]);
 
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1182,7 +1182,7 @@ describe('Alerts (Unit)', () => {
           accountRecoverySubscription,
         ]);
 
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -1296,7 +1296,7 @@ describe('Alerts (Unit)', () => {
           accountRecoverySubscription,
         ]);
 
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -1399,7 +1399,7 @@ describe('Alerts (Unit)', () => {
           accountRecoverySubscription,
         ]);
 
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -1508,7 +1508,7 @@ describe('Alerts (Unit)', () => {
           subscriptionBuilder().build(),
         ]);
 
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });

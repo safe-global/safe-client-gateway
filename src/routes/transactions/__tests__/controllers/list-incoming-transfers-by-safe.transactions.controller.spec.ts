@@ -90,10 +90,9 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       });
 
     expect(networkService.get).toHaveBeenCalledTimes(1);
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${safeConfigUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
+    });
   });
 
   it('Failure: Transaction API fails', async () => {
@@ -125,16 +124,15 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       });
 
     expect(networkService.get).toHaveBeenCalledTimes(2);
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${safeConfigUrl}/api/v1/chains/${chainId}`,
-      undefined,
-    );
-    expect(networkService.get).toHaveBeenCalledWith(
-      `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`,
-      expect.objectContaining({
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
+    });
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`,
+      networkRequest: expect.objectContaining({
         params: expect.objectContaining({ offset, limit }),
       }),
-    );
+    });
   });
 
   it('Failure: data validation fails', async () => {
@@ -196,7 +194,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('address', erc20Transfer.tokenAddress)
       .with('trusted', true)
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -280,7 +278,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('address', erc20Transfer.tokenAddress)
       .with('trusted', trusted)
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -363,7 +361,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('address', erc20Transfer.tokenAddress)
       .with('trusted', false)
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -416,7 +414,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('type', TokenType.Erc721)
       .with('address', erc721Transfer.tokenAddress)
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -490,7 +488,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('value', faker.number.int({ min: 1 }).toString())
       .with('transferId', 'e1015fc690')
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;

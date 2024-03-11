@@ -73,10 +73,12 @@ export class TransactionApi implements ITransactionApi {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
       const { data: dataDecoded } = await this.networkService.post<DataDecoded>(
-        url,
         {
-          data: args.data,
-          to: args.to,
+          url,
+          data: {
+            data: args.data,
+            to: args.to,
+          },
         },
       );
       return dataDecoded;
@@ -208,12 +210,15 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
-      await this.networkService.post(url, {
-        safe: args.safeAddress,
-        delegate: args.delegate,
-        delegator: args.delegator,
-        signature: args.signature,
-        label: args.label,
+      await this.networkService.post({
+        url,
+        data: {
+          safe: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          label: args.label,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -227,10 +232,13 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/${args.delegate}`;
-      return await this.networkService.delete(url, {
-        delegate: args.delegate,
-        delegator: args.delegator,
-        signature: args.signature,
+      return await this.networkService.delete({
+        url,
+        data: {
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -244,10 +252,13 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}`;
-      return await this.networkService.delete(url, {
-        delegate: args.delegate,
-        safe: args.safeAddress,
-        signature: args.signature,
+      return await this.networkService.delete({
+        url,
+        data: {
+          delegate: args.delegate,
+          safe: args.safeAddress,
+          signature: args.signature,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -366,8 +377,11 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${args.safeTxHash}/confirmations/`;
-      return await this.networkService.post(url, {
-        signature: args.addConfirmationDto.signedSafeTxHash,
+      return await this.networkService.post({
+        url,
+        data: {
+          signature: args.addConfirmationDto.signedSafeTxHash,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -377,7 +391,7 @@ export class TransactionApi implements ITransactionApi {
   async getSafesByModule(moduleAddress: string): Promise<SafeList> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      const { data } = await this.networkService.get<SafeList>(url);
+      const { data } = await this.networkService.get<SafeList>({ url });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -527,8 +541,11 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/transactions/${args.safeTxHash}`;
-      await this.networkService.delete(url, {
-        signature: args.signature,
+      await this.networkService.delete({
+        url,
+        data: {
+          signature: args.signature,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -684,16 +701,19 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/`;
-      await this.networkService.post(url, {
-        uuid: args.device.uuid,
-        cloudMessagingToken: args.device.cloudMessagingToken,
-        buildNumber: args.device.buildNumber,
-        bundle: args.device.bundle,
-        deviceType: args.device.deviceType,
-        version: args.device.version,
-        timestamp: args.device.timestamp,
-        safes: args.safes,
-        signatures: args.signatures,
+      await this.networkService.post({
+        url,
+        data: {
+          uuid: args.device.uuid,
+          cloudMessagingToken: args.device.cloudMessagingToken,
+          buildNumber: args.device.buildNumber,
+          bundle: args.device.bundle,
+          deviceType: args.device.deviceType,
+          version: args.device.version,
+          timestamp: args.device.timestamp,
+          safes: args.safes,
+          signatures: args.signatures,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -703,7 +723,7 @@ export class TransactionApi implements ITransactionApi {
   async deleteDeviceRegistration(uuid: string): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}`;
-      await this.networkService.delete(url);
+      await this.networkService.delete({ url });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -715,7 +735,7 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${args.uuid}/safes/${args.safeAddress}`;
-      await this.networkService.delete(url);
+      await this.networkService.delete({ url });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -727,15 +747,15 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<Estimation> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.address}/multisig-transactions/estimations/`;
-      const { data: estimation } = await this.networkService.post<Estimation>(
+      const { data: estimation } = await this.networkService.post<Estimation>({
         url,
-        {
+        data: {
           to: args.getEstimationDto.to,
           value: args.getEstimationDto.value,
           data: args.getEstimationDto.data,
           operation: args.getEstimationDto.operation,
         },
-      );
+      });
       return estimation;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -794,21 +814,24 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.address}/multisig-transactions/`;
-      return await this.networkService.post(url, {
-        to: args.data.to,
-        value: args.data.value,
-        data: args.data.data,
-        operation: args.data.operation,
-        baseGas: args.data.baseGas,
-        gasPrice: args.data.gasPrice,
-        gasToken: args.data.gasToken,
-        refundReceiver: args.data.refundReceiver,
-        nonce: args.data.nonce,
-        safeTxGas: args.data.safeTxGas,
-        contractTransactionHash: args.data.safeTxHash,
-        sender: args.data.sender,
-        signature: args.data.signature,
-        origin: args.data.origin,
+      return await this.networkService.post({
+        url,
+        data: {
+          to: args.data.to,
+          value: args.data.value,
+          data: args.data.data,
+          operation: args.data.operation,
+          baseGas: args.data.baseGas,
+          gasPrice: args.data.gasPrice,
+          gasToken: args.data.gasToken,
+          refundReceiver: args.data.refundReceiver,
+          nonce: args.data.nonce,
+          safeTxGas: args.data.safeTxGas,
+          contractTransactionHash: args.data.safeTxHash,
+          sender: args.data.sender,
+          signature: args.data.signature,
+          origin: args.data.origin,
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -823,10 +846,13 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<Message> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
-      const { data } = await this.networkService.post<Message>(url, {
-        message: args.message,
-        safeAppId: args.safeAppId,
-        signature: args.signature,
+      const { data } = await this.networkService.post<Message>({
+        url,
+        data: {
+          message: args.message,
+          safeAppId: args.safeAppId,
+          signature: args.signature,
+        },
       });
       return data;
     } catch (error) {
@@ -840,8 +866,11 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/messages/${args.messageHash}/signatures/`;
-      const { data } = await this.networkService.post(url, {
-        signature: args.signature,
+      const { data } = await this.networkService.post({
+        url,
+        data: {
+          signature: args.signature,
+        },
       });
       return data;
     } catch (error) {

@@ -127,7 +127,7 @@ describe('Zerion Collectibles Controller', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
@@ -234,10 +234,12 @@ describe('Zerion Collectibles Controller', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(1);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -267,7 +269,7 @@ describe('Zerion Collectibles Controller', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
@@ -294,10 +296,12 @@ describe('Zerion Collectibles Controller', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(1);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -330,7 +334,7 @@ describe('Zerion Collectibles Controller', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
@@ -357,10 +361,12 @@ describe('Zerion Collectibles Controller', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(1);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -392,7 +398,7 @@ describe('Zerion Collectibles Controller', () => {
         const apiKey = app
           .get(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
@@ -419,10 +425,12 @@ describe('Zerion Collectibles Controller', () => {
           });
 
         expect(networkService.get.mock.calls.length).toBe(1);
-        expect(networkService.get.mock.calls[0][0]).toBe(
+        expect(networkService.get.mock.calls[0][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
-        expect(networkService.get.mock.calls[0][1]).toStrictEqual({
+        expect(
+          networkService.get.mock.calls[0][0].networkRequest,
+        ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
@@ -438,7 +446,7 @@ describe('Zerion Collectibles Controller', () => {
       it(`500 error response`, async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.reject(new Error('test error'));

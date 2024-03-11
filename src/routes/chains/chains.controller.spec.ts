@@ -137,15 +137,15 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
-      expect(networkService.get).toHaveBeenCalledWith(
-        `${safeConfigUrl}/api/v1/chains`,
-        {
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains`,
+        networkRequest: {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
             offset: PaginationData.DEFAULT_OFFSET,
           },
         },
-      );
+      });
     });
 
     it('Failure: network service fails', async () => {
@@ -163,15 +163,15 @@ describe('Chains Controller (Unit)', () => {
       });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
-      expect(networkService.get).toHaveBeenCalledWith(
-        `${safeConfigUrl}/api/v1/chains`,
-        {
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains`,
+        networkRequest: {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
             offset: PaginationData.DEFAULT_OFFSET,
           },
         },
-      );
+      });
     });
 
     it('Failure: received data is not valid', async () => {
@@ -196,15 +196,15 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
-      expect(networkService.get).toHaveBeenCalledWith(
-        `${safeConfigUrl}/api/v1/chains`,
-        {
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains`,
+        networkRequest: {
           params: {
             limit: PaginationData.DEFAULT_LIMIT,
             offset: PaginationData.DEFAULT_OFFSET,
           },
         },
-      );
+      });
     });
   });
 
@@ -303,13 +303,15 @@ describe('Chains Controller (Unit)', () => {
         .expect(backboneResponse);
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about`,
       );
-      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
+        undefined,
+      );
     });
 
     it('Validate the response', async () => {
@@ -336,13 +338,15 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about`,
       );
-      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
+        undefined,
+      );
     });
 
     it('Failure getting the chain', async () => {
@@ -363,10 +367,9 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
-      expect(networkService.get).toHaveBeenCalledWith(
-        `${safeConfigUrl}/api/v1/chains/1`,
-        undefined,
-      );
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains/1`,
+      });
     });
 
     it('Failure getting the backbone data', async () => {
@@ -391,13 +394,15 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about`,
       );
-      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
+        undefined,
+      );
     });
   });
 
@@ -432,13 +437,15 @@ describe('Chains Controller (Unit)', () => {
         .expect(masterCopiesResponse);
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
-      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
+        undefined,
+      );
     });
 
     it('Failure getting the chain', async () => {
@@ -459,10 +466,9 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
-      expect(networkService.get).toHaveBeenCalledWith(
-        `${safeConfigUrl}/api/v1/chains/1`,
-        undefined,
-      );
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains/1`,
+      });
     });
 
     it('Should fail getting the master-copies data', async () => {
@@ -487,13 +493,15 @@ describe('Chains Controller (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0]).toBe(
+      expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/1`,
       );
-      expect(networkService.get.mock.calls[1][0]).toBe(
+      expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about/singletons/`,
       );
-      expect(networkService.get.mock.calls[1][1]).toBe(undefined);
+      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
+        undefined,
+      );
     });
 
     it('Should return validation error', async () => {
