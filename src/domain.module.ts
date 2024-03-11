@@ -11,7 +11,6 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
-import { BackboneValidator } from '@/domain/backbone/backbone.validator';
 import { SingletonValidator } from '@/domain/chains/singleton.validator';
 import { SafeListValidator } from '@/domain/safe/safe-list.validator';
 import { SafeValidator } from '@/domain/safe/safe.validator';
@@ -78,7 +77,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    BackboneValidator,
     ContractsValidator,
     CreationTransactionValidator,
     DataDecodedValidator,
