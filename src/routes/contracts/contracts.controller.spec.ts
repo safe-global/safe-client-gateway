@@ -135,11 +135,14 @@ describe('Contracts controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/contracts/${contract.address}`)
-        .expect(500)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'boolean',
+          path: ['name'],
+          message: 'Expected string, received boolean',
         });
     });
   });
