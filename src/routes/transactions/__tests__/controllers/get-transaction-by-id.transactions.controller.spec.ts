@@ -9,7 +9,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { CALL_OPERATION } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
@@ -188,7 +188,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('safe', safe.address)
       .with('data', null)
       .with('value', '0xf')
-      .with('operation', CALL_OPERATION)
+      .with('operation', Operation.CALL)
       .with('isSuccessful', true)
       .build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -244,7 +244,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             value: moduleTransaction.value,
             hexData: moduleTransaction.data,
             dataDecoded: moduleTransaction.dataDecoded,
-            operation: CALL_OPERATION,
+            operation: Operation.CALL,
             addressInfoIndex: null,
             trustedDelegateCallTarget: null,
           },

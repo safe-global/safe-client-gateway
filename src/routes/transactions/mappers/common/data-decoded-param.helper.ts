@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { DELEGATE_OPERATION } from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()
 export class DataDecodedParamHelper {
@@ -73,7 +73,7 @@ export class DataDecodedParamHelper {
       (param) =>
         Array.isArray(param.valueDecoded) &&
         param.valueDecoded.some(
-          (innerParam) => innerParam?.operation === DELEGATE_OPERATION,
+          (innerParam) => innerParam?.operation === Operation.DELEGATE,
         ),
     );
   }
