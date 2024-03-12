@@ -38,9 +38,7 @@ export class HumanDescriptionTemplate {
 
     this.templateMatches = Array.from(
       template.matchAll(HumanDescriptionTemplate.REGEX),
-    ).filter((match): match is SafeRegExpMatchArray => {
-      return match.groups !== undefined;
-    });
+    ).filter((match) => match.groups !== undefined) as SafeRegExpMatchArray[];
   }
 
   /**
