@@ -60,17 +60,16 @@ export class EnableRecoveryAlertsGuard implements CanActivate {
     const message = `${EnableRecoveryAlertsGuard.ACTION_PREFIX}-${chainId}-${safeAddress}-${moduleAddress}-${signer}-${timestamp}`;
 
     try {
-      await verifyMessage({
+      const isValid = await verifyMessage({
         address: signer,
         message,
         signature,
       });
-    } catch (e) {
-      this.loggingService.debug(e);
-      return false;
-    }
 
-    try {
+      if (!isValid) {
+        return false;
+      }
+
       const { safes } = await this.safeRepository.getSafesByModule({
         chainId,
         moduleAddress,
