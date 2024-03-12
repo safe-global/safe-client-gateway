@@ -1,4 +1,8 @@
-import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
+import {
+  erc20ApproveEncoder,
+  erc20TransferEncoder,
+  erc20TransferFromEncoder,
+} from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -107,11 +111,49 @@ describe('LimitAddressesMapper', () => {
           });
 
           // transfer (execTransaction)
-          it('should return the limit when sending ERC-20 tokens to another party', async () => {
+          it('should return the limit when `trasfer`ing ERC-20 tokens to another party', async () => {
             const safe = safeBuilder().build();
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('data', erc20TransferEncoder().encode())
+              .encode() as Hex;
+            // Official mastercopy
+            mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+            const expectedLimitAddresses = await target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to: safeAddress,
+            });
+            expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+          });
+
+          // transferFrom (execTransaction)
+          it('should return the limit when `transferFrom`ing ERC-20 tokens to another party', async () => {
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with('data', erc20TransferFromEncoder().encode())
+              .encode() as Hex;
+            // Official mastercopy
+            mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+            const expectedLimitAddresses = await target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to: safeAddress,
+            });
+            expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+          });
+
+          // approve (execTransaction)
+          it('should return the limit when `approve`ing` ERC-20 tokens', async () => {
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with('data', erc20ApproveEncoder().encode())
               .encode() as Hex;
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
@@ -348,13 +390,68 @@ describe('LimitAddressesMapper', () => {
           });
 
           // transfer (execTransaction)
-          it('should throw when sending ERC-20 tokens to self', async () => {
+          it('should throw when `transfer`ing ERC-20 tokens to self', async () => {
             const safe = safeBuilder().build();
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with(
                 'data',
                 erc20TransferEncoder().with('to', safeAddress).encode(),
+              )
+              .encode() as Hex;
+            // Official mastercopy
+            mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+            await expect(
+              target.getLimitAddresses({
+                version,
+                chainId,
+                data,
+                to: safeAddress,
+              }),
+            ).rejects.toThrow(
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+            );
+          });
+
+          // transferFrom (execTransaction)
+          it('should throw when `transferFrom`ing ERC-20 tokens to self', async () => {
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with(
+                'data',
+                erc20TransferFromEncoder()
+                  .with('recipient', safeAddress)
+                  .encode(),
+              )
+              .encode() as Hex;
+            // Official mastercopy
+            mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+            await expect(
+              target.getLimitAddresses({
+                version,
+                chainId,
+                data,
+                to: safeAddress,
+              }),
+            ).rejects.toThrow(
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+            );
+          });
+
+          it('should throw when `transferFrom`ing ERC-20 tokens from sender to sender as recipient', async () => {
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const recipient = getAddress(faker.finance.ethereumAddress());
+            const data = execTransactionEncoder()
+              .with(
+                'data',
+                erc20TransferFromEncoder()
+                  .with('sender', recipient)
+                  .with('recipient', recipient)
+                  .encode(),
               )
               .encode() as Hex;
             // Official mastercopy

@@ -12,7 +12,7 @@ import {
   getProxyFactoryDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
-import { isAddress, isHex } from 'viem';
+import { getAddress, isAddress, isHex } from 'viem';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
@@ -134,16 +134,31 @@ export class LimitAddressesMapper {
       return false;
     }
 
-    // If data of execTransaction is an ERC20 transfer
+    // If data of execTransaction is of ERC20
     try {
       const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
         data: execTransaction.data,
       });
-      // If the ERC20 transfer targets 'self' (the Safe), we consider it to be invalid
-      return (
-        erc20DecodedData.functionName === 'transfer' &&
-        erc20DecodedData.args[0] !== args.to
-      );
+
+      // `transfer` to 'self' (the Safe) is not allowed
+      if (erc20DecodedData.functionName === 'transfer') {
+        const to = erc20DecodedData.args[0];
+        // TODO: Propagate checksummed address types from RelayDto from controller
+        return to !== getAddress(args.to);
+      }
+
+      // `transferFrom` to 'self' or from sender to sender as recipient is not allowed
+      if (erc20DecodedData.functionName === 'transferFrom') {
+        const [sender, recipient] = erc20DecodedData.args;
+        return (
+          sender !== recipient &&
+          // TODO: Propagate checksummed address types from RelayDto from controller
+          recipient !== getAddress(args.to)
+        );
+      }
+
+      // Otherwise allow other methods
+      return true;
     } catch {
       // swallow exception if data is not an ERC20 transfer
     }
