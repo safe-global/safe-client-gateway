@@ -11,29 +11,20 @@ export const OrderSchema = z.object({
   validTo: z.number(),
   appData: z.string(),
   feeAmount: NumericStringSchema,
-  kind: z.union([z.literal('buy'), z.literal('sell')]),
+  kind: z.enum(['buy', 'sell', 'unknown']).default('unknown'),
   partiallyFillable: z.boolean(),
-  sellTokenBalance: z.union([
-    z.literal('erc20'),
-    z.literal('internal'),
-    z.literal('external'),
-  ]),
-  buyTokenBalance: z.union([z.literal('erc20'), z.literal('internal')]),
-  signingScheme: z.union([
-    z.literal('eip712'),
-    z.literal('ethsign'),
-    z.literal('presign'),
-    z.literal('eip1271'),
-  ]),
+  sellTokenBalance: z
+    .enum(['erc20', 'internal', 'external', 'unknown'])
+    .default('unknown'),
+  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).default('unknown'),
+  signingScheme: z
+    .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
+    .default('unknown'),
   signature: z.string(),
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.union([
-    z.literal('market'),
-    z.literal('limit'),
-    z.literal('liquidity'),
-  ]),
+  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).default('unknown'),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: NumericStringSchema.nullish().default(null),
@@ -42,13 +33,16 @@ export const OrderSchema = z.object({
   executedBuyAmount: NumericStringSchema,
   executedFeeAmount: NumericStringSchema,
   invalidated: z.boolean(),
-  status: z.union([
-    z.literal('presignaturePending'),
-    z.literal('open'),
-    z.literal('fulfilled'),
-    z.literal('cancelled'),
-    z.literal('expired'),
-  ]),
+  status: z
+    .enum([
+      'presignaturePending',
+      'open',
+      'fulfilled',
+      'cancelled',
+      'expired',
+      'unknown',
+    ])
+    .default('unknown'),
   fullFeeAmount: NumericStringSchema,
   isLiquidityOrder: z.boolean(),
   ethflowData: z
@@ -63,11 +57,13 @@ export const OrderSchema = z.object({
     .object({
       sender: AddressSchema,
       placementError: z
-        .union([
-          z.literal('QuoteNotFound'),
-          z.literal('ValidToTooFarInFuture'),
-          z.literal('PreValidationError'),
+        .enum([
+          'QuoteNotFound',
+          'ValidToTooFarInFuture',
+          'PreValidationError',
+          'unknown',
         ])
+        .default('unknown')
         .nullish()
         .default(null),
     })
