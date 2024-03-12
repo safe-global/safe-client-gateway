@@ -3,7 +3,7 @@ import { Contract as DomainContract } from '@/domain/contracts/entities/contract
 
 export class Contract implements DomainContract {
   @ApiProperty()
-  address!: string;
+  address!: `0x${string}`;
   @ApiProperty()
   name!: string;
   @ApiProperty()
@@ -11,7 +11,7 @@ export class Contract implements DomainContract {
   @ApiProperty()
   logoUri!: string;
   @ApiPropertyOptional({ type: Object, nullable: true })
-  contractAbi!: object | null;
+  contractAbi!: Record<string, unknown> | null;
   @ApiProperty()
   trustedForDelegateCall!: boolean;
 }
