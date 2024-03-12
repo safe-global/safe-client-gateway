@@ -67,8 +67,8 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getDataDecoded(args: {
-    data: string;
-    to?: string;
+    data: `0x${string}`;
+    to?: `0x${string}`;
   }): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;

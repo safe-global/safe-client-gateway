@@ -32,8 +32,9 @@ export class TransactionPreviewMapper {
       if (previewTransactionDto.data !== null) {
         dataDecoded = await this.dataDecodedRepository.getDataDecoded({
           chainId,
-          data: previewTransactionDto.data,
-          to: previewTransactionDto.to,
+          // TODO: Remove casting when `PreviewTransactionDto` validation is migrated to zod
+          data: previewTransactionDto.data as `0x${string}`,
+          to: previewTransactionDto.to as `0x${string}`,
         });
       }
     } catch (error) {

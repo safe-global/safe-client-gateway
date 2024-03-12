@@ -1,16 +1,8 @@
-import { JSONSchemaType } from 'ajv';
-import { HEX_PATTERN } from '@/validation/patterns';
-import { GetDataDecodedDto } from '@/routes/data-decode/entities/get-data-decoded.dto.entity';
+import { z } from 'zod';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const GET_DATA_DECODED_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/delegates/get-data-decoded.dto.json';
-
-export const getDataDecodedDtoSchema: JSONSchemaType<GetDataDecodedDto> = {
-  $id: GET_DATA_DECODED_DTO_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    data: { type: 'string', pattern: HEX_PATTERN },
-    to: { type: 'string', pattern: HEX_PATTERN, nullable: true },
-  },
-  required: ['data'],
-};
+export const GetDataDecodedDtoSchema = z.object({
+  data: HexSchema,
+  to: AddressSchema.optional(),
+});
