@@ -5,8 +5,8 @@ import {
   ValueType,
 } from '@/domain/human-description/entities/human-description.entity';
 
-type SafeRegExpMatchArray = RegExpMatchArray & {
-  groups: NonNullable<RegExpMatchArray['groups']>;
+type SafeRegExpExecArray = RegExpExecArray & {
+  groups: NonNullable<RegExpExecArray['groups']>;
 };
 
 /**
@@ -28,7 +28,7 @@ export class HumanDescriptionTemplate {
    * Store the regex matches as an array instead of an iterable so that it can be restarted
    * @private
    */
-  private readonly templateMatches: SafeRegExpMatchArray[];
+  private readonly templateMatches: SafeRegExpExecArray[];
 
   constructor(
     functionSignature: string,
@@ -38,7 +38,7 @@ export class HumanDescriptionTemplate {
 
     this.templateMatches = Array.from(
       template.matchAll(HumanDescriptionTemplate.REGEX),
-    ).filter((match): match is SafeRegExpMatchArray => {
+    ).filter((match): match is SafeRegExpExecArray => {
       return match.groups !== undefined;
     });
   }
