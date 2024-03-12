@@ -1,11 +1,18 @@
-import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { JSONSchemaType } from 'ajv';
+import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
 
-export const PreviewTransactionDtoSchema = z.object({
-  to: AddressSchema,
-  data: HexSchema.nullish().default(null),
-  value: z.string(),
-  operation: z.nativeEnum(Operation),
-});
+export const PREVIEW_TRANSACTION_DTO_SCHEMA_ID =
+  'https://safe-client.safe.global/schemas/transactions/preview-transaction.dto.json';
+
+export const previewTransactionDtoSchema: JSONSchemaType<PreviewTransactionDto> =
+  {
+    $id: PREVIEW_TRANSACTION_DTO_SCHEMA_ID,
+    type: 'object',
+    properties: {
+      to: { type: 'string' },
+      data: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },
+      value: { type: 'string' },
+      operation: { type: 'number', enum: [0, 1] },
+    },
+    required: ['to', 'value', 'operation'],
+  };

@@ -5,7 +5,7 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import { DELEGATE_OPERATION } from '@/domain/safe/entities/operation.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
@@ -56,7 +56,7 @@ describe('Transaction Data Mapper (Unit)', () => {
 
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
-        Operation.DELEGATE,
+        DELEGATE_OPERATION,
         faker.finance.ethereumAddress(),
         null,
       );
