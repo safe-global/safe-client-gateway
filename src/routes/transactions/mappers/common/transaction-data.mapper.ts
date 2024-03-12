@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
-import {
-  DELEGATE_OPERATION,
-  Operation,
-} from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -79,7 +76,7 @@ export class TransactionDataMapper {
     to: string,
     dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
-    if (operation !== DELEGATE_OPERATION) return null;
+    if (operation !== Operation.DELEGATE) return null;
 
     let contract: Contract;
     try {
