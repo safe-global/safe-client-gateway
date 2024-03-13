@@ -25,7 +25,6 @@ import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
-import { SafeAppsValidator } from '@/domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
 import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
@@ -81,7 +80,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
-    SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
     TokenValidator,

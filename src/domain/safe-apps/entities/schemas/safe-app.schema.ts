@@ -2,10 +2,12 @@ import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-a
 import { z } from 'zod';
 
 export const SafeAppAccessControlSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal(SafeAppAccessControlPolicies.DomainAllowlist),
-    value: z.array(z.string().url()).nullish().default(null),
-  }),
+  z
+    .object({
+      type: z.literal(SafeAppAccessControlPolicies.DomainAllowlist),
+      value: z.array(z.string().url()).nullish().default(null),
+    })
+    .strict(),
   z.object({
     type: z.literal(SafeAppAccessControlPolicies.Unknown),
   }),
@@ -35,6 +37,6 @@ export const SafeAppSchema = z.object({
   features: z.array(z.string()),
   socialProfiles: z.array(SafeAppSocialProfileSchema),
   iconUrl: z.string().url().nullish().default(null),
-  provider: SafeAppProviderSchema.nullish(),
+  provider: SafeAppProviderSchema.nullish().default(null),
   developerWebsite: z.string().url().nullish().default(null),
 });
