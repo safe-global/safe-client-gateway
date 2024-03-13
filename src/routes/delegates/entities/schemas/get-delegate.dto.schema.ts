@@ -1,22 +1,14 @@
-import { JSONSchemaType } from 'ajv';
-import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const GET_DELEGATE_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/delegates/get-delegate.dto.json';
-
-export const getDelegateDtoSchema: JSONSchemaType<GetDelegateDto> = {
-  $id: GET_DELEGATE_DTO_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    safe: { type: 'string', nullable: true },
-    delegate: { type: 'string', nullable: true },
-    delegator: { type: 'string', nullable: true },
-    label: { type: 'string', nullable: true },
-  },
-  oneOf: [
-    { required: ['safe'] },
-    { required: ['delegate'] },
-    { required: ['delegator'] },
-    { required: ['label'] },
-  ],
-};
+export const GetDelegateDtoSchema = z
+  .object({
+    safe: AddressSchema.optional(),
+    delegate: AddressSchema.optional(),
+    delegator: AddressSchema.optional(),
+    label: z.string().optional(),
+  })
+  .refine((value) => {
+    // Require at least one field to be present
+    return Object.values(value).some(Boolean);
+  });
