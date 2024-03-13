@@ -5,7 +5,7 @@ import { Token, TokenType } from '@/domain/tokens/entities/token.entity';
 export function tokenBuilder(): IBuilder<Token> {
   return new Builder<Token>()
     .with('address', faker.finance.ethereumAddress())
-    .with('decimals', faker.number.int())
+    .with('decimals', faker.number.int({ min: 0, max: 32 }))
     .with('logoUri', faker.internet.url({ appendSlash: false }))
     .with('name', faker.word.sample())
     .with('symbol', faker.finance.currencySymbol())
