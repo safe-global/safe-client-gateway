@@ -99,7 +99,12 @@ describe('Safe Apps Controller (Unit)', () => {
             provider: safeAppsResponse[0].provider,
             accessControl: {
               type: 'DOMAIN_ALLOWLIST',
-              value: safeAppsResponse[0].accessControl.value,
+              value: (
+                safeAppsResponse[0].accessControl as {
+                  value: string[] | null;
+                  type: SafeAppAccessControlPolicies.DomainAllowlist;
+                }
+              ).value,
             },
             tags: safeAppsResponse[0].tags,
             features: safeAppsResponse[0].features,
@@ -116,7 +121,7 @@ describe('Safe Apps Controller (Unit)', () => {
             provider: safeAppsResponse[1].provider,
             accessControl: {
               type: 'NO_RESTRICTIONS',
-              value: safeAppsResponse[1].accessControl.value,
+              value: null,
             },
             tags: safeAppsResponse[1].tags,
             features: safeAppsResponse[1].features,
@@ -138,7 +143,7 @@ describe('Safe Apps Controller (Unit)', () => {
                 ...safeAppsResponse[0],
                 accessControl: {
                   type: 'UNKNOWN',
-                  value: safeAppsResponse[0].accessControl.value,
+                  value: null,
                 },
               },
             ],
@@ -162,7 +167,7 @@ describe('Safe Apps Controller (Unit)', () => {
             provider: safeAppsResponse[0].provider,
             accessControl: {
               type: 'UNKNOWN',
-              value: safeAppsResponse[0].accessControl.value,
+              value: null,
             },
             tags: safeAppsResponse[0].tags,
             features: safeAppsResponse[0].features,
