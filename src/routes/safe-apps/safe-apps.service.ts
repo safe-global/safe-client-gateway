@@ -46,7 +46,7 @@ export class SafeAppsService {
       case SafeAppAccessControlPolicies.NoRestrictions:
         return {
           type: SafeAppAccessControlPolicies.NoRestrictions,
-          value: domainSafeApp.accessControl.value,
+          value: null,
         };
       case SafeAppAccessControlPolicies.DomainAllowlist:
         return {
@@ -56,7 +56,7 @@ export class SafeAppsService {
       default:
         return {
           type: SafeAppAccessControlPolicies.Unknown,
-          value: domainSafeApp.accessControl.value,
+          value: null,
         };
     }
   }
