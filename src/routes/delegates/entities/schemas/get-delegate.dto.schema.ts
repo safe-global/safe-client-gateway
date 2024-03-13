@@ -8,7 +8,9 @@ export const GetDelegateDtoSchema = z
     delegator: AddressSchema.optional(),
     label: z.string().optional(),
   })
-  .refine((value) => {
-    // Require at least one field to be present
-    return Object.values(value).some(Boolean);
-  });
+  .refine(
+    (value) => {
+      return Object.values(value).some(Boolean);
+    },
+    () => ({ message: 'At least one property is required' }),
+  );
