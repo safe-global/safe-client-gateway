@@ -1,130 +1,74 @@
-export const ORDER_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/swaps/order.json';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
-export const orderSchema = {
-  $id: ORDER_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    sellToken: { type: 'string' },
-    buyToken: { type: 'string' },
-    receiver: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-    sellAmount: { type: 'string' },
-    buyAmount: { type: 'string' },
-    validTo: { type: 'integer' },
-    appData: { type: 'string' },
-    feeAmount: { type: 'string' },
-    kind: { type: 'string', enum: ['buy', 'sell'] },
-    partiallyFillable: { type: 'boolean' },
-    sellTokenBalance: {
-      type: 'string',
-      enum: ['erc20', 'internal', 'external'],
-    },
-    buyTokenBalance: { type: 'string', enum: ['erc20', 'internal'] },
-    signingScheme: {
-      type: 'string',
-      enum: ['eip712', 'ethsign', 'presign', 'eip1271'],
-    },
-    signature: { type: 'string' },
-    from: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-    quoteId: {
-      oneOf: [{ type: 'integer' }, { type: 'null', nullable: true }],
-    },
-    creationDate: { type: 'string', isDate: true },
-    class: { type: 'string', enum: ['market', 'limit', 'liquidity'] },
-    owner: { type: 'string' },
-    uid: { type: 'string' },
-    availableBalance: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-    executedSellAmount: { type: 'string' },
-    executedSellAmountBeforeFees: { type: 'string' },
-    executedBuyAmount: { type: 'string' },
-    executedFeeAmount: { type: 'string' },
-    invalidated: { type: 'boolean' },
-    status: {
-      type: 'string',
-      enum: [
-        'presignaturePending',
-        'open',
-        'fulfilled',
-        'cancelled',
-        'expired',
-      ],
-    },
-    fullFeeAmount: { type: 'string' },
-    isLiquidityOrder: { type: 'boolean' },
-    ethflowData: {
-      oneOf: [
-        {
-          type: 'object',
-          properties: {
-            refundTxHash: {
-              oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-            },
-            userValidTo: { type: 'integer' },
-          },
-        },
-        { type: 'null', nullable: true },
-      ],
-    },
-    onchainUser: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-    onchainOrderData: {
-      type: ['object'],
-      properties: {
-        sender: { type: 'string' },
-        placementError: {
-          oneOf: [
-            {
-              type: 'string',
-              enum: [
-                'QuoteNotFound',
-                'ValidToTooFarInFuture',
-                'PreValidationError',
-              ],
-            },
-            { type: 'null', nullable: true },
-          ],
-        },
-      },
-    },
-    executedSurplusFee: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-    fullAppData: {
-      oneOf: [{ type: 'string' }, { type: 'null', nullable: true }],
-    },
-  },
-  required: [
-    'sellToken',
-    'buyToken',
-    'sellAmount',
-    'buyAmount',
-    'validTo',
-    'appData',
-    'feeAmount',
-    'kind',
-    'partiallyFillable',
-    'sellTokenBalance',
-    'buyTokenBalance',
-    'signingScheme',
-    'signature',
-    'creationDate',
-    'class',
-    'owner',
-    'uid',
-    'executedSellAmount',
-    'executedSellAmountBeforeFees',
-    'executedBuyAmount',
-    'executedFeeAmount',
-    'invalidated',
-    'status',
-    'fullFeeAmount',
-    'isLiquidityOrder',
-  ],
-};
+export const OrderSchema = z.object({
+  sellToken: AddressSchema,
+  buyToken: AddressSchema,
+  receiver: AddressSchema.nullish().default(null),
+  sellAmount: NumericStringSchema,
+  buyAmount: NumericStringSchema,
+  validTo: z.number(),
+  appData: z.string(),
+  feeAmount: NumericStringSchema,
+  kind: z.enum(['buy', 'sell', 'unknown']).default('unknown'),
+  partiallyFillable: z.boolean(),
+  sellTokenBalance: z
+    .enum(['erc20', 'internal', 'external', 'unknown'])
+    .default('unknown'),
+  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).default('unknown'),
+  signingScheme: z
+    .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
+    .default('unknown'),
+  signature: z.string(),
+  from: AddressSchema.nullish().default(null),
+  quoteId: z.number().nullish().default(null),
+  creationDate: z.coerce.date(),
+  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).default('unknown'),
+  owner: AddressSchema,
+  uid: z.string(),
+  availableBalance: NumericStringSchema.nullish().default(null),
+  executedSellAmount: NumericStringSchema,
+  executedSellAmountBeforeFees: NumericStringSchema,
+  executedBuyAmount: NumericStringSchema,
+  executedFeeAmount: NumericStringSchema,
+  invalidated: z.boolean(),
+  status: z
+    .enum([
+      'presignaturePending',
+      'open',
+      'fulfilled',
+      'cancelled',
+      'expired',
+      'unknown',
+    ])
+    .default('unknown'),
+  fullFeeAmount: NumericStringSchema,
+  isLiquidityOrder: z.boolean(),
+  ethflowData: z
+    .object({
+      refundTxHash: z.string().nullish().default(null),
+      userValidTo: z.number(),
+    })
+    .nullish()
+    .default(null),
+  onchainUser: AddressSchema.nullish().default(null),
+  onchainOrderData: z
+    .object({
+      sender: AddressSchema,
+      placementError: z
+        .enum([
+          'QuoteNotFound',
+          'ValidToTooFarInFuture',
+          'PreValidationError',
+          'unknown',
+        ])
+        .default('unknown')
+        .nullish()
+        .default(null),
+    })
+    .nullish()
+    .default(null),
+  executedSurplusFee: NumericStringSchema.nullish().default(null),
+  fullAppData: z.string().nullish().default(null),
+});
