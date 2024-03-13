@@ -27,7 +27,7 @@ export class LockingApi implements ILockingApi {
   async getRank(safeAddress: `0x${string}`): Promise<Rank> {
     try {
       const url = `${this.baseUri}/api/v1/leaderboard/${safeAddress}`;
-      const { data } = await this.networkService.get<Rank>(url);
+      const { data } = await this.networkService.get<Rank>({ url });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -40,10 +40,13 @@ export class LockingApi implements ILockingApi {
   }): Promise<Page<Rank>> {
     try {
       const url = `${this.baseUri}/api/v1/leaderboard`;
-      const { data } = await this.networkService.get<Page<Rank>>(url, {
-        params: {
-          limit: args.limit,
-          offset: args.offset,
+      const { data } = await this.networkService.get<Page<Rank>>({
+        url,
+        networkRequest: {
+          params: {
+            limit: args.limit,
+            offset: args.offset,
+          },
         },
       });
       return data;
