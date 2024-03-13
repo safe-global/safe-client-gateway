@@ -1,9 +1,17 @@
 import { z } from 'zod';
 
-export const SafeAppAccessControlSchema = z.object({
-  type: z.string(),
-  value: z.array(z.string().url()).nullish().default(null),
-});
+export const SafeAppAccessControlSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(SafeAppAccessControlPolicies.DomainAllowlist),
+    value: z.array(z.string().url()).nullish().default(null),
+  }),
+  z.object({
+    type: z.literal(SafeAppAccessControlPolicies.NoRestrictions),
+  }),
+  z.object({
+    type: z.literal(SafeAppAccessControlPolicies.Unknown),
+  }),
+]);
 
 export const SafeAppSocialProfileSchema = z.object({
   platform: z.string(),
