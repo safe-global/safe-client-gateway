@@ -24,13 +24,32 @@ export class LockingApi implements ILockingApi {
       this.configurationService.getOrThrow<string>('locking.baseUri');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
+    try {
+      const url = `${this.baseUri}/api/v1/leaderboard/${safeAddress}`;
+      const { data } = await this.networkService.get<Rank>(url);
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getLeaderboard(args: {
-    safeAddress?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Rank>> {
-    throw new Error('Method not implemented.');
+    try {
+      const url = `${this.baseUri}/api/v1/leaderboard`;
+      const { data } = await this.networkService.get<Page<Rank>>(url, {
+        params: {
+          limit: args.limit,
+          offset: args.offset,
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 
   async getLockingHistory(args: {
