@@ -74,7 +74,7 @@ describe('Locking (Unit)', () => {
   describe('GET rank', () => {
     it('should get the rank', async () => {
       const rank = rankBuilder().build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${rank.holder}`:
             return Promise.resolve({ data: rank, status: 200 });
@@ -106,7 +106,7 @@ describe('Locking (Unit)', () => {
     it('should validate the response', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const rank = { invalid: 'rank' };
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
             return Promise.resolve({ data: rank, status: 200 });
@@ -134,7 +134,7 @@ describe('Locking (Unit)', () => {
         types: ['clientError', 'serverError'],
       });
       const errorMessage = faker.word.words();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
             return Promise.reject(
@@ -166,7 +166,7 @@ describe('Locking (Unit)', () => {
       const leaderboard = pageBuilder()
         .with('results', [rankBuilder().build()])
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
             return Promise.resolve({ data: leaderboard, status: 200 });
@@ -192,7 +192,7 @@ describe('Locking (Unit)', () => {
       const leaderboard = pageBuilder()
         .with('results', [{ invalid: 'rank' }])
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
             return Promise.resolve({ data: leaderboard, status: 200 });
@@ -219,7 +219,7 @@ describe('Locking (Unit)', () => {
         types: ['clientError', 'serverError'],
       });
       const errorMessage = faker.word.words();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
             return Promise.reject(
