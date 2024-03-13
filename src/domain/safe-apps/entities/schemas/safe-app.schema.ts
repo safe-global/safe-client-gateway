@@ -1,20 +1,9 @@
-import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 import { z } from 'zod';
 
-export const SafeAppAccessControlSchema = z.discriminatedUnion('type', [
-  z
-    .object({
-      type: z.literal(SafeAppAccessControlPolicies.DomainAllowlist),
-      value: z.array(z.string().url()).nullish().default(null),
-    })
-    .strict(),
-  z.object({
-    type: z.literal(SafeAppAccessControlPolicies.Unknown),
-  }),
-  z.object({
-    type: z.literal(SafeAppAccessControlPolicies.NoRestrictions),
-  }),
-]);
+export const SafeAppAccessControlSchema = z.object({
+  type: z.string(),
+  value: z.array(z.string().url()).nullish().default(null),
+});
 
 export const SafeAppSocialProfileSchema = z.object({
   platform: z.string(),

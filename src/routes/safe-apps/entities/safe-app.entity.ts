@@ -11,7 +11,7 @@ export class SafeApp {
   @ApiProperty()
   name: string;
   @ApiProperty()
-  iconUrl: string;
+  iconUrl: string | null;
   @ApiProperty()
   description: string;
   @ApiProperty()
@@ -33,7 +33,7 @@ export class SafeApp {
     id: number,
     url: string,
     name: string,
-    iconUrl: string,
+    iconUrl: string | null,
     description: string,
     chainIds: string[],
     provider: SafeAppProvider | null,

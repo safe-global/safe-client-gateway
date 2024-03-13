@@ -5,7 +5,6 @@ import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.b
 import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 import { SafeAppSchema } from '@/domain/safe-apps/entities/schemas/safe-app.schema';
 import { faker } from '@faker-js/faker';
-import { omit } from 'lodash';
 import { ZodError } from 'zod';
 
 describe('SafeAppSchema', () => {
@@ -114,7 +113,7 @@ describe('SafeAppSchema', () => {
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(result.success);
+    expect(result.success).toBe(true);
   });
 
   it('should validate the url field on a SafeAppAccessControlPolicies.DomainAllowList accessControl', () => {
@@ -142,38 +141,36 @@ describe('SafeAppSchema', () => {
     );
   });
 
-  it('should strip out value on a SafeAppAccessControlPolicies.NoRestrictions accessControl', () => {
-    const accessControl = safeAppAccessControlBuilder()
-      .with('type', SafeAppAccessControlPolicies.NoRestrictions)
-      .with('value', [faker.string.alphanumeric()])
-      .build();
-
+  it('should validate a SafeAppAccessControlPolicies.NoRestrictions accessControl', () => {
     const safeApp = safeAppBuilder()
-      .with('accessControl', accessControl)
+      .with(
+        'accessControl',
+        safeAppAccessControlBuilder()
+          .with('type', SafeAppAccessControlPolicies.NoRestrictions)
+          .with('value', null)
+          .build(),
+      )
       .build();
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(result.success && result.data.accessControl).toStrictEqual(
-      omit(accessControl, 'value'),
-    );
+    expect(result.success).toBe(true);
   });
 
-  it('should strip out value on a SafeAppAccessControlPolicies.Unknown accessControl', () => {
-    const accessControl = safeAppAccessControlBuilder()
-      .with('type', SafeAppAccessControlPolicies.Unknown)
-      .with('value', [faker.string.alphanumeric()])
-      .build();
-
+  it('should validate a SafeAppAccessControlPolicies.Unknown accessControl', () => {
     const safeApp = safeAppBuilder()
-      .with('accessControl', accessControl)
+      .with(
+        'accessControl',
+        safeAppAccessControlBuilder()
+          .with('type', SafeAppAccessControlPolicies.Unknown)
+          .with('value', null)
+          .build(),
+      )
       .build();
 
     const result = SafeAppSchema.safeParse(safeApp);
 
-    expect(result.success && result.data.accessControl).toStrictEqual(
-      omit(accessControl, 'value'),
-    );
+    expect(result.success).toBe(true);
   });
 
   it('should not validate an invalid SafeApp', () => {
