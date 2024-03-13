@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Collectible implements DomainCollectible {
   @ApiProperty()
-  address!: string;
+  address!: `0x${string}`;
   @ApiProperty()
   tokenName!: string;
   @ApiProperty()

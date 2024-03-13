@@ -43,7 +43,7 @@ export class Chain {
   description: string;
   // TODO: Make required when implemented on config service and deemed stable
   @ApiPropertyOptional()
-  chainLogoUri?: string;
+  chainLogoUri?: string | null;
   @ApiProperty()
   l2: boolean;
   @ApiProperty()
@@ -103,7 +103,7 @@ export class Chain {
     ensRegistryAddress: string | null,
     isTestnet: boolean,
     // TODO: Make required when deemed stable on config service
-    chainLogoUri?: string,
+    chainLogoUri?: string | null,
   ) {
     this.chainId = chainId;
     this.chainName = chainName;

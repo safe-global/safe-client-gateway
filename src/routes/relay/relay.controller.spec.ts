@@ -135,7 +135,7 @@ describe('Relay controller', () => {
                   .with('value', faker.number.bigInt())
                   .encode() as Hex;
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -146,7 +146,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
@@ -175,7 +175,7 @@ describe('Relay controller', () => {
                 const gasLimit = faker.string.numeric({ exclude: '0' });
                 const data = execTransactionEncoder().encode() as Hex;
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -186,7 +186,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
@@ -212,12 +212,12 @@ describe('Relay controller', () => {
                 const expectedGasLimit = (
                   BigInt(gasLimit) + BigInt(150_000)
                 ).toString();
-                expect(networkService.post).toHaveBeenCalledWith(
-                  `${relayUrl}/relays/v2/sponsored-call`,
-                  expect.objectContaining({
+                expect(networkService.post).toHaveBeenCalledWith({
+                  url: `${relayUrl}/relays/v2/sponsored-call`,
+                  data: expect.objectContaining({
                     gasLimit: expectedGasLimit,
                   }),
-                );
+                });
               });
 
               it.each([
@@ -255,7 +255,7 @@ describe('Relay controller', () => {
                     .with('data', execTransactionData)
                     .encode() as Hex;
                   const taskId = faker.string.uuid();
-                  networkService.get.mockImplementation((url) => {
+                  networkService.get.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
@@ -268,7 +268,7 @@ describe('Relay controller', () => {
                         );
                     }
                   });
-                  networkService.post.mockImplementation((url) => {
+                  networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${relayUrl}/relays/v2/sponsored-call`:
                         return Promise.resolve({
@@ -305,7 +305,7 @@ describe('Relay controller', () => {
                   .with('data', execTransactionEncoder().encode())
                   .encode() as Hex;
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -316,7 +316,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
@@ -373,7 +373,7 @@ describe('Relay controller', () => {
                   network: chainId,
                 })!.networkAddresses[chainId];
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -384,7 +384,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
@@ -434,7 +434,7 @@ describe('Relay controller', () => {
               network: chainId,
             })!.networkAddresses[chainId];
             const taskId = faker.string.uuid();
-            networkService.get.mockImplementation((url) => {
+            networkService.get.mockImplementation(({ url }) => {
               switch (url) {
                 case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                   return Promise.resolve({ data: chain, status: 200 });
@@ -445,7 +445,7 @@ describe('Relay controller', () => {
                   return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
-            networkService.post.mockImplementation((url) => {
+            networkService.post.mockImplementation(({ url }) => {
               switch (url) {
                 case `${relayUrl}/relays/v2/sponsored-call`:
                   return Promise.resolve({ data: { taskId }, status: 200 });
@@ -500,7 +500,7 @@ describe('Relay controller', () => {
                   network: chainId,
                 })!.networkAddresses[chainId];
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -511,7 +511,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({ data: { taskId }, status: 200 });
@@ -562,7 +562,7 @@ describe('Relay controller', () => {
               network: chainId,
             })!.networkAddresses[chainId];
             const taskId = faker.string.uuid();
-            networkService.get.mockImplementation((url) => {
+            networkService.get.mockImplementation(({ url }) => {
               switch (url) {
                 case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                   return Promise.resolve({ data: chain, status: 200 });
@@ -573,7 +573,7 @@ describe('Relay controller', () => {
                   return Promise.reject(`No matching rule for url: ${url}`);
               }
             });
-            networkService.post.mockImplementation((url) => {
+            networkService.post.mockImplementation(({ url }) => {
               switch (url) {
                 case `${relayUrl}/relays/v2/sponsored-call`:
                   return Promise.resolve({ data: { taskId }, status: 200 });
@@ -624,7 +624,7 @@ describe('Relay controller', () => {
                     )
                     .encode();
                   const taskId = faker.string.uuid();
-                  networkService.get.mockImplementation((url) => {
+                  networkService.get.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
@@ -634,7 +634,7 @@ describe('Relay controller', () => {
                         );
                     }
                   });
-                  networkService.post.mockImplementation((url) => {
+                  networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${relayUrl}/relays/v2/sponsored-call`:
                         return Promise.resolve({
@@ -681,7 +681,7 @@ describe('Relay controller', () => {
                     )
                     .encode();
                   const taskId = faker.string.uuid();
-                  networkService.get.mockImplementation((url) => {
+                  networkService.get.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
@@ -691,7 +691,7 @@ describe('Relay controller', () => {
                         );
                     }
                   });
-                  networkService.post.mockImplementation((url) => {
+                  networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${relayUrl}/relays/v2/sponsored-call`:
                         return Promise.resolve({
@@ -744,7 +744,7 @@ describe('Relay controller', () => {
                     )
                     .encode();
                   const taskId = faker.string.uuid();
-                  networkService.get.mockImplementation((url) => {
+                  networkService.get.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
@@ -754,7 +754,7 @@ describe('Relay controller', () => {
                         );
                     }
                   });
-                  networkService.post.mockImplementation((url) => {
+                  networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${relayUrl}/relays/v2/sponsored-call`:
                         return Promise.resolve({
@@ -801,7 +801,7 @@ describe('Relay controller', () => {
                     )
                     .encode();
                   const taskId = faker.string.uuid();
-                  networkService.get.mockImplementation((url) => {
+                  networkService.get.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                         return Promise.resolve({ data: chain, status: 200 });
@@ -811,7 +811,7 @@ describe('Relay controller', () => {
                         );
                     }
                   });
-                  networkService.post.mockImplementation((url) => {
+                  networkService.post.mockImplementation(({ url }) => {
                     switch (url) {
                       case `${relayUrl}/relays/v2/sponsored-call`:
                         return Promise.resolve({
@@ -883,7 +883,7 @@ describe('Relay controller', () => {
                 )
                 .encode();
               const taskId = faker.string.uuid();
-              networkService.get.mockImplementation((url) => {
+              networkService.get.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
@@ -891,7 +891,7 @@ describe('Relay controller', () => {
                     return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
-              networkService.post.mockImplementation((url) => {
+              networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
@@ -930,7 +930,7 @@ describe('Relay controller', () => {
                   .with('to', safeAddress)
                   .with('value', faker.number.bigInt())
                   .encode() as Hex;
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -968,7 +968,7 @@ describe('Relay controller', () => {
                     erc20TransferEncoder().with('to', safeAddress).encode(),
                   )
                   .encode() as Hex;
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1002,7 +1002,7 @@ describe('Relay controller', () => {
                 const data = execTransactionEncoder()
                   .with('value', faker.number.bigInt())
                   .encode() as Hex;
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1059,7 +1059,7 @@ describe('Relay controller', () => {
                   network: chainId,
                 })!.networkAddresses[chainId];
                 const taskId = faker.string.uuid();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1070,7 +1070,7 @@ describe('Relay controller', () => {
                       return Promise.reject(`No matching rule for url: ${url}`);
                   }
                 });
-                networkService.post.mockImplementation((url) => {
+                networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${relayUrl}/relays/v2/sponsored-call`:
                       return Promise.resolve({
@@ -1124,7 +1124,7 @@ describe('Relay controller', () => {
                   version,
                   network: chainId,
                 })!.networkAddresses[chainId];
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1175,7 +1175,7 @@ describe('Relay controller', () => {
                   version,
                   network: chainId,
                 })!.networkAddresses[chainId];
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1227,7 +1227,7 @@ describe('Relay controller', () => {
                   .encode();
                 // Unofficial MultiSend deployment
                 const to = faker.finance.ethereumAddress();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1275,7 +1275,7 @@ describe('Relay controller', () => {
                     setupEncoder().with('owners', owners).encode(),
                   )
                   .encode();
-                networkService.get.mockImplementation((url) => {
+                networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                       return Promise.resolve({ data: chain, status: 200 });
@@ -1337,7 +1337,7 @@ describe('Relay controller', () => {
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = erc20TransferEncoder().encode();
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1377,7 +1377,7 @@ describe('Relay controller', () => {
                 .with('value', faker.number.bigInt())
                 .encode() as Hex;
               const taskId = faker.string.uuid();
-              networkService.get.mockImplementation((url) => {
+              networkService.get.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
@@ -1388,7 +1388,7 @@ describe('Relay controller', () => {
                     return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
-              networkService.post.mockImplementation((url) => {
+              networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1447,7 +1447,7 @@ describe('Relay controller', () => {
                 network: chainId,
               })!.networkAddresses[chainId];
               const taskId = faker.string.uuid();
-              networkService.get.mockImplementation((url) => {
+              networkService.get.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
@@ -1458,7 +1458,7 @@ describe('Relay controller', () => {
                     return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
-              networkService.post.mockImplementation((url) => {
+              networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1513,7 +1513,7 @@ describe('Relay controller', () => {
                 )
                 .encode();
               const taskId = faker.string.uuid();
-              networkService.get.mockImplementation((url) => {
+              networkService.get.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                     return Promise.resolve({ data: chain, status: 200 });
@@ -1521,7 +1521,7 @@ describe('Relay controller', () => {
                     return Promise.reject(`No matching rule for url: ${url}`);
                 }
               });
-              networkService.post.mockImplementation((url) => {
+              networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
                   case `${relayUrl}/relays/v2/sponsored-call`:
                     return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1560,7 +1560,7 @@ describe('Relay controller', () => {
             .with('value', faker.number.bigInt())
             .encode() as Hex;
           const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1572,7 +1572,7 @@ describe('Relay controller', () => {
                 return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
-          networkService.post.mockImplementation((url) => {
+          networkService.post.mockImplementation(({ url }) => {
             switch (url) {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1618,7 +1618,7 @@ describe('Relay controller', () => {
             .with('value', faker.number.bigInt())
             .encode() as Hex;
           const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1629,7 +1629,7 @@ describe('Relay controller', () => {
                 return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
-          networkService.post.mockImplementation((url) => {
+          networkService.post.mockImplementation(({ url }) => {
             switch (url) {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1662,7 +1662,7 @@ describe('Relay controller', () => {
             .with('value', faker.number.bigInt())
             .encode() as Hex;
           const taskId = faker.string.uuid();
-          networkService.get.mockImplementation((url) => {
+          networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: chain, status: 200 });
@@ -1673,7 +1673,7 @@ describe('Relay controller', () => {
                 return Promise.reject(`No matching rule for url: ${url}`);
             }
           });
-          networkService.post.mockImplementation((url) => {
+          networkService.post.mockImplementation(({ url }) => {
             switch (url) {
               case `${relayUrl}/relays/v2/sponsored-call`:
                 return Promise.resolve({ data: { taskId }, status: 200 });
@@ -1710,7 +1710,7 @@ describe('Relay controller', () => {
         const chain = chainBuilder().with('chainId', chainId).build();
         const safe = safeBuilder().build();
         const data = execTransactionEncoder().encode() as Hex;
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -1721,7 +1721,7 @@ describe('Relay controller', () => {
               return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
-        networkService.post.mockImplementation((url) => {
+        networkService.post.mockImplementation(({ url }) => {
           switch (url) {
             case `${relayUrl}/relays/v2/sponsored-call`:
               return Promise.reject(new Error('Relayer error'));
@@ -1757,7 +1757,7 @@ describe('Relay controller', () => {
           .with('value', faker.number.bigInt())
           .encode() as Hex;
         const taskId = faker.string.uuid();
-        networkService.get.mockImplementation((url) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
@@ -1768,7 +1768,7 @@ describe('Relay controller', () => {
               return Promise.reject(`No matching rule for url: ${url}`);
           }
         });
-        networkService.post.mockImplementation((url) => {
+        networkService.post.mockImplementation(({ url }) => {
           switch (url) {
             case `${relayUrl}/relays/v2/sponsored-call`:
               return Promise.resolve({ data: { taskId }, status: 200 });

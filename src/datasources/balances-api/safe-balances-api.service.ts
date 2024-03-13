@@ -125,7 +125,7 @@ export class SafeBalancesApi implements IBalancesApi {
   ): Promise<Balance[]> {
     const tokenAddresses = balances
       .map((balance) => balance.tokenAddress)
-      .filter((address): address is string => address !== null);
+      .filter((address): address is `0x${string}` => address !== null);
 
     const assetPrices = await this.coingeckoApi.getTokenPrices({
       chainId: this.chainId,

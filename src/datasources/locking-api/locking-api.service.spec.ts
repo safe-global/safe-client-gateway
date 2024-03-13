@@ -61,15 +61,15 @@ describe('LockingApi', () => {
 
       await service.getLockingHistory({ safeAddress });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith(
-        `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
-        {
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
+        networkRequest: {
           params: {
             limit: undefined,
             offset: undefined,
           },
         },
-      );
+      });
     });
 
     it('should forward pagination queries', async () => {
@@ -90,15 +90,15 @@ describe('LockingApi', () => {
 
       await service.getLockingHistory({ safeAddress, limit, offset });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith(
-        `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
-        {
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
+        networkRequest: {
           params: {
             limit,
             offset,
           },
         },
-      );
+      });
     });
 
     it('should forward error', async () => {

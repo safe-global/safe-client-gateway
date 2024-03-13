@@ -106,9 +106,9 @@ describe('PushwooshApi', () => {
       await service.createMessage(createEmailMessageDto);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
+        data: {
           request: {
             application: pushwooshApplicationCode,
             auth: pushwooshApiKey,
@@ -126,7 +126,7 @@ describe('PushwooshApi', () => {
             ],
           },
         },
-      );
+      });
     });
 
     it('should create a new unique (using emailMessageId field) message', async () => {
@@ -144,9 +144,9 @@ describe('PushwooshApi', () => {
       await service.createMessage(createEmailMessageDto);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: `${pushwooshBaseUri}/json/1.3/createEmailMessage`,
+        data: {
           request: {
             application: pushwooshApplicationCode,
             auth: pushwooshApiKey,
@@ -165,7 +165,7 @@ describe('PushwooshApi', () => {
             ],
           },
         },
-      );
+      });
     });
   });
 
@@ -195,15 +195,15 @@ describe('PushwooshApi', () => {
       await service.deleteEmailAddress({ emailAddress });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        `${pushwooshBaseUri}/json/1.3/deleteEmail`,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: `${pushwooshBaseUri}/json/1.3/deleteEmail`,
+        data: {
           request: {
             application: pushwooshApplicationCode,
             email: emailAddress,
           },
         },
-      );
+      });
     });
   });
 });

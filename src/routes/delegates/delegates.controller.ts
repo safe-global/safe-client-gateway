@@ -20,10 +20,11 @@ import { DelegatePage } from '@/routes/delegates/entities/delegate.page.entity';
 import { DeleteDelegateDto } from '@/routes/delegates/entities/delete-delegate.dto.entity';
 import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
 import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
-import { CreateDelegateDtoValidationPipe } from '@/routes/delegates/pipes/create-delegate.dto.validation.pipe';
-import { DeleteDelegateDtoValidationPipe } from '@/routes/delegates/pipes/delete-delegate.dto.validation.pipe';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { DeleteSafeDelegateDtoValidationPipe } from '@/routes/delegates/pipes/delete-safe-delegate.dto.validation.pipe';
 import { GetDelegateDtoValidationPipe } from '@/routes/delegates/pipes/get-delegate.dto.validation.pipe';
+import { CreateDelegateDtoSchema } from '@/routes/delegates/entities/schemas/create-delegate.dto.schema';
+import { DeleteDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-delegate.dto.schema';
 
 @ApiTags('delegates')
 @Controller({
@@ -77,7 +78,8 @@ export class DelegatesController {
   @Post('chains/:chainId/delegates')
   async postDelegate(
     @Param('chainId') chainId: string,
-    @Body(CreateDelegateDtoValidationPipe) createDelegateDto: CreateDelegateDto,
+    @Body(new ValidationPipe(CreateDelegateDtoSchema))
+    createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
     await this.service.postDelegate({ chainId, createDelegateDto });
   }
@@ -86,7 +88,8 @@ export class DelegatesController {
   async deleteDelegate(
     @Param('chainId') chainId: string,
     @Param('delegateAddress') delegateAddress: string,
-    @Body(DeleteDelegateDtoValidationPipe) deleteDelegateDto: DeleteDelegateDto,
+    @Body(new ValidationPipe(DeleteDelegateDtoSchema))
+    deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
     return this.service.deleteDelegate({
       chainId,

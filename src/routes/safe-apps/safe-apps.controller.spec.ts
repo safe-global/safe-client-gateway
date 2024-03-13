@@ -77,7 +77,7 @@ describe('Safe Apps Controller (Unit)', () => {
           )
           .build(),
       ];
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({ data: safeAppsResponse, status: 200 });
@@ -126,7 +126,7 @@ describe('Safe Apps Controller (Unit)', () => {
     it('Success with UNKNOWN accessControl', async () => {
       const chain = chainBuilder().build();
       const safeAppsResponse = [safeAppBuilder().build()];
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({
@@ -184,7 +184,7 @@ describe('Safe Apps Controller (Unit)', () => {
           .build(),
       ];
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({ data: safeAppsResponse, status: 200 });

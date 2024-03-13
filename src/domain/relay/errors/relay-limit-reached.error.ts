@@ -1,6 +1,7 @@
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { Hex } from 'viem';
 
-export class RelayLimitReachedError extends Error {
+export class RelayLimitReachedError extends HttpException {
   constructor(
     readonly address: Hex,
     readonly current: number,
@@ -8,6 +9,7 @@ export class RelayLimitReachedError extends Error {
   ) {
     super(
       `Relay limit reached for ${address} | current: ${current} | limit: ${limit}`,
+      HttpStatus.TOO_MANY_REQUESTS,
     );
   }
 }

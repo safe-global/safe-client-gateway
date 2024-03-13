@@ -1,18 +1,10 @@
-import { JSONSchemaType } from 'ajv';
-import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const CREATE_DELEGATE_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/delegates/create-delegate.dto.json';
-
-export const createDelegateDtoSchema: JSONSchemaType<CreateDelegateDto> = {
-  $id: CREATE_DELEGATE_DTO_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    safe: { type: 'string', nullable: true },
-    delegate: { type: 'string' },
-    delegator: { type: 'string' },
-    signature: { type: 'string' },
-    label: { type: 'string' },
-  },
-  required: ['delegate', 'delegator', 'signature', 'label'],
-};
+export const CreateDelegateDtoSchema = z.object({
+  safe: AddressSchema.nullish().default(null),
+  delegate: AddressSchema,
+  delegator: AddressSchema,
+  signature: z.string(),
+  label: z.string(),
+});
