@@ -16,7 +16,13 @@ export function orderBuilder(): IBuilder<Order> {
     .with('sellAmount', faker.number.bigInt({ min: 1 }))
     .with('buyAmount', faker.number.bigInt({ min: 1 }))
     .with('validTo', faker.date.future().getTime())
-    .with('appData', faker.string.hexadecimal())
+    .with(
+      'appData',
+      JSON.stringify({
+        version: faker.system.semver(),
+        metadata: {},
+      }),
+    )
     .with('feeAmount', faker.number.bigInt({ min: 1 }))
     .with('kind', faker.helpers.arrayElement(['buy', 'sell']))
     .with('partiallyFillable', faker.datatype.boolean())
@@ -40,7 +46,7 @@ export function orderBuilder(): IBuilder<Order> {
     .with('creationDate', faker.date.recent())
     .with('class', faker.helpers.arrayElement(['market', 'limit', 'liquidity']))
     .with('owner', getAddress(faker.finance.ethereumAddress()))
-    .with('uid', faker.string.uuid())
+    .with('uid', faker.string.hexadecimal({ length: 112 }))
     .with(
       'availableBalance',
       faker.datatype.boolean() ? faker.number.bigInt({ min: 1 }) : null,
@@ -66,7 +72,9 @@ export function orderBuilder(): IBuilder<Order> {
       'ethflowData',
       faker.datatype.boolean()
         ? {
-            refundTxHash: faker.string.hexadecimal(),
+            refundTxHash: faker.datatype.boolean()
+              ? faker.string.hexadecimal()
+              : null,
             userValidTo: faker.date.future().getTime(),
           }
         : null,

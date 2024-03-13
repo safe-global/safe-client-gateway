@@ -197,7 +197,7 @@ export class SwapOrderMapper {
   private _getExecutedSurplusFee(
     executedSurplusFee: bigint,
     token: Token & { decimals: number },
-  ): string | null {
+  ): string {
     const surplus = asDecimal(executedSurplusFee, token.decimals);
     return `${surplus} ${token.symbol}`;
   }

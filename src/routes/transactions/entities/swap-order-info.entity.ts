@@ -9,7 +9,7 @@ import {
 } from '@nestjs/swagger';
 
 export class TokenInfo {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   logo: string | null;
 
   @ApiProperty()
@@ -60,7 +60,7 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
 
 @ApiExtraModels(TokenInfo)
 export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   surplus: string | null;
 
   @ApiProperty()
