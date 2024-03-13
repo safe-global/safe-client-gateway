@@ -1085,6 +1085,42 @@ describe('Relay controller', () => {
                   });
               });
 
+              // approve (execTransaction)
+              it('should return 422 when trying to call an ERC-20 method on the Safe', async () => {
+                const chain = chainBuilder().with('chainId', chainId).build();
+                const safe = safeBuilder().build();
+                const safeAddress = getAddress(safe.address);
+                const data = execTransactionEncoder()
+                  .with('to', safeAddress)
+                  .with('data', erc20ApproveEncoder().encode())
+                  .encode() as Hex;
+                networkService.get.mockImplementation(({ url }) => {
+                  switch (url) {
+                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                      return Promise.resolve({ data: chain, status: 200 });
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                      // Official mastercopy
+                      return Promise.resolve({ data: safe, status: 200 });
+                    default:
+                      return Promise.reject(`No matching rule for url: ${url}`);
+                  }
+                });
+
+                await request(app.getHttpServer())
+                  .post(`/v1/chains/${chain.chainId}/relay`)
+                  .send({
+                    version,
+                    to: safeAddress,
+                    data,
+                  })
+                  .expect(422)
+                  .expect({
+                    message:
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+                    statusCode: 422,
+                  });
+              });
+
               // Unofficial mastercopy
               it('should return 422 when the mastercopy is not official', async () => {
                 const chain = chainBuilder().with('chainId', chainId).build();

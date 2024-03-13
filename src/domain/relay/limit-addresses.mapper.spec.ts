@@ -469,6 +469,29 @@ describe('LimitAddressesMapper', () => {
             );
           });
 
+          // approve (execTransaction)
+          it('should throw when trying to call an ERC-20 method on the Safe', async () => {
+            const safe = safeBuilder().build();
+            const safeAddress = getAddress(safe.address);
+            const data = execTransactionEncoder()
+              .with('to', safeAddress)
+              .with('data', erc20ApproveEncoder().encode())
+              .encode() as Hex;
+            // Official mastercopy
+            mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+            await expect(
+              target.getLimitAddresses({
+                version,
+                chainId,
+                data,
+                to: safeAddress,
+              }),
+            ).rejects.toThrow(
+              'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+            );
+          });
+
           // Unofficial mastercopy
           it('should throw when the mastercopy is not official', async () => {
             const safe = safeBuilder().build();

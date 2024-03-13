@@ -119,63 +119,102 @@ export class LimitAddressesMapper {
   }
 
   private isValidExecTransactionCall(args: { to: string; data: Hex }): boolean {
-    let execTransaction: { data: Hex; to: Hex; value: bigint };
-    // If transaction is an execTransaction
+    const execTransactionArgs = this.getExecTransactionArgs(args.data);
+    // Not a valid execTransaction call
+    if (!execTransactionArgs) {
+      return false;
+    }
+
+    // Only ERC-20 transfer to other party is valid
+    if (this.erc20Decoder.helpers.isTransfer(execTransactionArgs.data)) {
+      return this.isValidErc20Transfer({
+        to: args.to,
+        data: execTransactionArgs.data,
+      });
+    }
+
+    // Only ERC-20 transferFrom to other party is valid
+    if (this.erc20Decoder.helpers.isTransferFrom(execTransactionArgs.data)) {
+      return this.isValidErc20TransferFrom({
+        to: args.to,
+        data: execTransactionArgs.data,
+      });
+    }
+
+    // Other ERC-20 methods are valid if they are...
+
+    // Only transaction to other party is valid
+    const toSelf = execTransactionArgs.to === args.to;
+    if (!toSelf) {
+      return true;
+    }
+
+    // Only transaction with no value is valid
+    const hasValue = execTransactionArgs.value > BigInt(0);
+    if (hasValue) {
+      return false;
+    }
+
+    // Cancellations and Safe calls (e.g. owner management) are valid
+    const isCancellation = execTransactionArgs.data === '0x';
+    return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
+  }
+
+  private getExecTransactionArgs(data: Hex): {
+    to: Hex;
+    value: bigint;
+    data: Hex;
+  } | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
-        data: args.data,
+        data,
       });
+
       if (safeDecodedData.functionName !== 'execTransaction') {
-        return false;
-      }
-      const [to, value, data] = safeDecodedData.args;
-      execTransaction = { to, value, data };
-    } catch (e) {
-      return false;
-    }
-
-    // If data of execTransaction is of ERC20
-    try {
-      const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
-        data: execTransaction.data,
-      });
-
-      // `transfer` to 'self' (the Safe) is not allowed
-      if (erc20DecodedData.functionName === 'transfer') {
-        const to = erc20DecodedData.args[0];
-        // TODO: Propagate checksummed address types from RelayDto from controller
-        return to !== getAddress(args.to);
+        return null;
       }
 
-      // `transferFrom` to 'self' or from sender to sender as recipient is not allowed
-      if (erc20DecodedData.functionName === 'transferFrom') {
-        const [sender, recipient] = erc20DecodedData.args;
-        return (
-          sender !== recipient &&
-          // TODO: Propagate checksummed address types from RelayDto from controller
-          recipient !== getAddress(args.to)
-        );
-      }
-
-      // Otherwise allow other methods
-      return true;
+      return {
+        to: safeDecodedData.args[0],
+        value: safeDecodedData.args[1],
+        data: safeDecodedData.args[2],
+      };
     } catch {
-      // swallow exception if data is not an ERC20 transfer
+      return null;
     }
+  }
 
-    // If a transaction does not target 'self' consider it valid
-    if (args.to !== execTransaction.to) {
-      return true;
-    }
+  private isValidErc20Transfer(args: { to: string; data: Hex }): boolean {
+    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
+      data: args.data,
+    });
 
-    // Transaction targets 'self'
-    // Block transactions targeting self with a value greater than 0
-    if (execTransaction.value > BigInt(0)) {
+    if (erc20DecodedData.functionName !== 'transfer') {
       return false;
     }
 
-    const isCancellation = execTransaction.data === '0x';
-    return isCancellation || this.safeDecoder.isCall(execTransaction.data);
+    const [to] = erc20DecodedData.args;
+    // to 'self' (the Safe) is not allowed
+    // TODO: Propagate checksummed address types from RelayDto from controller
+    return to !== getAddress(args.to);
+  }
+
+  private isValidErc20TransferFrom(args: { to: string; data: Hex }): boolean {
+    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
+      data: args.data,
+    });
+
+    if (erc20DecodedData.functionName !== 'transferFrom') {
+      return false;
+    }
+
+    const [sender, recipient] = erc20DecodedData.args;
+    // to 'self' (the Safe) or from sender to sender as recipient is not allowed
+    return (
+      sender !== recipient &&
+      // TODO: Propagate checksummed address types from RelayDto from controller
+      recipient !== getAddress(args.to)
+    );
   }
 
   private async isOfficialMastercopy(args: {
