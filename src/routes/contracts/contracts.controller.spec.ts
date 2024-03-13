@@ -135,9 +135,9 @@ describe('Contracts controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/contracts/${contract.address}`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'boolean',

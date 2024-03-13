@@ -117,9 +117,9 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/leaderboard/${safeAddress}`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',
@@ -203,9 +203,9 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/leaderboard`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',
@@ -317,9 +317,9 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/${safeAddress}/history`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_union_discriminator',
           options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
           path: ['results', 0, 'eventType'],

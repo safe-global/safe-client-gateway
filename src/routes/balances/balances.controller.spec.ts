@@ -615,7 +615,7 @@ describe('Balances Controller (Unit)', () => {
       });
     });
 
-    it(`422 error if validation fails`, async () => {
+    it(`500 error if validation fails`, async () => {
       const chainId = '1';
       const safeAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
@@ -637,9 +637,9 @@ describe('Balances Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',

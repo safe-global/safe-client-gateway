@@ -185,9 +185,9 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/chains')
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',
@@ -327,9 +327,9 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',

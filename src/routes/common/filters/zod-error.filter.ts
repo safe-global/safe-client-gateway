@@ -6,24 +6,30 @@ import {
 } from '@nestjs/common';
 import { ZodError, ZodIssue } from 'zod';
 import { Response } from 'express';
+import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
 
 /**
- * This {@link ExceptionFilter} catches any {@link ZodError} thrown
- * at the route level.
+ * This {@link ExceptionFilter} catches any {@link ZodError} thrown from
+ * the domain or {@link ZodErrorWithCode} thrown at the route level.
  *
  * It builds a JSON payload which contains a code and a message.
- * The code and message used are read from {@link ZodError} issues.
+ * The message is read from the initial {@link ZodIssue} and the code
+ * from {@link ZodErrorWithCode.code} or 500 if {@link ZodError}.
  */
-@Catch(ZodError)
+@Catch(ZodError, ZodErrorWithCode)
 export class ZodErrorFilter implements ExceptionFilter {
-  catch(exception: ZodError, host: ArgumentsHost): void {
+  catch(exception: ZodError | ZodErrorWithCode, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const code =
+      exception instanceof ZodErrorWithCode
+        ? exception.code
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const error = this.mapZodErrorResponse(exception);
 
-    response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
-      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    response.status(code).json({
+      statusCode: code,
       ...error,
     });
   }

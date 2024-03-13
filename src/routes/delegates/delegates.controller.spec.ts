@@ -110,9 +110,9 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
+          statusCode: 500,
           code: 'invalid_type',
           expected: 'string',
           received: 'boolean',
