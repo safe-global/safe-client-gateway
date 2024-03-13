@@ -14,6 +14,12 @@ import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { Hash } from 'viem';
 import { DisableRecoveryAlertsGuard } from '@/routes/recovery/guards/disable-recovery-alerts.guard';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+
+const safeRepository = {
+  getSafesByModule: jest.fn(),
+} as jest.MockedObjectDeep<ISafeRepository>;
+const safeRepositoryMock = jest.mocked(safeRepository);
 
 @Controller()
 class TestController {
@@ -54,6 +60,12 @@ describe('DisableRecoveryAlertsGuard guard tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestLoggingModule, ConfigurationModule.register(configuration)],
       controllers: [TestController],
+      providers: [
+        {
+          provide: ISafeRepository,
+          useValue: safeRepositoryMock,
+        },
+      ],
     }).compile();
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -63,7 +75,11 @@ describe('DisableRecoveryAlertsGuard guard tests', () => {
     await app.close();
   });
 
-  it('returns 200 for a valid signature', async () => {
+  it('returns 200 for a valid signature for module on given Safe', async () => {
+    safeRepositoryMock.getSafesByModule.mockResolvedValue({
+      safes: [safeAddress],
+    });
+
     await request(app.getHttpServer())
       .delete(`/test/${chainId}/${safeAddress}/${moduleAddress}`)
       .set('Safe-Wallet-Signature', signature)
@@ -73,6 +89,22 @@ describe('DisableRecoveryAlertsGuard guard tests', () => {
         signer: signer.address,
       })
       .expect(200);
+  });
+
+  it('returns 403 for a valid signature for module not on given Safe', async () => {
+    safeRepositoryMock.getSafesByModule.mockResolvedValue({
+      safes: [],
+    });
+
+    await request(app.getHttpServer())
+      .delete(`/test/${chainId}/${safeAddress}/${moduleAddress}`)
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .send({
+        moduleAddress,
+        signer: signer.address,
+      })
+      .expect(403);
   });
 
   it('returns 403 for an invalid signature', async () => {
