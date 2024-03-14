@@ -28,10 +28,12 @@ import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/tran
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
+import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
+import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 
 @Module({
   controllers: [TransactionsController],
-  imports: [AddressInfoModule, DataDecodedModule],
+  imports: [AddressInfoModule, DataDecodedModule, SwapOrderMapperModule],
   providers: [
     CreationTransactionMapper,
     CustomTransactionMapper,
@@ -52,6 +54,7 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
     QueuedItemsMapper,
     SafeAppInfoMapper,
     SettingsChangeMapper,
+    SetPreSignatureDecoder,
     TransactionDataMapper,
     TransactionPreviewMapper,
     TransactionsHistoryMapper,

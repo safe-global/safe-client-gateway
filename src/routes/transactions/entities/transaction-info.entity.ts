@@ -6,6 +6,7 @@ export enum TransactionInfoType {
   Custom = 'Custom',
   SettingsChange = 'SettingsChange',
   Transfer = 'Transfer',
+  SwapOrder = 'SwapOrder',
 }
 
 export class TransactionInfo {
