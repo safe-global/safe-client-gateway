@@ -62,9 +62,7 @@ export const OrderSchema = z.object({
           'PreValidationError',
           'unknown',
         ])
-        .catch('unknown')
-        .nullish()
-        .default(null),
+        .catch('unknown'),
     })
     .nullish()
     .default(null),
