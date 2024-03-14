@@ -1,16 +1,15 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
   receiver: AddressSchema.nullish().default(null),
-  sellAmount: NumericStringSchema,
-  buyAmount: NumericStringSchema,
+  sellAmount: z.coerce.bigint(),
+  buyAmount: z.coerce.bigint(),
   validTo: z.number(),
   appData: z.string(),
-  feeAmount: NumericStringSchema,
+  feeAmount: z.coerce.bigint(),
   kind: z.enum(['buy', 'sell', 'unknown']).default('unknown'),
   partiallyFillable: z.boolean(),
   sellTokenBalance: z
@@ -27,11 +26,11 @@ export const OrderSchema = z.object({
   class: z.enum(['market', 'limit', 'liquidity', 'unknown']).default('unknown'),
   owner: AddressSchema,
   uid: z.string(),
-  availableBalance: NumericStringSchema.nullish().default(null),
-  executedSellAmount: NumericStringSchema,
-  executedSellAmountBeforeFees: NumericStringSchema,
-  executedBuyAmount: NumericStringSchema,
-  executedFeeAmount: NumericStringSchema,
+  availableBalance: z.coerce.bigint().nullish().default(null),
+  executedSellAmount: z.coerce.bigint(),
+  executedSellAmountBeforeFees: z.coerce.bigint(),
+  executedBuyAmount: z.coerce.bigint(),
+  executedFeeAmount: z.coerce.bigint(),
   invalidated: z.boolean(),
   status: z
     .enum([
@@ -43,7 +42,7 @@ export const OrderSchema = z.object({
       'unknown',
     ])
     .default('unknown'),
-  fullFeeAmount: NumericStringSchema,
+  fullFeeAmount: z.coerce.bigint(),
   isLiquidityOrder: z.boolean(),
   ethflowData: z
     .object({
@@ -69,6 +68,6 @@ export const OrderSchema = z.object({
     })
     .nullish()
     .default(null),
-  executedSurplusFee: NumericStringSchema.nullish().default(null),
+  executedSurplusFee: z.coerce.bigint().nullish().default(null),
   fullAppData: z.string().nullish().default(null),
 });
