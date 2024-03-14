@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import { getFunctionSelector, parseAbi } from 'viem';
+import { toFunctionSelector, parseAbi } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 export const abi = parseAbi([
@@ -15,7 +15,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     super(abi);
-    this.setPreSignatureFunctionSelector = getFunctionSelector(abi[0]);
+    this.setPreSignatureFunctionSelector = toFunctionSelector(abi[0]);
   }
 
   /**
