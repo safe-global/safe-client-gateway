@@ -164,8 +164,15 @@ describe('Data decode e2e tests', () => {
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/data-decoder`)
       .send({ ...getDataDecodedDto, to: faker.number.int() })
-      .expect(400)
-      .expect({ message: 'Validation failed', code: 42, arguments: [] });
+      .expect(422)
+      .expect({
+        statusCode: 422,
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'number',
+        path: ['to'],
+        message: 'Expected string, received number',
+      });
   });
 
   it('POST /data-decoder should throw a validation error (2)', async () => {
@@ -174,7 +181,12 @@ describe('Data decode e2e tests', () => {
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/data-decoder`)
       .send({ ...getDataDecodedDto, to: faker.string.alphanumeric() })
-      .expect(400)
-      .expect({ message: 'Validation failed', code: 42, arguments: [] });
+      .expect(422)
+      .expect({
+        statusCode: 422,
+        code: 'custom',
+        path: ['to'],
+        message: 'Invalid input',
+      });
   });
 });
