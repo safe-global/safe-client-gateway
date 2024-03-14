@@ -14,16 +14,16 @@ export const OrderSchema = z.object({
   partiallyFillable: z.boolean(),
   sellTokenBalance: z
     .enum(['erc20', 'internal', 'external', 'unknown'])
-    .default('unknown'),
-  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).default('unknown'),
+    .catch('unknown'),
+  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).catch('unknown'),
   signingScheme: z
     .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
-    .default('unknown'),
+    .catch('unknown'),
   signature: z.string(),
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).default('unknown'),
+  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).catch('unknown'),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),
@@ -41,7 +41,7 @@ export const OrderSchema = z.object({
       'expired',
       'unknown',
     ])
-    .default('unknown'),
+    .catch('unknown'),
   fullFeeAmount: z.coerce.bigint(),
   isLiquidityOrder: z.boolean(),
   ethflowData: z
@@ -62,7 +62,7 @@ export const OrderSchema = z.object({
           'PreValidationError',
           'unknown',
         ])
-        .default('unknown')
+        .catch('unknown')
         .nullish()
         .default(null),
     })
