@@ -141,8 +141,6 @@ export class LimitAddressesMapper {
       });
     }
 
-    // Other ERC-20 methods are valid if they are...
-
     // Only transaction to other party is valid
     const toSelf = execTransactionArgs.to === args.to;
     if (!toSelf) {
@@ -185,6 +183,7 @@ export class LimitAddressesMapper {
   }
 
   private isValidErc20Transfer(args: { to: string; data: Hex }): boolean {
+    // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
     });
@@ -200,6 +199,7 @@ export class LimitAddressesMapper {
   }
 
   private isValidErc20TransferFrom(args: { to: string; data: Hex }): boolean {
+    // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
     });
