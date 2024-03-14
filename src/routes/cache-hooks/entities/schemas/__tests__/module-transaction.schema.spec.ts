@@ -1,18 +1,14 @@
 import { ModuleTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/module-transaction.schema';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
+import { moduleTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/module-transaction.builder';
 
 describe('ModuleTransactionEventSchema', () => {
-  const moduleTransactionEvent = {
-    type: 'MODULE_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    module: faker.finance.ethereumAddress(),
-    txHash: faker.string.hexadecimal(),
-  };
+  it('should validate an module transaction event', () => {
+    const moduleTransactionEvent = moduleTransactionEventBuilder().build();
 
-  it('should validate a module transaction event', () => {
     const result = ModuleTransactionEventSchema.safeParse(
       moduleTransactionEvent,
     );
@@ -20,66 +16,90 @@ describe('ModuleTransactionEventSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should checksum the address and module', () => {
+  it('should not allow a non-MODULE_TRANSACTION event', () => {
+    const moduleTransactionEvent = moduleTransactionEventBuilder()
+      .with('type', faker.word.sample() as EventType.MODULE_TRANSACTION)
+      .build();
+
     const result = ModuleTransactionEventSchema.safeParse(
       moduleTransactionEvent,
     );
 
-    expect(result.success && result.data.address).toBe(
-      getAddress(moduleTransactionEvent.address),
-    );
-    expect(result.success && result.data.module).toBe(
-      getAddress(moduleTransactionEvent.module),
-    );
-  });
-
-  it('should not allow an invalid module transaction event', () => {
-    const invalidModuleTransactionEvent = {
-      invalid: 'moduleTransactionEvent',
-    };
-
-    const result = ModuleTransactionEventSchema.safeParse(
-      invalidModuleTransactionEvent,
-    );
-
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        // @ts-expect-error - no type inferral for literal
         {
+          received: moduleTransactionEvent.type,
           code: 'invalid_literal',
           expected: 'MODULE_TRANSACTION',
           path: ['type'],
           message: 'Invalid literal value, expected "MODULE_TRANSACTION"',
         },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['address'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['module'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['txHash'],
-          message: 'Required',
-        },
       ]),
     );
+  });
+
+  it.each([['address' as const], ['module' as const]])(
+    'should not allow a non-address %s',
+    (field) => {
+      const moduleTransactionEvent = moduleTransactionEventBuilder()
+        .with(field, faker.string.alpha() as `0x${string}`)
+        .build();
+
+      const result = ModuleTransactionEventSchema.safeParse(
+        moduleTransactionEvent,
+      );
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            path: [field],
+            message: 'Invalid input',
+          },
+        ]),
+      );
+    },
+  );
+
+  it.each([['address' as const], ['module' as const]])(
+    'should checksum the %s',
+    (field) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as `0x${string}`;
+      const moduleTransactionEvent = moduleTransactionEventBuilder()
+        .with(field, nonChecksummedAddress)
+        .build();
+
+      const result = ModuleTransactionEventSchema.safeParse(
+        moduleTransactionEvent,
+      );
+
+      expect(result.success && result.data[field]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    },
+  );
+
+  it.each([
+    ['type' as const],
+    ['address' as const],
+    ['chainId' as const],
+    ['module' as const],
+    ['txHash' as const],
+  ])(`should not allow a missing %s`, (field) => {
+    const moduleTransactionEvent = moduleTransactionEventBuilder().build();
+    delete moduleTransactionEvent[field];
+
+    const result = ModuleTransactionEventSchema.safeParse(
+      moduleTransactionEvent,
+    );
+
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
   });
 });

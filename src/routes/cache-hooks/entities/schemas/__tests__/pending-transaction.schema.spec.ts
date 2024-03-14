@@ -1,17 +1,14 @@
+import { pendingTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/pending-transaction.builder';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { PendingTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/pending-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('PendingTransactionEventSchema', () => {
-  const pendingTransactionEvent = {
-    type: 'PENDING_MULTISIG_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    safeTxHash: faker.string.hexadecimal(),
-  };
+  it('should validate an pending transaction event', () => {
+    const pendingTransactionEvent = pendingTransactionEventBuilder().build();
 
-  it('should validate an pending event', () => {
     const result = PendingTransactionEventSchema.safeParse(
       pendingTransactionEvent,
     );
@@ -19,57 +16,86 @@ describe('PendingTransactionEventSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should checksum the address', () => {
-    const result = PendingTransactionEventSchema.safeParse(
-      pendingTransactionEvent,
-    );
-
-    expect(result.success && result.data.address).toBe(
-      getAddress(pendingTransactionEvent.address),
-    );
-  });
-
-  it('should not allow an invalid pending event', () => {
-    const invalidPendingTransactionEvent = {
-      invalid: 'pendingTransactionEvent',
-    };
+  it('should not allow a non-PENDING_MULTISIG_TRANSACTION event', () => {
+    const executedTransactionEvent = pendingTransactionEventBuilder()
+      .with(
+        'type',
+        faker.word.sample() as EventType.PENDING_MULTISIG_TRANSACTION,
+      )
+      .build();
 
     const result = PendingTransactionEventSchema.safeParse(
-      invalidPendingTransactionEvent,
+      executedTransactionEvent,
     );
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        // @ts-expect-error - no type inferral for literal
         {
+          received: executedTransactionEvent.type,
           code: 'invalid_literal',
           expected: 'PENDING_MULTISIG_TRANSACTION',
           path: ['type'],
           message:
             'Invalid literal value, expected "PENDING_MULTISIG_TRANSACTION"',
         },
+      ]),
+    );
+  });
+
+  it('should not allow a non-address address', () => {
+    const pendingTransactionEvent = pendingTransactionEventBuilder()
+      .with('address', faker.string.sample() as `0x${string}`)
+      .build();
+
+    const result = PendingTransactionEventSchema.safeParse(
+      pendingTransactionEvent,
+    );
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
         {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
+          code: 'custom',
           path: ['address'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['safeTxHash'],
-          message: 'Required',
+          message: 'Invalid input',
         },
       ]),
     );
+  });
+
+  it('should checksum the address', () => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as `0x${string}`;
+    const pendingTransactionEvent = pendingTransactionEventBuilder()
+      .with('address', nonChecksummedAddress)
+      .build();
+
+    const result = PendingTransactionEventSchema.safeParse(
+      pendingTransactionEvent,
+    );
+    expect(result.success && result.data.address).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it.each([
+    ['type' as const],
+    ['address' as const],
+    ['chainId' as const],
+    ['safeTxHash' as const],
+  ])('should not allow a missing %s', (field) => {
+    const pendingTransactionEvent = pendingTransactionEventBuilder().build();
+    delete pendingTransactionEvent[field];
+
+    const result = PendingTransactionEventSchema.safeParse(
+      pendingTransactionEvent,
+    );
+
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
   });
 });

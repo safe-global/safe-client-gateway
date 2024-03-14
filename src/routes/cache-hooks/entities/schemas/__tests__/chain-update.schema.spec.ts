@@ -1,43 +1,52 @@
+import { chainUpdateEventBuilder } from '@/routes/cache-hooks/entities/__tests__/chain-update.builder';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { ChainUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/chain-update.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
 describe('ChainUpdateEventSchema', () => {
   it('should validate a valid chain event', () => {
-    const chainEvent = {
-      type: 'CHAIN_UPDATE',
-      chainId: faker.string.numeric(),
-    };
+    const chainUpdateEvent = chainUpdateEventBuilder().build();
 
-    const result = ChainUpdateEventSchema.safeParse(chainEvent);
+    const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
 
     expect(result.success).toBe(true);
   });
 
-  it('should not allow an invalid chain event', () => {
-    const invalidChainEvent = {
-      invalid: 'chainEvent',
-    };
+  it('should not allow an non-CHAIN_UPDATE event', () => {
+    const chainUpdateEvent = chainUpdateEventBuilder()
+      .with('type', faker.word.sample() as EventType.CHAIN_UPDATE)
+      .build();
 
-    const result = ChainUpdateEventSchema.safeParse(invalidChainEvent);
+    const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        // @ts-expect-error - no type inferral for literal
         {
+          received: chainUpdateEvent.type,
           code: 'invalid_literal',
           expected: 'CHAIN_UPDATE',
           path: ['type'],
           message: 'Invalid literal value, expected "CHAIN_UPDATE"',
         },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        },
       ]),
     );
   });
+
+  it.each([['type' as const], ['chainId' as const]])(
+    'should not allow a missing %s',
+    (field) => {
+      const chainUpdateEvent = chainUpdateEventBuilder().build();
+      delete chainUpdateEvent[field];
+
+      const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
+
+      expect(
+        !result.success &&
+          result.error.issues.length === 1 &&
+          result.error.issues[0].path.length === 1 &&
+          result.error.issues[0].path[0] === field,
+      ).toBe(true);
+    },
+  );
 });

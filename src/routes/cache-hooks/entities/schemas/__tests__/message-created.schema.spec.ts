@@ -1,70 +1,88 @@
+import { messageCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__/message-created.builder';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { MessageCreatedEventSchema } from '@/routes/cache-hooks/entities/schemas/message-created.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('MessageCreatedEventSchema', () => {
-  const messageCreatedEvent = {
-    type: 'MESSAGE_CREATED',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    messageHash: faker.string.hexadecimal(),
-  };
-
   it('should validate a message created event', () => {
+    const messageCreatedEvent = messageCreatedEventBuilder().build();
+
     const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
 
     expect(result.success).toBe(true);
   });
 
-  it('should checksum the address', () => {
+  it('should not allow a non-MESSAGE_CREATED event', () => {
+    const messageCreatedEvent = messageCreatedEventBuilder()
+      .with('type', faker.word.sample() as EventType.MESSAGE_CREATED)
+      .build();
+
     const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
-
-    expect(result.success && result.data.address).toBe(
-      getAddress(messageCreatedEvent.address),
-    );
-  });
-
-  it('should not allow an invalid message event', () => {
-    const invalidMessageCreatedEvent = {
-      invalid: 'messageCreatedEvent',
-    };
-
-    const result = MessageCreatedEventSchema.safeParse(
-      invalidMessageCreatedEvent,
-    );
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        // @ts-expect-error - no type inferral for literal
         {
+          received: messageCreatedEvent.type,
           code: 'invalid_literal',
           expected: 'MESSAGE_CREATED',
           path: ['type'],
           message: 'Invalid literal value, expected "MESSAGE_CREATED"',
         },
+      ]),
+    );
+  });
+
+  it('should not allow a non-address address', () => {
+    const messageCreatedEvent = messageCreatedEventBuilder()
+      .with('address', faker.string.alpha() as `0x${string}`)
+      .build();
+
+    const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
         {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
+          code: 'custom',
           path: ['address'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['messageHash'],
-          message: 'Required',
+          message: 'Invalid input',
         },
       ]),
     );
+  });
+
+  it('should checksum the address', () => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as `0x${string}`;
+    const messageCreatedEvent = messageCreatedEventBuilder()
+      .with('address', nonChecksummedAddress)
+      .build();
+
+    const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
+
+    expect(result.success && result.data.address).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it.each([
+    ['type' as const],
+    ['address' as const],
+    ['chainId' as const],
+    ['messageHash' as const],
+  ])(`should not allow a non-%s`, (field) => {
+    const messageCreatedEvent = messageCreatedEventBuilder().build();
+    delete messageCreatedEvent[field];
+
+    const result = MessageCreatedEventSchema.safeParse(messageCreatedEvent);
+
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
   });
 });

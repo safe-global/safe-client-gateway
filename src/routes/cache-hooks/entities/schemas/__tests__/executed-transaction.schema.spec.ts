@@ -1,18 +1,14 @@
+import { executedTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/executed-transaction.builder';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { ExecutedTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/executed-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('ExecutedTransactionEventSchema', () => {
-  const executedTransactionEvent = {
-    type: 'EXECUTED_MULTISIG_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    safeTxHash: faker.string.hexadecimal(),
-    txHash: faker.string.hexadecimal(),
-  };
-
   it('should validate an execution event', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+
     const result = ExecutedTransactionEventSchema.safeParse(
       executedTransactionEvent,
     );
@@ -20,64 +16,87 @@ describe('ExecutedTransactionEventSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should checksum the address', () => {
+  it('should not allow a non-EXECUTED_MULTISIG_TRANSACTION event', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with(
+        'type',
+        faker.word.sample() as EventType.EXECUTED_MULTISIG_TRANSACTION,
+      )
+      .build();
+
     const result = ExecutedTransactionEventSchema.safeParse(
       executedTransactionEvent,
     );
 
-    expect(result.success && result.data.address).toBe(
-      getAddress(executedTransactionEvent.address),
-    );
-  });
-
-  it('should not allow an invalid execution event', () => {
-    const invalidExecutedTransactionEvent = {
-      invalid: 'executedTransactionEvent',
-    };
-
-    const result = ExecutedTransactionEventSchema.safeParse(
-      invalidExecutedTransactionEvent,
-    );
-
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        // @ts-expect-error - no type inferral for literal
         {
+          received: executedTransactionEvent.type,
           code: 'invalid_literal',
           expected: 'EXECUTED_MULTISIG_TRANSACTION',
           path: ['type'],
           message:
             'Invalid literal value, expected "EXECUTED_MULTISIG_TRANSACTION"',
         },
+      ]),
+    );
+  });
+
+  it('should not allow a non-address address', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with('address', faker.string.sample() as `0x${string}`)
+      .build();
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
         {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
+          code: 'custom',
           path: ['address'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['safeTxHash'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['txHash'],
-          message: 'Required',
+          message: 'Invalid input',
         },
       ]),
     );
+  });
+
+  it('should checksum the address', () => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as `0x${string}`;
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with('address', nonChecksummedAddress)
+      .build();
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+    expect(result.success && result.data.address).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it.each([
+    ['type' as const],
+    ['address' as const],
+    ['chainId' as const],
+    ['safeTxHash' as const],
+    ['txHash' as const],
+  ])('should not allow a missing %s', (field) => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    delete executedTransactionEvent[field];
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
   });
 });

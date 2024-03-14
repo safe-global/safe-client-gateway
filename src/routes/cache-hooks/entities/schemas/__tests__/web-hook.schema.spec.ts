@@ -1,114 +1,43 @@
+import { chainUpdateEventBuilder } from '@/routes/cache-hooks/entities/__tests__/chain-update.builder';
+import { deletedMultisigTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/executed-transaction.builder';
+import { incomingEtherEventBuilder } from '@/routes/cache-hooks/entities/__tests__/incoming-ether.builder';
+import { incomingTokenEventBuilder } from '@/routes/cache-hooks/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__/message-created.builder';
+import { moduleTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/module-transaction.builder';
+import { newConfirmationEventBuilder } from '@/routes/cache-hooks/entities/__tests__/new-confirmation.builder';
+import { newMessageConfirmationEventBuilder } from '@/routes/cache-hooks/entities/__tests__/new-message-confirmation.builder';
+import { outgoingEtherEventBuilder } from '@/routes/cache-hooks/entities/__tests__/outgoing-ether.builder';
+import { outgoingTokenEventBuilder } from '@/routes/cache-hooks/entities/__tests__/outgoing-token.builder';
+import { pendingTransactionEventBuilder } from '@/routes/cache-hooks/entities/__tests__/pending-transaction.builder';
+import { safeAppsEventBuilder } from '@/routes/cache-hooks/entities/__tests__/safe-apps-update.builder';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
-import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
 describe('WebHookSchema', () => {
-  const chainEvent = {
-    type: 'CHAIN_UPDATE',
-    chainId: faker.string.numeric(),
-  };
-  const deletedMultisigTransactionEvent = {
-    type: 'DELETED_MULTISIG_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    safeTxHash: faker.string.hexadecimal(),
-  };
-  const executedTransactionEvent = {
-    type: 'EXECUTED_MULTISIG_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    safeTxHash: faker.string.hexadecimal(),
-    txHash: faker.string.hexadecimal(),
-  };
-  const incomingEtherEvent = {
-    type: 'INCOMING_ETHER',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    txHash: faker.string.hexadecimal(),
-    value: faker.string.numeric(),
-  };
-  const incomingTokenEvent = {
-    type: 'INCOMING_TOKEN',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    tokenAddress: faker.finance.ethereumAddress(),
-    txHash: faker.string.hexadecimal(),
-  };
-  const messageCreatedEvent = {
-    type: 'MESSAGE_CREATED',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    messageHash: faker.string.hexadecimal(),
-  };
-  const moduleTransactionEvent = {
-    type: 'MODULE_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    module: faker.finance.ethereumAddress(),
-    txHash: faker.string.hexadecimal(),
-  };
-  const newConfirmationEvent = {
-    type: 'NEW_CONFIRMATION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    owner: faker.finance.ethereumAddress(),
-    safeTxHash: faker.string.hexadecimal(),
-  };
-  const newMessageConfirmationEvent = {
-    type: 'MESSAGE_CONFIRMATION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    messageHash: faker.string.hexadecimal(),
-  };
-  const outgoingEtherEvent = {
-    type: 'OUTGOING_ETHER',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    txHash: faker.string.hexadecimal(),
-    value: faker.string.numeric(),
-  };
-  const outgoingTokenEvent = {
-    type: 'OUTGOING_TOKEN',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    tokenAddress: faker.finance.ethereumAddress(),
-    txHash: faker.string.hexadecimal(),
-  };
-  const pendingTransactionEvent = {
-    type: 'PENDING_MULTISIG_TRANSACTION',
-    address: faker.finance.ethereumAddress(),
-    chainId: faker.string.numeric(),
-    safeTxHash: faker.string.hexadecimal(),
-  };
-  const safeAppsEvent = {
-    type: 'SAFE_APPS_UPDATE',
-    chainId: faker.string.numeric(),
-  };
+  [
+    chainUpdateEventBuilder,
+    deletedMultisigTransactionEventBuilder,
+    executedTransactionEventBuilder,
+    incomingEtherEventBuilder,
+    incomingTokenEventBuilder,
+    messageCreatedEventBuilder,
+    moduleTransactionEventBuilder,
+    newConfirmationEventBuilder,
+    newMessageConfirmationEventBuilder,
+    outgoingEtherEventBuilder,
+    outgoingTokenEventBuilder,
+    pendingTransactionEventBuilder,
+    safeAppsEventBuilder,
+  ].forEach((builder) => {
+    const event = builder().build();
 
-  const events = [
-    chainEvent,
-    deletedMultisigTransactionEvent,
-    executedTransactionEvent,
-    incomingEtherEvent,
-    incomingTokenEvent,
-    messageCreatedEvent,
-    moduleTransactionEvent,
-    newConfirmationEvent,
-    newMessageConfirmationEvent,
-    outgoingEtherEvent,
-    outgoingTokenEvent,
-    pendingTransactionEvent,
-    safeAppsEvent,
-  ];
-
-  it.each(events.map((event) => [event.type, event]))(
-    'should validate a %s event',
-    (_, event) => {
+    it(`should validate a ${event.type} event`, () => {
       const result = WebHookSchema.safeParse(event);
 
       expect(result.success).toBe(true);
-    },
-  );
+    });
+  });
 
   it('should not allow an invalid event', () => {
     const invalidEvent = {
