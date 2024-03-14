@@ -1,11 +1,9 @@
-export interface DataDecodedParameter {
-  name: string;
-  type: string;
-  value: unknown;
-  valueDecoded?: Record<string, unknown> | Record<string, unknown>[];
-}
+import {
+  DataDecodedParameterSchema,
+  DataDecodedSchema,
+} from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { z } from 'zod';
 
-export interface DataDecoded {
-  method: string;
-  parameters: DataDecodedParameter[] | null;
-}
+export type DataDecodedParameter = z.infer<typeof DataDecodedParameterSchema>;
+
+export type DataDecoded = z.infer<typeof DataDecodedSchema>;

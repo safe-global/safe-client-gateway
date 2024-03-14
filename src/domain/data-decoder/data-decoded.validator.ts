@@ -11,6 +11,7 @@ import { IValidator } from '@/domain/interfaces/validator.interface';
 import { GenericValidator } from '@/validation/providers/generic.validator';
 import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 
+// TODO: Remove after creation, module, multisig and transaction type are migrated to zod
 @Injectable()
 export class DataDecodedValidator implements IValidator<DataDecoded> {
   private readonly isValidDataDecoded: ValidateFunction<DataDecoded>;

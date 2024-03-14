@@ -1,15 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
-import { DataDecodedValidator } from '@/domain/data-decoder/data-decoded.validator';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class DataDecodedRepository implements IDataDecodedRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly validator: DataDecodedValidator,
   ) {}
 
   async getDataDecoded(args: {
@@ -24,6 +23,6 @@ export class DataDecodedRepository implements IDataDecodedRepository {
       data: args.data,
       to: args.to,
     });
-    return this.validator.validate(dataDecoded);
+    return DataDecodedSchema.parse(dataDecoded);
   }
 }
