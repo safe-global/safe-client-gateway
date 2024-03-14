@@ -41,9 +41,8 @@ export class Chain {
   chainName: string;
   @ApiProperty()
   description: string;
-  // TODO: Make required when implemented on config service and deemed stable
-  @ApiPropertyOptional()
-  chainLogoUri?: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  chainLogoUri: string | null;
   @ApiProperty()
   l2: boolean;
   @ApiProperty()
@@ -102,8 +101,7 @@ export class Chain {
     theme: Theme,
     ensRegistryAddress: string | null,
     isTestnet: boolean,
-    // TODO: Make required when deemed stable on config service
-    chainLogoUri?: string | null,
+    chainLogoUri: string | null,
   ) {
     this.chainId = chainId;
     this.chainName = chainName;

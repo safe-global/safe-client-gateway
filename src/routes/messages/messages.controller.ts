@@ -11,8 +11,9 @@ import { Message } from '@/routes/messages/entities/message.entity';
 import { MessagePage } from '@/routes/messages/entities/messages-page.entity';
 import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
 import { MessagesService } from '@/routes/messages/messages.service';
-import { CreateMessageDtoValidationPipe } from '@/routes/messages/pipes/create-message.dto.validation.pipe';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { UpdateMessageSignatureDtoValidationPipe } from '@/routes/messages/pipes/update-message-signature.dto.validation.pipe';
+import { CreateMessageDtoSchema } from '@/routes/messages/entities/schemas/create-message.dto.schema';
 
 @ApiTags('messages')
 @Controller({
@@ -53,7 +54,8 @@ export class MessagesController {
   async createMessage(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body(CreateMessageDtoValidationPipe) createMessageDto: CreateMessageDto,
+    @Body(new ValidationPipe(CreateMessageDtoSchema))
+    createMessageDto: CreateMessageDto,
   ): Promise<unknown> {
     return this.messagesService.createMessage({
       chainId,
