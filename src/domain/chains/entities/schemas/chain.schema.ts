@@ -12,7 +12,7 @@ export const NativeCurrencySchema = z.object({
 export const RpcUriSchema = z.object({
   authentication: z
     .nativeEnum(RpcUriAuthentication)
-    .default(RpcUriAuthentication.Unknown),
+    .catch(() => RpcUriAuthentication.Unknown),
   value: z.string(),
 });
 
@@ -46,7 +46,7 @@ export const GasPriceFixedEip1559Schema = z.object({
 });
 
 export const GasPriceSchema = z.array(
-  z.union([
+  z.discriminatedUnion('type', [
     GasPriceOracleSchema,
     GasPriceFixedSchema,
     GasPriceFixedEip1559Schema,
@@ -57,8 +57,7 @@ export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
   description: z.string(),
-  // TODO: Make required when deemed stable on config service
-  chainLogoUri: z.string().url().optional().nullable().default(null),
+  chainLogoUri: z.string().url().nullish().default(null),
   l2: z.boolean(),
   isTestnet: z.boolean(),
   shortName: z.string(),
@@ -71,7 +70,7 @@ export const ChainSchema = z.object({
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
-  ensRegistryAddress: AddressSchema.nullable(),
+  ensRegistryAddress: AddressSchema.nullish().default(null),
   disabledWallets: z.array(z.string()),
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
