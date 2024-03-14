@@ -2,7 +2,6 @@ import { creationTransactionBuilder } from '@/domain/safe/entities/__tests__/cre
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { ZodError } from 'zod';
 
 describe('CreationTransactionSchema', () => {
   it('should validate a valid creation transaction', () => {
@@ -13,77 +12,62 @@ describe('CreationTransactionSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should checmsum the creator, factoryAddress and masterCopy', () => {
+  it('should coerce the created date to a Date', () => {
+    const creationTransaction = creationTransactionBuilder().build();
+
+    const result = CreationTransactionSchema.safeParse(creationTransaction);
+
+    expect(result.success && result.data.created).toBeInstanceOf(Date);
+  });
+
+  it.each([
+    ['creator' as const],
+    ['factoryAddress' as const],
+    ['masterCopy' as const],
+  ])('should checksum the %s', (field) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as `0x${string}`;
     const creationTransaction = creationTransactionBuilder()
-      .with('creator', nonChecksummedAddress)
-      .with('factoryAddress', nonChecksummedAddress)
-      .with('masterCopy', nonChecksummedAddress)
+      .with(field, nonChecksummedAddress)
       .build();
 
     const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-    expect(result.success && result.data.creator).toBe(
-      getAddress(nonChecksummedAddress),
-    );
-    expect(result.success && result.data.factoryAddress).toBe(
-      getAddress(nonChecksummedAddress),
-    );
-    expect(result.success && result.data.masterCopy).toBe(
+    expect(result.success && result.data[field]).toBe(
       getAddress(nonChecksummedAddress),
     );
   });
 
-  it('should allow optional masterCopy, setupData and dataDecoded, defaulting to null', () => {
-    const fields = ['masterCopy', 'setupData', 'dataDecoded'] as const;
+  it.each([
+    ['masterCopy' as const],
+    ['setupData' as const],
+    ['dataDecoded' as const],
+  ])('should allow an optional %s', (field) => {
     const creationTransaction = creationTransactionBuilder().build();
-    fields.forEach((field) => {
-      delete creationTransaction[field];
-    });
+    delete creationTransaction[field];
 
     const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-    fields.forEach((field) => {
-      expect(result.success && result.data[field]).toBe(null);
-    });
+    expect(result.success && result.data[field]).toBe(null);
   });
 
-  it('should not validate an invalid creation creation transaction', () => {
-    const creationTransaction = { invalid: 'creationTransaction' };
+  it.each([
+    ['created' as const],
+    ['creator' as const],
+    ['transactionHash' as const],
+    ['factoryAddress' as const],
+  ])('should not allow an undefined %s', (field) => {
+    const creationTransaction = creationTransactionBuilder().build();
+    delete creationTransaction[field];
 
     const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'invalid_date',
-          path: ['created'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['creator'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['transactionHash'],
-          message: 'Required',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['factoryAddress'],
-          message: 'Required',
-        },
-      ]),
-    );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
   });
 });
