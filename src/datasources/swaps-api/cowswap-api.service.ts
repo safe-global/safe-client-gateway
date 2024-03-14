@@ -13,7 +13,7 @@ export class CowSwapApi implements ISwapsApi {
   async getOrder(uid: string): Promise<Order> {
     try {
       const url = `${this.baseUrl}/api/v1/orders/${uid}`;
-      const { data } = await this.networkService.get<Order>(url);
+      const { data } = await this.networkService.get<Order>({ url });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);

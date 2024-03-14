@@ -19,8 +19,11 @@ import { z } from 'zod';
 export class LockingController {
   constructor(private readonly lockingService: LockingService) {}
 
-  @Get('/:safeAddress/rank')
-  async getRank(@Param('safeAddress') safeAddress: string): Promise<Rank> {
+  @Get('/leaderboard/:safeAddress')
+  async getRank(
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: z.infer<typeof AddressSchema>,
+  ): Promise<Rank> {
     return this.lockingService.getRank(safeAddress);
   }
 

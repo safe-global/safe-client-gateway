@@ -12,6 +12,7 @@ import {
   withdrawEventItemBuilder,
 } from '@/domain/locking/entities/__tests__/locking-event.builder';
 import { getAddress } from 'viem';
+import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 
 const networkService = {
   get: jest.fn(),
@@ -42,7 +43,115 @@ describe('LockingApi', () => {
     );
   });
 
-  it.todo('getLeaderboard');
+  describe('getRank', () => {
+    it('should get rank', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const rank = rankBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: {
+          rank,
+        },
+        status: 200,
+      });
+
+      const result = await service.getRank(safeAddress);
+
+      expect(result).toEqual({ rank });
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`,
+      });
+    });
+
+    it('should forward error', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(service.getRank(safeAddress)).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getLeaderboard', () => {
+    it('should get leaderboard', async () => {
+      const leaderboardPage = pageBuilder()
+        .with('results', [rankBuilder().build()])
+        .build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: leaderboardPage,
+        status: 200,
+      });
+
+      const result = await service.getLeaderboard({});
+
+      expect(result).toEqual(leaderboardPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/leaderboard`,
+        networkRequest: {
+          params: {
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward pagination queries', async () => {
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const leaderboardPage = pageBuilder()
+        .with('results', [rankBuilder().build()])
+        .build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: leaderboardPage,
+        status: 200,
+      });
+
+      await service.getLeaderboard({ limit, offset });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/leaderboard`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/leaderboard`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(service.getLeaderboard({})).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
 
   describe('getLockingHistory', () => {
     it('should get locking history', async () => {
@@ -61,15 +170,15 @@ describe('LockingApi', () => {
 
       await service.getLockingHistory({ safeAddress });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith(
-        `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
-        {
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
+        networkRequest: {
           params: {
             limit: undefined,
             offset: undefined,
           },
         },
-      );
+      });
     });
 
     it('should forward pagination queries', async () => {
@@ -90,15 +199,15 @@ describe('LockingApi', () => {
 
       await service.getLockingHistory({ safeAddress, limit, offset });
 
-      expect(mockNetworkService.get).toHaveBeenCalledWith(
-        `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
-        {
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${safeAddress}`,
+        networkRequest: {
           params: {
             limit,
             offset,
           },
         },
-      );
+      });
     });
 
     it('should forward error', async () => {

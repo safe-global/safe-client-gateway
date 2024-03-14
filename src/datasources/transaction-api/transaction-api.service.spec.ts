@@ -108,9 +108,12 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(decodedData);
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(getDataDecodedUrl, {
-        data,
-        to,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: getDataDecodedUrl,
+        data: {
+          data,
+          to,
+        },
       });
     });
 
@@ -141,9 +144,12 @@ describe('TransactionApi', () => {
       );
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(getDataDecodedUrl, {
-        data,
-        to,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: getDataDecodedUrl,
+        data: {
+          data,
+          to,
+        },
       });
     });
   });
@@ -479,9 +485,12 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postDelegateUrl, {
-        ...delegate,
-        signature,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postDelegateUrl,
+        data: {
+          ...delegate,
+          signature,
+        },
       });
     });
 
@@ -516,9 +525,12 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postDelegateUrl, {
-        ...delegate,
-        signature,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postDelegateUrl,
+        data: {
+          ...delegate,
+          signature,
+        },
       });
     });
   });
@@ -540,10 +552,13 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(deleteDelegateUrl, {
-        delegate: delegate.delegate,
-        delegator: delegate.delegator,
-        signature,
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteDelegateUrl,
+        data: {
+          delegate: delegate.delegate,
+          delegator: delegate.delegator,
+          signature,
+        },
       });
     });
 
@@ -578,10 +593,13 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(deleteDelegateUrl, {
-        delegate: delegate.delegate,
-        delegator: delegate.delegator,
-        signature,
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteDelegateUrl,
+        data: {
+          delegate: delegate.delegate,
+          delegator: delegate.delegator,
+          signature,
+        },
       });
     });
   });
@@ -603,14 +621,14 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteSafeDelegateUrl,
-        {
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteSafeDelegateUrl,
+        data: {
           delegate: delegate.delegate,
           safe: delegate.safe!,
           signature,
         },
-      );
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -644,14 +662,14 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteSafeDelegateUrl,
-        {
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteSafeDelegateUrl,
+        data: {
           delegate: delegate.delegate,
           safe: delegate.safe!,
           signature,
         },
-      );
+      });
     });
   });
 
@@ -982,8 +1000,11 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postConfirmationUrl, {
-        signature: signedSafeTxHash,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postConfirmationUrl,
+        data: {
+          signature: signedSafeTxHash,
+        },
       });
     });
 
@@ -1017,8 +1038,11 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postConfirmationUrl, {
-        signature: signedSafeTxHash,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postConfirmationUrl,
+        data: {
+          signature: signedSafeTxHash,
+        },
       });
     });
   });
@@ -1042,7 +1066,9 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(safesByModule);
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-      expect(mockNetworkService.get).toHaveBeenCalledWith(getSafesByModuleUrl);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: getSafesByModuleUrl,
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -1071,7 +1097,9 @@ describe('TransactionApi', () => {
       );
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-      expect(mockNetworkService.get).toHaveBeenCalledWith(getSafesByModuleUrl);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: getSafesByModuleUrl,
+      });
     });
   });
 
@@ -1470,8 +1498,11 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(deleteTransactionUrl, {
-        signature,
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteTransactionUrl,
+        data: {
+          signature,
+        },
       });
     });
 
@@ -1505,8 +1536,11 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(deleteTransactionUrl, {
-        signature,
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteTransactionUrl,
+        data: {
+          signature,
+        },
       });
     });
   });
@@ -1930,14 +1964,14 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        postDeviceRegistrationUrl,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postDeviceRegistrationUrl,
+        data: {
           ...device,
           safes,
           signatures,
         },
-      );
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -1970,8 +2004,11 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postConfirmationUrl, {
-        signature: signedSafeTxHash,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postConfirmationUrl,
+        data: {
+          signature: signedSafeTxHash,
+        },
       });
     });
   });
@@ -1988,9 +2025,9 @@ describe('TransactionApi', () => {
       await service.deleteDeviceRegistration(uuid);
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteDeviceRegistrationUrl,
-      );
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteDeviceRegistrationUrl,
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -2019,9 +2056,9 @@ describe('TransactionApi', () => {
       );
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteDeviceRegistrationUrl,
-      );
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteDeviceRegistrationUrl,
+      });
     });
   });
 
@@ -2038,9 +2075,9 @@ describe('TransactionApi', () => {
       await service.deleteSafeRegistration({ uuid, safeAddress });
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteSafeRegistrationUrl,
-      );
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteSafeRegistrationUrl,
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -2070,9 +2107,9 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.delete).toHaveBeenCalledTimes(1);
-      expect(networkService.delete).toHaveBeenCalledWith(
-        deleteSafeRegistrationUrl,
-      );
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: deleteSafeRegistrationUrl,
+      });
     });
   });
 
@@ -2099,11 +2136,14 @@ describe('TransactionApi', () => {
 
       expect(actual).toBe(estimation);
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(getEstimationUrl, {
-        to,
-        value,
-        data,
-        operation,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: getEstimationUrl,
+        data: {
+          to,
+          value,
+          data,
+          operation,
+        },
       });
     });
 
@@ -2140,11 +2180,14 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(getEstimationUrl, {
-        to,
-        value,
-        data,
-        operation,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: getEstimationUrl,
+        data: {
+          to,
+          value,
+          data,
+          operation,
+        },
       });
     });
   });
@@ -2308,13 +2351,13 @@ describe('TransactionApi', () => {
 
       const { safeTxHash, ...rest } = proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        postMultisigTransactionUrl,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMultisigTransactionUrl,
+        data: {
           ...rest,
           contractTransactionHash: safeTxHash,
         },
-      );
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -2348,13 +2391,13 @@ describe('TransactionApi', () => {
 
       const { safeTxHash, ...rest } = proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        postMultisigTransactionUrl,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMultisigTransactionUrl,
+        data: {
           ...rest,
           contractTransactionHash: safeTxHash,
         },
-      );
+      });
     });
   });
 
@@ -2378,10 +2421,13 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postMessageUrl, {
-        message,
-        safeAppId,
-        signature,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMessageUrl,
+        data: {
+          message,
+          safeAppId,
+          signature,
+        },
       });
     });
 
@@ -2419,10 +2465,13 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(postMessageUrl, {
-        message,
-        safeAppId,
-        signature,
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMessageUrl,
+        data: {
+          message,
+          safeAppId,
+          signature,
+        },
       });
     });
   });
@@ -2443,12 +2492,12 @@ describe('TransactionApi', () => {
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        postMessageSignatureUrl,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMessageSignatureUrl,
+        data: {
           signature,
         },
-      );
+      });
     });
 
     const errorMessage = faker.word.words();
@@ -2481,12 +2530,12 @@ describe('TransactionApi', () => {
       ).rejects.toThrow(expected);
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
-      expect(networkService.post).toHaveBeenCalledWith(
-        postMessageSignatureUrl,
-        {
+      expect(networkService.post).toHaveBeenCalledWith({
+        url: postMessageSignatureUrl,
+        data: {
           signature,
         },
-      );
+      });
     });
   });
 

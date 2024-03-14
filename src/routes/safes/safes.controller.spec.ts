@@ -40,6 +40,7 @@ import {
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication;
@@ -76,11 +77,15 @@ describe('Safes Controller (Unit)', () => {
       .with('recommendedMasterCopyVersion', masterCopyVersion)
       .build();
     const owner = faker.finance.ethereumAddress();
+    const singleton = faker.finance.ethereumAddress();
     const singletons = [
-      singletonBuilder().with('version', masterCopyVersion).build(),
+      singletonBuilder()
+        .with('address', getAddress(singleton))
+        .with('version', masterCopyVersion)
+        .build(),
     ];
     const singletonInfo = contractBuilder()
-      .with('address', singletons[0].address)
+      .with('address', getAddress(singletons[0].address))
       .build();
     const safeInfo = safeBuilder()
       .with('owners', [owner])
@@ -88,9 +93,11 @@ describe('Safes Controller (Unit)', () => {
       .with('version', masterCopyVersion)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
 
     const moduleTransactions = pageBuilder()
       .with('results', [
@@ -112,7 +119,7 @@ describe('Safes Controller (Unit)', () => {
       ])
       .build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -191,12 +198,12 @@ describe('Safes Controller (Unit)', () => {
         messagesTag: '1678624146',
         modules: null,
         fallbackHandler: {
-          value: fallbackHandlerInfo.address,
+          value: getAddress(fallbackHandlerInfo.address),
           name: fallbackHandlerInfo.displayName,
           logoUri: fallbackHandlerInfo.logoUri,
         },
         guard: {
-          value: guardInfo.address,
+          value: getAddress(guardInfo.address),
           name: guardInfo.displayName,
           logoUri: guardInfo.logoUri,
         },
@@ -213,15 +220,17 @@ describe('Safes Controller (Unit)', () => {
       .with('version', null)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -266,15 +275,17 @@ describe('Safes Controller (Unit)', () => {
       .with('version', 'vI.N.V.A.L.I.D')
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -320,15 +331,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -375,15 +388,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -433,15 +448,17 @@ describe('Safes Controller (Unit)', () => {
       .with('version', '4.0.0')
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -485,14 +502,16 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -557,15 +576,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -609,14 +630,16 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -660,9 +683,11 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder()
       .with('results', [
@@ -686,7 +711,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -730,15 +755,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -782,14 +809,16 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const multisigTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -833,14 +862,16 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -905,14 +936,16 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -980,13 +1013,15 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1053,12 +1088,14 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1128,15 +1165,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1180,12 +1219,14 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1243,12 +1284,14 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1303,12 +1346,14 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1352,9 +1397,11 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1379,7 +1426,7 @@ describe('Safes Controller (Unit)', () => {
       ])
       .build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1423,16 +1470,18 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
 
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1479,19 +1528,27 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .with('modules', [module1, module2, module3])
       .build();
-    const moduleInfo1 = contractBuilder().with('address', module1).build();
-    const moduleInfo2 = contractBuilder().with('address', module2).build();
-    const moduleInfo3 = contractBuilder().with('address', module3).build();
-    const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+    const moduleInfo1 = contractBuilder()
+      .with('address', getAddress(module1))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const moduleInfo2 = contractBuilder()
+      .with('address', getAddress(module2))
+      .build();
+    const moduleInfo3 = contractBuilder()
+      .with('address', getAddress(module3))
+      .build();
+    const fallbackHandlerInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.fallbackHandler))
+      .build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1558,15 +1615,17 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1610,7 +1669,7 @@ describe('Safes Controller (Unit)', () => {
       .with('fallbackHandler', NULL_ADDRESS)
       .build();
     const fallbackHandlerInfo = contractBuilder()
-      .with('address', safeInfo.fallbackHandler)
+      .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
@@ -1618,7 +1677,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1665,7 +1724,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1712,13 +1771,15 @@ describe('Safes Controller (Unit)', () => {
     const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder().with('guard', NULL_ADDRESS).build();
     const fallbackHandlerInfo = contractBuilder().build();
-    const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardInfo = contractBuilder()
+      .with('address', getAddress(safeInfo.guard))
+      .build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -1766,7 +1827,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });

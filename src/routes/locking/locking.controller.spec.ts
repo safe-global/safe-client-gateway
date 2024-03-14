@@ -27,6 +27,7 @@ import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { getAddress } from 'viem';
+import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -70,9 +71,180 @@ describe('Locking (Unit)', () => {
     await app.close();
   });
 
-  it.todo('GET rank');
+  describe('GET rank', () => {
+    it('should get the rank', async () => {
+      const rank = rankBuilder().build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard/${rank.holder}`:
+            return Promise.resolve({ data: rank, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
 
-  it.todo('GET leaderboard');
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard/${rank.holder}`)
+        .expect(200)
+        .expect(rank);
+    });
+
+    it('should validate the Safe address in URL', async () => {
+      const safeAddress = faker.string.alphanumeric();
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          path: [],
+          message: 'Invalid input',
+        });
+    });
+
+    it('should validate the response', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const rank = { invalid: 'rank' };
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
+            return Promise.resolve({ data: rank, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['holder'],
+          message: 'Required',
+        });
+    });
+
+    it('should forward an error from the service', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(`${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
+
+  describe('GET leaderboard', () => {
+    it('should get the leaderboard', async () => {
+      const leaderboard = pageBuilder()
+        .with('results', [rankBuilder().build()])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard`:
+            return Promise.resolve({ data: leaderboard, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            count: leaderboard.count,
+            next: expect.any(String),
+            previous: expect.any(String),
+            results: leaderboard.results,
+          });
+        });
+    });
+
+    it('should validate the response', async () => {
+      const leaderboard = pageBuilder()
+        .with('results', [{ invalid: 'rank' }])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard`:
+            return Promise.resolve({ data: leaderboard, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['results', 0, 'holder'],
+          message: 'Required',
+        });
+    });
+
+    it('should forward an error from the service', async () => {
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(`${lockingBaseUri}/api/v1/leaderboard`),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/leaderboard`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
 
   describe('GET locking history', () => {
     it('should get locking history', async () => {
@@ -88,7 +260,7 @@ describe('Locking (Unit)', () => {
         .with('previous', null)
         .with('next', null)
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
@@ -134,7 +306,7 @@ describe('Locking (Unit)', () => {
         .with('previous', null)
         .with('next', null)
         .build();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
@@ -162,7 +334,7 @@ describe('Locking (Unit)', () => {
         types: ['clientError', 'serverError'],
       });
       const errorMessage = faker.word.words();
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.reject(

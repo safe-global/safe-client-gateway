@@ -6,10 +6,11 @@ import {
   Alert,
   EventType,
 } from '@/routes/alerts/entities/alert.dto.entity';
+import { getAddress } from 'viem';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
   return new Builder<AlertLog>()
-    .with('address', faker.finance.ethereumAddress())
+    .with('address', getAddress(faker.finance.ethereumAddress()))
     .with(
       'topics',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
@@ -25,8 +26,8 @@ export function alertTransactionBuilder(): IBuilder<AlertTransaction> {
     .with('block_hash', faker.string.hexadecimal({ length: 66 }))
     .with('block_number', faker.number.int())
     .with('hash', faker.string.hexadecimal({ length: 66 }))
-    .with('from', faker.finance.ethereumAddress())
-    .with('to', faker.finance.ethereumAddress())
+    .with('from', getAddress(faker.finance.ethereumAddress()))
+    .with('to', getAddress(faker.finance.ethereumAddress()))
     .with(
       'logs',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>

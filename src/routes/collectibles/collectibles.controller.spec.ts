@@ -80,7 +80,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
@@ -123,7 +123,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
@@ -140,7 +140,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           limit: 10,
           offset: 20,
@@ -167,7 +167,7 @@ describe('Collectibles Controller (Unit)', () => {
         ])
         .build();
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
@@ -184,7 +184,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[1][1]).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,
@@ -206,7 +206,7 @@ describe('Collectibles Controller (Unit)', () => {
           message: 'some collectibles error',
         },
       );
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
@@ -235,7 +235,7 @@ describe('Collectibles Controller (Unit)', () => {
       const transactionServiceError = new NetworkRequestError(
         new URL(transactionServiceUrl),
       );
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });

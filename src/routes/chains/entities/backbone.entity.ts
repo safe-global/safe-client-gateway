@@ -5,7 +5,7 @@ export class Backbone implements DomainBackbone {
   @ApiProperty()
   api_version!: string;
   @ApiProperty()
-  headers!: string[];
+  headers!: string[] | null;
   @ApiProperty()
   host!: string;
   @ApiProperty()
@@ -13,7 +13,7 @@ export class Backbone implements DomainBackbone {
   @ApiProperty()
   secure!: boolean;
   @ApiProperty()
-  settings!: Record<string, string>;
+  settings!: Record<string, unknown> | null;
   @ApiProperty()
   version!: string;
 }

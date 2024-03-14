@@ -1,8 +1,4 @@
-export interface Contract {
-  address: string;
-  name: string;
-  displayName: string;
-  logoUri: string;
-  contractAbi: object | null;
-  trustedForDelegateCall: boolean;
-}
+import { ContractSchema } from '@/domain/contracts/entities/schemas/contract.schema';
+import { z } from 'zod';
+
+export type Contract = z.infer<typeof ContractSchema>;

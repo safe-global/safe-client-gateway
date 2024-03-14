@@ -6,7 +6,7 @@ export class CreateDelegateDto
   implements z.infer<typeof CreateDelegateDtoSchema>
 {
   @ApiPropertyOptional()
-  safe?: `0x${string}`;
+  safe!: `0x${string}` | null;
   @ApiProperty()
   delegate!: `0x${string}`;
   @ApiProperty()

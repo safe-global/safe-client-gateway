@@ -104,7 +104,7 @@ describe('Email controller edit email tests', () => {
     const safe = safeBuilder().with('address', safeAddress).build();
     const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -184,7 +184,7 @@ describe('Email controller edit email tests', () => {
     const safe = safeBuilder().build();
     const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -267,7 +267,7 @@ describe('Email controller edit email tests', () => {
     const safe = safeBuilder().build();
     const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -314,7 +314,7 @@ describe('Email controller edit email tests', () => {
     const safe = safeBuilder().build();
     const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
