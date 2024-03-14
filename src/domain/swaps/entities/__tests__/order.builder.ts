@@ -35,7 +35,7 @@ export function orderBuilder(): IBuilder<Order> {
       'signingScheme',
       faker.helpers.arrayElement(['eip712', 'ethsign', 'presign', 'eip1271']),
     )
-    .with('signature', faker.string.hexadecimal())
+    .with('signature', faker.string.hexadecimal() as `0x${string}`)
     .with(
       'from',
       faker.datatype.boolean()
@@ -73,7 +73,7 @@ export function orderBuilder(): IBuilder<Order> {
       faker.datatype.boolean()
         ? {
             refundTxHash: faker.datatype.boolean()
-              ? faker.string.hexadecimal()
+              ? (faker.string.hexadecimal() as `0x${string}`)
               : null,
             userValidTo: faker.date.future().getTime(),
           }
