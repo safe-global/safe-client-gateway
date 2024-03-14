@@ -33,7 +33,11 @@ import {
   setupEncoder,
   swapOwnerEncoder,
 } from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
-import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
+import {
+  erc20ApproveEncoder,
+  erc20TransferEncoder,
+  erc20TransferFromEncoder,
+} from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -222,9 +226,14 @@ describe('Relay controller', () => {
 
               it.each([
                 [
-                  'sending ERC-20 tokens to another party',
+                  '`transfer`ing ERC-20 tokens to another party',
                   erc20TransferEncoder().encode(),
                 ],
+                [
+                  '`transferFrom`ing ERC-20 tokens to another party',
+                  erc20TransferFromEncoder().encode(),
+                ],
+                ['`approve`ing ERC-20 tokens', erc20ApproveEncoder().encode()],
                 ['cancelling a transaction', '0x' as const],
                 [
                   'making an addOwnerWithThreshold call',
@@ -958,7 +967,7 @@ describe('Relay controller', () => {
               });
 
               // transfer (execTransaction)
-              it('should return 422 sending ERC-20 tokens to self', async () => {
+              it('should return 422 `transfer`ing ERC-20 tokens to self', async () => {
                 const chain = chainBuilder().with('chainId', chainId).build();
                 const safe = safeBuilder().build();
                 const safeAddress = getAddress(safe.address);
@@ -967,6 +976,123 @@ describe('Relay controller', () => {
                     'data',
                     erc20TransferEncoder().with('to', safeAddress).encode(),
                   )
+                  .encode() as Hex;
+                networkService.get.mockImplementation(({ url }) => {
+                  switch (url) {
+                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                      return Promise.resolve({ data: chain, status: 200 });
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                      // Official mastercopy
+                      return Promise.resolve({ data: safe, status: 200 });
+                    default:
+                      return Promise.reject(`No matching rule for url: ${url}`);
+                  }
+                });
+
+                await request(app.getHttpServer())
+                  .post(`/v1/chains/${chain.chainId}/relay`)
+                  .send({
+                    version,
+                    to: safeAddress,
+                    data,
+                  })
+                  .expect(422)
+                  .expect({
+                    message:
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+                    statusCode: 422,
+                  });
+              });
+
+              // transferFrom (execTransaction)
+              it('should return 422 `transferFrom`ing ERC-20 tokens to self', async () => {
+                const chain = chainBuilder().with('chainId', chainId).build();
+                const safe = safeBuilder().build();
+                const safeAddress = getAddress(safe.address);
+                const data = execTransactionEncoder()
+                  .with(
+                    'data',
+                    erc20TransferFromEncoder()
+                      .with('recipient', safeAddress)
+                      .encode(),
+                  )
+                  .encode() as Hex;
+                networkService.get.mockImplementation(({ url }) => {
+                  switch (url) {
+                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                      return Promise.resolve({ data: chain, status: 200 });
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                      // Official mastercopy
+                      return Promise.resolve({ data: safe, status: 200 });
+                    default:
+                      return Promise.reject(`No matching rule for url: ${url}`);
+                  }
+                });
+
+                await request(app.getHttpServer())
+                  .post(`/v1/chains/${chain.chainId}/relay`)
+                  .send({
+                    version,
+                    to: safeAddress,
+                    data,
+                  })
+                  .expect(422)
+                  .expect({
+                    message:
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+                    statusCode: 422,
+                  });
+              });
+
+              it('should return 422 `transferFrom`ing ERC-20 tokens from sender to sender as recipient', async () => {
+                const chain = chainBuilder().with('chainId', chainId).build();
+                const safe = safeBuilder().build();
+                const safeAddress = getAddress(safe.address);
+                const recipient = getAddress(faker.finance.ethereumAddress());
+                const data = execTransactionEncoder()
+                  .with(
+                    'data',
+                    erc20TransferFromEncoder()
+                      .with('sender', recipient)
+                      .with('recipient', recipient)
+                      .encode(),
+                  )
+                  .encode() as Hex;
+                networkService.get.mockImplementation(({ url }) => {
+                  switch (url) {
+                    case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                      return Promise.resolve({ data: chain, status: 200 });
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                      // Official mastercopy
+                      return Promise.resolve({ data: safe, status: 200 });
+                    default:
+                      return Promise.reject(`No matching rule for url: ${url}`);
+                  }
+                });
+
+                await request(app.getHttpServer())
+                  .post(`/v1/chains/${chain.chainId}/relay`)
+                  .send({
+                    version,
+                    to: safeAddress,
+                    data,
+                  })
+                  .expect(422)
+                  .expect({
+                    message:
+                      'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+                    statusCode: 422,
+                  });
+              });
+
+              // approve (execTransaction)
+              it('should return 422 when trying to call an ERC-20 method on the Safe', async () => {
+                const chain = chainBuilder().with('chainId', chainId).build();
+                const safe = safeBuilder().build();
+                const safeAddress = getAddress(safe.address);
+                const data = execTransactionEncoder()
+                  .with('to', safeAddress)
+                  .with('data', erc20ApproveEncoder().encode())
                   .encode() as Hex;
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {

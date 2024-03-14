@@ -99,7 +99,12 @@ describe('Safe Apps Controller (Unit)', () => {
             provider: safeAppsResponse[0].provider,
             accessControl: {
               type: 'DOMAIN_ALLOWLIST',
-              value: safeAppsResponse[0].accessControl.value,
+              value: (
+                safeAppsResponse[0].accessControl as {
+                  value: string[] | null;
+                  type: SafeAppAccessControlPolicies.DomainAllowlist;
+                }
+              ).value,
             },
             tags: safeAppsResponse[0].tags,
             features: safeAppsResponse[0].features,
@@ -114,7 +119,10 @@ describe('Safe Apps Controller (Unit)', () => {
             description: safeAppsResponse[1].description,
             chainIds: safeAppsResponse[1].chainIds.map((c) => c.toString()),
             provider: safeAppsResponse[1].provider,
-            accessControl: { type: 'NO_RESTRICTIONS' },
+            accessControl: {
+              type: 'NO_RESTRICTIONS',
+              value: null,
+            },
             tags: safeAppsResponse[1].tags,
             features: safeAppsResponse[1].features,
             developerWebsite: safeAppsResponse[1].developerWebsite,
@@ -134,8 +142,8 @@ describe('Safe Apps Controller (Unit)', () => {
               {
                 ...safeAppsResponse[0],
                 accessControl: {
-                  type: faker.word.sample(),
-                  value: safeAppsResponse[0].accessControl.value,
+                  type: 'UNKNOWN',
+                  value: null,
                 },
               },
             ],
@@ -157,7 +165,10 @@ describe('Safe Apps Controller (Unit)', () => {
             description: safeAppsResponse[0].description,
             chainIds: safeAppsResponse[0].chainIds.map((c) => c.toString()),
             provider: safeAppsResponse[0].provider,
-            accessControl: { type: 'UNKNOWN' },
+            accessControl: {
+              type: 'UNKNOWN',
+              value: null,
+            },
             tags: safeAppsResponse[0].tags,
             features: safeAppsResponse[0].features,
             developerWebsite: safeAppsResponse[0].developerWebsite,
@@ -196,9 +207,8 @@ describe('Safe Apps Controller (Unit)', () => {
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
         .expect(500)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
   });

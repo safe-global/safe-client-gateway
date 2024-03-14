@@ -17,6 +17,8 @@ import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc72
 import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/human-description.mapper';
 import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
+import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { SwapOrderMapper } from '@/routes/transactions/mappers/common/swap-order.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -24,6 +26,7 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
   private readonly isRichFragmentsEnabled: boolean;
+  private readonly isSwapsDecodingEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -47,9 +50,14 @@ export class MultisigTransactionInfoMapper {
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
+    private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
+    private readonly swapOrderMapper: SwapOrderMapper,
   ) {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
+    );
+    this.isSwapsDecodingEnabled = this.configurationService.getOrThrow(
+      'features.swapsDecoding',
     );
   }
 
@@ -79,6 +87,14 @@ export class MultisigTransactionInfoMapper {
     const richDecodedInfoApiProperty = this.isRichFragmentsEnabled
       ? richDecodedInfo
       : undefined;
+
+    if (this.isSwapsDecodingEnabled && this.isCoWSwapOrder(transaction)) {
+      return await this.swapOrderMapper.mapSwapOrder(
+        chainId,
+        transaction,
+        dataSize,
+      );
+    }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
@@ -162,6 +178,13 @@ export class MultisigTransactionInfoMapper {
       humanDescription,
       richDecodedInfoApiProperty,
     );
+  }
+
+  private isCoWSwapOrder(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): boolean {
+    if (!transaction.data) return false;
+    return this.setPreSignatureDecoder.isSetPreSignature(transaction.data);
   }
 
   private isCustomTransaction(

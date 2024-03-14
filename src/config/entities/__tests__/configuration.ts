@@ -174,6 +174,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerionBalancesChainIds: ['137'],
     locking: true,
     relay: true,
+    swapsDecoding: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

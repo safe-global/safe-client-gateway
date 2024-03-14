@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
-// TODO: Add and test once defined
-export const RankSchema = z.object({});
+export const RankSchema = z.object({
+  holder: AddressSchema,
+  position: NumericStringSchema,
+  lockedAmount: NumericStringSchema,
+  unlockedAmount: NumericStringSchema,
+  withdrawnAmount: NumericStringSchema,
+});
 
 export const RankPageSchema = buildZodPageSchema(RankSchema);
