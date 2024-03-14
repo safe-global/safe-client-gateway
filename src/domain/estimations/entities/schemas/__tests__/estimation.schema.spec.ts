@@ -32,4 +32,22 @@ describe('EstimationSchema', () => {
       ]),
     );
   });
+
+  it('should not validation without safeTxGas', () => {
+    const estimation = {};
+
+    const result = EstimationSchema.safeParse(estimation);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['safeTxGas'],
+          message: 'Required',
+        },
+      ]),
+    );
+  });
 });
