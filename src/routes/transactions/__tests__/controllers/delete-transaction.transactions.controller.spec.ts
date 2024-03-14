@@ -74,11 +74,14 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     await request(app.getHttpServer())
       .delete(`/v1/chains/${chainId}/transactions/${safeTxHash}`)
       .send(invalidDeleteTransactionDto)
-      .expect(400)
+      .expect(422)
       .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
+        statusCode: 422,
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'number',
+        path: ['signature'],
+        message: 'Expected string, received number',
       });
   });
 
