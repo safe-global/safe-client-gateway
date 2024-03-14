@@ -12,7 +12,7 @@ export const NativeCurrencySchema = z.object({
 export const RpcUriSchema = z.object({
   authentication: z
     .nativeEnum(RpcUriAuthentication)
-    .default(RpcUriAuthentication.Unknown),
+    .catch(() => RpcUriAuthentication.Unknown),
   value: z.string(),
 });
 

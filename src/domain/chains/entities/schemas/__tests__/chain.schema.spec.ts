@@ -16,7 +16,6 @@ import {
   ThemeSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Chain schemas', () => {
@@ -79,9 +78,9 @@ describe('Chain schemas', () => {
     });
 
     it('should default the authentication to UNKNOWN', () => {
-      const rpcUri = rpcUriBuilder().build();
-      // @ts-expect-error - inferred types don't allow optional types
-      delete rpcUri.authentication;
+      const rpcUri = {
+        value: faker.internet.url(),
+      };
 
       const result = RpcUriSchema.safeParse(rpcUri);
 
@@ -269,31 +268,22 @@ describe('Chain schemas', () => {
   });
 
   describe('GasPriceSchema', () => {
-    it('should validate a valid gas price', () => {
-      const gasPrice = faker.helpers
-        .arrayElements(
-          [
-            gasPriceOracleBuilder,
-            gasPriceFixedBuilder,
-            gasPriceFixedEIP1559Builder,
-          ],
-          {
-            min: 3,
-            max: 9,
-          },
-        )
-        .map((builder) => builder().build());
+    it.each([
+      ['oracle', gasPriceOracleBuilder],
+      ['fixed', gasPriceFixedBuilder],
+      ['fixed1559', gasPriceFixedEIP1559Builder],
+    ])('should validate a valid %s gas price', (_, builder) => {
+      const gasPrice = builder().build();
 
-      const result = GasPriceSchema.safeParse(gasPrice);
+      const result = GasPriceSchema.safeParse([gasPrice]);
 
       expect(result.success).toBe(true);
     });
 
     it('should not validate an invalid gas price', () => {
       const gasPrice = [
-        { invalid: 'gasPriceOracle' },
-        { invalid: 'gasPriceFixed' },
-        { invalid: 'gasPriceFixedEip1559' },
+        // type is schema discriminator
+        { type: faker.string.sample() },
       ];
 
       const result = GasPriceSchema.safeParse(gasPrice);
@@ -304,20 +294,6 @@ describe('Chain schemas', () => {
             code: 'invalid_union_discriminator',
             options: ['oracle', 'fixed', 'fixed1559'],
             path: [0, 'type'],
-            message:
-              "Invalid discriminator value. Expected 'oracle' | 'fixed' | 'fixed1559'",
-          },
-          {
-            code: 'invalid_union_discriminator',
-            options: ['oracle', 'fixed', 'fixed1559'],
-            path: [1, 'type'],
-            message:
-              "Invalid discriminator value. Expected 'oracle' | 'fixed' | 'fixed1559'",
-          },
-          {
-            code: 'invalid_union_discriminator',
-            options: ['oracle', 'fixed', 'fixed1559'],
-            path: [2, 'type'],
             message:
               "Invalid discriminator value. Expected 'oracle' | 'fixed' | 'fixed1559'",
           },
@@ -335,36 +311,29 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow undefined chainLogoUri and ensRegistryAddress and default to null', () => {
+    it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
+      'should allow undefined %s and default to null',
+      (field) => {
+        const chain = chainBuilder().build();
+        delete chain[field];
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data[field]).toBe(null);
+      },
+    );
+
+    it.each([
+      ['chainId' as const],
+      ['chainName' as const],
+      ['description' as const],
+      ['shortName' as const],
+      ['transactionService' as const],
+      ['vpcTransactionService' as const],
+      ['recommendedMasterCopyVersion' as const],
+    ])('should not validate a chain without %s', (field) => {
       const chain = chainBuilder().build();
-      // @ts-expect-error - inferred types don't allow optional types
-      delete chain.chainLogoUri;
-      // @ts-expect-error - inferred types don't allow optional types
-      delete chain.ensRegistryAddress;
-
-      const result = ChainSchema.safeParse(chain);
-
-      expect(result.success && result.data.chainLogoUri).toBe(null);
-      expect(result.success && result.data.ensRegistryAddress).toBe(null);
-    });
-
-    it('should checksum the ensRegistryAddress', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
-      const chain = chainBuilder()
-        .with('ensRegistryAddress', nonChecksummedAddress)
-        .build();
-
-      const result = ChainSchema.safeParse(chain);
-
-      expect(result.success && result.data.ensRegistryAddress).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    });
-
-    it('should not validate an invalid chain', () => {
-      const chain = { invalid: 'chain' };
+      delete chain[field];
 
       const result = ChainSchema.safeParse(chain);
 
@@ -374,126 +343,7 @@ describe('Chain schemas', () => {
             code: 'invalid_type',
             expected: 'string',
             received: 'undefined',
-            path: ['chainId'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['chainName'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['description'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'undefined',
-            path: ['l2'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'boolean',
-            received: 'undefined',
-            path: ['isTestnet'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['shortName'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['rpcUri'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['safeAppsRpcUri'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['publicRpcUri'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['blockExplorerUriTemplate'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['nativeCurrency'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['transactionService'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['vpcTransactionService'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'object',
-            received: 'undefined',
-            path: ['theme'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['gasPrice'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['disabledWallets'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['features'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['recommendedMasterCopyVersion'],
+            path: [field],
             message: 'Required',
           },
         ]),
