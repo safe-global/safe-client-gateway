@@ -30,6 +30,41 @@ describe('GetDelegateDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should not allow no properties', () => {
+    const getDelegateDto = {};
+
+    const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'At least one property is required',
+          path: [],
+        },
+      ]),
+    );
+  });
+
+  it.each([['safe' as const], ['delegate' as const], ['delegator' as const]])(
+    'should not validate non-hex %s',
+    (property) => {
+      const getDelegateDto = { [property]: faker.word.sample() };
+
+      const result = GetDelegateDtoSchema.safeParse(getDelegateDto);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            path: [property],
+            message: 'Invalid input',
+          },
+        ]),
+      );
+    },
+  );
+
   it.each([['safe' as const], ['delegate' as const], ['delegator' as const]])(
     'should checksum %s' as const,
     (property) => {
