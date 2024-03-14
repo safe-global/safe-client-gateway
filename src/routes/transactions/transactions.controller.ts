@@ -99,7 +99,7 @@ export class TransactionsController {
   async deleteTransaction(
     @Param('chainId') chainId: string,
     @Param('safeTxHash') safeTxHash: string,
-    @Body(DeleteTransactionDtoSchema)
+    @Body(new ValidationPipe(DeleteTransactionDtoSchema))
     deleteTransactionDto: DeleteTransactionDto,
   ): Promise<void> {
     return this.transactionsService.deleteTransaction({
