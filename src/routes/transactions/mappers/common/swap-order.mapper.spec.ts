@@ -164,6 +164,49 @@ describe('Swap Order Mapper tests', () => {
     },
   );
 
+  it(`should map to custom order if getOrder throws an error`, async () => {
+    const chainId = faker.string.numeric();
+    const transaction = multisigTransactionBuilder().build();
+    const dataSize = 0;
+    const orderUid = faker.string.hexadecimal({ length: 112 }) as `0x${string}`;
+    setPreSignatureDecoderMock.getOrderUid.mockReturnValue(orderUid);
+    swapsRepositoryMock.getOrder.mockRejectedValue(
+      new Error('Order not found'),
+    );
+    const customTransaction = new CustomTransactionInfo(
+      new AddressInfo(faker.finance.ethereumAddress()),
+      dataSize.toString(),
+      transaction.value,
+      null,
+      null,
+      false,
+      null,
+      null,
+    );
+    customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
+      customTransaction,
+    );
+
+    const result = await target.mapSwapOrder(chainId, transaction, dataSize);
+
+    expect(result).toBe(customTransaction);
+    expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(1);
+    expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledWith(
+      transaction.data,
+    );
+    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(1);
+    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledWith(
+      chainId,
+      expect.any(String),
+    );
+    expect(
+      customTransactionMapperMock.mapCustomTransaction,
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      customTransactionMapperMock.mapCustomTransaction,
+    ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
+  });
+
   it('should map to custom order if transaction data is null', async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().with('data', null).build();

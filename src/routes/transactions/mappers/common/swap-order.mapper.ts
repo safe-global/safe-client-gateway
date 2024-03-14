@@ -84,9 +84,9 @@ export class SwapOrderMapper {
     if (!orderUid) {
       return this._mapUnknownOrderStatus(chainId, transaction, dataSize);
     }
-    const order = await this.swapsRepository.getOrder(chainId, orderUid);
 
     try {
+      const order = await this.swapsRepository.getOrder(chainId, orderUid);
       const [buyToken, sellToken] = await Promise.all([
         this.tokenRepository.getToken({
           chainId,
@@ -153,7 +153,7 @@ export class SwapOrderMapper {
     );
   }
 
-  private _getExecutionPrice(
+  private _getExecutionPriceLabel(
     sellToken: TokenAmount,
     buyToken: TokenAmount,
   ): string {
@@ -161,7 +161,7 @@ export class SwapOrderMapper {
     return `1 ${sellToken.token.symbol} = ${ratio} ${buyToken.token.symbol}`;
   }
 
-  private _getLimitPrice(
+  private _getLimitPriceLabel(
     sellToken: TokenAmount,
     buyToken: TokenAmount,
   ): string {
@@ -177,8 +177,8 @@ export class SwapOrderMapper {
     if (args.order.kind === 'unknown') {
       throw new Error('Unknown order kind');
     }
-    const surplusFee: string | null = args.order.executedSurplusFee
-      ? this._getExecutedSurplusFee(
+    const surplusFeeLabel: string | null = args.order.executedSurplusFee
+      ? this._getExecutedSurplusFeeLabel(
           args.order.executedSurplusFee,
           args.buyToken.token,
         )
@@ -189,12 +189,15 @@ export class SwapOrderMapper {
       sellToken: args.sellToken.toTokenInfo(),
       buyToken: args.buyToken.toTokenInfo(),
       expiresTimestamp: args.order.validTo,
-      surplus: surplusFee,
-      executionPrice: this._getExecutionPrice(args.sellToken, args.buyToken),
+      surplusFeeLabel: surplusFeeLabel,
+      executionPriceLabel: this._getExecutionPriceLabel(
+        args.sellToken,
+        args.buyToken,
+      ),
     });
   }
 
-  private _getExecutedSurplusFee(
+  private _getExecutedSurplusFeeLabel(
     executedSurplusFee: bigint,
     token: Token & { decimals: number },
   ): string {
@@ -224,7 +227,7 @@ export class SwapOrderMapper {
       sellToken: args.sellToken.toTokenInfo(),
       buyToken: args.buyToken.toTokenInfo(),
       expiresTimestamp: args.order.validTo,
-      limitPriceDescription: this._getLimitPrice(args.sellToken, args.buyToken),
+      limitPriceLabel: this._getLimitPriceLabel(args.sellToken, args.buyToken),
     });
   }
 }

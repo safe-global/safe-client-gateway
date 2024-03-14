@@ -61,29 +61,29 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
 @ApiExtraModels(TokenInfo)
 export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
   @ApiPropertyOptional({ type: String, nullable: true })
-  surplus: string | null;
+  surplusLabel: string | null;
 
   @ApiProperty()
-  executionPrice: string;
+  executionPriceLabel: string;
 
   constructor(args: {
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     expiresTimestamp: number;
-    surplus: string | null;
-    executionPrice: string;
+    surplusFeeLabel: string | null;
+    executionPriceLabel: string;
   }) {
     super({ ...args, status: 'fulfilled' });
-    this.surplus = args.surplus;
-    this.executionPrice = args.executionPrice;
+    this.surplusLabel = args.surplusFeeLabel;
+    this.executionPriceLabel = args.executionPriceLabel;
   }
 }
 
 @ApiExtraModels(TokenInfo)
 export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
   @ApiProperty()
-  limitPriceDescription: string;
+  limitPriceLabel: string;
 
   constructor(args: {
     status: 'open' | 'cancelled' | 'expired';
@@ -91,9 +91,9 @@ export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     expiresTimestamp: number;
-    limitPriceDescription: string;
+    limitPriceLabel: string;
   }) {
     super({ ...args });
-    this.limitPriceDescription = args.limitPriceDescription;
+    this.limitPriceLabel = args.limitPriceLabel;
   }
 }
