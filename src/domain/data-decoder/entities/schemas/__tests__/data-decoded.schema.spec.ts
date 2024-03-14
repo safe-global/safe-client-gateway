@@ -46,9 +46,9 @@ describe('Data decoded schema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow record valueDecoded', () => {
+    it('should allow array valueDecoded', () => {
       const dataDecodedParameter = dataDecodedParameterBuilder()
-        .with('valueDecoded', { key: 'value' })
+        .with('valueDecoded', [JSON.parse(fakeJson())])
         .build();
 
       const result = DataDecodedParameterSchema.safeParse(dataDecodedParameter);
@@ -57,8 +57,9 @@ describe('Data decoded schema', () => {
     });
 
     it('should allow no valueDecoded', () => {
-      const dataDecodedParameter = dataDecodedParameterBuilder().build();
-      delete dataDecodedParameter.valueDecoded;
+      const dataDecodedParameter = dataDecodedParameterBuilder()
+        .with('valueDecoded', undefined)
+        .build();
 
       const result = DataDecodedParameterSchema.safeParse(dataDecodedParameter);
 
