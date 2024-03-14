@@ -35,8 +35,10 @@ describe('CreateMessageDtoSchema', () => {
     expect(result.success && result.data.safeAppId).toBe(null);
   });
 
-  it('should not validate invalid CreateMessageDto', () => {
-    const createMessageDto = { invalid: 'createMessageDto' };
+  it('should not validated without a message', () => {
+    const createMessageDto = createMessageDtoBuilder().build();
+    // @ts-expect-error - inferred type doesn't allow optional properties
+    delete createMessageDto.message;
 
     const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
@@ -75,6 +77,18 @@ describe('CreateMessageDtoSchema', () => {
           path: ['message'],
           message: 'Invalid input',
         },
+      ]),
+    );
+  });
+  it('should not validated without a signature', () => {
+    const createMessageDto = createMessageDtoBuilder().build();
+    // @ts-expect-error - inferred type doesn't allow optional properties
+    delete createMessageDto.signature;
+
+    const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
         {
           code: 'invalid_type',
           expected: 'string',
