@@ -8,7 +8,8 @@ export const DataDecodedParameterSchema = z.object({
   value: z.custom<Required<unknown>>(),
   valueDecoded: z
     .union([z.record(z.unknown()), z.array(z.record(z.unknown()))])
-    .optional(),
+    .nullish()
+    .default(null),
 });
 
 export const DataDecodedSchema = z.object({

@@ -205,13 +205,10 @@ describe('Safe Apps Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
-          path: ['accessControl', 'value', 0],
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
   });

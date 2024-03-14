@@ -20,7 +20,10 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export interface ITransactionApi {
-  getDataDecoded(args: { data: string; to?: string }): Promise<DataDecoded>;
+  getDataDecoded(args: {
+    data: `0x${string}`;
+    to?: `0x${string}`;
+  }): Promise<DataDecoded>;
 
   getBackbone(): Promise<Backbone>;
 

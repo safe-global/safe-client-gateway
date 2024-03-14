@@ -46,9 +46,9 @@ describe('Data decoded schema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow record valueDecoded', () => {
+    it('should allow array valueDecoded', () => {
       const dataDecodedParameter = dataDecodedParameterBuilder()
-        .with('valueDecoded', { key: 'value' })
+        .with('valueDecoded', [JSON.parse(fakeJson())])
         .build();
 
       const result = DataDecodedParameterSchema.safeParse(dataDecodedParameter);
@@ -56,13 +56,14 @@ describe('Data decoded schema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should allow no valueDecoded', () => {
+    it('should allow no valueDecoded, defaulting to null', () => {
       const dataDecodedParameter = dataDecodedParameterBuilder().build();
+      // @ts-expect-error - inferred type doesn't allow optional parameters
       delete dataDecodedParameter.valueDecoded;
 
       const result = DataDecodedParameterSchema.safeParse(dataDecodedParameter);
 
-      expect(result.success).toBe(true);
+      expect(result.success && result.data.valueDecoded).toBe(null);
     });
   });
 

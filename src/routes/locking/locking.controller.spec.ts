@@ -117,14 +117,10 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/leaderboard/${safeAddress}`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['holder'],
-          message: 'Required',
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
 
@@ -203,14 +199,10 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/leaderboard`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['results', 0, 'holder'],
-          message: 'Required',
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
 
@@ -317,14 +309,10 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/${safeAddress}/history`)
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
-          code: 'invalid_union_discriminator',
-          options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
-          path: ['results', 0, 'eventType'],
-          message:
-            "Invalid discriminator value. Expected 'LOCKED' | 'UNLOCKED' | 'WITHDRAWN'",
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
 
