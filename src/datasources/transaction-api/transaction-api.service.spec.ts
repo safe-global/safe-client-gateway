@@ -23,6 +23,7 @@ import { messageBuilder } from '@/domain/messages/entities/__tests__/message.bui
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
+import { getAddress } from 'viem';
 
 const dataSource = {
   get: jest.fn(),
@@ -95,8 +96,8 @@ describe('TransactionApi', () => {
 
   describe('getDataDecoded', () => {
     it('should return the decoded data', async () => {
-      const data = faker.string.hexadecimal();
-      const to = faker.finance.ethereumAddress();
+      const data = faker.string.hexadecimal() as `0x${string}`;
+      const to = getAddress(faker.finance.ethereumAddress());
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder/`;
       const decodedData = dataDecodedBuilder().build();
       networkService.post.mockResolvedValueOnce({
@@ -122,8 +123,8 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const data = faker.string.hexadecimal();
-      const to = faker.finance.ethereumAddress();
+      const data = faker.string.hexadecimal() as `0x${string}`;
+      const to = getAddress(faker.finance.ethereumAddress());
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],

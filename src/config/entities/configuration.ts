@@ -170,6 +170,7 @@ export default () => ({
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
     locking: process.env.FF_LOCKING?.toLowerCase() === 'true',
     relay: process.env.FF_RELAY?.toLowerCase() === 'true',
+    swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

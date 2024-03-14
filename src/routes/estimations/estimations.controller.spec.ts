@@ -162,14 +162,10 @@ describe('Estimations Controller (Unit)', () => {
           0,
         ),
       )
-      .expect(422)
+      .expect(500)
       .expect({
-        statusCode: 422,
-        code: 'invalid_type',
-        expected: 'string',
-        received: 'undefined',
-        path: ['safeTxGas'],
-        message: 'Required',
+        statusCode: 500,
+        message: 'Internal server error',
       });
   });
 

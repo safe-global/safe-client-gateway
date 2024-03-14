@@ -9,7 +9,7 @@ export interface IDataDecodedRepository {
    */
   getDataDecoded(args: {
     chainId: string;
-    data: string;
-    to: string;
+    data: `0x${string}`;
+    to?: `0x${string}`;
   }): Promise<DataDecoded>;
 }

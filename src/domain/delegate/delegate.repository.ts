@@ -38,9 +38,9 @@ export class DelegateRepository implements IDelegateRepository {
 
   async postDelegate(args: {
     chainId: string;
-    safeAddress: string | null;
-    delegate: string;
-    delegator: string;
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
     label: string;
   }): Promise<void> {

@@ -2,14 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { SafeAppsValidator } from '@/domain/safe-apps/safe-apps.validator';
+import { SafeAppSchema } from '@/domain/safe-apps/entities/schemas/safe-app.schema';
 
 @Injectable()
 export class SafeAppsRepository implements ISafeAppsRepository {
   constructor(
     @Inject(IConfigApi)
     private readonly configApi: IConfigApi,
-    private readonly validator: SafeAppsValidator,
   ) {}
 
   async getSafeApps(args: {
@@ -18,7 +17,7 @@ export class SafeAppsRepository implements ISafeAppsRepository {
     url?: string;
   }): Promise<SafeApp[]> {
     const safeApps = await this.configApi.getSafeApps(args);
-    return safeApps.map((safeApp) => this.validator.validate(safeApp));
+    return safeApps.map((safeApp) => SafeAppSchema.parse(safeApp));
   }
 
   async clearSafeApps(chainId: string): Promise<void> {
@@ -28,6 +27,6 @@ export class SafeAppsRepository implements ISafeAppsRepository {
   async getSafeAppById(chainId: string, id: number): Promise<SafeApp | null> {
     const safeApps = await this.configApi.getSafeApps({ chainId });
     const safeApp = safeApps.find((safeApp) => safeApp.id === id);
-    return safeApp ? this.validator.validate(safeApp) : null;
+    return safeApp ? SafeAppSchema.parse(safeApp) : null;
   }
 }

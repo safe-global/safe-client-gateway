@@ -183,17 +183,10 @@ describe('Chains Controller (Unit)', () => {
         status: 200,
       });
 
-      await request(app.getHttpServer())
-        .get('/v1/chains')
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['chainId'],
-          message: 'Required',
-        });
+      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
@@ -327,14 +320,10 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
-        .expect(422)
+        .expect(500)
         .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['name'],
-          message: 'Required',
+          statusCode: 500,
+          message: 'Internal server error',
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);

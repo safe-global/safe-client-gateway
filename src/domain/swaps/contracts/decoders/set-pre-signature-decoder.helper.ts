@@ -19,6 +19,14 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
   }
 
   /**
+   * Checks if the provided transaction data is a setPreSignature call.
+   * @param data - the transaction data
+   */
+  isSetPreSignature(data: string): boolean {
+    return data.startsWith(this.setPreSignatureFunctionSelector);
+  }
+
+  /**
    * Gets the Order UID associated with the provided transaction data.
    *
    * @param data - the transaction data for the setPreSignature call
@@ -26,7 +34,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
    */
   getOrderUid(data: `0x${string}`): `0x${string}` | null {
     try {
-      if (!data.startsWith(this.setPreSignatureFunctionSelector)) return null;
+      if (!this.isSetPreSignature(data)) return null;
       const { args } = this.decodeFunctionData({ data });
       return args[0];
     } catch (e) {

@@ -67,8 +67,8 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getDataDecoded(args: {
-    data: string;
-    to?: string;
+    data: `0x${string}`;
+    to?: `0x${string}`;
   }): Promise<DataDecoded> {
     try {
       const url = `${this.baseUrl}/api/v1/data-decoder/`;
@@ -202,9 +202,9 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async postDelegate(args: {
-    safeAddress: string | null;
-    delegate: string;
-    delegator: string;
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
     label: string;
   }): Promise<void> {

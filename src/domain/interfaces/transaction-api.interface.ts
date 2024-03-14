@@ -20,7 +20,10 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export interface ITransactionApi {
-  getDataDecoded(args: { data: string; to?: string }): Promise<DataDecoded>;
+  getDataDecoded(args: {
+    data: `0x${string}`;
+    to?: `0x${string}`;
+  }): Promise<DataDecoded>;
 
   getBackbone(): Promise<Backbone>;
 
@@ -42,9 +45,9 @@ export interface ITransactionApi {
   }): Promise<Page<Delegate>>;
 
   postDelegate(args: {
-    safeAddress: string | null;
-    delegate: string;
-    delegator: string;
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
     label: string;
   }): Promise<void>;
