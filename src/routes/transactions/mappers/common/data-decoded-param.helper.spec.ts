@@ -36,6 +36,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 0,
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -52,6 +53,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transfer',
@@ -68,6 +70,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -84,6 +87,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'safeTransferFrom',
@@ -100,6 +104,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: faker.word.sample(),
@@ -140,6 +145,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 0,
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -156,11 +162,13 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
 
       const dataDecoded: DataDecoded = {
@@ -178,6 +186,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: faker.number.int(),
+        valueDecoded: null,
       };
       const dataDecoded = {
         method: 'transfer',
@@ -195,11 +204,13 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
 
       const dataDecoded: DataDecoded = {
@@ -217,11 +228,13 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -238,6 +251,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: faker.word.sample(),
@@ -278,6 +292,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: faker.number.int(),
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -294,11 +309,13 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
 
       const dataDecoded: DataDecoded = {
@@ -316,11 +333,13 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: faker.number.int(),
+        valueDecoded: null,
       };
 
       const dataDecoded: DataDecoded = {
@@ -338,16 +357,19 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
       const thirdParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'thirdValue',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -364,16 +386,19 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'firstValue',
+        valueDecoded: null,
       };
       const secondParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'secondValue',
+        valueDecoded: null,
       };
       const thirdParam: DataDecodedParameter = {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'thirdValue',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: 'transferFrom',
@@ -390,6 +415,7 @@ describe('DataDecoded param helper (Unit)', () => {
         name: faker.word.sample(),
         type: faker.word.sample(),
         value: 'value',
+        valueDecoded: null,
       };
       const dataDecoded: DataDecoded = {
         method: faker.word.sample(),
