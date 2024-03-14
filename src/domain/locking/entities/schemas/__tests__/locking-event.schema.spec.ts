@@ -25,6 +25,55 @@ describe('Locking event schemas', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should not allow a non-date string executionDate', () => {
+      const executionDate = faker.string.alpha();
+      const lockEventItem = lockEventItemBuilder()
+        .with('executionDate', executionDate as unknown as Date)
+        .build();
+
+      const result = LockEventItemSchema.safeParse(lockEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_date',
+            path: ['executionDate'],
+            message: 'Invalid date',
+          },
+        ]),
+      );
+    });
+
+    it('should coerce the executionDate to a date', () => {
+      const executionDate = faker.date.recent();
+      const lockEventItem = lockEventItemBuilder()
+        .with('executionDate', executionDate.toISOString() as unknown as Date)
+        .build();
+
+      const result = LockEventItemSchema.safeParse(lockEventItem);
+
+      expect(result.success && result.data.executionDate).toBeInstanceOf(Date);
+    });
+
+    it('should not allow non-hex transactionHash', () => {
+      const transactionHash = faker.string.numeric();
+      const lockEventItem = lockEventItemBuilder()
+        .with('transactionHash', transactionHash as `0x${string}`)
+        .build();
+
+      const result = LockEventItemSchema.safeParse(lockEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid input',
+            path: ['transactionHash'],
+          },
+        ]),
+      );
+    });
+
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
@@ -39,6 +88,27 @@ describe('Locking event schemas', () => {
         getAddress(nonChecksummedAddress),
       );
     });
+
+    it.each([['amount' as const], ['logIndex' as const]])(
+      'should not allow a non-numeric string %s',
+      (field) => {
+        const lockEventItem = lockEventItemBuilder()
+          .with(field, faker.string.alpha())
+          .build();
+
+        const result = LockEventItemSchema.safeParse(lockEventItem);
+
+        expect(!result.success && result.error).toStrictEqual(
+          new ZodError([
+            {
+              code: 'custom',
+              message: 'Invalid input',
+              path: [field],
+            },
+          ]),
+        );
+      },
+    );
 
     it('should not validate an invalid LockEventItem', () => {
       const lockEventItem = { invalid: 'lockEventItem' };
@@ -101,6 +171,36 @@ describe('Locking event schemas', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should not allow a non-date string executionDate', () => {
+      const executionDate = faker.string.alpha();
+      const withdrawEventItem = unlockEventItemBuilder()
+        .with('executionDate', executionDate as unknown as Date)
+        .build();
+
+      const result = UnlockEventItemSchema.safeParse(withdrawEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_date',
+            path: ['executionDate'],
+            message: 'Invalid date',
+          },
+        ]),
+      );
+    });
+
+    it('should coerce the executionDate to a date', () => {
+      const executionDate = faker.date.recent();
+      const unlockEventItem = unlockEventItemBuilder()
+        .with('executionDate', executionDate.toISOString() as unknown as Date)
+        .build();
+
+      const result = UnlockEventItemSchema.safeParse(unlockEventItem);
+
+      expect(result.success && result.data.executionDate).toBeInstanceOf(Date);
+    });
+
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
@@ -113,6 +213,28 @@ describe('Locking event schemas', () => {
 
       expect(result.success && result.data.holder).toBe(
         getAddress(nonChecksummedAddress),
+      );
+    });
+
+    it.each([
+      ['amount' as const],
+      ['logIndex' as const],
+      ['unlockIndex' as const],
+    ])('should not allow a non-numeric string %s', (field) => {
+      const unlockEventItem = unlockEventItemBuilder()
+        .with(field, faker.string.alpha())
+        .build();
+
+      const result = UnlockEventItemSchema.safeParse(unlockEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid input',
+            path: [field],
+          },
+        ]),
       );
     });
 
@@ -184,6 +306,36 @@ describe('Locking event schemas', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should not allow a non-date string executionDate', () => {
+      const executionDate = faker.string.alpha();
+      const withdrawEventItem = withdrawEventItemBuilder()
+        .with('executionDate', executionDate as unknown as Date)
+        .build();
+
+      const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_date',
+            path: ['executionDate'],
+            message: 'Invalid date',
+          },
+        ]),
+      );
+    });
+
+    it('should coerce the executionDate to a date', () => {
+      const executionDate = faker.date.recent();
+      const withdrawEventItem = withdrawEventItemBuilder()
+        .with('executionDate', executionDate.toISOString() as unknown as Date)
+        .build();
+
+      const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
+
+      expect(result.success && result.data.executionDate).toBeInstanceOf(Date);
+    });
+
     it('should checksum the holder', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
@@ -196,6 +348,28 @@ describe('Locking event schemas', () => {
 
       expect(result.success && result.data.holder).toBe(
         getAddress(nonChecksummedAddress),
+      );
+    });
+
+    it.each([
+      ['amount' as const],
+      ['logIndex' as const],
+      ['unlockIndex' as const],
+    ])('should not allow a non-numeric string %s', (field) => {
+      const withdrawEventItem = withdrawEventItemBuilder()
+        .with(field, faker.string.alpha())
+        .build();
+
+      const result = WithdrawEventItemSchema.safeParse(withdrawEventItem);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid input',
+            path: [field],
+          },
+        ]),
       );
     });
 
@@ -291,12 +465,12 @@ describe('Locking event schemas', () => {
   });
 
   describe('LockingEventPageSchema', () => {
-    it('should validate a valid locking event page', () => {
-      const lockingEvent = faker.helpers.arrayElement([
-        lockEventItemBuilder().build(),
-        unlockEventItemBuilder().build(),
-        withdrawEventItemBuilder().build(),
-      ]);
+    it.each([
+      ['LockingEventItem', lockEventItemBuilder],
+      ['UnlockEventItem', unlockEventItemBuilder],
+      ['WithdrawEventItem', withdrawEventItemBuilder],
+    ])(`should validate a valid %s page`, (event, eventBuilder) => {
+      const lockingEvent = eventBuilder().build();
       const lockingEventPage = pageBuilder()
         .with('results', [lockingEvent])
         .with('count', 1)
@@ -310,39 +484,27 @@ describe('Locking event schemas', () => {
     });
 
     it('should not validate an invalid locking event page', () => {
-      const lockingEventPage = { invalid: 'lockingEventPage' };
+      const lockingEvent = {
+        // type is discriminator
+        type: faker.word.sample(),
+      };
+      const lockingEventPage = pageBuilder()
+        .with('results', [lockingEvent])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
 
       const result = LockingEventPageSchema.safeParse(lockingEventPage);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
           {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'undefined',
-            path: ['count'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['next'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['previous'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'array',
-            received: 'undefined',
-            path: ['results'],
-            message: 'Required',
+            code: 'invalid_union_discriminator',
+            options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
+            path: ['results', 0, 'eventType'],
+            message:
+              "Invalid discriminator value. Expected 'LOCKED' | 'UNLOCKED' | 'WITHDRAWN'",
           },
         ]),
       );
