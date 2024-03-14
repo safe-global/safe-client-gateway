@@ -106,8 +106,8 @@ describe('Swap Order Mapper tests', () => {
         symbol: buyToken.symbol,
       },
       expiresTimestamp: order.validTo,
-      surplus: expectedSurplus,
-      executionPrice: expectedExecutionPrice,
+      surplusLabel: expectedSurplus,
+      executionPriceLabel: expectedExecutionPrice,
       humanDescription: null,
       richDecodedInfo: null,
     });
@@ -157,7 +157,7 @@ describe('Swap Order Mapper tests', () => {
           symbol: buyToken.symbol,
         },
         expiresTimestamp: order.validTo,
-        limitPriceDescription: expectedLimitPriceDescription,
+        limitPriceLabel: expectedLimitPriceDescription,
         humanDescription: null,
         richDecodedInfo: null,
       });
