@@ -15,7 +15,7 @@ export class LockingService {
     private readonly lockingRepository: ILockingRepository,
   ) {}
 
-  async getRank(safeAddress: string): Promise<Rank> {
+  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
     return this.lockingRepository.getRank(safeAddress);
   }
 

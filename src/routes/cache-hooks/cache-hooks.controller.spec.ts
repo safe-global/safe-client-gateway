@@ -142,7 +142,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -166,7 +166,7 @@ describe('Post Hook Events (Unit)', () => {
       type: 'SOME_TEST_TYPE_THAT_WE_DO_NOT_SUPPORT',
       safeTxHash: 'some-safe-tx-hash',
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/1`:
           return Promise.resolve({
@@ -227,7 +227,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -284,7 +284,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -341,7 +341,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -390,7 +390,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -448,7 +448,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -502,7 +502,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -551,7 +551,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -595,7 +595,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -664,7 +664,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
@@ -711,7 +711,7 @@ describe('Post Hook Events (Unit)', () => {
       chainId: chainId,
       ...payload,
     };
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({

@@ -1,35 +1,32 @@
-import { JSONSchemaType, Schema } from 'ajv';
-import { BalanceToken } from '@/domain/balances/entities/balance.token.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const BALANCE_TOKEN_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/balances/balance-token.json';
+export const NativeBalanceSchema = z.object({
+  // Likely `null` but for safety we allow optional defaulting
+  tokenAddress: z.null().optional().default(null),
+  token: z.null().optional().default(null),
+  balance: z.string(),
+});
 
-const balanceTokenSchema: JSONSchemaType<BalanceToken> = {
-  $id: BALANCE_TOKEN_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    name: { type: 'string' },
-    symbol: { type: 'string' },
-    decimals: { type: 'number' },
-    logoUri: { type: 'string' },
-  },
-  required: ['name', 'symbol', 'decimals', 'logoUri'],
-};
+export const BalanceTokenSchema = z.object({
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number(),
+  logoUri: z.string(),
+});
 
-export const BALANCE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/balances/balance.json';
+export const Erc20BalanceSchema = z.object({
+  tokenAddress: AddressSchema,
+  token: BalanceTokenSchema,
+  balance: z.string(),
+});
 
-const balanceSchema: Schema = {
-  $id: BALANCE_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    tokenAddress: { type: 'string', nullable: true, default: null },
-    token: { anyOf: [{ type: 'null' }, { $ref: 'balance-token.json' }] },
-    balance: { type: 'string' },
-    fiatBalance: { type: 'string', nullable: true, default: null },
-    fiatConversion: { type: 'string', nullable: true, default: null },
-  },
-  required: ['balance'],
-};
+const FiatSchema = z.object({
+  fiatBalance: z.string().nullish().default(null),
+  fiatConversion: z.string().nullish().default(null),
+});
 
-export { balanceSchema, balanceTokenSchema };
+export const BalanceSchema = z.union([
+  NativeBalanceSchema.merge(FiatSchema),
+  Erc20BalanceSchema.merge(FiatSchema),
+]);

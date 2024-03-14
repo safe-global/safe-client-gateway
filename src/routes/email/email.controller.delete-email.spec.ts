@@ -129,7 +129,7 @@ describe('Email controller delete email tests', () => {
       .build();
     const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
@@ -258,7 +258,7 @@ describe('Email controller delete email tests', () => {
       .build();
     const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });

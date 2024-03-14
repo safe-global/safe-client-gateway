@@ -17,9 +17,9 @@ export class LockingRepository implements ILockingRepository {
     private readonly lockingApi: ILockingApi,
   ) {}
 
-  async getRank(safeAddress: string): Promise<Rank> {
-    const rank = await this.lockingApi.getLeaderboard({ safeAddress });
-    return RankSchema.parse(rank.results[0]);
+  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
+    const rank = await this.lockingApi.getRank(safeAddress);
+    return RankSchema.parse(rank);
   }
 
   async getLeaderboard(args: {

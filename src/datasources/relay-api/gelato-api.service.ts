@@ -42,14 +42,17 @@ export class GelatoApi implements IRelayApi {
 
     try {
       const url = `${this.baseUri}/relays/v2/sponsored-call`;
-      const { data } = await this.networkService.post<{ taskId: string }>(url, {
-        sponsorApiKey,
-        chainId: args.chainId,
-        target: args.to,
-        data: args.data,
-        ...(args.gasLimit && {
-          gasLimit: this.getRelayGasLimit(args.gasLimit).toString(),
-        }),
+      const { data } = await this.networkService.post<{ taskId: string }>({
+        url,
+        data: {
+          sponsorApiKey,
+          chainId: args.chainId,
+          target: args.to,
+          data: args.data,
+          ...(args.gasLimit && {
+            gasLimit: this.getRelayGasLimit(args.gasLimit).toString(),
+          }),
+        },
       });
       return data;
     } catch (error) {

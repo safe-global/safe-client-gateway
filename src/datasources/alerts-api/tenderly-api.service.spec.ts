@@ -78,19 +78,19 @@ describe('TenderlyApi', () => {
 
       await service.addContract(contract);
 
-      expect(mockNetworkService.post).toHaveBeenCalledWith(
-        `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
-        {
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/address`,
+        data: {
           address: contract.address,
           display_name: contract.displayName,
           network_id: contract.chainId,
         },
-        {
+        networkRequest: {
           headers: {
             'X-Access-Key': tenderlyApiKey,
           },
         },
-      );
+      });
     });
 
     it('should forward error', async () => {
@@ -126,15 +126,14 @@ describe('TenderlyApi', () => {
 
       await service.deleteContract(contract);
 
-      expect(mockNetworkService.delete).toHaveBeenCalledWith(
-        `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/contract/${contract.chainId}/${contract.address}`,
-        undefined,
-        {
+      expect(mockNetworkService.delete).toHaveBeenCalledWith({
+        url: `${tenderlyBaseUri}/api/v1/account/${tenderlyAccount}/project/${tenderlyProject}/contract/${contract.chainId}/${contract.address}`,
+        networkRequest: {
           headers: {
             'X-Access-Key': tenderlyApiKey,
           },
         },
-      );
+      });
     });
 
     it('should forward error', async () => {

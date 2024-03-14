@@ -100,7 +100,10 @@ export class AddressInfoHelper {
       case 'CONTRACT':
         return this.contractsRepository
           .getContract({ chainId, contractAddress: address })
-          .then((c) => new AddressInfo(c.address, c.displayName, c.logoUri));
+          .then(
+            (c) =>
+              new AddressInfo(c.address, c.displayName, c.logoUri ?? undefined),
+          );
       case 'TOKEN':
         return this.tokenRepository
           .getToken({ chainId, address })

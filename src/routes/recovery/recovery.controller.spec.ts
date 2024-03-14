@@ -88,7 +88,7 @@ describe('Recovery (Unit)', () => {
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -97,9 +97,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.resolve({ status: 200, data: {} })
@@ -112,10 +121,57 @@ describe('Recovery (Unit)', () => {
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
         .send({
           ...addRecoveryModuleDto,
-          // TODO: Add to request
           signer: signer.address,
         })
         .expect(200);
+    });
+
+    it('should prevent requests for modules not on specified Safe', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const timestamp = jest.now();
+      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
+      const signature = await signer.signMessage({ message });
+
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ status: 200, data: chain });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+        ) {
+          return Promise.resolve({ status: 200, data: safe });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [] },
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+      networkService.post.mockImplementation(({ url }) =>
+        url ===
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
+          ? Promise.resolve({ status: 200, data: {} })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Safe-Wallet-Signature', signature)
+        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+        .send({
+          ...addRecoveryModuleDto,
+          signer: signer.address,
+        })
+        .expect(403);
     });
 
     it('should prevent requests older than 5 minutes', async () => {
@@ -128,7 +184,7 @@ describe('Recovery (Unit)', () => {
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -136,6 +192,15 @@ describe('Recovery (Unit)', () => {
           url === `${chain.transactionService}/api/v1/safes/${safe.address}`
         ) {
           return Promise.resolve({ status: 200, data: safe });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
@@ -163,7 +228,7 @@ describe('Recovery (Unit)', () => {
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -171,6 +236,15 @@ describe('Recovery (Unit)', () => {
           url === `${chain.transactionService}/api/v1/safes/${safe.address}`
         ) {
           return Promise.resolve({ status: 200, data: safe });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
@@ -198,7 +272,7 @@ describe('Recovery (Unit)', () => {
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -207,9 +281,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.resolve({ status: 200, data: {} })
@@ -250,7 +333,7 @@ describe('Recovery (Unit)', () => {
         },
       );
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -259,9 +342,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
@@ -299,7 +391,7 @@ describe('Recovery (Unit)', () => {
         } as Response,
       );
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -308,9 +400,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.post.mockImplementation((url) =>
+      networkService.post.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
           ? Promise.reject(error)
@@ -339,7 +440,7 @@ describe('Recovery (Unit)', () => {
       const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -348,9 +449,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
           ? Promise.resolve({ status: 204, data: {} })
@@ -369,6 +479,55 @@ describe('Recovery (Unit)', () => {
         .expect(204);
     });
 
+    it('should prevent requests for modules not on specified Safe', async () => {
+      const moduleAddress = faker.finance.ethereumAddress();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const timestamp = jest.now();
+      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
+      const signature = await signer.signMessage({ message });
+
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ status: 200, data: chain });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+        ) {
+          return Promise.resolve({ status: 200, data: safe });
+        }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [] },
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+      networkService.delete.mockImplementation(({ url }) =>
+        url ===
+        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
+          ? Promise.resolve({ status: 204, data: {} })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
+        )
+        .set('Safe-Wallet-Signature', signature)
+        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+        .send({
+          signer: signer.address,
+        })
+        .expect(403);
+    });
+
     it('should prevent requests older than 5 minutes', async () => {
       const moduleAddress = faker.finance.ethereumAddress();
       const privateKey = generatePrivateKey();
@@ -379,7 +538,7 @@ describe('Recovery (Unit)', () => {
       const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -388,9 +547,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
           ? Promise.resolve({ status: 204, data: {} })
@@ -421,7 +589,7 @@ describe('Recovery (Unit)', () => {
       const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -430,9 +598,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
           ? Promise.resolve({ status: 204, data: {} })
@@ -473,7 +650,7 @@ describe('Recovery (Unit)', () => {
         },
       );
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -482,9 +659,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
           ? Promise.reject(error)
@@ -528,7 +714,7 @@ describe('Recovery (Unit)', () => {
         } as Response,
       );
 
-      networkService.get.mockImplementation((url) => {
+      networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
         }
@@ -537,9 +723,18 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
+        ) {
+          return Promise.resolve({
+            status: 200,
+            data: { safes: [safe.address] },
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation((url) =>
+      networkService.delete.mockImplementation(({ url }) =>
         url ===
         `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
           ? Promise.reject(error)

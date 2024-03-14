@@ -11,15 +11,11 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
-import { BackboneValidator } from '@/domain/backbone/backbone.validator';
 import { SingletonValidator } from '@/domain/chains/singleton.validator';
-import { CollectiblesValidator } from '@/domain/collectibles/collectibles.validator';
 import { SafeListValidator } from '@/domain/safe/safe-list.validator';
 import { SafeValidator } from '@/domain/safe/safe.validator';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { ContractsValidator } from '@/domain/contracts/contracts.validator';
-import { DelegateValidator } from '@/domain/delegate/delegate.validator';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
 import { DelegateRepository } from '@/domain/delegate/delegate.repository';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
@@ -29,7 +25,6 @@ import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
-import { SafeAppsValidator } from '@/domain/safe-apps/safe-apps.validator';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
 import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
@@ -49,7 +44,6 @@ import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
 import { IHumanDescriptionRepository } from '@/domain/human-description/human-description.repository.interface';
 import { HumanDescriptionRepository } from '@/domain/human-description/human-description.repository';
-import { BalancesValidator } from '@/domain/balances/balances.validator';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
 
 @Global()
@@ -79,21 +73,15 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    BackboneValidator,
-    CollectiblesValidator,
-    ContractsValidator,
     CreationTransactionValidator,
     DataDecodedValidator,
-    DelegateValidator,
     EstimationsValidator,
     SingletonValidator,
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
-    SafeAppsValidator,
     SafeListValidator,
     SafeValidator,
-    BalancesValidator,
     TokenValidator,
     TransactionTypeValidator,
     TransferValidator,

@@ -5,7 +5,7 @@ import { Rank } from '@/domain/locking/entities/rank.entity';
 export const ILockingRepository = Symbol('ILockingRepository');
 
 export interface ILockingRepository {
-  getRank(safeAddress: string): Promise<Rank>;
+  getRank(safeAddress: `0x${string}`): Promise<Rank>;
 
   getLeaderboard(args: {
     limit?: number;

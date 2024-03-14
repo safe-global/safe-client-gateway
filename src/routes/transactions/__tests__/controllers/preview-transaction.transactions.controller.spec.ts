@@ -85,7 +85,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
     const contractResponse = contractBuilder().build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -100,7 +100,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse, status: 200 });
@@ -152,7 +152,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -167,7 +167,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse, status: 200 });
@@ -218,7 +218,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -233,7 +233,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.reject({ error: 'Data cannot be decoded' });
@@ -299,7 +299,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const contractResponse = contractBuilder()
       .with('trustedForDelegateCall', true)
       .build();
-    networkService.get.mockImplementation((url) => {
+    networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
@@ -314,7 +314,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    networkService.post.mockImplementation((url) => {
+    networkService.post.mockImplementation(({ url }) => {
       const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({ data: dataDecodedResponse, status: 200 });
