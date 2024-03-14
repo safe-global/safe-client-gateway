@@ -120,11 +120,7 @@ describe('Locking (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['holder'],
-          message: 'Required',
+          message: 'Internal server error',
         });
     });
 
@@ -206,11 +202,7 @@ describe('Locking (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['results', 0, 'holder'],
-          message: 'Required',
+          message: 'Internal server error',
         });
     });
 
@@ -320,11 +312,7 @@ describe('Locking (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_union_discriminator',
-          options: ['LOCKED', 'UNLOCKED', 'WITHDRAWN'],
-          path: ['results', 0, 'eventType'],
-          message:
-            "Invalid discriminator value. Expected 'LOCKED' | 'UNLOCKED' | 'WITHDRAWN'",
+          message: 'Internal server error',
         });
     });
 

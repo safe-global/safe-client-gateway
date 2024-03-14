@@ -640,11 +640,7 @@ describe('Balances Controller (Unit)', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['balance'],
-          message: 'Required',
+          message: 'Internal server error',
         });
 
       expect(networkService.get.mock.calls.length).toBe(3);

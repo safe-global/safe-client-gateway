@@ -113,11 +113,7 @@ describe('Delegates controller', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'boolean',
-          path: ['label'],
-          message: 'Expected string, received boolean',
+          message: 'Internal server error',
         });
     });
 

@@ -138,11 +138,7 @@ describe('Contracts controller', () => {
         .expect(500)
         .expect({
           statusCode: 500,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'boolean',
-          path: ['name'],
-          message: 'Expected string, received boolean',
+          message: 'Internal server error',
         });
     });
   });

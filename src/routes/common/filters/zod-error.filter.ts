@@ -21,17 +21,22 @@ export class ZodErrorFilter implements ExceptionFilter {
   catch(exception: ZodError | ZodErrorWithCode, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const code =
-      exception instanceof ZodErrorWithCode
-        ? exception.code
-        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const error = this.mapZodErrorResponse(exception);
+    if (exception instanceof ZodErrorWithCode) {
+      const code = exception.code;
+      const error = this.mapZodErrorResponse(exception);
 
-    response.status(code).json({
-      statusCode: code,
-      ...error,
-    });
+      response.status(code).json({
+        statusCode: code,
+        ...error,
+      });
+    } else {
+      // Don't expose validation as it may contain sensitive data
+      response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal server error',
+      });
+    }
   }
 
   private mapZodErrorResponse(exception: ZodError): ZodIssue {
