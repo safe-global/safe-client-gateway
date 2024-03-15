@@ -1,10 +1,14 @@
+import { DeleteSafeDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-safe-delegate.dto.schema';
 import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class DeleteSafeDelegateDto {
+export class DeleteSafeDelegateDto
+  implements z.infer<typeof DeleteSafeDelegateDtoSchema>
+{
   @ApiProperty()
-  delegate!: string;
+  delegate!: `0x${string}`;
   @ApiProperty()
-  safe!: string;
+  safe!: `0x${string}`;
   @ApiProperty()
   signature!: string;
 }

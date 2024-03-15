@@ -1,17 +1,8 @@
-import { JSONSchemaType } from 'ajv';
-import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-delegate.dto.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const DELETE_SAFE_DELEGATE_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/delegates/delete-safe-delegate.dto.json';
-
-export const deleteSafeDelegateDtoSchema: JSONSchemaType<DeleteSafeDelegateDto> =
-  {
-    $id: DELETE_SAFE_DELEGATE_DTO_SCHEMA_ID,
-    type: 'object',
-    properties: {
-      delegate: { type: 'string' },
-      safe: { type: 'string' },
-      signature: { type: 'string' },
-    },
-    required: ['delegate', 'safe', 'signature'],
-  };
+export const DeleteSafeDelegateDtoSchema = z.object({
+  delegate: AddressSchema,
+  safe: AddressSchema,
+  signature: z.string(),
+});
