@@ -28,6 +28,7 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { getAddress } from 'viem';
 import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -182,6 +183,56 @@ describe('Locking (Unit)', () => {
             results: leaderboard.results,
           });
         });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/leaderboard`,
+        networkRequest: {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
+      });
+    });
+
+    it('should forward the pagination parameters', async () => {
+      const limit = faker.number.int({ min: 1, max: 10 });
+      const offset = faker.number.int({ min: 1, max: 10 });
+      const leaderboard = pageBuilder()
+        .with('results', [rankBuilder().build()])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/leaderboard`:
+            return Promise.resolve({ data: leaderboard, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/locking/leaderboard?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        )
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            count: leaderboard.count,
+            next: expect.any(String),
+            previous: expect.any(String),
+            results: leaderboard.results,
+          });
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/leaderboard`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
     });
 
     it('should validate the response', async () => {
@@ -254,6 +305,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
+          // Service will have checksummed address
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
           default:
@@ -273,6 +325,67 @@ describe('Locking (Unit)', () => {
             executionDate: result.executionDate.toISOString(),
           })),
         });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`,
+        networkRequest: {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
+      });
+    });
+
+    it('should forward the pagination parameters', async () => {
+      const safeAddress = faker.finance.ethereumAddress();
+      const limit = faker.number.int({ min: 1, max: 10 });
+      const offset = faker.number.int({ min: 1, max: 10 });
+      const lockingHistory = [
+        lockEventItemBuilder().build(),
+        unlockEventItemBuilder().build(),
+        withdrawEventItemBuilder().build(),
+      ];
+      const lockingHistoryPage = pageBuilder<LockingEvent>()
+        .with('results', lockingHistory)
+        .with('count', lockingHistory.length)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          // Service will have checksummed address
+          case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
+            return Promise.resolve({ data: lockingHistoryPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/locking/${safeAddress}/history?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        )
+        .expect(200)
+        .expect({
+          count: lockingHistoryPage.count,
+          next: null,
+          previous: null,
+          results: lockingHistoryPage.results.map((result) => ({
+            ...result,
+            executionDate: result.executionDate.toISOString(),
+          })),
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
     });
 
     it('should validate the Safe address in URL', async () => {
@@ -300,6 +413,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
+          // Service will have checksummed address
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
             return Promise.resolve({ data: lockingHistoryPage, status: 200 });
           default:
