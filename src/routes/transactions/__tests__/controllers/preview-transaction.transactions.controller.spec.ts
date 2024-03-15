@@ -12,10 +12,7 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import {
-  CALL_OPERATION,
-  DELEGATE_OPERATION,
-} from '@/domain/safe/entities/operation.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
@@ -84,7 +81,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
 
   it('should preview a transaction', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
-      .with('operation', CALL_OPERATION)
+      .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
@@ -152,7 +149,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
 
   it('should preview a transaction with an unknown "to" address', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
-      .with('operation', CALL_OPERATION)
+      .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
@@ -219,7 +216,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
 
   it('should preview a transaction even if the data cannot be decoded', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
-      .with('operation', CALL_OPERATION)
+      .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();
@@ -285,7 +282,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
 
   it('should preview a transaction with a nested call', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
-      .with('operation', DELEGATE_OPERATION)
+      .with('operation', Operation.DELEGATE)
       .build();
     const chainId = faker.string.numeric();
     const safeAddress = faker.finance.ethereumAddress();

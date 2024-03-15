@@ -61,36 +61,13 @@ describe('PreviewTransactionDtoSchema', () => {
           path: ['value'],
           message: 'Required',
         },
+        // @ts-expect-error - enum values cannot be inferred by zod (zod-based error)
         {
-          code: 'invalid_union',
-          unionErrors: [
-            {
-              issues: [
-                // @ts-expect-error - zod cannot infer literal (zod-based error)
-                {
-                  code: 'invalid_literal',
-                  expected: 0,
-                  path: ['operation'],
-                  message: 'Invalid literal value, expected 0',
-                },
-              ],
-              name: 'ZodError',
-            },
-            {
-              issues: [
-                // @ts-expect-error - zod cannot infer literal (zod-based error)
-                {
-                  code: 'invalid_literal',
-                  expected: 1,
-                  path: ['operation'],
-                  message: 'Invalid literal value, expected 1',
-                },
-              ],
-              name: 'ZodError',
-            },
-          ],
+          expected: '0 | 1',
+          received: 'undefined',
+          code: 'invalid_type',
           path: ['operation'],
-          message: 'Invalid input',
+          message: 'Required',
         },
       ]),
     );
