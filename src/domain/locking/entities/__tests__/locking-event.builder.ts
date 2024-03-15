@@ -1,5 +1,10 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
 import {
+  LockEventItem,
+  UnlockEventItem,
+  WithdrawEventItem,
+} from '@/domain/locking/entities/locking-event.entity';
+import {
   LockEventItemSchema,
   LockingEventType,
   UnlockEventItemSchema,
@@ -9,9 +14,7 @@ import { faker } from '@faker-js/faker';
 import { Hex, getAddress } from 'viem';
 import { z } from 'zod';
 
-export function lockEventItemBuilder(): IBuilder<
-  z.infer<typeof LockEventItemSchema>
-> {
+export function lockEventItemBuilder(): IBuilder<LockEventItem> {
   return new Builder<z.infer<typeof LockEventItemSchema>>()
     .with('eventType', LockingEventType.LOCKED)
     .with('executionDate', faker.date.recent())
@@ -21,9 +24,7 @@ export function lockEventItemBuilder(): IBuilder<
     .with('logIndex', faker.string.numeric());
 }
 
-export function unlockEventItemBuilder(): IBuilder<
-  z.infer<typeof UnlockEventItemSchema>
-> {
+export function unlockEventItemBuilder(): IBuilder<UnlockEventItem> {
   return new Builder<z.infer<typeof UnlockEventItemSchema>>()
     .with('eventType', LockingEventType.UNLOCKED)
     .with('executionDate', faker.date.recent())
@@ -34,9 +35,7 @@ export function unlockEventItemBuilder(): IBuilder<
     .with('logIndex', faker.string.numeric());
 }
 
-export function withdrawEventItemBuilder(): IBuilder<
-  z.infer<typeof WithdrawEventItemSchema>
-> {
+export function withdrawEventItemBuilder(): IBuilder<WithdrawEventItem> {
   return new Builder<z.infer<typeof WithdrawEventItemSchema>>()
     .with('eventType', LockingEventType.WITHDRAWN)
     .with('executionDate', faker.date.recent())
