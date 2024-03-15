@@ -14,10 +14,9 @@ describe('OrderSchema', () => {
   });
 
   it('hexadecimal signature should be valid', () => {
-    const order = {
-      ...orderBuilder().build(),
-      signature: faker.string.hexadecimal() as `0x${string}`,
-    };
+    const order = orderBuilder()
+      .with('signature', faker.string.hexadecimal() as `0x${string}`)
+      .build();
 
     const result = OrderSchema.safeParse(order);
 
@@ -38,55 +37,6 @@ describe('OrderSchema', () => {
     },
   );
 
-  it('should fallback to unknown sellTokenBalance on order with an invalid sellTokenBalance', () => {
-    const order = {
-      ...orderBuilder().build(),
-      sellTokenBalance: faker.string.sample(),
-    };
-
-    const result = OrderSchema.safeParse(order);
-
-    expect(result.success && result.data.sellTokenBalance).toBe('unknown');
-  });
-
-  it('should fallback to unknown buyTokenBalance on order with an invalid buyTokenBalance', () => {
-    const order = {
-      ...orderBuilder().build(),
-      buyTokenBalance: faker.string.sample(),
-    };
-
-    const result = OrderSchema.safeParse(order);
-
-    expect(result.success && result.data.buyTokenBalance).toBe('unknown');
-  });
-
-  it('should fallback to unknown signingScheme on order with an invalid signingScheme', () => {
-    const order = {
-      ...orderBuilder().build(),
-      signingScheme: faker.string.sample(),
-    };
-
-    const result = OrderSchema.safeParse(order);
-
-    expect(result.success && result.data.signingScheme).toBe('unknown');
-  });
-
-  it('should fallback to unknown class on order with an invalid class', () => {
-    const order = { ...orderBuilder().build(), class: faker.string.sample() };
-
-    const result = OrderSchema.safeParse(order);
-
-    expect(result.success && result.data.class).toBe('unknown');
-  });
-
-  it('should fallback to unknown status on order with an invalid status', () => {
-    const order = { ...orderBuilder().build(), status: faker.string.sample() };
-
-    const result = OrderSchema.safeParse(order);
-
-    expect(result.success && result.data.status).toBe('unknown');
-  });
-
   it('should fallback to unknown placementError on order with an invalid placementError', () => {
     const order = {
       ...orderBuilder().build(),
@@ -103,12 +53,22 @@ describe('OrderSchema', () => {
     );
   });
 
-  it('should fallback to unknown kind on order with an invalid kind', () => {
-    const order = { ...orderBuilder().build(), kind: faker.string.sample() };
+  it.each<keyof Order>([
+    'kind',
+    'sellTokenBalance',
+    'buyTokenBalance',
+    'signingScheme',
+    'class',
+    'status',
+  ])(`should fallback to unknown %s on order with an invalid %s`, (key) => {
+    const order = {
+      ...orderBuilder().build(),
+      [key]: faker.string.sample(),
+    };
 
     const result = OrderSchema.safeParse(order);
 
-    expect(result.success && result.data.kind).toBe('unknown');
+    expect(result.success && result.data[key]).toBe('unknown');
   });
 
   it.each<keyof Order>([
