@@ -46,7 +46,7 @@ describe('GetDelegateDtoSchema', () => {
     );
   });
 
-  it.each([['safe' as const], ['delegate' as const], ['delegator' as const]])(
+  it.each(['safe' as const, 'delegate' as const, 'delegator' as const])(
     'should not validate non-hex %s',
     (property) => {
       const getDelegateDto = { [property]: faker.word.sample() };
