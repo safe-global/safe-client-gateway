@@ -34,7 +34,7 @@ describe('NewConfirmationEventSchema', () => {
     );
   });
 
-  it.each([['address' as const], ['owner' as const]])(
+  it.each(['address' as const, 'owner' as const])(
     'should not allow a non-address %s',
     (field) => {
       const newConfirmationEvent = newConfirmationEventBuilder()
@@ -55,7 +55,7 @@ describe('NewConfirmationEventSchema', () => {
     },
   );
 
-  it.each([['address' as const], ['owner' as const]])(
+  it.each(['address' as const, 'owner' as const])(
     'should checksum the  %s',
     (field) => {
       const nonChecksummedAddress = faker.finance
@@ -74,11 +74,11 @@ describe('NewConfirmationEventSchema', () => {
   );
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['owner' as const],
-    ['safeTxHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'owner' as const,
+    'safeTxHash' as const,
   ])(`should not allow a missing %s`, (field) => {
     const newConfirmationEvent = newConfirmationEventBuilder().build();
     delete newConfirmationEvent[field];

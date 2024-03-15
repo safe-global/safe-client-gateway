@@ -33,7 +33,7 @@ describe('ChainUpdateEventSchema', () => {
     );
   });
 
-  it.each([['type' as const], ['chainId' as const]])(
+  it.each(['type' as const, 'chainId' as const])(
     'should not allow a missing %s',
     (field) => {
       const chainUpdateEvent = chainUpdateEventBuilder().build();

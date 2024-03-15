@@ -79,10 +79,10 @@ describe('PendingTransactionEventSchema', () => {
   });
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['safeTxHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'safeTxHash' as const,
   ])('should not allow a missing %s', (field) => {
     const pendingTransactionEvent = pendingTransactionEventBuilder().build();
     delete pendingTransactionEvent[field];

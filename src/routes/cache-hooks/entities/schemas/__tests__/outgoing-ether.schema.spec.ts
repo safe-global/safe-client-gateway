@@ -68,11 +68,11 @@ describe('OutgoingEtherEventSchema', () => {
   });
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['txHash' as const],
-    ['value' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'txHash' as const,
+    'value' as const,
   ])('should not allow a missing %s', (field) => {
     const outgoingEtherEvent = outgoingEtherEventBuilder().build();
     delete outgoingEtherEvent[field];

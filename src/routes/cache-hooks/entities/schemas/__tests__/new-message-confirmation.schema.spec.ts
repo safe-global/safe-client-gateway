@@ -77,10 +77,10 @@ describe('NewMessageConfirmationEventSchema', () => {
   });
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['messageHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'messageHash' as const,
   ])('should not allow a missing %s', (field) => {
     const newMessageConfirmationEvent =
       newMessageConfirmationEventBuilder().build();

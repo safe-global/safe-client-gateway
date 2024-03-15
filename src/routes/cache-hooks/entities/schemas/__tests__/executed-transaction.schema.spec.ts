@@ -79,11 +79,11 @@ describe('ExecutedTransactionEventSchema', () => {
   });
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['safeTxHash' as const],
-    ['txHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'safeTxHash' as const,
+    'txHash' as const,
   ])('should not allow a missing %s', (field) => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
     delete executedTransactionEvent[field];

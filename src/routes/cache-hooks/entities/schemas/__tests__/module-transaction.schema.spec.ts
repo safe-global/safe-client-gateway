@@ -38,7 +38,7 @@ describe('ModuleTransactionEventSchema', () => {
     );
   });
 
-  it.each([['address' as const], ['module' as const]])(
+  it.each(['address' as const, 'module' as const])(
     'should not allow a non-address %s',
     (field) => {
       const moduleTransactionEvent = moduleTransactionEventBuilder()
@@ -61,7 +61,7 @@ describe('ModuleTransactionEventSchema', () => {
     },
   );
 
-  it.each([['address' as const], ['module' as const]])(
+  it.each(['address' as const, 'module' as const])(
     'should checksum the %s',
     (field) => {
       const nonChecksummedAddress = faker.finance
@@ -82,11 +82,11 @@ describe('ModuleTransactionEventSchema', () => {
   );
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['module' as const],
-    ['txHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'module' as const,
+    'txHash' as const,
   ])(`should not allow a missing %s`, (field) => {
     const moduleTransactionEvent = moduleTransactionEventBuilder().build();
     delete moduleTransactionEvent[field];

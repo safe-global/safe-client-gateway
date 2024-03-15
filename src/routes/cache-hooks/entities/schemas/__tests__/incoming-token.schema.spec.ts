@@ -34,7 +34,7 @@ describe('IncomingTokenEventSchema', () => {
     );
   });
 
-  it.each([['address' as const], ['tokenAddress' as const]])(
+  it.each(['address' as const, 'tokenAddress' as const])(
     'should not allow a non-address %s',
     (field) => {
       const incomingTokenEvent = incomingTokenEventBuilder()
@@ -55,7 +55,7 @@ describe('IncomingTokenEventSchema', () => {
     },
   );
 
-  it.each([['address' as const], ['tokenAddress' as const]])(
+  it.each(['address' as const, 'tokenAddress' as const])(
     'should checksum the %s',
     (field) => {
       const nonChecksummedAddress = faker.finance
@@ -74,11 +74,11 @@ describe('IncomingTokenEventSchema', () => {
   );
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['tokenAddress' as const],
-    ['txHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'tokenAddress' as const,
+    'txHash' as const,
   ])(`should not allow a missing %s`, (field) => {
     const incomingTokenEvent = incomingTokenEventBuilder().build();
     delete incomingTokenEvent[field];

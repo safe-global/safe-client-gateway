@@ -68,10 +68,10 @@ describe('MessageCreatedEventSchema', () => {
   });
 
   it.each([
-    ['type' as const],
-    ['address' as const],
-    ['chainId' as const],
-    ['messageHash' as const],
+    'type' as const,
+    'address' as const,
+    'chainId' as const,
+    'messageHash' as const,
   ])(`should not allow a non-%s`, (field) => {
     const messageCreatedEvent = messageCreatedEventBuilder().build();
     delete messageCreatedEvent[field];
