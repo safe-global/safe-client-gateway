@@ -1,7 +1,8 @@
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
-export class FakeCacheService implements ICacheService {
+export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
   private isReady: boolean = true;
 
