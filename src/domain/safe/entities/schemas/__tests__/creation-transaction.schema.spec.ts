@@ -21,9 +21,9 @@ describe('CreationTransactionSchema', () => {
   });
 
   it.each([
-    ['creator' as const],
-    ['factoryAddress' as const],
-    ['masterCopy' as const],
+    'creator' as const,
+    'factoryAddress' as const,
+    'masterCopy' as const,
   ])('should checksum the %s', (field) => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
@@ -40,9 +40,9 @@ describe('CreationTransactionSchema', () => {
   });
 
   it.each([
-    ['masterCopy' as const],
-    ['setupData' as const],
-    ['dataDecoded' as const],
+    'masterCopy' as const,
+    'setupData' as const,
+    'dataDecoded' as const,
   ])('should allow an optional %s', (field) => {
     const creationTransaction = creationTransactionBuilder().build();
     delete creationTransaction[field];
@@ -52,11 +52,30 @@ describe('CreationTransactionSchema', () => {
     expect(result.success && result.data[field]).toBe(null);
   });
 
+  it.each(['creator' as const, 'setupData' as const])(
+    'should only allow hex %s',
+    (field) => {
+      const creationTransaction = creationTransactionBuilder()
+        .with(field, 'not a hex string' as `0x${string}`)
+        .build();
+
+      const result = CreationTransactionSchema.safeParse(creationTransaction);
+
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'custom',
+          message: 'Invalid input',
+          path: [field],
+        },
+      ]);
+    },
+  );
+
   it.each([
-    ['created' as const],
-    ['creator' as const],
-    ['transactionHash' as const],
-    ['factoryAddress' as const],
+    'created' as const,
+    'creator' as const,
+    'transactionHash' as const,
+    'factoryAddress' as const,
   ])('should not allow an undefined %s', (field) => {
     const creationTransaction = creationTransactionBuilder().build();
     delete creationTransaction[field];
