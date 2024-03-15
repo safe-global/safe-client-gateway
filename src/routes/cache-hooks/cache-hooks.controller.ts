@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { CacheHooksService } from '@/routes/cache-hooks/cache-hooks.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -6,6 +13,7 @@ import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
 import { PreExecutionLogGuard } from '@/routes/cache-hooks/guards/pre-execution.guard';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Controller({
   path: '',
@@ -13,7 +21,10 @@ import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.sc
 })
 @ApiExcludeController()
 export class CacheHooksController {
-  constructor(private readonly service: CacheHooksService) {}
+  constructor(
+    private readonly service: CacheHooksService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {}
 
   @UseGuards(PreExecutionLogGuard, BasicAuthGuard)
   @Post('/hooks/events')
@@ -21,6 +32,8 @@ export class CacheHooksController {
   async postEvent(
     @Body(new ValidationPipe(WebHookSchema)) event: Event,
   ): Promise<void> {
-    await this.service.onEvent(event);
+    this.service.onEvent(event).catch((error) => {
+      this.loggingService.error(error);
+    });
   }
 }
