@@ -83,13 +83,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const safe = safeBuilder().with('address', transaction.safe).build();
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
-    const safeAppsResponse = [
-      safeAppBuilder()
-        .with('url', faker.internet.url({ appendSlash: false }))
-        .with('iconUrl', faker.internet.url({ appendSlash: false }))
-        .with('name', faker.word.words())
-        .build(),
-    ];
     const rejectionTxsPage = pageBuilder().with('results', []).build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -117,8 +110,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           return Promise.resolve({ data: contract, status: 200 });
         case getToTokenUrl:
           return Promise.resolve({ data: token, status: 200 });
-        case getSafeAppsUrl:
-          return Promise.resolve({ data: safeAppsResponse, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
