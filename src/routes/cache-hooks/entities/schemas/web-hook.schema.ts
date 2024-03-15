@@ -1,53 +1,30 @@
-import { JSONSchemaType } from 'ajv';
-import { Event } from '@/routes/cache-hooks/entities/event.entity';
+import { z } from 'zod';
+import { ChainUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/chain-update.schema';
+import { DeletedMultisigTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/deleted-multisig-transaction.schema';
+import { ExecutedTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/executed-transaction.schema';
+import { IncomingEtherEventSchema } from '@/routes/cache-hooks/entities/schemas/incoming-ether.schema';
+import { IncomingTokenEventSchema } from '@/routes/cache-hooks/entities/schemas/incoming-token.schema';
+import { MessageCreatedEventSchema } from '@/routes/cache-hooks/entities/schemas/message-created.schema';
+import { ModuleTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/module-transaction.schema';
+import { NewConfirmationEventSchema } from '@/routes/cache-hooks/entities/schemas/new-confirmation.schema';
+import { NewMessageConfirmationEventSchema } from '@/routes/cache-hooks/entities/schemas/new-message-confirmation.schema';
+import { OutgoingEtherEventSchema } from '@/routes/cache-hooks/entities/schemas/outgoing-ether.schema';
+import { OutgoingTokenEventSchema } from '@/routes/cache-hooks/entities/schemas/outgoing-token.schema';
+import { PendingTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/pending-transaction.schema';
+import { SafeAppsUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/safe-apps-update.schema';
 
-export const WEB_HOOK_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/web-hook.json';
-
-export const webHookSchema: JSONSchemaType<Event> = {
-  $id: WEB_HOOK_SCHEMA_ID,
-  type: 'object',
-  discriminator: { propertyName: 'type' },
-  required: ['type', 'chainId'],
-  oneOf: [
-    {
-      $ref: 'chain-update.json',
-    },
-    {
-      $ref: 'deleted-multisig-transaction.json',
-    },
-    {
-      $ref: 'executed-transaction.json',
-    },
-    {
-      $ref: 'incoming-ether.json',
-    },
-    {
-      $ref: 'incoming-token.json',
-    },
-    {
-      $ref: 'message-created.json',
-    },
-    {
-      $ref: 'module-transaction.json',
-    },
-    {
-      $ref: 'new-confirmation.json',
-    },
-    {
-      $ref: 'new-message-confirmation.json',
-    },
-    {
-      $ref: 'outgoing-ether.json',
-    },
-    {
-      $ref: 'outgoing-token.json',
-    },
-    {
-      $ref: 'pending-transaction.json',
-    },
-    {
-      $ref: 'safe-apps-update.json',
-    },
-  ],
-};
+export const WebHookSchema = z.discriminatedUnion('type', [
+  ChainUpdateEventSchema,
+  DeletedMultisigTransactionEventSchema,
+  ExecutedTransactionEventSchema,
+  IncomingEtherEventSchema,
+  IncomingTokenEventSchema,
+  MessageCreatedEventSchema,
+  ModuleTransactionEventSchema,
+  NewConfirmationEventSchema,
+  NewMessageConfirmationEventSchema,
+  OutgoingEtherEventSchema,
+  OutgoingTokenEventSchema,
+  PendingTransactionEventSchema,
+  SafeAppsUpdateEventSchema,
+]);

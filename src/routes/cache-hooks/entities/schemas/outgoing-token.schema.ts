@@ -1,19 +1,11 @@
-import { JSONSchemaType } from 'ajv';
-import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
-import { OutgoingToken } from '@/routes/cache-hooks/entities/outgoing-token.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const OUTGOING_TOKEN_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/outgoing-token.json';
-
-export const outgoingTokenEventSchema: JSONSchemaType<OutgoingToken> = {
-  $id: OUTGOING_TOKEN_EVENT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    address: { type: 'string' },
-    chainId: { type: 'string' },
-    type: { type: 'string', const: EventType.OUTGOING_TOKEN },
-    tokenAddress: { type: 'string' },
-    txHash: { type: 'string' },
-  },
-  required: ['address', 'chainId', 'type', 'tokenAddress', 'txHash'],
-};
+export const OutgoingTokenEventSchema = z.object({
+  type: z.literal(EventType.OUTGOING_TOKEN),
+  address: AddressSchema,
+  chainId: z.string(),
+  tokenAddress: AddressSchema,
+  txHash: z.string(),
+});

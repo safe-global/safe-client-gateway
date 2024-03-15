@@ -1,9 +1,4 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { PendingTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/pending-transaction.schema';
+import { z } from 'zod';
 
-export interface PendingTransaction
-  extends EventPayload<EventType.PENDING_MULTISIG_TRANSACTION> {
-  safeTxHash: string;
-}
+export type PendingTransaction = z.infer<typeof PendingTransactionEventSchema>;

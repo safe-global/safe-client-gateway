@@ -1,4 +1,4 @@
-export enum EventType {
+export const enum EventType {
   CHAIN_UPDATE = 'CHAIN_UPDATE',
   NEW_CONFIRMATION = 'NEW_CONFIRMATION',
   EXECUTED_MULTISIG_TRANSACTION = 'EXECUTED_MULTISIG_TRANSACTION',
@@ -13,9 +13,3 @@ export enum EventType {
   SAFE_APPS_UPDATE = 'SAFE_APPS_UPDATE',
   DELETED_MULTISIG_TRANSACTION = 'DELETED_MULTISIG_TRANSACTION',
 }
-
-export type EventPayload<T extends EventType> = {
-  address: string;
-  chainId: string;
-  type: T;
-};

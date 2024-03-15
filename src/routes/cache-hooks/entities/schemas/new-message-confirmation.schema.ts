@@ -1,19 +1,10 @@
-import { JSONSchemaType } from 'ajv';
-import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
-import { NewMessageConfirmation } from '@/routes/cache-hooks/entities/new-message-confirmation.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/new-message-confirmation.json';
-
-export const newMessageConfirmationEventSchema: JSONSchemaType<NewMessageConfirmation> =
-  {
-    $id: NEW_MESSAGE_CONFIRMATION_EVENT_SCHEMA_ID,
-    type: 'object',
-    properties: {
-      address: { type: 'string' },
-      chainId: { type: 'string' },
-      type: { type: 'string', const: EventType.MESSAGE_CONFIRMATION },
-      messageHash: { type: 'string' },
-    },
-    required: ['address', 'chainId', 'type', 'messageHash'],
-  };
+export const NewMessageConfirmationEventSchema = z.object({
+  type: z.literal(EventType.MESSAGE_CONFIRMATION),
+  address: AddressSchema,
+  chainId: z.string(),
+  messageHash: z.string(),
+});
