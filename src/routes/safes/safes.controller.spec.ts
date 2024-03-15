@@ -381,7 +381,9 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const supportedMasterCopy = faker.finance.ethereumAddress();
     const singletons = [
-      singletonBuilder().with('address', supportedMasterCopy).build(),
+      singletonBuilder()
+        .with('address', getAddress(supportedMasterCopy))
+        .build(),
     ];
     const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()
@@ -440,7 +442,9 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const supportedMasterCopy = faker.finance.ethereumAddress();
     const singletons = [
-      singletonBuilder().with('address', supportedMasterCopy).build(),
+      singletonBuilder()
+        .with('address', getAddress(supportedMasterCopy))
+        .build(),
     ];
     const singletonInfo = contractBuilder().build();
     const safeInfo = safeBuilder()

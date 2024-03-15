@@ -3,7 +3,7 @@ import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
-import { SingletonValidator } from '@/domain/chains/singleton.validator';
+import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -14,7 +14,6 @@ export class ChainsRepository implements IChainsRepository {
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly singletonValidator: SingletonValidator,
   ) {}
 
   async getChain(chainId: string): Promise<Chain> {
@@ -36,8 +35,6 @@ export class ChainsRepository implements IChainsRepository {
     const transactionApi =
       await this.transactionApiManager.getTransactionApi(chainId);
     const singletons = await transactionApi.getSingletons();
-    return singletons.map((singleton) =>
-      this.singletonValidator.validate(singleton),
-    );
+    return singletons.map((singleton) => SingletonSchema.parse(singleton));
   }
 }
