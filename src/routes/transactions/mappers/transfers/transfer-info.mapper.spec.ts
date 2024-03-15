@@ -15,6 +15,7 @@ import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-tr
 import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
 import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
+import { getAddress } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -37,7 +38,9 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder().with('address', transfer.tokenAddress).build();
+    const token = tokenBuilder()
+      .with('address', getAddress(transfer.tokenAddress))
+      .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 
@@ -68,7 +71,9 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder().with('address', transfer.tokenAddress).build();
+    const token = tokenBuilder()
+      .with('address', getAddress(transfer.tokenAddress))
+      .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     tokenRepository.getToken.mockResolvedValue(token);
 

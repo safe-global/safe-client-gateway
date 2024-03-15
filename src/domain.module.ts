@@ -29,7 +29,6 @@ import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validat
 import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { TokenValidator } from '@/domain/tokens/token.validator';
 import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
@@ -80,7 +79,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     MultisigTransactionValidator,
     SafeListValidator,
     SafeValidator,
-    TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
   ],
