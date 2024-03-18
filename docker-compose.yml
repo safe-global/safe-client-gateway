@@ -52,6 +52,7 @@ services:
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: ${EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX-example_template_unknown_recovery_tx}
       EMAIL_TEMPLATE_RECOVERY_TX: ${EMAIL_TEMPLATE_RECOVERY_TX-example_template_recovery_tx}
       EMAIL_TEMPLATE_VERIFICATION_CODE: ${EMAIL_TEMPLATE_VERIFICATION_CODE-example_template_verification_code}
+      JWT_TOKEN: ${JWT_TOKEN-example_token}
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: ${RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN-example_api_key}
       RELAY_PROVIDER_API_KEY_SEPOLIA: ${RELAY_PROVIDER_API_KEY_SEPOLIA-example_api_key}
     depends_on:

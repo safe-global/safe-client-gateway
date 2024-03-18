@@ -17,6 +17,7 @@ describe('Configuration validator', () => {
     EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+    JWT_SECRET: faker.string.alphanumeric(),
     RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
   };
@@ -46,6 +47,7 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_TEMPLATE_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_VERIFICATION_CODE' },
+    { key: 'JWT_SECRET' },
     { key: 'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN' },
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
   ])(
@@ -75,6 +77,7 @@ describe('Configuration validator', () => {
         EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
         EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
         EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+        JWT_SECRET: faker.string.alphanumeric(),
         RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
         RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       }),

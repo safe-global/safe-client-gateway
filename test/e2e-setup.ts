@@ -8,6 +8,7 @@ process.env.ALERTS_PROVIDER_PROJECT = 'fake-project';
 process.env.EMAIL_API_APPLICATION_CODE = 'fake-application-code';
 process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
 process.env.EMAIL_API_KEY = 'fake-api-key';
+process.env.JWT_SECRET = 'fake-secret';
 
 // For E2E tests, connect to the test database
 process.env.POSTGRES_HOST = 'localhost';

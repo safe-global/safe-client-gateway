@@ -2,6 +2,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
+  private static readonly AUTH_NONCE_KEY = 'auth_nonce';
   private static readonly BACKBONE_KEY = 'backbone';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
@@ -32,6 +33,14 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
+
+  static getAuthNonceCacheKey(nonce: string): string {
+    return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
+  }
+
+  static getAuthNonceCacheDir(nonce: string): CacheDir {
+    return new CacheDir(CacheRouter.getAuthNonceCacheKey(nonce), '');
+  }
 
   static getBalancesCacheKey(args: {
     chainId: string;

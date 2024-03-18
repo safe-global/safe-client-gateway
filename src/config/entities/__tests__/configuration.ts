@@ -169,6 +169,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
+    auth: true,
     richFragments: true,
     email: true,
     zerionBalancesChainIds: ['137'],
@@ -177,6 +178,9 @@ export default (): ReturnType<typeof configuration> => ({
     swapsDecoding: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
+  jwt: {
+    secret: faker.string.alphanumeric(),
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
