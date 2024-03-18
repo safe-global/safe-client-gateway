@@ -14,7 +14,9 @@ describe('AddRecoveryModuleDtoSchema', () => {
   });
 
   it('should checksum the moduleAddress', () => {
-    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as `0x${string}`;
     const addRecoveryModuleDto = addRecoveryModuleDtoBuilder()
       .with('moduleAddress', nonChecksummedAddress)
       .build();
