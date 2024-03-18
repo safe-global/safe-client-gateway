@@ -1,6 +1,6 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/configuration';
+import configuration from '@/config/entities/__tests__/configuration';
 import { JwtModule } from '@/datasources/jwt/jwt.module';
 import { AuthDomainModule } from '@/domain/auth/auth.domain.module';
 import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';

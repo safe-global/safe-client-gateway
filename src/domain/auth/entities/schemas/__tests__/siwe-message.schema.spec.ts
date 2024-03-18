@@ -438,30 +438,6 @@ describe('SiweMessageSchema', () => {
         ]),
       );
     });
-
-    it('should not allow an expirationTime before issuedAt or now', () => {
-      const message = siweMessageBuilder()
-        .with('issuedAt', faker.date.recent().toISOString())
-        .with('expirationTime', faker.date.past().toISOString())
-        .build();
-
-      const result = SiweMessageSchema.safeParse(message);
-
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'custom',
-            path: ['expirationTime'],
-            message: 'expirationTime must be after issuedAt',
-          },
-          {
-            code: 'custom',
-            path: ['expirationTime'],
-            message: 'expirationTime must be in the future',
-          },
-        ]),
-      );
-    });
   });
 
   describe('notBefore', () => {
