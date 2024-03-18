@@ -53,12 +53,13 @@ describe('Configuration validator', () => {
     ({ key }) => {
       process.env.NODE_ENV = 'production';
       expect(() => validate(omit(validConfiguration, key))).toThrow(
-        `must have required property '${key}'`,
+        `Configuration is invalid: ${key} Required`,
       );
     },
   );
 
   it('should an invalid LOG_LEVEL configuration in production environment', () => {
+    process.env.NODE_ENV = 'production';
     expect(() =>
       validate({
         ...JSON.parse(fakeJson()),
@@ -77,6 +78,8 @@ describe('Configuration validator', () => {
         RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
         RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       }),
-    ).toThrow(/LOG_LEVEL must be equal to one of the allowed values/);
+    ).toThrow(
+      /LOG_LEVEL Invalid enum value. Expected 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly', received/,
+    );
   });
 });

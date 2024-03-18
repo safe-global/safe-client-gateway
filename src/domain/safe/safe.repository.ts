@@ -12,7 +12,7 @@ import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
-import { SafeListValidator } from '@/domain/safe/safe-list.validator';
+import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeValidator } from '@/domain/safe/safe.validator';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
@@ -29,7 +29,6 @@ export class SafeRepository implements ISafeRepository {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
-    private readonly safeListValidator: SafeListValidator,
     private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
@@ -371,7 +370,7 @@ export class SafeRepository implements ISafeRepository {
       args.ownerAddress,
     );
 
-    return this.safeListValidator.validate(safeList);
+    return SafeListSchema.parse(safeList);
   }
 
   async getAllSafesByOwner(args: {
@@ -469,6 +468,6 @@ export class SafeRepository implements ISafeRepository {
       args.moduleAddress,
     );
 
-    return this.safeListValidator.validate(safesByModule);
+    return SafeListSchema.parse(safesByModule);
   }
 }
