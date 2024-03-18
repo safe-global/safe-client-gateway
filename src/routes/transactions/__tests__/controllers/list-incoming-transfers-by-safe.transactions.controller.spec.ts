@@ -465,7 +465,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
                   direction: 'INCOMING',
                   transferInfo: {
                     type: 'ERC721',
-                    tokenAddress: token.address,
+                    tokenAddress: erc721Transfer.tokenAddress,
                     tokenId: erc721Transfer.tokenId,
                     tokenName: token.name,
                     tokenSymbol: token.symbol,

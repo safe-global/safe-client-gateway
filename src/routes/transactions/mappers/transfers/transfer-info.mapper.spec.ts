@@ -55,7 +55,7 @@ describe('Transfer Info mapper (Unit)', () => {
         direction: TransferDirection.Unknown,
         transferInfo: expect.objectContaining({
           type: 'ERC20',
-          tokenAddress: token.address,
+          tokenAddress: transfer.tokenAddress,
           value: transfer.value,
           tokenName: token.name,
           tokenSymbol: token.symbol,
@@ -88,7 +88,7 @@ describe('Transfer Info mapper (Unit)', () => {
         direction: TransferDirection.Unknown,
         transferInfo: expect.objectContaining({
           type: 'ERC721',
-          tokenAddress: token.address,
+          tokenAddress: transfer.tokenAddress,
           tokenId: transfer.tokenId,
           tokenName: token.name,
           tokenSymbol: token.symbol,
