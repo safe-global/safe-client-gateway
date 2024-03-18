@@ -3,6 +3,7 @@ import { DeleteSafeDelegateDto } from '@/routes/delegates/entities/delete-safe-d
 import { DeleteSafeDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-safe-delegate.dto.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { ZodError } from 'zod';
 
 describe('DeleteSafeDelegateDtoSchema', () => {
   it('should validate a DeleteSafeDelegateDto', () => {
@@ -13,7 +14,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['delegate' as const, 'safe' as const])(
+  it.each<keyof DeleteSafeDelegateDto>(['delegate', 'safe'])(
     'should checksum %s',
     (key) => {
       const nonChecksummedAddress = faker.finance
@@ -32,6 +33,24 @@ describe('DeleteSafeDelegateDtoSchema', () => {
       );
     },
   );
+
+  it('should not allow non-hex signature', () => {
+    const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
+      .with('signature', faker.string.numeric())
+      .build();
+
+    const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid input',
+          path: ['signature'],
+        },
+      ]),
+    );
+  });
 
   it.each<keyof DeleteSafeDelegateDto>(['delegate', 'safe', 'signature'])(
     `should not allow %s to be undefined`,
