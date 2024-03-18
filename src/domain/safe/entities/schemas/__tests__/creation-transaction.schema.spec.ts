@@ -1,4 +1,5 @@
 import { creationTransactionBuilder } from '@/domain/safe/entities/__tests__/creation-transaction.builder';
+import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -13,14 +14,18 @@ describe('CreationTransactionSchema', () => {
   });
 
   it('should coerce the created date to a Date', () => {
-    const creationTransaction = creationTransactionBuilder().build();
+    const creationTransaction = creationTransactionBuilder()
+      .with('created', faker.date.recent().toISOString() as unknown as Date)
+      .build();
 
     const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-    expect(result.success && result.data.created).toBeInstanceOf(Date);
+    expect(result.success && result.data.created).toStrictEqual(
+      new Date(creationTransaction.created),
+    );
   });
 
-  it.each([
+  it.each<keyof CreationTransaction>([
     'creator' as const,
     'factoryAddress' as const,
     'masterCopy' as const,
