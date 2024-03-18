@@ -1,13 +1,4 @@
-import { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
+import { MessageSchema } from '@/domain/messages/entities/schemas/message.schema';
+import { z } from 'zod';
 
-export interface Message {
-  created: Date;
-  modified: Date;
-  safe: string;
-  messageHash: string;
-  message: string | unknown;
-  proposedBy: string;
-  safeAppId: number | null;
-  confirmations: MessageConfirmation[];
-  preparedSignature: string | null;
-}
+export type Message = z.infer<typeof MessageSchema>;

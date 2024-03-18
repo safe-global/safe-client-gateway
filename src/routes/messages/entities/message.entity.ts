@@ -9,7 +9,7 @@ export enum MessageStatus {
 
 export class Message {
   @ApiProperty()
-  messageHash: string;
+  messageHash: `0x${string}`;
   @ApiProperty()
   status: MessageStatus;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -17,7 +17,7 @@ export class Message {
   @ApiPropertyOptional({ type: String, nullable: true })
   name: string | null;
   @ApiProperty()
-  message: string | unknown;
+  message: string | Record<string, unknown>;
   @ApiProperty()
   creationTimestamp: number;
   @ApiProperty()
@@ -31,21 +31,21 @@ export class Message {
   @ApiProperty()
   confirmations: MessageConfirmation[];
   @ApiPropertyOptional({ type: String, nullable: true })
-  preparedSignature: string | null;
+  preparedSignature: `0x${string}` | null;
 
   constructor(
-    messageHash: string,
+    messageHash: `0x${string}`,
     status: MessageStatus,
     logoUri: string | null,
     name: string | null,
-    message: string | unknown,
+    message: string | Record<string, unknown>,
     creationTimestamp: number,
     modifiedTimestamp: number,
     confirmationsSubmitted: number,
     confirmationsRequired: number,
     proposedBy: AddressInfo,
     confirmations: MessageConfirmation[],
-    preparedSignature: string | null,
+    preparedSignature: `0x${string}` | null,
   ) {
     this.messageHash = messageHash;
     this.status = status;

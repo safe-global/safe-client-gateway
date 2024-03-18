@@ -5,9 +5,9 @@ export class MessageConfirmation {
   @ApiProperty()
   owner: AddressInfo;
   @ApiProperty()
-  signature: string;
+  signature: `0x${string}`;
 
-  constructor(owner: AddressInfo, signature: string) {
+  constructor(owner: AddressInfo, signature: `0x${string}`) {
     this.owner = owner;
     this.signature = signature;
   }

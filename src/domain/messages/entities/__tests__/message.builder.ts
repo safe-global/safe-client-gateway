@@ -5,15 +5,19 @@ import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,
 } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
+import { getAddress } from 'viem';
 
 export function messageBuilder(): IBuilder<Message> {
   return new Builder<Message>()
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
-    .with('safe', faker.finance.ethereumAddress())
+    .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('message', faker.word.words({ count: { min: 1, max: 5 } }))
-    .with('messageHash', faker.string.hexadecimal({ length: 32 }))
-    .with('proposedBy', faker.finance.ethereumAddress())
+    .with(
+      'messageHash',
+      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+    )
+    .with('proposedBy', getAddress(faker.finance.ethereumAddress()))
     .with('safeAppId', faker.number.int())
     .with(
       'confirmations',
@@ -21,7 +25,10 @@ export function messageBuilder(): IBuilder<Message> {
         count: { min: 2, max: 5 },
       }),
     )
-    .with('preparedSignature', faker.string.hexadecimal({ length: 32 }));
+    .with(
+      'preparedSignature',
+      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+    );
 }
 
 export function toJson(message: Message): unknown {
