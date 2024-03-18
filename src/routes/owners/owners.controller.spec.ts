@@ -20,6 +20,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication;
@@ -78,7 +79,12 @@ describe('Owners Controller (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(200)
-        .expect(transactionApiSafeListResponse);
+        .expect({
+          // Validation schema checksums addresses
+          safes: transactionApiSafeListResponse.safes.map((safe) =>
+            getAddress(safe),
+          ),
+        });
     });
 
     it('Failure: Config API fails', async () => {
@@ -167,9 +173,8 @@ describe('Owners Controller (Unit)', () => {
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
   });
@@ -244,8 +249,9 @@ describe('Owners Controller (Unit)', () => {
         .get(`/v1/owners/${ownerAddress}/safes`)
         .expect(200)
         .expect({
-          [chainId1]: safesOnChain1,
-          [chainId2]: safesOnChain2,
+          // Validation schema checksums addresses
+          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
+          [chainId2]: safesOnChain2.map((safe) => getAddress(safe)),
         });
     });
 
@@ -328,9 +334,8 @@ describe('Owners Controller (Unit)', () => {
         .get(`/v1/owners/${ownerAddress}/safes`)
         .expect(500)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
   });

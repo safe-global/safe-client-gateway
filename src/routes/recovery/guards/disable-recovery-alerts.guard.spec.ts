@@ -12,7 +12,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { Hash } from 'viem';
+import { Hash, getAddress } from 'viem';
 import { DisableRecoveryAlertsGuard } from '@/routes/recovery/guards/disable-recovery-alerts.guard';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
@@ -77,7 +77,7 @@ describe('DisableRecoveryAlertsGuard guard tests', () => {
 
   it('returns 200 for a valid signature for module on given Safe', async () => {
     safeRepositoryMock.getSafesByModule.mockResolvedValue({
-      safes: [safeAddress],
+      safes: [getAddress(safeAddress)],
     });
 
     await request(app.getHttpServer())
