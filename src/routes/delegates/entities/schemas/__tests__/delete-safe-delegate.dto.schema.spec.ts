@@ -36,7 +36,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
 
   it('should not allow non-hex signature', () => {
     const deleteSafeDelegateDto = deleteSafeDelegateDtoBuilder()
-      .with('signature', faker.string.numeric())
+      .with('signature', faker.string.numeric() as `0x${string}`)
       .build();
 
     const result = DeleteSafeDelegateDtoSchema.safeParse(deleteSafeDelegateDto);

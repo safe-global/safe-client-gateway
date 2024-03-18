@@ -10,5 +10,5 @@ export class DeleteSafeDelegateDto
   @ApiProperty()
   safe!: `0x${string}`;
   @ApiProperty()
-  signature!: string;
+  signature!: `0x${string}`;
 }
