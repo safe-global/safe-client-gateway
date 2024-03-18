@@ -164,6 +164,7 @@ export default () => ({
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
   },
   features: {
+    auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
@@ -178,6 +179,9 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET,
   },
   locking: {
     // TODO: Add fallback value and requirement validation
