@@ -59,6 +59,7 @@ import {
 } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { getAddress } from 'viem';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
@@ -428,7 +429,7 @@ describe('Transactions History Controller (Unit)', () => {
     const safe = safeBuilder().build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
-      .with('safe', safe.address)
+      .with('safe', getAddress(safe.address))
       .with('isSuccessful', true)
       .with('data', null)
       .with('operation', 0)

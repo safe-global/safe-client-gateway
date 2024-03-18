@@ -10,7 +10,10 @@ import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
-import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
+import {
+  ModuleTransactionPageSchema,
+  ModuleTransactionSchema,
+} from '@/domain/safe/entities/schemas/module-transaction.schema';
 import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -32,7 +35,6 @@ export class SafeRepository implements ISafeRepository {
     private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
-    private readonly moduleTransactionValidator: ModuleTransactionValidator,
     private readonly creationTransactionValidator: CreationTransactionValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
@@ -138,7 +140,7 @@ export class SafeRepository implements ISafeRepository {
     const moduleTransaction = await transactionService.getModuleTransaction(
       args.moduleTransactionId,
     );
-    return this.moduleTransactionValidator.validate(moduleTransaction);
+    return ModuleTransactionSchema.parse(moduleTransaction);
   }
 
   async getModuleTransactions(args: {
@@ -152,7 +154,7 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getModuleTransactions(args);
-    return this.moduleTransactionValidator.validatePage(page);
+    return ModuleTransactionPageSchema.parse(page);
   }
 
   async clearModuleTransactions(args: {
