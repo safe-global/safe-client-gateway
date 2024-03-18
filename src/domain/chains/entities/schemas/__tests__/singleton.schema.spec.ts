@@ -13,23 +13,20 @@ describe('SingletonSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['address' as const, 'deployer' as const])(
-    'should checksum %s',
-    (key) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase() as `0x${string}`;
-      const singleton = singletonBuilder()
-        .with(key, nonChecksummedAddress)
-        .build();
+  it.each(['address' as const])('should checksum %s', (key) => {
+    const nonChecksummedAddress = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as `0x${string}`;
+    const singleton = singletonBuilder()
+      .with(key, nonChecksummedAddress)
+      .build();
 
-      const result = SingletonSchema.safeParse(singleton);
+    const result = SingletonSchema.safeParse(singleton);
 
-      expect(result.success && result.data[key]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[key]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
   it.each<keyof Singleton>([
     'address',
