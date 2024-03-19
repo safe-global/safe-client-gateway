@@ -2117,9 +2117,9 @@ describe('TransactionApi', () => {
   describe('getEstimation', () => {
     it('should return the estimation received', async () => {
       const safeAddress = faker.finance.ethereumAddress();
-      const to = faker.finance.ethereumAddress();
+      const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
-      const data = faker.string.hexadecimal();
+      const data = faker.string.hexadecimal() as `0x${string}`;
       const operation = faker.helpers.arrayElement([0, 1] as const);
       const estimation = {
         safeTxGas: faker.string.numeric(),
@@ -2154,9 +2154,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = faker.finance.ethereumAddress();
-      const to = faker.finance.ethereumAddress();
+      const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
-      const data = faker.string.hexadecimal();
+      const data = faker.string.hexadecimal() as `0x${string}`;
       const operation = faker.helpers.arrayElement([0, 1] as const);
       const getEstimationUrl = `${baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/estimations/`;
       const statusCode = faker.internet.httpStatusCode({
