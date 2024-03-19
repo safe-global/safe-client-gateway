@@ -25,7 +25,7 @@ describe('Root Controller tests', () => {
     await app.init();
   });
 
-  it('should redirect / to /index.html', async () => {
+  it('should redirect / to /api', async () => {
     await request(app.getHttpServer())
       .get(`/`)
       .expect(302)
