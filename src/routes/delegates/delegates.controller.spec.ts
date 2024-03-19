@@ -475,8 +475,15 @@ describe('Delegates controller', () => {
           }/delegates/${deleteSafeDelegateDto.delegate}`,
         )
         .send({ ...deleteSafeDelegateDto, safe: faker.datatype.boolean() })
-        .expect(400)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'boolean',
+          path: ['safe'],
+          message: 'Expected string, received boolean',
+        });
     });
   });
 });
