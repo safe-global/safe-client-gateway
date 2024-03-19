@@ -162,16 +162,61 @@ describe('AuthGuard', () => {
       });
   });
 
-  it('should allow access if the SiweMessage is valid', async () => {
-    const message = siweMessageBuilder()
-      .with('expirationTime', new Date(faker.date.future()).toISOString())
-      .build();
-    const accessToken = jwtService.sign(message);
+  describe('should allow access if the SiweMessage is valid', () => {
+    it('when notBefore nor expirationTime is specified', async () => {
+      const message = siweMessageBuilder()
+        .with('expirationTime', undefined)
+        .with('notBefore', undefined)
+        .build();
+      const accessToken = jwtService.sign(message);
 
-    await request(app.getHttpServer())
-      .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
-      .expect(200)
-      .expect({});
+      await request(app.getHttpServer())
+        .get('/valid')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect({});
+    });
+
+    it('when expirationTime is and notBefore is not specified', async () => {
+      const message = siweMessageBuilder()
+        .with('expirationTime', new Date(faker.date.future()).toISOString())
+        .with('notBefore', undefined)
+        .build();
+      const accessToken = jwtService.sign(message);
+
+      await request(app.getHttpServer())
+        .get('/valid')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect({});
+    });
+
+    it('when notBefore is and expirationTime is not specified', async () => {
+      const message = siweMessageBuilder()
+        .with('expirationTime', undefined)
+        .with('notBefore', new Date(faker.date.past()).toISOString())
+        .build();
+      const accessToken = jwtService.sign(message);
+
+      await request(app.getHttpServer())
+        .get('/valid')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect({});
+    });
+
+    it('when notBefore and expirationTime are specified', async () => {
+      const message = siweMessageBuilder()
+        .with('expirationTime', new Date(faker.date.future()).toISOString())
+        .with('notBefore', new Date(faker.date.past()).toISOString())
+        .build();
+      const accessToken = jwtService.sign(message);
+
+      await request(app.getHttpServer())
+        .get('/valid')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect({});
+    });
   });
 });

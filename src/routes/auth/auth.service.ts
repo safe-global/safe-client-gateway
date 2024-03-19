@@ -71,7 +71,7 @@ export class AuthService {
     const { message, signature } = args.verifyAuthMessageDto;
 
     const hasExpired =
-      message.expirationTime && new Date(message.expirationTime) < new Date();
+      !!message.expirationTime && new Date(message.expirationTime) < new Date();
 
     const cacheDir = CacheRouter.getAuthNonceCacheDir(
       args.verifyAuthMessageDto.message.nonce,

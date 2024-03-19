@@ -67,7 +67,7 @@ export class AuthGuard implements CanActivate {
     const now = new Date();
     // Should be covered by JWT verification but we check in case
     const hasExpired = !!expirationTime && new Date(expirationTime) < now;
-    const isValid = !!notBefore && new Date(notBefore) < now;
+    const isValid = notBefore ? new Date(notBefore) < now : true;
 
     return !hasExpired && isValid;
   }
