@@ -30,7 +30,7 @@ describe('Root Controller tests', () => {
       .get(`/`)
       .expect(302)
       .expect((res) => {
-        expect(res.get('location')).toBe('/index.html');
+        expect(res.get('location')).toBe('/api');
       });
   });
 });
