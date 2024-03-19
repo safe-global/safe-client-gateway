@@ -367,18 +367,6 @@ describe('SiweMessageSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should default to the current time if not provided', () => {
-      const message = siweMessageBuilder().build();
-      // @ts-expect-error - inferred type takes default into account
-      delete message.issuedAt;
-
-      const result = SiweMessageSchema.safeParse(message);
-
-      expect(result.success && result.data.issuedAt).toBe(
-        new Date(jest.now()).toISOString(),
-      );
-    });
-
     it('should not validate a non-ISO 8601 datetime string', () => {
       const message = siweMessageBuilder()
         .with('issuedAt', faker.lorem.sentence())

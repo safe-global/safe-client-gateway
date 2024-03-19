@@ -67,11 +67,7 @@ export const SiweMessageSchema = z.object({
   /**
    * REQUIRED. The time when the message was generated, typically the current time. Its value MUST be an ISO 8601 datetime string.
    */
-  issuedAt: z
-    .string()
-    .datetime()
-    .optional()
-    .default(() => new Date().toISOString()),
+  issuedAt: z.string().datetime(),
   /**
    * OPTIONAL. The time when the signed authentication message is no longer valid. Its value MUST be an ISO 8601 datetime string.
    */
