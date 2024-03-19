@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { isEmpty } from 'lodash';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
@@ -22,6 +21,7 @@ import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-tr
 import { getAddress } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -33,7 +33,6 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
     private readonly moduleTransactionValidator: ModuleTransactionValidator,
-    private readonly creationTransactionValidator: CreationTransactionValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
@@ -219,7 +218,7 @@ export class SafeRepository implements ISafeRepository {
     const createTransaction = await transactionService.getCreationTransaction(
       args.safeAddress,
     );
-    return this.creationTransactionValidator.validate(createTransaction);
+    return CreationTransactionSchema.parse(createTransaction);
   }
 
   async getTransactionHistory(args: {
