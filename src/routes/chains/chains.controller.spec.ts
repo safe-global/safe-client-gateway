@@ -511,9 +511,8 @@ describe('Chains Controller (Unit)', () => {
         .get('/v1/chains/1/about/master-copies')
         .expect(500)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 500,
+          message: 'Internal server error',
         });
     });
   });

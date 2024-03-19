@@ -19,6 +19,7 @@ import {
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { Page } from '@/domain/entities/page.entity';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class SafesService {
@@ -246,7 +247,8 @@ export class SafesService {
     if (
       !supportedSingletons
         .map((singleton) => singleton.address)
-        .includes(safe.masterCopy)
+        // TODO: Remove checksumming when Safe schema is in Zod
+        .includes(getAddress(safe.masterCopy))
     )
       return MasterCopyVersionState.UNKNOWN;
 

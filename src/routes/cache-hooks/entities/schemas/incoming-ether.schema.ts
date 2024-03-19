@@ -1,19 +1,11 @@
-import { JSONSchemaType } from 'ajv';
-import { EventType } from '@/routes/cache-hooks/entities/event-payload.entity';
-import { IncomingEther } from '@/routes/cache-hooks/entities/incoming-ether.entity';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const INCOMING_ETHER_EVENT_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/cache-hooks/incoming-ether.json';
-
-export const incomingEtherEventSchema: JSONSchemaType<IncomingEther> = {
-  $id: INCOMING_ETHER_EVENT_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    address: { type: 'string' },
-    chainId: { type: 'string' },
-    type: { type: 'string', const: EventType.INCOMING_ETHER },
-    txHash: { type: 'string' },
-    value: { type: 'string' },
-  },
-  required: ['address', 'chainId', 'type', 'txHash', 'value'],
-};
+export const IncomingEtherEventSchema = z.object({
+  type: z.literal(EventType.INCOMING_ETHER),
+  address: AddressSchema,
+  chainId: z.string(),
+  txHash: z.string(),
+  value: z.string(),
+});

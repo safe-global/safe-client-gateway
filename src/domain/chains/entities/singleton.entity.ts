@@ -1,8 +1,4 @@
-export interface Singleton {
-  address: string;
-  version: string;
-  deployer: string;
-  deployedBlockNumber: number;
-  lastIndexedBlockNumber: number;
-  l2: boolean;
-}
+import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
+import { z } from 'zod';
+
+export type Singleton = z.infer<typeof SingletonSchema>;

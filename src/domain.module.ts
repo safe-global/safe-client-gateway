@@ -11,8 +11,6 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
-import { SingletonValidator } from '@/domain/chains/singleton.validator';
-import { SafeListValidator } from '@/domain/safe/safe-list.validator';
 import { SafeValidator } from '@/domain/safe/safe.validator';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
@@ -29,12 +27,10 @@ import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validat
 import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { TokenValidator } from '@/domain/tokens/token.validator';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
 import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
-import { EstimationsValidator } from '@/domain/estimations/estimations.validator';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { MessageValidator } from '@/domain/messages/message.validator';
@@ -73,14 +69,10 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
     DataDecodedValidator,
-    EstimationsValidator,
-    SingletonValidator,
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
-    SafeListValidator,
     SafeValidator,
-    TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
   ],

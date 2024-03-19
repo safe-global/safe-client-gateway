@@ -1,57 +1,43 @@
-import Ajv, { Schema } from 'ajv';
-import addFormats from 'ajv-formats';
+import { z } from 'zod';
 
-const configurationSchema: Schema = {
-  type: 'object',
-  properties: {
-    AUTH_TOKEN: { type: 'string' },
-    LOG_LEVEL: {
-      type: 'string',
-      enum: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
-    },
-    ALERTS_PROVIDER_SIGNING_KEY: { type: 'string' },
-    ALERTS_PROVIDER_API_KEY: { type: 'string' },
-    ALERTS_PROVIDER_ACCOUNT: { type: 'string' },
-    ALERTS_PROVIDER_PROJECT: { type: 'string' },
-    EMAIL_API_APPLICATION_CODE: { type: 'string' },
-    EMAIL_API_FROM_EMAIL: { type: 'string', format: 'email' },
-    EMAIL_API_KEY: { type: 'string' },
-    EMAIL_TEMPLATE_RECOVERY_TX: { type: 'string' },
-    EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: { type: 'string' },
-    EMAIL_TEMPLATE_VERIFICATION_CODE: { type: 'string' },
-    RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: { type: 'string' },
-    RELAY_PROVIDER_API_KEY_SEPOLIA: { type: 'string' },
-  },
-  required: [
-    'AUTH_TOKEN',
-    'ALERTS_PROVIDER_SIGNING_KEY',
-    'ALERTS_PROVIDER_API_KEY',
-    'ALERTS_PROVIDER_ACCOUNT',
-    'ALERTS_PROVIDER_PROJECT',
-    'EMAIL_API_APPLICATION_CODE',
-    'EMAIL_API_FROM_EMAIL',
-    'EMAIL_API_KEY',
-    'EMAIL_TEMPLATE_RECOVERY_TX',
-    'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX',
-    'EMAIL_TEMPLATE_VERIFICATION_CODE',
-    'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN',
-    'RELAY_PROVIDER_API_KEY_SEPOLIA',
-  ],
-};
+const ConfigurationSchema = z.object({
+  AUTH_TOKEN: z.string(),
+  LOG_LEVEL: z
+    .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
+    .optional(),
+  ALERTS_PROVIDER_SIGNING_KEY: z.string(),
+  ALERTS_PROVIDER_API_KEY: z.string(),
+  ALERTS_PROVIDER_ACCOUNT: z.string(),
+  ALERTS_PROVIDER_PROJECT: z.string(),
+  EMAIL_API_APPLICATION_CODE: z.string(),
+  EMAIL_API_FROM_EMAIL: z.string().email(),
+  EMAIL_API_KEY: z.string(),
+  EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
+  EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
+  EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
+  RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
+  RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
+});
 
 export function validate(
   configuration: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (process.env.NODE_ENV !== 'test') {
-    const ajv = new Ajv({ allErrors: true });
-    addFormats(ajv, { formats: ['email'] });
-
-    if (!ajv.validate(configurationSchema, configuration)) {
-      const errors = ajv.errors
-        ?.map((error) => `${error.instancePath} ${error.message}`)
-        ?.join(', ');
-      throw Error(`Configuration is invalid: ${errors}`);
-    }
+  if (process.env.NODE_ENV === 'test') {
+    return configuration;
   }
-  return configuration;
+
+  const result = ConfigurationSchema.safeParse(configuration);
+  if (result.success) {
+    return configuration;
+  }
+
+  const { fieldErrors } = result.error.flatten();
+
+  const errors = Object.entries(fieldErrors)
+    .reduce<Array<string>>((acc, [key, [error]]) => {
+      return [...acc, `${key} ${error}`];
+    }, [])
+    .join(', ');
+
+  throw Error(`Configuration is invalid: ${errors}`);
 }

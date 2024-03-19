@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { getFunctionSelector } from 'viem';
+import { toFunctionSelector } from 'viem';
 import { HumanDescriptionTemplate } from '@/domain/human-description/entities/human-description-template.entity';
 import {
   FunctionSignatureHash,
@@ -22,7 +22,7 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
     const humanDescriptions = this.humanDescriptionApi.getDescriptions();
 
     for (const functionSignature in humanDescriptions) {
-      const selector = getFunctionSelector(functionSignature);
+      const selector = toFunctionSelector(functionSignature);
       this.templates[selector] = new HumanDescriptionTemplate(
         functionSignature,
         humanDescriptions[functionSignature],

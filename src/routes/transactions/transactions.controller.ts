@@ -32,7 +32,7 @@ import { TransactionItemPage } from '@/routes/transactions/entities/transaction-
 import { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 import { AddConfirmationDtoSchema } from '@/routes/transactions/entities/schemas/add-confirmation.dto.schema';
-import { PreviewTransactionDtoValidationPipe } from '@/routes/transactions/pipes/preview-transaction.validation.pipe';
+import { PreviewTransactionDtoSchema } from '@/routes/transactions/entities/schemas/preview-transaction.dto.schema';
 import { ProposeTransactionDtoValidationPipe } from '@/routes/transactions/pipes/propose-transaction.dto.validation.pipe';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
@@ -189,7 +189,7 @@ export class TransactionsController {
   async previewTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body(PreviewTransactionDtoValidationPipe)
+    @Body(new ValidationPipe(PreviewTransactionDtoSchema))
     previewTransactionDto: PreviewTransactionDto,
   ): Promise<TransactionPreview> {
     return this.transactionsService.previewTransaction({

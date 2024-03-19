@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
@@ -10,20 +11,20 @@ export const OrderSchema = z.object({
   validTo: z.number(),
   appData: z.string(),
   feeAmount: z.coerce.bigint(),
-  kind: z.enum(['buy', 'sell', 'unknown']).default('unknown'),
+  kind: z.enum(['buy', 'sell', 'unknown']).catch('unknown'),
   partiallyFillable: z.boolean(),
   sellTokenBalance: z
     .enum(['erc20', 'internal', 'external', 'unknown'])
-    .default('unknown'),
-  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).default('unknown'),
+    .catch('unknown'),
+  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).catch('unknown'),
   signingScheme: z
     .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
-    .default('unknown'),
-  signature: z.string(),
+    .catch('unknown'),
+  signature: HexSchema,
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).default('unknown'),
+  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).catch('unknown'),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),
@@ -41,12 +42,12 @@ export const OrderSchema = z.object({
       'expired',
       'unknown',
     ])
-    .default('unknown'),
+    .catch('unknown'),
   fullFeeAmount: z.coerce.bigint(),
   isLiquidityOrder: z.boolean(),
   ethflowData: z
     .object({
-      refundTxHash: z.string().nullish().default(null),
+      refundTxHash: HexSchema.nullish().default(null),
       userValidTo: z.number(),
     })
     .nullish()
@@ -62,7 +63,7 @@ export const OrderSchema = z.object({
           'PreValidationError',
           'unknown',
         ])
-        .default('unknown')
+        .catch('unknown')
         .nullish()
         .default(null),
     })

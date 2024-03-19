@@ -46,7 +46,11 @@ export class LockingService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<LockingEvent>> {
-    const result = await this.lockingRepository.getLockingHistory(args);
+    const result = await this.lockingRepository.getLockingHistory({
+      safeAddress: args.safeAddress,
+      limit: args.paginationData.limit,
+      offset: args.paginationData.offset,
+    });
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(

@@ -3,7 +3,7 @@ import { TokenType } from '@/routes/balances/entities/token-type.entity';
 
 export class Token {
   @ApiProperty()
-  address!: string;
+  address!: `0x${string}`;
   @ApiPropertyOptional({ type: Number, nullable: true })
   decimals!: number | null;
   @ApiProperty()

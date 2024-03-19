@@ -1,9 +1,4 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { IncomingTokenEventSchema } from '@/routes/cache-hooks/entities/schemas/incoming-token.schema';
+import { z } from 'zod';
 
-export interface IncomingToken extends EventPayload<EventType.INCOMING_TOKEN> {
-  tokenAddress: string;
-  txHash: string;
-}
+export type IncomingToken = z.infer<typeof IncomingTokenEventSchema>;

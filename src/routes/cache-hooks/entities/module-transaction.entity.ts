@@ -1,10 +1,4 @@
-import {
-  EventPayload,
-  EventType,
-} from '@/routes/cache-hooks/entities/event-payload.entity';
+import { ModuleTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/module-transaction.schema';
+import { z } from 'zod';
 
-export interface ModuleTransaction
-  extends EventPayload<EventType.MODULE_TRANSACTION> {
-  module: string;
-  txHash: string;
-}
+export type ModuleTransaction = z.infer<typeof ModuleTransactionEventSchema>;
