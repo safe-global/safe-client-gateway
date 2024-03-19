@@ -11,6 +11,16 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Page } from '@/domain/entities/page.entity';
+import {
+  isMultisigTransaction,
+  isEthereumTransaction,
+  isModuleTransaction,
+  isCreationTransaction,
+  Transaction,
+} from '@/domain/safe/entities/transaction.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { isArray } from 'lodash';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -23,11 +33,20 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
  */
 @Injectable()
 export class CacheFirstDataSource {
+  private readonly isHistoryDebugLogsEnabled: boolean;
+
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isHistoryDebugLogsEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.historyDebugLogs',
+      );
+  }
 
   /**
    * Gets the cached value behind {@link CacheDir}.
@@ -111,6 +130,17 @@ export class CacheFirstDataSource {
         JSON.stringify(data),
         args.expireTimeSeconds,
       );
+
+      // TODO: transient logging for debugging
+      if (
+        this.isHistoryDebugLogsEnabled &&
+        args.url.includes('all-transactions')
+      ) {
+        this.logTransactionsCacheWrite(
+          args.cacheDir,
+          data as Page<Transaction>,
+        );
+      }
     }
     return data;
   }
@@ -162,5 +192,47 @@ export class CacheFirstDataSource {
       }),
       notFoundExpireTimeSeconds,
     );
+  }
+
+  /**
+   * Logs the type and the hash of the transactions present in the data parameter.
+   * NOTE: this is a debugging-only function.
+   * TODO: remove this function after debugging.
+   */
+  private logTransactionsCacheWrite(
+    cacheDir: CacheDir,
+    data: Page<Transaction>,
+  ): void {
+    this.loggingService.info({
+      type: 'cache_write',
+      cacheKey: cacheDir.key,
+      cacheField: cacheDir.field,
+      timestamp: Date.now(),
+      txHashes:
+        isArray(data?.results) && // no validation executed yet at this point
+        data.results.map((transaction) => {
+          if (isMultisigTransaction(transaction)) {
+            return {
+              txType: 'multisig',
+              safeTxHash: transaction.safeTxHash,
+            };
+          } else if (isEthereumTransaction(transaction)) {
+            return {
+              txType: 'ethereum',
+              txHash: transaction.txHash,
+            };
+          } else if (isModuleTransaction(transaction)) {
+            return {
+              txType: 'module',
+              transactionHash: transaction.transactionHash,
+            };
+          } else if (isCreationTransaction(transaction)) {
+            return {
+              txType: 'creation',
+              transactionHash: transaction.transactionHash,
+            };
+          }
+        }),
+    });
   }
 }

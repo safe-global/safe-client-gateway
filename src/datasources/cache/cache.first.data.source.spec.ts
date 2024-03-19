@@ -7,6 +7,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService } from '@/logging/logging.interface';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -24,15 +25,19 @@ const mockNetworkService = jest.mocked(networkService);
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
   let fakeCacheService: FakeCacheService;
+  let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
     jest.resetAllMocks();
     jest.useFakeTimers();
     fakeCacheService = new FakeCacheService();
+    fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('features.historyDebugLogs', true);
     cacheFirstDataSource = new CacheFirstDataSource(
       fakeCacheService,
       mockNetworkService,
       mockLoggingService,
+      fakeConfigurationService,
     );
   });
 
@@ -231,6 +236,7 @@ describe('CacheFirstDataSource', () => {
       mockCache,
       mockNetworkService,
       mockLoggingService,
+      fakeConfigurationService,
     );
 
     const targetUrl = faker.internet.url({ appendSlash: false });
@@ -274,6 +280,7 @@ describe('CacheFirstDataSource', () => {
       mockCache,
       mockNetworkService,
       mockLoggingService,
+      fakeConfigurationService,
     );
 
     const targetUrl = faker.internet.url({ appendSlash: false });
