@@ -24,6 +24,14 @@ describe('UpdateMessageSignatureDtoSchema', () => {
       updateMessageSignatureDto,
     );
 
-    expect(!result.success && result.error).toStrictEqual(new ZodError([]));
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid input',
+          path: ['signature'],
+        },
+      ]),
+    );
   });
 });
