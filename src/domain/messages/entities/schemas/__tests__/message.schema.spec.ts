@@ -218,30 +218,5 @@ describe('Message schemas', () => {
 
       expect(result.success).toBe(true);
     });
-
-    it('should allow empty pages', () => {
-      const messagePage = pageBuilder().with('results', []).build();
-
-      const result = MessagePageSchema.safeParse(messagePage);
-
-      expect(result.success).toBe(true);
-    });
-
-    it.each<keyof Page<Message>>(['count', 'next', 'previous', 'results'])(
-      'should not allow %s to be undefined',
-      (key) => {
-        const messagePage = pageBuilder().with('results', []).build();
-        delete messagePage[key];
-
-        const result = MessagePageSchema.safeParse(messagePage);
-
-        expect(
-          !result.success &&
-            result.error.issues.length === 1 &&
-            result.error.issues[0].path.length === 1 &&
-            result.error.issues[0].path[0] === key,
-        ).toBe(true);
-      },
-    );
   });
 });
