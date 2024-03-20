@@ -195,7 +195,7 @@ export interface ITransactionApi {
 
   postMessageSignature(args: {
     messageHash: string;
-    signature: string;
+    signature: `0x${string}`;
   }): Promise<unknown>;
 
   clearMessagesBySafe(args: { safeAddress: string }): Promise<void>;
