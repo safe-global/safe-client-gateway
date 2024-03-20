@@ -137,6 +137,7 @@ export class CacheFirstDataSource {
         args.url.includes('all-transactions')
       ) {
         this.logTransactionsCacheWrite(
+          startTimeMs,
           args.cacheDir,
           data as Page<Transaction>,
         );
@@ -200,6 +201,7 @@ export class CacheFirstDataSource {
    * TODO: remove this function after debugging.
    */
   private logTransactionsCacheWrite(
+    requestStartTime: number,
     cacheDir: CacheDir,
     data: Page<Transaction>,
   ): void {
@@ -207,7 +209,8 @@ export class CacheFirstDataSource {
       type: 'cache_write',
       cacheKey: cacheDir.key,
       cacheField: cacheDir.field,
-      timestamp: Date.now(),
+      cacheWriteTime: new Date(Date.now()),
+      requestStartTime: new Date(requestStartTime),
       txHashes:
         isArray(data?.results) && // no validation executed yet at this point
         data.results.map((transaction) => {
