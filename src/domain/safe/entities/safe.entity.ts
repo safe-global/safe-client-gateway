@@ -1,11 +1,4 @@
-export interface Safe {
-  address: string;
-  fallbackHandler: string;
-  guard: string;
-  masterCopy: string;
-  modules: string[] | null;
-  nonce: number;
-  owners: string[];
-  threshold: number;
-  version: string | null;
-}
+import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
+import { z } from 'zod';
+
+export type Safe = z.infer<typeof SafeSchema>;

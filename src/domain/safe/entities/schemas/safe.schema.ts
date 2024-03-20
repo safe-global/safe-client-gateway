@@ -1,35 +1,14 @@
-import { Schema } from 'ajv';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { z } from 'zod';
 
-export const SAFE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/safe/safe.json';
-
-export const safeSchema: Schema = {
-  $id: SAFE_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    address: { type: 'string' },
-    nonce: { type: 'number' },
-    threshold: { type: 'number' },
-    owners: { type: 'array', items: { type: 'string' } },
-    masterCopy: { type: 'string' },
-    modules: {
-      oneOf: [
-        { type: 'array', items: { type: 'string' } },
-        { type: 'null', nullable: true },
-      ],
-      default: null,
-    },
-    fallbackHandler: { type: 'string' },
-    guard: { type: 'string' },
-    version: { type: 'string', nullable: true, default: null },
-  },
-  required: [
-    'address',
-    'nonce',
-    'threshold',
-    'owners',
-    'masterCopy',
-    'fallbackHandler',
-    'guard',
-  ],
-};
+export const SafeSchema = z.object({
+  address: AddressSchema,
+  nonce: z.number(),
+  threshold: z.number(),
+  owners: z.array(AddressSchema),
+  masterCopy: AddressSchema,
+  modules: z.array(AddressSchema).nullish().default(null),
+  fallbackHandler: AddressSchema,
+  guard: AddressSchema,
+  version: z.string().nullish().default(null),
+});

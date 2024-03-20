@@ -11,7 +11,6 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
-import { SafeValidator } from '@/domain/safe/safe.validator';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
@@ -72,7 +71,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     MessageValidator,
     ModuleTransactionValidator,
     MultisigTransactionValidator,
-    SafeValidator,
     TransactionTypeValidator,
     TransferValidator,
   ],

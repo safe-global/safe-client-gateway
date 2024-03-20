@@ -27,6 +27,7 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
+import { getAddress } from 'viem';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -75,7 +76,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
   it('should propose a transaction', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().with('address', safeAddress).build();
     const safeApps = [safeAppBuilder().build()];
