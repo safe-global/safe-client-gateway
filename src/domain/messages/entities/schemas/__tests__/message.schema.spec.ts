@@ -3,13 +3,11 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { SignatureType } from '@/domain/messages/entities/message-confirmation.entity';
-import { Message } from '@/domain/messages/entities/message.entity';
 import {
   MessageConfirmationSchema,
   MessagePageSchema,
   MessageSchema,
 } from '@/domain/messages/entities/schemas/message.schema';
-import { Page } from '@/routes/common/entities/page.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
