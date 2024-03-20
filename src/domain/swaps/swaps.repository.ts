@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
-import { Order } from '@/domain/swaps/entities/order.entity';
-import { OrderSchema } from '@/domain/swaps/entities/schemas/order.schema';
+import { Order, OrderSchema } from '@/domain/swaps/entities/order.entity';
 
 @Injectable()
 export class SwapsRepository {
