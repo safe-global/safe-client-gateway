@@ -209,7 +209,7 @@ export class CacheFirstDataSource {
       type: 'cache_write',
       cacheKey: cacheDir.key,
       cacheField: cacheDir.field,
-      cacheWriteTime: new Date(Date.now()),
+      cacheWriteTime: new Date(),
       requestStartTime: new Date(requestStartTime),
       txHashes:
         isArray(data?.results) && // no validation executed yet at this point
