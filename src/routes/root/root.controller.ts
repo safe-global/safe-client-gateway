@@ -1,12 +1,12 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Redirect } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { Response } from 'express';
 
 @Controller()
 @ApiExcludeController()
 export class RootController {
   @Get()
-  getIndex(@Res() res: Response): void {
-    return res.redirect('/index.html');
+  @Redirect('/api', 302)
+  redirectApi(): void {
+    // This method is intentionally left blank because @Redirect() handles the response
   }
 }

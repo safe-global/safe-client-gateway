@@ -35,6 +35,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -219,7 +220,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
-      .with('address', multisigTransaction.to)
+      .with('address', getAddress(multisigTransaction.to))
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;

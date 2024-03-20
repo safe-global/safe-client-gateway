@@ -3,21 +3,23 @@ import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { TokenValidator } from '@/domain/tokens/token.validator';
+import {
+  TokenPageSchema,
+  TokenSchema,
+} from '@/domain/tokens/entities/schemas/token.schema';
 
 @Injectable()
 export class TokenRepository implements ITokenRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly tokenValidator: TokenValidator,
   ) {}
 
   async getToken(args: { chainId: string; address: string }): Promise<Token> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const token = await transactionService.getToken(args.address);
-    return this.tokenValidator.validate(token);
+    return TokenSchema.parse(token);
   }
 
   async getTokens(args: {
@@ -28,7 +30,6 @@ export class TokenRepository implements ITokenRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getTokens(args);
-
-    return this.tokenValidator.validatePage(page);
+    return TokenPageSchema.parse(page);
   }
 }

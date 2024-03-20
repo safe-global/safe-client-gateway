@@ -1,11 +1,4 @@
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
+import { z } from 'zod';
 
-export interface CreationTransaction {
-  created: Date;
-  creator: string;
-  transactionHash: string;
-  factoryAddress: string;
-  masterCopy: string | null;
-  setupData: string | null;
-  dataDecoded: DataDecoded | null;
-}
+export type CreationTransaction = z.infer<typeof CreationTransactionSchema>;

@@ -26,8 +26,6 @@ import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { TokenValidator } from '@/domain/tokens/token.validator';
-import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
@@ -69,12 +67,10 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    CreationTransactionValidator,
     DataDecodedValidator,
     MessageValidator,
     MultisigTransactionValidator,
     SafeValidator,
-    TokenValidator,
     TransactionTypeValidator,
     TransferValidator,
   ],

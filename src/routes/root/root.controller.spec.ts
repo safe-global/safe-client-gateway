@@ -25,12 +25,12 @@ describe('Root Controller tests', () => {
     await app.init();
   });
 
-  it('should redirect / to /index.html', async () => {
+  it('should redirect / to /api', async () => {
     await request(app.getHttpServer())
       .get(`/`)
       .expect(302)
       .expect((res) => {
-        expect(res.get('location')).toBe('/index.html');
+        expect(res.get('location')).toBe('/api');
       });
   });
 });

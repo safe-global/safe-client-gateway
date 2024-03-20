@@ -486,7 +486,7 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const tokenResponse = tokenBuilder()
       .with('type', TokenType.Erc20)
-      .with('address', multisigTransaction.to)
+      .with('address', getAddress(multisigTransaction.to))
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -570,7 +570,7 @@ describe('Transactions History Controller (Unit)', () => {
                   direction: 'OUTGOING',
                   transferInfo: {
                     type: 'ERC20',
-                    tokenAddress: multisigTransaction.to,
+                    tokenAddress: getAddress(multisigTransaction.to),
                     tokenName: tokenResponse.name,
                     tokenSymbol: tokenResponse.symbol,
                     logoUri: tokenResponse.logoUri,
