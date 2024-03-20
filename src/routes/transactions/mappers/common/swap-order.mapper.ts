@@ -169,6 +169,29 @@ export class SwapOrderMapper {
     return `1 ${sellToken.token.symbol} = ${ratio} ${buyToken.token.symbol}`;
   }
 
+  /**
+   * Returns the filled percentage of an order.
+   * The percentage is calculated as the ratio of the executed amount to the total amount.
+   *
+   * @param order - The order to calculate the filled percentage for.
+   * @private
+   */
+  private _getFilledPercentage(order: Order): string {
+    let executed: number;
+    let total: number;
+    if (order.kind === 'buy') {
+      executed = Number(order.executedBuyAmount);
+      total = Number(order.buyAmount);
+    } else if (order.kind === 'sell') {
+      executed = Number(order.executedSellAmount);
+      total = Number(order.sellAmount);
+    } else {
+      throw new Error('Unknown order kind');
+    }
+
+    return ((executed / total) * 100).toFixed(2).toString();
+  }
+
   private _mapFulfilledOrderStatus(args: {
     buyToken: TokenAmount;
     sellToken: TokenAmount;
@@ -194,6 +217,7 @@ export class SwapOrderMapper {
         args.sellToken,
         args.buyToken,
       ),
+      filledPercentage: this._getFilledPercentage(args.order),
     });
   }
 
@@ -228,6 +252,7 @@ export class SwapOrderMapper {
       buyToken: args.buyToken.toTokenInfo(),
       expiresTimestamp: args.order.validTo,
       limitPriceLabel: this._getLimitPriceLabel(args.sellToken, args.buyToken),
+      filledPercentage: this._getFilledPercentage(args.order),
     });
   }
 }
