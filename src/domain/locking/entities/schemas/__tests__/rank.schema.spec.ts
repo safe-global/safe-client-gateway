@@ -42,7 +42,7 @@ describe('RankSchema', () => {
         },
         {
           code: 'invalid_type',
-          expected: 'string',
+          expected: 'number',
           received: 'undefined',
           path: ['position'],
           message: 'Required',
