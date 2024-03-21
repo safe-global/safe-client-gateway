@@ -1,52 +1,26 @@
-import { Schema } from 'ajv';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
-export const MODULE_TRANSACTION_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/safe/module-transaction.json';
+export const ModuleTransactionSchema = z.object({
+  safe: AddressSchema,
+  to: AddressSchema,
+  value: z.string().nullish().default(null),
+  data: HexSchema.nullish().default(null),
+  dataDecoded: DataDecodedSchema.nullish().default(null),
+  operation: z.nativeEnum(Operation),
+  created: z.coerce.date(),
+  executionDate: z.coerce.date(),
+  blockNumber: z.number(),
+  isSuccessful: z.boolean(),
+  transactionHash: HexSchema,
+  module: AddressSchema,
+  moduleTransactionId: z.string(),
+});
 
-export const moduleTransactionSchema: Schema = {
-  $id: MODULE_TRANSACTION_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    safe: { type: 'string' },
-    to: { type: 'string' },
-    value: { type: 'string', nullable: true, default: null },
-    data: { type: 'string', nullable: true, default: null },
-    dataDecoded: {
-      oneOf: [
-        {
-          $ref: '../data-decoded/data-decoded.json',
-        },
-        { type: 'null' },
-      ],
-    },
-    operation: { type: 'number', enum: [0, 1] },
-    created: { type: 'string', isDate: true },
-    executionDate: { type: 'string', isDate: true },
-    blockNumber: { type: 'number' },
-    isSuccessful: { type: 'boolean' },
-    transactionHash: { type: 'string' },
-    module: { type: 'string' },
-    moduleTransactionId: { type: 'string' },
-  },
-  required: [
-    'safe',
-    'to',
-    'operation',
-    'created',
-    'executionDate',
-    'blockNumber',
-    'isSuccessful',
-    'transactionHash',
-    'module',
-    'moduleTransactionId',
-  ],
-};
-
-export const MODULE_TRANSACTION_PAGE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/safe/module-transaction-page.json';
-
-export const moduleTransactionPageSchema: Schema = buildPageSchema(
-  MODULE_TRANSACTION_PAGE_SCHEMA_ID,
-  moduleTransactionSchema,
+export const ModuleTransactionPageSchema = buildZodPageSchema(
+  ModuleTransactionSchema,
 );

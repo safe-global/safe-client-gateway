@@ -24,7 +24,6 @@ import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
-import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
@@ -70,7 +69,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ITokenRepository, useClass: TokenRepository },
     DataDecodedValidator,
     MessageValidator,
-    ModuleTransactionValidator,
     MultisigTransactionValidator,
     SafeValidator,
     TransactionTypeValidator,
