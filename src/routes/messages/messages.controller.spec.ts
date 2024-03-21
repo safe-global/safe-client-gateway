@@ -903,11 +903,14 @@ describe('Messages controller', () => {
           `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
         )
         .send({})
-        .expect(400)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['signature'],
+          message: 'Required',
         });
     });
   });
