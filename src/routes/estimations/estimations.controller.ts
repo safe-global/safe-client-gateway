@@ -3,7 +3,8 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { EstimationResponse } from '@/routes/estimations/entities/estimation-response.entity';
 import { GetEstimationDto } from '@/routes/estimations/entities/get-estimation.dto.entity';
 import { EstimationsService } from '@/routes/estimations/estimations.service';
-import { GetEstimationDtoValidationPipe } from '@/routes/estimations/pipes/get-estimation.dto.validation.pipe';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { GetEstimationDtoSchema } from '@/routes/estimations/entities/schemas/get-estimation.dto.schema';
 
 @ApiTags('estimations')
 @Controller({
@@ -19,7 +20,8 @@ export class EstimationsController {
   async getContract(
     @Param('chainId') chainId: string,
     @Param('address') address: string,
-    @Body(GetEstimationDtoValidationPipe) getEstimationDto: GetEstimationDto,
+    @Body(new ValidationPipe(GetEstimationDtoSchema))
+    getEstimationDto: GetEstimationDto,
   ): Promise<EstimationResponse> {
     return this.estimationsService.getEstimation({
       chainId,

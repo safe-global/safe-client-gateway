@@ -90,7 +90,8 @@ describe('Email controller save email tests', () => {
     const signerAddress = signer.address;
     // Signer is owner of safe
     const safe = safeBuilder()
-      .with('address', safeAddress)
+      // Allow test of non-checksummed address by casting
+      .with('address', safeAddress as `0x${string}`)
       .with('owners', [signerAddress])
       .build();
     const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;

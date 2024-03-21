@@ -39,6 +39,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { getAddress } from 'viem';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -185,7 +186,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .build();
     const moduleTransactionId = faker.string.uuid();
     const moduleTransaction = moduleTransactionBuilder()
-      .with('safe', safe.address)
+      .with('safe', getAddress(safe.address))
       .with('data', null)
       .with('value', '0xf')
       .with('operation', Operation.CALL)
@@ -401,8 +402,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
@@ -566,8 +567,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
@@ -731,8 +732,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder()
       .with('owners', safeOwners)

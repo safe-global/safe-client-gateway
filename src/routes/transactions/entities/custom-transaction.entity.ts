@@ -12,7 +12,7 @@ export class CustomTransactionInfo extends TransactionInfo {
   @ApiProperty()
   dataSize: string;
   @ApiProperty()
-  value: string;
+  value: string | null;
   @ApiProperty()
   isCancellation: boolean;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -23,7 +23,7 @@ export class CustomTransactionInfo extends TransactionInfo {
   constructor(
     to: AddressInfo,
     dataSize: string,
-    value: string,
+    value: string | null,
     methodName: string | null,
     actionCount: number | null,
     isCancellation: boolean,

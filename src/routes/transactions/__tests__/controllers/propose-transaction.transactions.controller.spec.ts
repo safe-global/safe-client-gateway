@@ -29,6 +29,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { getAddress } from 'viem';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -84,7 +85,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
   it('should propose a transaction', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().with('address', safeAddress).build();
     const safeApps = [safeAppBuilder().build()];

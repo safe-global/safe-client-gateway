@@ -128,9 +128,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
       .expect(500)
       .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
+        statusCode: 500,
+        message: 'Internal server error',
       });
   });
 

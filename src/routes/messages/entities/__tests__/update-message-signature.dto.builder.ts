@@ -5,6 +5,6 @@ import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-mes
 export function updateMessageSignatureDtoBuilder(): IBuilder<UpdateMessageSignatureDto> {
   return new Builder<UpdateMessageSignatureDto>().with(
     'signature',
-    faker.string.hexadecimal({ length: 32 }),
+    faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
   );
 }

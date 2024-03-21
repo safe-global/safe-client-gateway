@@ -9,11 +9,13 @@ import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
-import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
+import {
+  ModuleTransactionPageSchema,
+  ModuleTransactionSchema,
+} from '@/domain/safe/entities/schemas/module-transaction.schema';
 import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { SafeValidator } from '@/domain/safe/safe.validator';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
 import { TransferValidator } from '@/domain/safe/transfer.validator';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
@@ -22,6 +24,7 @@ import { getAddress } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
+import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -29,10 +32,8 @@ export class SafeRepository implements ISafeRepository {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
-    private readonly safeValidator: SafeValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
     private readonly transferValidator: TransferValidator,
-    private readonly moduleTransactionValidator: ModuleTransactionValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
@@ -41,8 +42,8 @@ export class SafeRepository implements ISafeRepository {
   async getSafe(args: { chainId: string; address: string }): Promise<Safe> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
-    const safe: Safe = await transactionService.getSafe(args.address);
-    return this.safeValidator.validate(safe);
+    const safe = await transactionService.getSafe(args.address);
+    return SafeSchema.parse(safe);
   }
 
   async clearSafe(args: { chainId: string; address: string }): Promise<void> {
@@ -137,7 +138,7 @@ export class SafeRepository implements ISafeRepository {
     const moduleTransaction = await transactionService.getModuleTransaction(
       args.moduleTransactionId,
     );
-    return this.moduleTransactionValidator.validate(moduleTransaction);
+    return ModuleTransactionSchema.parse(moduleTransaction);
   }
 
   async getModuleTransactions(args: {
@@ -151,7 +152,7 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getModuleTransactions(args);
-    return this.moduleTransactionValidator.validatePage(page);
+    return ModuleTransactionPageSchema.parse(page);
   }
 
   async clearModuleTransactions(args: {
