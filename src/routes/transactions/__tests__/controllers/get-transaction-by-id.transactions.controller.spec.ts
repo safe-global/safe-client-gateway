@@ -402,8 +402,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
@@ -567,8 +567,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
@@ -732,8 +732,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safeOwners = [
-      faker.finance.ethereumAddress(),
-      faker.finance.ethereumAddress(),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
     ];
     const safe = safeBuilder()
       .with('owners', safeOwners)
