@@ -13,7 +13,10 @@ import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swap-order-info.entity';
+import {
+  DefaultSwapOrderTransactionInfo,
+  FulfilledSwapOrderTransactionInfo,
+} from '@/routes/transactions/entities/swap-order-info.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,
@@ -22,7 +25,8 @@ import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swap-or
   TransferTransactionInfo,
   ModuleExecutionInfo,
   MultisigExecutionInfo,
-  SwapOrderTransactionInfo,
+  FulfilledSwapOrderTransactionInfo,
+  DefaultSwapOrderTransactionInfo,
 )
 export class Transaction {
   @ApiProperty()
@@ -36,7 +40,8 @@ export class Transaction {
       { $ref: getSchemaPath(CreationTransactionInfo) },
       { $ref: getSchemaPath(CustomTransactionInfo) },
       { $ref: getSchemaPath(SettingsChangeTransaction) },
-      { $ref: getSchemaPath(SwapOrderTransactionInfo) },
+      { $ref: getSchemaPath(DefaultSwapOrderTransactionInfo) },
+      { $ref: getSchemaPath(FulfilledSwapOrderTransactionInfo) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
     ],
   })
