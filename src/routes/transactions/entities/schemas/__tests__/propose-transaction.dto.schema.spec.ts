@@ -126,19 +126,19 @@ describe('ProposeTransactionDtoSchema', () => {
     });
   });
 
-  it.each(['data' as const, 'refundReceiver' as const, 'signature' as const, 'origin' as const])(
-    `should allow optional %s, defaulting to null`,
-    (field) => {
-      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
-      delete proposeTransactionDto[field];
+  it.each([
+    'data' as const,
+    'refundReceiver' as const,
+    'signature' as const,
+    'origin' as const,
+  ])(`should allow optional %s, defaulting to null`, (field) => {
+    const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+    delete proposeTransactionDto[field];
 
-      const result = ProposeTransactionDtoSchema.safeParse(
-        proposeTransactionDto,
-      );
+    const result = ProposeTransactionDtoSchema.safeParse(proposeTransactionDto);
 
-      expect(result.success && result.data[field]).toBe(null);
-    },
-  );
+    expect(result.success && result.data[field]).toBe(null);
+  });
 
   it.each([0, 1])('should validate %s as operation', (operation) => {
     const proposeTransactionDto = proposeTransactionDtoBuilder()
