@@ -98,7 +98,7 @@ describe('GetEstimationDtoSchema', () => {
     );
   });
 
-  it.each([['to' as const], ['value' as const], ['operation' as const]])(
+  it.each(['to' as const, 'value' as const, 'operation' as const])(
     'should not allow %s to be undefined',
     (key) => {
       const getEstimationDto = getEstimationDtoBuilder().build();
