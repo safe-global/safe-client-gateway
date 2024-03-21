@@ -126,7 +126,7 @@ describe('ProposeTransactionDtoSchema', () => {
     });
   });
 
-  it.each(['data' as const, 'refundReceiver' as const, 'signature' as const])(
+  it.each(['data' as const, 'refundReceiver' as const, 'signature' as const, 'origin' as const])(
     `should allow optional %s, defaulting to null`,
     (field) => {
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();

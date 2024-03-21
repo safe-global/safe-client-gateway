@@ -18,4 +18,5 @@ export const ProposeTransactionDtoSchema = z.object({
   safeTxHash: HexSchema,
   sender: AddressSchema,
   signature: HexSchema.nullish().default(null),
+  origin: z.string().nullish().default(null),
 });
