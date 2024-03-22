@@ -106,6 +106,7 @@ describe('Swap Order Mapper tests', () => {
         symbol: buyToken.symbol,
       },
       expiresTimestamp: order.validTo,
+      filledPercentage: expect.any(String),
       surplusLabel: expectedSurplus,
       executionPriceLabel: expectedExecutionPrice,
       humanDescription: null,
@@ -157,6 +158,7 @@ describe('Swap Order Mapper tests', () => {
           symbol: buyToken.symbol,
         },
         expiresTimestamp: order.validTo,
+        filledPercentage: expect.any(String),
         limitPriceLabel: expectedLimitPriceDescription,
         humanDescription: null,
         richDecodedInfo: null,
@@ -378,6 +380,57 @@ describe('Swap Order Mapper tests', () => {
       expect(
         customTransactionMapperMock.mapCustomTransaction,
       ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
+    },
+  );
+
+  it.each([
+    // [executedAmount, amount, expectedFilledPercentage]
+    [1000, 1000, '100.00'],
+    [0, 1000, '0.00'],
+    [500, 1000, '50.00'],
+    [350, 1050, '33.33'],
+  ])(
+    'should calculate the filled percentage correctly for buy orders',
+    async (executedAmount, amount, expected) => {
+      const chainId = faker.string.numeric();
+      const transaction = multisigTransactionBuilder().build();
+      const buyToken = tokenBuilder().with('decimals', 0).build();
+      const sellToken = tokenBuilder().build();
+      const order = orderBuilder()
+        .with(
+          'status',
+          faker.helpers.arrayElement([
+            'open',
+            'fulfilled',
+            'cancelled',
+            'expired',
+          ]),
+        )
+        .build();
+      if (order.kind === 'buy') {
+        order['executedBuyAmount'] = BigInt(executedAmount);
+        order['buyAmount'] = BigInt(amount);
+      } else if (order.kind === 'sell') {
+        order['executedSellAmount'] = BigInt(executedAmount);
+        order['sellAmount'] = BigInt(amount);
+      } else {
+        throw new Error('Invalid order kind');
+      }
+      setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
+        order.uid as `0x${string}`,
+      );
+      swapsRepositoryMock.getOrder.mockResolvedValue(order);
+      tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
+        if (address === order.buyToken) return Promise.resolve(buyToken);
+        if (address === order.sellToken) return Promise.resolve(sellToken);
+        return Promise.reject(new Error(`Token ${address} not found.`));
+      });
+
+      const result = await target.mapSwapOrder(chainId, transaction, 0);
+
+      expect(result).toMatchObject({
+        filledPercentage: expected,
+      });
     },
   );
 });
