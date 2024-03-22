@@ -85,7 +85,7 @@ describe('Locking (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/locking/leaderboard/${rank.holder}`)
+        .get(`/v1/locking/leaderboard/rank/${rank.holder}`)
         .expect(200)
         .expect(rank);
     });
@@ -94,7 +94,7 @@ describe('Locking (Unit)', () => {
       const safeAddress = faker.string.alphanumeric();
 
       await request(app.getHttpServer())
-        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .get(`/v1/locking/leaderboard/rank/${safeAddress}`)
         .expect(422)
         .expect({
           statusCode: 422,
@@ -117,7 +117,7 @@ describe('Locking (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .get(`/v1/locking/leaderboard/rank/${safeAddress}`)
         .expect(500)
         .expect({
           statusCode: 500,
@@ -149,7 +149,7 @@ describe('Locking (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/locking/leaderboard/${safeAddress}`)
+        .get(`/v1/locking/leaderboard/rank/${safeAddress}`)
         .expect(statusCode)
         .expect({
           message: errorMessage,
