@@ -51,7 +51,10 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ description: 'The timestamp when the order expires' })
   expiresTimestamp: number;
 
-  @ApiProperty({ description: 'The filled percentage of the order' })
+  @ApiProperty({
+    description: 'The filled percentage of the order',
+    examples: ['0.00', '50.75', '100.00'],
+  })
   filledPercentage: string;
 
   protected constructor(args: {

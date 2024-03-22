@@ -396,7 +396,7 @@ describe('Swap Order Mapper tests', () => {
       const transaction = multisigTransactionBuilder().build();
       const buyToken = tokenBuilder().with('decimals', 0).build();
       const sellToken = tokenBuilder().build();
-      let order = orderBuilder()
+      const order = orderBuilder()
         .with(
           'status',
           faker.helpers.arrayElement([
@@ -408,17 +408,11 @@ describe('Swap Order Mapper tests', () => {
         )
         .build();
       if (order.kind === 'buy') {
-        order = {
-          ...order,
-          executedBuyAmount: BigInt(executedAmount),
-          buyAmount: BigInt(amount),
-        };
+        order['executedBuyAmount'] = BigInt(executedAmount);
+        order['buyAmount'] = BigInt(amount);
       } else if (order.kind === 'sell') {
-        order = {
-          ...order,
-          executedSellAmount: BigInt(executedAmount),
-          sellAmount: BigInt(amount),
-        };
+        order['executedSellAmount'] = BigInt(executedAmount);
+        order['sellAmount'] = BigInt(amount);
       } else {
         throw new Error('Invalid order kind');
       }
