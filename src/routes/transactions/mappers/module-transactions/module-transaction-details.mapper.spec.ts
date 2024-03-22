@@ -10,6 +10,7 @@ import { TransactionDataMapper } from '@/routes/transactions/mappers/common/tran
 import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import { ModuleTransactionDetailsMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-details.mapper';
 import { ModuleTransactionStatusMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-status.mapper';
+import { getAddress } from 'viem';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
@@ -45,7 +46,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
     const transaction = moduleTransactionBuilder()
-      .with('safe', safe.address)
+      .with('safe', getAddress(safe.address))
       .build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
@@ -62,8 +63,8 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
-      safeAddress: safe.address,
-      txId: `module_${safe.address}_${transaction.moduleTransactionId}`,
+      safeAddress: getAddress(safe.address),
+      txId: `module_${getAddress(safe.address)}_${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime(),
       txStatus,
       txInfo,
@@ -86,7 +87,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
     const transaction = moduleTransactionBuilder()
-      .with('safe', safe.address)
+      .with('safe', getAddress(safe.address))
       .build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
@@ -109,8 +110,8 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const actual = await mapper.mapDetails(chainId, transaction);
 
     expect(actual).toEqual({
-      safeAddress: safe.address,
-      txId: `module_${safe.address}_${transaction.moduleTransactionId}`,
+      safeAddress: getAddress(safe.address),
+      txId: `module_${getAddress(safe.address)}_${transaction.moduleTransactionId}`,
       executedAt: transaction.executionDate?.getTime(),
       txStatus,
       txInfo,

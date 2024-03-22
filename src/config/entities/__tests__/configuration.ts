@@ -175,6 +175,7 @@ export default (): ReturnType<typeof configuration> => ({
     locking: true,
     relay: true,
     swapsDecoding: true,
+    historyDebugLogs: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

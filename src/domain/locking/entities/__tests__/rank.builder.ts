@@ -6,7 +6,7 @@ import { getAddress } from 'viem';
 export function rankBuilder(): IBuilder<Rank> {
   return new Builder<Rank>()
     .with('holder', getAddress(faker.finance.ethereumAddress()))
-    .with('position', faker.string.numeric())
+    .with('position', faker.number.int())
     .with('lockedAmount', faker.string.numeric())
     .with('unlockedAmount', faker.string.numeric())
     .with('withdrawnAmount', faker.string.numeric());

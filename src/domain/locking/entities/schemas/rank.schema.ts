@@ -5,7 +5,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 
 export const RankSchema = z.object({
   holder: AddressSchema,
-  position: NumericStringSchema,
+  position: z.number(),
   lockedAmount: NumericStringSchema,
   unlockedAmount: NumericStringSchema,
   withdrawnAmount: NumericStringSchema,

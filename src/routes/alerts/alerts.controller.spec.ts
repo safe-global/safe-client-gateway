@@ -256,9 +256,9 @@ describe('Alerts (Unit)', () => {
           const chain = chainBuilder().build();
           const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
           ];
           const safe = safeBuilder()
             .with('owners', owners)
@@ -267,7 +267,7 @@ describe('Alerts (Unit)', () => {
 
           const removeOwner = removeOwnerEncoder(owners).with(
             'owner',
-            getAddress(owners[1]),
+            owners[1],
           );
           const { threshold } = removeOwner.build();
           const transactionAddedEvent = transactionAddedEventBuilder()
@@ -364,9 +364,9 @@ describe('Alerts (Unit)', () => {
           const chain = chainBuilder().build();
           const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
           ];
           const safe = safeBuilder()
             .with('owners', owners)
@@ -568,9 +568,9 @@ describe('Alerts (Unit)', () => {
           const chain = chainBuilder().build();
           const delayModifier = getAddress(faker.finance.ethereumAddress());
           const owners = [
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
-            faker.finance.ethereumAddress(),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
           ];
           const safe = safeBuilder()
             .with('modules', [delayModifier])
@@ -579,7 +579,7 @@ describe('Alerts (Unit)', () => {
 
           const addOwnerWithThreshold = addOwnerWithThresholdEncoder();
           const removeOwner = removeOwnerEncoder(safe.owners)
-            .with('owner', getAddress(owners[0]))
+            .with('owner', owners[0])
             .with('threshold', faker.number.bigInt());
           const multiSendTransactions = multiSendTransactionsEncoder([
             {
@@ -1112,9 +1112,9 @@ describe('Alerts (Unit)', () => {
         const chain = chainBuilder().build();
         const delayModifier = getAddress(faker.finance.ethereumAddress());
         const owners = [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
         ];
         const safe = safeBuilder()
           .with('modules', [delayModifier])
@@ -1227,9 +1227,9 @@ describe('Alerts (Unit)', () => {
         const chain = chainBuilder().build();
         const delayModifier = getAddress(faker.finance.ethereumAddress());
         const owners = [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
         ];
         const safe = safeBuilder()
           .with('modules', [delayModifier])

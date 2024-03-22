@@ -1,15 +1,10 @@
+import { TokenSchema } from '@/domain/tokens/entities/schemas/token.schema';
+import { z } from 'zod';
+
 export enum TokenType {
   Erc721 = 'ERC721',
   Erc20 = 'ERC20',
   NativeToken = 'NATIVE_TOKEN',
 }
 
-export interface Token {
-  address: string;
-  decimals: number | null;
-  logoUri: string;
-  name: string;
-  symbol: string;
-  type: TokenType;
-  trusted: boolean;
-}
+export type Token = z.infer<typeof TokenSchema>;

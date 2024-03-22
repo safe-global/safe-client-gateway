@@ -6,6 +6,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-execution-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { MultisigTransactionExecutionInfoMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
+import { getAddress } from 'viem';
 
 describe('Multisig Transaction execution info mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionInfoMapper;
@@ -83,8 +84,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder().build();
     const safe = safeBuilder()
       .with('owners', [
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
       ])
       .build();
 
@@ -106,15 +107,22 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
 
   it('should return a MultiSigExecutionInfo with some safe owners as missing signers', () => {
     const confirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
+      confirmationBuilder()
+        .with('owner', getAddress(faker.finance.ethereumAddress()))
+        .build(),
+      confirmationBuilder()
+        .with('owner', getAddress(faker.finance.ethereumAddress()))
+        .build(),
     ];
     const transaction = multisigTransactionBuilder()
-      .with('proposer', confirmations[0].owner)
+      .with('proposer', getAddress(confirmations[0].owner))
       .with('confirmations', confirmations)
       .build();
     const safe = safeBuilder()
-      .with('owners', [confirmations[0].owner, faker.finance.ethereumAddress()])
+      .with('owners', [
+        getAddress(confirmations[0].owner),
+        getAddress(faker.finance.ethereumAddress()),
+      ])
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(

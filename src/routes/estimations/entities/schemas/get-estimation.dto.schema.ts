@@ -1,17 +1,12 @@
-import { JSONSchemaType } from 'ajv';
-import { GetEstimationDto } from '@/routes/estimations/entities/get-estimation.dto.entity';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
-export const GET_ESTIMATION_DTO_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/estimations/get-estimation.dto.json';
-
-export const getEstimationDtoSchema: JSONSchemaType<GetEstimationDto> = {
-  $id: GET_ESTIMATION_DTO_SCHEMA_ID,
-  type: 'object',
-  properties: {
-    to: { type: 'string' },
-    value: { type: 'string' },
-    data: { oneOf: [{ type: 'string' }, { type: 'null', nullable: true }] },
-    operation: { type: 'number', enum: [0, 1] },
-  },
-  required: ['to', 'value'],
-};
+export const GetEstimationDtoSchema = z.object({
+  to: AddressSchema,
+  value: NumericStringSchema,
+  data: HexSchema.nullish().default(null),
+  operation: z.nativeEnum(Operation),
+});

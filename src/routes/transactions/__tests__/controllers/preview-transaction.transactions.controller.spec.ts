@@ -27,6 +27,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { previewTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/preview-transaction.dto.builder';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { getAddress } from 'viem';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -84,7 +85,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
@@ -152,7 +153,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
@@ -219,7 +220,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('operation', Operation.CALL)
       .build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
@@ -285,7 +286,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('operation', Operation.DELEGATE)
       .build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder().with('address', safeAddress).build();
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder()

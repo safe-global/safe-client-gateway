@@ -63,7 +63,7 @@ export class MessagesRepository implements IMessagesRepository {
   async updateMessageSignature(args: {
     chainId: string;
     messageHash: string;
-    signature: string;
+    signature: `0x${string}`;
   }): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
