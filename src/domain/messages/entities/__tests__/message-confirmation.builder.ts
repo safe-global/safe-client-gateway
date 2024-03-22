@@ -4,13 +4,17 @@ import {
   MessageConfirmation,
   SignatureType,
 } from '@/domain/messages/entities/message-confirmation.entity';
+import { getAddress } from 'viem';
 
 export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
   return new Builder<MessageConfirmation>()
     .with('created', faker.date.recent())
     .with('modified', faker.date.recent())
-    .with('owner', faker.finance.ethereumAddress())
-    .with('signature', faker.string.hexadecimal({ length: 32 }))
+    .with('owner', getAddress(faker.finance.ethereumAddress()))
+    .with(
+      'signature',
+      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+    )
     .with('signatureType', faker.helpers.objectValue(SignatureType));
 }
 

@@ -31,7 +31,6 @@ import { IEstimationsRepository } from '@/domain/estimations/estimations.reposit
 import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
-import { MessageValidator } from '@/domain/messages/message.validator';
 import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
@@ -67,7 +66,6 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
     DataDecodedValidator,
-    MessageValidator,
     MultisigTransactionValidator,
     TransactionTypeValidator,
     TransferValidator,
