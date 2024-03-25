@@ -18,6 +18,7 @@ import { SwapsModule } from '@/domain/swaps/swaps.module';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * Represents the amount of a token in a swap order.
@@ -61,6 +62,9 @@ function asDecimal(amount: number | bigint, decimals: number): number {
 
 @Injectable()
 export class SwapOrderMapper {
+  private readonly swapsExplorerBaseUri: string =
+    this.configurationService.getOrThrow('swaps.explorerBaseUri');
+
   constructor(
     private readonly swapsRepository: SwapsRepository,
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
@@ -68,6 +72,8 @@ export class SwapOrderMapper {
     private readonly tokenRepository: ITokenRepository,
     private readonly customTransactionMapper: CustomTransactionMapper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {}
 
   async mapSwapOrder(
@@ -192,6 +198,18 @@ export class SwapOrderMapper {
     return ((executed / total) * 100).toFixed(2).toString();
   }
 
+  /**
+   * Returns the URL to the explorer page of an order.
+   *
+   * @param order - The order to get the explorer URL for.
+   * @private
+   */
+  private _getOrderExplorerUrl(order: Order): URL {
+    const url = new URL(this.swapsExplorerBaseUri);
+    url.pathname = `/orders/${order.uid}`;
+    return url;
+  }
+
   private _mapFulfilledOrderStatus(args: {
     buyToken: TokenAmount;
     sellToken: TokenAmount;
@@ -219,6 +237,7 @@ export class SwapOrderMapper {
         args.buyToken,
       ),
       filledPercentage: this._getFilledPercentage(args.order),
+      explorerUrl: this._getOrderExplorerUrl(args.order),
     });
   }
 
@@ -255,6 +274,7 @@ export class SwapOrderMapper {
       expiresTimestamp: args.order.validTo,
       limitPriceLabel: this._getLimitPriceLabel(args.sellToken, args.buyToken),
       filledPercentage: this._getFilledPercentage(args.order),
+      explorerUrl: this._getOrderExplorerUrl(args.order),
     });
   }
 }

@@ -235,5 +235,7 @@ export default () => ({
       100: 'https://api.cow.fi/xdai',
       11155111: 'https://api.cow.fi/sepolia',
     },
+    explorerBaseUri:
+      process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',
   },
 });
