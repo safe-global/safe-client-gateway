@@ -93,6 +93,7 @@ describe('Swap Order Mapper tests', () => {
     expect(result).toBeInstanceOf(FulfilledSwapOrderTransactionInfo);
     expect(result).toEqual({
       type: 'SwapOrder',
+      orderUid: order.uid,
       status: 'fulfilled',
       orderKind: order.kind,
       sellToken: {
@@ -145,6 +146,7 @@ describe('Swap Order Mapper tests', () => {
       expect(result).toBeInstanceOf(DefaultSwapOrderTransactionInfo);
       expect(result).toEqual({
         type: 'SwapOrder',
+        orderUid: order.uid,
         status: order.status,
         orderKind: order.kind,
         sellToken: {

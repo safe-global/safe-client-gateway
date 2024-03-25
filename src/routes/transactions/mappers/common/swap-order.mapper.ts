@@ -208,6 +208,7 @@ export class SwapOrderMapper {
       : null;
 
     return new FulfilledSwapOrderTransactionInfo({
+      orderUid: args.order.uid,
       orderKind: args.order.kind,
       sellToken: args.sellToken.toTokenInfo(),
       buyToken: args.buyToken.toTokenInfo(),
@@ -246,6 +247,7 @@ export class SwapOrderMapper {
         `${args.order.status} orders should not be mapped as default orders. Order UID = ${args.order.uid}`,
       );
     return new DefaultSwapOrderTransactionInfo({
+      orderUid: args.order.uid,
       status: args.order.status,
       orderKind: args.order.kind,
       sellToken: args.sellToken.toTokenInfo(),

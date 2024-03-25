@@ -36,6 +36,9 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.SwapOrder] })
   override type: TransactionInfoType.SwapOrder;
 
+  @ApiProperty({ description: 'The order UID' })
+  orderUid: string;
+
   @ApiProperty({ enum: ['open', 'fulfilled', 'cancelled', 'expired'] })
   status: 'open' | 'fulfilled' | 'cancelled' | 'expired';
 
@@ -58,6 +61,7 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   filledPercentage: string;
 
   protected constructor(args: {
+    orderUid: string;
     status: 'open' | 'fulfilled' | 'cancelled' | 'expired';
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
@@ -66,6 +70,7 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
     filledPercentage: string;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
+    this.orderUid = args.orderUid;
     this.type = TransactionInfoType.SwapOrder;
     this.status = args.status;
     this.orderKind = args.orderKind;
@@ -96,6 +101,7 @@ export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo 
   executionPriceLabel: string;
 
   constructor(args: {
+    orderUid: string;
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
     buyToken: TokenInfo;
@@ -123,6 +129,7 @@ export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
   limitPriceLabel: string;
 
   constructor(args: {
+    orderUid: string;
     status: 'open' | 'cancelled' | 'expired';
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
