@@ -15,6 +15,7 @@ import { getAddress } from 'viem';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { ILoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const swapsRepository = {
   getOrder: jest.fn(),
@@ -43,21 +44,32 @@ const loggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 const loggingServiceMock = jest.mocked(loggingService);
 
+const configurationService = {
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>;
+const configurationServiceMock = jest.mocked(configurationService);
+
 function asDecimal(amount: number | bigint, decimals: number): number {
   return Number(amount) / 10 ** decimals;
 }
 
 describe('Swap Order Mapper tests', () => {
   let target: SwapOrderMapper;
+  const explorerBaseUrl = faker.internet.url();
 
   beforeEach(() => {
     jest.resetAllMocks();
+    configurationServiceMock.getOrThrow.mockImplementation((key) => {
+      if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
+      throw new Error(`Key ${key} not found.`);
+    });
     target = new SwapOrderMapper(
       swapsRepositoryMock,
       setPreSignatureDecoderMock,
       tokenRepositoryMock,
       customTransactionMapperMock,
       loggingServiceMock,
+      configurationServiceMock,
     );
   });
 
@@ -108,6 +120,7 @@ describe('Swap Order Mapper tests', () => {
       },
       expiresTimestamp: order.validTo,
       filledPercentage: expect.any(String),
+      explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
       surplusLabel: expectedSurplus,
       executionPriceLabel: expectedExecutionPrice,
       humanDescription: null,
@@ -162,6 +175,7 @@ describe('Swap Order Mapper tests', () => {
         expiresTimestamp: order.validTo,
         filledPercentage: expect.any(String),
         limitPriceLabel: expectedLimitPriceDescription,
+        explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
         humanDescription: null,
         richDecodedInfo: null,
       });

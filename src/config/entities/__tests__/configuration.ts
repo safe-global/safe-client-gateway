@@ -224,5 +224,6 @@ export default (): ReturnType<typeof configuration> => ({
       100: faker.internet.url(),
       11155111: faker.internet.url(),
     },
+    explorerBaseUri: faker.internet.url(),
   },
 });

@@ -60,6 +60,9 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   })
   filledPercentage: string;
 
+  @ApiProperty({ description: 'The URL to the explorer page of the order' })
+  explorerUrl: URL;
+
   protected constructor(args: {
     orderUid: string;
     status: 'open' | 'fulfilled' | 'cancelled' | 'expired';
@@ -68,6 +71,7 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
     buyToken: TokenInfo;
     expiresTimestamp: number;
     filledPercentage: string;
+    explorerUrl: URL;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
     this.orderUid = args.orderUid;
@@ -78,6 +82,7 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
     this.buyToken = args.buyToken;
     this.expiresTimestamp = args.expiresTimestamp;
     this.filledPercentage = args.filledPercentage;
+    this.explorerUrl = args.explorerUrl;
   }
 }
 
@@ -109,6 +114,7 @@ export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo 
     surplusFeeLabel: string | null;
     executionPriceLabel: string;
     filledPercentage: string;
+    explorerUrl: URL;
   }) {
     super({ ...args, status: 'fulfilled' });
     this.status = 'fulfilled';
@@ -137,6 +143,7 @@ export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
     expiresTimestamp: number;
     limitPriceLabel: string;
     filledPercentage: string;
+    explorerUrl: URL;
   }) {
     super(args);
     this.status = args.status;
