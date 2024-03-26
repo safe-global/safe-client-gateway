@@ -6254,15 +6254,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nestjs-cls@npm:^4.2.1":
-  version: 4.2.1
-  resolution: "nestjs-cls@npm:4.2.1"
+"nestjs-cls@npm:^4.3.0":
+  version: 4.3.0
+  resolution: "nestjs-cls@npm:4.3.0"
   peerDependencies:
     "@nestjs/common": "> 7.0.0 < 11"
     "@nestjs/core": "> 7.0.0 < 11"
     reflect-metadata: "*"
     rxjs: ">= 7"
-  checksum: 10/981da659384b1a34639eeccd2ceec11a59e0d7f2d9cc0d12b97fbcf8c3c286faa2ac28e497cc358e30522c69db7d2d200ac11560423a8c9644772370bde16aa3
+  checksum: 10/10325e1ee0c6cda290e5de36f58d871cce883c08df1cafd3c09ee9fabae10e215e57c6d04bbc63612e901c747874f66c0ab6e33fb74079f689d2e0e407c4b2c5
   languageName: node
   linkType: hard
 
@@ -7114,7 +7114,7 @@ __metadata:
     husky: "npm:^9.0.11"
     jest: "npm:29.7.0"
     lodash: "npm:^4.17.21"
-    nestjs-cls: "npm:^4.2.1"
+    nestjs-cls: "npm:^4.3.0"
     postgres: "npm:^3.4.3"
     postgres-shift: "npm:^0.1.0"
     prettier: "npm:^3.2.5"
