@@ -1,4 +1,6 @@
 import { HealthEntity } from '@/domain/health/entities/health.entity';
+import { Module } from '@nestjs/common';
+import { HealthRepository } from '@/domain/health/health.repository';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 
@@ -14,3 +16,14 @@ export interface IHealthRepository {
    */
   isReady(): Promise<HealthEntity>;
 }
+
+@Module({
+  providers: [
+    {
+      provide: IHealthRepository,
+      useClass: HealthRepository,
+    },
+  ],
+  exports: [IHealthRepository],
+})
+export class HealthRepositoryModule {}

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { IHumanDescriptionApi } from '@/domain/interfaces/human-description-api.interface';
 import { FunctionSignature } from '@/domain/human-description/entities/human-description.entity';
 import ContractDescriptions from '@/datasources/human-description-api/json';
@@ -9,3 +9,14 @@ export class HumanDescriptionApi implements IHumanDescriptionApi {
     return ContractDescriptions;
   }
 }
+
+@Module({
+  providers: [
+    {
+      provide: IHumanDescriptionApi,
+      useClass: HumanDescriptionApi,
+    },
+  ],
+  exports: [IHumanDescriptionApi],
+})
+export class HumanDescriptionApiModule {}

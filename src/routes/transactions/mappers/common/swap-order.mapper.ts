@@ -6,7 +6,10 @@ import {
   SwapOrderTransactionInfo,
   TokenInfo,
 } from '@/routes/transactions/entities/swap-order-info.entity';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import {
+  ITokenRepository,
+  TokenRepositoryModule,
+} from '@/domain/tokens/token.repository.interface';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { SwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsModule } from '@/domain/swaps/swaps.module';
@@ -241,7 +244,7 @@ export class SwapOrderMapper {
 }
 
 @Module({
-  imports: [SwapsModule],
+  imports: [SwapsModule, TokenRepositoryModule],
   providers: [SwapOrderMapper, SetPreSignatureDecoder],
   exports: [SwapOrderMapper],
 })

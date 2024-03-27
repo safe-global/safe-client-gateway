@@ -8,6 +8,13 @@ import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { Module } from '@nestjs/common';
+import { SafeRepository } from '@/domain/safe/safe.repository';
+import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
+import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction.validator';
+import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
+import { TransferValidator } from '@/domain/safe/transfer.validator';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -193,3 +200,18 @@ export interface ISafeRepository {
     moduleAddress: string;
   }): Promise<SafeList>;
 }
+
+@Module({
+  imports: [ChainsRepositoryModule, TransactionApiManagerModule],
+  providers: [
+    {
+      provide: ISafeRepository,
+      useClass: SafeRepository,
+    },
+    MultisigTransactionValidator,
+    TransactionTypeValidator,
+    TransferValidator,
+  ],
+  exports: [ISafeRepository],
+})
+export class SafeRepositoryModule {}
