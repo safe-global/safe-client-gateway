@@ -1,8 +1,5 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
-import { isHex } from 'viem';
 import {
   DefaultSwapOrderTransactionInfo,
   FulfilledSwapOrderTransactionInfo,
@@ -10,14 +7,10 @@ import {
   TokenInfo,
 } from '@/routes/transactions/entities/swap-order-info.entity';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { SwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsModule } from '@/domain/swaps/swaps.module';
-import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 import { Order } from '@/domain/swaps/entities/order.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
@@ -70,93 +63,61 @@ export class SwapOrderMapper {
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
-    private readonly customTransactionMapper: CustomTransactionMapper,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {}
 
   async mapSwapOrder(
     chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
-    dataSize: number,
-  ): Promise<SwapOrderTransactionInfo | CustomTransactionInfo> {
-    if (!isHex(transaction.data)) {
-      return this._mapUnknownOrderStatus(chainId, transaction, dataSize);
-    }
-
+    transaction: { data: `0x${string}` },
+  ): Promise<SwapOrderTransactionInfo> {
     const orderUid: `0x${string}` | null =
       this.setPreSignatureDecoder.getOrderUid(transaction.data);
     if (!orderUid) {
-      return this._mapUnknownOrderStatus(chainId, transaction, dataSize);
+      throw new Error('Order UID not found in transaction data');
     }
 
-    try {
-      const order = await this.swapsRepository.getOrder(chainId, orderUid);
-      const [buyToken, sellToken] = await Promise.all([
-        this.tokenRepository.getToken({
-          chainId,
-          address: order.buyToken,
-        }),
-        this.tokenRepository.getToken({
-          chainId,
-          address: order.sellToken,
-        }),
-      ]);
-
-      const buyTokenAmount = new TokenAmount({
-        token: buyToken,
-        amount: order.buyAmount,
-        executedAmount: order.executedBuyAmount,
-      });
-      const sellTokenAmount = new TokenAmount({
-        token: sellToken,
-        amount: order.sellAmount,
-        executedAmount: order.executedSellAmount,
-      });
-
-      switch (order.status) {
-        case 'fulfilled':
-          return this._mapFulfilledOrderStatus({
-            buyToken: buyTokenAmount,
-            sellToken: sellTokenAmount,
-            order,
-          });
-        case 'open':
-        case 'cancelled':
-        case 'expired':
-          return this._mapDefaultOrderStatus({
-            buyToken: buyTokenAmount,
-            sellToken: sellTokenAmount,
-            order,
-          });
-        default:
-          return this._mapUnknownOrderStatus(chainId, transaction, dataSize);
-      }
-    } catch (e) {
-      this.loggingService.warn(e);
-      return this.customTransactionMapper.mapCustomTransaction(
-        transaction,
-        dataSize,
+    const order = await this.swapsRepository.getOrder(chainId, orderUid);
+    const [buyToken, sellToken] = await Promise.all([
+      this.tokenRepository.getToken({
         chainId,
-        null,
-        null,
-      );
-    }
-  }
+        address: order.buyToken,
+      }),
+      this.tokenRepository.getToken({
+        chainId,
+        address: order.sellToken,
+      }),
+    ]);
 
-  private _mapUnknownOrderStatus(
-    chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
-    dataSize: number,
-  ): Promise<CustomTransactionInfo> {
-    return this.customTransactionMapper.mapCustomTransaction(
-      transaction,
-      dataSize,
-      chainId,
-      null,
-      null,
-    );
+    const buyTokenAmount = new TokenAmount({
+      token: buyToken,
+      amount: order.buyAmount,
+      executedAmount: order.executedBuyAmount,
+    });
+    const sellTokenAmount = new TokenAmount({
+      token: sellToken,
+      amount: order.sellAmount,
+      executedAmount: order.executedSellAmount,
+    });
+
+    switch (order.status) {
+      case 'fulfilled':
+        return this._mapFulfilledOrderStatus({
+          buyToken: buyTokenAmount,
+          sellToken: sellTokenAmount,
+          order,
+        });
+      case 'open':
+      case 'cancelled':
+      case 'expired':
+        return this._mapDefaultOrderStatus({
+          buyToken: buyTokenAmount,
+          sellToken: sellTokenAmount,
+          order,
+        });
+      default:
+        throw new Error(`Unknown order status: ${order.status}`);
+    }
   }
 
   private _getExecutionPriceLabel(
@@ -280,10 +241,8 @@ export class SwapOrderMapper {
 }
 
 @Module({
-  // TODO AddressInfoModule is not needed in this module but it is required by the CustomTransactionMapper.
-  //  The CustomTransactionMapper (module to be created) should be the one providing it instead.
-  imports: [SwapsModule, AddressInfoModule],
-  providers: [SwapOrderMapper, SetPreSignatureDecoder, CustomTransactionMapper],
+  imports: [SwapsModule],
+  providers: [SwapOrderMapper, SetPreSignatureDecoder],
   exports: [SwapOrderMapper],
 })
 export class SwapOrderMapperModule {}

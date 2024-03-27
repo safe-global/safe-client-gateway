@@ -30,6 +30,7 @@ import { TransactionsController } from '@/routes/transactions/transactions.contr
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 
 @Module({
   controllers: [TransactionsController],
@@ -44,6 +45,7 @@ import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pr
     ModuleTransactionDetailsMapper,
     ModuleTransactionMapper,
     ModuleTransactionStatusMapper,
+    MultiSendDecoder,
     MultisigTransactionDetailsMapper,
     MultisigTransactionExecutionDetailsMapper,
     MultisigTransactionExecutionInfoMapper,
