@@ -7129,7 +7129,7 @@ __metadata:
     ts-node: "npm:^10.9.2"
     tsconfig-paths: "npm:4.2.0"
     typescript: "npm:^5.4.3"
-    viem: "npm:^2.8.13"
+    viem: "npm:^2.9.6"
     winston: "npm:^3.12.0"
     zod: "npm:^3.22.4"
   languageName: unknown
@@ -8153,9 +8153,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.8.13":
-  version: 2.8.13
-  resolution: "viem@npm:2.8.13"
+"viem@npm:^2.9.6":
+  version: 2.9.6
+  resolution: "viem@npm:2.9.6"
   dependencies:
     "@adraffy/ens-normalize": "npm:1.10.0"
     "@noble/curves": "npm:1.2.0"
@@ -8170,7 +8170,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/2674514bbc100b8eef2fcf8326028ea63be497c64eb4e8bd9a284734b6d601881aa104d3bf557952ef1bc440cc9c003c9863777894168a1f0668103013f1b67a
+  checksum: 10/e96f96c757a38dd6f61aa486592738fb8bff30cc30c9836ea9267fe76d0efc9bec828b3743d39e2c5593f4c5b99563787f7cfa9dfd308733ba9160ca67a4b847
   languageName: node
   linkType: hard
 
