@@ -7,6 +7,12 @@ export default (): ReturnType<typeof configuration> => ({
     version: faker.system.semver(),
     buildNumber: faker.string.numeric(),
   },
+  amqp: {
+    url: faker.internet.url({ appendSlash: false }),
+    exchange: faker.string.sample(),
+    queue: faker.string.sample(),
+    prefetch: faker.number.int(),
+  },
   applicationPort: faker.internet.port().toString(),
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),

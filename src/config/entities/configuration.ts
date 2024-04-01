@@ -6,6 +6,15 @@ export default () => ({
     version: process.env.APPLICATION_VERSION,
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
+  amqp: {
+    url: process.env.AMQP_URL,
+    exchange: process.env.AMQP_EXCHANGE,
+    queue: process.env.AMQP_QUEUE,
+    prefetch:
+      process.env.AMQP_PREFETCH != null
+        ? parseInt(process.env.AMQP_PREFETCH)
+        : `${10}`,
+  },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
     token: process.env.AUTH_TOKEN,
