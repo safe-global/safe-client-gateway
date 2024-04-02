@@ -1,7 +1,7 @@
 #
 # BUILD CONTAINER
 #
-FROM node:20.11.1 as base
+FROM node:20.12.0 as base
 ENV NODE_ENV production
 ENV YARN_CACHE_FOLDER /root/.yarn
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.yarn yarn run build \
 #
 # PRODUCTION CONTAINER
 #
-FROM node:20.11.1-alpine as production
+FROM node:20.12.0-alpine as production
 USER node
 
 ARG VERSION
