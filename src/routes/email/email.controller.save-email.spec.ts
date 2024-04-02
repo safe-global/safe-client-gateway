@@ -30,6 +30,8 @@ import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 import { EmailAddress } from '@/domain/account/entities/account.entity';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 describe('Email controller save email tests', () => {
   let app: INestApplication;
@@ -56,6 +58,8 @@ describe('Email controller save email tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     configurationService = moduleFixture.get(IConfigurationService);

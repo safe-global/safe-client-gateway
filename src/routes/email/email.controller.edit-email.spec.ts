@@ -30,6 +30,8 @@ import {
 } from '@/domain/account/entities/account.entity';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { getAddress } from 'viem';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 const verificationCodeTtlMs = 100;
 
@@ -69,6 +71,8 @@ describe('Email controller edit email tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

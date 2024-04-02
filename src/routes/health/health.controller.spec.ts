@@ -14,6 +14,8 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import * as request from 'supertest';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication;
@@ -33,6 +35,8 @@ describe('Health Controller tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);

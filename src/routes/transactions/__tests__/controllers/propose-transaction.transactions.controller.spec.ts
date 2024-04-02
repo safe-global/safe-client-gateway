@@ -30,6 +30,8 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { getAddress } from 'viem';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -50,6 +52,8 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

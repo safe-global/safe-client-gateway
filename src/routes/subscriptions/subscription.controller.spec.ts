@@ -28,6 +28,8 @@ import {
   ALERTS_API_CONFIGURATION_MODULE,
 } from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
 import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 describe('Subscription Controller tests', () => {
   let app: INestApplication;
@@ -63,6 +65,8 @@ describe('Subscription Controller tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     accountDataSource = moduleFixture.get(IAccountDataSource);

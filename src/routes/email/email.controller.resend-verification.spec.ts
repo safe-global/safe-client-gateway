@@ -18,6 +18,8 @@ import { accountBuilder } from '@/domain/account/entities/__tests__/account.buil
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -52,6 +54,8 @@ describe('Email controller resend verification tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     accountDataSource = moduleFixture.get(IAccountDataSource);

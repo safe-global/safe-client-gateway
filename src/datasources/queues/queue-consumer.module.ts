@@ -1,4 +1,6 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { QueueConsumerService } from '@/datasources/queues/queue-consumer.service';
+import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 import { Module } from '@nestjs/common';
 import amqp, {
   AmqpConnectionManager,
@@ -15,16 +17,21 @@ function queueConsumerFactory(
   configurationService: IConfigurationService,
 ): QueueConsumer {
   const amqpUrl = configurationService.getOrThrow<string>('amqp.url');
-  const exchange = configurationService.getOrThrow<string>('amqp.exchange');
+  const exchangeName =
+    configurationService.getOrThrow<string>('amqp.exchange.name');
+  const exchangeMode =
+    configurationService.getOrThrow<string>('amqp.exchange.mode');
   const queue = configurationService.getOrThrow<string>('amqp.queue');
   const prefetch = configurationService.getOrThrow<number>('amqp.prefetch');
+
   const connection = amqp.connect(amqpUrl);
   const channel = connection.createChannel({
     json: true,
     setup: async (ch: Channel) => {
+      await ch.assertExchange(exchangeName, exchangeMode, { durable: true });
       await ch.assertQueue(queue, { durable: true });
       await ch.prefetch(prefetch);
-      await ch.bindQueue(queue, exchange, '');
+      await ch.bindQueue(queue, exchangeName, '');
     },
   });
   return { connection, channel };
@@ -37,7 +44,9 @@ function queueConsumerFactory(
       useFactory: queueConsumerFactory,
       inject: [IConfigurationService],
     },
-    // TODO: hooks
+    { provide: IQueueConsumerService, useClass: QueueConsumerService },
   ],
+  exports: [IQueueConsumerService],
+  // TODO: hooks
 })
 export class QueueConsumerModule {}

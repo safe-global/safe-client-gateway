@@ -26,6 +26,8 @@ import {
   zerionNFTInfoBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-collectible.entity.builder';
 import { getAddress } from 'viem';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication;
@@ -47,6 +49,8 @@ describe('Zerion Collectibles Controller', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

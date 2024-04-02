@@ -17,6 +17,8 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -52,6 +54,8 @@ describe('Email controller verify email tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     accountDataSource = moduleFixture.get(IAccountDataSource);

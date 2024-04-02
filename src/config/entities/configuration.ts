@@ -8,12 +8,15 @@ export default () => ({
   },
   amqp: {
     url: process.env.AMQP_URL,
-    exchange: process.env.AMQP_EXCHANGE,
+    exchange: {
+      name: process.env.AMQP_EXCHANGE_NAME,
+      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+    },
     queue: process.env.AMQP_QUEUE,
     prefetch:
       process.env.AMQP_PREFETCH != null
         ? parseInt(process.env.AMQP_PREFETCH)
-        : `${10}`,
+        : 100,
   },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {

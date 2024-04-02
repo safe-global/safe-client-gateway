@@ -9,7 +9,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
-    exchange: faker.string.sample(),
+    exchange: { name: faker.string.sample(), mode: faker.string.sample() },
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
   },

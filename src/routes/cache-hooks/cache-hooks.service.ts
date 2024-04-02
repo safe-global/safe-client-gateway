@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
@@ -8,10 +8,14 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
+import { ConsumeMessage } from 'amqplib';
+import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
-export class CacheHooksService {
+export class CacheHooksService implements OnModuleInit {
   private static readonly HOOK_TYPE = 'hook';
+  private readonly queue: string;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -28,7 +32,23 @@ export class CacheHooksService {
     private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IQueueConsumerService)
+    private readonly queueConsumerService: IQueueConsumerService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.queue = this.configurationService.getOrThrow<string>('amqp.queue');
+  }
+
+  onModuleInit(): Promise<void> {
+    return this.queueConsumerService.subscribe(
+      this.queue,
+      async (msg: ConsumeMessage) => {
+        msg;
+        // TODO: validate/transform msg to Event and call onEvent(event)
+      },
+    );
+  }
 
   async onEvent(event: Event): Promise<void[]> {
     const promises: Promise<void>[] = [];

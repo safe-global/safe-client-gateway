@@ -51,6 +51,8 @@ import {
 } from '@safe-global/safe-deployments';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -109,6 +111,8 @@ describe('Relay controller', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     configurationService = moduleFixture.get(IConfigurationService);
