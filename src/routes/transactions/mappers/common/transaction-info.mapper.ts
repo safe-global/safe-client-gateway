@@ -57,7 +57,7 @@ export class MultisigTransactionInfoMapper {
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
     private readonly swapOrderMapper: SwapOrderMapper,
-    private readonly multisendDecoder: MultiSendDecoder,
+    private readonly multiSendDecoder: MultiSendDecoder,
   ) {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
@@ -239,8 +239,8 @@ export class MultisigTransactionInfoMapper {
       return data;
     }
     // or in the data of a multisend transaction
-    if (this.multisendDecoder.helpers.isMultiSend(data)) {
-      const transactions = this.multisendDecoder.mapMultiSendTransactions(data);
+    if (this.multiSendDecoder.helpers.isMultiSend(data)) {
+      const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
       // TODO If we can build a sorted hash map of the transactions, we can avoid iterating all of them
       //  as we know the pattern of a Swap Order.
       for (const transaction of transactions) {
