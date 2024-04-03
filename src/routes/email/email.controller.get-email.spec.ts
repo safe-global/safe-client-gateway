@@ -68,7 +68,10 @@ describe('Email controller get email tests', () => {
     },
   ])('Retrieves email if correctly authenticated', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().with('address', safeAddress).build();
+    const safe = safeBuilder()
+      // Allow test of non-checksummed address by casting
+      .with('address', safeAddress as `0x${string}`)
+      .build();
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const timestamp = Date.now();

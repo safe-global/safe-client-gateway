@@ -72,6 +72,7 @@ describe('Transactions History Controller (Unit)', () => {
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),
       mappings: {
+        ...configuration().mappings,
         history: {
           maxNestedTransfers: 5,
         },
@@ -429,7 +430,7 @@ describe('Transactions History Controller (Unit)', () => {
     const safe = safeBuilder().build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
-      .with('safe', safe.address)
+      .with('safe', getAddress(safe.address))
       .with('isSuccessful', true)
       .with('data', null)
       .with('operation', 0)

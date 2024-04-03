@@ -476,7 +476,7 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
         .expect(500)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect({ statusCode: 500, message: 'Internal server error' });
     });
 
     it('should get a message with a date label', async () => {
@@ -804,11 +804,10 @@ describe('Messages controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const createMessageDto = messageBuilder().build();
-      createMessageDto.message = faker.number.int();
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(createMessageDto)
+        .send({ ...createMessageDto, message: faker.number.int() })
         .expect(422)
         .expect({
           statusCode: 422,
@@ -903,11 +902,14 @@ describe('Messages controller', () => {
           `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
         )
         .send({})
-        .expect(400)
+        .expect(422)
         .expect({
-          message: 'Validation failed',
-          code: 42,
-          arguments: [],
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['signature'],
+          message: 'Required',
         });
     });
   });

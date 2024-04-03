@@ -12,7 +12,7 @@ import { MessagePage } from '@/routes/messages/entities/messages-page.entity';
 import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
 import { MessagesService } from '@/routes/messages/messages.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { UpdateMessageSignatureDtoValidationPipe } from '@/routes/messages/pipes/update-message-signature.dto.validation.pipe';
+import { UpdateMessageSignatureDtoSchema } from '@/routes/messages/entities/schemas/update-message-signature.dto.schema';
 import { CreateMessageDtoSchema } from '@/routes/messages/entities/schemas/create-message.dto.schema';
 
 @ApiTags('messages')
@@ -69,7 +69,7 @@ export class MessagesController {
   async updateMessageSignature(
     @Param('chainId') chainId: string,
     @Param('messageHash') messageHash: string,
-    @Body(UpdateMessageSignatureDtoValidationPipe)
+    @Body(new ValidationPipe(UpdateMessageSignatureDtoSchema))
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {
     return this.messagesService.updateMessageSignature({

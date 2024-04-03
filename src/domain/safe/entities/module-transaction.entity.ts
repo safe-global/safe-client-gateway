@@ -4,15 +4,15 @@ import { Operation } from '@/domain/safe/entities/operation.entity';
 export interface ModuleTransaction {
   blockNumber: number;
   created: Date;
-  data: string | null;
+  data: `0x${string}` | null;
   dataDecoded: DataDecoded | null;
   executionDate: Date;
   isSuccessful: boolean;
-  module: string;
+  module: `0x${string}`;
   moduleTransactionId: string;
   operation: Operation;
-  safe: string;
-  to: string;
-  transactionHash: string;
-  value: string;
+  safe: `0x${string}`;
+  to: `0x${string}`;
+  transactionHash: `0x${string}`;
+  value: string | null;
 }

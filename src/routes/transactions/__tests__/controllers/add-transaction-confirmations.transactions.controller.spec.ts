@@ -28,6 +28,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entities/add-confirmation.dto.builder';
+import { getAddress } from 'viem';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -78,9 +79,13 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
     const transaction = multisigToJson(
-      multisigTransactionBuilder().build(),
+      multisigTransactionBuilder()
+        .with('safe', getAddress(faker.finance.ethereumAddress()))
+        .build(),
     ) as MultisigTransaction;
-    const safe = safeBuilder().with('address', transaction.safe).build();
+    const safe = safeBuilder()
+      .with('address', getAddress(transaction.safe))
+      .build();
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
     const rejectionTxsPage = pageBuilder().with('results', []).build();

@@ -176,6 +176,7 @@ export default (): ReturnType<typeof configuration> => ({
     locking: true,
     relay: true,
     swapsDecoding: true,
+    historyDebugLogs: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   jwt: {
@@ -191,6 +192,9 @@ export default (): ReturnType<typeof configuration> => ({
   mappings: {
     history: {
       maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),
+    },
+    safe: {
+      maxOverviews: faker.number.int({ min: 1, max: 5 }),
     },
   },
   owners: {
@@ -224,5 +228,6 @@ export default (): ReturnType<typeof configuration> => ({
       100: faker.internet.url(),
       11155111: faker.internet.url(),
     },
+    explorerBaseUri: faker.internet.url(),
   },
 });

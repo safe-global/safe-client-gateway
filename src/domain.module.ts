@@ -11,7 +11,6 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { SafeRepository } from '@/domain/safe/safe.repository';
-import { SafeValidator } from '@/domain/safe/safe.validator';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IDelegateRepository } from '@/domain/delegate/delegate.repository.interface';
@@ -24,17 +23,14 @@ import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
-import { ModuleTransactionValidator } from '@/domain/safe/module-transaction.validator';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenRepository } from '@/domain/tokens/token.repository';
-import { CreationTransactionValidator } from '@/domain/safe/creation-transaction.validator';
 import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
 import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
 import { IEstimationsRepository } from '@/domain/estimations/estimations.repository.interface';
 import { EstimationsRepository } from '@/domain/estimations/estimations.repository';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
-import { MessageValidator } from '@/domain/messages/message.validator';
 import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import { HealthRepository } from '@/domain/health/health.repository';
 import { HumanDescriptionApiModule } from '@/datasources/human-description-api/human-description-api.module';
@@ -69,12 +65,8 @@ import { BalancesApiModule } from '@/datasources/balances-api/balances-api.modul
     { provide: ISafeAppsRepository, useClass: SafeAppsRepository },
     { provide: ISafeRepository, useClass: SafeRepository },
     { provide: ITokenRepository, useClass: TokenRepository },
-    CreationTransactionValidator,
     DataDecodedValidator,
-    MessageValidator,
-    ModuleTransactionValidator,
     MultisigTransactionValidator,
-    SafeValidator,
     TransactionTypeValidator,
     TransferValidator,
   ],

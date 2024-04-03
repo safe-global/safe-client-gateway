@@ -1,7 +1,6 @@
 import { SwapOrderMapper } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { SwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
@@ -12,9 +11,7 @@ import {
   FulfilledSwapOrderTransactionInfo,
 } from '@/routes/transactions/entities/swap-order-info.entity';
 import { getAddress } from 'viem';
-import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { ILoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 const swapsRepository = {
   getOrder: jest.fn(),
@@ -32,16 +29,10 @@ const tokenRepository = {
 
 const tokenRepositoryMock = jest.mocked(tokenRepository);
 
-const customTransactionMapper = {
-  mapCustomTransaction: jest.fn(),
-} as jest.MockedObjectDeep<CustomTransactionMapper>;
-
-const customTransactionMapperMock = jest.mocked(customTransactionMapper);
-
-const loggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
-const loggingServiceMock = jest.mocked(loggingService);
+const configurationService = {
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>;
+const configurationServiceMock = jest.mocked(configurationService);
 
 function asDecimal(amount: number | bigint, decimals: number): number {
   return Number(amount) / 10 ** decimals;
@@ -49,15 +40,19 @@ function asDecimal(amount: number | bigint, decimals: number): number {
 
 describe('Swap Order Mapper tests', () => {
   let target: SwapOrderMapper;
+  const explorerBaseUrl = faker.internet.url();
 
   beforeEach(() => {
     jest.resetAllMocks();
+    configurationServiceMock.getOrThrow.mockImplementation((key) => {
+      if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
+      throw new Error(`Key ${key} not found.`);
+    });
     target = new SwapOrderMapper(
       swapsRepositoryMock,
       setPreSignatureDecoderMock,
       tokenRepositoryMock,
-      customTransactionMapperMock,
-      loggingServiceMock,
+      configurationServiceMock,
     );
   });
 
@@ -82,7 +77,9 @@ describe('Swap Order Mapper tests', () => {
       return Promise.reject(new Error(`Token ${address} not found.`));
     });
 
-    const result = await target.mapSwapOrder(chainId, transaction, 0);
+    const result = await target.mapSwapOrder(chainId, {
+      data: transaction.data as `0x${string}`,
+    });
 
     const surplus = asDecimal(order.executedSurplusFee!, buyToken.decimals!);
     const expectedSurplus = `${surplus} ${buyToken.symbol}`;
@@ -93,6 +90,7 @@ describe('Swap Order Mapper tests', () => {
     expect(result).toBeInstanceOf(FulfilledSwapOrderTransactionInfo);
     expect(result).toEqual({
       type: 'SwapOrder',
+      orderUid: order.uid,
       status: 'fulfilled',
       orderKind: order.kind,
       sellToken: {
@@ -106,6 +104,8 @@ describe('Swap Order Mapper tests', () => {
         symbol: buyToken.symbol,
       },
       expiresTimestamp: order.validTo,
+      filledPercentage: expect.any(String),
+      explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
       surplusLabel: expectedSurplus,
       executionPriceLabel: expectedExecutionPrice,
       humanDescription: null,
@@ -135,7 +135,9 @@ describe('Swap Order Mapper tests', () => {
         return Promise.reject(new Error(`Token ${address} not found.`));
       });
 
-      const result = await target.mapSwapOrder(chainId, transaction, 0);
+      const result = await target.mapSwapOrder(chainId, {
+        data: transaction.data as `0x${string}`,
+      });
 
       const ratio =
         asDecimal(order.sellAmount, sellToken.decimals!) /
@@ -144,6 +146,7 @@ describe('Swap Order Mapper tests', () => {
       expect(result).toBeInstanceOf(DefaultSwapOrderTransactionInfo);
       expect(result).toEqual({
         type: 'SwapOrder',
+        orderUid: order.uid,
         status: order.status,
         orderKind: order.kind,
         sellToken: {
@@ -157,39 +160,29 @@ describe('Swap Order Mapper tests', () => {
           symbol: buyToken.symbol,
         },
         expiresTimestamp: order.validTo,
+        filledPercentage: expect.any(String),
         limitPriceLabel: expectedLimitPriceDescription,
+        explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
         humanDescription: null,
         richDecodedInfo: null,
       });
     },
   );
 
-  it(`should map to custom order if getOrder throws an error`, async () => {
+  it(`should throw if getOrder throws an error`, async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
-    const dataSize = 0;
     const orderUid = faker.string.hexadecimal({ length: 112 }) as `0x${string}`;
     setPreSignatureDecoderMock.getOrderUid.mockReturnValue(orderUid);
-    swapsRepositoryMock.getOrder.mockRejectedValue(
-      new Error('Order not found'),
-    );
-    const customTransaction = new CustomTransactionInfo(
-      new AddressInfo(faker.finance.ethereumAddress()),
-      dataSize.toString(),
-      transaction.value,
-      null,
-      null,
-      false,
-      null,
-      null,
-    );
-    customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
-      customTransaction,
-    );
+    const error = new Error('Order not found');
+    swapsRepositoryMock.getOrder.mockRejectedValue(error);
 
-    const result = await target.mapSwapOrder(chainId, transaction, dataSize);
+    await expect(
+      target.mapSwapOrder(chainId, {
+        data: transaction.data as `0x${string}`,
+      }),
+    ).rejects.toThrow(error);
 
-    expect(result).toBe(customTransaction);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(1);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledWith(
       transaction.data,
@@ -199,110 +192,44 @@ describe('Swap Order Mapper tests', () => {
       chainId,
       expect.any(String),
     );
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
   });
 
-  it('should map to custom order if transaction data is null', async () => {
-    const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder().with('data', null).build();
-    const dataSize = 0;
-    const customTransaction = new CustomTransactionInfo(
-      new AddressInfo(faker.finance.ethereumAddress()),
-      dataSize.toString(),
-      transaction.value,
-      null,
-      null,
-      false,
-      null,
-      null,
-    );
-    customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
-      customTransaction,
-    );
-
-    const result = await target.mapSwapOrder(chainId, transaction, dataSize);
-
-    expect(result).toBe(customTransaction);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
-    expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(0);
-    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(0);
-  });
-
-  it(`should map to custom transaction if order id is null`, async () => {
+  it(`should throw if order id is null`, async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
-    const dataSize = 0;
     setPreSignatureDecoderMock.getOrderUid.mockReturnValue(null);
-    const customTransaction = new CustomTransactionInfo(
-      new AddressInfo(faker.finance.ethereumAddress()),
-      dataSize.toString(),
-      transaction.value,
-      null,
-      null,
-      false,
-      null,
-      null,
-    );
-    setPreSignatureDecoderMock.getOrderUid.mockReturnValue(null);
-    customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
-      customTransaction,
-    );
 
-    const result = await target.mapSwapOrder(chainId, transaction, dataSize);
+    await expect(
+      target.mapSwapOrder(chainId, {
+        data: transaction.data as `0x${string}`,
+      }),
+    ).rejects.toThrow('Order UID not found in transaction data');
 
-    expect(result).toBe(customTransaction);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(1);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledWith(
       transaction.data,
     );
     expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(0);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
   });
 
-  it('should map to custom transaction if token data is not available', async () => {
+  it('should throw if token data is not available', async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
-    const dataSize = 0;
     const order = orderBuilder().build();
     setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
       order.uid as `0x${string}`,
-    );
-    const customTransaction = new CustomTransactionInfo(
-      new AddressInfo(faker.finance.ethereumAddress()),
-      dataSize.toString(),
-      transaction.value,
-      null,
-      null,
-      false,
-      null,
-      null,
-    );
-    customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
-      customTransaction,
     );
     tokenRepositoryMock.getToken.mockRejectedValue(
       new Error('Token not found'),
     );
     swapsRepositoryMock.getOrder.mockResolvedValue(order);
 
-    const result = await target.mapSwapOrder(chainId, transaction, dataSize);
+    await expect(
+      target.mapSwapOrder(chainId, {
+        data: transaction.data as `0x${string}`,
+      }),
+    ).rejects.toThrow('Token not found');
 
-    expect(result).toBe(customTransaction);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(1);
     expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledWith(
       transaction.data,
@@ -312,20 +239,13 @@ describe('Swap Order Mapper tests', () => {
       chainId,
       order.uid,
     );
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      customTransactionMapperMock.mapCustomTransaction,
-    ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
   });
 
   it.each(['fulfilled', 'open', 'cancelled', 'expired'])(
-    'should map to custom transaction if order kind is unknown',
+    'should throw if %s order kind is unknown',
     async (status) => {
       const chainId = faker.string.numeric();
       const transaction = multisigTransactionBuilder().build();
-      const dataSize = 0;
       const buyToken = tokenBuilder().with('decimals', 0).build();
       const sellToken = tokenBuilder().build();
       const order = orderBuilder()
@@ -346,23 +266,13 @@ describe('Swap Order Mapper tests', () => {
         if (address === order.sellToken) return Promise.resolve(sellToken);
         return Promise.reject(new Error(`Token ${address} not found.`));
       });
-      const customTransaction = new CustomTransactionInfo(
-        new AddressInfo(faker.finance.ethereumAddress()),
-        dataSize.toString(),
-        transaction.value,
-        null,
-        null,
-        false,
-        null,
-        null,
-      );
-      customTransactionMapperMock.mapCustomTransaction.mockResolvedValue(
-        customTransaction,
-      );
 
-      const result = await target.mapSwapOrder(chainId, transaction, dataSize);
+      await expect(
+        target.mapSwapOrder(chainId, {
+          data: transaction.data as `0x${string}`,
+        }),
+      ).rejects.toThrow('Unknown order kind');
 
-      expect(result).toBe(customTransaction);
       expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledTimes(1);
       expect(setPreSignatureDecoderMock.getOrderUid).toHaveBeenCalledWith(
         transaction.data,
@@ -372,12 +282,59 @@ describe('Swap Order Mapper tests', () => {
         chainId,
         order.uid,
       );
-      expect(
-        customTransactionMapperMock.mapCustomTransaction,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        customTransactionMapperMock.mapCustomTransaction,
-      ).toHaveBeenCalledWith(transaction, dataSize, chainId, null, null);
+    },
+  );
+
+  it.each([
+    // [executedAmount, amount, expectedFilledPercentage]
+    [1000, 1000, '100.00'],
+    [0, 1000, '0.00'],
+    [500, 1000, '50.00'],
+    [350, 1050, '33.33'],
+  ])(
+    'should calculate the filled percentage correctly for buy orders',
+    async (executedAmount, amount, expected) => {
+      const chainId = faker.string.numeric();
+      const transaction = multisigTransactionBuilder().build();
+      const buyToken = tokenBuilder().with('decimals', 0).build();
+      const sellToken = tokenBuilder().build();
+      const order = orderBuilder()
+        .with(
+          'status',
+          faker.helpers.arrayElement([
+            'open',
+            'fulfilled',
+            'cancelled',
+            'expired',
+          ]),
+        )
+        .build();
+      if (order.kind === 'buy') {
+        order['executedBuyAmount'] = BigInt(executedAmount);
+        order['buyAmount'] = BigInt(amount);
+      } else if (order.kind === 'sell') {
+        order['executedSellAmount'] = BigInt(executedAmount);
+        order['sellAmount'] = BigInt(amount);
+      } else {
+        throw new Error('Invalid order kind');
+      }
+      setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
+        order.uid as `0x${string}`,
+      );
+      swapsRepositoryMock.getOrder.mockResolvedValue(order);
+      tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
+        if (address === order.buyToken) return Promise.resolve(buyToken);
+        if (address === order.sellToken) return Promise.resolve(sellToken);
+        return Promise.reject(new Error(`Token ${address} not found.`));
+      });
+
+      const result = await target.mapSwapOrder(chainId, {
+        data: transaction.data as `0x${string}`,
+      });
+
+      expect(result).toMatchObject({
+        filledPercentage: expected,
+      });
     },
   );
 });

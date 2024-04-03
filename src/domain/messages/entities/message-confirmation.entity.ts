@@ -1,3 +1,6 @@
+import { MessageConfirmationSchema } from '@/domain/messages/entities/schemas/message.schema';
+import { z } from 'zod';
+
 export enum SignatureType {
   ContractSignature = 'CONTRACT_SIGNATURE',
   ApprovedHash = 'APPROVED_HASH',
@@ -5,10 +8,4 @@ export enum SignatureType {
   EthSign = 'ETH_SIGN',
 }
 
-export interface MessageConfirmation {
-  created: Date;
-  modified: Date;
-  owner: string;
-  signature: string;
-  signatureType: SignatureType;
-}
+export type MessageConfirmation = z.infer<typeof MessageConfirmationSchema>;

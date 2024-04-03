@@ -19,7 +19,7 @@ export class LockingController {
   constructor(private readonly lockingService: LockingService) {}
 
   @ApiOkResponse({ type: Rank })
-  @Get('/leaderboard/:safeAddress')
+  @Get('/leaderboard/rank/:safeAddress')
   async getRank(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,

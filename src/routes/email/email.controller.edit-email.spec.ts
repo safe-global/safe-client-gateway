@@ -101,7 +101,10 @@ describe('Email controller edit email tests', () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const signerAddress = signer.address;
-    const safe = safeBuilder().with('address', safeAddress).build();
+    const safe = safeBuilder()
+      // Allow test of non-checksummed address by casting
+      .with('address', safeAddress as `0x${string}`)
+      .build();
     const message = `email-edit-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
     const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation(({ url }) => {

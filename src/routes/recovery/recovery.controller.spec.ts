@@ -307,8 +307,15 @@ describe('Recovery (Unit)', () => {
           ...addRecoveryModuleDto,
           signer: signer.address,
         })
-        .expect(500)
-        .expect({ message: 'Validation failed', code: 42, arguments: [] });
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'number',
+          path: ['moduleAddress'],
+          message: 'Expected string, received number',
+        });
     });
 
     it('Should return the alerts provider error message', async () => {

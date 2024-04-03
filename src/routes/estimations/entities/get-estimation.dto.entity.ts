@@ -4,11 +4,11 @@ import { Operation } from '@/domain/safe/entities/operation.entity';
 
 export class GetEstimationDto implements DomainGetEstimationDto {
   @ApiProperty()
-  to!: string;
+  to!: `0x${string}`;
   @ApiProperty()
   value!: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  data!: string | null;
+  data!: `0x${string}` | null;
   @ApiProperty()
   operation!: Operation;
 }

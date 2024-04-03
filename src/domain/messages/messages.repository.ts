@@ -2,15 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Message } from '@/domain/messages/entities/message.entity';
-import { MessageValidator } from '@/domain/messages/message.validator';
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
+import {
+  MessagePageSchema,
+  MessageSchema,
+} from '@/domain/messages/entities/schemas/message.schema';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly messageValidator: MessageValidator,
   ) {}
 
   async getMessageByHash(args: {
@@ -20,7 +22,7 @@ export class MessagesRepository implements IMessagesRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const message = await transactionService.getMessageByHash(args.messageHash);
-    return this.messageValidator.validate(message);
+    return MessageSchema.parse(message);
   }
 
   async getMessagesBySafe(args: {
@@ -37,7 +39,7 @@ export class MessagesRepository implements IMessagesRepository {
       offset: args.offset,
     });
 
-    return this.messageValidator.validatePage(page);
+    return MessagePageSchema.parse(page);
   }
 
   async createMessage(args: {
@@ -61,7 +63,7 @@ export class MessagesRepository implements IMessagesRepository {
   async updateMessageSignature(args: {
     chainId: string;
     messageHash: string;
-    signature: string;
+    signature: `0x${string}`;
   }): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);

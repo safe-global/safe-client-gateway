@@ -5,7 +5,6 @@ import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { DomainModule } from '@/domain.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
@@ -16,8 +15,6 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ValidationModule } from '@/validation/validation.module';
-import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
@@ -25,8 +22,14 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
+import { AppModule } from '@/app.module';
+import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { getAddress } from 'viem';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -37,18 +40,17 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        TransactionsModule,
-        // common
-        DomainModule,
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-        ValidationModule,
-      ],
-    }).compile();
+      imports: [AppModule.register(configuration)],
+    })
+      .overrideModule(AccountDataSourceModule)
+      .useModule(TestAccountDataSourceModule)
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
@@ -69,13 +71,21 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     await request(app.getHttpServer())
       .post(`/v1/chains/${safeAddress}/transactions/${safeTxHash}/propose`)
       .send({ ...proposeTransactionDto, value: 1 })
-      .expect(400);
+      .expect(422)
+      .expect({
+        statusCode: 422,
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'number',
+        path: ['value'],
+        message: 'Expected string, received number',
+      });
   });
 
   it('should propose a transaction', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().with('address', safeAddress).build();
     const safeApps = [safeAppBuilder().build()];

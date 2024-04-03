@@ -5,7 +5,7 @@ export class Rank implements DomainRank {
   @ApiProperty()
   holder!: `0x${string}`;
   @ApiProperty()
-  position!: string;
+  position!: number;
   @ApiProperty()
   lockedAmount!: string;
   @ApiProperty()

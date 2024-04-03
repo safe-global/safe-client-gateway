@@ -10,6 +10,7 @@ export interface IBalancesRepository {
   getBalances(args: {
     chainId: string;
     safeAddress: string;
+    fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]>;

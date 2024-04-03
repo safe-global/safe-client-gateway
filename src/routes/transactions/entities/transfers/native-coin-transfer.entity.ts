@@ -6,9 +6,9 @@ import {
 
 export class NativeCoinTransfer extends Transfer {
   @ApiProperty()
-  value: string;
+  value: string | null;
 
-  constructor(value: string) {
+  constructor(value: string | null) {
     super(TransferType.NativeCoin);
     this.value = value;
   }

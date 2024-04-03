@@ -26,6 +26,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { getAddress } from 'viem';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -98,7 +99,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   it('should get a transactions queue with labels and conflict headers', async () => {
     const chainId = faker.string.numeric();
     const chainResponse = chainBuilder().build();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
@@ -274,7 +275,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   it('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainResponse = chainBuilder().build();
     const contractResponse = contractBuilder().build();
     const safeResponse = safeBuilder()
@@ -477,7 +478,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   it('should get an "untrusted" queue', async () => {
     const chainId = faker.string.numeric();
-    const safeAddress = faker.finance.ethereumAddress();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainResponse = chainBuilder().build();
     const contractResponse = contractBuilder().build();
     const safeResponse = safeBuilder()

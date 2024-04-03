@@ -25,7 +25,7 @@ function configureSwagger(app: INestApplication): void {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('index.html', app, document, {
+  SwaggerModule.setup('api', app, document, {
     customfavIcon: '/favicon.png',
     customSiteTitle: 'Safe Client Gateway',
     customCss: `.topbar-wrapper img { content:url(\'logo.svg\'); }`,
