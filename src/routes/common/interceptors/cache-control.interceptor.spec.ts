@@ -4,7 +4,7 @@ import {
   INestApplication,
   UseInterceptors,
 } from '@nestjs/common';
-import { CacheControlInterceptor } from '@/cache-control.interceptor';
+import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 

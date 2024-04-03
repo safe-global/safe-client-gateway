@@ -44,7 +44,7 @@ import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
 import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-import { CacheControlInterceptor } from '@/cache-control.interceptor';
+import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 
 @Module({})
 export class AppModule implements NestModule {
