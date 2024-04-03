@@ -60,11 +60,11 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
         (cursor += MultiSendDecoder.DATA_LENGTH_SIZE),
       );
 
-      const data = slice(
-        transactions,
-        cursor,
-        (cursor += hexToNumber(dataLength)),
-      );
+      const data =
+        // slice throws if start/end byte offsets are the same
+        hexToNumber(dataLength) === 0
+          ? '0x'
+          : slice(transactions, cursor, (cursor += hexToNumber(dataLength)));
 
       mapped.push({
         operation: hexToNumber(operation),
