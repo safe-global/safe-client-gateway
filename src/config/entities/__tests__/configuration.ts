@@ -180,6 +180,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   httpClient: { requestTimeout: faker.number.int() },
   jwt: {
+    issuer: faker.lorem.word(),
     secret: faker.string.alphanumeric(),
   },
   locking: {

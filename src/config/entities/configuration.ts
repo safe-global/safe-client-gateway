@@ -183,6 +183,7 @@ export default () => ({
     ),
   },
   jwt: {
+    issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
   },
   locking: {

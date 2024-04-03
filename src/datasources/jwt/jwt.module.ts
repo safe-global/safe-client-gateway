@@ -7,21 +7,22 @@ import * as jwt from 'jsonwebtoken';
 // Use inferred type
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function jwtClientFactory(configurationService: IConfigurationService) {
+  const issuer = configurationService.getOrThrow<string>('jwt.issuer');
   const secret = configurationService.getOrThrow<string>('jwt.secret');
 
   return {
     sign: (
       payload: string | Buffer | object,
-      options?: jwt.SignOptions,
+      options: jwt.SignOptions = {},
     ): string => {
-      return jwt.sign(payload, secret, options);
+      return jwt.sign(payload, secret, { ...options, issuer });
     },
     verify: <T>(
       token: string,
-      options?: Omit<jwt.VerifyOptions, 'complete'>,
+      options: Omit<jwt.VerifyOptions, 'complete'> = {},
     ): T => {
       // As we are not `complete` decoding, it will be T if verified
-      return jwt.verify(token, secret, options) as T;
+      return jwt.verify(token, secret, { ...options, issuer }) as T;
     },
   };
 }
