@@ -48,6 +48,16 @@ import {
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { EmailAddress } from '@/domain/account/entities/account.entity';
 import { subscriptionBuilder } from '@/domain/account/entities/__tests__/subscription.builder';
+import {
+  AlertsApiConfigurationModule,
+  alertsApiConfigurationModule,
+} from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
+import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
+import {
+  AlertsConfigurationModule,
+  alertsConfigurationModule,
+} from '@/routes/alerts/configuration/alerts.configuration.module';
+import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -102,6 +112,12 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
+        .overrideModule(alertsConfigurationModule)
+        .useModule(AlertsConfigurationModule.register(alertsConfiguration))
+        .overrideModule(alertsApiConfigurationModule)
+        .useModule(
+          AlertsApiConfigurationModule.register(alertsApiConfiguration),
+        )
         .overrideModule(AccountDataSourceModule)
         .useModule(TestAccountDataSourceModule)
         .overrideModule(CacheModule)
@@ -116,7 +132,7 @@ describe('Alerts (Unit)', () => {
 
       configurationService = moduleFixture.get(IConfigurationService);
       safeConfigUrl = configurationService.get('safeConfig.baseUri');
-      signingKey = configurationService.getOrThrow('alerts.signingKey');
+      signingKey = configurationService.getOrThrow('alerts-route.signingKey');
       emailApi = moduleFixture.get(IEmailApi);
       accountDataSource = moduleFixture.get(IAccountDataSource);
       networkService = moduleFixture.get(NetworkService);
@@ -1576,7 +1592,6 @@ describe('Alerts (Unit)', () => {
 
     describe('/alerts route disabled', () => {
       let app: INestApplication;
-      let signingKey: string;
 
       beforeEach(async () => {
         jest.resetAllMocks();
@@ -1604,9 +1619,6 @@ describe('Alerts (Unit)', () => {
           .compile();
 
         app = moduleFixture.createNestApplication();
-        const configurationService = moduleFixture.get(IConfigurationService);
-        signingKey = configurationService.getOrThrow('alerts.signingKey');
-
         await app.init();
       });
 
@@ -1618,7 +1630,7 @@ describe('Alerts (Unit)', () => {
         const alert = alertBuilder().build();
         const timestamp = Date.now().toString();
         const signature = fakeTenderlySignature({
-          signingKey,
+          signingKey: faker.string.nanoid(32),
           alert,
           timestamp,
         });
