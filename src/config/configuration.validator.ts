@@ -15,8 +15,6 @@ const ConfigurationSchema = z.object({
   EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
   EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
   EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
-  JWT_ISSUER: z.string(),
-  JWT_SECRET: z.string(),
   RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
   RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
 });

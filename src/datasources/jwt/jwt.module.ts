@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 
@@ -14,7 +14,6 @@ function jwtClientFactory() {
 
 export type JwtClient = ReturnType<typeof jwtClientFactory>;
 
-@Global()
 @Module({
   providers: [
     {
