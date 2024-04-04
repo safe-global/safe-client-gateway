@@ -178,6 +178,10 @@ export default (): ReturnType<typeof configuration> => ({
     historyDebugLogs: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
+  jwt: {
+    issuer: faker.lorem.word(),
+    secret: faker.string.alphanumeric(),
+  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

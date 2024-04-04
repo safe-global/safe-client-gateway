@@ -181,9 +181,14 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
   },
+  jwt: {
+    issuer: process.env.JWT_ISSUER,
+    secret: process.env.JWT_SECRET,
+  },
   locking: {
-    // TODO: Add fallback value and requirement validation
-    baseUri: process.env.LOCKING_PROVIDER_API_BASE_URI || '',
+    baseUri:
+      process.env.LOCKING_PROVIDER_API_BASE_URI ||
+      'https://safe-locking.safe.global',
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',
