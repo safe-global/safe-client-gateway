@@ -1,5 +1,6 @@
 import { RelayLegacyDto } from '@/routes/relay/entities/relay.legacy.dto.entity';
-import { RelayLegacyDtoValidationPipe } from '@/routes/relay/pipes/relay.legacy.validation.pipe';
+import { RelayLegacyDtoSchema } from '@/routes/relay/entities/schemas/relay.legacy.dto.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
@@ -18,7 +19,7 @@ export class RelayLegacyController {
   @Post()
   @Redirect(undefined, HttpStatus.PERMANENT_REDIRECT)
   relay(
-    @Body(RelayLegacyDtoValidationPipe)
+    @Body(new ValidationPipe(RelayLegacyDtoSchema))
     relayLegacyDto: RelayLegacyDto,
   ): { url: string } {
     return { url: `/v1/chains/${relayLegacyDto.chainId}/relay` };
