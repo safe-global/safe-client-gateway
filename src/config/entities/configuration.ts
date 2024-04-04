@@ -186,8 +186,9 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   locking: {
-    // TODO: Add fallback value and requirement validation
-    baseUri: process.env.LOCKING_PROVIDER_API_BASE_URI || '',
+    baseUri:
+      process.env.LOCKING_PROVIDER_API_BASE_URI ||
+      'https://safe-locking.safe.global',
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',
