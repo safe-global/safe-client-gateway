@@ -8,4 +8,4 @@ export const RelayLegacyDtoSchema = z.object({
   to: AddressSchema,
   data: HexSchema,
   gasLimit: z.string().nullish().default(null),
-})
+});
