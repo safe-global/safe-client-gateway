@@ -182,9 +182,8 @@ export default () => ({
     ),
   },
   jwt: {
-    // TODO: Remove fallback and add validation if implementation is accepted
-    issuer: process.env.JWT_ISSUER || 'fake-issuer',
-    secret: process.env.JWT_SECRET || 'fake-secret',
+    issuer: process.env.JWT_ISSUER,
+    secret: process.env.JWT_SECRET,
   },
   locking: {
     baseUri:
