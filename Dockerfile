@@ -27,7 +27,8 @@ ARG VERSION
 ARG BUILD_NUMBER
 
 ENV APPLICATION_VERSION=${VERSION} \
-    APPLICATION_BUILD_NUMBER=${BUILD_NUMBER}
+    APPLICATION_BUILD_NUMBER=${BUILD_NUMBER} \
+    NODE_ENV=production
 
 COPY --chown=node:node --from=base /app/abis ./abis
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
