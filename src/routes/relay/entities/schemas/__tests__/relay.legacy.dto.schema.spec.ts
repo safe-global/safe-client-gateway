@@ -1,4 +1,4 @@
-import { RelayLegacyDtoSchema } from '@/routes/relay/entities/schemas/relay.legacy.dto.schema';
+import { RelayLegacyDtoSchema } from '@/routes/relay/entities/relay.legacy.dto.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

@@ -1,5 +1,5 @@
 import { RelayLegacyDto } from '@/routes/relay/entities/relay.legacy.dto.entity';
-import { RelayLegacyDtoSchema } from '@/routes/relay/entities/schemas/relay.legacy.dto.schema';
+import { RelayLegacyDtoSchema } from '@/routes/relay/entities/relay.legacy.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
