@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ValidationModule } from '@/validation/validation.module';
 import { DelegatesController } from '@/routes/delegates/delegates.controller';
 import { DelegatesService } from '@/routes/delegates/delegates.service';
+import { DelegateRepositoryModule } from '@/domain/delegate/delegate.repository.interface';
 
 @Module({
+  imports: [DelegateRepositoryModule],
   controllers: [DelegatesController],
   providers: [DelegatesService],
-  imports: [ValidationModule],
 })
 export class DelegatesModule {}

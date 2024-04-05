@@ -1,5 +1,8 @@
 import { Page } from '@/domain/entities/page.entity';
 import { Message } from '@/domain/messages/entities/message.entity';
+import { Module } from '@nestjs/common';
+import { MessagesRepository } from '@/domain/messages/messages.repository';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 
@@ -40,3 +43,15 @@ export interface IMessagesRepository {
     messageHash: string;
   }): Promise<void>;
 }
+
+@Module({
+  imports: [TransactionApiManagerModule],
+  providers: [
+    {
+      provide: IMessagesRepository,
+      useClass: MessagesRepository,
+    },
+  ],
+  exports: [IMessagesRepository],
+})
+export class MessagesRepositoryModule {}

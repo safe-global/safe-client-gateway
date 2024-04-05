@@ -5,7 +5,6 @@ import * as request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { DomainModule } from '@/domain.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
@@ -43,7 +42,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         // feature
         TransactionsModule,
         // common
-        DomainModule,
         TestCacheModule,
         ConfigurationModule.register(configuration),
         TestLoggingModule,

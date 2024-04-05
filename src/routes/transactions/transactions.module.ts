@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
-import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { Erc20TransferMapper } from '@/routes/transactions/mappers/common/erc20-transfer.mapper';
@@ -31,10 +30,25 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
+import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
+import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
+import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
 
 @Module({
   controllers: [TransactionsController],
-  imports: [AddressInfoModule, DataDecodedModule, SwapOrderMapperModule],
+  imports: [
+    AddressInfoModule,
+    ContractsRepositoryModule,
+    DataDecodedRepositoryModule,
+    HumanDescriptionRepositoryModule,
+    SafeRepositoryModule,
+    SafeAppsRepositoryModule,
+    SwapOrderMapperModule,
+    TokenRepositoryModule,
+  ],
   providers: [
     CreationTransactionMapper,
     CustomTransactionMapper,
