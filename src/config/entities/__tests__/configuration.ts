@@ -17,6 +17,7 @@ export default (): ReturnType<typeof configuration> => ({
   applicationPort: faker.internet.port().toString(),
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
+    nonceTtlSeconds: faker.number.int(),
   },
   balances: {
     balancesTtlSeconds: faker.number.int(),
@@ -176,6 +177,7 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
+    auth: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   jwt: {
