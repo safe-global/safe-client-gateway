@@ -7,7 +7,7 @@ import { verifyMessage } from 'viem';
 
 @Injectable()
 export class SiweApi implements IAuthApi {
-  private readonly NONCE_LENGTH = 8;
+  private static readonly NONCE_LENGTH = 8;
 
   constructor(
     @Inject(LoggingService)
@@ -22,7 +22,7 @@ export class SiweApi implements IAuthApi {
    */
   generateNonce(): string {
     // One byte is two hex chars
-    const length = this.NONCE_LENGTH / 2;
+    const length = SiweApi.NONCE_LENGTH / 2;
     const randomValues = crypto.getRandomValues(new Uint8Array(length));
 
     return Array.from(randomValues, (byte) => {
