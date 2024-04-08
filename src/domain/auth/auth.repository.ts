@@ -122,23 +122,30 @@ export class AuthRepository implements IAuthRepository {
     message: SiweMessage;
     signature: `0x${string}`;
   }): Promise<boolean> {
+    const cacheDir = CacheRouter.getAuthNonceCacheDir(args.message.nonce);
+
     const isExpired =
       !!args.message.expirationTime &&
       new Date(args.message.expirationTime) < new Date();
 
-    const isValidSignature = await this.authApi
-      .verifyMessage(args)
-      // Don't prevent nonce from being deleted
-      .catch(() => false);
+    try {
+      // Verification is not necessary, message has expired
+      if (isExpired) {
+        return false;
+      }
 
-    const cacheDir = CacheRouter.getAuthNonceCacheDir(args.message.nonce);
-    const cachedNonce = await this.cacheService.get(cacheDir);
-    const isValidNonce = cachedNonce === args.message.nonce;
+      const [isValidSignature, cachedNonce] = await Promise.all([
+        this.authApi.verifyMessage(args),
+        await this.cacheService.get(cacheDir),
+      ]);
+      const isValidNonce = cachedNonce === args.message.nonce;
 
-    // Delete nonce from cache to prevent replay attacks
-    await this.cacheService.deleteByKey(cacheDir.key);
-
-    return !isExpired && isValidSignature && isValidNonce;
+      return isValidSignature && isValidNonce;
+    } catch {
+      return false;
+    } finally {
+      await this.cacheService.deleteByKey(cacheDir.key);
+    }
   }
 
   private getSecondsUntil(date: Date): number {
