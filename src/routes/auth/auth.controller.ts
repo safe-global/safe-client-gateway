@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post, Req, HttpCode } from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpCode } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { Request } from 'express';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AuthService } from '@/routes/auth/auth.service';
 import { VerifyAuthMessageDtoSchema } from '@/routes/auth/entities/schemas/verify-auth-message.dto.schema';
@@ -10,7 +9,7 @@ import { VerifyAuthMessageDto } from '@/routes/auth/entities/schemas/verify-auth
  * The AuthController is responsible for handling authentication:
  *
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
- * 2. The client signs this nonce in a SiWe message, sending it and
+ * 2. The client signs this nonce in a SIWE message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
  * 3. If verification succeeds, a JWT access token is returned.
  * 4. The access token should be used in the `Authorization` header for
@@ -28,10 +27,9 @@ export class AuthController {
     return this.authService.getNonce();
   }
 
-  @HttpCode(202)
+  @HttpCode(200)
   @Post('verify')
   async verify(
-    @Req() request: Request,
     @Body(new ValidationPipe(VerifyAuthMessageDtoSchema))
     verifyAuthMessageDto: VerifyAuthMessageDto,
   ): Promise<{
@@ -39,9 +37,6 @@ export class AuthController {
     tokenType: string;
     expiresIn: number | null;
   }> {
-    return await this.authService.verify({
-      request,
-      verifyAuthMessageDto,
-    });
+    return await this.authService.verify(verifyAuthMessageDto);
   }
 }

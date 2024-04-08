@@ -4,9 +4,9 @@ import { Request } from 'express';
 export const IAuthRepository = Symbol('IAuthRepository');
 
 export interface IAuthRepository {
-  generateNonce(): string;
+  generateNonce(): Promise<{ nonce: string }>;
 
-  verifyMessage(args: {
+  isAuthorized(args: {
     message: SiweMessage;
     signature: `0x${string}`;
   }): Promise<boolean>;

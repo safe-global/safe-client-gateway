@@ -121,7 +121,7 @@ describe('AuthController', () => {
           message,
           signature,
         })
-        .expect(202)
+        .expect(200)
         .expect(({ body }) =>
           expect(body).toStrictEqual({
             accessToken: expect.any(String),

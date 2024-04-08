@@ -2,52 +2,22 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/schemas/verify-auth-message.dto';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { Request } from 'express';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SiweMessage } from '@/domain/auth/entities/siwe-message.entity';
 
 @Injectable()
 export class AuthService {
   static readonly AUTH_TOKEN_TOKEN_TYPE = 'Bearer';
 
-  private readonly nonceTtlInSeconds: number;
-
   constructor(
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(IAuthRepository)
     private readonly authRepository: IAuthRepository,
     @Inject(IJwtService)
     private readonly jwtService: IJwtService,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
-  ) {
-    this.nonceTtlInSeconds = this.configurationService.getOrThrow(
-      'auth.nonceTtlSeconds',
-    );
-  }
+  ) {}
 
-  /**
-   * Generates a unique nonce and stores it in cache for later verification.
-   *
-   * @returns nonce - unique string to be signed
-   */
   async getNonce(): Promise<{
     nonce: string;
   }> {
-    const nonce = this.authRepository.generateNonce();
-
-    // Store nonce for reference to verify/prevent replay attacks
-    const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
-    await this.cacheService.set(cacheDir, nonce, this.nonceTtlInSeconds);
-
-    return {
-      nonce,
-    };
+    return await this.authRepository.generateNonce();
   }
 
   /**
@@ -65,33 +35,28 @@ export class AuthService {
    *
    * @returns accessToken - JWT access token
    * @returns tokenType - token type ('Bearer') to be used in the `Authorization` header
-   * @returns notBefore - expoch from when token is valid (if applicable, otherwise null)
+   * @returns notBefore - epoch from when token is valid (if applicable, otherwise null)
    * @returns expiresIn - time in seconds until the token expires (if applicable, otherwise null)
    */
-  async verify(args: {
-    request: Request;
-    verifyAuthMessageDto: VerifyAuthMessageDto;
-  }): Promise<{
+  async verify(args: VerifyAuthMessageDto): Promise<{
     accessToken: string;
     tokenType: string;
     notBefore: number | null;
     expiresIn: number | null;
   }> {
-    const isAuthorized = await this.isAuthorized(
-      args.verifyAuthMessageDto,
-    ).catch(() => false);
+    const isAuthorized = await this.authRepository
+      .isAuthorized(args)
+      .catch(() => false);
 
     if (!isAuthorized) {
       throw new UnauthorizedException();
     }
 
-    const { message } = args.verifyAuthMessageDto;
-
-    const dateWhenTokenIsValid = message.notBefore
-      ? new Date(message.notBefore)
+    const dateWhenTokenIsValid = args.message.notBefore
+      ? new Date(args.message.notBefore)
       : null;
-    const dateWhenTokenExpires = message.expirationTime
-      ? new Date(message.expirationTime)
+    const dateWhenTokenExpires = args.message.expirationTime
+      ? new Date(args.message.expirationTime)
       : null;
 
     const secondsUntilTokenIsValid = dateWhenTokenIsValid
@@ -101,7 +66,7 @@ export class AuthService {
       ? this.getSecondsUntil(dateWhenTokenExpires)
       : null;
 
-    const accessToken = this.jwtService.sign(message, {
+    const accessToken = this.jwtService.sign(args.message, {
       ...(secondsUntilTokenIsValid !== null && {
         notBefore: secondsUntilTokenIsValid,
       }),
@@ -116,38 +81,6 @@ export class AuthService {
       notBefore: dateWhenTokenIsValid?.getTime() ?? null,
       expiresIn: secondsUntilTokenExpires,
     };
-  }
-
-  /**
-   * Verifies that a message is valid according to its expiration date,
-   * signature and nonce.
-   *
-   * @param args.message - SiWe message in object form
-   * @param args.signature - signature from signing the message
-   *
-   * @returns boolean - whether the message is valid
-   */
-  private async isAuthorized(args: {
-    message: SiweMessage;
-    signature: `0x${string}`;
-  }): Promise<boolean> {
-    const isExpired =
-      !!args.message.expirationTime &&
-      new Date(args.message.expirationTime) < new Date();
-
-    const isValidSignature = await this.authRepository
-      .verifyMessage(args)
-      // Don't prevent nonce from being deleted
-      .catch(() => false);
-
-    const cacheDir = CacheRouter.getAuthNonceCacheDir(args.message.nonce);
-    const cachedNonce = await this.cacheService.get(cacheDir);
-    const isValidNonce = cachedNonce === args.message.nonce;
-
-    // Delete nonce from cache to prevent replay attacks
-    await this.cacheService.deleteByKey(cacheDir.key);
-
-    return !isExpired && isValidSignature && isValidNonce;
   }
 
   private getSecondsUntil(date: Date): number {
