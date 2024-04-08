@@ -11,6 +11,7 @@ import { Event } from '@/routes/cache-hooks/entities/event.entity';
 import { ConsumeMessage } from 'amqplib';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 
 @Injectable()
 export class CacheHooksService implements OnModuleInit {
@@ -44,8 +45,14 @@ export class CacheHooksService implements OnModuleInit {
     return this.queueConsumerService.subscribe(
       this.queue,
       async (msg: ConsumeMessage) => {
-        msg;
-        // TODO: validate/transform msg to Event and call onEvent(event)
+        try {
+          const event: Event = WebHookSchema.parse(
+            JSON.parse(msg.content.toString()),
+          );
+          await this.onEvent(event);
+        } catch (err) {
+          this.loggingService.error(err);
+        }
       },
     );
   }

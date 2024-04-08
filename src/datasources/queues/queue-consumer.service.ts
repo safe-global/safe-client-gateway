@@ -12,6 +12,6 @@ export class QueueConsumerService implements IQueueConsumerService {
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,
   ): Promise<void> {
-    await this.consumer.channel.consume(queueName, fn);
+    await this.consumer.channel.consume(queueName, fn, { noAck: true });
   }
 }
