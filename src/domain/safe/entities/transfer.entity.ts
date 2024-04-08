@@ -1,11 +1,10 @@
-export interface Transfer {
-  blockNumber: number;
-  executionDate: Date;
-  from: string;
-  to: string;
-  transactionHash: string;
-  transferId: string;
-}
+import { Erc20TransferSchema } from '@/domain/safe/entities/schemas/erc20-transfer.schema';
+import { Erc721TransferSchema } from '@/domain/safe/entities/schemas/erc721-transfer.schema';
+import { NativeTokenTransferSchema } from '@/domain/safe/entities/schemas/native-token-transfer.schema';
+import { TransferSchema } from '@/domain/safe/entities/schemas/transfer.schema';
+import { z } from 'zod';
+
+export type Transfer = z.infer<typeof TransferSchema>;
 
 const hasTokenAddress = (
   transfer: Transfer,
@@ -31,30 +30,25 @@ const hasTokenId = (
   return 'tokenId' in transfer && transfer.tokenId != null;
 };
 
-export interface ERC20Transfer extends Transfer {
-  tokenAddress: string;
-  value: string;
-}
+export type ERC20Transfer = z.infer<typeof Erc20TransferSchema>;
 
+// TODO: Just check `type` is `"ERC20_TRANSFER"`
 export function isERC20Transfer(transfer: Transfer): transfer is ERC20Transfer {
   return hasTokenAddress(transfer) && hasValue(transfer);
 }
 
-export interface ERC721Transfer extends Transfer {
-  tokenAddress: string;
-  tokenId: string;
-}
+export type ERC721Transfer = z.infer<typeof Erc721TransferSchema>;
 
+// TODO: Just check `type` is `"ERC721_TRANSFER"`
 export function isERC721Transfer(
   transfer: Transfer,
 ): transfer is ERC721Transfer {
   return hasTokenAddress(transfer) && hasTokenId(transfer);
 }
 
-export interface NativeTokenTransfer extends Transfer {
-  value: string;
-}
+export type NativeTokenTransfer = z.infer<typeof NativeTokenTransferSchema>;
 
+// TODO: Just check `type` is `"ETHER_TRANSFER"`
 export function isNativeTokenTransfer(
   transfer: Transfer,
 ): transfer is NativeTokenTransfer {

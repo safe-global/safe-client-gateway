@@ -152,11 +152,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
       .expect(500)
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -173,11 +169,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
       )
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Should get a trusted ERC20 incoming transfer mapped to the expected format', async () => {
@@ -192,7 +184,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
-      .with('address', getAddress(erc20Transfer.tokenAddress))
+      .with('address', getAddress(erc20Transfer.tokenAddress!))
       .with('trusted', true)
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -276,7 +268,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     const trusted = false;
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
-      .with('address', getAddress(erc20Transfer.tokenAddress))
+      .with('address', getAddress(erc20Transfer.tokenAddress!))
       .with('trusted', trusted)
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -359,7 +351,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
-      .with('address', getAddress(erc20Transfer.tokenAddress))
+      .with('address', getAddress(erc20Transfer.tokenAddress!))
       .with('trusted', false)
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -413,7 +405,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc721)
-      .with('address', getAddress(erc721Transfer.tokenAddress))
+      .with('address', getAddress(erc721Transfer.tokenAddress!))
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;

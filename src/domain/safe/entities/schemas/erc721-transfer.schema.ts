@@ -1,5 +1,21 @@
 import { Schema } from 'ajv';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
+export const Erc721TransferSchema = z.object({
+  type: z.literal('ERC721_TRANSFER'),
+  executionDate: z.coerce.date(),
+  blockNumber: z.number(),
+  transactionHash: HexSchema,
+  to: AddressSchema,
+  from: AddressSchema,
+  tokenId: z.string(),
+  tokenAddress: AddressSchema.nullish().default(null),
+  transferId: z.string(),
+});
+
+// TODO: Remove after migrating transactionTypeSchema
 export const ERC721_TRANSFER_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/erc721-transfer.json';
 

@@ -17,7 +17,10 @@ import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
-import { TransferValidator } from '@/domain/safe/transfer.validator';
+import {
+  TransferPageSchema,
+  TransferSchema,
+} from '@/domain/safe/entities/schemas/transfer.schema';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';
@@ -33,7 +36,6 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionApiManager: ITransactionApiManager,
     private readonly multisigTransactionValidator: MultisigTransactionValidator,
     private readonly transactionTypeValidator: TransactionTypeValidator,
-    private readonly transferValidator: TransferValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
@@ -79,7 +81,7 @@ export class SafeRepository implements ISafeRepository {
       ...args,
       onlyErc721: true,
     });
-    return this.transferValidator.validatePage(page);
+    return TransferPageSchema.parse(page);
   }
 
   async clearTransfers(args: {
@@ -106,7 +108,7 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getIncomingTransfers(args);
-    return this.transferValidator.validatePage(page);
+    return TransferPageSchema.parse(page);
   }
 
   async clearIncomingTransfers(args: {
@@ -346,7 +348,7 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const transfer = await transactionService.getTransfer(args.transferId);
-    return this.transferValidator.validate(transfer);
+    return TransferSchema.parse(transfer);
   }
 
   async getTransfers(args: {
@@ -357,7 +359,7 @@ export class SafeRepository implements ISafeRepository {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const page = await transactionService.getTransfers(args);
-    return this.transferValidator.validatePage(page);
+    return TransferPageSchema.parse(page);
   }
 
   async getSafesByOwner(args: {
