@@ -52,7 +52,7 @@ describe('RelayLegacyDtoSchema', () => {
 
   it('should throw for a non-numeric chainId', () => {
     const relayLegacyDto = {
-      chainId: faker.string.alphanumeric(),
+      chainId: faker.string.alpha(),
       to: getAddress(faker.finance.ethereumAddress()),
       data: faker.string.hexadecimal(),
     };
