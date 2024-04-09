@@ -1,12 +1,9 @@
 import { QueueConsumer } from '@/datasources/queues/queue-consumer.module';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
-import { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { Inject } from '@nestjs/common';
 import { ConsumeMessage } from 'amqplib';
 
-export class QueueConsumerService
-  implements IQueueConsumerService, IQueueReadiness
-{
+export class QueueConsumerService implements IQueueConsumerService {
   constructor(
     @Inject('QueueConsumer') private readonly consumer: QueueConsumer,
   ) {}

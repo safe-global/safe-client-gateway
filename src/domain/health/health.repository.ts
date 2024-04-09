@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 import { HealthEntity } from '@/domain/health/entities/health.entity';
 import { IHealthRepository } from '@/domain/health/health.repository.interface';
 import {
@@ -6,11 +6,7 @@ import {
   ICacheReadiness,
 } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import {
-  QueueReadiness,
-  IQueueReadiness,
-} from '@/domain/interfaces/queue-readiness.interface';
-
+import { Inject, Injectable } from '@nestjs/common';
 @Injectable()
 export class HealthRepository implements IHealthRepository {
   constructor(
@@ -18,8 +14,8 @@ export class HealthRepository implements IHealthRepository {
     private readonly cacheService: ICacheReadiness,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(QueueReadiness)
-    private readonly queueConsumerService: IQueueReadiness,
+    @Inject(IQueueConsumerService)
+    private readonly queueConsumerService: IQueueConsumerService,
   ) {}
 
   async isReady(): Promise<HealthEntity> {
