@@ -1,7 +1,8 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { JwtModule } from '@/datasources/jwt/jwt.module';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { AuthDomainModule } from '@/domain/auth/auth.domain.module';
 import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';
@@ -28,15 +29,20 @@ describe('AuthGuard', () => {
 
   beforeEach(async () => {
     jest.useFakeTimers();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
         ConfigurationModule.register(configuration),
-        JwtModule,
+        CacheModule,
         AuthDomainModule,
       ],
       controllers: [TestController],
-    }).compile();
+    })
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .compile();
+
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();

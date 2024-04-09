@@ -5,7 +5,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { AuthService } from '@/routes/auth/auth.service';
 import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
 
@@ -26,7 +25,6 @@ import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
 export class AuthGuard implements CanActivate {
   constructor(
     @Inject(IAuthRepository) private readonly authRepository: IAuthRepository,
-    @Inject(IJwtService) private readonly jwtService: IJwtService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
