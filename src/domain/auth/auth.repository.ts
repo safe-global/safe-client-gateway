@@ -65,7 +65,7 @@ export class AuthRepository implements IAuthRepository {
    * @returns notBefore - epoch from when token is valid (if applicable, otherwise null)
    * @returns expiresIn - time in seconds until the token expires (if applicable, otherwise null)
    */
-  async verify(args: VerifyAuthMessageDto): Promise<{
+  async verifyMessage(args: VerifyAuthMessageDto): Promise<{
     accessToken: string;
     tokenType: string;
     notBefore: number | null;
@@ -173,5 +173,21 @@ export class AuthRepository implements IAuthRepository {
     }
 
     return token;
+  }
+
+  /**
+   * Verifies access token and returns the decoded payload.
+   *
+   * Returns null if token is not yet valid, expired or malformed.
+   *
+   * @param accessToken - JWT access token
+   * @returns the decoded payload, or null if token is invalid.
+   */
+  verifyAccessToken(accessToken: string): unknown | null {
+    try {
+      return this.jwtService.verify(accessToken);
+    } catch {
+      return null;
+    }
   }
 }

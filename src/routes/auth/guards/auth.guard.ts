@@ -17,7 +17,7 @@ import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
  *
  * 1. Check for the presence of an access token in the request.
  * 2. Verify the token's validity and decode it.
- * 3. Ensure the decoded token is that of a valie SiweMessage.
+ * 3. Ensure the decoded token is that of a valid SiweMessage.
  * 4. Ensure the token is not expired or not yet valid.
  * 5. Allow access if all checks pass.
  */
@@ -42,13 +42,7 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    const payload = ((): unknown | null => {
-      try {
-        return this.jwtService.verify(accessToken);
-      } catch {
-        return null;
-      }
-    })();
+    const payload = this.authRepository.verifyAccessToken(accessToken);
 
     // Token is either not yet valid, expired or malformed
     if (!payload) {

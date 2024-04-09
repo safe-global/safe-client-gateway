@@ -6,7 +6,10 @@ export const IAuthRepository = Symbol('IAuthRepository');
 export interface IAuthRepository {
   generateNonce(): Promise<{ nonce: string }>;
 
-  verify(args: { message: SiweMessage; signature: `0x${string}` }): Promise<{
+  verifyMessage(args: {
+    message: SiweMessage;
+    signature: `0x${string}`;
+  }): Promise<{
     accessToken: string;
     tokenType: string;
     notBefore: number | null;
@@ -14,4 +17,6 @@ export interface IAuthRepository {
   }>;
 
   getAccessToken(request: Request, tokenType: string): string | null;
+
+  verifyAccessToken(accessToken: string): unknown | null;
 }
