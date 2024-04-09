@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { QueueConsumerService } from '@/datasources/queues/queue-consumer.service';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
+import { QueueConsumerShutdownHook } from '@/datasources/queues/queue-consumer.shutdown.hook';
 import { Module } from '@nestjs/common';
 import amqp, {
   AmqpConnectionManager,
@@ -45,8 +46,8 @@ function queueConsumerFactory(
       inject: [IConfigurationService],
     },
     { provide: IQueueConsumerService, useClass: QueueConsumerService },
+    QueueConsumerShutdownHook,
   ],
   exports: [IQueueConsumerService],
-  // TODO: hooks
 })
 export class QueueConsumerModule {}
