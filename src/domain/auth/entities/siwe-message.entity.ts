@@ -36,7 +36,7 @@ export const SiweMessageSchema = z.object({
     .string()
     // We cannot use AddressSchema here as the given address will have been referenced in the message signed
     .refine(isChecksummedAddress, {
-      message: 'Invalid address',
+      message: 'Invalid checksummed address',
     }),
   /**
    * OPTIONAL. A human-readable ASCII assertion that the user will sign which MUST NOT include '\n' (the byte 0x0a).
