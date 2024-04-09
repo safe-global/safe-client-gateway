@@ -71,9 +71,9 @@ export class AuthRepository implements IAuthRepository {
     notBefore: number | null;
     expiresIn: number | null;
   }> {
-    const isAuthorized = await this.isAuthorized(args).catch(() => false);
+    const isValid = await this.isValid(args).catch(() => false);
 
-    if (!isAuthorized) {
+    if (!isValid) {
       throw new UnauthorizedException();
     }
 
@@ -118,7 +118,7 @@ export class AuthRepository implements IAuthRepository {
    *
    * @returns boolean - whether the message is valid
    */
-  private async isAuthorized(args: {
+  private async isValid(args: {
     message: SiweMessage;
     signature: `0x${string}`;
   }): Promise<boolean> {
@@ -136,7 +136,7 @@ export class AuthRepository implements IAuthRepository {
 
       const [isValidSignature, cachedNonce] = await Promise.all([
         this.authApi.verifyMessage(args),
-        await this.cacheService.get(cacheDir),
+        this.cacheService.get(cacheDir),
       ]);
       const isValidNonce = cachedNonce === args.message.nonce;
 
@@ -162,7 +162,7 @@ export class AuthRepository implements IAuthRepository {
   getAccessToken(request: Request, tokenType: string): string | null {
     const header = request.headers.authorization;
 
-    if (typeof header !== 'string') {
+    if (!header) {
       return null;
     }
 

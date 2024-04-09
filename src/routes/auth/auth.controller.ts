@@ -2,8 +2,10 @@ import { Body, Controller, Get, Post, HttpCode } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AuthService } from '@/routes/auth/auth.service';
-import { VerifyAuthMessageDtoSchema } from '@/routes/auth/entities/schemas/verify-auth-message.dto.schema';
-import { VerifyAuthMessageDto } from '@/routes/auth/entities/schemas/verify-auth-message.dto';
+import {
+  VerifyAuthMessageDto,
+  VerifyAuthMessageDtoSchema,
+} from '@/routes/auth/entities/schemas/verify-auth-message.dto';
 
 /**
  * The AuthController is responsible for handling authentication:
