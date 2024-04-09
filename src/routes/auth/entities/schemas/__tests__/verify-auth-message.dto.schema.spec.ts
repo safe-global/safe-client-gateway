@@ -1,5 +1,5 @@
 import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';
-import { VerifyAuthMessageDtoSchema } from '@/routes/auth/entities/schemas/verify-auth-message.dto.schema';
+import { VerifyAuthMessageDtoSchema } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { faker } from '@faker-js/faker';
 
 describe('VerifyAuthMessageDto', () => {

@@ -18,7 +18,7 @@ export default () => ({
   auth: {
     token: process.env.AUTH_TOKEN,
     nonceTtlSeconds: parseInt(
-      process.env.AUTH_NONCE_TTL_SECONDS ?? `${60 * 60}`,
+      process.env.AUTH_NONCE_TTL_SECONDS ?? `${5 * 60}`,
     ),
   },
   balances: {
