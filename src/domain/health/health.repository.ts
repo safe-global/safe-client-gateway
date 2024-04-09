@@ -14,9 +14,12 @@ import {
 @Injectable()
 export class HealthRepository implements IHealthRepository {
   constructor(
-    @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(QueueReadiness) private readonly queueReadiness: IQueueReadiness,
+    @Inject(CacheReadiness)
+    private readonly cacheService: ICacheReadiness,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+    @Inject(QueueReadiness)
+    private readonly queueConsumerService: IQueueReadiness,
   ) {}
 
   async isReady(): Promise<HealthEntity> {
@@ -27,7 +30,7 @@ export class HealthRepository implements IHealthRepository {
       return HealthEntity.NOT_READY;
     }
 
-    return this.queueReadiness.isReady()
+    return this.queueConsumerService.isReady()
       ? HealthEntity.READY
       : HealthEntity.NOT_READY;
   }

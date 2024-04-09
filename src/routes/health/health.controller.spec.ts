@@ -16,10 +16,15 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
 import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import {
+  IQueueReadiness,
+  QueueReadiness,
+} from '@/domain/interfaces/queue-readiness.interface';
 
 describe('Health Controller tests', () => {
   let app: INestApplication;
   let cacheService: FakeCacheService;
+  let queueReadiness: jest.MockedObjectDeep<IQueueReadiness>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -42,6 +47,7 @@ describe('Health Controller tests', () => {
     app = await new TestAppProvider().provide(moduleFixture);
 
     cacheService = moduleFixture.get(CacheService);
+    queueReadiness = moduleFixture.get(QueueReadiness);
 
     await app.init();
   });
@@ -49,6 +55,7 @@ describe('Health Controller tests', () => {
   describe('readiness tests', () => {
     it('cache service is not ready', async () => {
       cacheService.setReadyState(false);
+      queueReadiness.isReady.mockReturnValue(true);
 
       await request(app.getHttpServer())
         .get(`/health/ready`)
@@ -56,8 +63,19 @@ describe('Health Controller tests', () => {
         .expect({ status: 'KO' });
     });
 
-    it('cache service is ready', async () => {
+    it('queue consumer is not ready', async () => {
       cacheService.setReadyState(true);
+      queueReadiness.isReady.mockReturnValue(false);
+
+      await request(app.getHttpServer())
+        .get(`/health/ready`)
+        .expect(503)
+        .expect({ status: 'KO' });
+    });
+
+    it('both cache and queue consumer are ready', async () => {
+      cacheService.setReadyState(true);
+      queueReadiness.isReady.mockReturnValue(true);
 
       await request(app.getHttpServer())
         .get(`/health/ready`)
