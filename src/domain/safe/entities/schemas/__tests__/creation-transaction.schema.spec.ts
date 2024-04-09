@@ -57,8 +57,28 @@ describe('CreationTransactionSchema', () => {
     expect(result.success && result.data[field]).toBe(null);
   });
 
-  it.each(['creator' as const, 'setupData' as const])(
-    'should only allow hex %s',
+  it.each([
+    'creator' as const,
+    'factoryAddress' as const,
+    'masterCopy' as const,
+  ])('should not allow non-address %s', (field) => {
+    const creationTransaction = creationTransactionBuilder()
+      .with(field, 'not an address' as `0x${string}`)
+      .build();
+
+    const result = CreationTransactionSchema.safeParse(creationTransaction);
+
+    expect(!result.success && result.error.issues).toEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: [field],
+      },
+    ]);
+  });
+
+  it.each(['transactionHash' as const, 'setupData' as const])(
+    'should not allow non-hex %s',
     (field) => {
       const creationTransaction = creationTransactionBuilder()
         .with(field, 'not a hex string' as `0x${string}`)
@@ -69,7 +89,7 @@ describe('CreationTransactionSchema', () => {
       expect(!result.success && result.error.issues).toEqual([
         {
           code: 'custom',
-          message: 'Invalid input',
+          message: 'Invalid hex string',
           path: [field],
         },
       ]);

@@ -62,7 +62,7 @@ describe('RelayLegacyDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid input',
+        message: 'Invalid numeric string',
         path: ['chainId'],
       },
     ]);
@@ -80,7 +80,7 @@ describe('RelayLegacyDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid input',
+        message: 'Invalid address',
         path: ['to'],
       },
     ]);
@@ -98,7 +98,7 @@ describe('RelayLegacyDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid input',
+        message: 'Invalid hex string',
         path: ['data'],
       },
     ]);

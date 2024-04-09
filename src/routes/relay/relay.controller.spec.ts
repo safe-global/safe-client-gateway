@@ -1452,7 +1452,7 @@ describe('Relay controller', () => {
               statusCode: 422,
               code: 'custom',
               path: ['gasLimit'],
-              message: 'Invalid input',
+              message: 'Unable to parse value',
             });
         });
 

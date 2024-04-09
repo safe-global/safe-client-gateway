@@ -58,7 +58,7 @@ describe('RelayDtoSchema', () => {
     const result = RelayDtoSchema.safeParse(relayDto);
 
     expect(!result.success && result.error.issues).toStrictEqual([
-      { code: 'custom', message: 'Invalid input', path: ['to'] },
+      { code: 'custom', message: 'Invalid address', path: ['to'] },
     ]);
   });
 
@@ -72,7 +72,7 @@ describe('RelayDtoSchema', () => {
     const result = RelayDtoSchema.safeParse(relayDto);
 
     expect(!result.success && result.error.issues).toStrictEqual([
-      { code: 'custom', message: 'Invalid input', path: ['data'] },
+      { code: 'custom', message: 'Invalid hex string', path: ['data'] },
     ]);
   });
 
@@ -86,7 +86,7 @@ describe('RelayDtoSchema', () => {
     const result = RelayDtoSchema.safeParse(relayDto);
 
     expect(!result.success && result.error.issues).toStrictEqual([
-      { code: 'custom', message: 'Invalid input', path: ['version'] },
+      { code: 'custom', message: 'Invalid semver string', path: ['version'] },
     ]);
   });
 
@@ -101,7 +101,7 @@ describe('RelayDtoSchema', () => {
     const result = RelayDtoSchema.safeParse(relayDto);
 
     expect(!result.success && result.error.issues).toStrictEqual([
-      { code: 'custom', message: 'Invalid input', path: ['gasLimit'] },
+      { code: 'custom', message: 'Unable to parse value', path: ['gasLimit'] },
     ]);
   });
 });

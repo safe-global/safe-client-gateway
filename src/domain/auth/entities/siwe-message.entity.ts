@@ -25,9 +25,8 @@ export const SiweMessageSchema = z.object({
   domain: z
     .string()
     // We cannot use z.url() here as assumes scheme is present
-    .refine((domain) => {
-      // Duplicate schemes are otherwise valid, e.g. https://https://example.com
-      return !domain.includes('://') && URL.canParse(`scheme://${domain}`);
+    .refine(isRfc3986Authority, {
+      message: 'Invalid RFC 3986 authority',
     }),
   /**
    * REQUIRED. The Ethereum address performing the signing. Its value SHOULD be conformant to mixed-case checksum address
@@ -36,13 +35,8 @@ export const SiweMessageSchema = z.object({
   address: z
     .string()
     // We cannot use AddressSchema here as the given address will have been referenced in the message signed
-    .refine((value): value is `0x${string}` => {
-      try {
-        // Ensure address is checksummed
-        return value === getAddress(value);
-      } catch {
-        return false;
-      }
+    .refine(isChecksummedAddress, {
+      message: 'Invalid address',
     }),
   /**
    * OPTIONAL. A human-readable ASCII assertion that the user will sign which MUST NOT include '\n' (the byte 0x0a).
@@ -50,7 +44,9 @@ export const SiweMessageSchema = z.object({
   statement: z
     .string()
     .optional()
-    .refine((value) => !value?.includes('\n')),
+    .refine((value) => !value || isOneLine(value), {
+      message: 'Must not include newlines',
+    }),
   /**
    * REQUIRED. An RFC 3986 URI referring to the resource that is the subject of the signing (as in the subject of a claim).
    */
@@ -93,10 +89,29 @@ export const SiweMessageSchema = z.object({
    */
   resources: z
     .array(
-      z
-        .string()
-        .url()
-        .refine((value) => !value?.includes('\n')),
+      z.string().url().refine(isOneLine, {
+        message: 'Must not include newlines',
+      }),
     )
     .optional(),
 });
+
+function isRfc3986Authority(value: string): boolean {
+  return (
+    !value.includes('://') &&
+    // Duplicate schemes are otherwise valid, e.g. 'https://https://example.com'
+    URL.canParse(`scheme://${value}`)
+  );
+}
+
+function isChecksummedAddress(value: string): value is `0x${string}` {
+  try {
+    return value === getAddress(value);
+  } catch {
+    return false;
+  }
+}
+
+function isOneLine(value: string): boolean {
+  return !value.includes('\n');
+}

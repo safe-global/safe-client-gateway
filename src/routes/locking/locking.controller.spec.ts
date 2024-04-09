@@ -99,8 +99,8 @@ describe('Locking (Unit)', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
+          message: 'Invalid address',
           path: [],
-          message: 'Invalid input',
         });
     });
 
@@ -397,8 +397,8 @@ describe('Locking (Unit)', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
+          message: 'Invalid address',
           path: [],
-          message: 'Invalid input',
         });
     });
 

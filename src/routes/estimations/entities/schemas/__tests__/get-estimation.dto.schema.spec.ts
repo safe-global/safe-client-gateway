@@ -51,7 +51,7 @@ describe('GetEstimationDtoSchema', () => {
       new ZodError([
         {
           code: 'custom',
-          message: 'Invalid input',
+          message: 'Invalid hex string',
           path: ['data'],
         },
       ]),

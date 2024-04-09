@@ -58,8 +58,8 @@ describe('DeletedMultisigTransactionEventSchema', () => {
       new ZodError([
         {
           code: 'custom',
+          message: 'Invalid address',
           path: ['address'],
-          message: 'Invalid input',
         },
       ]),
     );

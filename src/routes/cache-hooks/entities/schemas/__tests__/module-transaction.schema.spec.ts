@@ -53,8 +53,8 @@ describe('ModuleTransactionEventSchema', () => {
         new ZodError([
           {
             code: 'custom',
+            message: 'Invalid address',
             path: [field],
-            message: 'Invalid input',
           },
         ]),
       );

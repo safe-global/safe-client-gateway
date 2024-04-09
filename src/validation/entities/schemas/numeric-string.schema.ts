@@ -4,4 +4,6 @@ function isNumeric(value: unknown): boolean {
   return typeof value === 'string' && !isNaN(Number(value));
 }
 
-export const NumericStringSchema = z.string().refine(isNumeric);
+export const NumericStringSchema = z.string().refine(isNumeric, {
+  message: 'Invalid numeric string',
+});

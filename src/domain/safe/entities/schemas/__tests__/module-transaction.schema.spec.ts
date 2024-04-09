@@ -63,7 +63,7 @@ describe('ModuleTransaction schemas', () => {
           new ZodError([
             {
               code: 'custom',
-              message: 'Invalid input',
+              message: 'Invalid hex string',
               path: [key],
             },
           ]),

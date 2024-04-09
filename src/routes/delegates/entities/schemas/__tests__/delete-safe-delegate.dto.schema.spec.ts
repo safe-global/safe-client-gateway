@@ -45,7 +45,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
       new ZodError([
         {
           code: 'custom',
-          message: 'Invalid input',
+          message: 'Invalid hex string',
           path: ['signature'],
         },
       ]),

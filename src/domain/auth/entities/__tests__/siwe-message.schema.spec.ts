@@ -66,7 +66,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid RFC 3986 authority',
             path: ['domain'],
           },
         ]),
@@ -85,7 +85,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid RFC 3986 authority',
             path: ['domain'],
           },
         ]),
@@ -118,7 +118,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid address',
             path: ['address'],
           },
         ]),
@@ -136,7 +136,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid address',
             path: ['address'],
           },
         ]),
@@ -174,7 +174,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Must not include newlines',
             path: ['statement'],
           },
         ]),
@@ -567,7 +567,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Must not include newlines',
             path: ['resources', 0],
           },
         ]),
