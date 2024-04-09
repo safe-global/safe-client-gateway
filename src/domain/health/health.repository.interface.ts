@@ -1,6 +1,7 @@
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 import { HealthEntity } from '@/domain/health/entities/health.entity';
-import { Module } from '@nestjs/common';
 import { HealthRepository } from '@/domain/health/health.repository';
+import { Module } from '@nestjs/common';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 
@@ -18,6 +19,7 @@ export interface IHealthRepository {
 }
 
 @Module({
+  imports: [QueueConsumerModule],
   providers: [
     {
       provide: IHealthRepository,
