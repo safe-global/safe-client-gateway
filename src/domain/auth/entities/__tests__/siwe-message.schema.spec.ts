@@ -118,7 +118,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid address',
+            message: 'Invalid checksummed address',
             path: ['address'],
           },
         ]),
@@ -136,7 +136,7 @@ describe('SiweMessageSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid address',
+            message: 'Invalid checksummed address',
             path: ['address'],
           },
         ]),
