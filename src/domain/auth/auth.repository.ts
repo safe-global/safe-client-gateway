@@ -10,7 +10,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { AuthService } from '@/routes/auth/auth.service';
-import { VerifyAuthMessageDto } from '@/routes/auth/entities/schemas/verify-auth-message.dto';
+import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 
 @Injectable()

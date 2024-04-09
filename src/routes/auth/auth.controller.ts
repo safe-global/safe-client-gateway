@@ -5,7 +5,7 @@ import { AuthService } from '@/routes/auth/auth.service';
 import {
   VerifyAuthMessageDto,
   VerifyAuthMessageDtoSchema,
-} from '@/routes/auth/entities/schemas/verify-auth-message.dto';
+} from '@/routes/auth/entities/verify-auth-message.dto.entity';
 
 /**
  * The AuthController is responsible for handling authentication:

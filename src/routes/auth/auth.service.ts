@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { VerifyAuthMessageDto } from '@/routes/auth/entities/schemas/verify-auth-message.dto';
+import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 
 @Injectable()
