@@ -19,7 +19,7 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     const safe = safeBuilder().build();
     const proposer = faker.finance.ethereumAddress();
     const transaction = multisigTransactionBuilder()
-      .with('proposer', proposer)
+      .with('proposer', getAddress(proposer))
       .build();
 
     const executionInfo = mapper.mapExecutionInfo(

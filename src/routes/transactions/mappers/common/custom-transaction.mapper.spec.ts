@@ -10,6 +10,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
+import { getAddress } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -161,8 +162,8 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const dataSize = 0;
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
-      .with('to', toAddress.value)
-      .with('safe', toAddress.value)
+      .with('to', getAddress(toAddress.value))
+      .with('safe', getAddress(toAddress.value))
       .with('value', value)
       .with('operation', 0)
       .with('baseGas', 0)

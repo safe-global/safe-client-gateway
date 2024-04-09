@@ -64,7 +64,7 @@ describe('Human descriptions mapper (Unit)', () => {
     });
 
     transaction = multisigTransactionBuilder()
-      .with('to', toAddress.value)
+      .with('to', getAddress(toAddress.value))
       .with('data', mockTransferData)
       .build();
 
@@ -90,7 +90,9 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if data is not hex data', async () => {
     const data = 'something that is not hex';
 
-    const transaction = multisigTransactionBuilder().with('data', data).build();
+    const transaction = multisigTransactionBuilder()
+      .with('data', data as `0x${string}`)
+      .build();
 
     const humanDescription = await mapper.mapRichDecodedInfo(
       transaction,
@@ -129,7 +131,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const corruptedData = mockTransferData.slice(0, -7);
 
     const transaction = multisigTransactionBuilder()
-      .with('data', corruptedData)
+      .with('data', corruptedData as `0x${string}`)
       .build();
 
     const humanDescription = await mapper.mapRichDecodedInfo(

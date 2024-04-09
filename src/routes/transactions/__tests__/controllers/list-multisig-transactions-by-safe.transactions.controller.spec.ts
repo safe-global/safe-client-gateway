@@ -151,11 +151,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
       .expect(500)
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -168,18 +164,14 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       status: 200,
     });
     networkService.get.mockResolvedValueOnce({
-      data: { ...page, count: null },
+      data: { ...page, count: '1' },
       status: 200,
     });
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
       .expect(500)
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
@@ -426,7 +418,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const contractResponse = contractBuilder().build();
     const domainTransaction = multisigTransactionBuilder()
       .with('value', '0')
-      .with('data', faker.string.hexadecimal({ length: 32 }))
+      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with(
@@ -442,6 +434,9 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .build();
+    const multisigTransactionsPage = pageBuilder()
+      .with('results', [multisigTransactionToJson(domainTransaction)])
+      .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
@@ -456,7 +451,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
-          data: { results: [multisigTransactionToJson(domainTransaction)] },
+          data: multisigTransactionsPage,
           status: 200,
         });
       }

@@ -8,8 +8,8 @@ import {
 export class MultisigExecutionInfo extends ExecutionInfo {
   @ApiProperty()
   nonce: number;
-  @ApiProperty()
-  confirmationsRequired: number;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  confirmationsRequired: number | null;
   @ApiProperty()
   confirmationsSubmitted: number;
   @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
@@ -17,7 +17,7 @@ export class MultisigExecutionInfo extends ExecutionInfo {
 
   constructor(
     nonce: number,
-    confirmationsRequired: number,
+    confirmationsRequired: number | null,
     confirmationsSubmitted: number,
     missingSigners: AddressInfo[] | null,
   ) {

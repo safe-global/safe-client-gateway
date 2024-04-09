@@ -7,6 +7,7 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { getAddress } from 'viem';
 
 const HASH_LENGTH = 10;
 
@@ -21,14 +22,14 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
       }),
     )
     .with('confirmationsRequired', faker.number.int())
-    .with('data', faker.string.hexadecimal())
+    .with('data', faker.string.hexadecimal() as `0x${string}`)
     .with('dataDecoded', dataDecodedBuilder().build())
     .with('ethGasPrice', faker.string.hexadecimal())
-    .with('executor', faker.finance.ethereumAddress())
+    .with('executor', getAddress(faker.finance.ethereumAddress()))
     .with('executionDate', faker.date.recent())
     .with('fee', faker.string.hexadecimal())
     .with('gasPrice', faker.string.hexadecimal())
-    .with('gasToken', faker.finance.ethereumAddress())
+    .with('gasToken', getAddress(faker.finance.ethereumAddress()))
     .with('gasUsed', faker.number.int())
     .with('isExecuted', faker.datatype.boolean())
     .with('isSuccessful', faker.datatype.boolean())
@@ -41,15 +42,21 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
         appendSlash: false,
       })}", "name": "${faker.word.words()}"}`,
     )
-    .with('proposer', faker.finance.ethereumAddress())
-    .with('refundReceiver', faker.finance.ethereumAddress())
-    .with('safe', faker.finance.ethereumAddress())
+    .with('proposer', getAddress(faker.finance.ethereumAddress()))
+    .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
+    .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('safeTxGas', faker.number.int())
-    .with('safeTxHash', faker.string.hexadecimal({ length: HASH_LENGTH }))
-    .with('signatures', faker.string.hexadecimal())
+    .with(
+      'safeTxHash',
+      faker.string.hexadecimal({ length: HASH_LENGTH }) as `0x${string}`,
+    )
+    .with('signatures', faker.string.hexadecimal() as `0x${string}`)
     .with('submissionDate', faker.date.recent())
-    .with('to', faker.finance.ethereumAddress())
-    .with('transactionHash', faker.string.hexadecimal({ length: HASH_LENGTH }))
+    .with('to', getAddress(faker.finance.ethereumAddress()))
+    .with(
+      'transactionHash',
+      faker.string.hexadecimal({ length: HASH_LENGTH }) as `0x${string}`,
+    )
     .with('trusted', faker.datatype.boolean())
     .with('value', faker.string.numeric());
 }
