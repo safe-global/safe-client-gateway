@@ -1,5 +1,8 @@
 import { Device } from '@/domain/notifications/entities/device.entity';
 import { SafeRegistration } from '@/domain/notifications/entities/safe-registration.entity';
+import { Module } from '@nestjs/common';
+import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const INotificationsRepository = Symbol('INotificationsRepository');
 
@@ -30,3 +33,15 @@ export interface INotificationsRepository {
     safeAddress: string;
   }): Promise<void>;
 }
+
+@Module({
+  imports: [TransactionApiManagerModule],
+  providers: [
+    {
+      provide: INotificationsRepository,
+      useClass: NotificationsRepository,
+    },
+  ],
+  exports: [INotificationsRepository],
+})
+export class NotificationsRepositoryModule {}

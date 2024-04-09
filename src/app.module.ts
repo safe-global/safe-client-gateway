@@ -13,7 +13,6 @@ import { BalancesModule } from '@/routes/balances/balances.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import { DomainModule } from '@/domain.module';
 import { CacheHooksModule } from '@/routes/cache-hooks/cache-hooks.module';
 import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
@@ -103,7 +102,6 @@ export class AppModule implements NestModule {
           },
         }),
         ConfigurationModule.register(configFactory),
-        DomainModule,
         NetworkModule,
         RequestScopedLoggingModule,
         ServeStaticModule.forRoot({

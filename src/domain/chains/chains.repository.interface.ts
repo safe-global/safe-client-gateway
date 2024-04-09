@@ -1,6 +1,10 @@
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { Page } from '@/domain/entities/page.entity';
+import { Module } from '@nestjs/common';
+import { ChainsRepository } from '@/domain/chains/chains.repository';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 
@@ -32,3 +36,15 @@ export interface IChainsRepository {
    */
   getSingletons(chainId: string): Promise<Singleton[]>;
 }
+
+@Module({
+  imports: [ConfigApiModule, TransactionApiManagerModule],
+  providers: [
+    {
+      provide: IChainsRepository,
+      useClass: ChainsRepository,
+    },
+  ],
+  exports: [IChainsRepository],
+})
+export class ChainsRepositoryModule {}

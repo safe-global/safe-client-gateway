@@ -1,5 +1,8 @@
 import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
+import { Module } from '@nestjs/common';
+import { DelegateRepository } from '@/domain/delegate/delegate.repository';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const IDelegateRepository = Symbol('IDelegateRepository');
 
@@ -37,3 +40,15 @@ export interface IDelegateRepository {
     signature: string;
   }): Promise<unknown>;
 }
+
+@Module({
+  imports: [TransactionApiManagerModule],
+  providers: [
+    {
+      provide: IDelegateRepository,
+      useClass: DelegateRepository,
+    },
+  ],
+  exports: [IDelegateRepository],
+})
+export class DelegateRepositoryModule {}

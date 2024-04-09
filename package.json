@@ -27,11 +27,11 @@
   "dependencies": {
     "@nestjs/cli": "^10.3.2",
     "@nestjs/common": "^10.3.7",
-    "@nestjs/config": "^3.2.0",
+    "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.3.7",
     "@nestjs/platform-express": "^10.3.7",
     "@nestjs/serve-static": "^4.0.2",
-    "@nestjs/swagger": "^7.3.0",
+    "@nestjs/swagger": "^7.3.1",
     "@safe-global/safe-deployments": "^1.33.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
@@ -45,7 +45,7 @@
     "rxjs": "^7.8.1",
     "semver": "^7.6.0",
     "viem": "^2.9.6",
-    "winston": "^3.12.0",
+    "winston": "^3.13.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -72,7 +72,7 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.4"
   },
   "jest": {
     "moduleFileExtensions": [
