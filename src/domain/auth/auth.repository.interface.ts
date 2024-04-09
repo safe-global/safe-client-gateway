@@ -4,12 +4,14 @@ import { Request } from 'express';
 export const IAuthRepository = Symbol('IAuthRepository');
 
 export interface IAuthRepository {
-  generateNonce(): string;
+  generateNonce(): Promise<{ nonce: string }>;
 
-  verifyMessage(args: {
-    message: SiweMessage;
-    signature: `0x${string}`;
-  }): Promise<boolean>;
+  verify(args: { message: SiweMessage; signature: `0x${string}` }): Promise<{
+    accessToken: string;
+    tokenType: string;
+    notBefore: number | null;
+    expiresIn: number | null;
+  }>;
 
   getAccessToken(request: Request, tokenType: string): string | null;
 }

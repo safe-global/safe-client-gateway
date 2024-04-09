@@ -44,6 +44,7 @@ import { SubscriptionControllerModule } from '@/routes/subscriptions/subscriptio
 import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
+import { AuthModule } from '@/routes/auth/auth.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -52,6 +53,7 @@ export class AppModule implements NestModule {
   // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
     const {
+      auth: isAuthFeatureEnabled,
       email: isEmailFeatureEnabled,
       locking: isLockingFeatureEnabled,
       relay: isRelayFeatureEnabled,
@@ -62,6 +64,7 @@ export class AppModule implements NestModule {
       imports: [
         // features
         AboutModule,
+        ...(isAuthFeatureEnabled ? [AuthModule] : []),
         BalancesModule,
         CacheHooksModule,
         ChainsModule,

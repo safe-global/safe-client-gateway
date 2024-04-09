@@ -17,6 +17,9 @@ export default () => ({
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
     token: process.env.AUTH_TOKEN,
+    nonceTtlSeconds: parseInt(
+      process.env.AUTH_NONCE_TTL_SECONDS ?? `${5 * 60}`,
+    ),
   },
   balances: {
     balancesTtlSeconds: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${300}`),
@@ -173,6 +176,7 @@ export default () => ({
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
+    auth: process.env.FF_AUTH?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
