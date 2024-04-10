@@ -14,6 +14,7 @@ import { Event } from '@/routes/cache-hooks/entities/event.entity';
 import { PreExecutionLogGuard } from '@/routes/cache-hooks/guards/pre-execution.guard';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Controller({
   path: '',
@@ -21,10 +22,16 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 })
 @ApiExcludeController()
 export class CacheHooksController {
+  private readonly isEventHooksEndpointEnabled: boolean;
   constructor(
     private readonly service: CacheHooksService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isEventHooksEndpointEnabled =
+      this.configurationService.getOrThrow<boolean>('features.eventsQueue');
+  }
 
   @UseGuards(PreExecutionLogGuard, BasicAuthGuard)
   @Post('/hooks/events')
@@ -32,8 +39,10 @@ export class CacheHooksController {
   async postEvent(
     @Body(new ValidationPipe(WebHookSchema)) event: Event,
   ): Promise<void> {
-    this.service.onEvent(event).catch((error) => {
-      this.loggingService.error(error);
-    });
+    if (!this.isEventHooksEndpointEnabled) {
+      this.service.onEvent(event).catch((error) => {
+        this.loggingService.error(error);
+      });
+    }
   }
 }

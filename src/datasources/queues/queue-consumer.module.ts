@@ -39,36 +39,31 @@ function queueConsumerFactory(
   return { connection, channel };
 }
 
-class MockQueueConsumerService implements IQueueConsumerService {
-  isReady(): boolean {
-    return true;
-  }
-
-  subscribe(): Promise<void> {
-    return Promise.resolve();
-  }
-}
-
 @Module({})
 export class QueueConsumerModule {
   static register(configFactory = configuration): DynamicModule {
     const { eventsQueue: isEventsQueueEnabled } = configFactory()['features'];
     return {
       module: QueueConsumerModule,
-      providers: [
-        {
-          provide: 'QueueConsumer',
-          useFactory: queueConsumerFactory,
-          inject: [IConfigurationService],
-        },
-        {
-          provide: IQueueConsumerService,
-          useClass: isEventsQueueEnabled
-            ? QueueConsumerService
-            : MockQueueConsumerService,
-        },
-        QueueConsumerShutdownHook,
-      ],
+      providers: isEventsQueueEnabled
+        ? [
+            {
+              provide: 'QueueConsumer',
+              useFactory: queueConsumerFactory,
+              inject: [IConfigurationService],
+            },
+            { provide: IQueueConsumerService, useClass: QueueConsumerService },
+            QueueConsumerShutdownHook,
+          ]
+        : [
+            {
+              provide: IQueueConsumerService,
+              useFactory: () => ({
+                isReady: () => true,
+                subscribe: () => Promise.resolve(),
+              }),
+            },
+          ],
       exports: [IQueueConsumerService],
     };
   }

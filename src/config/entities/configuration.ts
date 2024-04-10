@@ -181,7 +181,7 @@ export default () => ({
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
-    eventsQueue: true,
+    eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
