@@ -81,8 +81,8 @@ describe('Swap Order Mapper tests', () => {
       data: transaction.data as `0x${string}`,
     });
 
-    const fee = asDecimal(order.executedSurplusFee!, buyToken.decimals!);
-    const expectedFeeLabel = `${fee} ${buyToken.symbol}`;
+    const fee = asDecimal(order.executedSurplusFee!, sellToken.decimals!);
+    const expectedFeeLabel = `${fee} ${sellToken.symbol}`;
     const executionRatio =
       asDecimal(order.executedSellAmount, sellToken.decimals!) /
       asDecimal(order.executedBuyAmount, buyToken.decimals!);
