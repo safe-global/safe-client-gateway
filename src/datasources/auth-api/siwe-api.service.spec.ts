@@ -1,6 +1,6 @@
 import { SiweApi } from '@/datasources/auth-api/siwe-api.service';
 import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
-import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';
+import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';

@@ -1,4 +1,4 @@
-import { SiweMessage } from '@/domain/auth/entities/siwe-message.entity';
+import { SiweMessage } from '@/domain/siwe/entities/siwe-message.entity';
 
 /**
  * The following adheres to the EIP-4361 (SiWe) standard

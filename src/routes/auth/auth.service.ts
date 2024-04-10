@@ -1,28 +1,38 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
-import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
+import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
+import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 
 @Injectable()
 export class AuthService {
   static readonly AUTH_TOKEN_TOKEN_TYPE = 'Bearer';
 
   constructor(
-    @Inject(IAuthRepository)
-    private readonly authRepository: IAuthRepository,
+    @Inject(ISiweRepository)
+    private readonly siweRepository: ISiweRepository,
+    @Inject(IJwtRepository)
+    private readonly jwtRepository: IJwtRepository,
   ) {}
 
   async getNonce(): Promise<{
     nonce: string;
   }> {
-    return await this.authRepository.generateNonce();
+    return await this.siweRepository.generateNonce();
   }
 
   async verify(args: VerifyAuthMessageDto): Promise<{
     accessToken: string;
     tokenType: string;
-    notBefore: number | null;
-    expiresIn: number | null;
   }> {
-    return await this.authRepository.verifyMessage(args);
+    const isValid = await this.siweRepository.isValidMessage(args);
+
+    if (!isValid) {
+      throw new UnauthorizedException();
+    }
+
+    return {
+      accessToken: this.jwtRepository.signToken(args.message),
+      tokenType: AuthService.AUTH_TOKEN_TOKEN_TYPE,
+    };
   }
 }

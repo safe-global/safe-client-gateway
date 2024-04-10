@@ -1,4 +1,4 @@
-import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
+import { SiweMessageSchema } from '@/domain/siwe/entities/siwe-message.entity';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
 

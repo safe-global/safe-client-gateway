@@ -4,8 +4,10 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
+import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 import { AuthService } from '@/routes/auth/auth.service';
+import { Request } from 'express';
+import { JwtAccessTokenPayloadSchema } from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 /**
  * The AuthGuard should be used to protect routes that require authentication.
@@ -21,13 +23,13 @@ import { AuthService } from '@/routes/auth/auth.service';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject(IAuthRepository) private readonly authRepository: IAuthRepository,
+    @Inject(IJwtRepository) private readonly jwtRepository: IJwtRepository,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
 
-    const accessToken = this.authRepository.getAccessToken(
+    const accessToken = this.getAccessToken(
       request,
       AuthService.AUTH_TOKEN_TOKEN_TYPE,
     );
@@ -38,10 +40,26 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      this.authRepository.verifyAccessToken(accessToken);
+      this.jwtRepository.verifyToken(accessToken, JwtAccessTokenPayloadSchema);
       return true;
     } catch {
       return false;
     }
+  }
+
+  private getAccessToken(request: Request, tokenType: string): string | null {
+    const header = request.headers.authorization;
+
+    if (!header) {
+      return null;
+    }
+
+    const [type, token] = header.split(' ');
+
+    if (type !== tokenType || !token) {
+      return null;
+    }
+
+    return token;
   }
 }

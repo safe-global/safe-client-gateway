@@ -1,5 +1,5 @@
 import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
-import { SiweMessage } from '@/domain/auth/entities/siwe-message.entity';
+import { SiweMessage } from '@/domain/siwe/entities/siwe-message.entity';
 import { IAuthApi } from '@/domain/interfaces/auth-api.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
