@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 import { registerAs } from '@nestjs/config';
 import configurationValidator from '@/config/configuration.validator';
 import { z } from 'zod';
