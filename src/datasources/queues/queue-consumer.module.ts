@@ -1,8 +1,9 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/configuration';
 import { QueueConsumerService } from '@/datasources/queues/queue-consumer.service';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 import { QueueConsumerShutdownHook } from '@/datasources/queues/queue-consumer.shutdown.hook';
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import amqp, {
   AmqpConnectionManager,
   ChannelWrapper,
@@ -38,16 +39,37 @@ function queueConsumerFactory(
   return { connection, channel };
 }
 
-@Module({
-  providers: [
-    {
-      provide: 'QueueConsumer',
-      useFactory: queueConsumerFactory,
-      inject: [IConfigurationService],
-    },
-    { provide: IQueueConsumerService, useClass: QueueConsumerService },
-    QueueConsumerShutdownHook,
-  ],
-  exports: [IQueueConsumerService],
-})
-export class QueueConsumerModule {}
+class MockQueueConsumerService implements IQueueConsumerService {
+  isReady(): boolean {
+    return true;
+  }
+
+  subscribe(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+@Module({})
+export class QueueConsumerModule {
+  static register(configFactory = configuration): DynamicModule {
+    const { eventsQueue: isEventsQueueEnabled } = configFactory()['features'];
+    return {
+      module: QueueConsumerModule,
+      providers: [
+        {
+          provide: 'QueueConsumer',
+          useFactory: queueConsumerFactory,
+          inject: [IConfigurationService],
+        },
+        {
+          provide: IQueueConsumerService,
+          useClass: isEventsQueueEnabled
+            ? QueueConsumerService
+            : MockQueueConsumerService,
+        },
+        QueueConsumerShutdownHook,
+      ],
+      exports: [IQueueConsumerService],
+    };
+  }
+}

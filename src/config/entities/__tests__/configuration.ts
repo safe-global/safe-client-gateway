@@ -177,6 +177,7 @@ export default (): ReturnType<typeof configuration> => ({
     swapsDecoding: true,
     historyDebugLogs: false,
     auth: true,
+    eventsQueue: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   jwt: {

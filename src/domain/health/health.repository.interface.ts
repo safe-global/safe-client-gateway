@@ -19,7 +19,7 @@ export interface IHealthRepository {
 }
 
 @Module({
-  imports: [QueueConsumerModule],
+  imports: [QueueConsumerModule.register()],
   providers: [
     {
       provide: IHealthRepository,
