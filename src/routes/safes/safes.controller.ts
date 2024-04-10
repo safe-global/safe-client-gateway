@@ -1,4 +1,4 @@
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   DefaultValuePipe,
@@ -38,6 +38,7 @@ export class SafesController {
     return this.service.getNonces({ chainId, safeAddress });
   }
 
+  @ApiQuery({ name: 'wallet_address', required: false })
   @Get('safes')
   async getSafeOverview(
     @Query('currency') currency: string,
@@ -47,7 +48,8 @@ export class SafesController {
     trusted: boolean,
     @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
     excludeSpam: boolean,
-    @Query('walletAddress') walletAddress?: string,
+    @Query('wallet_address')
+    walletAddress?: string,
   ): Promise<Array<SafeOverview>> {
     return this.service.getSafeOverview({
       currency,
