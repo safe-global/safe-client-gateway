@@ -3,7 +3,7 @@ export const IJwtService = Symbol('IJwtService');
 export interface IJwtService {
   sign<T extends string | object>(
     payload: T,
-    options: {
+    options?: {
       expiresIn?: number;
       notBefore?: number;
     },
