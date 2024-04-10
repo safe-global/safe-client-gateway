@@ -27,8 +27,17 @@ describe('Subscription Controller tests', () => {
     jest.resetAllMocks();
     jest.useFakeTimers();
 
+    const defaultTestConfiguration = configuration();
+    const testConfiguration: typeof configuration = () => ({
+      ...defaultTestConfiguration,
+      features: {
+        ...defaultTestConfiguration.features,
+        email: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration), EmailControllerModule],
+      imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
