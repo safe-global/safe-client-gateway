@@ -17,7 +17,7 @@ import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
  * 1. Check for the presence of an access token in the request.
  * 2. Verify the token's validity and decode it.
  * 3. Ensure the decoded token is that of a valid SiweMessage.
- * 4. Ensure the token is not expired or not yet valid.
+ * 4. Ensure the token has not expired and is already valid.
  * 5. Allow access if all checks pass.
  */
 
