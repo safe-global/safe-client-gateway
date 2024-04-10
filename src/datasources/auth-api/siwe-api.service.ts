@@ -8,19 +8,23 @@ import { verifyMessage } from 'viem';
 @Injectable()
 export class SiweApi implements IAuthApi {
   /**
-   * This matches the entropy of the official SiWe implementation:
+   * The official SiWe implementation uses a nonce length of 17:
    *
-   * > 96 bits has been chosen as a number to sufficiently balance size and security considerations
-   * > relative to the lifespan of it's usage.
+   * > 96 bits has been chosen as a number to sufficiently balance size and security
+   * > considerations relative to the lifespan of it's usage.
    *
+   * ```
    * const ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-   * const length = Math.ceil(96 / (Math.log(ALPHANUMERIC.length) / Math.LN2))
+   * const length = Math.ceil(96 / (Math.log(ALPHANUMERIC.length) / Math.LN2)) // 17
+   * ```
    *
    * @see https://github.com/spruceid/siwe/blob/0e63b05cd3c722abd282dd1128aa8878648a8620/packages/siwe/lib/utils.ts#L36-L53
    * @see https://github.com/StableLib/stablelib/blob/5243520e343c217b6a751464dec1bc980cb510d8/packages/random/random.ts#L80-L99
+   *
+   * As we rely on typed arrays to generate random values, we must use an even number.
+   * We therefore use a length of 18 to be compatible and remain as similar as possible.
    */
-
-  private static readonly NONCE_LENGTH = 17;
+  private static readonly NONCE_LENGTH = 18;
 
   constructor(
     @Inject(LoggingService)
@@ -34,9 +38,9 @@ export class SiweApi implements IAuthApi {
    * @see https://eips.ethereum.org/EIPS/eip-4361#message-fields
    */
   generateNonce(): string {
-    const randomValues = crypto.getRandomValues(
-      new Uint8Array(SiweApi.NONCE_LENGTH),
-    );
+    // One byte is two hex chars
+    const length = SiweApi.NONCE_LENGTH / 2;
+    const randomValues = crypto.getRandomValues(new Uint8Array(length));
 
     return Array.from(randomValues, (byte) => {
       return byte.toString(16).padStart(2, '0');
