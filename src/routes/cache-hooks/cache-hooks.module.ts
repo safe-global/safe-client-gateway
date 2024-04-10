@@ -18,7 +18,7 @@ import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module'
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
-    QueueConsumerModule.register(),
+    QueueConsumerModule,
   ],
   providers: [JsonSchemaService, CacheHooksService],
   controllers: [CacheHooksController],

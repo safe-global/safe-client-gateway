@@ -1,27 +1,41 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { QueueConsumer } from '@/datasources/queues/queue-consumer.module';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject } from '@nestjs/common';
 import { ConsumeMessage } from 'amqplib';
 
 export class QueueConsumerService implements IQueueConsumerService {
+  private readonly isEventsQueueEnabled: boolean;
+
   constructor(
     @Inject('QueueConsumer') private readonly consumer: QueueConsumer,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isEventsQueueEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.eventsQueue',
+    );
+  }
 
   isReady(): boolean {
-    return this.consumer.connection.isConnected();
+    if (this.isEventsQueueEnabled) {
+      return this.consumer.connection.isConnected();
+    }
+    return true;
   }
 
   async subscribe(
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,
   ): Promise<void> {
-    await this.consumer.channel.consume(queueName, async (msg) => {
-      await fn(msg);
-      await this.consumer.channel.ack(msg);
-    });
-    this.loggingService.info(`Subscribed to queue: ${queueName}`);
+    if (this.isEventsQueueEnabled) {
+      await this.consumer.channel.consume(queueName, async (msg) => {
+        await fn(msg);
+        await this.consumer.channel.ack(msg);
+      });
+      this.loggingService.info(`Subscribed to queue: ${queueName}`);
+    }
   }
 }

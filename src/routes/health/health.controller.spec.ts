@@ -15,6 +15,8 @@ import * as request from 'supertest';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication;
@@ -35,15 +37,8 @@ describe('Health Controller tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideProvider(IQueueConsumerService)
-      .useFactory({
-        factory: () => {
-          return jest.mocked({
-            subscribe: jest.fn(),
-            isReady: jest.fn(),
-          } as jest.MockedObjectDeep<IQueueConsumerService>);
-        },
-      })
+      .overrideModule(QueueConsumerModule)
+      .useModule(TestQueueConsumerModule)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
