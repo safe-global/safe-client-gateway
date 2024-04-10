@@ -20,12 +20,12 @@ import { IAccountDataSource } from '@/domain/interfaces/account.datasource.inter
 import { INestApplication } from '@nestjs/common';
 import {
   AlertsConfigurationModule,
-  alertsConfigurationModule,
+  ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
 import {
   AlertsApiConfigurationModule,
-  alertsApiConfigurationModule,
+  ALERTS_API_CONFIGURATION_MODULE,
 } from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
 import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
 
@@ -49,9 +49,9 @@ describe('Subscription Controller tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
-      .overrideModule(alertsConfigurationModule)
+      .overrideModule(ALERTS_CONFIGURATION_MODULE)
       .useModule(AlertsConfigurationModule.register(alertsConfiguration))
-      .overrideModule(alertsApiConfigurationModule)
+      .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
       .useModule(AlertsApiConfigurationModule.register(alertsApiConfiguration))
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)

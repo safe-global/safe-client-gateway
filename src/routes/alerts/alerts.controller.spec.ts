@@ -50,12 +50,12 @@ import { EmailAddress } from '@/domain/account/entities/account.entity';
 import { subscriptionBuilder } from '@/domain/account/entities/__tests__/subscription.builder';
 import {
   AlertsApiConfigurationModule,
-  alertsApiConfigurationModule,
+  ALERTS_API_CONFIGURATION_MODULE,
 } from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
 import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
 import {
   AlertsConfigurationModule,
-  alertsConfigurationModule,
+  ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
 
@@ -112,9 +112,9 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(alertsConfigurationModule)
+        .overrideModule(ALERTS_CONFIGURATION_MODULE)
         .useModule(AlertsConfigurationModule.register(alertsConfiguration))
-        .overrideModule(alertsApiConfigurationModule)
+        .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
         .useModule(
           AlertsApiConfigurationModule.register(alertsApiConfiguration),
         )

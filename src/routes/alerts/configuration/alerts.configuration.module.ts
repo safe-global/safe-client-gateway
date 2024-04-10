@@ -19,5 +19,5 @@ export class AlertsConfigurationModule {
   }
 }
 
-export const alertsConfigurationModule =
+export const ALERTS_CONFIGURATION_MODULE =
   AlertsConfigurationModule.register(alertsConfiguration);
