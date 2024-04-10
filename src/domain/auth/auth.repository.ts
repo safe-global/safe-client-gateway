@@ -12,6 +12,10 @@ import {
 import { AuthService } from '@/routes/auth/auth.service';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  JwtAccessTokenPayload,
+  JwtAccessTokenPayloadSchema,
+} from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -77,6 +81,10 @@ export class AuthRepository implements IAuthRepository {
       throw new UnauthorizedException();
     }
 
+    const jwtAccessTokenPayload: JwtAccessTokenPayload = {
+      signer_address: args.message.address,
+    };
+
     const dateWhenTokenIsValid = args.message.notBefore
       ? new Date(args.message.notBefore)
       : null;
@@ -91,7 +99,7 @@ export class AuthRepository implements IAuthRepository {
       ? this.getSecondsUntil(dateWhenTokenExpires)
       : null;
 
-    const accessToken = this.jwtService.sign(args.message, {
+    const accessToken = this.jwtService.sign(jwtAccessTokenPayload, {
       ...(secondsUntilTokenIsValid !== null && {
         notBefore: secondsUntilTokenIsValid,
       }),
@@ -176,18 +184,14 @@ export class AuthRepository implements IAuthRepository {
   }
 
   /**
-   * Verifies access token and returns the decoded payload.
-   *
-   * Returns null if token is not yet valid, expired or malformed.
+   * Verifies access token and returns the {@link JwtAccessTokenPayload}.
    *
    * @param accessToken - JWT access token
-   * @returns the decoded payload, or null if token is invalid.
+   * @throws if the token is invalid or doesn't parse as expected.
+   * @returns the {@link JwtAccessTokenPayload}.
    */
-  verifyAccessToken(accessToken: string): unknown | null {
-    try {
-      return this.jwtService.verify(accessToken);
-    } catch {
-      return null;
-    }
+  verifyAccessToken(accessToken: string): JwtAccessTokenPayload {
+    const payload = this.jwtService.verify(accessToken);
+    return JwtAccessTokenPayloadSchema.parse(payload);
   }
 }

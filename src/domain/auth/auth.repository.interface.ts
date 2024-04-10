@@ -1,4 +1,5 @@
 import { SiweMessage } from '@/domain/auth/entities/siwe-message.entity';
+import { JwtAccessTokenPayload } from '@/routes/auth/entities/jwt-access-token.payload.entity';
 import { Request } from 'express';
 
 export const IAuthRepository = Symbol('IAuthRepository');
@@ -18,5 +19,5 @@ export interface IAuthRepository {
 
   getAccessToken(request: Request, tokenType: string): string | null;
 
-  verifyAccessToken(accessToken: string): unknown | null;
+  verifyAccessToken(accessToken: string): JwtAccessTokenPayload;
 }
