@@ -14,8 +14,6 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import * as request from 'supertest';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 
 describe('Health Controller tests', () => {
@@ -37,8 +35,15 @@ describe('Health Controller tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideProvider(IQueueConsumerService)
+      .useFactory({
+        factory: () => {
+          return jest.mocked({
+            subscribe: jest.fn(),
+            isReady: jest.fn(),
+          } as jest.MockedObjectDeep<IQueueConsumerService>);
+        },
+      })
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
