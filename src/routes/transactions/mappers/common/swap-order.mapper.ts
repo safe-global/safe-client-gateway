@@ -208,7 +208,7 @@ export class SwapOrderMapper {
         args.sellToken,
         args.buyToken,
       ),
-      surplusLabel: surplusLabel,
+      surplusLabel,
       filledPercentage: this._getFilledPercentage(args.order),
       explorerUrl: this._getOrderExplorerUrl(args.order),
     });
