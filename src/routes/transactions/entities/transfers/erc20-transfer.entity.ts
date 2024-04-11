@@ -5,8 +5,8 @@ import {
 } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export class Erc20Transfer extends Transfer {
-  @ApiPropertyOptional({ type: String, nullable: true })
-  tokenAddress: `0x${string}` | null;
+  @ApiProperty()
+  tokenAddress: `0x${string}`;
   @ApiProperty()
   value: string;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -21,7 +21,7 @@ export class Erc20Transfer extends Transfer {
   trusted: boolean | null;
 
   constructor(
-    tokenAddress: `0x${string}` | null,
+    tokenAddress: `0x${string}`,
     value: string,
     tokenName: string | null = null,
     tokenSymbol: string | null = null,

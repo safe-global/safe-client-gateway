@@ -51,14 +51,4 @@ describe('Erc20TransferSchema', () => {
       );
     },
   );
-
-  it('should allow an undefined tokenAddress', () => {
-    const erc20Transfer = erc20TransferBuilder().build();
-    // @ts-expect-error - type reflectes inferred coercion
-    delete erc20Transfer.tokenAddress;
-
-    const result = Erc20TransferSchema.safeParse(erc20Transfer);
-
-    expect(result.success).toBe(true);
-  });
 });

@@ -1,18 +1,5 @@
 import { Schema } from 'ajv';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { z } from 'zod';
-import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { NativeTokenTransferSchema } from '@/domain/safe/entities/schemas/native-token-transfer.schema';
-import { Erc20TransferSchema } from '@/domain/safe/entities/schemas/erc20-transfer.schema';
-import { Erc721TransferSchema } from '@/domain/safe/entities/schemas/erc721-transfer.schema';
-
-export const TransferSchema = z.discriminatedUnion('type', [
-  NativeTokenTransferSchema,
-  Erc20TransferSchema,
-  Erc721TransferSchema,
-]);
-
-export const TransferPageSchema = buildZodPageSchema(TransferSchema);
 
 // TODO: Remove after migrating transactionTypeSchema
 export const TRANSFER_SCHEMA_ID =

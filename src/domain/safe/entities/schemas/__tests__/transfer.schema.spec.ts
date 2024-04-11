@@ -2,7 +2,7 @@ import { fakeJson } from '@/__tests__/faker';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { TransferSchema } from '@/domain/safe/entities/schemas/transfer.schema';
+import { TransferSchema } from '@/domain/safe/entities/transfer.entity';
 
 describe('TransferSchema', () => {
   it.each([

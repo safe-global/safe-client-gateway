@@ -8,7 +8,11 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
-import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import {
+  Transfer,
+  TransferPageSchema,
+  TransferSchema,
+} from '@/domain/safe/entities/transfer.entity';
 import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
@@ -17,10 +21,6 @@ import { MultisigTransactionValidator } from '@/domain/safe/multisig-transaction
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
-import {
-  TransferPageSchema,
-  TransferSchema,
-} from '@/domain/safe/entities/schemas/transfer.schema';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';

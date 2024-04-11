@@ -11,7 +11,7 @@ export const Erc20TransferSchema = z.object({
   to: AddressSchema,
   from: AddressSchema,
   value: z.string(),
-  tokenAddress: AddressSchema.nullish().default(null),
+  tokenAddress: AddressSchema,
   transferId: z.string(),
 });
 

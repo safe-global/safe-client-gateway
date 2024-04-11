@@ -1,10 +1,18 @@
+import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Erc20TransferSchema } from '@/domain/safe/entities/schemas/erc20-transfer.schema';
 import { Erc721TransferSchema } from '@/domain/safe/entities/schemas/erc721-transfer.schema';
 import { NativeTokenTransferSchema } from '@/domain/safe/entities/schemas/native-token-transfer.schema';
-import { TransferSchema } from '@/domain/safe/entities/schemas/transfer.schema';
 import { z } from 'zod';
 
 export type Transfer = z.infer<typeof TransferSchema>;
+
+export const TransferSchema = z.discriminatedUnion('type', [
+  NativeTokenTransferSchema,
+  Erc20TransferSchema,
+  Erc721TransferSchema,
+]);
+
+export const TransferPageSchema = buildZodPageSchema(TransferSchema);
 
 const hasTokenAddress = (
   transfer: Transfer,
