@@ -11,7 +11,9 @@ export const RelayDtoSchema = z.object({
   data: HexSchema,
   version: z
     .string()
-    .refine((value) => semver.parse(value) !== null)
+    .refine((value) => semver.parse(value) !== null, {
+      message: 'Invalid semver string',
+    })
     .default(LEGACY_SUPPORTED_VERSION),
   gasLimit: z
     .string()
@@ -26,6 +28,7 @@ export const RelayDtoSchema = z.object({
       } catch (e) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
+          message: 'Unable to parse value',
         });
         return z.NEVER;
       }

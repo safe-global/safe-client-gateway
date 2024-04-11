@@ -38,7 +38,7 @@ describe('JwtAccessTokenSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid input',
+        message: 'Invalid address',
         path: ['signer_address'],
       },
     ]);
