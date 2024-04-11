@@ -209,7 +209,7 @@ export default () => ({
       ),
     },
     safe: {
-      maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${7}`),
+      maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
   redis: {
