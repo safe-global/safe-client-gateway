@@ -10,9 +10,14 @@ export default () => ({
     url: process.env.AMQP_URL,
     exchange: {
       name: process.env.AMQP_EXCHANGE_NAME,
+      // The AMQP Exchange mode defaults to 'fanout'.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
+      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
       mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
     },
     queue: process.env.AMQP_QUEUE,
+    // The AMQP Prefetch value defaults to 100.
+    // Limits the number of unacknowledged messages delivered to a given channel/consumer.
     prefetch:
       process.env.AMQP_PREFETCH != null
         ? parseInt(process.env.AMQP_PREFETCH)

@@ -1,7 +1,7 @@
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 import { HealthEntity } from '@/domain/health/entities/health.entity';
-import { HealthRepository } from '@/domain/health/health.repository';
 import { Module } from '@nestjs/common';
+import { HealthRepository } from '@/domain/health/health.repository';
+import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 

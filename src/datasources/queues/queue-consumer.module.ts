@@ -31,6 +31,7 @@ function queueConsumerFactory(
     setup: async (ch: Channel) => {
       await ch.assertExchange(exchangeName, exchangeMode, { durable: true });
       await ch.assertQueue(queue, { durable: true });
+      // Using consumer (not channel) prefetch (https://www.rabbitmq.com/docs/consumer-prefetch)
       await ch.prefetch(prefetch);
       await ch.bindQueue(queue, exchangeName, '');
     },
