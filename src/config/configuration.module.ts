@@ -40,10 +40,6 @@ export const RootConfigurationSchema = z.object({
   LOG_LEVEL: z
     .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
     .optional(),
-  ALERTS_PROVIDER_SIGNING_KEY: z.string(),
-  ALERTS_PROVIDER_API_KEY: z.string(),
-  ALERTS_PROVIDER_ACCOUNT: z.string(),
-  ALERTS_PROVIDER_PROJECT: z.string(),
   EMAIL_API_APPLICATION_CODE: z.string(),
   EMAIL_API_FROM_EMAIL: z.string().email(),
   EMAIL_API_KEY: z.string(),

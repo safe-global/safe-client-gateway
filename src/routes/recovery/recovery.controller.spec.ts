@@ -23,6 +23,16 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import {
+  AlertsApiConfigurationModule,
+  ALERTS_API_CONFIGURATION_MODULE,
+} from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
+import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
+import {
+  AlertsConfigurationModule,
+  ALERTS_CONFIGURATION_MODULE,
+} from '@/routes/alerts/configuration/alerts.configuration.module';
+import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -50,6 +60,10 @@ describe('Recovery (Unit)', () => {
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
+      .overrideModule(ALERTS_CONFIGURATION_MODULE)
+      .useModule(AlertsConfigurationModule.register(alertsConfiguration))
+      .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
+      .useModule(AlertsApiConfigurationModule.register(alertsApiConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -59,9 +73,9 @@ describe('Recovery (Unit)', () => {
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
-    alertsUrl = configurationService.get('alerts.baseUri');
-    alertsAccount = configurationService.get('alerts.account');
-    alertsProject = configurationService.get('alerts.project');
+    alertsUrl = configurationService.get('alerts-api.baseUri');
+    alertsAccount = configurationService.get('alerts-api.account');
+    alertsProject = configurationService.get('alerts-api.project');
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
 

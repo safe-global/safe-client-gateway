@@ -19,8 +19,9 @@ export class TenderlySignatureGuard implements CanActivate {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.signingKey =
-      this.configurationService.getOrThrow<string>('alerts.signingKey');
+    this.signingKey = this.configurationService.getOrThrow<string>(
+      'alerts-route.signingKey',
+    );
   }
 
   canActivate(context: ExecutionContext): boolean {
