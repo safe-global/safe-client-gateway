@@ -31,7 +31,9 @@ export class AuthService {
     }
 
     return {
-      accessToken: this.jwtRepository.signToken(args.message),
+      accessToken: this.jwtRepository.signToken({
+        signer_address: args.message.address,
+      }),
       tokenType: AuthService.AUTH_TOKEN_TOKEN_TYPE,
     };
   }
