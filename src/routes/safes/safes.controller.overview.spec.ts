@@ -1219,7 +1219,7 @@ describe('Safes Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&walletAddress=${walletAddress}`,
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
         )
         .expect(200)
         .expect(({ body }) =>
@@ -1418,7 +1418,7 @@ describe('Safes Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&walletAddress=${walletAddress}`,
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
         )
         .expect(200)
         .expect(({ body }) =>
@@ -1639,7 +1639,7 @@ describe('Safes Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&walletAddress=${walletAddress}`,
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
         )
         .expect(200)
         .expect(({ body }) =>
