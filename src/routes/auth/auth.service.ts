@@ -23,6 +23,6 @@ export class AuthService {
     notBefore: number | null;
     expiresIn: number | null;
   }> {
-    return await this.authRepository.verify(args);
+    return await this.authRepository.verifyMessage(args);
   }
 }
