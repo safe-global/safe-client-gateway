@@ -12,10 +12,10 @@ export async function milliseconds(milliseconds: number): Promise<void> {
  */
 export async function retry(
   fn: () => void,
-  maxAttempts: number = 4,
-  delayMs: number = 1000,
+  maxAttempts: number = 20,
+  delayMs: number = 200,
 ): Promise<void> {
-  let attempt = 1;
+  let attempt = 0;
   const execute = async (): Promise<void> => {
     try {
       return await fn();
