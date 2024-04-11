@@ -45,7 +45,7 @@ describe('DeleteSafeDelegateDtoSchema', () => {
       new ZodError([
         {
           code: 'custom',
-          message: 'Invalid hex string',
+          message: 'Invalid "0x" notated hex string',
           path: ['signature'],
         },
       ]),

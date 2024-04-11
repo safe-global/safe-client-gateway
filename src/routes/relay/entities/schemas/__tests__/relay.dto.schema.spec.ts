@@ -72,7 +72,11 @@ describe('RelayDtoSchema', () => {
     const result = RelayDtoSchema.safeParse(relayDto);
 
     expect(!result.success && result.error.issues).toStrictEqual([
-      { code: 'custom', message: 'Invalid hex string', path: ['data'] },
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['data'],
+      },
     ]);
   });
 

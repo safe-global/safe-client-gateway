@@ -85,7 +85,7 @@ describe('ProposeTransactionDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid numeric string',
+            message: 'Invalid base-10 numeric string',
             path: [field],
           },
         ]),
@@ -118,7 +118,7 @@ describe('ProposeTransactionDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid hex string',
+            message: 'Invalid "0x" notated hex string',
             path: [field],
           },
         ]),

@@ -67,7 +67,7 @@ describe('Locking event schemas', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid hex string',
+            message: 'Invalid "0x" notated hex string',
             path: ['transactionHash'],
           },
         ]),
@@ -102,7 +102,7 @@ describe('Locking event schemas', () => {
           new ZodError([
             {
               code: 'custom',
-              message: 'Invalid numeric string',
+              message: 'Invalid base-10 numeric string',
               path: [field],
             },
           ]),
@@ -231,7 +231,7 @@ describe('Locking event schemas', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid numeric string',
+            message: 'Invalid base-10 numeric string',
             path: [field],
           },
         ]),
@@ -366,7 +366,7 @@ describe('Locking event schemas', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid numeric string',
+            message: 'Invalid base-10 numeric string',
             path: [field],
           },
         ]),

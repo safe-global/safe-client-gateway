@@ -89,7 +89,7 @@ describe('CreationTransactionSchema', () => {
       expect(!result.success && result.error.issues).toEqual([
         {
           code: 'custom',
-          message: 'Invalid hex string',
+          message: 'Invalid "0x" notated hex string',
           path: [field],
         },
       ]);

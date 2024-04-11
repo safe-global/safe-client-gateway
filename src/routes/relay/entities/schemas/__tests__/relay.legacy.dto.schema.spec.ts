@@ -62,7 +62,7 @@ describe('RelayLegacyDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid numeric string',
+        message: 'Invalid base-10 numeric string',
         path: ['chainId'],
       },
     ]);
@@ -98,7 +98,7 @@ describe('RelayLegacyDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Invalid hex string',
+        message: 'Invalid "0x" notated hex string',
         path: ['data'],
       },
     ]);

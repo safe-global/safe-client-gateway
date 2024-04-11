@@ -5,5 +5,5 @@ function isNumeric(value: unknown): boolean {
 }
 
 export const NumericStringSchema = z.string().refine(isNumeric, {
-  message: 'Invalid numeric string',
+  message: 'Invalid base-10 numeric string',
 });

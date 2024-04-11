@@ -63,7 +63,7 @@ describe('Message schemas', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid hex string',
+            message: 'Invalid "0x" notated hex string',
             path: ['signature'],
           },
         ]),
@@ -144,7 +144,7 @@ describe('Message schemas', () => {
           new ZodError([
             {
               code: 'custom',
-              message: 'Invalid hex string',
+              message: 'Invalid "0x" notated hex string',
               path: [key],
             },
           ]),
