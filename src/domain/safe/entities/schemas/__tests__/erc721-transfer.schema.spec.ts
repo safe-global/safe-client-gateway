@@ -51,14 +51,4 @@ describe('Erc721TransferSchema', () => {
       );
     },
   );
-
-  it('should allow an undefined tokenAddress', () => {
-    const erc721Transfer = erc721TransferBuilder().build();
-    // @ts-expect-error - type reflectes inferred coercion
-    delete erc721Transfer.tokenAddress;
-
-    const result = Erc721TransferSchema.safeParse(erc721Transfer);
-
-    expect(result.success).toBe(true);
-  });
 });

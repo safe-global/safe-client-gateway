@@ -83,7 +83,7 @@ describe('Transfer mapper (Unit)', () => {
           .build();
         const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
         const token = tokenBuilder()
-          .with('address', getAddress(transfer.tokenAddress!))
+          .with('address', getAddress(transfer.tokenAddress))
           .build();
         addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
         tokenRepository.getToken.mockResolvedValue(token);
@@ -122,7 +122,7 @@ describe('Transfer mapper (Unit)', () => {
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
-            .with('address', getAddress(transfer.tokenAddress!))
+            .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -159,7 +159,7 @@ describe('Transfer mapper (Unit)', () => {
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
-            .with('address', getAddress(transfer.tokenAddress!))
+            .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -186,7 +186,7 @@ describe('Transfer mapper (Unit)', () => {
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
-            .with('address', getAddress(transfer.tokenAddress!))
+            .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -236,7 +236,7 @@ describe('Transfer mapper (Unit)', () => {
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
           const token = tokenBuilder()
-            .with('address', getAddress(transfer.tokenAddress!))
+            .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', trusted)
             .build();
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -265,17 +265,14 @@ describe('Transfer mapper (Unit)', () => {
         .with('from', safe.address)
         .build();
       const erc721Token = tokenBuilder()
-        .with('address', getAddress(erc721Transfer.tokenAddress!))
+        .with('address', getAddress(erc721Transfer.tokenAddress))
         .build();
       const trustedErc20TransferWithValue = erc20TransferBuilder()
         .with('value', '1')
         .with('from', safe.address)
         .build();
       const trustedErc20Token = tokenBuilder()
-        .with(
-          'address',
-          getAddress(trustedErc20TransferWithValue.tokenAddress!),
-        )
+        .with('address', getAddress(trustedErc20TransferWithValue.tokenAddress))
         .with('trusted', true)
         .build();
       const trustedErc20TransferWithoutValue = erc20TransferBuilder()
@@ -287,10 +284,7 @@ describe('Transfer mapper (Unit)', () => {
         .with('from', safe.address)
         .build();
       const untrustedErc20Token = tokenBuilder()
-        .with(
-          'address',
-          getAddress(trustedErc20TransferWithValue.tokenAddress!),
-        )
+        .with('address', getAddress(trustedErc20TransferWithValue.tokenAddress))
         .with('trusted', false)
         .build();
       const untrustedErc20TransferWithoutValue = erc20TransferBuilder()
