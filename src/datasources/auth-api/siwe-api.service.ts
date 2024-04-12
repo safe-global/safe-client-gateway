@@ -4,6 +4,12 @@ import { IAuthApi } from '@/domain/interfaces/auth-api.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { verifyMessage } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 @Injectable()
 export class SiweApi implements IAuthApi {
@@ -26,10 +32,19 @@ export class SiweApi implements IAuthApi {
    */
   private static readonly NONCE_LENGTH = 18;
 
+  private readonly nonceTtlInSeconds: number;
+
   constructor(
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
+  ) {
+    this.nonceTtlInSeconds = this.configurationService.getOrThrow(
+      'auth.nonceTtlSeconds',
+    );
+  }
 
   /**
    * Returns a string-based nonce of at least 8 alphanumeric characters
@@ -64,5 +79,20 @@ export class SiweApi implements IAuthApi {
       );
       return false;
     }
+  }
+
+  async cacheNonce(nonce: string): Promise<void> {
+    const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
+    await this.cacheService.set(cacheDir, nonce, this.nonceTtlInSeconds);
+  }
+
+  async getCachedNonce(nonce: string): Promise<string | undefined> {
+    const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
+    return this.cacheService.get(cacheDir);
+  }
+
+  async clearCachedNonce(nonce: string): Promise<void> {
+    const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
+    await this.cacheService.deleteByKey(cacheDir.key);
   }
 }

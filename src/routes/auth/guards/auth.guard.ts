@@ -7,7 +7,6 @@ import {
 import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 import { AuthService } from '@/routes/auth/auth.service';
 import { Request } from 'express';
-import { JwtAccessTokenPayloadSchema } from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 /**
  * The AuthGuard should be used to protect routes that require authentication.
@@ -40,7 +39,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      this.jwtRepository.verifyToken(accessToken, JwtAccessTokenPayloadSchema);
+      this.jwtRepository.verifyToken(accessToken);
       return true;
     } catch {
       return false;

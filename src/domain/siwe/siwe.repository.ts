@@ -1,9 +1,3 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
 import { IAuthApi } from '@/domain/interfaces/auth-api.interface';
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
@@ -11,19 +5,10 @@ import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {
-  private readonly nonceTtlInSeconds: number;
-
   constructor(
     @Inject(IAuthApi)
     private readonly authApi: IAuthApi,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
-  ) {
-    this.nonceTtlInSeconds = this.configurationService.getOrThrow(
-      'auth.nonceTtlSeconds',
-    );
-  }
+  ) {}
 
   /**
    * Generates a unique nonce and stores it in cache for later verification.
@@ -34,8 +19,7 @@ export class SiweRepository implements ISiweRepository {
     const nonce = this.authApi.generateNonce();
 
     // Store nonce for reference to verify/prevent replay attacks
-    const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
-    await this.cacheService.set(cacheDir, nonce, this.nonceTtlInSeconds);
+    await this.authApi.cacheNonce(nonce);
 
     return {
       nonce,
@@ -54,8 +38,6 @@ export class SiweRepository implements ISiweRepository {
    * @returns boolean - whether the signed message is valid.
    */
   async isValidMessage(args: VerifyAuthMessageDto): Promise<boolean> {
-    const cacheDir = CacheRouter.getAuthNonceCacheDir(args.message.nonce);
-
     const isExpired =
       !!args.message.expirationTime &&
       new Date(args.message.expirationTime) < new Date();
@@ -68,7 +50,7 @@ export class SiweRepository implements ISiweRepository {
 
       const [isValidSignature, cachedNonce] = await Promise.all([
         this.authApi.verifyMessage(args),
-        this.cacheService.get(cacheDir),
+        this.authApi.getCachedNonce(args.message.nonce),
       ]);
       const isValidNonce = cachedNonce === args.message.nonce;
 
@@ -76,7 +58,7 @@ export class SiweRepository implements ISiweRepository {
     } catch {
       return false;
     } finally {
-      await this.cacheService.deleteByKey(cacheDir.key);
+      await this.authApi.clearCachedNonce(args.message.nonce);
     }
   }
 }

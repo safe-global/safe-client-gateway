@@ -1,7 +1,7 @@
 import { JwtModule } from '@/datasources/jwt/jwt.module';
 import { JwtRepository } from '@/domain/jwt/jwt.repository';
 import { Module } from '@nestjs/common';
-import { z } from 'zod';
+import { JwtAccessTokenPayload } from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 export const IJwtRepository = Symbol('IJwtRepository');
 
@@ -14,10 +14,7 @@ export interface IJwtRepository {
     },
   ): string;
 
-  verifyToken<T extends z.ZodTypeAny>(
-    accessToken: string,
-    schema: T,
-  ): z.ZodType<z.infer<T>>;
+  verifyToken(accessToken: string): JwtAccessTokenPayload;
 }
 
 @Module({

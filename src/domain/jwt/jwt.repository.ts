@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { z } from 'zod';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
+import {
+  JwtAccessTokenPayload,
+  JwtAccessTokenPayloadSchema,
+} from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 @Injectable()
 export class JwtRepository implements IJwtRepository {
@@ -20,11 +23,8 @@ export class JwtRepository implements IJwtRepository {
     return this.jwtService.sign(payload, options);
   }
 
-  verifyToken<T extends z.ZodTypeAny>(
-    accessToken: string,
-    schema: T,
-  ): z.ZodType<z.infer<T>> {
+  verifyToken(accessToken: string): JwtAccessTokenPayload {
     const payload = this.jwtService.verify(accessToken);
-    return schema.parse(payload);
+    return JwtAccessTokenPayloadSchema.parse(payload);
   }
 }

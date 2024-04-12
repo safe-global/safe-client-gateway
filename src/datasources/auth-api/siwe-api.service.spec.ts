@@ -1,5 +1,8 @@
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { SiweApi } from '@/datasources/auth-api/siwe-api.service';
 import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
@@ -11,11 +14,20 @@ const mockLoggingService = {
 
 describe('SiweApiService', () => {
   let service: SiweApi;
+  let fakeConfigurationService: FakeConfigurationService;
+  let fakeCacheService: FakeCacheService;
+  const nonceTtlInSeconds = faker.number.int();
 
   beforeEach(async () => {
     jest.resetAllMocks();
-
-    service = new SiweApi(mockLoggingService);
+    fakeConfigurationService = new FakeConfigurationService();
+    fakeCacheService = new FakeCacheService();
+    fakeConfigurationService.set('auth.nonceTtlSeconds', nonceTtlInSeconds);
+    service = new SiweApi(
+      mockLoggingService,
+      fakeConfigurationService,
+      fakeCacheService,
+    );
   });
 
   describe('generateNonce', () => {
@@ -56,6 +68,42 @@ describe('SiweApiService', () => {
           signature,
         }),
       ).resolves.toBe(false);
+    });
+  });
+
+  describe('cacheNonce', () => {
+    it('should cache the nonce', async () => {
+      const nonce = faker.string.alphanumeric();
+
+      await service.cacheNonce(nonce);
+
+      await expect(
+        fakeCacheService.get(new CacheDir(`auth_nonce_${nonce}`, '')),
+      ).resolves.toBe(nonce);
+    });
+  });
+
+  describe('getCachedNonce', () => {
+    it('should return the cached nonce', async () => {
+      const nonce = faker.string.alphanumeric();
+
+      await service.cacheNonce(nonce);
+      const expected = await service.getCachedNonce(nonce);
+
+      expect(expected).toBe(nonce);
+    });
+  });
+
+  describe('clearCachedNonce', () => {
+    it('should clear the cached nonce', async () => {
+      const nonce = faker.string.alphanumeric();
+
+      await service.cacheNonce(nonce);
+      await service.clearCachedNonce(nonce);
+
+      await expect(
+        fakeCacheService.get(new CacheDir(`auth_nonce_${nonce}`, '')),
+      ).resolves.toBe(undefined);
     });
   });
 });
