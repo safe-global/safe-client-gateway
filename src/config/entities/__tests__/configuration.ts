@@ -7,13 +7,6 @@ export default (): ReturnType<typeof configuration> => ({
     version: faker.system.semver(),
     buildNumber: faker.string.numeric(),
   },
-  alerts: {
-    baseUri: faker.internet.url({ appendSlash: false }),
-    signingKey: faker.string.nanoid(32),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    account: faker.string.sample(),
-    project: faker.string.sample(),
-  },
   applicationPort: faker.internet.port().toString(),
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
@@ -171,7 +164,7 @@ export default (): ReturnType<typeof configuration> => ({
   express: { jsonLimit: '1mb' },
   features: {
     richFragments: true,
-    email: true,
+    email: false,
     zerionBalancesChainIds: ['137'],
     locking: true,
     relay: true,

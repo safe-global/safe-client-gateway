@@ -28,8 +28,8 @@ describe('ProposeTransactionDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
+            message: 'Invalid address',
             path: [field],
-            message: 'Invalid input',
           },
         ]),
       );
@@ -85,7 +85,7 @@ describe('ProposeTransactionDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid base-10 numeric string',
             path: [field],
           },
         ]),
@@ -118,7 +118,7 @@ describe('ProposeTransactionDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
-            message: 'Invalid input',
+            message: 'Invalid "0x" notated hex string',
             path: [field],
           },
         ]),

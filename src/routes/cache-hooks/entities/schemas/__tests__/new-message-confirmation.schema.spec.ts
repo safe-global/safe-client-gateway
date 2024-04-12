@@ -52,8 +52,8 @@ describe('NewMessageConfirmationEventSchema', () => {
       new ZodError([
         {
           code: 'custom',
+          message: 'Invalid address',
           path: ['address'],
-          message: 'Invalid input',
         },
       ]),
     );

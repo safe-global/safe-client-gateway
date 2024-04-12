@@ -33,10 +33,10 @@ describe('TenderlyApi', () => {
     tenderlyProject = faker.string.sample();
 
     fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('alerts.baseUri', tenderlyBaseUri);
-    fakeConfigurationService.set('alerts.apiKey', tenderlyApiKey);
-    fakeConfigurationService.set('alerts.account', tenderlyAccount);
-    fakeConfigurationService.set('alerts.project', tenderlyProject);
+    fakeConfigurationService.set('alerts-api.baseUri', tenderlyBaseUri);
+    fakeConfigurationService.set('alerts-api.apiKey', tenderlyApiKey);
+    fakeConfigurationService.set('alerts-api.account', tenderlyAccount);
+    fakeConfigurationService.set('alerts-api.project', tenderlyProject);
 
     httpErrorFactory = new HttpErrorFactory();
 

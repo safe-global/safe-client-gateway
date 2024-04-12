@@ -25,13 +25,14 @@ export class TenderlyApi implements IAlertsApi {
     private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>('alerts.apiKey');
+    this.apiKey =
+      this.configurationService.getOrThrow<string>('alerts-api.apiKey');
     this.baseUrl =
-      this.configurationService.getOrThrow<string>('alerts.baseUri');
+      this.configurationService.getOrThrow<string>('alerts-api.baseUri');
     this.account =
-      this.configurationService.getOrThrow<string>('alerts.account');
+      this.configurationService.getOrThrow<string>('alerts-api.account');
     this.project =
-      this.configurationService.getOrThrow<string>('alerts.project');
+      this.configurationService.getOrThrow<string>('alerts-api.project');
   }
 
   /**

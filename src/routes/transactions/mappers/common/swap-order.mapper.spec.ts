@@ -81,12 +81,20 @@ describe('Swap Order Mapper tests', () => {
       data: transaction.data as `0x${string}`,
     });
 
-    const surplus = asDecimal(order.executedSurplusFee!, buyToken.decimals!);
-    const expectedSurplus = `${surplus} ${buyToken.symbol}`;
+    const fee = asDecimal(order.executedSurplusFee!, sellToken.decimals!);
+    const expectedFeeLabel = `${fee} ${sellToken.symbol}`;
     const executionRatio =
       asDecimal(order.executedSellAmount, sellToken.decimals!) /
       asDecimal(order.executedBuyAmount, buyToken.decimals!);
     const expectedExecutionPrice = `1 ${sellToken.symbol} = ${executionRatio} ${buyToken.symbol}`;
+    const expectedSurplus = Math.abs(
+      order.kind === 'buy'
+        ? asDecimal(order.sellAmount, sellToken.decimals!) -
+            asDecimal(order.executedSellAmount, sellToken.decimals!)
+        : asDecimal(order.buyAmount, buyToken.decimals!) -
+            asDecimal(order.executedBuyAmount, buyToken.decimals!),
+    );
+    const expectedSurplusLabel = `${expectedSurplus} ${order.kind === 'buy' ? sellToken.symbol : buyToken.symbol}`;
     expect(result).toBeInstanceOf(FulfilledSwapOrderTransactionInfo);
     expect(result).toEqual({
       type: 'SwapOrder',
@@ -106,8 +114,9 @@ describe('Swap Order Mapper tests', () => {
       expiresTimestamp: order.validTo,
       filledPercentage: expect.any(String),
       explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
-      surplusLabel: expectedSurplus,
+      feeLabel: expectedFeeLabel,
       executionPriceLabel: expectedExecutionPrice,
+      surplusLabel: expectedSurplusLabel,
       humanDescription: null,
       richDecodedInfo: null,
     });

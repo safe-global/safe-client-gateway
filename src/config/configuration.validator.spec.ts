@@ -40,10 +40,6 @@ describe('Configuration validator', () => {
 
   it.each([
     { key: 'AUTH_TOKEN' },
-    { key: 'ALERTS_PROVIDER_SIGNING_KEY' },
-    { key: 'ALERTS_PROVIDER_API_KEY' },
-    { key: 'ALERTS_PROVIDER_ACCOUNT' },
-    { key: 'ALERTS_PROVIDER_PROJECT' },
     { key: 'EMAIL_API_APPLICATION_CODE' },
     { key: 'EMAIL_API_FROM_EMAIL' },
     { key: 'EMAIL_API_KEY' },

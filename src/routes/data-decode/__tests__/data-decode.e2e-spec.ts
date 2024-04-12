@@ -186,7 +186,7 @@ describe('Data decode e2e tests', () => {
         statusCode: 422,
         code: 'custom',
         path: ['to'],
-        message: 'Invalid input',
+        message: 'Invalid address',
       });
   });
 });

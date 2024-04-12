@@ -95,9 +95,9 @@ export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo 
     type: String,
     nullable: true,
     description:
-      'The surplus label is in the format of "$executedSurplusFee $tokenSymbol"',
+      'The amount of fees paid for this order in the format of "$feeAmount $tokenSymbol"',
   })
-  surplusLabel: string | null;
+  feeLabel: string | null;
 
   @ApiProperty({
     description:
@@ -105,21 +105,29 @@ export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo 
   })
   executionPriceLabel: string;
 
+  @ApiProperty({
+    description:
+      'The (averaged) surplus for this order in the format of "$surplusAmount $tokenSymbol"',
+  })
+  surplusLabel: string;
+
   constructor(args: {
     orderUid: string;
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     expiresTimestamp: number;
-    surplusFeeLabel: string | null;
+    feeLabel: string | null;
     executionPriceLabel: string;
+    surplusLabel: string;
     filledPercentage: string;
     explorerUrl: URL;
   }) {
     super({ ...args, status: 'fulfilled' });
     this.status = 'fulfilled';
-    this.surplusLabel = args.surplusFeeLabel;
+    this.feeLabel = args.feeLabel;
     this.executionPriceLabel = args.executionPriceLabel;
+    this.surplusLabel = args.surplusLabel;
   }
 }
 
