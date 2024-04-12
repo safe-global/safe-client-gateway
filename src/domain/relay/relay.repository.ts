@@ -33,8 +33,8 @@ export class RelayRepository {
   async relay(args: {
     version: string;
     chainId: string;
-    to: string;
-    data: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
     gasLimit: bigint | null;
   }): Promise<{ taskId: string }> {
     const relayAddresses =

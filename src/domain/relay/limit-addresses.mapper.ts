@@ -12,7 +12,7 @@ import {
   getProxyFactoryDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
-import { getAddress, isAddress, isHex } from 'viem';
+import { isAddressEqual } from 'viem';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
@@ -33,17 +33,9 @@ export class LimitAddressesMapper {
   async getLimitAddresses(args: {
     version: string;
     chainId: string;
-    to: string;
-    data: string;
+    to: Hex;
+    data: Hex;
   }): Promise<readonly Hex[]> {
-    if (!isAddress(args.to)) {
-      throw Error('Invalid to provided');
-    }
-
-    if (!isHex(args.data)) {
-      throw Error('Invalid data provided');
-    }
-
     // Calldata matches that of execTransaction and meets validity requirements
     if (
       this.isValidExecTransactionCall({
@@ -118,7 +110,7 @@ export class LimitAddressesMapper {
     throw new InvalidTransferError();
   }
 
-  private isValidExecTransactionCall(args: { to: string; data: Hex }): boolean {
+  private isValidExecTransactionCall(args: { to: Hex; data: Hex }): boolean {
     const execTransactionArgs = this.getExecTransactionArgs(args.data);
     // Not a valid execTransaction call
     if (!execTransactionArgs) {
@@ -182,7 +174,7 @@ export class LimitAddressesMapper {
     }
   }
 
-  private isValidErc20Transfer(args: { to: string; data: Hex }): boolean {
+  private isValidErc20Transfer(args: { to: Hex; data: Hex }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -194,11 +186,10 @@ export class LimitAddressesMapper {
 
     const [to] = erc20DecodedData.args;
     // to 'self' (the Safe) is not allowed
-    // TODO: Propagate checksummed address types from RelayDto from controller
-    return to !== getAddress(args.to);
+    return !isAddressEqual(to, args.to);
   }
 
-  private isValidErc20TransferFrom(args: { to: string; data: Hex }): boolean {
+  private isValidErc20TransferFrom(args: { to: Hex; data: Hex }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -211,9 +202,7 @@ export class LimitAddressesMapper {
     const [sender, recipient] = erc20DecodedData.args;
     // to 'self' (the Safe) or from sender to sender as recipient is not allowed
     return (
-      sender !== recipient &&
-      // TODO: Propagate checksummed address types from RelayDto from controller
-      recipient !== getAddress(args.to)
+      !isAddressEqual(sender, recipient) && !isAddressEqual(recipient, args.to)
     );
   }
 
