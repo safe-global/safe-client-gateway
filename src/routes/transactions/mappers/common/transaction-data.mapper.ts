@@ -152,7 +152,7 @@ export class TransactionDataMapper {
     for (const transaction of valueDecoded) {
       promises.push(this._getIfValid(chainId, transaction.to));
       if (transaction?.dataDecoded?.parameters) {
-        for (const param of transaction?.dataDecoded?.parameters) {
+        for (const param of transaction.dataDecoded.parameters) {
           if (param.type === ADDRESS_PARAMETER_TYPE) {
             promises.push(this._getIfValid(chainId, param.value));
           }
