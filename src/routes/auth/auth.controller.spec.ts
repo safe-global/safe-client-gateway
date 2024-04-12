@@ -14,18 +14,13 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';
+import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
-import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
+import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-siwe-message';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-
-function secondsUntil(dateString: string): number {
-  const date = new Date(dateString);
-  return Math.floor((date.getTime() - Date.now()) / 1000);
-}
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -126,8 +121,6 @@ describe('AuthController', () => {
           expect(body).toStrictEqual({
             accessToken: expect.any(String),
             tokenType: 'Bearer',
-            expiresIn: secondsUntil(message.expirationTime!),
-            notBefore: new Date(message.notBefore!).getTime(),
           }),
         );
       // Nonce deleted

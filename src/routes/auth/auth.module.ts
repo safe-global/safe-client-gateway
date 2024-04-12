@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from '@/routes/auth/auth.controller';
 import { AuthService } from '@/routes/auth/auth.service';
-import { AuthDomainModule } from '@/domain/auth/auth.domain.module';
+import { SiweRepositoryModule } from '@/domain/siwe/siwe.repository.interface';
+import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
 
 @Module({
-  imports: [AuthDomainModule],
+  imports: [SiweRepositoryModule, JwtRepositoryModule],
   providers: [AuthService],
   controllers: [AuthController],
 })

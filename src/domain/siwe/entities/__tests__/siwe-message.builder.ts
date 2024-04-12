@@ -1,5 +1,5 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { SiweMessage } from '@/domain/auth/entities/siwe-message.entity';
+import { SiweMessage } from '@/domain/siwe/entities/siwe-message.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

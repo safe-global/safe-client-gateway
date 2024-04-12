@@ -1,5 +1,5 @@
-import { siweMessageBuilder } from '@/domain/auth/entities/__tests__/siwe-message.builder';
-import { SiweMessageSchema } from '@/domain/auth/entities/siwe-message.entity';
+import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
+import { SiweMessageSchema } from '@/domain/siwe/entities/siwe-message.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

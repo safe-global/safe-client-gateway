@@ -37,7 +37,6 @@ export class AuthController {
   ): Promise<{
     accessToken: string;
     tokenType: string;
-    expiresIn: number | null;
   }> {
     return await this.authService.verify(verifyAuthMessageDto);
   }

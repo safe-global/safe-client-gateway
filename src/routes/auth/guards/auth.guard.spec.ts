@@ -4,7 +4,6 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { AuthDomainModule } from '@/domain/auth/auth.domain.module';
 import { jwtAccessTokenPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
@@ -13,6 +12,7 @@ import { Get, INestApplication } from '@nestjs/common';
 import { Controller, UseGuards } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import * as request from 'supertest';
+import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
 
 function secondsUntil(date: Date): number {
   return Math.floor((date.getTime() - Date.now()) / 1000);
@@ -39,7 +39,7 @@ describe('AuthGuard', () => {
         TestLoggingModule,
         ConfigurationModule.register(configuration),
         CacheModule,
-        AuthDomainModule,
+        JwtRepositoryModule,
       ],
       controllers: [TestController],
     })
