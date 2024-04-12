@@ -1677,6 +1677,64 @@ describe('Relay controller', () => {
           );
         });
 
+        it('should handle both checksummed and non-checksummed addresses', async () => {
+          const chain = chainBuilder().with('chainId', chainId).build();
+          const safe = safeBuilder().build();
+          const nonChecksummedAddress = safe.address.toLowerCase();
+          const checksummedSafeAddress = getAddress(safe.address);
+          const data = execTransactionEncoder()
+            .with('value', faker.number.bigInt())
+            .encode() as Hex;
+          const taskId = faker.string.uuid();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${chain.transactionService}/api/v1/safes/${nonChecksummedAddress}`:
+              case `${chain.transactionService}/api/v1/safes/${checksummedSafeAddress}`:
+                // Official mastercopy
+                return Promise.resolve({ data: safe, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${relayUrl}/relays/v2/sponsored-call`:
+                return Promise.resolve({ data: { taskId }, status: 200 });
+              default:
+                return Promise.reject(`No matching rule for url: ${url}`);
+            }
+          });
+
+          for (const address of [
+            nonChecksummedAddress,
+            checksummedSafeAddress,
+          ]) {
+            await request(app.getHttpServer())
+              .post(`/v1/chains/${chain.chainId}/relay`)
+              .send({
+                to: address,
+                data,
+              });
+          }
+
+          await request(app.getHttpServer())
+            .get(`/v1/chains/${chain.chainId}/relay/${nonChecksummedAddress}`)
+            .expect(({ body }) => {
+              expect(body).toMatchObject({
+                remaining: 3,
+              });
+            });
+          await request(app.getHttpServer())
+            .get(`/v1/chains/${chain.chainId}/relay/${checksummedSafeAddress}`)
+            .expect(({ body }) => {
+              expect(body).toMatchObject({
+                remaining: 3,
+              });
+            });
+        });
+
         it('should not rate limit the same address on different chains', async () => {
           const differentChainId = faker.string.numeric({ exclude: chainId });
           const chain = chainBuilder().with('chainId', chainId).build();
