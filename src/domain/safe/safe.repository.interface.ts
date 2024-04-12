@@ -11,7 +11,6 @@ import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-tr
 import { Module } from '@nestjs/common';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
-import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const ISafeRepository = Symbol('ISafeRepository');
@@ -206,7 +205,6 @@ export interface ISafeRepository {
       provide: ISafeRepository,
       useClass: SafeRepository,
     },
-    TransactionTypeValidator,
   ],
   exports: [ISafeRepository],
 })
