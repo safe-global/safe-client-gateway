@@ -1036,7 +1036,7 @@ describe('Safes Controller Overview (Unit)', () => {
   });
 
   describe('Validation', () => {
-    it('omits erroroneous Safes on chains returning an error from the Config Service', async () => {
+    it('omits erroneous Safes on chains returning an error from the Config Service', async () => {
       const chain1 = chainBuilder().with('chainId', '1').build();
       const chain2 = chainBuilder().with('chainId', '10').build();
       const safeInfo1 = safeBuilder().build();
@@ -1263,7 +1263,7 @@ describe('Safes Controller Overview (Unit)', () => {
         );
     });
 
-    it('omits erroroneous Safes from the Transaction Service', async () => {
+    it('omits erroneous Safes from the Transaction Service', async () => {
       const chain1 = chainBuilder().with('chainId', '1').build();
       const chain2 = chainBuilder().with('chainId', '10').build();
       const safeInfo1 = safeBuilder().build();
@@ -1462,7 +1462,7 @@ describe('Safes Controller Overview (Unit)', () => {
         );
     });
 
-    it('omits erroroneous Safes validation of the Transaction Service return Promise.rejects', async () => {
+    it('omits erroneous Safes validation of the Transaction Service return Promise.rejects', async () => {
       const chain1 = chainBuilder().with('chainId', '1').build();
       const chain2 = chainBuilder().with('chainId', '10').build();
       const safeInfo1 = safeBuilder().build();
