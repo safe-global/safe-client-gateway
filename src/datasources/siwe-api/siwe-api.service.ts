@@ -1,6 +1,6 @@
-import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
+import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-siwe-message';
 import { SiweMessage } from '@/domain/siwe/entities/siwe-message.entity';
-import { IAuthApi } from '@/domain/interfaces/auth-api.interface';
+import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { verifyMessage } from 'viem';
@@ -12,7 +12,7 @@ import {
 import { CacheRouter } from '@/datasources/cache/cache.router';
 
 @Injectable()
-export class SiweApi implements IAuthApi {
+export class SiweApi implements ISiweApi {
   /**
    * The official SiWe implementation uses a nonce length of 17:
    *
@@ -81,17 +81,17 @@ export class SiweApi implements IAuthApi {
     }
   }
 
-  async cacheNonce(nonce: string): Promise<void> {
+  async storeNonce(nonce: string): Promise<void> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
     await this.cacheService.set(cacheDir, nonce, this.nonceTtlInSeconds);
   }
 
-  async getCachedNonce(nonce: string): Promise<string | undefined> {
+  async getNonce(nonce: string): Promise<string | undefined> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
     return this.cacheService.get(cacheDir);
   }
 
-  async clearCachedNonce(nonce: string): Promise<void> {
+  async clearNonce(nonce: string): Promise<void> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
     await this.cacheService.deleteByKey(cacheDir.key);
   }

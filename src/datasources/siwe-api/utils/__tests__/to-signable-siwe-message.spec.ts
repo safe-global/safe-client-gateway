@@ -1,4 +1,4 @@
-import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
+import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-siwe-message';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { faker } from '@faker-js/faker';
 

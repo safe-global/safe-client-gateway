@@ -17,7 +17,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
-import { toSignableSiweMessage } from '@/datasources/auth-api/utils/to-signable-siwe-message';
+import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-siwe-message';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';

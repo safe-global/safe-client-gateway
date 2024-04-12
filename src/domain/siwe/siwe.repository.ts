@@ -1,4 +1,4 @@
-import { IAuthApi } from '@/domain/interfaces/auth-api.interface';
+import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
@@ -6,8 +6,8 @@ import { Inject, Injectable } from '@nestjs/common';
 @Injectable()
 export class SiweRepository implements ISiweRepository {
   constructor(
-    @Inject(IAuthApi)
-    private readonly authApi: IAuthApi,
+    @Inject(ISiweApi)
+    private readonly siweApi: ISiweApi,
   ) {}
 
   /**
@@ -16,10 +16,10 @@ export class SiweRepository implements ISiweRepository {
    * @returns nonce - unique string to be signed
    */
   async generateNonce(): Promise<{ nonce: string }> {
-    const nonce = this.authApi.generateNonce();
+    const nonce = this.siweApi.generateNonce();
 
     // Store nonce for reference to verify/prevent replay attacks
-    await this.authApi.cacheNonce(nonce);
+    await this.siweApi.storeNonce(nonce);
 
     return {
       nonce,
@@ -48,17 +48,17 @@ export class SiweRepository implements ISiweRepository {
         return false;
       }
 
-      const [isValidSignature, cachedNonce] = await Promise.all([
-        this.authApi.verifyMessage(args),
-        this.authApi.getCachedNonce(args.message.nonce),
+      const [isValidSignature, storedNonce] = await Promise.all([
+        this.siweApi.verifyMessage(args),
+        this.siweApi.getNonce(args.message.nonce),
       ]);
-      const isValidNonce = cachedNonce === args.message.nonce;
+      const isValidNonce = storedNonce === args.message.nonce;
 
       return isValidSignature && isValidNonce;
     } catch {
       return false;
     } finally {
-      await this.authApi.clearCachedNonce(args.message.nonce);
+      await this.siweApi.clearNonce(args.message.nonce);
     }
   }
 }

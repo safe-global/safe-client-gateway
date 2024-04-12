@@ -1,4 +1,4 @@
-import { AuthApiModule } from '@/datasources/auth-api/auth-api.module';
+import { SiweApiModule } from '@/datasources/siwe-api/siwe-api.module';
 import { SiweRepository } from '@/domain/siwe/siwe.repository';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { Module } from '@nestjs/common';
@@ -12,7 +12,7 @@ export interface ISiweRepository {
 }
 
 @Module({
-  imports: [AuthApiModule],
+  imports: [SiweApiModule],
   providers: [
     {
       provide: ISiweRepository,
