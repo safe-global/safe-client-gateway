@@ -19,7 +19,6 @@ import {
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { Page } from '@/domain/entities/page.entity';
-import { getAddress } from 'viem';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
@@ -323,10 +322,9 @@ export class SafesService {
     // If the singleton of this safe is not part of the collection
     // of the supported singletons we return UNKNOWN
     if (
-      !supportedSingletons
-        .map((singleton) => singleton.address)
-        // TODO: Remove checksumming when Safe schema is in Zod
-        .includes(getAddress(safe.masterCopy))
+      supportedSingletons.every(
+        (singleton) => singleton.address !== safe.masterCopy,
+      )
     )
       return MasterCopyVersionState.UNKNOWN;
 
