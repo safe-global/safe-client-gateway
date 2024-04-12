@@ -139,6 +139,13 @@ export class SwapOrderMapper {
     return `1 ${sellToken.token.symbol} = ${ratio} ${buyToken.token.symbol}`;
   }
 
+  private _getSurplusPriceLabel(tokenAmount: TokenAmount): string {
+    const surplus = Math.abs(
+      tokenAmount.getAmount() - tokenAmount.getExecutedAmount(),
+    ).toString();
+    return `${surplus} ${tokenAmount.token.symbol}`;
+  }
+
   /**
    * Returns the filled percentage of an order.
    * The percentage is calculated as the ratio of the executed amount to the total amount.
@@ -186,6 +193,10 @@ export class SwapOrderMapper {
       ? this._getFeeLabel(args.order.executedSurplusFee, args.sellToken.token)
       : null;
 
+    const surplusLabel = this._getSurplusPriceLabel(
+      args.order.kind === 'buy' ? args.sellToken : args.buyToken,
+    );
+
     return new FulfilledSwapOrderTransactionInfo({
       orderUid: args.order.uid,
       orderKind: args.order.kind,
@@ -197,6 +208,7 @@ export class SwapOrderMapper {
         args.sellToken,
         args.buyToken,
       ),
+      surplusLabel,
       filledPercentage: this._getFilledPercentage(args.order),
       explorerUrl: this._getOrderExplorerUrl(args.order),
     });
