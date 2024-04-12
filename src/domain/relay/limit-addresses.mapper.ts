@@ -12,7 +12,6 @@ import {
   getProxyFactoryDeployment,
 } from '@safe-global/safe-deployments';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
-import { isAddressEqual } from 'viem';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
 import { InvalidTransferError } from '@/domain/relay/errors/invalid-transfer.error';
@@ -186,7 +185,7 @@ export class LimitAddressesMapper {
 
     const [to] = erc20DecodedData.args;
     // to 'self' (the Safe) is not allowed
-    return !isAddressEqual(to, args.to);
+    return to !== args.to;
   }
 
   private isValidErc20TransferFrom(args: { to: Hex; data: Hex }): boolean {
@@ -201,9 +200,7 @@ export class LimitAddressesMapper {
 
     const [sender, recipient] = erc20DecodedData.args;
     // to 'self' (the Safe) or from sender to sender as recipient is not allowed
-    return (
-      !isAddressEqual(sender, recipient) && !isAddressEqual(recipient, args.to)
-    );
+    return sender !== recipient && recipient !== args.to;
   }
 
   private async isOfficialMastercopy(args: {
