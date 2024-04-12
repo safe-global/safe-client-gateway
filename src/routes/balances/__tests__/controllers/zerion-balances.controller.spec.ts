@@ -31,8 +31,8 @@ import {
   zerionBalancesBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
 import { getAddress } from 'viem';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -72,8 +72,8 @@ describe('Balances Controller (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     configurationService = moduleFixture.get(IConfigurationService);

@@ -8,7 +8,7 @@ import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interf
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module'
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
-    QueueConsumerModule,
+    QueuesRepositoryModule,
   ],
   providers: [JsonSchemaService, CacheHooksService],
   controllers: [CacheHooksController],

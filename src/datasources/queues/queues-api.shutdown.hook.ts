@@ -1,9 +1,9 @@
-import { QueueConsumer } from '@/datasources/queues/queue-consumer.module';
+import { QueueConsumer } from '@/datasources/queues/queues-api.module';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 
 @Injectable()
-export class QueueConsumerShutdownHook implements OnModuleDestroy {
+export class QueuesApiShutdownHook implements OnModuleDestroy {
   constructor(
     @Inject('QueueConsumer') private readonly queueConsumer: QueueConsumer,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,

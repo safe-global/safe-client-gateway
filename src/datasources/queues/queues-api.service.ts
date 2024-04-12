@@ -1,11 +1,11 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { QueueConsumer } from '@/datasources/queues/queue-consumer.module';
-import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
+import { QueueConsumer } from '@/datasources/queues/queues-api.module';
+import { IQueuesApiService } from '@/datasources/queues/queues-api.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject } from '@nestjs/common';
 import { ConsumeMessage } from 'amqplib';
 
-export class QueueConsumerService implements IQueueConsumerService {
+export class QueueApiService implements IQueuesApiService {
   private readonly isEventsQueueEnabled: boolean;
 
   constructor(

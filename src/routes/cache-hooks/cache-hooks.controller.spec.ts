@@ -22,8 +22,8 @@ import {
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { getAddress } from 'viem';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication;
@@ -47,8 +47,8 @@ describe('Post Hook Events (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
     app = moduleFixture.createNestApplication();
 

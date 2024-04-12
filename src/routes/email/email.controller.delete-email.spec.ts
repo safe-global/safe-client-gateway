@@ -29,8 +29,8 @@ import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { INestApplication } from '@nestjs/common';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Email controller delete email tests', () => {
   let app: INestApplication;
@@ -56,8 +56,8 @@ describe('Email controller delete email tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

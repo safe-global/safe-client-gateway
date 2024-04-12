@@ -9,9 +9,9 @@ import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
 import { ConsumeMessage } from 'amqplib';
-import { IQueueConsumerService } from '@/datasources/queues/queue-consumer.service.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
+import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
 
 @Injectable()
 export class CacheHooksService implements OnModuleInit {
@@ -33,8 +33,8 @@ export class CacheHooksService implements OnModuleInit {
     private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(IQueueConsumerService)
-    private readonly queueConsumerService: IQueueConsumerService,
+    @Inject(IQueuesRepository)
+    private readonly queuesRepository: IQueuesRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
@@ -42,7 +42,7 @@ export class CacheHooksService implements OnModuleInit {
   }
 
   onModuleInit(): Promise<void> {
-    return this.queueConsumerService.subscribe(
+    return this.queuesRepository.subscribe(
       this.queue,
       async (msg: ConsumeMessage) => {
         try {

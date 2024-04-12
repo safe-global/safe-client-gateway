@@ -21,8 +21,8 @@ import { accountBuilder } from '@/domain/account/entities/__tests__/account.buil
 import { faker } from '@faker-js/faker';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import { getAddress } from 'viem';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Email controller get email tests', () => {
   let app: INestApplication;
@@ -43,8 +43,8 @@ describe('Email controller get email tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     accountDataSource = moduleFixture.get(IAccountDataSource);

@@ -33,8 +33,8 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -72,8 +72,8 @@ describe('Recovery (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(QueueConsumerModule)
-      .useModule(TestQueueConsumerModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

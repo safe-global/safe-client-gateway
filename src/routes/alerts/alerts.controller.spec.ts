@@ -58,8 +58,8 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import { TestQueueConsumerModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
-import { QueueConsumerModule } from '@/datasources/queues/queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -130,8 +130,8 @@ describe('Alerts (Unit)', () => {
         .useModule(TestNetworkModule)
         .overrideModule(EmailApiModule)
         .useModule(TestEmailApiModule)
-        .overrideModule(QueueConsumerModule)
-        .useModule(TestQueueConsumerModule)
+        .overrideModule(QueuesApiModule)
+        .useModule(TestQueuesApiModule)
         .compile();
 
       configurationService = moduleFixture.get(IConfigurationService);
@@ -1620,8 +1620,8 @@ describe('Alerts (Unit)', () => {
           .useModule(TestLoggingModule)
           .overrideModule(NetworkModule)
           .useModule(TestNetworkModule)
-          .overrideModule(QueueConsumerModule)
-          .useModule(TestQueueConsumerModule)
+          .overrideModule(QueuesApiModule)
+          .useModule(TestQueuesApiModule)
           .compile();
 
         app = moduleFixture.createNestApplication();

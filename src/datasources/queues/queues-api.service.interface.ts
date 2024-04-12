@@ -1,8 +1,8 @@
 import { ConsumeMessage } from 'amqplib';
 
-export const IQueueConsumerService = Symbol('IQueueConsumerService');
+export const IQueuesApiService = Symbol('IQueuesApiService');
 
-export interface IQueueConsumerService {
+export interface IQueuesApiService {
   /**
    * Checks if the configured queue consumer is connected.
    */
