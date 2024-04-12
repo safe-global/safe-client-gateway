@@ -240,7 +240,7 @@ export class TransactionsHistoryMapper {
             ),
           );
         } else {
-          // This should never happen as AJV would not allow an unknown transaction to get to this stage
+          // This should never happen as Zod would not allow an unknown transaction to get to this stage
           throw Error('Unrecognized transaction type');
         }
       }),

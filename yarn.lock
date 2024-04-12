@@ -2385,7 +2385,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv-formats@npm:2.1.1, ajv-formats@npm:^2.1.1":
+"ajv-formats@npm:2.1.1":
   version: 2.1.1
   resolution: "ajv-formats@npm:2.1.1"
   dependencies:
@@ -2408,7 +2408,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:8.12.0, ajv@npm:^8.12.0":
+"ajv@npm:8.12.0":
   version: 8.12.0
   resolution: "ajv@npm:8.12.0"
   dependencies:
@@ -7149,8 +7149,6 @@ __metadata:
     "@types/node": "npm:^20.12.2"
     "@types/semver": "npm:^7.5.8"
     "@types/supertest": "npm:^6.0.2"
-    ajv: "npm:^8.12.0"
-    ajv-formats: "npm:^2.1.1"
     eslint: "npm:^9.0.0"
     eslint-config-prettier: "npm:^9.1.0"
     husky: "npm:^9.0.11"

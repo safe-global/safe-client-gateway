@@ -15,7 +15,6 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ValidationModule } from '@/validation/validation.module';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -44,7 +43,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
-        ValidationModule,
       ],
     }).compile();
 
