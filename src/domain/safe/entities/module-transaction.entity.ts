@@ -1,5 +1,5 @@
 import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -28,6 +28,6 @@ export const ModuleTransactionTypeSchema = ModuleTransactionSchema.extend({
   txType: z.literal('MODULE_TRANSACTION'),
 });
 
-export const ModuleTransactionPageSchema = buildPageSchema(
+export const ModuleTransactionPageSchema = buildZodPageSchema(
   ModuleTransactionSchema,
 );

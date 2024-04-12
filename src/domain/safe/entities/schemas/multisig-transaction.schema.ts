@@ -1,4 +1,4 @@
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -52,6 +52,6 @@ export const MultisigTransactionTypeSchema = MultisigTransactionSchema.extend({
   txType: z.literal('MULTISIG_TRANSACTION'),
 });
 
-export const MultisigTransactionPageSchema = buildPageSchema(
+export const MultisigTransactionPageSchema = buildZodPageSchema(
   MultisigTransactionSchema,
 );
