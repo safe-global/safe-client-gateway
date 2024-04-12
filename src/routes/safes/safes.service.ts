@@ -19,7 +19,6 @@ import {
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { Page } from '@/domain/entities/page.entity';
-import { isAddressEqual } from 'viem';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
@@ -324,7 +323,7 @@ export class SafesService {
     // of the supported singletons we return UNKNOWN
     if (
       supportedSingletons.every(
-        (singleton) => !isAddressEqual(singleton.address, safe.masterCopy),
+        (singleton) => singleton.address !== safe.masterCopy,
       )
     )
       return MasterCopyVersionState.UNKNOWN;
