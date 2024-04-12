@@ -152,11 +152,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers`)
       .expect(500)
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -173,11 +169,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/`,
       )
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Should get a trusted ERC20 incoming transfer mapped to the expected format', async () => {

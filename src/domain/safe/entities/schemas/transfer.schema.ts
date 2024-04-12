@@ -1,6 +1,7 @@
 import { Schema } from 'ajv';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
+// TODO: Remove after migrating transactionTypeSchema
 export const TRANSFER_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/transfer.json';
 

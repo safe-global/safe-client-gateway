@@ -182,11 +182,8 @@ export class SwapOrderMapper {
     if (args.order.kind === 'unknown') {
       throw new Error('Unknown order kind');
     }
-    const surplusFeeLabel: string | null = args.order.executedSurplusFee
-      ? this._getExecutedSurplusFeeLabel(
-          args.order.executedSurplusFee,
-          args.buyToken.token,
-        )
+    const feeLabel: string | null = args.order.executedSurplusFee
+      ? this._getFeeLabel(args.order.executedSurplusFee, args.sellToken.token)
       : null;
 
     return new FulfilledSwapOrderTransactionInfo({
@@ -195,7 +192,7 @@ export class SwapOrderMapper {
       sellToken: args.sellToken.toTokenInfo(),
       buyToken: args.buyToken.toTokenInfo(),
       expiresTimestamp: args.order.validTo,
-      surplusFeeLabel: surplusFeeLabel,
+      feeLabel: feeLabel,
       executionPriceLabel: this._getExecutionPriceLabel(
         args.sellToken,
         args.buyToken,
@@ -205,7 +202,7 @@ export class SwapOrderMapper {
     });
   }
 
-  private _getExecutedSurplusFeeLabel(
+  private _getFeeLabel(
     executedSurplusFee: bigint,
     token: Token & { decimals: number },
   ): string {

@@ -81,8 +81,8 @@ describe('Swap Order Mapper tests', () => {
       data: transaction.data as `0x${string}`,
     });
 
-    const surplus = asDecimal(order.executedSurplusFee!, buyToken.decimals!);
-    const expectedSurplus = `${surplus} ${buyToken.symbol}`;
+    const fee = asDecimal(order.executedSurplusFee!, sellToken.decimals!);
+    const expectedFeeLabel = `${fee} ${sellToken.symbol}`;
     const executionRatio =
       asDecimal(order.executedSellAmount, sellToken.decimals!) /
       asDecimal(order.executedBuyAmount, buyToken.decimals!);
@@ -106,7 +106,7 @@ describe('Swap Order Mapper tests', () => {
       expiresTimestamp: order.validTo,
       filledPercentage: expect.any(String),
       explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
-      surplusLabel: expectedSurplus,
+      feeLabel: expectedFeeLabel,
       executionPriceLabel: expectedExecutionPrice,
       humanDescription: null,
       richDecodedInfo: null,

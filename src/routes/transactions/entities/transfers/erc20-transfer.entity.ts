@@ -6,7 +6,7 @@ import {
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty()
-  tokenAddress: string;
+  tokenAddress: `0x${string}`;
   @ApiProperty()
   value: string;
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -21,7 +21,7 @@ export class Erc20Transfer extends Transfer {
   trusted: boolean | null;
 
   constructor(
-    tokenAddress: string,
+    tokenAddress: `0x${string}`,
     value: string,
     tokenName: string | null = null,
     tokenSymbol: string | null = null,

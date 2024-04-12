@@ -859,7 +859,7 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const incomingTransfer = erc20TransferBuilder()
-        .with('to', safeAddress)
+        .with('to', getAddress(safeAddress))
         .build();
       const incomingTransfersPage = pageBuilder()
         .with('results', [incomingTransfer])

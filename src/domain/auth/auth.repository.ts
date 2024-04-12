@@ -12,6 +12,10 @@ import {
 import { AuthService } from '@/routes/auth/auth.service';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  JwtAccessTokenPayload,
+  JwtAccessTokenPayloadSchema,
+} from '@/routes/auth/entities/jwt-access-token.payload.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -65,7 +69,7 @@ export class AuthRepository implements IAuthRepository {
    * @returns notBefore - epoch from when token is valid (if applicable, otherwise null)
    * @returns expiresIn - time in seconds until the token expires (if applicable, otherwise null)
    */
-  async verify(args: VerifyAuthMessageDto): Promise<{
+  async verifyMessage(args: VerifyAuthMessageDto): Promise<{
     accessToken: string;
     tokenType: string;
     notBefore: number | null;
@@ -76,6 +80,10 @@ export class AuthRepository implements IAuthRepository {
     if (!isValid) {
       throw new UnauthorizedException();
     }
+
+    const jwtAccessTokenPayload: JwtAccessTokenPayload = {
+      signer_address: args.message.address,
+    };
 
     const dateWhenTokenIsValid = args.message.notBefore
       ? new Date(args.message.notBefore)
@@ -91,7 +99,7 @@ export class AuthRepository implements IAuthRepository {
       ? this.getSecondsUntil(dateWhenTokenExpires)
       : null;
 
-    const accessToken = this.jwtService.sign(args.message, {
+    const accessToken = this.jwtService.sign(jwtAccessTokenPayload, {
       ...(secondsUntilTokenIsValid !== null && {
         notBefore: secondsUntilTokenIsValid,
       }),
@@ -173,5 +181,17 @@ export class AuthRepository implements IAuthRepository {
     }
 
     return token;
+  }
+
+  /**
+   * Verifies access token and returns the {@link JwtAccessTokenPayload}.
+   *
+   * @param accessToken - JWT access token
+   * @throws if the token is invalid or doesn't parse as expected.
+   * @returns the {@link JwtAccessTokenPayload}.
+   */
+  verifyAccessToken(accessToken: string): JwtAccessTokenPayload {
+    const payload = this.jwtService.verify(accessToken);
+    return JwtAccessTokenPayloadSchema.parse(payload);
   }
 }

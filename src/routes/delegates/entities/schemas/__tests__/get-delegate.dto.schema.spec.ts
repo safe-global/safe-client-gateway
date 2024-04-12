@@ -47,7 +47,7 @@ describe('GetDelegateDtoSchema', () => {
   });
 
   it.each(['safe' as const, 'delegate' as const, 'delegator' as const])(
-    'should not validate non-hex %s',
+    'should not validate non-address %s',
     (property) => {
       const getDelegateDto = { [property]: faker.word.sample() };
 
@@ -57,8 +57,8 @@ describe('GetDelegateDtoSchema', () => {
         new ZodError([
           {
             code: 'custom',
+            message: 'Invalid address',
             path: [property],
-            message: 'Invalid input',
           },
         ]),
       );

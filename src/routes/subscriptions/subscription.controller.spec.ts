@@ -18,6 +18,16 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { INestApplication } from '@nestjs/common';
+import {
+  AlertsConfigurationModule,
+  ALERTS_CONFIGURATION_MODULE,
+} from '@/routes/alerts/configuration/alerts.configuration.module';
+import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
+import {
+  AlertsApiConfigurationModule,
+  ALERTS_API_CONFIGURATION_MODULE,
+} from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
+import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
 
 describe('Subscription Controller tests', () => {
   let app: INestApplication;
@@ -27,9 +37,22 @@ describe('Subscription Controller tests', () => {
     jest.resetAllMocks();
     jest.useFakeTimers();
 
+    const defaultTestConfiguration = configuration();
+    const testConfiguration: typeof configuration = () => ({
+      ...defaultTestConfiguration,
+      features: {
+        ...defaultTestConfiguration.features,
+        email: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration), EmailControllerModule],
+      imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
+      .overrideModule(ALERTS_CONFIGURATION_MODULE)
+      .useModule(AlertsConfigurationModule.register(alertsConfiguration))
+      .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
+      .useModule(AlertsApiConfigurationModule.register(alertsApiConfiguration))
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
       .overrideModule(AccountDataSourceModule)
