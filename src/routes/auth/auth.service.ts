@@ -5,8 +5,6 @@ import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 
 @Injectable()
 export class AuthService {
-  static readonly AUTH_TOKEN_TOKEN_TYPE = 'Bearer';
-
   constructor(
     @Inject(ISiweRepository)
     private readonly siweRepository: ISiweRepository,
@@ -20,9 +18,8 @@ export class AuthService {
     return await this.siweRepository.generateNonce();
   }
 
-  async verify(args: VerifyAuthMessageDto): Promise<{
+  async getAccessToken(args: VerifyAuthMessageDto): Promise<{
     accessToken: string;
-    tokenType: string;
   }> {
     const isValid = await this.siweRepository.isValidMessage(args);
 
@@ -34,7 +31,6 @@ export class AuthService {
       accessToken: this.jwtRepository.signToken({
         signer_address: args.message.address,
       }),
-      tokenType: AuthService.AUTH_TOKEN_TOKEN_TYPE,
     };
   }
 }

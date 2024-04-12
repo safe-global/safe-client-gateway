@@ -13,10 +13,7 @@ import { Controller, UseGuards } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
-
-function secondsUntil(date: Date): number {
-  return Math.floor((date.getTime() - Date.now()) / 1000);
-}
+import { getSecondsUntil } from '@/domain/common/utils/time';
 
 @Controller()
 class TestController {
@@ -72,7 +69,7 @@ describe('AuthGuard', () => {
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -85,14 +82,14 @@ describe('AuthGuard', () => {
     const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
     const notBefore = faker.date.future();
     const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-      notBefore: secondsUntil(notBefore),
+      notBefore: getSecondsUntil(notBefore),
     });
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -113,7 +110,7 @@ describe('AuthGuard', () => {
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -132,7 +129,7 @@ describe('AuthGuard', () => {
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -150,7 +147,7 @@ describe('AuthGuard', () => {
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -159,14 +156,14 @@ describe('AuthGuard', () => {
       const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
       const notBefore = faker.date.past();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        notBefore: secondsUntil(notBefore),
+        notBefore: getSecondsUntil(notBefore),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -175,14 +172,14 @@ describe('AuthGuard', () => {
       const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
       const expiresIn = faker.date.future();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        expiresIn: secondsUntil(expiresIn),
+        expiresIn: getSecondsUntil(expiresIn),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -192,15 +189,15 @@ describe('AuthGuard', () => {
       const notBefore = faker.date.past();
       const expiresIn = faker.date.future();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        notBefore: secondsUntil(notBefore),
-        expiresIn: secondsUntil(expiresIn),
+        notBefore: getSecondsUntil(notBefore),
+        expiresIn: getSecondsUntil(expiresIn),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
