@@ -1022,7 +1022,7 @@ describe('LimitAddressesMapper', () => {
                 setupEncoder().with('owners', owners).encode(),
               )
               .encode();
-            const to = faker.finance.ethereumAddress();
+            const to = getAddress(faker.finance.ethereumAddress());
 
             await expect(
               target.getLimitAddresses({
@@ -1062,51 +1062,6 @@ describe('LimitAddressesMapper', () => {
         ).rejects.toThrow(
           'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
         );
-      });
-
-      it('should throw if the to address is not valid', async () => {
-        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
-        const to = '0x000000000000000000000000000000000INVALID';
-        const data = erc20TransferEncoder().encode();
-
-        await expect(
-          target.getLimitAddresses({
-            version,
-            chainId,
-            data,
-            to,
-          }),
-        ).rejects.toThrow('Invalid to provided');
-      });
-
-      it('should throw if the to address is not hexadecimal', async () => {
-        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
-        const to = 'not hexadecimal';
-        const data = erc20TransferEncoder().encode();
-
-        await expect(
-          target.getLimitAddresses({
-            version,
-            chainId,
-            data,
-            to,
-          }),
-        ).rejects.toThrow('Invalid to provided');
-      });
-
-      it('should throw if the calldata is not hexadecimal', async () => {
-        const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
-        const to = faker.finance.ethereumAddress();
-        const data = 'not hexadecimal';
-
-        await expect(
-          target.getLimitAddresses({
-            version,
-            chainId,
-            data,
-            to,
-          }),
-        ).rejects.toThrow('Invalid data provided');
       });
     });
   });

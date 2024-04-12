@@ -2,7 +2,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { GelatoApi } from '@/datasources/relay-api/gelato-api.service';
 import { faker } from '@faker-js/faker';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Hex } from 'viem';
+import { Hex, getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -49,7 +49,7 @@ describe('GelatoApi', () => {
   describe('relay', () => {
     it('should relay the payload', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
       const taskId = faker.string.uuid();
@@ -81,7 +81,7 @@ describe('GelatoApi', () => {
 
     it('should add a gas buffer if a gas limit is provided', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const gasLimit = faker.number.bigInt();
       const apiKey = faker.string.sample();
@@ -115,7 +115,7 @@ describe('GelatoApi', () => {
 
     it('should throw if there is no API key preset', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
 
       await expect(
@@ -130,7 +130,7 @@ describe('GelatoApi', () => {
 
     it('should forward error', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const apiKey = faker.string.sample();
