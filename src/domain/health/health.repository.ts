@@ -6,15 +6,15 @@ import {
   ICacheReadiness,
 } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IQueuesApiService } from '@/datasources/queues/queues-api.service.interface';
+import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {
   constructor(
     @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IQueuesApiService)
-    private readonly queuesApiService: IQueuesApiService,
+    @Inject(IQueuesRepository)
+    private readonly queuesRepository: IQueuesRepository,
   ) {}
 
   async isReady(): Promise<HealthEntity> {
@@ -25,7 +25,7 @@ export class HealthRepository implements IHealthRepository {
       return HealthEntity.NOT_READY;
     }
 
-    return this.queuesApiService.isReady()
+    return this.queuesRepository.isReady()
       ? HealthEntity.READY
       : HealthEntity.NOT_READY;
   }
