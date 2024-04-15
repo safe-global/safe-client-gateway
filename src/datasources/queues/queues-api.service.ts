@@ -31,15 +31,15 @@ export class QueueApiService implements IQueuesApiService, IQueueReadiness {
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,
   ): Promise<void> {
-    if (this.isEventsQueueEnabled) {
-      await this.consumer.channel.consume(queueName, async (msg) => {
-        await fn(msg);
-        this.consumer.channel.ack(msg);
-      });
-      this.loggingService.info(`Subscribed to queue: ${queueName}`);
+    if (!this.isEventsQueueEnabled) {
+      return this.loggingService.warn(
+        `Cannot subscribe to queue ${queueName}. AMQP consumer is disabled`,
+      );
     }
-    this.loggingService.warn(
-      `Cannot subscribe to queue ${queueName}. AMQP consumer is disabled`,
-    );
+    await this.consumer.channel.consume(queueName, async (msg) => {
+      await fn(msg);
+      this.consumer.channel.ack(msg);
+    });
+    this.loggingService.info(`Subscribed to queue: ${queueName}`);
   }
 }
