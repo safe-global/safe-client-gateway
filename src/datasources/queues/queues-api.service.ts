@@ -38,6 +38,7 @@ export class QueueApiService implements IQueuesApiService, IQueueReadiness {
     }
     await this.consumer.channel.consume(queueName, async (msg) => {
       await fn(msg);
+      // Note: each message is explicitly acknowledged at this point, only after a success callback execution.
       this.consumer.channel.ack(msg);
     });
     this.loggingService.info(`Subscribed to queue: ${queueName}`);

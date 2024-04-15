@@ -10,8 +10,8 @@ export class QueuesApiShutdownHook implements OnModuleDestroy {
   ) {}
 
   async onModuleDestroy(): Promise<void> {
-    this.loggingService.info('Closing connection to queue');
+    this.loggingService.info('Closing connection to queues');
     await this.queueConsumer.channel.close();
-    this.loggingService.info('Queue connection closed');
+    this.loggingService.info('Connection to queues closed');
   }
 }
