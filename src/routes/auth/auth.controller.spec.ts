@@ -28,6 +28,7 @@ describe('AuthController', () => {
   let cacheService: FakeCacheService;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
@@ -63,10 +64,6 @@ describe('AuthController', () => {
 
   afterAll(async () => {
     await app.close();
-  });
-
-  beforeEach(() => {
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
@@ -109,10 +106,12 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
       });
-      const expires = new Date(expirationTime);
-      // jsonwebtoken floors milliseconds
-      expires.setMilliseconds(0);
-      const maxAge = getSecondsUntil(expires);
+      const expirationTimeInSeconds = getSecondsUntil(expirationTime);
+      // MaxAge does not include the second of expiration
+      const maxAge = expirationTimeInSeconds - 1;
+      // jsonwebtoken sets expiration based on timespans, not exact dates
+      // meaning we cannot use expirationTime directly
+      const expires = new Date(Date.now() + expirationTimeInSeconds * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
