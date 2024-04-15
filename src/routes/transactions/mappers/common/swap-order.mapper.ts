@@ -113,6 +113,7 @@ export class SwapOrderMapper {
       case 'open':
       case 'cancelled':
       case 'expired':
+      case 'presignaturePending':
         return this._mapDefaultOrderStatus({
           buyToken: buyTokenAmount,
           sellToken: sellTokenAmount,
@@ -230,11 +231,7 @@ export class SwapOrderMapper {
     if (args.order.kind === 'unknown') {
       throw new Error('Unknown order kind');
     }
-    if (
-      args.order.status === 'fulfilled' ||
-      args.order.status === 'presignaturePending' ||
-      args.order.status === 'unknown'
-    )
+    if (args.order.status === 'fulfilled' || args.order.status === 'unknown')
       throw new Error(
         `${args.order.status} orders should not be mapped as default orders. Order UID = ${args.order.uid}`,
       );

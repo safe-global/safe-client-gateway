@@ -122,7 +122,7 @@ describe('Swap Order Mapper tests', () => {
     });
   });
 
-  it.each(['open', 'cancelled', 'expired'])(
+  it.each(['open', 'cancelled', 'expired', 'presignaturePending'])(
     'should map %s swap orders successfully',
     async (orderStatus) => {
       const chainId = faker.string.numeric();
@@ -250,7 +250,7 @@ describe('Swap Order Mapper tests', () => {
     );
   });
 
-  it.each(['fulfilled', 'open', 'cancelled', 'expired'])(
+  it.each(['fulfilled', 'open', 'cancelled', 'expired', 'presignaturePending'])(
     'should throw if %s order kind is unknown',
     async (status) => {
       const chainId = faker.string.numeric();
