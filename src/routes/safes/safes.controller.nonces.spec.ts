@@ -24,7 +24,7 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { INestApplication } from '@nestjs/common';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Safes Controller Nonces (Unit)', () => {

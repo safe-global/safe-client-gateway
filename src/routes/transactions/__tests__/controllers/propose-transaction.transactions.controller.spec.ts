@@ -30,7 +30,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { getAddress } from 'viem';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {

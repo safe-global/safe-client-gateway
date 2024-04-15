@@ -27,7 +27,7 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Estimations Controller (Unit)', () => {

@@ -28,7 +28,7 @@ import {
   ALERTS_API_CONFIGURATION_MODULE,
 } from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
 import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Subscription Controller tests', () => {

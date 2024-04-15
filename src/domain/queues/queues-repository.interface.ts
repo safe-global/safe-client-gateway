@@ -6,7 +6,6 @@ import { ConsumeMessage } from 'amqplib';
 export const IQueuesRepository = Symbol('IQueuesRepository');
 
 export interface IQueuesRepository {
-  isReady(): boolean;
   subscribe(
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,

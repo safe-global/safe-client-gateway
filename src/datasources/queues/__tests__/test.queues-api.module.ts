@@ -1,10 +1,17 @@
 import { IQueuesApiService } from '@/datasources/queues/queues-api.service.interface';
+import {
+  IQueueReadiness,
+  QueueReadiness,
+} from '@/domain/interfaces/queue-readiness.interface';
 import { Module } from '@nestjs/common';
 
 const queuesApiService = {
   subscribe: jest.fn(),
-  isReady: jest.fn(),
 } as jest.MockedObjectDeep<IQueuesApiService>;
+
+const queueReadiness = {
+  isReady: jest.fn(),
+} as jest.MockedObjectDeep<IQueueReadiness>;
 
 @Module({
   providers: [
@@ -14,7 +21,13 @@ const queuesApiService = {
         return jest.mocked(queuesApiService);
       },
     },
+    {
+      provide: QueueReadiness,
+      useFactory: (): jest.MockedObjectDeep<IQueueReadiness> => {
+        return jest.mocked(queueReadiness);
+      },
+    },
   ],
-  exports: [IQueuesApiService],
+  exports: [IQueuesApiService, QueueReadiness],
 })
 export class TestQueuesApiModule {}

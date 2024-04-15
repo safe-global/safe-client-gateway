@@ -20,7 +20,7 @@ import {
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Contracts controller', () => {

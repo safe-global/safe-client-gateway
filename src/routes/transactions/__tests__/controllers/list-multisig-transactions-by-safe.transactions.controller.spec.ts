@@ -36,7 +36,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { getAddress } from 'viem';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {

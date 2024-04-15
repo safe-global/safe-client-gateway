@@ -29,7 +29,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { getAddress } from 'viem';
 import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Locking (Unit)', () => {

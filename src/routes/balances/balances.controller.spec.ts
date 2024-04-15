@@ -25,7 +25,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { getAddress } from 'viem';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;

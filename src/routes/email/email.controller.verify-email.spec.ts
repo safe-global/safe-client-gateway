@@ -17,7 +17,7 @@ import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { INestApplication } from '@nestjs/common';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 const resendLockWindowMs = 100;

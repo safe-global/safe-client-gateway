@@ -33,7 +33,7 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Recovery (Unit)', () => {

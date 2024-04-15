@@ -9,10 +9,6 @@ export class QueuesRepository implements IQueuesRepository {
     @Inject(IQueuesApiService) private readonly queuesApi: IQueuesApiService,
   ) {}
 
-  isReady(): boolean {
-    return this.queuesApi.isReady();
-  }
-
   async subscribe(
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,

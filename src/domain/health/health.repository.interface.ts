@@ -1,7 +1,7 @@
 import { HealthEntity } from '@/domain/health/entities/health.entity';
 import { Module } from '@nestjs/common';
 import { HealthRepository } from '@/domain/health/health.repository';
-import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 
@@ -19,7 +19,7 @@ export interface IHealthRepository {
 }
 
 @Module({
-  imports: [QueuesRepositoryModule],
+  imports: [QueuesApiModule],
   providers: [
     {
       provide: IHealthRepository,

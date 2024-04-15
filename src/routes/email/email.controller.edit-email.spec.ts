@@ -30,7 +30,7 @@ import {
 } from '@/domain/account/entities/account.entity';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { getAddress } from 'viem';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 const verificationCodeTtlMs = 100;

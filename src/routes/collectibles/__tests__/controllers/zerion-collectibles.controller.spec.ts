@@ -26,7 +26,7 @@ import {
   zerionNFTInfoBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-collectible.entity.builder';
 import { getAddress } from 'viem';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queue-consumer.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Zerion Collectibles Controller', () => {
