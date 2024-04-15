@@ -8,11 +8,15 @@ import { jwtAccessTokenPayloadBuilder } from '@/routes/auth/entities/schemas/__t
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { Get, INestApplication } from '@nestjs/common';
-import { Controller, UseGuards } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
 function secondsUntil(date: Date): number {
   return Math.floor((date.getTime() - Date.now()) / 1000);
@@ -34,15 +38,26 @@ describe('AuthGuard', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
 
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        auth: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
-        ConfigurationModule.register(configuration),
+        ConfigurationModule.register(testConfiguration),
         CacheModule,
         JwtRepositoryModule,
       ],
       controllers: [TestController],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .compile();
