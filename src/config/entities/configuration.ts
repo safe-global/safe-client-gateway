@@ -6,6 +6,23 @@ export default () => ({
     version: process.env.APPLICATION_VERSION,
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
+  amqp: {
+    url: process.env.AMQP_URL,
+    exchange: {
+      name: process.env.AMQP_EXCHANGE_NAME,
+      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
+      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
+      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+    },
+    queue: process.env.AMQP_QUEUE,
+    // The AMQP Prefetch value defaults to 0.
+    // Limits the number of unacknowledged messages delivered to a given channel/consumer.
+    prefetch:
+      process.env.AMQP_PREFETCH != null
+        ? parseInt(process.env.AMQP_PREFETCH)
+        : 0,
+  },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
     token: process.env.AUTH_TOKEN,
@@ -180,6 +197,7 @@ export default () => ({
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     confirmationView:
       process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
+    eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
