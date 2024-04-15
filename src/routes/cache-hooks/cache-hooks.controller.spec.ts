@@ -33,11 +33,9 @@ describe('Post Hook Events (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(config)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
@@ -59,10 +57,47 @@ describe('Post Hook Events (Unit)', () => {
     networkService = moduleFixture.get(NetworkService);
 
     await app.init();
+  }
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    await initApp(configuration);
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  it('should return 410 if the eventsQueue FF is active and the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        eventsQueue: true,
+      },
+    });
+
+    await initApp(testConfiguration);
+
+    const payload = {
+      type: 'INCOMING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    };
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainId = faker.string.numeric();
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(410);
   });
 
   it('should throw an error if authorization is not sent in the request headers', async () => {
@@ -836,4 +871,80 @@ describe('Post Hook Events (Unit)', () => {
 
     await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
+  ])(
+    '$type clears chains even if the eventsQueue FF is active ',
+    async (payload) => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          eventsQueue: true,
+        },
+      });
+      await initApp(testConfiguration);
+      const chainId = faker.string.numeric();
+      const cacheDir = new CacheDir(`chains`, '');
+      await fakeCacheService.set(
+        cacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+      const data = {
+        chainId: chainId,
+        ...payload,
+      };
+
+      await request(app.getHttpServer())
+        .post(`/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
+        .send(data)
+        .expect(202);
+
+      await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    },
+  );
+
+  it.each([
+    {
+      type: 'SAFE_APPS_UPDATE',
+    },
+  ])(
+    '$type clears safe apps even if the eventsQueue FF is active',
+    async (payload) => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          eventsQueue: true,
+        },
+      });
+      await initApp(testConfiguration);
+      const chainId = faker.string.numeric();
+      const cacheDir = new CacheDir(`${chainId}_safe_apps`, '');
+      await fakeCacheService.set(
+        cacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+      const data = {
+        chainId: chainId,
+        ...payload,
+      };
+
+      await request(app.getHttpServer())
+        .post(`/hooks/events`)
+        .set('Authorization', `Basic ${authToken}`)
+        .send(data)
+        .expect(202);
+
+      await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    },
+  );
 });

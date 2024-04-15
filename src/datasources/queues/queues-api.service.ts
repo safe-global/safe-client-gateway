@@ -33,7 +33,7 @@ export class QueueApiService implements IQueuesApiService {
     if (this.isEventsQueueEnabled) {
       await this.consumer.channel.consume(queueName, async (msg) => {
         await fn(msg);
-        await this.consumer.channel.ack(msg);
+        this.consumer.channel.ack(msg);
       });
       this.loggingService.info(`Subscribed to queue: ${queueName}`);
     }

@@ -4,6 +4,7 @@ import {
   HttpCode,
   Inject,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
@@ -15,6 +16,8 @@ import { PreExecutionLogGuard } from '@/routes/cache-hooks/guards/pre-execution.
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { EventProtocolChangedError } from '@/routes/cache-hooks/errors/event-protocol-changed.error';
+import { EventProtocolChangedFilter } from '@/routes/cache-hooks/filters/event-protocol-changed.filter';
 
 @Controller({
   path: '',
@@ -22,27 +25,40 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 })
 @ApiExcludeController()
 export class CacheHooksController {
-  private readonly isEventHooksEndpointEnabled: boolean;
+  private readonly isEventsQueueEnabled: boolean;
+  private readonly configServiceEventTypes = [
+    'CHAIN_UPDATE',
+    'SAFE_APPS_UPDATE',
+  ];
+
   constructor(
     private readonly service: CacheHooksService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.isEventHooksEndpointEnabled =
-      this.configurationService.getOrThrow<boolean>('features.eventsQueue');
+    this.isEventsQueueEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.eventsQueue',
+    );
   }
 
   @UseGuards(PreExecutionLogGuard, BasicAuthGuard)
   @Post('/hooks/events')
+  @UseFilters(EventProtocolChangedFilter)
   @HttpCode(202)
   async postEvent(
     @Body(new ValidationPipe(WebHookSchema)) event: Event,
   ): Promise<void> {
-    if (!this.isEventHooksEndpointEnabled) {
+    if (!this.isEventsQueueEnabled || this.isHttpEvent(event)) {
       this.service.onEvent(event).catch((error) => {
         this.loggingService.error(error);
       });
+    } else {
+      throw new EventProtocolChangedError();
     }
+  }
+
+  private isHttpEvent(event: Event): boolean {
+    return this.configServiceEventTypes.includes(event.type);
   }
 }
