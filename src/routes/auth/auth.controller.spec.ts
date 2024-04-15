@@ -109,10 +109,10 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
       });
-      const maxAge = getSecondsUntil(expirationTime);
-      const expires = new Date(
-        expirationTime.getTime() - new Date(1970, 0, 1).getTime(),
-      ).toUTCString();
+      const expires = new Date(expirationTime);
+      // jsonwebtoken floors milliseconds
+      expires.setMilliseconds(0);
+      const maxAge = getSecondsUntil(expires);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
@@ -127,7 +127,7 @@ describe('AuthController', () => {
         .expect(({ headers }) => {
           const setCookie = headers['set-cookie'];
           const setCookieRegExp = new RegExp(
-            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires}; HttpOnly; Secure; SameSite=Lax`,
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
           expect(setCookie).toHaveLength;

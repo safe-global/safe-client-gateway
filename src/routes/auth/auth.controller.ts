@@ -43,18 +43,23 @@ export class AuthController {
     const { accessToken } =
       await this.authService.getAccessToken(verifyAuthMessageDto);
 
-    const maxAge = verifyAuthMessageDto.message.expirationTime
-      ? getMillisecondsUntil(
-          new Date(verifyAuthMessageDto.message.expirationTime),
-        )
-      : undefined;
-
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
-      maxAge,
+      // Extract maxAge from token as it may slightly differ to SIWE message
+      maxAge: this.getMaxAge(accessToken),
     });
+  }
+
+  /**
+   * Extract the expiration time from the token and return the maximum age.
+   * @param accessToken - JWT token
+   * @returns maximum age of the token in milliseconds or undefined if none set
+   */
+  private getMaxAge(accessToken: string): number | undefined {
+    const { exp } = this.authService.getTokenPayloadWithClaims(accessToken);
+    return exp ? getMillisecondsUntil(new Date(exp * 1_000)) : undefined;
   }
 }

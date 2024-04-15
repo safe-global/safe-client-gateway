@@ -5,6 +5,10 @@ import {
   JwtAccessTokenPayload,
   JwtAccessTokenPayloadSchema,
 } from '@/routes/auth/entities/jwt-access-token.payload.entity';
+import {
+  JwtClaimsSchema,
+  JwtPayloadWithClaims,
+} from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
 export class JwtRepository implements IJwtRepository {
@@ -13,7 +17,7 @@ export class JwtRepository implements IJwtRepository {
     private readonly jwtService: IJwtService,
   ) {}
 
-  signToken<T extends string | object>(
+  signToken<T extends JwtAccessTokenPayload>(
     payload: T,
     options?: {
       expiresIn?: number;
@@ -26,5 +30,12 @@ export class JwtRepository implements IJwtRepository {
   verifyToken(accessToken: string): JwtAccessTokenPayload {
     const payload = this.jwtService.verify(accessToken);
     return JwtAccessTokenPayloadSchema.parse(payload);
+  }
+
+  decodeToken(
+    accessToken: string,
+  ): JwtPayloadWithClaims<JwtAccessTokenPayload> {
+    const decoded = this.jwtService.decode(accessToken);
+    return JwtAccessTokenPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }

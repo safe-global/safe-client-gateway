@@ -13,7 +13,7 @@ export function siweMessageBuilder(): IBuilder<SiweMessage> {
     .with('version', '1')
     .with('chainId', faker.number.int({ min: 1 }))
     .with('nonce', faker.string.alphanumeric({ length: 8 }))
-    .with('issuedAt', faker.date.recent().toISOString())
+    .with('issuedAt', new Date().toISOString())
     .with('expirationTime', faker.date.future().toISOString())
     .with('notBefore', faker.date.past().toISOString())
     .with('requestId', faker.string.uuid())

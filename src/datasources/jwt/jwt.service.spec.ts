@@ -31,7 +31,7 @@ describe('JwtService', () => {
 
   describe('sign', () => {
     it('should sign a payload with the issuer', () => {
-      const payload = fakeJson();
+      const payload = JSON.parse(fakeJson()) as object;
 
       service.sign(payload);
 
@@ -42,7 +42,7 @@ describe('JwtService', () => {
     });
 
     it('should sign a payload with options and the issuer', () => {
-      const payload = fakeJson();
+      const payload = JSON.parse(fakeJson()) as object;
       const options = {
         expiresIn: faker.number.int({ min: 1 }),
         notBefore: faker.number.int({ min: 1 }),
@@ -60,7 +60,7 @@ describe('JwtService', () => {
 
   describe('verify', () => {
     it('should verify a token with the issuer and explicit return of payload', () => {
-      const token = fakeJson();
+      const token = faker.string.alphanumeric();
 
       service.verify(token);
 
@@ -68,6 +68,23 @@ describe('JwtService', () => {
       expect(jwtClientMock.verify).toHaveBeenCalledWith(token, jwtSecret, {
         issuer: jwtIssuer,
         complete: false,
+      });
+    });
+  });
+
+  describe('decode', () => {
+    it('should decode a token with the issuer and return the payload with claims', () => {
+      jwtClientMock.verify.mockImplementation(() => ({
+        payload: {},
+      }));
+      const token = faker.string.alphanumeric();
+
+      service.decode(token);
+
+      expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
+      expect(jwtClientMock.verify).toHaveBeenCalledWith(token, jwtSecret, {
+        issuer: jwtIssuer,
+        complete: true,
       });
     });
   });
