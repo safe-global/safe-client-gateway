@@ -184,7 +184,7 @@ export class SafesService {
 
     for (const safeOverview of settledOverviews) {
       if (safeOverview.status === 'rejected') {
-        this.loggingService.error(
+        this.loggingService.warn(
           `Error while getting Safe overview: ${asError(safeOverview.reason)} `,
         );
       } else if (safeOverview.status === 'fulfilled') {
