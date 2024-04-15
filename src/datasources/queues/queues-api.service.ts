@@ -37,5 +37,8 @@ export class QueueApiService implements IQueuesApiService {
       });
       this.loggingService.info(`Subscribed to queue: ${queueName}`);
     }
+    this.loggingService.warn(
+      `Cannot subscribe to queue ${queueName}. AMQP consumer is disabled`,
+    );
   }
 }
