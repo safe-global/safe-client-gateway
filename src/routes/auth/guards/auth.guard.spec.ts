@@ -104,7 +104,7 @@ describe('AuthGuard', () => {
     const accessToken = jwtService.sign(jwtAccessTokenPayload, {
       expiresIn,
     });
-    jest.advanceTimersByTime(1);
+    jest.advanceTimersByTime(1_000);
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
 
