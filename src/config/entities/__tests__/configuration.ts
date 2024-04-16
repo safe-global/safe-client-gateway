@@ -170,13 +170,9 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
-    auth: true,
+    auth: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
-  jwt: {
-    issuer: faker.lorem.word(),
-    secret: faker.string.alphanumeric(),
-  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
