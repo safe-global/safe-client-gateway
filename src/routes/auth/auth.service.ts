@@ -30,9 +30,10 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const { address, notBefore, expirationTime } = args.message;
+    const { chainId, address, notBefore, expirationTime } = args.message;
 
     const payload: JwtAccessTokenPayload = {
+      chain_id: chainId.toString(),
       signer_address: address,
     };
 
