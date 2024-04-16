@@ -7,4 +7,12 @@ export interface IRelayApi {
     data: string;
     gasLimit: bigint | null;
   }): Promise<{ taskId: string }>;
+
+  getRelayCount(args: { chainId: string; address: string }): Promise<number>;
+
+  setRelayCount(args: {
+    chainId: string;
+    address: string;
+    count: number;
+  }): Promise<void>;
 }

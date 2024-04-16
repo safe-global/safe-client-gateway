@@ -39,8 +39,15 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ description: 'The order UID' })
   orderUid: string;
 
-  @ApiProperty({ enum: ['open', 'fulfilled', 'cancelled', 'expired'] })
-  status: 'open' | 'fulfilled' | 'cancelled' | 'expired';
+  @ApiProperty({
+    enum: ['open', 'fulfilled', 'cancelled', 'expired', 'presignaturePending'],
+  })
+  status:
+    | 'open'
+    | 'fulfilled'
+    | 'cancelled'
+    | 'expired'
+    | 'presignaturePending';
 
   @ApiProperty({ enum: ['buy', 'sell'] })
   orderKind: 'buy' | 'sell';
@@ -65,7 +72,12 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
 
   protected constructor(args: {
     orderUid: string;
-    status: 'open' | 'fulfilled' | 'cancelled' | 'expired';
+    status:
+      | 'open'
+      | 'fulfilled'
+      | 'cancelled'
+      | 'expired'
+      | 'presignaturePending';
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
     buyToken: TokenInfo;
@@ -133,8 +145,10 @@ export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo 
 
 @ApiExtraModels(TokenInfo)
 export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
-  @ApiProperty({ enum: ['open', 'cancelled', 'expired'] })
-  override status: 'open' | 'cancelled' | 'expired';
+  @ApiProperty({
+    enum: ['open', 'cancelled', 'expired', 'presignaturePending'],
+  })
+  override status: 'open' | 'cancelled' | 'expired' | 'presignaturePending';
 
   @ApiProperty({
     description:
@@ -144,7 +158,7 @@ export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
 
   constructor(args: {
     orderUid: string;
-    status: 'open' | 'cancelled' | 'expired';
+    status: 'open' | 'cancelled' | 'expired' | 'presignaturePending';
     orderKind: 'buy' | 'sell';
     sellToken: TokenInfo;
     buyToken: TokenInfo;
