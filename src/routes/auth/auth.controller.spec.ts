@@ -23,6 +23,8 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 
+const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
+
 describe('AuthController', () => {
   let app: INestApplication;
   let cacheService: FakeCacheService;
@@ -97,7 +99,10 @@ describe('AuthController', () => {
         `auth_nonce_${nonceResponse.body.nonce}`,
         '',
       );
-      const expirationTime = faker.date.future();
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
       const message = siweMessageBuilder()
         .with('address', signer.address)
         .with('nonce', nonceResponse.body.nonce)
@@ -136,11 +141,64 @@ describe('AuthController', () => {
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
 
+    it('should not verify a signer if expirationTime is too high', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const cacheDir = new CacheDir(
+        `auth_nonce_${nonceResponse.body.nonce}`,
+        '',
+      );
+      const expirationTime = faker.date.future({
+        refDate: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
+      const message = siweMessageBuilder()
+        .with('address', signer.address)
+        .with('nonce', nonceResponse.body.nonce)
+        .with('expirationTime', expirationTime.toISOString())
+        .build();
+      const signature = await signer.signMessage({
+        message: toSignableSiweMessage(message),
+      });
+
+      await expect(cacheService.get(cacheDir)).resolves.toBe(
+        nonceResponse.body.nonce,
+      );
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(422)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBe(undefined);
+
+          expect(body).toStrictEqual({
+            code: 'custom',
+            message: 'Must be within 900 seconds',
+            path: ['message', 'expirationTime'],
+            statusCode: 422,
+          });
+        });
+      // Nonce not deleted
+      await expect(cacheService.get(cacheDir)).resolves.toBe(
+        nonceResponse.body.nonce,
+      );
+    });
+
     it('should not verify a signer if using an unsigned nonce', async () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
       const message = siweMessageBuilder()
         .with('address', signer.address)
+        .with('expirationTime', expirationTime.toISOString())
         .build();
       const cacheDir = new CacheDir(`auth_nonce_${message.nonce}`, '');
       const signature = await signer.signMessage({
@@ -177,9 +235,14 @@ describe('AuthController', () => {
         `auth_nonce_${nonceResponse.body.nonce}`,
         '',
       );
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
       const message = siweMessageBuilder()
         .with('address', signer.address)
         .with('nonce', nonceResponse.body.nonce)
+        .with('expirationTime', expirationTime.toISOString())
         .build();
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
@@ -215,8 +278,13 @@ describe('AuthController', () => {
       const nonceResponse = await request(app.getHttpServer()).get(
         '/v1/auth/nonce',
       );
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
       const message = siweMessageBuilder()
         .with('nonce', nonceResponse.body.nonce)
+        .with('expirationTime', expirationTime.toISOString())
         .build();
       const cacheDir = new CacheDir(
         `auth_nonce_${nonceResponse.body.nonce}`,
