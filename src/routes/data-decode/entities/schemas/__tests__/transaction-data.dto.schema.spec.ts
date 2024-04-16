@@ -4,11 +4,11 @@ import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 import { TransactionDataDtoSchema } from '@/routes/common/entities/transaction-data.dto.entity';
 
-describe('GetDataDecodedDtoSchema', () => {
-  it('should validate a valid GetDataDecodedDto', () => {
-    const getDataDecodedDto = transactionDataDtoBuilder().build();
+describe('TransactionDataDtoSchema', () => {
+  it('should validate a valid TransactionDataDto', () => {
+    const transactionDataDto = transactionDataDtoBuilder().build();
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(result.success).toBe(true);
   });
@@ -17,11 +17,11 @@ describe('GetDataDecodedDtoSchema', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as `0x${string}`;
-    const getDataDecodedDto = transactionDataDtoBuilder()
+    const transactionDataDto = transactionDataDtoBuilder()
       .with('to', nonChecksummedAddress)
       .build();
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(result.success && result.data.to).toBe(
       getAddress(nonChecksummedAddress),
@@ -29,19 +29,19 @@ describe('GetDataDecodedDtoSchema', () => {
   });
 
   it('should allow optional to', () => {
-    const getDataDecodedDto = transactionDataDtoBuilder().build();
+    const transactionDataDto = transactionDataDtoBuilder().build();
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(result.success).toBe(true);
   });
 
   it('should not allow non-hex data', () => {
-    const getDataDecodedDto = transactionDataDtoBuilder()
+    const transactionDataDto = transactionDataDtoBuilder()
       .with('data', 'non-hex' as `0x${string}`)
       .build();
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -55,11 +55,11 @@ describe('GetDataDecodedDtoSchema', () => {
   });
 
   it('should not allow no hex', () => {
-    const getDataDecodedDto = transactionDataDtoBuilder().build();
+    const transactionDataDto = transactionDataDtoBuilder().build();
     // @ts-expect-error - inferred type does not allow optional propety
-    delete getDataDecodedDto.data;
+    delete transactionDataDto.data;
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -74,10 +74,10 @@ describe('GetDataDecodedDtoSchema', () => {
     );
   });
 
-  it('should not validate an invalid GetDataDecodedDto', () => {
-    const getDataDecodedDto = { invalid: 'getDataDecodedDto' };
+  it('should not validate an invalid TransactionDataDto', () => {
+    const transactionDataDto = { invalid: 'transactionDataDto' };
 
-    const result = TransactionDataDtoSchema.safeParse(getDataDecodedDto);
+    const result = TransactionDataDtoSchema.safeParse(transactionDataDto);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
