@@ -19,10 +19,6 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
-function secondsUntil(date: Date): number {
-  return Math.floor((date.getTime() - Date.now()) / 1000);
-}
-
 @Controller()
 class TestController {
   @Get('valid')
