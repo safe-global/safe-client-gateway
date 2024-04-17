@@ -4,7 +4,7 @@ import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 import {
   JwtAccessTokenPayload,
   JwtAccessTokenPayloadSchema,
-} from '@/routes/auth/entities/jwt-access-token.payload.entity';
+} from '@/domain/auth/entities/jwt-access-token.payload.entity';
 import {
   JwtClaimsSchema,
   JwtPayloadWithClaims,

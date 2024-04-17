@@ -1,5 +1,5 @@
-import { JwtAccessTokenPayloadSchema } from '@/routes/auth/entities/jwt-access-token.payload.entity';
-import { jwtAccessTokenPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
+import { JwtAccessTokenPayloadSchema } from '@/domain/auth/entities/jwt-access-token.payload.entity';
+import { jwtAccessTokenPayloadBuilder } from '@/domain/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

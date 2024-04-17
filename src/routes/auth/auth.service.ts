@@ -3,7 +3,7 @@ import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
 import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import { JwtAccessTokenPayload } from '@/routes/auth/entities/jwt-access-token.payload.entity';
+import { JwtAccessTokenPayload } from '@/domain/auth/entities/jwt-access-token.payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()

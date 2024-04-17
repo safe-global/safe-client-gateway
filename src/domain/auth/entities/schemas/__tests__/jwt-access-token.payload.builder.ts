@@ -1,5 +1,5 @@
 import { IBuilder, Builder } from '@/__tests__/builder';
-import { JwtAccessTokenPayload } from '@/routes/auth/entities/jwt-access-token.payload.entity';
+import { JwtAccessTokenPayload } from '@/domain/auth/entities/jwt-access-token.payload.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
