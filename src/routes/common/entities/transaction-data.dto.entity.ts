@@ -1,9 +1,15 @@
-import { GetDataDecodedDtoSchema } from '@/routes/data-decode/entities/schemas/get-data-decoded.dto.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export class GetDataDecodedDto
-  implements z.infer<typeof GetDataDecodedDtoSchema>
+export const TransactionDataDtoSchema = z.object({
+  data: HexSchema,
+  to: AddressSchema.optional(),
+});
+
+export class TransactionDataDto
+  implements z.infer<typeof TransactionDataDtoSchema>
 {
   @ApiProperty({ description: 'Hexadecimal value' })
   data: `0x${string}`;
