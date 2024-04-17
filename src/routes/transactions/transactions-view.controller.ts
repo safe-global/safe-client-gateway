@@ -6,17 +6,32 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ConfirmationView } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import {
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
+import {
+  BaselineConfirmationView,
+  ConfirmationView,
+  CowSwapConfirmationView,
+} from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
+import { TransactionsViewService } from '@/routes/transactions/transactions-view.service';
+import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.helper';
+import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import {
   TransactionDataDto,
   TransactionDataDtoSchema,
 } from '@/routes/common/entities/transaction-data.dto.entity';
-import { TransactionsViewService } from '@/routes/transactions/transactions-view.service';
-import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 
 @ApiTags('transactions')
 @Controller({
@@ -27,12 +42,20 @@ export class TransactionsViewController {
   constructor(private readonly service: TransactionsViewService) {}
 
   @HttpCode(200)
-  @ApiOkResponse({ type: ConfirmationView })
-  @Post('chains/:chainId/safes/:safeAddress/views/transaction-confirmation')
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(BaselineConfirmationView) },
+        { $ref: getSchemaPath(CowSwapConfirmationView) },
+      ],
+    },
+  })
+  @ApiExtraModels(BaselineConfirmationView, CowSwapConfirmationView)
   @ApiOperation({
     summary: 'Confirm Transaction View',
     description: 'This endpoint is experimental and may change.',
   })
+  @Post('chains/:chainId/safes/:safeAddress/views/transaction-confirmation')
   async getTransactionConfirmationView(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -48,8 +71,15 @@ export class TransactionsViewController {
 }
 
 @Module({
-  imports: [DataDecodedRepositoryModule],
-  providers: [TransactionsViewService],
+  imports: [
+    DataDecodedRepositoryModule,
+    SwapOrderHelperModule,
+    SwapOrderMapperModule,
+    SwapsRepositoryModule,
+    TokenRepositoryModule,
+  ],
+  // TODO module for SetPreSignatureDecoder
+  providers: [TransactionsViewService, SetPreSignatureDecoder],
   controllers: [TransactionsViewController],
 })
 export class TransactionsViewControllerModule {}
