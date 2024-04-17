@@ -4,16 +4,20 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { jwtAccessTokenPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
+import { jwtAccessTokenPayloadBuilder } from '@/domain/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { Get, INestApplication } from '@nestjs/common';
-import { Controller, UseGuards } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
 @Controller()
 class TestController {
@@ -31,15 +35,26 @@ describe('AuthGuard', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
 
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        auth: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
-        ConfigurationModule.register(configuration),
+        ConfigurationModule.register(testConfiguration),
         CacheModule,
         JwtRepositoryModule,
       ],
       controllers: [TestController],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .compile();

@@ -22,6 +22,11 @@ import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
 const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
 
@@ -45,6 +50,8 @@ describe('AuthController', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
@@ -162,6 +169,12 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
       });
+      const expirationTimeInSeconds = getSecondsUntil(expirationTime);
+      // MaxAge does not include the second of expiration
+      const maxAge = expirationTimeInSeconds - 1;
+      // jsonwebtoken sets expiration based on timespans, not exact dates
+      // meaning we cannot use expirationTime directly
+      const expires = new Date(Date.now() + expirationTimeInSeconds * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,

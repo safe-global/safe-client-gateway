@@ -57,6 +57,10 @@ export class AuthController {
    * Extract the expiration time from the token and return the maximum age.
    * @param accessToken - JWT token
    * @returns maximum age of the token in milliseconds or undefined if none set
+   *
+   * Note: the `Max-Age` of a cookie is in seconds, but express' requires it in
+   * milliseconds when setting it with `res.cookie()`.
+   * @see http://expressjs.com/en/api.html
    */
   private getMaxAge(accessToken: string): number | undefined {
     const { exp } = this.authService.getTokenPayloadWithClaims(accessToken);
