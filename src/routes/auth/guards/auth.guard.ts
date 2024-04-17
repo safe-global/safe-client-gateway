@@ -5,8 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
-import { AuthService } from '@/routes/auth/auth.service';
-import { Request } from 'express';
+import { AuthController } from '@/routes/auth/auth.controller';
 
 /**
  * The AuthGuard should be used to protect routes that require authentication.
@@ -28,10 +27,8 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
 
-    const accessToken = this.getAccessToken(
-      request,
-      AuthService.AUTH_TOKEN_TOKEN_TYPE,
-    );
+    const accessToken =
+      request.cookies[AuthController.ACCESS_TOKEN_COOKIE_NAME];
 
     // No token in the request
     if (!accessToken) {
@@ -44,21 +41,5 @@ export class AuthGuard implements CanActivate {
     } catch {
       return false;
     }
-  }
-
-  private getAccessToken(request: Request, tokenType: string): string | null {
-    const header = request.headers.authorization;
-
-    if (!header) {
-      return null;
-    }
-
-    const [type, token] = header.split(' ');
-
-    if (type !== tokenType || !token) {
-      return null;
-    }
-
-    return token;
   }
 }

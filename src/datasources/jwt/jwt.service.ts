@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -18,7 +19,7 @@ export class JwtService implements IJwtService {
     this.secret = this.configurationService.getOrThrow<string>('jwt.secret');
   }
 
-  sign<T extends string | object>(
+  sign<T extends object>(
     payload: T,
     options: { expiresIn?: number; notBefore?: number } = {},
   ): string {
@@ -28,11 +29,22 @@ export class JwtService implements IJwtService {
     });
   }
 
-  verify<T extends string | object>(token: string): T {
+  verify<T extends object>(token: string): T {
     return this.client.verify(token, this.secret, {
       issuer: this.issuer,
-      // Return the content of the payload
+      // Return only payload without claims, e.g. no exp, nbf, etc.
       complete: false,
     }) as T;
+  }
+
+  decode<T extends object>(token: string): JwtPayloadWithClaims<T> {
+    // Client has decode method but it does not verify signature so we use verify
+    const { payload } = this.client.verify(token, this.secret, {
+      issuer: this.issuer,
+      // Return headers, payload (with claims) and signature
+      complete: true,
+    });
+
+    return payload as JwtPayloadWithClaims<T>;
   }
 }

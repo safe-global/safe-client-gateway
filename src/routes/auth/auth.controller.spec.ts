@@ -21,6 +21,7 @@ import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { getSecondsUntil } from '@/domain/common/utils/time';
 import {
   JWT_CONFIGURATION_MODULE,
   JwtConfigurationModule,
@@ -32,6 +33,7 @@ describe('AuthController', () => {
   let cacheService: FakeCacheService;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
@@ -71,10 +73,6 @@ describe('AuthController', () => {
     await app.close();
   });
 
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
   afterEach(() => {
     jest.useRealTimers();
   });
@@ -106,13 +104,21 @@ describe('AuthController', () => {
         `auth_nonce_${nonceResponse.body.nonce}`,
         '',
       );
+      const expirationTime = faker.date.future();
       const message = siweMessageBuilder()
         .with('address', signer.address)
         .with('nonce', nonceResponse.body.nonce)
+        .with('expirationTime', expirationTime.toISOString())
         .build();
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
       });
+      const expirationTimeInSeconds = getSecondsUntil(expirationTime);
+      // MaxAge does not include the second of expiration
+      const maxAge = expirationTimeInSeconds - 1;
+      // jsonwebtoken sets expiration based on timespans, not exact dates
+      // meaning we cannot use expirationTime directly
+      const expires = new Date(Date.now() + expirationTimeInSeconds * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
@@ -124,12 +130,15 @@ describe('AuthController', () => {
           signature,
         })
         .expect(200)
-        .expect(({ body }) =>
-          expect(body).toStrictEqual({
-            accessToken: expect.any(String),
-            tokenType: 'Bearer',
-          }),
-        );
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'];
+          const setCookieRegExp = new RegExp(
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+          );
+
+          expect(setCookie).toHaveLength;
+          expect(setCookie[0]).toMatch(setCookieRegExp);
+        });
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -153,7 +162,14 @@ describe('AuthController', () => {
           signature,
         })
         .expect(401)
-        .expect({ message: 'Unauthorized', statusCode: 401 });
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBe(undefined);
+
+          expect(body).toStrictEqual({
+            message: 'Unauthorized',
+            statusCode: 401,
+          });
+        });
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -190,7 +206,14 @@ describe('AuthController', () => {
           signature,
         })
         .expect(401)
-        .expect({ message: 'Unauthorized', statusCode: 401 });
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBe(undefined);
+
+          expect(body).toStrictEqual({
+            message: 'Unauthorized',
+            statusCode: 401,
+          });
+        });
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -218,7 +241,14 @@ describe('AuthController', () => {
           signature,
         })
         .expect(401)
-        .expect({ message: 'Unauthorized', statusCode: 401 });
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBe(undefined);
+
+          expect(body).toStrictEqual({
+            message: 'Unauthorized',
+            statusCode: 401,
+          });
+        });
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -253,7 +283,14 @@ describe('AuthController', () => {
           signature,
         })
         .expect(401)
-        .expect({ message: 'Unauthorized', statusCode: 401 });
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBe(undefined);
+
+          expect(body).toStrictEqual({
+            message: 'Unauthorized',
+            statusCode: 401,
+          });
+        });
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
