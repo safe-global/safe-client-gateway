@@ -4,7 +4,7 @@ export const IQueuesApiService = Symbol('IQueuesApiService');
 
 export interface IQueuesApiService {
   /**
-   * Sets an arbitrary {@link fn} function as callback.
+   * Sets an arbitrary {@link fn} function as a callback.
    * Every time a new message is received into the queue {@link queueName},
    * this callback function gets executed.
    *
