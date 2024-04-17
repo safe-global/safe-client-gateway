@@ -41,6 +41,7 @@ export default () => ({
             42220: { nativeCoin: 'celo', chainName: 'celo' },
             43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
             5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+            534352: { nativeCoin: 'weth', chainName: 'scroll' },
             56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
             8453: { nativeCoin: 'ethereum', chainName: 'base' },
             84531: { nativeCoin: 'ethereum', chainName: 'base' },

@@ -70,6 +70,10 @@ export default (): ReturnType<typeof configuration> => ({
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
             },
+            534352: {
+              nativeCoin: faker.string.sample(),
+              chainName: faker.string.sample(),
+            },
             56: {
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
