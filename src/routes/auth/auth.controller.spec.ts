@@ -22,6 +22,11 @@ import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -43,6 +48,8 @@ describe('AuthController', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
