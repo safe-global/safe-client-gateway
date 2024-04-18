@@ -6,12 +6,10 @@ import { faker } from '@faker-js/faker';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import {
-  DefaultSwapOrderTransactionInfo,
-  FulfilledSwapOrderTransactionInfo,
-} from '@/routes/transactions/entities/swap-order-info.entity';
 import { getAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swap-order-info.entity';
 
 const swapsRepository = {
   getOrder: jest.fn(),
@@ -34,10 +32,6 @@ const configurationService = {
 } as jest.MockedObjectDeep<IConfigurationService>;
 const configurationServiceMock = jest.mocked(configurationService);
 
-function asDecimal(amount: number | bigint, decimals: number): number {
-  return Number(amount) / 10 ** decimals;
-}
-
 describe('Swap Order Mapper tests', () => {
   let target: SwapOrderMapper;
   const explorerBaseUrl = faker.internet.url();
@@ -56,81 +50,15 @@ describe('Swap Order Mapper tests', () => {
     );
   });
 
-  it('should map fulfilled swap orders successfully', async () => {
-    const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder().build();
-    const buyToken = tokenBuilder().with('decimals', 0).build();
-    const sellToken = tokenBuilder().build();
-    const order = orderBuilder()
-      .with('status', 'fulfilled')
-      .with('buyToken', getAddress(buyToken.address))
-      .with('sellToken', getAddress(sellToken.address))
-      .with('executedSurplusFee', faker.number.bigInt())
-      .build();
-    setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
-      order.uid as `0x${string}`,
-    );
-    swapsRepositoryMock.getOrder.mockResolvedValue(order);
-    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-      if (address === order.buyToken) return Promise.resolve(buyToken);
-      if (address === order.sellToken) return Promise.resolve(sellToken);
-      return Promise.reject(new Error(`Token ${address} not found.`));
-    });
-
-    const result = await target.mapSwapOrder(chainId, {
-      data: transaction.data as `0x${string}`,
-    });
-
-    const fee = asDecimal(order.executedSurplusFee!, sellToken.decimals!);
-    const expectedFeeLabel = `${fee} ${sellToken.symbol}`;
-    const executionRatio =
-      asDecimal(order.executedSellAmount, sellToken.decimals!) /
-      asDecimal(order.executedBuyAmount, buyToken.decimals!);
-    const expectedExecutionPrice = `1 ${sellToken.symbol} = ${executionRatio} ${buyToken.symbol}`;
-    const expectedSurplus = Math.abs(
-      order.kind === 'buy'
-        ? asDecimal(order.sellAmount, sellToken.decimals!) -
-            asDecimal(order.executedSellAmount, sellToken.decimals!)
-        : asDecimal(order.buyAmount, buyToken.decimals!) -
-            asDecimal(order.executedBuyAmount, buyToken.decimals!),
-    );
-    const expectedSurplusLabel = `${expectedSurplus} ${order.kind === 'buy' ? sellToken.symbol : buyToken.symbol}`;
-    expect(result).toBeInstanceOf(FulfilledSwapOrderTransactionInfo);
-    expect(result).toEqual({
-      type: 'SwapOrder',
-      orderUid: order.uid,
-      status: 'fulfilled',
-      orderKind: order.kind,
-      sellToken: {
-        amount: `${asDecimal(order.sellAmount, sellToken.decimals!)}`,
-        logo: sellToken.logoUri,
-        symbol: sellToken.symbol,
-      },
-      buyToken: {
-        amount: `${asDecimal(order.buyAmount, buyToken.decimals!)}`,
-        logo: buyToken.logoUri,
-        symbol: buyToken.symbol,
-      },
-      expiresTimestamp: order.validTo,
-      filledPercentage: expect.any(String),
-      explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
-      feeLabel: expectedFeeLabel,
-      executionPriceLabel: expectedExecutionPrice,
-      surplusLabel: expectedSurplusLabel,
-      humanDescription: null,
-      richDecodedInfo: null,
-    });
-  });
-
-  it.each(['open', 'cancelled', 'expired', 'presignaturePending'])(
+  it.each([Object.values(OrderStatus)])(
     'should map %s swap orders successfully',
     async (orderStatus) => {
       const chainId = faker.string.numeric();
       const transaction = multisigTransactionBuilder().build();
-      const buyToken = tokenBuilder().with('decimals', 0).build();
+      const buyToken = tokenBuilder().build();
       const sellToken = tokenBuilder().build();
       const order = orderBuilder()
-        .with('status', orderStatus as 'open' | 'cancelled' | 'expired')
+        .with('status', orderStatus)
         .with('buyToken', getAddress(buyToken.address))
         .with('sellToken', getAddress(sellToken.address))
         .build();
@@ -148,30 +76,35 @@ describe('Swap Order Mapper tests', () => {
         data: transaction.data as `0x${string}`,
       });
 
-      const ratio =
-        asDecimal(order.sellAmount, sellToken.decimals!) /
-        asDecimal(order.buyAmount, buyToken.decimals!);
-      const expectedLimitPriceDescription = `1 ${sellToken.symbol} = ${ratio} ${buyToken.symbol}`;
-      expect(result).toBeInstanceOf(DefaultSwapOrderTransactionInfo);
+      expect(result).toBeInstanceOf(SwapOrderTransactionInfo);
       expect(result).toEqual({
         type: 'SwapOrder',
-        orderUid: order.uid,
+        uid: order.uid,
         status: order.status,
-        orderKind: order.kind,
+        kind: order.kind,
+        validTo: order.validTo,
+        sellAmount: order.sellAmount.toString(),
+        buyAmount: order.buyAmount.toString(),
+        executedSellAmount: order.executedSellAmount.toString(),
+        executedBuyAmount: order.executedBuyAmount.toString(),
         sellToken: {
-          amount: `${asDecimal(order.sellAmount, sellToken.decimals!)}`,
-          logo: sellToken.logoUri,
+          address: sellToken.address,
+          decimals: sellToken.decimals,
+          logoUri: sellToken.logoUri,
+          name: sellToken.name,
           symbol: sellToken.symbol,
+          trusted: sellToken.trusted,
         },
         buyToken: {
-          amount: `${asDecimal(order.buyAmount, buyToken.decimals!)}`,
-          logo: buyToken.logoUri,
+          address: buyToken.address,
+          decimals: buyToken.decimals,
+          logoUri: buyToken.logoUri,
+          name: buyToken.name,
           symbol: buyToken.symbol,
+          trusted: buyToken.trusted,
         },
-        expiresTimestamp: order.validTo,
-        filledPercentage: expect.any(String),
-        limitPriceLabel: expectedLimitPriceDescription,
         explorerUrl: new URL(`${explorerBaseUrl}/orders/${order.uid}`),
+        executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
         humanDescription: null,
         richDecodedInfo: null,
       });
@@ -250,7 +183,7 @@ describe('Swap Order Mapper tests', () => {
     );
   });
 
-  it.each(['fulfilled', 'open', 'cancelled', 'expired', 'presignaturePending'])(
+  it.each(Object.values(OrderStatus))(
     'should throw if %s order kind is unknown',
     async (status) => {
       const chainId = faker.string.numeric();
@@ -258,10 +191,7 @@ describe('Swap Order Mapper tests', () => {
       const buyToken = tokenBuilder().with('decimals', 0).build();
       const sellToken = tokenBuilder().build();
       const order = orderBuilder()
-        .with(
-          'status',
-          status as 'fulfilled' | 'open' | 'cancelled' | 'expired',
-        )
+        .with('status', status)
         .with('buyToken', getAddress(buyToken.address))
         .with('sellToken', getAddress(sellToken.address))
         .with('kind', 'unknown')
@@ -291,59 +221,6 @@ describe('Swap Order Mapper tests', () => {
         chainId,
         order.uid,
       );
-    },
-  );
-
-  it.each([
-    // [executedAmount, amount, expectedFilledPercentage]
-    [1000, 1000, '100.00'],
-    [0, 1000, '0.00'],
-    [500, 1000, '50.00'],
-    [350, 1050, '33.33'],
-  ])(
-    'should calculate the filled percentage correctly for buy orders',
-    async (executedAmount, amount, expected) => {
-      const chainId = faker.string.numeric();
-      const transaction = multisigTransactionBuilder().build();
-      const buyToken = tokenBuilder().with('decimals', 0).build();
-      const sellToken = tokenBuilder().build();
-      const order = orderBuilder()
-        .with(
-          'status',
-          faker.helpers.arrayElement([
-            'open',
-            'fulfilled',
-            'cancelled',
-            'expired',
-          ]),
-        )
-        .build();
-      if (order.kind === 'buy') {
-        order['executedBuyAmount'] = BigInt(executedAmount);
-        order['buyAmount'] = BigInt(amount);
-      } else if (order.kind === 'sell') {
-        order['executedSellAmount'] = BigInt(executedAmount);
-        order['sellAmount'] = BigInt(amount);
-      } else {
-        throw new Error('Invalid order kind');
-      }
-      setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
-        order.uid as `0x${string}`,
-      );
-      swapsRepositoryMock.getOrder.mockResolvedValue(order);
-      tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-        if (address === order.buyToken) return Promise.resolve(buyToken);
-        if (address === order.sellToken) return Promise.resolve(sellToken);
-        return Promise.reject(new Error(`Token ${address} not found.`));
-      });
-
-      const result = await target.mapSwapOrder(chainId, {
-        data: transaction.data as `0x${string}`,
-      });
-
-      expect(result).toMatchObject({
-        filledPercentage: expected,
-      });
     },
   );
 });

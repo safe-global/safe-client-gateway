@@ -4,6 +4,15 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export type Order = z.infer<typeof OrderSchema>;
 
+export enum OrderStatus {
+  PreSignaturePending = 'presignaturePending',
+  Open = 'open',
+  Fulfilled = 'fulfilled',
+  Cancelled = 'cancelled',
+  Expired = 'expired',
+  Unknown = 'unknown',
+}
+
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
@@ -35,16 +44,7 @@ export const OrderSchema = z.object({
   executedBuyAmount: z.coerce.bigint(),
   executedFeeAmount: z.coerce.bigint(),
   invalidated: z.boolean(),
-  status: z
-    .enum([
-      'presignaturePending',
-      'open',
-      'fulfilled',
-      'cancelled',
-      'expired',
-      'unknown',
-    ])
-    .catch('unknown'),
+  status: z.nativeEnum(OrderStatus).catch(OrderStatus.Unknown),
   fullFeeAmount: z.coerce.bigint(),
   isLiquidityOrder: z.boolean(),
   ethflowData: z

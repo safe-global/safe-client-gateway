@@ -1,4 +1,4 @@
-import { Order } from '@/domain/swaps/entities/order.entity';
+import { Order, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -56,16 +56,7 @@ export function orderBuilder(): IBuilder<Order> {
     .with('executedBuyAmount', faker.number.bigInt({ min: 1 }))
     .with('executedFeeAmount', faker.number.bigInt({ min: 1 }))
     .with('invalidated', faker.datatype.boolean())
-    .with(
-      'status',
-      faker.helpers.arrayElement([
-        'presignaturePending',
-        'open',
-        'fulfilled',
-        'cancelled',
-        'expired',
-      ]),
-    )
+    .with('status', faker.helpers.arrayElement(Object.values(OrderStatus)))
     .with('fullFeeAmount', faker.number.bigInt({ min: 1 }))
     .with('isLiquidityOrder', faker.datatype.boolean())
     .with(
