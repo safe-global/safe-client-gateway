@@ -27,6 +27,23 @@ describe('JwtAccessTokenSchema', () => {
     );
   });
 
+  it('should not allow a non-numeric chain_id', () => {
+    const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder()
+      .with('chain_id', faker.lorem.word())
+      .build();
+
+    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+
+    expect(result.success).toBe(false);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid base-10 numeric string',
+        path: ['chain_id'],
+      },
+    ]);
+  });
+
   it('should not allow a non-address signer_address', () => {
     const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder()
       .with('signer_address', faker.lorem.word() as `0x${string}`)
@@ -53,6 +70,13 @@ describe('JwtAccessTokenSchema', () => {
 
     expect(result.success).toBe(false);
     expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['chain_id'],
+        received: 'undefined',
+      },
       {
         code: 'invalid_type',
         expected: 'string',

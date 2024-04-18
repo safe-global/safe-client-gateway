@@ -4,8 +4,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 export function jwtAccessTokenPayloadBuilder(): IBuilder<JwtAccessTokenPayload> {
-  return new Builder<JwtAccessTokenPayload>().with(
-    'signer_address',
-    getAddress(faker.finance.ethereumAddress()),
-  );
+  return new Builder<JwtAccessTokenPayload>()
+    .with('chain_id', faker.string.numeric({ exclude: ['0'] }))
+    .with('signer_address', getAddress(faker.finance.ethereumAddress()));
 }
