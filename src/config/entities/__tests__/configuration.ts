@@ -91,6 +91,8 @@ export default (): ReturnType<typeof configuration> => ({
               chainName: faker.string.sample(),
             },
           },
+          highRefreshRateTokens: [],
+          highRefreshRateTokensTtlSeconds: faker.number.int(),
         },
       },
       zerion: {

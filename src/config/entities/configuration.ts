@@ -47,6 +47,11 @@ export default () => ({
             84531: { nativeCoin: 'ethereum', chainName: 'base' },
             84532: { nativeCoin: 'ethereum', chainName: 'base' },
           },
+          highRefreshRateTokens:
+            process.env.HIGH_REFRESH_RATE_TOKENS?.split(',') ?? [],
+          highRefreshRateTokensTtlSeconds: parseInt(
+            process.env.HIGH_REFRESH_RATE_TOKENS_TTL_SECONDS ?? `${30}`,
+          ),
         },
       },
       zerion: {

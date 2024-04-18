@@ -34,6 +34,7 @@ describe('CoingeckoAPI', () => {
   const coingeckoBaseUri = faker.internet.url({ appendSlash: false });
   const coingeckoApiKey = faker.string.sample();
   const pricesCacheTtlSeconds = faker.number.int();
+  const highRefreshRateTokensTtlSeconds = faker.number.int();
   const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
@@ -50,8 +51,16 @@ describe('CoingeckoAPI', () => {
       coingeckoApiKey,
     );
     fakeConfigurationService.set(
+      `balances.providers.safe.prices.highRefreshRateTokens`,
+      [],
+    );
+    fakeConfigurationService.set(
       'balances.providers.safe.prices.pricesTtlSeconds',
       pricesCacheTtlSeconds,
+    );
+    fakeConfigurationService.set(
+      'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
+      highRefreshRateTokensTtlSeconds,
     );
     fakeConfigurationService.set(
       'balances.providers.safe.prices.notFoundPriceTtlSeconds',
@@ -350,6 +359,107 @@ describe('CoingeckoAPI', () => {
       ),
       JSON.stringify({
         [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
+      }),
+      pricesCacheTtlSeconds,
+    );
+  });
+
+  it('should return and cache with low TTL one high-refresh-rate token price', async () => {
+    const chain = chainBuilder().build();
+    const chainName = faker.string.sample();
+    const highRefreshRateTokenAddress = faker.finance.ethereumAddress();
+    const anotherTokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+    const lowerCaseFiatCode = fiatCode.toLowerCase();
+    const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
+    const anotherPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
+    const coingeckoPrice: AssetPrice = {
+      [highRefreshRateTokenAddress]: { [lowerCaseFiatCode]: price },
+      [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice },
+    };
+    mockCacheService.get.mockResolvedValue(undefined);
+    mockNetworkService.get.mockResolvedValue({
+      data: coingeckoPrice,
+      status: 200,
+    });
+    fakeConfigurationService.set(
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
+      chainName,
+    );
+    fakeConfigurationService.set(
+      `balances.providers.safe.prices.highRefreshRateTokens`,
+      [
+        faker.finance.ethereumAddress(),
+        highRefreshRateTokenAddress.toUpperCase(), // to check this configuration is case insensitive
+        faker.finance.ethereumAddress(),
+      ],
+    );
+    const service = new CoingeckoApi(
+      fakeConfigurationService,
+      mockCacheFirstDataSource,
+      mockNetworkService,
+      mockCacheService,
+      mockLoggingService,
+    );
+
+    const assetPrice = await service.getTokenPrices({
+      chainId: chain.chainId,
+      tokenAddresses: [highRefreshRateTokenAddress, anotherTokenAddress],
+      fiatCode,
+    });
+
+    expect(assetPrice).toEqual([
+      { [highRefreshRateTokenAddress]: { [lowerCaseFiatCode]: price } },
+      { [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice } },
+    ]);
+    expect(mockNetworkService.get).toHaveBeenCalledWith({
+      url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+      networkRequest: {
+        headers: {
+          'x-cg-pro-api-key': coingeckoApiKey,
+        },
+        params: {
+          contract_addresses: [
+            highRefreshRateTokenAddress,
+            anotherTokenAddress,
+          ].join(','),
+          vs_currencies: lowerCaseFiatCode,
+        },
+      },
+    });
+    expect(mockCacheService.get).toHaveBeenCalledTimes(2);
+    expect(mockCacheService.set).toHaveBeenCalledTimes(2);
+    // high-refresh-rate token price is cached with highRefreshRateTokensTtlSeconds
+    expect(mockCacheService.get).toHaveBeenCalledWith(
+      new CacheDir(
+        `${chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        '',
+      ),
+    );
+    expect(mockCacheService.set).toHaveBeenCalledWith(
+      new CacheDir(
+        `${chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        '',
+      ),
+      JSON.stringify({
+        [highRefreshRateTokenAddress]: { [lowerCaseFiatCode]: price },
+      }),
+      highRefreshRateTokensTtlSeconds,
+    );
+    // another token price is cached with pricesCacheTtlSeconds
+    expect(mockCacheService.get).toHaveBeenCalledWith(
+      new CacheDir(
+        `${chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        '',
+      ),
+    );
+    expect(mockCacheService.set).toHaveBeenCalledWith(
+      new CacheDir(
+        `${chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        '',
+      ),
+      JSON.stringify({
+        [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice },
       }),
       pricesCacheTtlSeconds,
     );

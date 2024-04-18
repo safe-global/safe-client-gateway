@@ -38,6 +38,14 @@ export class CoingeckoApi implements IPricesApi {
   private readonly notFoundPriceTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  /**
+   * Token addresses that will be cached with a highRefreshRateTokensTtlSeconds TTL.
+   */
+  private readonly highRefreshRateTokens: string[];
+  /**
+   * TTL in seconds for high-rate refresh token prices.
+   */
+  private readonly highRefreshRateTokensTtlSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -66,6 +74,17 @@ export class CoingeckoApi implements IPricesApi {
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
+    this.highRefreshRateTokens = this.configurationService
+      .getOrThrow<
+        string[]
+      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .map((tokenAddress) => tokenAddress.toLowerCase());
+
+    this.highRefreshRateTokensTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
       );
   }
 
@@ -242,13 +261,31 @@ export class CoingeckoApi implements IPricesApi {
         await this.cacheService.set(
           CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
           JSON.stringify(price),
-          validPrice
-            ? this.pricesTtlSeconds
-            : this._getRandomNotFoundTokenPriceTtl(),
+          this._getTtl(validPrice, tokenAddress),
         );
         return price;
       }),
     );
+  }
+
+  /**
+   * Gets the cache TTL for storing the price value.
+   * If the token address is included in {@link highRefreshRateTokens} (defaults to []),
+   * then {@link highRefreshRateTokensTtlSeconds} is used (defaults to 30 seconds).
+   * If the price cannot ve retrieved (or it's zero) {@link _getRandomNotFoundTokenPriceTtl} is called.
+   * Else {@link pricesTtlSeconds} is used (defaults to 300 seconds).
+   */
+  private _getTtl(
+    price: number | null | undefined,
+    tokenAddress: string,
+  ): number {
+    if (this.highRefreshRateTokens.includes(tokenAddress)) {
+      return this.highRefreshRateTokensTtlSeconds;
+    }
+
+    return !price
+      ? this._getRandomNotFoundTokenPriceTtl()
+      : this.pricesTtlSeconds;
   }
 
   /**
