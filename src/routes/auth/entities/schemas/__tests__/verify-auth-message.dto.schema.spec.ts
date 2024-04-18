@@ -5,6 +5,14 @@ import { faker } from '@faker-js/faker';
 const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
 
 describe('VerifyAuthMessageDto', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('should validate a VerifyAuthMessageDto', () => {
     const expirationTime = faker.date.between({
       from: new Date(),
