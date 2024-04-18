@@ -38,6 +38,14 @@ export class CoingeckoApi implements IPricesApi {
   private readonly notFoundPriceTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  /**
+   * Token addresses that will be cached with a highRefreshRateTokensTtlSeconds TTL.
+   */
+  private readonly highRefreshRateTokens: string[];
+  /**
+   * TTL in seconds for high-rate refresh token prices.
+   */
+  private readonly highRefreshRateTokensTtlSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -66,6 +74,13 @@ export class CoingeckoApi implements IPricesApi {
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    this.highRefreshRateTokens = this.configurationService.getOrThrow<string[]>(
+      'balances.providers.safe.prices.highRefreshRateTokens',
+    );
+    this.highRefreshRateTokensTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
       );
   }
 
@@ -242,13 +257,29 @@ export class CoingeckoApi implements IPricesApi {
         await this.cacheService.set(
           CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
           JSON.stringify(price),
-          validPrice
-            ? this.pricesTtlSeconds
-            : this._getRandomNotFoundTokenPriceTtl(),
+          this._getTtl(prices, tokenAddress, args.fiatCode),
         );
         return price;
       }),
     );
+  }
+
+  private _getTtl(
+    prices: AssetPrice,
+    tokenAddress: string,
+    fiatCode: string,
+  ): number | undefined {
+    const isValidPrice = prices[tokenAddress]?.[fiatCode];
+    const isHighRefreshRateToken =
+      this.highRefreshRateTokens.includes(tokenAddress);
+
+    if (!isValidPrice) {
+      return this._getRandomNotFoundTokenPriceTtl();
+    }
+
+    return isHighRefreshRateToken
+      ? this.highRefreshRateTokensTtlSeconds
+      : this.pricesTtlSeconds;
   }
 
   /**
