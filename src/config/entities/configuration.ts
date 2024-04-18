@@ -25,6 +25,9 @@ export default () => ({
           pricesTtlSeconds: parseInt(
             process.env.PRICES_TTL_SECONDS ?? `${300}`,
           ),
+          nativeCoinPricesTtlSeconds: parseInt(
+            process.env.NATIVE_COINS_PRICES_TTL_SECONDS ?? `${100}`,
+          ),
           notFoundPriceTtlSeconds: parseInt(
             process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
           ),

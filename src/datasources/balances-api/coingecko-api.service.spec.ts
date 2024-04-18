@@ -33,7 +33,8 @@ describe('CoingeckoAPI', () => {
   let fakeConfigurationService: FakeConfigurationService;
   const coingeckoBaseUri = faker.internet.url({ appendSlash: false });
   const coingeckoApiKey = faker.string.sample();
-  const pricesCacheTtlSeconds = faker.number.int();
+  const pricesTtlSeconds = faker.number.int();
+  const nativeCoinPricesTtlSeconds = faker.number.int();
   const highRefreshRateTokensTtlSeconds = faker.number.int();
   const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
@@ -56,7 +57,11 @@ describe('CoingeckoAPI', () => {
     );
     fakeConfigurationService.set(
       'balances.providers.safe.prices.pricesTtlSeconds',
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
+    );
+    fakeConfigurationService.set(
+      'balances.providers.safe.prices.nativeCoinPricesTtlSeconds',
+      nativeCoinPricesTtlSeconds,
     );
     fakeConfigurationService.set(
       'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
@@ -191,7 +196,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenCalledWith(
       expectedCacheDir,
       JSON.stringify({ [tokenAddress]: { [lowerCaseFiatCode]: price } }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
   });
 
@@ -251,7 +256,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenCalledWith(
       expectedCacheDir,
       JSON.stringify({ [tokenAddress]: { [lowerCaseFiatCode]: price } }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
   });
 
@@ -340,7 +345,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
@@ -350,7 +355,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
@@ -360,7 +365,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
   });
 
@@ -461,7 +466,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
   });
 
@@ -557,7 +562,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
     expect(mockCacheService.set).toHaveBeenNthCalledWith(
       2,
@@ -568,7 +573,7 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({
         [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
       }),
-      pricesCacheTtlSeconds,
+      pricesTtlSeconds,
     );
   });
 
@@ -703,7 +708,7 @@ describe('CoingeckoAPI', () => {
         },
       },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
-      expireTimeSeconds: pricesCacheTtlSeconds,
+      expireTimeSeconds: nativeCoinPricesTtlSeconds,
     });
   });
 
@@ -742,7 +747,7 @@ describe('CoingeckoAPI', () => {
         },
       },
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
-      expireTimeSeconds: pricesCacheTtlSeconds,
+      expireTimeSeconds: nativeCoinPricesTtlSeconds,
     });
   });
 });
