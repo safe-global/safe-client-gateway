@@ -20,6 +20,7 @@ export default (): ReturnType<typeof configuration> => ({
           baseUri: faker.internet.url({ appendSlash: false }),
           apiKey: faker.string.hexadecimal({ length: 32 }),
           pricesTtlSeconds: faker.number.int(),
+          nativeCoinPricesTtlSeconds: faker.number.int(),
           notFoundPriceTtlSeconds: faker.number.int(),
           chains: {
             1: {
