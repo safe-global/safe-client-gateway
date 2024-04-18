@@ -75,9 +75,13 @@ export class CoingeckoApi implements IPricesApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
       );
-    this.highRefreshRateTokens = this.configurationService.getOrThrow<string[]>(
-      'balances.providers.safe.prices.highRefreshRateTokens',
-    );
+    // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
+    this.highRefreshRateTokens = this.configurationService
+      .getOrThrow<
+        string[]
+      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .map((tokenAddress) => tokenAddress.toLowerCase());
+
     this.highRefreshRateTokensTtlSeconds =
       this.configurationService.getOrThrow<number>(
         'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
@@ -257,23 +261,28 @@ export class CoingeckoApi implements IPricesApi {
         await this.cacheService.set(
           CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
           JSON.stringify(price),
-          this._getTtl(prices, tokenAddress, args.fiatCode),
+          this._getTtl(validPrice, tokenAddress),
         );
         return price;
       }),
     );
   }
 
+  /**
+   * Gets the cache TTL for storing the price value.
+   * If the token address is included in {@link highRefreshRateTokens} (defaults to []),
+   * then {@link highRefreshRateTokensTtlSeconds} is used (defaults to 30 seconds).
+   * If the price cannot ve retrieved {@link _getRandomNotFoundTokenPriceTtl} is called.
+   * Else {@link pricesTtlSeconds} is used (defaults to 300 seconds).
+   */
   private _getTtl(
-    prices: AssetPrice,
+    price: number | null | undefined,
     tokenAddress: string,
-    fiatCode: string,
   ): number | undefined {
-    const isValidPrice = prices[tokenAddress]?.[fiatCode];
     const isHighRefreshRateToken =
       this.highRefreshRateTokens.includes(tokenAddress);
 
-    if (!isValidPrice) {
+    if (price == null) {
       return this._getRandomNotFoundTokenPriceTtl();
     }
 

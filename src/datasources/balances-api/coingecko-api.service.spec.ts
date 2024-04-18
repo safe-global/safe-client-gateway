@@ -377,7 +377,6 @@ describe('CoingeckoAPI', () => {
       [highRefreshRateTokenAddress]: { [lowerCaseFiatCode]: price },
       [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice },
     };
-    // TODO: document
     mockCacheService.get.mockResolvedValue(undefined);
     mockNetworkService.get.mockResolvedValue({
       data: coingeckoPrice,
@@ -391,7 +390,7 @@ describe('CoingeckoAPI', () => {
       `balances.providers.safe.prices.highRefreshRateTokens`,
       [
         faker.finance.ethereumAddress(),
-        highRefreshRateTokenAddress,
+        highRefreshRateTokenAddress.toUpperCase(), // to check this configuration is case insensitive
         faker.finance.ethereumAddress(),
       ],
     );
