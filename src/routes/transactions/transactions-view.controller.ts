@@ -15,6 +15,8 @@ import {
 } from '@/routes/common/entities/transaction-data.dto.entity';
 import { TransactionsViewService } from '@/routes/transactions/transactions-view.service';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('transactions')
 @Controller({
@@ -32,8 +34,9 @@ export class TransactionsViewController {
     description: 'This endpoint is experimental and may change.',
   })
   async getTransactionConfirmationView(
-    @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: string,
     @Body(new ValidationPipe(TransactionDataDtoSchema))
     transactionDataDto: TransactionDataDto,
   ): Promise<ConfirmationView> {
