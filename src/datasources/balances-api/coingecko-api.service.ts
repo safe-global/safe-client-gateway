@@ -272,22 +272,19 @@ export class CoingeckoApi implements IPricesApi {
    * Gets the cache TTL for storing the price value.
    * If the token address is included in {@link highRefreshRateTokens} (defaults to []),
    * then {@link highRefreshRateTokensTtlSeconds} is used (defaults to 30 seconds).
-   * If the price cannot ve retrieved {@link _getRandomNotFoundTokenPriceTtl} is called.
+   * If the price cannot ve retrieved (or it's zero) {@link _getRandomNotFoundTokenPriceTtl} is called.
    * Else {@link pricesTtlSeconds} is used (defaults to 300 seconds).
    */
   private _getTtl(
     price: number | null | undefined,
     tokenAddress: string,
-  ): number | undefined {
-    const isHighRefreshRateToken =
-      this.highRefreshRateTokens.includes(tokenAddress);
-
-    if (price == null) {
-      return this._getRandomNotFoundTokenPriceTtl();
+  ): number {
+    if (this.highRefreshRateTokens.includes(tokenAddress)) {
+      return this.highRefreshRateTokensTtlSeconds;
     }
 
-    return isHighRefreshRateToken
-      ? this.highRefreshRateTokensTtlSeconds
+    return !price
+      ? this._getRandomNotFoundTokenPriceTtl()
       : this.pricesTtlSeconds;
   }
 
