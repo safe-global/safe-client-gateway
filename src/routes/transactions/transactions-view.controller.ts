@@ -36,7 +36,7 @@ export class TransactionsViewController {
   async getTransactionConfirmationView(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: string,
+    safeAddress: `0x${string}`,
     @Body(new ValidationPipe(TransactionDataDtoSchema))
     transactionDataDto: TransactionDataDto,
   ): Promise<ConfirmationView> {
