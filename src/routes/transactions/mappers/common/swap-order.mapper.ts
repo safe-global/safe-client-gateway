@@ -9,7 +9,7 @@ import {
   TokenRepositoryModule,
 } from '@/domain/tokens/token.repository.interface';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { SwapsModule } from '@/domain/swaps/swaps.module';
+import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -103,7 +103,7 @@ export class SwapOrderMapper {
 }
 
 @Module({
-  imports: [SwapsModule, TokenRepositoryModule],
+  imports: [SwapsRepositoryModule, TokenRepositoryModule],
   providers: [SwapOrderMapper, SetPreSignatureDecoder],
   exports: [SwapOrderMapper],
 })

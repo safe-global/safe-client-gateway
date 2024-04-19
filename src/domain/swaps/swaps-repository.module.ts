@@ -10,4 +10,4 @@ import { SwapsApiModule } from '@/datasources/swaps-api/swaps-api.module';
   providers: [{ provide: ISwapsRepository, useClass: SwapsRepository }],
   exports: [ISwapsRepository],
 })
-export class SwapsModule {}
+export class SwapsRepositoryModule {}
