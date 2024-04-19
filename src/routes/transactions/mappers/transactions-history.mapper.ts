@@ -12,7 +12,10 @@ import {
   isMultisigTransaction,
   Transaction as TransactionDomain,
 } from '@/domain/safe/entities/transaction.entity';
-import { Transfer } from '@/domain/safe/entities/transfer.entity';
+import {
+  Transfer,
+  isERC20Transfer,
+} from '@/domain/safe/entities/transfer.entity';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';
 import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
 import { CreationTransactionMapper } from '@/routes/transactions/mappers/creation-transaction/creation-transaction.mapper';
@@ -68,6 +71,11 @@ export class TransactionsHistoryMapper {
         previousTransaction,
         timezoneOffset,
       ).getTime();
+      // Filter poisoned transactions
+      transactionsDomain = this.getLegitimateTransactions(
+        safe.address,
+        transactionsDomain,
+      );
       // Remove first transaction that was requested to get previous day timestamp
       transactionsDomain = transactionsDomain.slice(1);
     }
@@ -103,6 +111,82 @@ export class TransactionsHistoryMapper {
     );
 
     return transactionList.flat();
+  }
+
+  private getLegitimateTransactions(
+    safeAddress: string,
+    transactions: TransactionDomainGroup['transactions'],
+  ): TransactionDomainGroup['transactions'] {
+    /**
+     * The following filters poisoned events that are:
+     * - immediately after legitimate transfers
+     * - outgoing transfers
+     * - of the same value
+     * - by 4-char. vanity addresses
+     *
+     * It does not:
+     * - support referencing transfers within multiSends
+     * - have dynamic heuristics
+     * - depend on the trusted flag or have a feature flag
+     */
+
+    return transactions.map((item, i, arr) => {
+      // Address poisoning only targets transfers
+      if (!isEthereumTransaction(item) || !item.transfers) {
+        return item;
+      }
+
+      // Get the previous transaction...
+      const prevItem = arr[i - 1];
+      if (
+        !prevItem ||
+        !isEthereumTransaction(prevItem) ||
+        !prevItem.transfers
+      ) {
+        return item;
+      }
+
+      // ...get the last transfer
+      const prevTransfers = prevItem.transfers
+        .filter(isERC20Transfer)
+        .filter((prev) => safeAddress === prev.from);
+      const prevTransfer = prevTransfers.at(-1);
+
+      if (!prevTransfer) {
+        return item;
+      }
+
+      const legitTransfers = item.transfers.filter((transfer) => {
+        // Non-ERC20 transfers are always considered legitimate
+        if (!isERC20Transfer(transfer)) return true;
+
+        const isOutgoing = safeAddress === transfer.from;
+        if (isOutgoing) return true;
+
+        const isSameValue = transfer.value === prevTransfer.value;
+        if (!isSameValue) return true;
+
+        const sender = transfer.from.toLowerCase();
+        const prevSender = prevTransfer.from.toLowerCase();
+
+        const isSameAddress = sender === prevSender;
+        return !isSameAddress && !this.isVanityAddress(sender, prevSender);
+      });
+
+      item.transfers = legitTransfers.length === 0 ? null : legitTransfers;
+
+      return item;
+    });
+  }
+
+  private isVanityAddress(address1: string, address2: string): boolean {
+    const VANITY_THRESHOLD = 4;
+    return (
+      // Ignore `0x` prefix
+      address1.slice(2, VANITY_THRESHOLD) ===
+        address2.slice(2, VANITY_THRESHOLD) ||
+      address1.slice(-VANITY_THRESHOLD) === address2.slice(-VANITY_THRESHOLD)
+    );
   }
 
   private getTransactionTimestamp(transaction: TransactionDomain): Date {
