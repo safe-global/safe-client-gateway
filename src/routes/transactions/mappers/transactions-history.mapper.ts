@@ -136,7 +136,7 @@ export class TransactionsHistoryMapper {
         return item;
       }
 
-      // Get the previous transaction...
+      // From the previous transaction...
       const prevItem = arr[i - 1];
       if (
         !prevItem ||
