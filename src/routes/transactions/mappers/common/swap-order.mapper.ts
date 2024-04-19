@@ -61,7 +61,7 @@ export class SwapOrderMapper {
       uid: order.uid,
       status: order.status,
       kind: order.kind,
-      validTo: order.validTo,
+      validUntil: order.validTo,
       sellAmount: order.sellAmount.toString(),
       buyAmount: order.buyAmount.toString(),
       executedSellAmount: order.executedSellAmount.toString(),

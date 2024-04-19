@@ -66,7 +66,7 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
   kind: 'buy' | 'sell';
 
   @ApiProperty({ description: 'The timestamp when the order expires' })
-  validTo: number;
+  validUntil: number;
 
   @ApiProperty({
     description: 'The sell token raw amount (no decimals)',
@@ -111,7 +111,7 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
     uid: string;
     status: OrderStatus;
     kind: 'buy' | 'sell';
-    validTo: number;
+    validUntil: number;
     sellAmount: string;
     buyAmount: string;
     executedSellAmount: string;
@@ -125,7 +125,7 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
     this.uid = args.uid;
     this.status = args.status;
     this.kind = args.kind;
-    this.validTo = args.validTo;
+    this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;
     this.executedSellAmount = args.executedSellAmount;
