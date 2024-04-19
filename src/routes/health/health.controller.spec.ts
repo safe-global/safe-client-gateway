@@ -93,7 +93,7 @@ describe('Health Controller tests', () => {
     });
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 });
