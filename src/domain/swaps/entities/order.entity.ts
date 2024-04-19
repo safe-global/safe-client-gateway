@@ -13,6 +13,13 @@ export enum OrderStatus {
   Unknown = 'unknown',
 }
 
+export enum OrderClass {
+  Market = 'market',
+  Limit = 'limit',
+  Liquidity = 'liquidity',
+  Unknown = 'unknown',
+}
+
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
@@ -35,7 +42,7 @@ export const OrderSchema = z.object({
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).catch('unknown'),
+  class: z.nativeEnum(OrderClass).catch(OrderClass.Unknown),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),

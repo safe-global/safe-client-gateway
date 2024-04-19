@@ -1,4 +1,8 @@
-import { Order, OrderStatus } from '@/domain/swaps/entities/order.entity';
+import {
+  Order,
+  OrderClass,
+  OrderStatus,
+} from '@/domain/swaps/entities/order.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -44,7 +48,14 @@ export function orderBuilder(): IBuilder<Order> {
     )
     .with('quoteId', faker.datatype.boolean() ? faker.number.int() : null)
     .with('creationDate', faker.date.recent())
-    .with('class', faker.helpers.arrayElement(['market', 'limit', 'liquidity']))
+    .with(
+      'class',
+      faker.helpers.arrayElement(
+        Object.values(OrderClass).filter(
+          (orderClass) => orderClass !== OrderClass.Unknown,
+        ),
+      ),
+    )
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('uid', faker.string.hexadecimal({ length: 112 }))
     .with(

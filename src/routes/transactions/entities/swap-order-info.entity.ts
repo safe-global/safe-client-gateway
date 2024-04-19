@@ -7,7 +7,7 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
-import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import { OrderClass, OrderStatus } from '@/domain/swaps/entities/order.entity';
 
 export class TokenInfo {
   @ApiProperty({ description: 'The token address' })
@@ -65,6 +65,11 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: ['buy', 'sell'] })
   kind: 'buy' | 'sell';
 
+  @ApiProperty({
+    enum: OrderClass,
+  })
+  class: OrderClass;
+
   @ApiProperty({ description: 'The timestamp when the order expires' })
   validUntil: number;
 
@@ -111,6 +116,7 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
     uid: string;
     status: OrderStatus;
     kind: 'buy' | 'sell';
+    class: OrderClass;
     validUntil: number;
     sellAmount: string;
     buyAmount: string;
@@ -125,6 +131,7 @@ export class SwapOrderTransactionInfo extends TransactionInfo {
     this.uid = args.uid;
     this.status = args.status;
     this.kind = args.kind;
+    this.class = args.class;
     this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;
