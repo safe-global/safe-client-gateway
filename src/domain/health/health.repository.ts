@@ -6,21 +6,32 @@ import {
   ICacheReadiness,
 } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  IQueueReadiness,
+  QueueReadiness,
+} from '@/domain/interfaces/queue-readiness.interface';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {
   constructor(
-    @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
+    @Inject(QueueReadiness) private readonly queuesApi: IQueueReadiness,
   ) {}
 
   async isReady(): Promise<HealthEntity> {
     try {
       await this.cacheService.ping();
-      return HealthEntity.READY;
     } catch (error) {
       this.loggingService.warn('Cache service connection is not established');
       return HealthEntity.NOT_READY;
     }
+
+    if (!this.queuesApi.isReady()) {
+      this.loggingService.warn('AMQP connection is not established');
+      return HealthEntity.NOT_READY;
+    }
+
+    return HealthEntity.READY;
   }
 }
