@@ -31,7 +31,6 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
       // TODO: Address these rules: (added to update to ESLint 9)
-      'no-case-declarations': 'off',
       'no-useless-escape': 'off',
       '@typescript-eslint/await-thenable': 'off',
       '@typescript-eslint/no-base-to-string': 'off',
