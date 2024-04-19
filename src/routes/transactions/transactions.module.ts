@@ -28,7 +28,7 @@ import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
@@ -46,6 +46,7 @@ import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interfac
     HumanDescriptionRepositoryModule,
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
+    SetPreSignatureDecoderModule,
     SwapOrderMapperModule,
     TokenRepositoryModule,
   ],
@@ -70,7 +71,6 @@ import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interfac
     QueuedItemsMapper,
     SafeAppInfoMapper,
     SettingsChangeMapper,
-    SetPreSignatureDecoder,
     TransactionDataMapper,
     TransactionPreviewMapper,
     TransactionsHistoryMapper,
