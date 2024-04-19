@@ -8,7 +8,7 @@ import {
   ITokenRepository,
   TokenRepositoryModule,
 } from '@/domain/tokens/token.repository.interface';
-import { SwapsRepository } from '@/domain/swaps/swaps.repository';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsModule } from '@/domain/swaps/swaps.module';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -19,7 +19,8 @@ export class SwapOrderMapper {
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
   constructor(
-    private readonly swapsRepository: SwapsRepository,
+    @Inject(ISwapsRepository)
+    private readonly swapsRepository: ISwapsRepository,
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,

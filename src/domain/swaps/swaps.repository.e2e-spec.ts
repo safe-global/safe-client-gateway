@@ -7,7 +7,7 @@ import { ValidationModule } from '@/validation/validation.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { SwapsRepository } from '@/domain/swaps/swaps.repository';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import configuration from '@/config/entities/configuration';
 
@@ -104,7 +104,7 @@ const orderIds = {
 };
 describe('CowSwap E2E tests', () => {
   let app: INestApplication;
-  let repository: SwapsRepository;
+  let repository: ISwapsRepository;
 
   beforeAll(async () => {
     const cacheKeyPrefix = crypto.randomUUID();
@@ -124,7 +124,7 @@ describe('CowSwap E2E tests', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
-    repository = app.get(SwapsRepository);
+    repository = app.get(ISwapsRepository);
     await app.init();
   });
 

@@ -2,8 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 import { Order, OrderSchema } from '@/domain/swaps/entities/order.entity';
 
+export const ISwapsRepository = Symbol('ISwapsRepository');
+
+export interface ISwapsRepository {
+  getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order>;
+}
+
 @Injectable()
-export class SwapsRepository {
+export class SwapsRepository implements ISwapsRepository {
   constructor(
     @Inject(ISwapsApiFactory)
     private readonly swapsApiFactory: ISwapsApiFactory,
