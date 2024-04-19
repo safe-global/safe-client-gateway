@@ -1,8 +1,6 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import {
-  DefaultSwapOrderTransactionInfo,
-  FulfilledSwapOrderTransactionInfo,
   SwapOrderTransactionInfo,
   TokenInfo,
 } from '@/routes/transactions/entities/swap-order-info.entity';
@@ -10,51 +8,10 @@ import {
   ITokenRepository,
   TokenRepositoryModule,
 } from '@/domain/tokens/token.repository.interface';
-import { Token } from '@/domain/tokens/entities/token.entity';
 import { SwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsModule } from '@/domain/swaps/swaps.module';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-
-/**
- * Represents the amount of a token in a swap order.
- */
-class TokenAmount {
-  readonly token: Token & {
-    decimals: number;
-  };
-  private readonly amount: bigint;
-  private readonly executedAmount: bigint;
-
-  constructor(args: { token: Token; amount: bigint; executedAmount: bigint }) {
-    if (args.token.decimals === null)
-      throw new Error(`Token ${args.token.address} has no decimals set.`);
-
-    this.token = { ...args.token, decimals: args.token.decimals };
-    this.amount = args.amount;
-    this.executedAmount = args.executedAmount;
-  }
-
-  getAmount(): number {
-    return asDecimal(this.amount, this.token.decimals);
-  }
-
-  getExecutedAmount(): number {
-    return asDecimal(this.executedAmount, this.token.decimals);
-  }
-
-  toTokenInfo(): TokenInfo {
-    return new TokenInfo({
-      amount: this.getAmount().toString(),
-      symbol: this.token.symbol,
-      logo: this.token.logoUri,
-    });
-  }
-}
-
-function asDecimal(amount: number | bigint, decimals: number): number {
-  return Number(amount) / 10 ** decimals;
-}
 
 @Injectable()
 export class SwapOrderMapper {
@@ -81,6 +38,10 @@ export class SwapOrderMapper {
     }
 
     const order = await this.swapsRepository.getOrder(chainId, orderUid);
+    if (order.kind === 'unknown') {
+      throw new Error('Unknown order kind');
+    }
+
     const [buyToken, sellToken] = await Promise.all([
       this.tokenRepository.getToken({
         chainId,
@@ -92,82 +53,39 @@ export class SwapOrderMapper {
       }),
     ]);
 
-    const buyTokenAmount = new TokenAmount({
-      token: buyToken,
-      amount: order.buyAmount,
-      executedAmount: order.executedBuyAmount,
-    });
-    const sellTokenAmount = new TokenAmount({
-      token: sellToken,
-      amount: order.sellAmount,
-      executedAmount: order.executedSellAmount,
-    });
-
-    switch (order.status) {
-      case 'fulfilled':
-        return this._mapFulfilledOrderStatus({
-          buyToken: buyTokenAmount,
-          sellToken: sellTokenAmount,
-          order,
-        });
-      case 'open':
-      case 'cancelled':
-      case 'expired':
-      case 'presignaturePending':
-        return this._mapDefaultOrderStatus({
-          buyToken: buyTokenAmount,
-          sellToken: sellTokenAmount,
-          order,
-        });
-      default:
-        throw new Error(`Unknown order status: ${order.status}`);
-    }
-  }
-
-  private _getExecutionPriceLabel(
-    sellToken: TokenAmount,
-    buyToken: TokenAmount,
-  ): string {
-    const ratio = sellToken.getExecutedAmount() / buyToken.getExecutedAmount();
-    return `1 ${sellToken.token.symbol} = ${ratio} ${buyToken.token.symbol}`;
-  }
-
-  private _getLimitPriceLabel(
-    sellToken: TokenAmount,
-    buyToken: TokenAmount,
-  ): string {
-    const ratio = sellToken.getAmount() / buyToken.getAmount();
-    return `1 ${sellToken.token.symbol} = ${ratio} ${buyToken.token.symbol}`;
-  }
-
-  private _getSurplusPriceLabel(tokenAmount: TokenAmount): string {
-    const surplus = Math.abs(
-      tokenAmount.getAmount() - tokenAmount.getExecutedAmount(),
-    ).toString();
-    return `${surplus} ${tokenAmount.token.symbol}`;
-  }
-
-  /**
-   * Returns the filled percentage of an order.
-   * The percentage is calculated as the ratio of the executed amount to the total amount.
-   *
-   * @param order - The order to calculate the filled percentage for.
-   * @private
-   */
-  private _getFilledPercentage(order: Order): string {
-    let executed: number;
-    let total: number;
-    if (order.kind === 'buy') {
-      executed = Number(order.executedBuyAmount);
-      total = Number(order.buyAmount);
-    } else if (order.kind === 'sell') {
-      executed = Number(order.executedSellAmount);
-      total = Number(order.sellAmount);
-    } else {
-      throw new Error('Unknown order kind');
+    if (sellToken.decimals === null || buyToken.decimals === null) {
+      throw new Error('Invalid token decimals');
     }
 
-    return ((executed / total) * 100).toFixed(2).toString();
+    return new SwapOrderTransactionInfo({
+      uid: order.uid,
+      status: order.status,
+      kind: order.kind,
+      class: order.class,
+      validUntil: order.validTo,
+      sellAmount: order.sellAmount.toString(),
+      buyAmount: order.buyAmount.toString(),
+      executedSellAmount: order.executedSellAmount.toString(),
+      executedBuyAmount: order.executedBuyAmount.toString(),
+      sellToken: new TokenInfo({
+        address: sellToken.address,
+        decimals: sellToken.decimals,
+        logoUri: sellToken.logoUri,
+        name: sellToken.name,
+        symbol: sellToken.symbol,
+        trusted: sellToken.trusted,
+      }),
+      buyToken: new TokenInfo({
+        address: buyToken.address,
+        decimals: buyToken.decimals,
+        logoUri: buyToken.logoUri,
+        name: buyToken.name,
+        symbol: buyToken.symbol,
+        trusted: buyToken.trusted,
+      }),
+      explorerUrl: this._getOrderExplorerUrl(order),
+      executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
+    });
   }
 
   /**
@@ -180,72 +98,6 @@ export class SwapOrderMapper {
     const url = new URL(this.swapsExplorerBaseUri);
     url.pathname = `/orders/${order.uid}`;
     return url;
-  }
-
-  private _mapFulfilledOrderStatus(args: {
-    buyToken: TokenAmount;
-    sellToken: TokenAmount;
-    order: Order;
-  }): SwapOrderTransactionInfo {
-    if (args.order.kind === 'unknown') {
-      throw new Error('Unknown order kind');
-    }
-    const feeLabel: string | null = args.order.executedSurplusFee
-      ? this._getFeeLabel(args.order.executedSurplusFee, args.sellToken.token)
-      : null;
-
-    const surplusLabel = this._getSurplusPriceLabel(
-      args.order.kind === 'buy' ? args.sellToken : args.buyToken,
-    );
-
-    return new FulfilledSwapOrderTransactionInfo({
-      orderUid: args.order.uid,
-      orderKind: args.order.kind,
-      sellToken: args.sellToken.toTokenInfo(),
-      buyToken: args.buyToken.toTokenInfo(),
-      expiresTimestamp: args.order.validTo,
-      feeLabel: feeLabel,
-      executionPriceLabel: this._getExecutionPriceLabel(
-        args.sellToken,
-        args.buyToken,
-      ),
-      surplusLabel,
-      filledPercentage: this._getFilledPercentage(args.order),
-      explorerUrl: this._getOrderExplorerUrl(args.order),
-    });
-  }
-
-  private _getFeeLabel(
-    executedSurplusFee: bigint,
-    token: Token & { decimals: number },
-  ): string {
-    const surplus = asDecimal(executedSurplusFee, token.decimals);
-    return `${surplus} ${token.symbol}`;
-  }
-
-  private _mapDefaultOrderStatus(args: {
-    buyToken: TokenAmount;
-    sellToken: TokenAmount;
-    order: Order;
-  }): SwapOrderTransactionInfo {
-    if (args.order.kind === 'unknown') {
-      throw new Error('Unknown order kind');
-    }
-    if (args.order.status === 'fulfilled' || args.order.status === 'unknown')
-      throw new Error(
-        `${args.order.status} orders should not be mapped as default orders. Order UID = ${args.order.uid}`,
-      );
-    return new DefaultSwapOrderTransactionInfo({
-      orderUid: args.order.uid,
-      status: args.order.status,
-      orderKind: args.order.kind,
-      sellToken: args.sellToken.toTokenInfo(),
-      buyToken: args.buyToken.toTokenInfo(),
-      expiresTimestamp: args.order.validTo,
-      limitPriceLabel: this._getLimitPriceLabel(args.sellToken, args.buyToken),
-      filledPercentage: this._getFilledPercentage(args.order),
-      explorerUrl: this._getOrderExplorerUrl(args.order),
-    });
   }
 }
 

@@ -7,50 +7,91 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
+import { OrderClass, OrderStatus } from '@/domain/swaps/entities/order.entity';
 
 export class TokenInfo {
+  @ApiProperty({ description: 'The token address' })
+  address: `0x${string}`;
+
+  @ApiProperty({ description: 'The token decimals' })
+  decimals: number;
+
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description: 'The token logo',
+    description: 'The logo URI for the token',
   })
-  logo: string | null;
+  logoUri: string | null;
+
+  @ApiProperty({ description: 'The token name' })
+  name: string;
 
   @ApiProperty({ description: 'The token symbol' })
   symbol: string;
 
-  @ApiProperty({
-    description: 'The token amount in decimal format',
-  })
-  amount: string;
+  @ApiProperty({ description: 'The token trusted status' })
+  trusted: boolean;
 
-  constructor(args: { logo: string | null; symbol: string; amount: string }) {
-    this.logo = args.logo;
+  constructor(args: {
+    address: `0x${string}`;
+    decimals: number;
+    logoUri: string | null;
+    name: string;
+    symbol: string;
+    trusted: boolean;
+  }) {
+    this.address = args.address;
+    this.decimals = args.decimals;
+    this.logoUri = args.logoUri;
+    this.name = args.name;
     this.symbol = args.symbol;
-    this.amount = args.amount;
+    this.trusted = args.trusted;
   }
 }
 
 @ApiExtraModels(TokenInfo)
-export abstract class SwapOrderTransactionInfo extends TransactionInfo {
+export class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.SwapOrder] })
-  override type: TransactionInfoType.SwapOrder;
+  override type = TransactionInfoType.SwapOrder;
 
   @ApiProperty({ description: 'The order UID' })
-  orderUid: string;
+  uid: string;
 
   @ApiProperty({
-    enum: ['open', 'fulfilled', 'cancelled', 'expired', 'presignaturePending'],
+    enum: OrderStatus,
   })
-  status:
-    | 'open'
-    | 'fulfilled'
-    | 'cancelled'
-    | 'expired'
-    | 'presignaturePending';
+  status: OrderStatus;
 
   @ApiProperty({ enum: ['buy', 'sell'] })
-  orderKind: 'buy' | 'sell';
+  kind: 'buy' | 'sell';
+
+  @ApiProperty({
+    enum: OrderClass,
+  })
+  class: OrderClass;
+
+  @ApiProperty({ description: 'The timestamp when the order expires' })
+  validUntil: number;
+
+  @ApiProperty({
+    description: 'The sell token raw amount (no decimals)',
+  })
+  sellAmount: string;
+
+  @ApiProperty({
+    description: 'The buy token raw amount (no decimals)',
+  })
+  buyAmount: string;
+
+  @ApiProperty({
+    description: 'The executed sell token raw amount (no decimals)',
+  })
+  executedSellAmount: string;
+
+  @ApiProperty({
+    description: 'The executed buy token raw amount (no decimals)',
+  })
+  executedBuyAmount: string;
 
   @ApiProperty({ description: 'The sell token of the order' })
   sellToken: TokenInfo;
@@ -58,117 +99,47 @@ export abstract class SwapOrderTransactionInfo extends TransactionInfo {
   @ApiProperty({ description: 'The buy token of the order' })
   buyToken: TokenInfo;
 
-  @ApiProperty({ description: 'The timestamp when the order expires' })
-  expiresTimestamp: number;
-
   @ApiProperty({
-    description: 'The filled percentage of the order',
-    examples: ['0.00', '50.75', '100.00'],
+    type: String,
+    description: 'The URL to the explorer page of the order',
   })
-  filledPercentage: string;
-
-  @ApiProperty({ description: 'The URL to the explorer page of the order' })
   explorerUrl: URL;
-
-  protected constructor(args: {
-    orderUid: string;
-    status:
-      | 'open'
-      | 'fulfilled'
-      | 'cancelled'
-      | 'expired'
-      | 'presignaturePending';
-    orderKind: 'buy' | 'sell';
-    sellToken: TokenInfo;
-    buyToken: TokenInfo;
-    expiresTimestamp: number;
-    filledPercentage: string;
-    explorerUrl: URL;
-  }) {
-    super(TransactionInfoType.SwapOrder, null, null);
-    this.orderUid = args.orderUid;
-    this.type = TransactionInfoType.SwapOrder;
-    this.status = args.status;
-    this.orderKind = args.orderKind;
-    this.sellToken = args.sellToken;
-    this.buyToken = args.buyToken;
-    this.expiresTimestamp = args.expiresTimestamp;
-    this.filledPercentage = args.filledPercentage;
-    this.explorerUrl = args.explorerUrl;
-  }
-}
-
-@ApiExtraModels(TokenInfo)
-export class FulfilledSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
-  @ApiProperty({ enum: ['fulfilled'] })
-  override status: 'fulfilled';
 
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description:
-      'The amount of fees paid for this order in the format of "$feeAmount $tokenSymbol"',
+    description: 'The amount of fees paid for this order.',
   })
-  feeLabel: string | null;
-
-  @ApiProperty({
-    description:
-      'The execution price label is in the format of "1 $sellTokenSymbol = $ratio $buyTokenSymbol"',
-  })
-  executionPriceLabel: string;
-
-  @ApiProperty({
-    description:
-      'The (averaged) surplus for this order in the format of "$surplusAmount $tokenSymbol"',
-  })
-  surplusLabel: string;
+  executedSurplusFee: string | null;
 
   constructor(args: {
-    orderUid: string;
-    orderKind: 'buy' | 'sell';
+    uid: string;
+    status: OrderStatus;
+    kind: 'buy' | 'sell';
+    class: OrderClass;
+    validUntil: number;
+    sellAmount: string;
+    buyAmount: string;
+    executedSellAmount: string;
+    executedBuyAmount: string;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
-    expiresTimestamp: number;
-    feeLabel: string | null;
-    executionPriceLabel: string;
-    surplusLabel: string;
-    filledPercentage: string;
     explorerUrl: URL;
+    executedSurplusFee: string | null;
   }) {
-    super({ ...args, status: 'fulfilled' });
-    this.status = 'fulfilled';
-    this.feeLabel = args.feeLabel;
-    this.executionPriceLabel = args.executionPriceLabel;
-    this.surplusLabel = args.surplusLabel;
-  }
-}
-
-@ApiExtraModels(TokenInfo)
-export class DefaultSwapOrderTransactionInfo extends SwapOrderTransactionInfo {
-  @ApiProperty({
-    enum: ['open', 'cancelled', 'expired', 'presignaturePending'],
-  })
-  override status: 'open' | 'cancelled' | 'expired' | 'presignaturePending';
-
-  @ApiProperty({
-    description:
-      'The limit price label is in the format of "1 $sellTokenSymbol = $limitPriceLabel $buyTokenSymbol"',
-  })
-  limitPriceLabel: string;
-
-  constructor(args: {
-    orderUid: string;
-    status: 'open' | 'cancelled' | 'expired' | 'presignaturePending';
-    orderKind: 'buy' | 'sell';
-    sellToken: TokenInfo;
-    buyToken: TokenInfo;
-    expiresTimestamp: number;
-    limitPriceLabel: string;
-    filledPercentage: string;
-    explorerUrl: URL;
-  }) {
-    super(args);
+    super(TransactionInfoType.SwapOrder, null, null);
+    this.uid = args.uid;
     this.status = args.status;
-    this.limitPriceLabel = args.limitPriceLabel;
+    this.kind = args.kind;
+    this.class = args.class;
+    this.validUntil = args.validUntil;
+    this.sellAmount = args.sellAmount;
+    this.buyAmount = args.buyAmount;
+    this.executedSellAmount = args.executedSellAmount;
+    this.executedBuyAmount = args.executedBuyAmount;
+    this.sellToken = args.sellToken;
+    this.buyToken = args.buyToken;
+    this.explorerUrl = args.explorerUrl;
+    this.executedSurplusFee = args.executedSurplusFee;
   }
 }
