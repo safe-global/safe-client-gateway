@@ -1,8 +1,11 @@
+import { getSecondsUntil } from '@/domain/common/utils/time';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
-import { SiweMessageSchema } from '@/domain/siwe/entities/siwe-message.entity';
+import { getSiweMessageSchema } from '@/domain/siwe/entities/siwe-message.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
+
+const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
 
 describe('SiweMessageSchema', () => {
   beforeEach(() => {
@@ -15,8 +18,11 @@ describe('SiweMessageSchema', () => {
 
   it('should validate a SiWe message', () => {
     const message = siweMessageBuilder().build();
+    const maxValidityInSecs =
+      getSecondsUntil(new Date(message.expirationTime!)) + 1;
+    const schema = getSiweMessageSchema(maxValidityInSecs);
 
-    const result = SiweMessageSchema.safeParse(message);
+    const result = schema.safeParse(message);
 
     expect(result.success).toBe(true);
   });
@@ -26,16 +32,22 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('scheme', faker.internet.protocol())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
 
     it('should validate without scheme', () => {
       const message = siweMessageBuilder().with('scheme', undefined).build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -47,8 +59,11 @@ describe('SiweMessageSchema', () => {
         .with('scheme', undefined)
         .with('domain', faker.internet.domainName())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -59,8 +74,11 @@ describe('SiweMessageSchema', () => {
         // A scheme is present in the domain
         .with('domain', faker.internet.url())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -78,8 +96,11 @@ describe('SiweMessageSchema', () => {
         .with('scheme', faker.internet.protocol())
         .with('domain', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -98,8 +119,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('address', getAddress(faker.finance.ethereumAddress()))
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -111,8 +135,11 @@ describe('SiweMessageSchema', () => {
           faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
         )
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -129,8 +156,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('address', faker.lorem.word() as `0x${string}`)
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -149,16 +179,22 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('statement', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
 
     it('should allow an optional statement', () => {
       const message = siweMessageBuilder().with('statement', undefined).build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -167,8 +203,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('statement', `${faker.lorem.sentence()}\n`)
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -187,8 +226,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('uri', faker.internet.url({ appendSlash: false }))
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -197,8 +239,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('uri', faker.internet.domainName())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -216,8 +261,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('uri', faker.lorem.word())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -235,8 +283,11 @@ describe('SiweMessageSchema', () => {
   describe('version', () => {
     it('should validate version 1', () => {
       const message = siweMessageBuilder().with('version', '1').build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -245,8 +296,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('version', '2' as '1')
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -267,8 +321,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('chainId', faker.number.int())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -277,8 +334,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('chainId', faker.lorem.word() as unknown as number)
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -299,8 +359,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('nonce', faker.string.alphanumeric({ length: 8 }))
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -309,8 +372,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('nonce', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -328,8 +394,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('nonce', faker.string.alphanumeric({ length: 7 }))
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -352,8 +421,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('issuedAt', faker.date.recent().toISOString())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -362,8 +434,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('issuedAt', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -383,8 +458,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('expirationTime', faker.date.future().toISOString())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -393,8 +471,10 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('expirationTime', undefined)
         .build();
+      const maxValidityInSecs = faker.number.int({ min: 1 });
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -403,8 +483,10 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('expirationTime', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs = faker.number.int({ min: 1 });
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -412,6 +494,34 @@ describe('SiweMessageSchema', () => {
             code: 'invalid_string',
             validation: 'datetime',
             message: 'Invalid datetime',
+            path: ['expirationTime'],
+          },
+          {
+            code: 'custom',
+            message: `Must be within ${maxValidityInSecs} seconds`,
+            path: ['expirationTime'],
+          },
+        ]),
+      );
+    });
+
+    it('should only allow a maximum validity period', () => {
+      const expirationTime = faker.date.future({
+        refDate: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+      });
+      const message = siweMessageBuilder()
+        .with('expirationTime', expirationTime.toISOString())
+        .build();
+      const maxValidityInSecs = getSecondsUntil(expirationTime) - 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
+
+      const result = schema.safeParse(message);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: `Must be within ${maxValidityInSecs} seconds`,
             path: ['expirationTime'],
           },
         ]),
@@ -424,16 +534,22 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('notBefore', faker.date.past().toISOString())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
 
     it('should allow an optional notBefore', () => {
       const message = siweMessageBuilder().with('notBefore', undefined).build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -442,8 +558,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('notBefore', faker.lorem.sentence())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -463,16 +582,22 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('requestId', faker.string.uuid())
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
 
     it('allow an optional requestId', () => {
       const message = siweMessageBuilder().with('requestId', undefined).build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -481,8 +606,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('requestId', faker.number.int() as unknown as string)
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -503,8 +631,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('resources', [faker.internet.url({ appendSlash: false })])
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -513,8 +644,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('resources', [faker.internet.domainName()])
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -530,8 +664,11 @@ describe('SiweMessageSchema', () => {
 
     it('allow an optional resources', () => {
       const message = siweMessageBuilder().with('resources', undefined).build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(result.success).toBe(true);
     });
@@ -540,8 +677,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('resources', faker.lorem.sentence() as unknown as string[])
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -560,8 +700,11 @@ describe('SiweMessageSchema', () => {
       const message = siweMessageBuilder()
         .with('resources', [`${faker.internet.url({ appendSlash: false })}\n`])
         .build();
+      const maxValidityInSecs =
+        getSecondsUntil(new Date(message.expirationTime!)) + 1;
+      const schema = getSiweMessageSchema(maxValidityInSecs);
 
-      const result = SiweMessageSchema.safeParse(message);
+      const result = schema.safeParse(message);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -584,9 +727,12 @@ describe('SiweMessageSchema', () => {
     ['nonce' as const],
   ])('should not allow %s to be undefined', (key) => {
     const message = siweMessageBuilder().build();
+    const maxValidityInSecs =
+      getSecondsUntil(new Date(message.expirationTime!)) + 1;
+    const schema = getSiweMessageSchema(maxValidityInSecs);
     delete message[key];
 
-    const result = SiweMessageSchema.safeParse(message);
+    const result = schema.safeParse(message);
 
     expect(
       !result.success &&
