@@ -26,7 +26,7 @@ import {
   TransactionDataDto,
   TransactionDataDtoSchema,
 } from '@/routes/common/entities/transaction-data.dto.entity';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -73,13 +73,13 @@ export class TransactionsViewController {
 @Module({
   imports: [
     DataDecodedRepositoryModule,
+    SetPreSignatureDecoderModule,
     SwapOrderHelperModule,
     SwapOrderMapperModule,
     SwapsRepositoryModule,
     TokenRepositoryModule,
   ],
-  // TODO module for SetPreSignatureDecoder
-  providers: [TransactionsViewService, SetPreSignatureDecoder],
+  providers: [TransactionsViewService],
   controllers: [TransactionsViewController],
 })
 export class TransactionsViewControllerModule {}
