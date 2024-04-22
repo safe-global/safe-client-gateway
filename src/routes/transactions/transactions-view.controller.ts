@@ -21,17 +21,14 @@ import {
 import { TransactionsViewService } from '@/routes/transactions/transactions-view.service';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.helper';
-import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import {
   TransactionDataDto,
   TransactionDataDtoSchema,
 } from '@/routes/common/entities/transaction-data.dto.entity';
 import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
-import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 
 @ApiTags('transactions')
 @Controller({
@@ -75,9 +72,6 @@ export class TransactionsViewController {
     DataDecodedRepositoryModule,
     SetPreSignatureDecoderModule,
     SwapOrderHelperModule,
-    SwapOrderMapperModule,
-    SwapsRepositoryModule,
-    TokenRepositoryModule,
   ],
   providers: [TransactionsViewService],
   controllers: [TransactionsViewController],
