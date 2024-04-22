@@ -52,27 +52,27 @@ describe('Events queue processing e2e tests', () => {
     await app.close();
   });
 
-  it.only.each([
+  it.each([
     {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
-    // {
-    //   type: 'OUTGOING_ETHER',
-    //   txHash: faker.string.hexadecimal({ length: 32 }),
-    //   value: faker.string.numeric(),
-    // },
-    // {
-    //   type: 'INCOMING_ETHER',
-    //   txHash: faker.string.hexadecimal({ length: 32 }),
-    //   value: faker.string.numeric(),
-    // },
-    // {
-    //   type: 'OUTGOING_TOKEN',
-    //   tokenAddress: faker.finance.ethereumAddress(),
-    //   txHash: faker.string.hexadecimal({ length: 32 }),
-    // },
+    {
+      type: 'OUTGOING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'INCOMING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'OUTGOING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
   ])('$type clears balances', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(

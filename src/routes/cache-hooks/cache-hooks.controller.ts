@@ -18,6 +18,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { EventProtocolChangedError } from '@/routes/cache-hooks/errors/event-protocol-changed.error';
 import { EventProtocolChangedFilter } from '@/routes/cache-hooks/filters/event-protocol-changed.filter';
+import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 
 @Controller({
   path: '',

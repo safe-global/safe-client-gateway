@@ -1,7 +1,7 @@
 /**
  * Stops execution for {@link milliseconds} milliseconds.
  */
-export async function milliseconds(milliseconds: number): Promise<void> {
+export async function waitMilliseconds(milliseconds: number): Promise<void> {
   await new Promise((_) => setTimeout(_, milliseconds));
 }
 
@@ -25,7 +25,7 @@ export async function retry(
       }
     }
 
-    await milliseconds(delayMs);
+    await waitMilliseconds(delayMs);
     attempt++;
     return execute();
   };
