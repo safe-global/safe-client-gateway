@@ -51,7 +51,9 @@ export class TransactionsHistoryMapper {
     if (transactionsDomain.length == 0) {
       return [];
     }
-    const previousTransaction = await (async () => {
+    const previousTransaction = await (async (): Promise<
+      TransactionItem | undefined
+    > => {
       const prevDomainTransaction = this.getPreviousItem(
         offset,
         transactionsDomain,
@@ -74,7 +76,7 @@ export class TransactionsHistoryMapper {
         : mappedPreviousTransaction;
     })();
 
-    const transactions = await (async () => {
+    const transactions = await (async (): Promise<Array<TransactionItem>> => {
       const mappedTransactions = await Promise.all(
         transactionsDomain.map((transaction) => {
           return this.mapTransaction(transaction, chainId, safe, onlyTrusted);
@@ -124,7 +126,7 @@ export class TransactionsHistoryMapper {
   private filterTransactions(
     transactions: TransactionItem[],
     previousTransaction: TransactionItem | undefined,
-  ) {
+  ): Array<TransactionItem> {
     return transactions.filter((item, i, arr) => {
       // Executed by Safe - cannot be imitation
       if (item.transaction.executionInfo) {
