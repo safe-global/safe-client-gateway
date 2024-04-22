@@ -27,8 +27,8 @@ import { EventProtocolChangedFilter } from '@/routes/cache-hooks/filters/event-p
 export class CacheHooksController {
   private readonly isEventsQueueEnabled: boolean;
   private readonly configServiceEventTypes = [
-    'CHAIN_UPDATE',
-    'SAFE_APPS_UPDATE',
+    EventType.CHAIN_UPDATE,
+    EventType.SAFE_APPS_UPDATE,
   ];
 
   constructor(
