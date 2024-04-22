@@ -44,7 +44,7 @@ export class TransactionsViewService {
     }
 
     try {
-      return await this.handleSwapOrder({
+      return await this.getSwapOrderConfirmationView({
         chainId: args.chainId,
         data: swapOrderData,
         dataDecoded,
@@ -58,7 +58,7 @@ export class TransactionsViewService {
     }
   }
 
-  private async handleSwapOrder(args: {
+  private async getSwapOrderConfirmationView(args: {
     chainId: string;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
