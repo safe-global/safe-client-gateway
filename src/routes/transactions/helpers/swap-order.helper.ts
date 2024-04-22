@@ -73,7 +73,7 @@ export class SwapOrderHelper {
    * @throws {Error} Throws an error if either the sellToken or buyToken object has null decimals.
    */
   async getOrder(args: { chainId: string; orderUid: `0x${string}` }): Promise<{
-    order: Omit<Order, 'kind'> & { kind: Exclude<Order['kind'], 'unknown'> };
+    order: Order & { kind: Exclude<Order['kind'], 'unknown'> };
     sellToken: Token & { decimals: number };
     buyToken: Token & { decimals: number };
   }> {
