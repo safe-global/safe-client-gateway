@@ -13,7 +13,7 @@ import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swap-order-info.entity';
+import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,

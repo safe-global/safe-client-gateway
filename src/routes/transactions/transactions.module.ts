@@ -29,13 +29,13 @@ import { TransactionsController } from '@/routes/transactions/transactions.contr
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
+import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.helper';
 
 @Module({
   controllers: [TransactionsController],
@@ -48,6 +48,7 @@ import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interfac
     SafeAppsRepositoryModule,
     SetPreSignatureDecoderModule,
     SwapOrderMapperModule,
+    SwapOrderHelperModule,
     TokenRepositoryModule,
   ],
   providers: [
@@ -60,7 +61,6 @@ import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interfac
     ModuleTransactionDetailsMapper,
     ModuleTransactionMapper,
     ModuleTransactionStatusMapper,
-    MultiSendDecoder,
     MultisigTransactionDetailsMapper,
     MultisigTransactionExecutionDetailsMapper,
     MultisigTransactionExecutionInfoMapper,
