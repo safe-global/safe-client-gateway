@@ -251,10 +251,12 @@ describe('Transactions History Controller (Unit)', () => {
         .with('executionDate', new Date('2022-12-25T00:00:00Z'))
         .build(),
     );
-    const nativeTokenTransfer = nativeTokenTransferBuilder().build();
+    const nativeTokenTransfer = nativeTokenTransferBuilder()
+      .with('executionDate', new Date('2022-12-31T00:00:00Z'))
+      .build();
     const incomingTransaction = ethereumTransactionToJson(
       ethereumTransactionBuilder()
-        .with('executionDate', new Date('2022-12-31T00:00:00Z'))
+        .with('executionDate', nativeTokenTransfer.executionDate)
         .with('transfers', [
           nativeTokenTransferToJson(nativeTokenTransfer) as Transfer,
         ])
@@ -996,12 +998,14 @@ describe('Transactions History Controller (Unit)', () => {
                 erc20TransferBuilder()
                   .with('tokenAddress', untrustedToken.address)
                   .with('value', faker.string.numeric({ exclude: ['0'] }))
+                  .with('executionDate', date)
                   .build(),
               ) as Transfer,
               erc20TransferToJson(
                 erc20TransferBuilder()
                   .with('tokenAddress', trustedToken.address)
                   .with('value', faker.string.numeric({ exclude: ['0'] }))
+                  .with('executionDate', date)
                   .build(),
               ) as Transfer,
             ])
@@ -1015,12 +1019,14 @@ describe('Transactions History Controller (Unit)', () => {
                 erc20TransferBuilder()
                   .with('tokenAddress', untrustedToken.address)
                   .with('value', faker.string.numeric({ exclude: ['0'] }))
+                  .with('executionDate', oneDayAfter)
                   .build(),
               ) as Transfer,
               erc20TransferToJson(
                 erc20TransferBuilder()
                   .with('tokenAddress', untrustedToken.address)
                   .with('value', faker.string.numeric({ exclude: ['0'] }))
+                  .with('executionDate', oneDayAfter)
                   .build(),
               ) as Transfer,
             ])
@@ -1034,6 +1040,7 @@ describe('Transactions History Controller (Unit)', () => {
                 erc20TransferBuilder()
                   .with('tokenAddress', trustedToken.address)
                   .with('value', faker.string.numeric({ exclude: ['0'] }))
+                  .with('executionDate', twoDaysAfter)
                   .build(),
               ) as Transfer,
             ])

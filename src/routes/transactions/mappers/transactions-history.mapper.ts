@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
-import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import {
+  TransferDirection,
+  isTransferTransactionInfo,
+} from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import {
   isCreationTransaction,
@@ -12,10 +13,7 @@ import {
   isMultisigTransaction,
   Transaction as TransactionDomain,
 } from '@/domain/safe/entities/transaction.entity';
-import {
-  Transfer,
-  isERC20Transfer,
-} from '@/domain/safe/entities/transfer.entity';
+import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { DateLabel } from '@/routes/common/entities/date-label.entity';
 import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
 import { CreationTransactionMapper } from '@/routes/transactions/mappers/creation-transaction/creation-transaction.mapper';
@@ -24,18 +22,10 @@ import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisi
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
-class TransactionDomainGroup {
-  timestamp!: number;
-  transactions!: (
-    | MultisigTransaction
-    | ModuleTransaction
-    | EthereumTransaction
-    | CreationTransaction
-  )[];
-}
-
 @Injectable()
 export class TransactionsHistoryMapper {
+  private readonly VANITY_ADDRESS_CHARS = 4;
+
   private readonly maxNestedTransfers: number;
 
   constructor(
@@ -61,152 +51,153 @@ export class TransactionsHistoryMapper {
     if (transactionsDomain.length == 0) {
       return [];
     }
-    const previousTransaction = this.getPreviousItem(
-      offset,
-      transactionsDomain,
-    );
-    let prevPageTimestamp = 0;
-    if (previousTransaction !== null) {
-      prevPageTimestamp = this.getDayFromTransactionDate(
-        previousTransaction,
-        timezoneOffset,
-      ).getTime();
-      // Filter poisoned transactions
-      transactionsDomain = this.getLegitimateTransactions(
-        safe.address,
+    const previousTransaction = await (async () => {
+      const prevDomainTransaction = this.getPreviousItem(
+        offset,
         transactionsDomain,
+      );
+      if (!prevDomainTransaction) {
+        return;
+      }
+      // We map in order to filter last list item against it
+      const mappedPreviousTransaction = await this.mapTransaction(
+        prevDomainTransaction,
+        chainId,
+        safe,
+        onlyTrusted,
       );
       // Remove first transaction that was requested to get previous day timestamp
       transactionsDomain = transactionsDomain.slice(1);
-    }
 
-    const transactionsDomainGroups = this.groupByDay(
-      transactionsDomain,
-      timezoneOffset,
-    );
+      return Array.isArray(mappedPreviousTransaction)
+        ? mappedPreviousTransaction.at(-1)
+        : mappedPreviousTransaction;
+    })();
 
-    const transactionList = await Promise.all(
-      transactionsDomainGroups.map(async (transactionGroup) => {
-        const items: (TransactionItem | DateLabel)[] = [];
-        const groupTransactions = (
-          await this.mapGroupTransactions(
-            transactionGroup,
-            chainId,
-            safe,
-            onlyTrusted,
-          )
-        )
-          .filter(<T>(x: T | undefined): x is T => x != null)
-          .flat();
+    const transactions = await (async () => {
+      const mappedTransactions = await Promise.all(
+        transactionsDomain.map((transaction) => {
+          return this.mapTransaction(transaction, chainId, safe, onlyTrusted);
+        }),
+      );
+      const transactionItems = mappedTransactions
+        .filter(<T>(x: T): x is NonNullable<T> => x != null)
+        .flat();
+
+      // TODO: Decide on whether to filter or mark transactions as untrusted
+      //       as well as hiding behind a feature flag.
+      return this.filterTransactions(transactionItems, previousTransaction);
+    })();
+
+    // The groups respect timezone offset – this was done for grouping only.
+    const transactionsByDay = this.groupByDay(transactions, timezoneOffset);
+    return transactionsByDay.reduce<Array<TransactionItem | DateLabel>>(
+      (transactionList, transactionsOnDay) => {
+        // The actual value of the group should be in the UTC timezone instead
+        // A group should always have at least one transaction.
+        const { timestamp } = transactionsOnDay[0].transaction;
 
         // If the current group is a follow-up from the previous page,
         // or the group is empty, the date label shouldn't be added.
-        const isFollowUp = transactionGroup.timestamp == prevPageTimestamp;
-        if (!isFollowUp && groupTransactions.length) {
-          items.push(new DateLabel(transactionGroup.timestamp));
+        const isFollowUp =
+          timestamp == previousTransaction?.transaction.timestamp;
+        if (!isFollowUp && transactionsOnDay.length > 0 && timestamp) {
+          transactionList.push(new DateLabel(timestamp));
         }
-        items.push(...groupTransactions);
-        return items;
-      }),
+        return transactionList.concat(transactionsOnDay);
+      },
+      [],
     );
-
-    return transactionList.flat();
   }
 
-  private getLegitimateTransactions(
-    safeAddress: string,
-    transactions: TransactionDomainGroup['transactions'],
-  ): TransactionDomainGroup['transactions'] {
-    /**
-     * The following filters poisoned events that are:
-     * - immediately after legitimate transfers
-     * - outgoing transfers
-     * - of the same value
-     * - by 4-char. vanity addresses
-     *
-     * It does not:
-     * - support referencing transfers within multiSends
-     * - have dynamic heuristics
-     * - depend on the trusted flag or have a feature flag
-     */
-
-    return transactions.map((item, i, arr) => {
-      // Address poisoning only targets transfers
-      if (!isEthereumTransaction(item) || !item.transfers) {
-        return item;
+  /**
+   * Filters out outgoing ERC20 transactions that match their direct predecessor
+   * in terms of value and recipient address vanity - but not the exact address.
+   *
+   * @param transactions - list of transactions to filter
+   * @param previousTransaction - transaction to compare last {@link transactions}
+   *                              item against
+   *
+   * Note: this does not compare batched multiSend transactions as the "distance"
+   * between those batched and their imitation would not be immediate.
+   */
+  private filterTransactions(
+    transactions: TransactionItem[],
+    previousTransaction: TransactionItem | undefined,
+  ) {
+    return transactions.filter((item, i, arr) => {
+      // Executed by Safe - cannot be imitation
+      if (item.transaction.executionInfo) {
+        return true;
       }
 
-      // From the previous transaction...
-      const prevItem = arr[i - 1];
+      const prevItem = i === arr.length - 1 ? previousTransaction : arr[i + 1];
+      // No reference transaction to filter against
+      if (!prevItem) {
+        return true;
+      }
+
+      const txInfo = item.transaction.txInfo;
+      const prevTxInfo = prevItem.transaction.txInfo;
+
+      // Only consider transfers...
       if (
-        !prevItem ||
-        !isEthereumTransaction(prevItem) ||
-        !prevItem.transfers
+        !isTransferTransactionInfo(txInfo) ||
+        !isTransferTransactionInfo(prevTxInfo)
       ) {
-        return item;
+        return true;
       }
 
-      // ...get the last transfer
-      const prevTransfers = prevItem.transfers
-        .filter(isERC20Transfer)
-        .filter((prev) => safeAddress === prev.from);
-      const prevTransfer = prevTransfers.at(-1);
-
-      if (!prevTransfer) {
-        return item;
+      // ...of ERC20s...
+      if (
+        !isErc20Transfer(txInfo.transferInfo) ||
+        !isErc20Transfer(prevTxInfo.transferInfo)
+      ) {
+        return true;
       }
 
-      const legitTransfers = item.transfers.filter((transfer) => {
-        // Non-ERC20 transfers are always considered legitimate
-        if (!isERC20Transfer(transfer)) return true;
+      // ...that are outgoing
+      const isOutgoing = txInfo.direction === TransferDirection.Outgoing;
+      const isPrevOutgoing =
+        prevTxInfo.direction === TransferDirection.Outgoing;
+      if (!isOutgoing || !isPrevOutgoing) {
+        return true;
+      }
 
-        const isOutgoing = safeAddress === transfer.from;
-        if (isOutgoing) return true;
+      // Imitation transfers are of the same value
+      const isSameValue =
+        txInfo.transferInfo.value === prevTxInfo.transferInfo.value;
+      if (!isSameValue) {
+        return true;
+      }
 
-        const isSameValue = transfer.value === prevTransfer.value;
-        if (!isSameValue) return true;
-
-        const sender = transfer.from.toLowerCase();
-        const prevSender = prevTransfer.from.toLowerCase();
-
-        const isSameAddress = sender === prevSender;
-        return !isSameAddress && !this.isVanityAddress(sender, prevSender);
-      });
-
-      item.transfers = legitTransfers.length === 0 ? null : legitTransfers;
-
-      return item;
+      // If a recipient is a vanity address, but not the exact recipient
+      // of the previous transaction, it is likely imitating it
+      const isSameRecipient =
+        txInfo.recipient.value === prevTxInfo.recipient.value;
+      if (isSameRecipient) {
+        return true;
+      }
+      return !this.isVanityAddress(
+        txInfo.recipient.value,
+        prevTxInfo.recipient.value,
+        this.VANITY_ADDRESS_CHARS,
+      );
     });
   }
 
-  private isVanityAddress(address1: string, address2: string): boolean {
-    const VANITY_THRESHOLD = 4;
-    return (
-      // Ignore `0x` prefix
-      address1.slice(2, VANITY_THRESHOLD) ===
-        address2.slice(2, VANITY_THRESHOLD) ||
-      address1.slice(-VANITY_THRESHOLD) === address2.slice(-VANITY_THRESHOLD)
-    );
-  }
+  private isVanityAddress(
+    address1: string,
+    address2: string,
+    chars: number,
+  ): boolean {
+    const a1 = address1.toLowerCase();
+    const a2 = address2.toLowerCase();
 
-  private getTransactionTimestamp(transaction: TransactionDomain): Date {
-    let timestamp: Date | null;
-    if (isMultisigTransaction(transaction)) {
-      const executionDate = transaction.executionDate;
-      timestamp = executionDate ?? transaction.submissionDate;
-    } else if (isEthereumTransaction(transaction)) {
-      timestamp = transaction.executionDate;
-    } else if (isModuleTransaction(transaction)) {
-      timestamp = transaction.executionDate;
-    } else if (isCreationTransaction(transaction)) {
-      timestamp = transaction.created;
-    } else {
-      throw Error('Unknown transaction type');
-    }
-    if (timestamp == null) {
-      throw Error('ExecutionDate cannot be null');
-    }
-    return timestamp;
+    // Ignore `0x` prefix
+    const isVanityPrefix = a1.slice(2, chars) === a2.slice(2, chars);
+    const isVanitySuffix = a1.slice(-chars) === a2.slice(-chars);
+    return isVanityPrefix && isVanitySuffix;
   }
 
   private getPreviousItem(
@@ -218,34 +209,16 @@ export class TransactionsHistoryMapper {
     return transactions[0];
   }
 
-  private getDayFromTransactionDate(
-    transaction: TransactionDomain,
-    timezoneOffset: number,
-  ): Date {
-    const timestamp = this.getTransactionTimestamp(transaction);
-    return this.getDayStartForDate(timestamp, timezoneOffset);
-  }
-
   private groupByDay(
-    transactions: TransactionDomain[],
+    transactions: TransactionItem[],
     timezoneOffset: number,
-  ): TransactionDomainGroup[] {
-    return Object.entries(
-      groupBy(transactions, (transaction) => {
-        return this.getDayFromTransactionDate(
-          transaction,
-          timezoneOffset,
-        ).getTime();
-      }),
-    ).map(([, transactions]): TransactionDomainGroup => {
-      // The groups respect the timezone offset – this was done for grouping only.
-      // The actual value of the group should be in the UTC timezone instead
-      // A group should always have at least one transaction.
-      return {
-        timestamp: this.getTransactionTimestamp(transactions[0]).getTime(),
-        transactions: transactions,
-      };
+  ): TransactionItem[][] {
+    const grouped = groupBy(transactions, ({ transaction }) => {
+      // timestamp will always be defined for historical transactions
+      const date = new Date(transaction.timestamp ?? 0);
+      return this.getDayStartForDate(date, timezoneOffset).getTime();
     });
+    return Object.values(grouped);
   }
 
   /**
@@ -282,52 +255,40 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private mapGroupTransactions(
-    transactionGroup: TransactionDomainGroup,
+  private async mapTransaction(
+    transaction: TransactionDomain,
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-  ): Promise<(TransactionItem | TransactionItem[] | undefined)[]> {
-    return Promise.all(
-      transactionGroup.transactions.map(async (transaction) => {
-        if (isMultisigTransaction(transaction)) {
-          return new TransactionItem(
-            await this.multisigTransactionMapper.mapTransaction(
-              chainId,
-              transaction,
-              safe,
-            ),
-          );
-        } else if (isModuleTransaction(transaction)) {
-          return new TransactionItem(
-            await this.moduleTransactionMapper.mapTransaction(
-              chainId,
-              transaction,
-            ),
-          );
-        } else if (isEthereumTransaction(transaction)) {
-          const transfers = transaction.transfers;
-          if (transfers != null) {
-            return await this.mapTransfers(
-              transfers,
-              chainId,
-              safe,
-              onlyTrusted,
-            );
-          }
-        } else if (isCreationTransaction(transaction)) {
-          return new TransactionItem(
-            await this.creationTransactionMapper.mapTransaction(
-              chainId,
-              transaction,
-              safe,
-            ),
-          );
-        } else {
-          // This should never happen as AJV would not allow an unknown transaction to get to this stage
-          throw Error('Unrecognized transaction type');
-        }
-      }),
-    );
+  ): Promise<TransactionItem | TransactionItem[] | undefined> {
+    if (isMultisigTransaction(transaction)) {
+      return new TransactionItem(
+        await this.multisigTransactionMapper.mapTransaction(
+          chainId,
+          transaction,
+          safe,
+        ),
+      );
+    } else if (isModuleTransaction(transaction)) {
+      return new TransactionItem(
+        await this.moduleTransactionMapper.mapTransaction(chainId, transaction),
+      );
+    } else if (isEthereumTransaction(transaction)) {
+      const transfers = transaction.transfers;
+      if (transfers != null) {
+        return await this.mapTransfers(transfers, chainId, safe, onlyTrusted);
+      }
+    } else if (isCreationTransaction(transaction)) {
+      return new TransactionItem(
+        await this.creationTransactionMapper.mapTransaction(
+          chainId,
+          transaction,
+          safe,
+        ),
+      );
+    } else {
+      // This should never happen as AJV would not allow an unknown transaction to get to this stage
+      throw Error('Unrecognized transaction type');
+    }
   }
 }
