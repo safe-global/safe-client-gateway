@@ -101,6 +101,8 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   })
   executedSurplusFee: string | null;
 
+  fullAppData: Record<string, unknown> | null;
+
   @ApiProperty({ description: 'The sell token of the order' })
   sellToken: TokenInfo;
 
@@ -125,5 +127,6 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     this.executedSurplusFee = args.executedSurplusFee;
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
+    this.fullAppData = args.fullAppData;
   }
 }

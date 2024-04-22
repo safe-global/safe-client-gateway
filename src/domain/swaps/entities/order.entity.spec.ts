@@ -123,4 +123,27 @@ describe('OrderSchema', () => {
       );
     });
   });
+
+  describe('fullAppData', () => {
+    it.each([
+      '[]',
+      '{}',
+      'null',
+      '{\n  "version": "0.1.0",\n  "appCode": "Yearn",\n  "metadata": {\n    "referrer": {\n      "version": "0.1.0",\n      "address": "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52"\n    }\n  }\n}\n',
+    ])('is valid', (fullAppData) => {
+      const order = orderBuilder().with('fullAppData', fullAppData).build();
+
+      const result = OrderSchema.safeParse(order);
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  it.each(['a', 'a : b', '{', '['])('is not valid', (fullAppData) => {
+    const order = orderBuilder().with('fullAppData', fullAppData).build();
+
+    const result = OrderSchema.safeParse(order);
+
+    expect(result.success).toBe(false);
+  });
 });
