@@ -1,7 +1,6 @@
-import { Inject, Injectable, Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
   SwapOrderHelper,
@@ -12,7 +11,6 @@ import {
 export class SwapOrderMapper {
   constructor(
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
-    @Inject(IConfigurationService)
     private readonly swapOrderHelper: SwapOrderHelper,
   ) {}
 
