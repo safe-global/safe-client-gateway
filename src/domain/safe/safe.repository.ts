@@ -20,7 +20,7 @@ import {
 import {
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
-} from '@/domain/safe/entities/schemas/multisig-transaction.schema';
+} from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';

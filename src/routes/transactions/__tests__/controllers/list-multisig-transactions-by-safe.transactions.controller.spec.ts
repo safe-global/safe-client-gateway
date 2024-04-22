@@ -164,7 +164,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       status: 200,
     });
     networkService.get.mockResolvedValueOnce({
-      data: { ...page, count: '1' },
+      data: { ...page, count: 'invalid' },
       status: 200,
     });
 
