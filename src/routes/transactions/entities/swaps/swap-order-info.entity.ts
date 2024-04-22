@@ -12,9 +12,9 @@ import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entit
 
 export interface OrderInfo {
   uid: string;
-  orderStatus: OrderStatus;
+  status: OrderStatus;
   kind: 'buy' | 'sell';
-  class: OrderClass;
+  orderClass: OrderClass;
   validUntil: number;
   sellAmount: string;
   buyAmount: string;
@@ -38,7 +38,7 @@ export class SwapOrderTransactionInfo
   @ApiProperty({
     enum: OrderStatus,
   })
-  orderStatus: OrderStatus;
+  status: OrderStatus;
 
   @ApiProperty({ enum: ['buy', 'sell'] })
   kind: 'buy' | 'sell';
@@ -46,7 +46,7 @@ export class SwapOrderTransactionInfo
   @ApiProperty({
     enum: OrderClass,
   })
-  class: OrderClass;
+  orderClass: OrderClass;
 
   @ApiProperty({ description: 'The timestamp when the order expires' })
   validUntil: number;
@@ -107,9 +107,9 @@ export class SwapOrderTransactionInfo
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
     this.uid = args.uid;
-    this.orderStatus = args.orderStatus;
+    this.status = args.orderStatus;
     this.kind = args.kind;
-    this.class = args.class;
+    this.orderClass = args.class;
     this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;
