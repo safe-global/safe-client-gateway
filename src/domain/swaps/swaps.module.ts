@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { SwapsRepository } from '@/domain/swaps/swaps.repository';
+import {
+  ISwapsRepository,
+  SwapsRepository,
+} from '@/domain/swaps/swaps.repository';
 import { SwapsApiModule } from '@/datasources/swaps-api/swaps-api.module';
 
 @Module({
   imports: [SwapsApiModule],
-  providers: [SwapsRepository],
-  exports: [SwapsRepository],
+  providers: [{ provide: ISwapsRepository, useClass: SwapsRepository }],
+  exports: [ISwapsRepository],
 })
 export class SwapsModule {}
