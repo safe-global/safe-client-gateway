@@ -55,7 +55,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   @ApiProperty({
     enum: OrderStatus,
   })
-  orderStatus: OrderStatus;
+  status: OrderStatus;
 
   @ApiProperty({ enum: ['buy', 'sell'] })
   kind: 'buy' | 'sell';
@@ -63,7 +63,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   @ApiProperty({
     enum: OrderClass,
   })
-  class: OrderClass;
+  orderClass: OrderClass;
 
   @ApiProperty({ description: 'The timestamp when the order expires' })
   validUntil: number;
@@ -113,9 +113,9 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     this.method = args.method;
     this.parameters = args.parameters;
     this.uid = args.uid;
-    this.orderStatus = args.orderStatus;
+    this.status = args.status;
     this.kind = args.kind;
-    this.class = args.class;
+    this.orderClass = args.orderClass;
     this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;
