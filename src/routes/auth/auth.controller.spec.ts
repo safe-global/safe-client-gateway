@@ -118,12 +118,10 @@ describe('AuthController', () => {
       const signature = await signer.signMessage({
         message: toSignableSiweMessage(message),
       });
-      const expirationTimeInSeconds = getSecondsUntil(expirationTime);
-      // MaxAge does not include the second of expiration
-      const maxAge = expirationTimeInSeconds - 1;
+      const maxAge = getSecondsUntil(expirationTime);
       // jsonwebtoken sets expiration based on timespans, not exact dates
       // meaning we cannot use expirationTime directly
-      const expires = new Date(Date.now() + expirationTimeInSeconds * 1_000);
+      const expires = new Date(Date.now() + maxAge * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
