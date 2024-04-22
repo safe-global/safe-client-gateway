@@ -31,7 +31,7 @@ export class SwapOrderMapper {
 
     return new SwapOrderTransactionInfo({
       uid: order.uid,
-      status: order.status,
+      orderStatus: order.status,
       kind: order.kind,
       class: order.class,
       validUntil: order.validTo,
