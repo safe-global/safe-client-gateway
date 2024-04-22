@@ -55,7 +55,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   @ApiProperty({
     enum: OrderStatus,
   })
-  status: OrderStatus;
+  orderStatus: OrderStatus;
 
   @ApiProperty({ enum: ['buy', 'sell'] })
   kind: 'buy' | 'sell';
@@ -113,7 +113,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     this.method = args.method;
     this.parameters = args.parameters;
     this.uid = args.uid;
-    this.status = args.status;
+    this.orderStatus = args.orderStatus;
     this.kind = args.kind;
     this.class = args.class;
     this.validUntil = args.validUntil;

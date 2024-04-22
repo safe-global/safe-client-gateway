@@ -12,7 +12,7 @@ import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entit
 
 export interface OrderInfo {
   uid: string;
-  status: OrderStatus;
+  orderStatus: OrderStatus;
   kind: 'buy' | 'sell';
   class: OrderClass;
   validUntil: number;
@@ -38,7 +38,7 @@ export class SwapOrderTransactionInfo
   @ApiProperty({
     enum: OrderStatus,
   })
-  status: OrderStatus;
+  orderStatus: OrderStatus;
 
   @ApiProperty({ enum: ['buy', 'sell'] })
   kind: 'buy' | 'sell';
@@ -92,7 +92,7 @@ export class SwapOrderTransactionInfo
 
   constructor(args: {
     uid: string;
-    status: OrderStatus;
+    orderStatus: OrderStatus;
     kind: 'buy' | 'sell';
     class: OrderClass;
     validUntil: number;
@@ -107,7 +107,7 @@ export class SwapOrderTransactionInfo
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
     this.uid = args.uid;
-    this.status = args.status;
+    this.orderStatus = args.orderStatus;
     this.kind = args.kind;
     this.class = args.class;
     this.validUntil = args.validUntil;

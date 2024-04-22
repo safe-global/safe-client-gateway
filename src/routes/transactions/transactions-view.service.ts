@@ -78,7 +78,7 @@ export class TransactionsViewService {
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       uid: order.uid,
-      status: order.status,
+      orderStatus: order.status,
       kind: order.kind,
       class: order.class,
       validUntil: order.validTo,
