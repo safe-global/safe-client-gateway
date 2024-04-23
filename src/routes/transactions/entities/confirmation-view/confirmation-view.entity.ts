@@ -101,6 +101,11 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   })
   executedSurplusFee: string | null;
 
+  @ApiPropertyOptional({
+    type: Object,
+    nullable: true,
+    description: 'The App Data for this order',
+  })
   fullAppData: Record<string, unknown> | null;
 
   @ApiProperty({ description: 'The sell token of the order' })

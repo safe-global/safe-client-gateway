@@ -81,6 +81,8 @@ export const OrderSchema = z.object({
   executedSurplusFee: z.coerce.bigint().nullish().default(null),
   fullAppData: z
     .string()
+    .nullish()
+    .default(null)
     .transform((jsonString, ctx) => {
       try {
         if (!jsonString) return null;
@@ -92,7 +94,5 @@ export const OrderSchema = z.object({
         });
         return z.NEVER;
       }
-    })
-    .nullish()
-    .default(null),
+    }),
 });

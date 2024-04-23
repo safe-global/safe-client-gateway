@@ -91,6 +91,11 @@ export class SwapOrderTransactionInfo
   })
   executedSurplusFee: string | null;
 
+  @ApiPropertyOptional({
+    type: Object,
+    nullable: true,
+    description: 'The App Data for this order',
+  })
   fullAppData: Record<string, unknown> | null;
 
   constructor(args: {
