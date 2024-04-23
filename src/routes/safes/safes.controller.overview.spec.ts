@@ -1036,104 +1036,178 @@ describe('Safes Controller Overview (Unit)', () => {
   });
 
   describe('Validation', () => {
-    it('forwards error responses from the Config Service', async () => {
-      const chain = chainBuilder().with('chainId', '10').build();
-      const safeInfo = safeBuilder().build();
-      const currency = faker.finance.currencyCode();
+    it('omits erroneous Safes on chains returning an error from the Config Service', async () => {
+      const chain1 = chainBuilder().with('chainId', '1').build();
+      const chain2 = chainBuilder().with('chainId', '10').build();
+      const safeInfo1 = safeBuilder().build();
+      const safeInfo2 = safeBuilder().build();
+      const safeInfo3 = safeBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
-            const error = new NetworkResponseError(
-              new URL(`${safeConfigUrl}/api/v1/chains/${chain.chainId}`),
-              {
-                status: 404,
-              } as Response,
-            );
-            return Promise.reject(error);
-          }
-          default: {
-            return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}`,
-        )
-        .expect(404);
-    });
-
-    it('forwards error responses from the Transaction Service', async () => {
-      const chain = chainBuilder().with('chainId', '10').build();
-      const safeInfo = safeBuilder().build();
-      const currency = faker.finance.currencyCode();
-
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
-            return Promise.resolve({ data: chain, status: 200 });
-          }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
-            const error = new NetworkResponseError(
-              new URL(
-                `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
-              ),
-              {
-                status: 500,
-              } as Response,
-            );
-            return Promise.reject(error);
-          }
-          default: {
-            return Promise.reject(`No matching rule for url: ${url}`);
-          }
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}`,
-        )
-        .expect(500);
-    });
-
-    it('throw a 500 if validation of the Transaction Service return Promise.rejects', async () => {
-      const chain = chainBuilder().with('chainId', '10').build();
-      const safeInfo = safeBuilder().build();
-      const tokenAddress = faker.finance.ethereumAddress();
-      const secondTokenAddress = faker.finance.ethereumAddress();
-      const transactionApiBalancesResponse = [
+      const tokenAddress1 = faker.finance.ethereumAddress();
+      const tokenAddress2 = faker.finance.ethereumAddress();
+      const secondTokenAddress1 = faker.finance.ethereumAddress();
+      const secondTokenAddress2 = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse1 = [
         balanceBuilder()
           .with('tokenAddress', null)
           .with('balance', '3000000000000000000')
           .with('token', null)
           .build(),
         balanceBuilder()
-          .with('tokenAddress', getAddress(tokenAddress))
+          .with('tokenAddress', getAddress(tokenAddress1))
           .with('balance', '4000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
         balanceBuilder()
-          .with('tokenAddress', getAddress(secondTokenAddress))
+          .with('tokenAddress', getAddress(secondTokenAddress1))
           .with('balance', '3000000000000000000')
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
       ];
+      const transactionApiBalancesResponse2 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress2))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress1))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const transactionApiBalancesResponse3 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress1))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress2))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const nativeCoinId1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.nativeCoin`,
+        );
+      const nativeCoinId2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.nativeCoin`,
+        );
+      const chainName1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.chainName`,
+        );
+      const chainName2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.chainName`,
+        );
       const currency = faker.finance.currencyCode();
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId1]: { [currency.toLowerCase()]: 1536.75 },
+        [nativeCoinId2]: { [currency.toLowerCase()]: 1536.75 },
+      };
+      const tokenPriceProviderResponse = {
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [secondTokenAddress1]: { [currency.toLowerCase()]: 10 },
+        [secondTokenAddress2]: { [currency.toLowerCase()]: 10 },
+      };
+      const walletAddress = faker.finance.ethereumAddress();
+      const queuedTransactions1 = pageBuilder().build();
+      const queuedTransactions2 = pageBuilder().build();
+      const queuedTransactions3 = pageBuilder().build();
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
-            return Promise.resolve({ data: chain, status: 200 });
+          case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
+            const error = new NetworkResponseError(
+              new URL(`${safeConfigUrl}/api/v1/chains/${chain1.chainId}`),
+              {
+                status: 404,
+              } as Response,
+            );
+            return Promise.reject(error);
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
-            return Promise.resolve({ data: 'invalid', status: 200 });
+          case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
+            return Promise.resolve({ data: chain2, status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+            return Promise.resolve({ data: safeInfo1, status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+            return Promise.resolve({ data: safeInfo2, status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+            return Promise.resolve({ data: safeInfo3, status: 200 });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
             return Promise.resolve({
-              data: transactionApiBalancesResponse,
+              data: transactionApiBalancesResponse1,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse3,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/price`: {
+            return Promise.resolve({
+              data: nativeCoinPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName1}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName2}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions1,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions3,
               status: 200,
             });
           }
@@ -1145,10 +1219,468 @@ describe('Safes Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}`,
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
         )
-        .expect(500)
-        .expect({ statusCode: 500, message: 'Internal server error' });
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject([
+            // safeInfo1 is omitted
+            {
+              address: {
+                value: safeInfo2.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo2.threshold,
+              owners: safeInfo2.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '4910.25',
+              queued: queuedTransactions2.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+            {
+              address: {
+                value: safeInfo3.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo3.threshold,
+              owners: safeInfo3.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '5410.25',
+              queued: queuedTransactions3.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+          ]),
+        );
+    });
+
+    it('omits erroneous Safes from the Transaction Service', async () => {
+      const chain1 = chainBuilder().with('chainId', '1').build();
+      const chain2 = chainBuilder().with('chainId', '10').build();
+      const safeInfo1 = safeBuilder().build();
+      const safeInfo2 = safeBuilder().build();
+      const safeInfo3 = safeBuilder().build();
+
+      const tokenAddress1 = faker.finance.ethereumAddress();
+      const tokenAddress2 = faker.finance.ethereumAddress();
+      const secondTokenAddress1 = faker.finance.ethereumAddress();
+      const secondTokenAddress2 = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse2 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress2))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress1))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const transactionApiBalancesResponse3 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress1))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress2))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const nativeCoinId1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.nativeCoin`,
+        );
+      const nativeCoinId2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.nativeCoin`,
+        );
+      const chainName1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.chainName`,
+        );
+      const chainName2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.chainName`,
+        );
+      const currency = faker.finance.currencyCode();
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId1]: { [currency.toLowerCase()]: 1536.75 },
+        [nativeCoinId2]: { [currency.toLowerCase()]: 1536.75 },
+      };
+      const tokenPriceProviderResponse = {
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [secondTokenAddress1]: { [currency.toLowerCase()]: 10 },
+        [secondTokenAddress2]: { [currency.toLowerCase()]: 10 },
+      };
+      const walletAddress = faker.finance.ethereumAddress();
+      const queuedTransactions2 = pageBuilder().build();
+      const queuedTransactions3 = pageBuilder().build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
+            return Promise.resolve({ data: chain1, status: 200 });
+          }
+          case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
+            return Promise.resolve({ data: chain2, status: 200 });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+            const error = new NetworkResponseError(
+              new URL(
+                `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`,
+              ),
+              {
+                status: 500,
+              } as Response,
+            );
+            return Promise.reject(error);
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+            return Promise.resolve({ data: safeInfo2, status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+            return Promise.resolve({ data: safeInfo3, status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse3,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/price`: {
+            return Promise.resolve({
+              data: nativeCoinPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName1}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName2}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions3,
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
+        )
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject([
+            // safeInfo1 is omitted
+            {
+              address: {
+                value: safeInfo2.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo2.threshold,
+              owners: safeInfo2.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '4910.25',
+              queued: queuedTransactions2.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+            {
+              address: {
+                value: safeInfo3.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo3.threshold,
+              owners: safeInfo3.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '5410.25',
+              queued: queuedTransactions3.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+          ]),
+        );
+    });
+
+    it('omits erroneous Safes validation of the Transaction Service return Promise.rejects', async () => {
+      const chain1 = chainBuilder().with('chainId', '1').build();
+      const chain2 = chainBuilder().with('chainId', '10').build();
+      const safeInfo1 = safeBuilder().build();
+      const safeInfo2 = safeBuilder().build();
+      const safeInfo3 = safeBuilder().build();
+
+      const tokenAddress1 = faker.finance.ethereumAddress();
+      const tokenAddress2 = faker.finance.ethereumAddress();
+      const secondTokenAddress1 = faker.finance.ethereumAddress();
+      const secondTokenAddress2 = faker.finance.ethereumAddress();
+      const transactionApiBalancesResponse1 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress1))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress1))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const transactionApiBalancesResponse2 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress2))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress1))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const transactionApiBalancesResponse3 = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(tokenAddress1))
+          .with('balance', '4000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(secondTokenAddress2))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const nativeCoinId1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.nativeCoin`,
+        );
+      const nativeCoinId2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.nativeCoin`,
+        );
+      const chainName1 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain1.chainId}.chainName`,
+        );
+      const chainName2 = app
+        .get(IConfigurationService)
+        .getOrThrow(
+          `balances.providers.safe.prices.chains.${chain2.chainId}.chainName`,
+        );
+      const currency = faker.finance.currencyCode();
+      const nativeCoinPriceProviderResponse = {
+        [nativeCoinId1]: { [currency.toLowerCase()]: 1536.75 },
+        [nativeCoinId2]: { [currency.toLowerCase()]: 1536.75 },
+      };
+      const tokenPriceProviderResponse = {
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [tokenAddress1]: { [currency.toLowerCase()]: 12.5 },
+        [secondTokenAddress1]: { [currency.toLowerCase()]: 10 },
+        [secondTokenAddress2]: { [currency.toLowerCase()]: 10 },
+      };
+      const walletAddress = faker.finance.ethereumAddress();
+      const queuedTransactions1 = pageBuilder().build();
+      const queuedTransactions2 = pageBuilder().build();
+      const queuedTransactions3 = pageBuilder().build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
+            return Promise.resolve({ data: chain1, status: 200 });
+          }
+          case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
+            return Promise.resolve({ data: chain2, status: 200 });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+            return Promise.resolve({ data: 'invalid', status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+            return Promise.resolve({ data: safeInfo2, status: 200 });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+            return Promise.resolve({ data: safeInfo3, status: 200 });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse1,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/balances/`: {
+            return Promise.resolve({
+              data: transactionApiBalancesResponse3,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/price`: {
+            return Promise.resolve({
+              data: nativeCoinPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName1}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/token_price/${chainName2}`: {
+            return Promise.resolve({
+              data: tokenPriceProviderResponse,
+              status: 200,
+            });
+          }
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions1,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions2,
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: queuedTransactions3,
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/safes?currency=${currency}&safes=${chain1.chainId}:${safeInfo1.address},${chain2.chainId}:${safeInfo2.address},${chain2.chainId}:${safeInfo3.address}&wallet_address=${walletAddress}`,
+        )
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject([
+            // safeInfo1 is omitted
+            {
+              address: {
+                value: safeInfo2.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo2.threshold,
+              owners: safeInfo2.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '4910.25',
+              queued: queuedTransactions2.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+            {
+              address: {
+                value: safeInfo3.address,
+                name: null,
+                logoUri: null,
+              },
+              chainId: chain2.chainId,
+              threshold: safeInfo3.threshold,
+              owners: safeInfo3.owners.map((owner) => ({
+                value: owner,
+                name: null,
+                logoUri: null,
+              })),
+              fiatTotal: '5410.25',
+              queued: queuedTransactions3.count,
+              awaitingConfirmation: expect.any(Number),
+            },
+          ]),
+        );
     });
 
     it('should return a 0-balance when an error is thrown by the provider', async () => {

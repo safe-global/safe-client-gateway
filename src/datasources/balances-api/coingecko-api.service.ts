@@ -34,10 +34,25 @@ export class CoingeckoApi implements IPricesApi {
   static readonly NOT_FOUND_TTL_RANGE_SECONDS: number = 60 * 60 * 24;
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
-  private readonly pricesTtlSeconds: number;
-  private readonly notFoundPriceTtlSeconds: number;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly pricesTtlSeconds: number;
+  /**
+   * TTL in seconds for native coin prices.
+   */
+  private readonly nativeCoinPricesTtlSeconds: number;
+  /**
+   * TTL in seconds for a not found token price.
+   */
+  private readonly notFoundPriceTtlSeconds: number;
+  /**
+   * Token addresses that will be cached with a highRefreshRateTokensTtlSeconds TTL.
+   */
+  private readonly highRefreshRateTokens: string[];
+  /**
+   * TTL in seconds for high-rate refresh token prices.
+   */
+  private readonly highRefreshRateTokensTtlSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -60,12 +75,27 @@ export class CoingeckoApi implements IPricesApi {
     this.pricesTtlSeconds = this.configurationService.getOrThrow<number>(
       'balances.providers.safe.prices.pricesTtlSeconds',
     );
+    this.nativeCoinPricesTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'balances.providers.safe.prices.nativeCoinPricesTtlSeconds',
+      );
     this.notFoundPriceTtlSeconds = this.configurationService.getOrThrow<number>(
       'balances.providers.safe.prices.notFoundPriceTtlSeconds',
     );
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
+    this.highRefreshRateTokens = this.configurationService
+      .getOrThrow<
+        string[]
+      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .map((tokenAddress) => tokenAddress.toLowerCase());
+
+    this.highRefreshRateTokensTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
       );
   }
 
@@ -98,7 +128,7 @@ export class CoingeckoApi implements IPricesApi {
           }),
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.pricesTtlSeconds,
+        expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
       });
       return result?.[nativeCoinId]?.[lowerCaseFiatCode];
     } catch (error) {
@@ -242,13 +272,31 @@ export class CoingeckoApi implements IPricesApi {
         await this.cacheService.set(
           CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
           JSON.stringify(price),
-          validPrice
-            ? this.pricesTtlSeconds
-            : this._getRandomNotFoundTokenPriceTtl(),
+          this._getTtl(validPrice, tokenAddress),
         );
         return price;
       }),
     );
+  }
+
+  /**
+   * Gets the cache TTL for storing the price value.
+   * If the token address is included in {@link highRefreshRateTokens} (defaults to []),
+   * then {@link highRefreshRateTokensTtlSeconds} is used (defaults to 30 seconds).
+   * If the price cannot ve retrieved (or it's zero) {@link _getRandomNotFoundTokenPriceTtl} is called.
+   * Else {@link pricesTtlSeconds} is used (defaults to 300 seconds).
+   */
+  private _getTtl(
+    price: number | null | undefined,
+    tokenAddress: string,
+  ): number {
+    if (this.highRefreshRateTokens.includes(tokenAddress)) {
+      return this.highRefreshRateTokensTtlSeconds;
+    }
+
+    return !price
+      ? this._getRandomNotFoundTokenPriceTtl()
+      : this.pricesTtlSeconds;
   }
 
   /**

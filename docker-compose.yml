@@ -34,6 +34,17 @@ services:
       -c ssl_key_file=/var/lib/postgresql/server.key
       -c hba_file=/etc/pg_hba.conf
 
+  rabbitmq:
+    image: rabbitmq:alpine
+    ports:
+      - '5672:5672'
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 15s
+      timeout: 30s
+      retries: 3
+      start_period: 15s
+
   web:
     build: .
     tty: true

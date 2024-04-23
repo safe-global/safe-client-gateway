@@ -7,6 +7,12 @@ export default (): ReturnType<typeof configuration> => ({
     version: faker.system.semver(),
     buildNumber: faker.string.numeric(),
   },
+  amqp: {
+    url: faker.internet.url({ appendSlash: false }),
+    exchange: { name: faker.string.sample(), mode: faker.string.sample() },
+    queue: faker.string.sample(),
+    prefetch: faker.number.int(),
+  },
   applicationPort: faker.internet.port().toString(),
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
@@ -20,6 +26,7 @@ export default (): ReturnType<typeof configuration> => ({
           baseUri: faker.internet.url({ appendSlash: false }),
           apiKey: faker.string.hexadecimal({ length: 32 }),
           pricesTtlSeconds: faker.number.int(),
+          nativeCoinPricesTtlSeconds: faker.number.int(),
           notFoundPriceTtlSeconds: faker.number.int(),
           chains: {
             1: {
@@ -70,6 +77,10 @@ export default (): ReturnType<typeof configuration> => ({
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
             },
+            534352: {
+              nativeCoin: faker.string.sample(),
+              chainName: faker.string.sample(),
+            },
             56: {
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
@@ -87,6 +98,8 @@ export default (): ReturnType<typeof configuration> => ({
               chainName: faker.string.sample(),
             },
           },
+          highRefreshRateTokens: [],
+          highRefreshRateTokensTtlSeconds: faker.number.int(),
         },
       },
       zerion: {
@@ -170,13 +183,11 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
-    auth: true,
+    auth: false,
+    confirmationView: false,
+    eventsQueue: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
-  jwt: {
-    issuer: faker.lorem.word(),
-    secret: faker.string.alphanumeric(),
-  },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

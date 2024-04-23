@@ -19,11 +19,12 @@ import {
 } from '@/routes/safes/entities/safe-info.entity';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { Page } from '@/domain/entities/page.entity';
-import { getAddress } from 'viem';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class SafesService {
@@ -40,6 +41,7 @@ export class SafesService {
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
@@ -134,7 +136,7 @@ export class SafesService {
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
-    return Promise.all(
+    const settledOverviews = await Promise.allSettled(
       limitedSafes.map(async ({ chainId, address }) => {
         const [safe, balances] = await Promise.all([
           this.safeRepository.getSafe({
@@ -176,6 +178,20 @@ export class SafesService {
         );
       }),
     );
+
+    const safeOverviews: Array<SafeOverview> = [];
+
+    for (const safeOverview of settledOverviews) {
+      if (safeOverview.status === 'rejected') {
+        this.loggingService.warn(
+          `Error while getting Safe overview: ${asError(safeOverview.reason)} `,
+        );
+      } else if (safeOverview.status === 'fulfilled') {
+        safeOverviews.push(safeOverview.value);
+      }
+    }
+
+    return safeOverviews;
   }
 
   public async getNonces(args: {
@@ -323,10 +339,9 @@ export class SafesService {
     // If the singleton of this safe is not part of the collection
     // of the supported singletons we return UNKNOWN
     if (
-      !supportedSingletons
-        .map((singleton) => singleton.address)
-        // TODO: Remove checksumming when Safe schema is in Zod
-        .includes(getAddress(safe.masterCopy))
+      supportedSingletons.every(
+        (singleton) => singleton.address !== safe.masterCopy,
+      )
     )
       return MasterCopyVersionState.UNKNOWN;
 

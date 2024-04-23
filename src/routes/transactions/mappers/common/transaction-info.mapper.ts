@@ -17,12 +17,11 @@ import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc72
 import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/human-description.mapper';
 import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { SwapOrderMapper } from '@/routes/transactions/mappers/common/swap-order.mapper';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { isHex } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swap-order-info.entity';
+import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
+import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -55,9 +54,8 @@ export class MultisigTransactionInfoMapper {
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
     private readonly humanDescriptionMapper: HumanDescriptionMapper,
-    private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
     private readonly swapOrderMapper: SwapOrderMapper,
-    private readonly multiSendDecoder: MultiSendDecoder,
+    private readonly swapOrderHelper: SwapOrderHelper,
   ) {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
@@ -185,11 +183,6 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
-    if (!transaction.data) return false;
-    return this.setPreSignatureDecoder.isSetPreSignature(transaction.data);
-  }
-
   /**
    * Maps a swap order transaction.
    * If the transaction is not a swap order, it returns null.
@@ -206,7 +199,7 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
-    const orderData: `0x${string}` | null = this.findSwapOrder(
+    const orderData: `0x${string}` | null = this.swapOrderHelper.findSwapOrder(
       transaction.data,
     );
 
@@ -223,33 +216,6 @@ export class MultisigTransactionInfoMapper {
       this.loggingService.warn(error);
       return null;
     }
-  }
-
-  /**
-   * Finds the swap order in the transaction data.
-   * The swap order can be in the transaction data directly or in the data of a Multisend transaction.
-   *
-   * @param data - The transaction data
-   * @private
-   * @returns The swap order if found, otherwise null
-   */
-  private findSwapOrder(data: `0x${string}`): `0x${string}` | null {
-    // The swap order can be in the transaction data directly
-    if (this.isSwapOrder({ data })) {
-      return data;
-    }
-    // or in the data of a multisend transaction
-    if (this.multiSendDecoder.helpers.isMultiSend(data)) {
-      const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
-      // TODO If we can build a sorted hash map of the transactions, we can avoid iterating all of them
-      //  as we know the pattern of a Swap Order.
-      for (const transaction of transactions) {
-        if (this.isSwapOrder(transaction)) {
-          return transaction.data;
-        }
-      }
-    }
-    return null;
   }
 
   private isCustomTransaction(

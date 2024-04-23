@@ -6,6 +6,23 @@ export default () => ({
     version: process.env.APPLICATION_VERSION,
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
+  amqp: {
+    url: process.env.AMQP_URL,
+    exchange: {
+      name: process.env.AMQP_EXCHANGE_NAME,
+      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
+      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
+      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+    },
+    queue: process.env.AMQP_QUEUE,
+    // The AMQP Prefetch value defaults to 0.
+    // Limits the number of unacknowledged messages delivered to a given channel/consumer.
+    prefetch:
+      process.env.AMQP_PREFETCH != null
+        ? parseInt(process.env.AMQP_PREFETCH)
+        : 100,
+  },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
     token: process.env.AUTH_TOKEN,
@@ -25,6 +42,9 @@ export default () => ({
           pricesTtlSeconds: parseInt(
             process.env.PRICES_TTL_SECONDS ?? `${300}`,
           ),
+          nativeCoinPricesTtlSeconds: parseInt(
+            process.env.NATIVE_COINS_PRICES_TTL_SECONDS ?? `${100}`,
+          ),
           notFoundPriceTtlSeconds: parseInt(
             process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
           ),
@@ -41,11 +61,17 @@ export default () => ({
             42220: { nativeCoin: 'celo', chainName: 'celo' },
             43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
             5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
+            534352: { nativeCoin: 'weth', chainName: 'scroll' },
             56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
             8453: { nativeCoin: 'ethereum', chainName: 'base' },
             84531: { nativeCoin: 'ethereum', chainName: 'base' },
             84532: { nativeCoin: 'ethereum', chainName: 'base' },
           },
+          highRefreshRateTokens:
+            process.env.HIGH_REFRESH_RATE_TOKENS?.split(',') ?? [],
+          highRefreshRateTokensTtlSeconds: parseInt(
+            process.env.HIGH_REFRESH_RATE_TOKENS_TTL_SECONDS ?? `${30}`,
+          ),
         },
       },
       zerion: {
@@ -169,6 +195,9 @@ export default () => ({
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
+    confirmationView:
+      process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
+    eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -176,10 +205,6 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
-  },
-  jwt: {
-    issuer: process.env.JWT_ISSUER,
-    secret: process.env.JWT_SECRET,
   },
   locking: {
     baseUri:
@@ -201,7 +226,7 @@ export default () => ({
       ),
     },
     safe: {
-      maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${7}`),
+      maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
   redis: {

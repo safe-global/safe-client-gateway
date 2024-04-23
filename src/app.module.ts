@@ -44,6 +44,7 @@ import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
+import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -56,6 +57,7 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       locking: isLockingFeatureEnabled,
       relay: isRelayFeatureEnabled,
+      confirmationView: isConfirmationViewEnabled,
     } = configFactory()['features'];
 
     return {
@@ -90,6 +92,9 @@ export class AppModule implements NestModule {
         SafeAppsModule,
         SafesModule,
         TransactionsModule,
+        ...(isConfirmationViewEnabled
+          ? [TransactionsViewControllerModule]
+          : []),
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
