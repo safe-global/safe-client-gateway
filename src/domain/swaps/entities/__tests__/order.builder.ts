@@ -112,8 +112,5 @@ export function orderBuilder(): IBuilder<Order> {
       'executedSurplusFee',
       faker.datatype.boolean() ? faker.number.bigInt({ min: 1 }) : null,
     )
-    .with(
-      'fullAppData',
-      faker.datatype.boolean() ? faker.string.hexadecimal() : null,
-    );
+    .with('fullAppData', faker.datatype.boolean() ? JSON.stringify({}) : null);
 }

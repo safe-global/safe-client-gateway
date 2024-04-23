@@ -79,5 +79,20 @@ export const OrderSchema = z.object({
     .nullish()
     .default(null),
   executedSurplusFee: z.coerce.bigint().nullish().default(null),
-  fullAppData: z.string().nullish().default(null),
+  fullAppData: z
+    .string()
+    .nullish()
+    .default(null)
+    .transform((jsonString, ctx) => {
+      try {
+        if (!jsonString) return null;
+        return JSON.parse(jsonString);
+      } catch (error) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Not a valid JSON payload',
+        });
+        return z.NEVER;
+      }
+    }),
 });

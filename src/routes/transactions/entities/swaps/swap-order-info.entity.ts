@@ -22,6 +22,7 @@ export interface OrderInfo {
   executedBuyAmount: string;
   explorerUrl: URL;
   executedSurplusFee: string | null;
+  fullAppData: Record<string, unknown> | null;
 }
 
 @ApiExtraModels(TokenInfo)
@@ -90,6 +91,13 @@ export class SwapOrderTransactionInfo
   })
   executedSurplusFee: string | null;
 
+  @ApiPropertyOptional({
+    type: Object,
+    nullable: true,
+    description: 'The App Data for this order',
+  })
+  fullAppData: Record<string, unknown> | null;
+
   constructor(args: {
     uid: string;
     orderStatus: OrderStatus;
@@ -104,6 +112,7 @@ export class SwapOrderTransactionInfo
     buyToken: TokenInfo;
     explorerUrl: URL;
     executedSurplusFee: string | null;
+    fullAppData: Record<string, unknown> | null;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
     this.uid = args.uid;
@@ -119,5 +128,6 @@ export class SwapOrderTransactionInfo
     this.buyToken = args.buyToken;
     this.explorerUrl = args.explorerUrl;
     this.executedSurplusFee = args.executedSurplusFee;
+    this.fullAppData = args.fullAppData;
   }
 }
