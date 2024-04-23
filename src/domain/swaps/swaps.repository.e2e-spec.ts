@@ -2,12 +2,12 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { SwapsModule } from '@/domain/swaps/swaps.module';
+import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { ValidationModule } from '@/validation/validation.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { SwapsRepository } from '@/domain/swaps/swaps.repository';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import configuration from '@/config/entities/configuration';
 
@@ -104,14 +104,14 @@ const orderIds = {
 };
 describe('CowSwap E2E tests', () => {
   let app: INestApplication;
-  let repository: SwapsRepository;
+  let repository: ISwapsRepository;
 
   beforeAll(async () => {
     const cacheKeyPrefix = crypto.randomUUID();
     const moduleRef = await Test.createTestingModule({
       imports: [
         // Feature
-        SwapsModule,
+        SwapsRepositoryModule,
         // Common
         ConfigurationModule.register(configuration),
         NetworkModule,
@@ -124,7 +124,7 @@ describe('CowSwap E2E tests', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
-    repository = app.get(SwapsRepository);
+    repository = app.get(ISwapsRepository);
     await app.init();
   });
 

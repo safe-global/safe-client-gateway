@@ -2,10 +2,12 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { GelatoApi } from '@/datasources/relay-api/gelato-api.service';
 import { faker } from '@faker-js/faker';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Hex } from 'viem';
+import { Hex, getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 const mockNetworkService = jest.mocked({
   post: jest.fn(),
@@ -14,7 +16,9 @@ const mockNetworkService = jest.mocked({
 describe('GelatoApi', () => {
   let target: GelatoApi;
   let fakeConfigurationService: FakeConfigurationService;
+  let fakeCacheService: FakeCacheService;
   let baseUri: string;
+  let ttlSeconds: number;
   let httpErrorFactory: HttpErrorFactory;
 
   beforeEach(async () => {
@@ -22,18 +26,23 @@ describe('GelatoApi', () => {
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();
+    fakeCacheService = new FakeCacheService();
     baseUri = faker.internet.url({ appendSlash: false });
+    ttlSeconds = faker.number.int();
     fakeConfigurationService.set('relay.baseUri', baseUri);
+    fakeConfigurationService.set('relay.ttlSeconds', ttlSeconds);
 
     target = new GelatoApi(
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
+      fakeCacheService,
     );
   });
 
   it('should error if baseUri is not defined', () => {
     const fakeConfigurationService = new FakeConfigurationService();
+    const fakeCacheService = new FakeCacheService();
     const httpErrorFactory = new HttpErrorFactory();
 
     expect(
@@ -42,6 +51,7 @@ describe('GelatoApi', () => {
           mockNetworkService,
           fakeConfigurationService,
           httpErrorFactory,
+          fakeCacheService,
         ),
     ).toThrow();
   });
@@ -49,7 +59,7 @@ describe('GelatoApi', () => {
   describe('relay', () => {
     it('should relay the payload', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const apiKey = faker.string.sample();
       const taskId = faker.string.uuid();
@@ -81,7 +91,7 @@ describe('GelatoApi', () => {
 
     it('should add a gas buffer if a gas limit is provided', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const gasLimit = faker.number.bigInt();
       const apiKey = faker.string.sample();
@@ -115,7 +125,7 @@ describe('GelatoApi', () => {
 
     it('should throw if there is no API key preset', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
 
       await expect(
@@ -130,7 +140,7 @@ describe('GelatoApi', () => {
 
     it('should forward error', async () => {
       const chainId = faker.string.numeric();
-      const address = faker.finance.ethereumAddress() as Hex;
+      const address = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const apiKey = faker.string.sample();
@@ -154,6 +164,57 @@ describe('GelatoApi', () => {
           gasLimit: null,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+    });
+  });
+
+  describe('getRelayCount', () => {
+    it('should return the count', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const count = faker.number.int({ min: 1 });
+      await fakeCacheService.set(
+        new CacheDir(`${chainId}_relay_${address}`, ''),
+        count.toString(),
+        ttlSeconds,
+      );
+
+      const result = await target.getRelayCount({
+        chainId,
+        address,
+      });
+
+      expect(result).toBe(count);
+    });
+
+    it('should return 0 if the count is not cached', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const result = await target.getRelayCount({
+        chainId,
+        address,
+      });
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('setRelayCount', () => {
+    it('should cache the count', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const count = faker.number.int({ min: 1 });
+
+      await target.setRelayCount({
+        chainId,
+        address,
+        count,
+      });
+
+      const result = await fakeCacheService.get(
+        new CacheDir(`${chainId}_relay_${address}`, ''),
+      );
+      expect(result).toBe(count.toString());
     });
   });
 });

@@ -1,38 +1,27 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class JwtService implements IJwtService {
-  private readonly issuer: string;
-  private readonly secret: string;
-
   constructor(
     @Inject('JwtClient')
     private readonly client: JwtClient,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {
-    this.issuer = this.configurationService.getOrThrow<string>('jwt.issuer');
-    this.secret = this.configurationService.getOrThrow<string>('jwt.secret');
-  }
+  ) {}
 
-  sign<T extends string | object>(
+  sign<T extends object>(
     payload: T,
-    options: { expiresIn?: number; notBefore?: number } = {},
+    options: { issuedAt?: number; expiresIn?: number; notBefore?: number } = {},
   ): string {
-    return this.client.sign(payload, this.secret, {
-      ...options,
-      issuer: this.issuer,
-    });
+    return this.client.sign(payload, options);
   }
 
-  verify<T extends string | object>(token: string): T {
-    return this.client.verify(token, this.secret, {
-      issuer: this.issuer,
-      // Return the content of the payload
-      complete: false,
-    }) as T;
+  verify<T extends object>(token: string): T {
+    return this.client.verify(token);
+  }
+
+  decode<T extends object>(token: string): JwtPayloadWithClaims<T> {
+    return this.client.decode(token);
   }
 }

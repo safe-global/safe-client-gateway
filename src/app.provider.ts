@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
+import * as cookieParser from 'cookie-parser';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -44,11 +45,16 @@ function configureRequestBodyLimit(app: INestApplication): void {
   }
 }
 
+function configureCookies(app: INestApplication): void {
+  app.use(cookieParser());
+}
+
 export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
   configureVersioning,
   configureShutdownHooks,
   configureSwagger,
   configureRequestBodyLimit,
+  configureCookies,
 ];
 
 /**

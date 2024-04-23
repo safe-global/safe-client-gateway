@@ -20,4 +20,11 @@ process.env.POSTGRES_PASSWORD = 'postgres';
 process.env.REDIS_HOST = '127.0.0.1';
 process.env.REDIS_PORT = '6379';
 
+// For E2E tests, connect to the test AMQP server
+process.env.AMQP_URL = 'amqp://localhost:5672';
+process.env.AMQP_EXCHANGE_NAME = 'test-exchange';
+process.env.AMQP_EXCHANGE_MODE = 'fanout';
+process.env.AMQP_QUEUE = 'test-queue';
+process.env.AMQP_PREFETCH = '100';
+
 process.env.OWNERS_TTL_SECONDS = '0';

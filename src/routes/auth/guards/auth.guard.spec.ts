@@ -4,19 +4,20 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { AuthDomainModule } from '@/domain/auth/auth.domain.module';
-import { jwtAccessTokenPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
+import { jwtAccessTokenPayloadBuilder } from '@/domain/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { Get, INestApplication } from '@nestjs/common';
-import { Controller, UseGuards } from '@nestjs/common';
-import { TestingModule, Test } from '@nestjs/testing';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-
-function secondsUntil(date: Date): number {
-  return Math.floor((date.getTime() - Date.now()) / 1000);
-}
+import { JwtRepositoryModule } from '@/domain/jwt/jwt.repository.interface';
+import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 
 @Controller()
 class TestController {
@@ -34,15 +35,26 @@ describe('AuthGuard', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
 
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        auth: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
-        ConfigurationModule.register(configuration),
+        ConfigurationModule.register(testConfiguration),
         CacheModule,
-        AuthDomainModule,
+        JwtRepositoryModule,
       ],
       controllers: [TestController],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .compile();
@@ -72,7 +84,7 @@ describe('AuthGuard', () => {
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -85,14 +97,14 @@ describe('AuthGuard', () => {
     const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
     const notBefore = faker.date.future();
     const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-      notBefore: secondsUntil(notBefore),
+      notBefore: getSecondsUntil(notBefore),
     });
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -107,13 +119,13 @@ describe('AuthGuard', () => {
     const accessToken = jwtService.sign(jwtAccessTokenPayload, {
       expiresIn,
     });
-    jest.advanceTimersByTime(1);
+    jest.advanceTimersByTime(1_000);
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -132,7 +144,7 @@ describe('AuthGuard', () => {
 
     await request(app.getHttpServer())
       .get('/valid')
-      .set('authorization', `Bearer ${accessToken}`)
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -150,7 +162,7 @@ describe('AuthGuard', () => {
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -159,14 +171,14 @@ describe('AuthGuard', () => {
       const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
       const notBefore = faker.date.past();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        notBefore: secondsUntil(notBefore),
+        notBefore: getSecondsUntil(notBefore),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -175,14 +187,14 @@ describe('AuthGuard', () => {
       const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
       const expiresIn = faker.date.future();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        expiresIn: secondsUntil(expiresIn),
+        expiresIn: getSecondsUntil(expiresIn),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });
@@ -192,15 +204,15 @@ describe('AuthGuard', () => {
       const notBefore = faker.date.past();
       const expiresIn = faker.date.future();
       const accessToken = jwtService.sign(jwtAccessTokenPayload, {
-        notBefore: secondsUntil(notBefore),
-        expiresIn: secondsUntil(expiresIn),
+        notBefore: getSecondsUntil(notBefore),
+        expiresIn: getSecondsUntil(expiresIn),
       });
 
       expect(() => jwtService.verify(accessToken)).not.toThrow();
 
       await request(app.getHttpServer())
         .get('/valid')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ secret: 'This is a secret message' });
     });

@@ -4,19 +4,11 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { getAddress } from 'viem';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 @Injectable()
 export class RelayRepository {
   // Number of relay requests per ttl
   private readonly limit: number;
-  private readonly ttlSeconds: number;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -24,17 +16,15 @@ export class RelayRepository {
     private readonly limitAddressesMapper: LimitAddressesMapper,
     @Inject(IRelayApi)
     private readonly relayApi: IRelayApi,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.limit = configurationService.getOrThrow('relay.limit');
-    this.ttlSeconds = configurationService.getOrThrow('relay.ttlSeconds');
   }
 
   async relay(args: {
     version: string;
     chainId: string;
-    to: string;
-    data: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
     gasLimit: bigint | null;
   }): Promise<{ taskId: string }> {
     const relayAddresses =
@@ -76,9 +66,7 @@ export class RelayRepository {
     chainId: string;
     address: string;
   }): Promise<number> {
-    const cacheDir = this.getRelayCacheKey(args);
-    const currentCount = await this.cacheService.get(cacheDir);
-    return currentCount ? parseInt(currentCount) : 0;
+    return this.relayApi.getRelayCount(args);
   }
 
   private async canRelay(args: {
@@ -95,22 +83,10 @@ export class RelayRepository {
   }): Promise<void> {
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;
-    const cacheDir = this.getRelayCacheKey(args);
-    return this.cacheService.set(
-      cacheDir,
-      incremented.toString(),
-      this.ttlSeconds,
-    );
-  }
-
-  private getRelayCacheKey(args: {
-    chainId: string;
-    address: string;
-  }): CacheDir {
-    return CacheRouter.getRelayCacheDir({
+    return this.relayApi.setRelayCount({
       chainId: args.chainId,
-      // Ensure address is checksummed to always have a consistent cache key
-      address: getAddress(args.address),
+      address: args.address,
+      count: incremented,
     });
   }
 }
