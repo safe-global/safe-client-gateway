@@ -21,7 +21,7 @@ export default () => ({
     prefetch:
       process.env.AMQP_PREFETCH != null
         ? parseInt(process.env.AMQP_PREFETCH)
-        : 0,
+        : 100,
   },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
