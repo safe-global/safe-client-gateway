@@ -1,6 +1,6 @@
 import { Schema } from 'ajv';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
+// TODO: Remove after migrating transactionTypeSchema
 export const CONFIRMATION_SCHEMA_ID =
   'https://safe-client.safe.global/schemas/safe/confirmation.json';
 
@@ -91,11 +91,3 @@ export const multisigTransactionSchema: Schema = {
     'trusted',
   ],
 };
-
-export const MULTISIG_TRANSACTION_PAGE_SCHEMA_ID =
-  'https://safe-client.safe.global/schemas/safe/multisig-transaction-page.json';
-
-export const multisigTransactionPageSchema: Schema = buildPageSchema(
-  MULTISIG_TRANSACTION_PAGE_SCHEMA_ID,
-  multisigTransactionSchema,
-);

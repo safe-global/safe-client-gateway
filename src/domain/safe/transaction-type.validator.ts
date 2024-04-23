@@ -46,6 +46,10 @@ import {
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { GenericValidator } from '@/validation/providers/generic.validator';
 import { JsonSchemaService } from '@/validation/providers/json-schema.service';
+import {
+  CONFIRMATION_SCHEMA_ID,
+  confirmationSchema,
+} from '@/domain/safe/entities/schemas/multisig-transaction.schema';
 
 @Injectable()
 export class TransactionTypeValidator
@@ -86,6 +90,11 @@ export class TransactionTypeValidator
     );
 
     this.jsonSchemaService.getSchema(DATA_DECODED_SCHEMA_ID, dataDecodedSchema);
+
+    this.jsonSchemaService.getSchema(
+      CONFIRMATION_SCHEMA_ID,
+      confirmationSchema,
+    );
 
     this.jsonSchemaService.getSchema(
       MODULE_TRANSACTION_TYPE_SCHEMA_ID,

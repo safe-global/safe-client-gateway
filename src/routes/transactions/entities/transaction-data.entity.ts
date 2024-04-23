@@ -28,7 +28,7 @@ export class TransactionData {
     hexData: string | null,
     dataDecoded: DataDecoded | null,
     to: AddressInfo,
-    value: string,
+    value: string | null,
     operation: Operation,
     trustedDelegateCallTarget: boolean | null,
     addressInfoIndex: Record<string, AddressInfo> | null,

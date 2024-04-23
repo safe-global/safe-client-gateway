@@ -1,6 +1,7 @@
 import { MessageConfirmationSchema } from '@/domain/messages/entities/schemas/message.schema';
 import { z } from 'zod';
 
+// TODO: Move to a shared location as used for other entities
 export enum SignatureType {
   ContractSignature = 'CONTRACT_SIGNATURE',
   ApprovedHash = 'APPROVED_HASH',
