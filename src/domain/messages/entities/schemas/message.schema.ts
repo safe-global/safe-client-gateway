@@ -1,4 +1,4 @@
-import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { SignatureType } from '@/domain/messages/entities/message-confirmation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -24,4 +24,4 @@ export const MessageSchema = z.object({
   preparedSignature: HexSchema.nullish().default(null),
 });
 
-export const MessagePageSchema = buildZodPageSchema(MessageSchema);
+export const MessagePageSchema = buildPageSchema(MessageSchema);

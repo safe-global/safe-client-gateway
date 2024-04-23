@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
 export const CollectibleSchema = z.object({
   address: AddressSchema,
@@ -15,3 +16,5 @@ export const CollectibleSchema = z.object({
   imageUri: z.string().nullish().default(null),
   metadata: z.record(z.unknown()).nullish().default(null),
 });
+
+export const CollectiblePageSchema = buildPageSchema(CollectibleSchema);

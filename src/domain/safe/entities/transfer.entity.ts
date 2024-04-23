@@ -1,4 +1,4 @@
-import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Erc20TransferSchema } from '@/domain/safe/entities/schemas/erc20-transfer.schema';
 import { Erc721TransferSchema } from '@/domain/safe/entities/schemas/erc721-transfer.schema';
 import { NativeTokenTransferSchema } from '@/domain/safe/entities/schemas/native-token-transfer.schema';
@@ -12,7 +12,7 @@ export const TransferSchema = z.discriminatedUnion('type', [
   Erc721TransferSchema,
 ]);
 
-export const TransferPageSchema = buildZodPageSchema(TransferSchema);
+export const TransferPageSchema = buildPageSchema(TransferSchema);
 
 const hasTokenAddress = (
   transfer: Transfer,

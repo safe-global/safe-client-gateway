@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
-import { CollectibleSchema } from '@/domain/collectibles/entities/schemas/collectible.schema';
+import { CollectiblePageSchema } from '@/domain/collectibles/entities/schemas/collectible.schema';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
@@ -22,8 +22,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
   }): Promise<Page<Collectible>> {
     const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     const page = await api.getCollectibles(args);
-    page?.results.map((result) => CollectibleSchema.parse(result));
-    return page;
+    return CollectiblePageSchema.parse(page);
   }
 
   async clearCollectibles(args: {

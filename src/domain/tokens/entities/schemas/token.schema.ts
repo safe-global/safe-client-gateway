@@ -1,4 +1,4 @@
-import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
@@ -13,4 +13,4 @@ export const TokenSchema = z.object({
   trusted: z.boolean(),
 });
 
-export const TokenPageSchema = buildZodPageSchema(TokenSchema);
+export const TokenPageSchema = buildPageSchema(TokenSchema);

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
 export const NativeCurrencySchema = z.object({
   name: z.string(),
@@ -76,3 +77,5 @@ export const ChainSchema = z.object({
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
   recommendedMasterCopyVersion: z.string(),
 });
+
+export const ChainPageSchema = buildPageSchema(ChainSchema);

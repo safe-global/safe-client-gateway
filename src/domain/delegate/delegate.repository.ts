@@ -3,7 +3,7 @@ import { IDelegateRepository } from '@/domain/delegate/delegate.repository.inter
 import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { DelegateSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
+import { DelegatePageSchema } from '@/domain/delegate/entities/schemas/delegate.schema';
 
 @Injectable()
 export class DelegateRepository implements IDelegateRepository {
@@ -32,8 +32,7 @@ export class DelegateRepository implements IDelegateRepository {
       offset: args.offset,
     });
 
-    page?.results.map((result) => DelegateSchema.parse(result));
-    return page;
+    return DelegatePageSchema.parse(page);
   }
 
   async postDelegate(args: {
