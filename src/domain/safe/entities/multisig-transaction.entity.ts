@@ -1,5 +1,5 @@
 import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
-import { buildZodPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { SignatureType } from '@/domain/messages/entities/message-confirmation.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -56,6 +56,6 @@ export const MultisigTransactionTypeSchema = MultisigTransactionSchema.extend({
   txType: z.literal('MULTISIG_TRANSACTION'),
 });
 
-export const MultisigTransactionPageSchema = buildZodPageSchema(
+export const MultisigTransactionPageSchema = buildPageSchema(
   MultisigTransactionSchema,
 );

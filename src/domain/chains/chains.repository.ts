@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import {
+  ChainPageSchema,
+  ChainSchema,
+} from '@/domain/chains/entities/schemas/chain.schema';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
@@ -27,8 +30,7 @@ export class ChainsRepository implements IChainsRepository {
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     const page = await this.configApi.getChains({ limit, offset });
-    page.results.map((result) => ChainSchema.parse(result));
-    return page;
+    return ChainPageSchema.parse(page);
   }
 
   async getSingletons(chainId: string): Promise<Singleton[]> {
