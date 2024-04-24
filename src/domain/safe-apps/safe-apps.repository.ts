@@ -14,6 +14,7 @@ export class SafeAppsRepository implements ISafeAppsRepository {
   async getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
+    ignoreVisibility?: boolean;
     url?: string;
   }): Promise<SafeApp[]> {
     const safeApps = await this.configApi.getSafeApps(args);

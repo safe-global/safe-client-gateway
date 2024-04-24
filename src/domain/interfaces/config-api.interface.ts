@@ -14,6 +14,7 @@ export interface IConfigApi {
   getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
+    ignoreVisibility?: boolean;
     url?: string;
   }): Promise<SafeApp[]>;
 

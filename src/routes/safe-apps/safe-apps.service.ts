@@ -18,7 +18,10 @@ export class SafeAppsService {
     clientUrl?: string;
     url?: string;
   }): Promise<SafeApp[]> {
-    const result = await this.safeAppsRepository.getSafeApps(args);
+    const result = await this.safeAppsRepository.getSafeApps({
+      ...args,
+      ignoreVisibility: false,
+    });
 
     return result.map(
       (safeApp) =>
