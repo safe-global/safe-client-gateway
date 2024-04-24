@@ -52,6 +52,10 @@ export const MultisigTransactionSchema = z.object({
   trusted: z.boolean(),
 });
 
+export const MultisigTransactionTypeSchema = MultisigTransactionSchema.extend({
+  txType: z.literal('MULTISIG_TRANSACTION'),
+});
+
 export const MultisigTransactionPageSchema = buildZodPageSchema(
   MultisigTransactionSchema,
 );

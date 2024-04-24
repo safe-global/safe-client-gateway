@@ -16,14 +16,14 @@ import {
 import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
-} from '@/domain/safe/entities/schemas/module-transaction.schema';
+} from '@/domain/safe/entities/module-transaction.entity';
 import {
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { TransactionTypeValidator } from '@/domain/safe/transaction-type.validator';
+import { TransactionTypePageSchema } from '@/domain/safe/entities/schemas/transaction-type.schema';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { getAddress } from 'viem';
@@ -37,7 +37,6 @@ export class SafeRepository implements ISafeRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    private readonly transactionTypeValidator: TransactionTypeValidator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
@@ -251,7 +250,7 @@ export class SafeRepository implements ISafeRepository {
         queued: false,
       },
     );
-    return this.transactionTypeValidator.validatePage(page);
+    return TransactionTypePageSchema.parse(page);
   }
 
   async clearAllExecutedTransactions(args: {
