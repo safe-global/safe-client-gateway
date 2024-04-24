@@ -47,9 +47,7 @@ export class CacheHooksService implements OnModuleInit {
       async (msg: ConsumeMessage) => {
         try {
           const content = JSON.parse(msg.content.toString());
-          const event: Event = WebHookSchema.parse(
-            JSON.parse(Buffer.from(content.data).toString()),
-          );
+          const event: Event = WebHookSchema.parse(content);
           await this.onEvent(event);
         } catch (err) {
           this.loggingService.error(err);
