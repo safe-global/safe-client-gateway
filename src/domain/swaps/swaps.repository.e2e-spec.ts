@@ -139,7 +139,10 @@ describe('CowSwap E2E tests', () => {
             orderId as `0x${string}`,
           );
 
-          expect(actual).toEqual(expectedObject);
+          expect(actual).toEqual({
+            ...expectedObject,
+            fullAppData: JSON.parse(expectedObject.fullAppData),
+          });
         });
       });
     });

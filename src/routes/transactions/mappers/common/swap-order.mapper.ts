@@ -57,6 +57,7 @@ export class SwapOrderMapper {
       }),
       explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order),
       executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
+      fullAppData: order.fullAppData,
     });
   }
 }

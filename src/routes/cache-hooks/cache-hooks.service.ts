@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
@@ -8,10 +8,15 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
+import { ConsumeMessage } from 'amqplib';
+import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 
 @Injectable()
-export class CacheHooksService {
+export class CacheHooksService implements OnModuleInit {
   private static readonly HOOK_TYPE = 'hook';
+  private readonly queueName: string;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -28,7 +33,30 @@ export class CacheHooksService {
     private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IQueuesRepository)
+    private readonly queuesRepository: IQueuesRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
+  }
+
+  onModuleInit(): Promise<void> {
+    return this.queuesRepository.subscribe(
+      this.queueName,
+      async (msg: ConsumeMessage) => {
+        try {
+          const content = JSON.parse(msg.content.toString());
+          const event: Event = WebHookSchema.parse(
+            JSON.parse(Buffer.from(content.data).toString()),
+          );
+          await this.onEvent(event);
+        } catch (err) {
+          this.loggingService.error(err);
+        }
+      },
+    );
+  }
 
   async onEvent(event: Event): Promise<void[]> {
     const promises: Promise<void>[] = [];
