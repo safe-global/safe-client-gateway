@@ -102,6 +102,13 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   executedSurplusFee: string | null;
 
   @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'The (optional) address to receive the proceeds of the trade',
+  })
+  receiver: string | null;
+
+  @ApiPropertyOptional({
     type: Object,
     nullable: true,
     description: 'The App Data for this order',
@@ -132,6 +139,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     this.executedSurplusFee = args.executedSurplusFee;
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
+    this.receiver = args.receiver;
     this.fullAppData = args.fullAppData;
   }
 }

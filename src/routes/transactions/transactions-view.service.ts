@@ -104,6 +104,7 @@ export class TransactionsViewService {
         trusted: buyToken.trusted,
       }),
       executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
+      receiver: order.receiver,
       fullAppData: order.fullAppData,
     });
   }
