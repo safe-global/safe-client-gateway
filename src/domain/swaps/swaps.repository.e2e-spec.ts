@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
-import { ValidationModule } from '@/validation/validation.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -116,7 +115,6 @@ describe('CowSwap E2E tests', () => {
         ConfigurationModule.register(configuration),
         NetworkModule,
         TestLoggingModule,
-        ValidationModule,
       ],
     })
       .overrideProvider(CacheKeyPrefix)
