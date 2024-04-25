@@ -43,6 +43,7 @@ export const OrderSchema = z.object({
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
   class: z.nativeEnum(OrderClass).catch(OrderClass.Unknown),
+  settlementContract: AddressSchema,
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),

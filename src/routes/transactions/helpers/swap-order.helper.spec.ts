@@ -92,6 +92,7 @@ describe('Swap Order Helper tests', () => {
         buyToken: order.buyToken,
         buyTokenBalance: order.buyTokenBalance,
         class: order.class,
+        settlementContract: order.settlementContract,
         creationDate: order.creationDate,
         ethflowData: order.ethflowData,
         executedBuyAmount: order.executedBuyAmount,

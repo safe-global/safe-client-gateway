@@ -64,6 +64,7 @@ export function orderBuilder(): IBuilder<Order> {
         ),
       ),
     )
+    .with('settlementContract', getAddress(faker.finance.ethereumAddress()))
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('uid', faker.string.hexadecimal({ length: 112 }))
     .with(
