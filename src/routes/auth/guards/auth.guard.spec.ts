@@ -4,14 +4,14 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { authPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/auth-payload.entity.builder';
+import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { AuthRepositoryModule } from '@/routes/auth/auth.repository.interface';
+import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import {
   JWT_CONFIGURATION_MODULE,

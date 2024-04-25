@@ -1,9 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
-import { IAuthRepository } from '@/routes/auth/auth.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()

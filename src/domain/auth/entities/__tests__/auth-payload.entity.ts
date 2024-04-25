@@ -1,5 +1,5 @@
-import { AuthPayloadSchema } from '@/routes/auth/entities/auth-payload.entity';
-import { authPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/auth-payload.entity.builder';
+import { AuthPayloadSchema } from '@/domain/auth/entities/auth-payload.entity';
+import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IAuthRepository } from '@/routes/auth/auth.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { AuthController } from '@/routes/auth/auth.controller';
 
 /**

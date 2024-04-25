@@ -1,5 +1,5 @@
 import { IBuilder, Builder } from '@/__tests__/builder';
-import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

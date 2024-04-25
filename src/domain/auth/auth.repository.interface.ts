@@ -1,7 +1,7 @@
 import { JwtModule } from '@/datasources/jwt/jwt.module';
-import { AuthRepository } from '@/routes/auth/auth.repository';
+import { AuthRepository } from '@/domain/auth/auth.repository';
 import { Module } from '@nestjs/common';
-import { AuthPayload as AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload as AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { JwtPayloadWithClaims as AuthPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 export const IAuthRepository = Symbol('IAuthRepository');

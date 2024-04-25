@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { IAuthRepository } from '@/routes/auth/auth.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
   AuthPayload,
   AuthPayloadSchema,
-} from '@/routes/auth/entities/auth-payload.entity';
+} from '@/domain/auth/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
   JwtPayloadWithClaims,
