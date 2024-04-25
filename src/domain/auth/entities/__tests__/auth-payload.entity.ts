@@ -1,26 +1,26 @@
-import { JwtAccessTokenPayloadSchema } from '@/domain/auth/entities/jwt-access-token.payload.entity';
-import { jwtAccessTokenPayloadBuilder } from '@/domain/auth/entities/schemas/__tests__/jwt-access-token.payload.builder';
+import { AuthPayloadSchema } from '@/domain/auth/entities/auth-payload.entity';
+import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-describe('JwtAccessTokenSchema', () => {
-  it('should parse a valid JwtAccessTokenSchema', () => {
-    const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder().build();
+describe('AuthPayloadSchema', () => {
+  it('should parse a valid AuthPayloadSchema', () => {
+    const authPayload = authPayloadBuilder().build();
 
-    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+    const result = AuthPayloadSchema.safeParse(authPayload);
 
     expect(result.success).toBe(true);
     // Address did not checksum as it already way
-    expect(result.success && result.data).toStrictEqual(jwtAccessTokenPayload);
+    expect(result.success && result.data).toStrictEqual(authPayload);
   });
 
   it('should checksum the signer_address', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
-    const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder()
+    const authPayload = authPayloadBuilder()
       .with('signer_address', nonChecksummedAddress as `0x${string}`)
       .build();
 
-    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+    const result = AuthPayloadSchema.safeParse(authPayload);
 
     expect(result.success && result.data.signer_address).toBe(
       getAddress(nonChecksummedAddress),
@@ -28,11 +28,11 @@ describe('JwtAccessTokenSchema', () => {
   });
 
   it('should not allow a non-numeric chain_id', () => {
-    const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder()
+    const authPayload = authPayloadBuilder()
       .with('chain_id', faker.lorem.word())
       .build();
 
-    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+    const result = AuthPayloadSchema.safeParse(authPayload);
 
     expect(result.success).toBe(false);
     expect(!result.success && result.error.issues).toStrictEqual([
@@ -45,11 +45,11 @@ describe('JwtAccessTokenSchema', () => {
   });
 
   it('should not allow a non-address signer_address', () => {
-    const jwtAccessTokenPayload = jwtAccessTokenPayloadBuilder()
+    const authPayload = authPayloadBuilder()
       .with('signer_address', faker.lorem.word() as `0x${string}`)
       .build();
 
-    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+    const result = AuthPayloadSchema.safeParse(authPayload);
 
     expect(result.success).toBe(false);
     expect(!result.success && result.error.issues).toStrictEqual([
@@ -61,12 +61,12 @@ describe('JwtAccessTokenSchema', () => {
     ]);
   });
 
-  it('should not parse an invalid JwtAccessTokenSchema', () => {
-    const jwtAccessTokenPayload = {
+  it('should not parse an invalid AuthPayloadSchema', () => {
+    const authPayload = {
       unknown: 'payload',
     };
 
-    const result = JwtAccessTokenPayloadSchema.safeParse(jwtAccessTokenPayload);
+    const result = AuthPayloadSchema.safeParse(authPayload);
 
     expect(result.success).toBe(false);
     expect(!result.success && result.error.issues).toStrictEqual([

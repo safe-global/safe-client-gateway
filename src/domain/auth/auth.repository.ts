@@ -1,23 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
-  JwtAccessTokenPayload,
-  JwtAccessTokenPayloadSchema,
-} from '@/domain/auth/entities/jwt-access-token.payload.entity';
+  AuthPayload,
+  AuthPayloadSchema,
+} from '@/domain/auth/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
   JwtPayloadWithClaims,
 } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
-export class JwtRepository implements IJwtRepository {
+export class AuthRepository implements IAuthRepository {
   constructor(
     @Inject(IJwtService)
     private readonly jwtService: IJwtService,
   ) {}
 
-  signToken<T extends JwtAccessTokenPayload>(
+  signToken<T extends AuthPayload>(
     payload: T,
     options?: {
       expiresIn?: number;
@@ -27,15 +27,13 @@ export class JwtRepository implements IJwtRepository {
     return this.jwtService.sign(payload, options);
   }
 
-  verifyToken(accessToken: string): JwtAccessTokenPayload {
+  verifyToken(accessToken: string): AuthPayload {
     const payload = this.jwtService.verify(accessToken);
-    return JwtAccessTokenPayloadSchema.parse(payload);
+    return AuthPayloadSchema.parse(payload);
   }
 
-  decodeToken(
-    accessToken: string,
-  ): JwtPayloadWithClaims<JwtAccessTokenPayload> {
+  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayload> {
     const decoded = this.jwtService.decode(accessToken);
-    return JwtAccessTokenPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
+    return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }

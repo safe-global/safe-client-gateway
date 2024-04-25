@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { AuthController } from '@/routes/auth/auth.controller';
 
 /**
@@ -21,7 +21,7 @@ import { AuthController } from '@/routes/auth/auth.controller';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject(IJwtRepository) private readonly jwtRepository: IJwtRepository,
+    @Inject(IAuthRepository) private readonly authRepository: IAuthRepository,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -36,7 +36,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      this.jwtRepository.verifyToken(accessToken);
+      this.authRepository.verifyToken(accessToken);
       return true;
     } catch {
       return false;
