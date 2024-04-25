@@ -353,7 +353,7 @@ describe('Email controller get email tests', () => {
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(404)
       .expect({
-        message: `No email address was found for the provided signer ${safe.owners[0]}.`,
+        message: `No email address was found for the provided signer ${signerAddress}.`,
         statusCode: 404,
       });
   });
