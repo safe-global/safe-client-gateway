@@ -15,7 +15,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { authPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/auth-payload.entity.builder';
+import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { faker } from '@faker-js/faker';
