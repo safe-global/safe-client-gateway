@@ -31,6 +31,11 @@ import {
   zerionBalancesBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-balance.entity.builder';
 import { getAddress } from 'viem';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication;
@@ -62,6 +67,8 @@ describe('Balances Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)

@@ -23,6 +23,11 @@ import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-n
 import { getAddress } from 'viem';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 describe('Email controller get email tests', () => {
   let app: INestApplication;
@@ -36,6 +41,8 @@ describe('Email controller get email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration), EmailControllerModule],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)

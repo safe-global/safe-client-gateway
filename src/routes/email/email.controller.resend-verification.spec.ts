@@ -18,6 +18,11 @@ import { accountBuilder } from '@/domain/account/entities/__tests__/account.buil
 import { verificationCodeBuilder } from '@/domain/account/entities/__tests__/verification-code.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
@@ -44,6 +49,8 @@ describe('Email controller resend verification tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
