@@ -183,7 +183,7 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
-    auth: false,
+    auth: true,
     confirmationView: false,
     eventsQueue: false,
   },
