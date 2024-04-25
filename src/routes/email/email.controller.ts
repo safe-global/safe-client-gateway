@@ -27,7 +27,7 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { Email } from '@/routes/email/entities/email.entity';
 import { UnauthenticatedExceptionFilter } from '@/routes/email/exception-filters/unauthenticated.exception-filter';
 import { AuthPayloadDecorator } from '@/routes/auth/decorators/auth-payload.decorator';
-import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 

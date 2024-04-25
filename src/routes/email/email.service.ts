@@ -7,7 +7,7 @@ import {
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { Email } from '@/routes/email/entities/email.entity';
 import { InvalidAddressError } from 'viem';
-import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @Injectable()
 export class EmailService {
