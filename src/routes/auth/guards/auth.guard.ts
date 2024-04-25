@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { AuthController } from '@/routes/auth/auth.controller';
-import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Request } from 'express';
 
 declare module 'express' {
