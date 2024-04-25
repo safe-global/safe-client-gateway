@@ -105,6 +105,7 @@ export class TransactionsViewService {
       }),
       executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
       receiver: order.receiver,
+      owner: order.owner,
       fullAppData: order.fullAppData,
     });
   }

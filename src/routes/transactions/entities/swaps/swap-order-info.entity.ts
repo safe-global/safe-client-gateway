@@ -23,6 +23,7 @@ export interface OrderInfo {
   explorerUrl: URL;
   executedSurplusFee: string | null;
   receiver: string | null;
+  owner: `0x${string}`;
   fullAppData: Record<string, unknown> | null;
 }
 
@@ -99,6 +100,11 @@ export class SwapOrderTransactionInfo
   })
   receiver: string | null;
 
+  @ApiProperty({
+    type: String,
+  })
+  owner: `0x${string}`;
+
   @ApiPropertyOptional({
     type: Object,
     nullable: true,
@@ -121,6 +127,7 @@ export class SwapOrderTransactionInfo
     explorerUrl: URL;
     executedSurplusFee: string | null;
     receiver: string | null;
+    owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
@@ -138,6 +145,7 @@ export class SwapOrderTransactionInfo
     this.explorerUrl = args.explorerUrl;
     this.executedSurplusFee = args.executedSurplusFee;
     this.receiver = args.receiver;
+    this.owner = args.owner;
     this.fullAppData = args.fullAppData;
   }
 }

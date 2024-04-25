@@ -108,6 +108,11 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   })
   receiver: string | null;
 
+  @ApiProperty({
+    type: String,
+  })
+  owner: `0x${string}`;
+
   @ApiPropertyOptional({
     type: Object,
     nullable: true,
@@ -140,6 +145,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
     this.receiver = args.receiver;
+    this.owner = args.owner;
     this.fullAppData = args.fullAppData;
   }
 }
