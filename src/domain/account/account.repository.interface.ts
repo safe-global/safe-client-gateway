@@ -6,7 +6,7 @@ export interface IAccountRepository {
   getAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
   }): Promise<Account>;
 
   getAccounts(args: {

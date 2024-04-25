@@ -15,16 +15,19 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { authPayloadBuilder } from '@/routes/auth/entities/schemas/__tests__/auth-payload.entity.builder';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { faker } from '@faker-js/faker';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import { getAddress } from 'viem';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { getSecondsUntil } from '@/domain/common/utils/time';
 
 describe('Email controller get email tests', () => {
   let app: INestApplication;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
+  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -44,6 +47,7 @@ describe('Email controller get email tests', () => {
       .compile();
 
     accountDataSource = moduleFixture.get(IAccountDataSource);
+    jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -72,24 +76,24 @@ describe('Email controller get email tests', () => {
       // Allow test of non-checksummed address by casting
       .with('address', safeAddress as `0x${string}`)
       .build();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const timestamp = Date.now();
-    const message = `email-retrieval-${chain.chainId}-${safeAddress}-${signer.address}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', safe.owners[0])
+      .build();
+    const accessToken = jwtService.sign(authPayload);
     const account = accountBuilder()
-      .with('signer', signer.address)
+      .with('signer', safe.owners[0])
       .with('chainId', chain.chainId)
       .with('safeAddress', getAddress(safe.address))
       .build();
     accountDataSource.getAccount.mockResolvedValue(account);
 
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${safe.owners[0]}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(200)
       .expect({
         email: account.emailAddress.value,
@@ -101,115 +105,219 @@ describe('Email controller get email tests', () => {
       chainId: chain.chainId.toString(),
       // Should always call with the checksummed address
       safeAddress: getAddress(safeAddress),
-      signer: signer.address,
+      signer: safe.owners[0],
     });
   });
 
-  it('Returns 403 if wrong message was signed', async () => {
+  it('Returns 403 if no token is present', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const timestamp = Date.now();
-    const message = faker.string.sample(32);
-    const signature = await signer.signMessage({ message });
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
-
-    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+      .expect(403);
   });
 
-  it('returns 422 if Safe address is not a valid Ethereum address', async () => {
-    const chain = chainBuilder().build();
-    const invalidSafeAddress = faker.word.sample();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const timestamp = Date.now();
-    const message = `email-retrieval-${chain.chainId}-${invalidSafeAddress}-${signer.address}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
-
-    await request(app.getHttpServer())
-      .get(
-        `/v1/chains/${chain.chainId}/safes/${invalidSafeAddress}/emails/${signer.address}`,
-      )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(422)
-      .expect({
-        message: `Address "${invalidSafeAddress}" is invalid.`,
-        error: 'Unprocessable Entity',
-        statusCode: 422,
-      });
-
-    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
-  });
-
-  it('Returns 403 if signature expired', async () => {
+  it('returns 403 if token is not a valid JWT', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const timestamp = Date.now();
-    const message = `email-retrieval-${chain.chainId}-${safe.address}-${signer.address}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
-    const account = accountBuilder()
-      .with('signer', signer.address)
-      .with('chainId', chain.chainId)
-      .with('safeAddress', getAddress(safe.address))
+    const accessToken = faker.string.alphanumeric();
+
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+  });
+
+  it('returns 403 is token it not yet valid', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', safe.owners[0])
       .build();
-    accountDataSource.getAccount.mockResolvedValue(account);
+    const notBefore = faker.date.future();
+    const accessToken = jwtService.sign(authPayload, {
+      notBefore: getSecondsUntil(notBefore),
+    });
 
-    // Advance time by 5 minutes
-    jest.advanceTimersByTime(5 * 60 * 1000);
-
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+  });
 
-    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+  it('returns 403 if token has expired', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', safe.owners[0])
+      .build();
+    const accessToken = jwtService.sign(authPayload, {
+      expiresIn: 0, // Now
+    });
+    jest.advanceTimersByTime(1_000);
+
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+  });
+
+  it('returns 403 if signer_address is not a valid Ethereum address', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', faker.string.numeric() as `0x${string}`)
+      .build();
+    const accessToken = jwtService.sign(authPayload);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+  });
+
+  it('returns 403 if chain_id is not a valid chain ID', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', faker.string.alpha())
+      .with('signer_address', safe.owners[0])
+      .build();
+    const accessToken = jwtService.sign(authPayload);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+  });
+
+  // Note: this could be removed as we checksum the :signer but for robustness we should keep it
+  it.each([
+    // non-checksummed address
+    {
+      signer_address: faker.finance.ethereumAddress().toLowerCase(),
+    },
+    // checksummed address
+    {
+      signer_address: getAddress(faker.finance.ethereumAddress()),
+    },
+  ])(
+    'returns 401 if signer_address does not match a non-checksummed signer request',
+    async ({ signer_address }) => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const authPayload = authPayloadBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signer_address as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayload);
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
+            // non-checksummed
+            safe.owners[0].toLowerCase()
+          }`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+    },
+  );
+
+  it.each([
+    // non-checksummed address
+    {
+      signer_address: faker.finance.ethereumAddress().toLowerCase(),
+    },
+    // checksummed address
+    {
+      signer_address: getAddress(faker.finance.ethereumAddress()),
+    },
+  ])(
+    'returns 401 if signer_address does not match a checksummed signer request',
+    async ({ signer_address }) => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const authPayload = authPayloadBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signer_address as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayload);
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
+            // checksummed
+            getAddress(safe.owners[0])
+          }`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+    },
+  );
+
+  it('Returns 401 if chain_id does not match the request', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+      .with('signer_address', safe.owners[0])
+      .build();
+    const accessToken = jwtService.sign(authPayload);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(401);
   });
 
   it('Returns 404 if signer has no emails', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const timestamp = Date.now();
-    const message = `email-retrieval-${chain.chainId}-${safe.address}-${signer.address}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
+    const authPayload = authPayloadBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', safe.owners[0])
+      .build();
+    const accessToken = jwtService.sign(authPayload);
     accountDataSource.getAccount.mockRejectedValue(
-      new AccountDoesNotExistError(chain.chainId, safe.address, signer.address),
+      new AccountDoesNotExistError(chain.chainId, safe.address, safe.owners[0]),
     );
 
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(404)
       .expect({
-        message: `No email address was found for the provided signer ${signer.address}.`,
+        message: `No email address was found for the provided signer ${safe.owners[0]}.`,
         statusCode: 404,
       });
   });

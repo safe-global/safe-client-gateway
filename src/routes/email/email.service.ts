@@ -1,11 +1,13 @@
 import {
   Inject,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { Email } from '@/routes/email/entities/email.entity';
 import { InvalidAddressError } from 'viem';
+import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
 
 @Injectable()
 export class EmailService {
@@ -76,8 +78,16 @@ export class EmailService {
   async getEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<Email> {
+    if (
+      !args.authPayload ||
+      args.authPayload.signer_address !== args.signer ||
+      args.authPayload.chain_id !== args.chainId
+    ) {
+      throw new UnauthorizedException();
+    }
     const account = await this.repository
       .getAccount(args)
       .catch((e) => this._mapInvalidAddressError(e));

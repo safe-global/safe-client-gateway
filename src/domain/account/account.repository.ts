@@ -58,7 +58,7 @@ export class AccountRepository implements IAccountRepository {
   async getAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
   }): Promise<Account> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
