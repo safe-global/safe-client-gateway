@@ -245,9 +245,7 @@ describe('Email controller get email tests', () => {
     'returns 401 if signer_address does not match a non-checksummed signer request',
     async ({ signer_address }) => {
       const chain = chainBuilder().build();
-      const safe = safeBuilder()
-        .with('owners', [signer_address as `0x${string}`])
-        .build();
+      const safe = safeBuilder().build();
       const authPayload = authPayloadBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signer_address as `0x${string}`)
@@ -259,7 +257,7 @@ describe('Email controller get email tests', () => {
         .get(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
             // non-checksummed
-            signer_address
+            safe.owners[0].toLowerCase()
           }`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
