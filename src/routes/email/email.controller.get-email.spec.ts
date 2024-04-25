@@ -83,13 +83,14 @@ describe('Email controller get email tests', () => {
       // Allow test of non-checksummed address by casting
       .with('address', safeAddress as `0x${string}`)
       .build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', chain.chainId)
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const accessToken = jwtService.sign(authPayload);
     const account = accountBuilder()
-      .with('signer', safe.owners[0])
+      .with('signer', signerAddress)
       .with('chainId', chain.chainId)
       .with('safeAddress', getAddress(safe.address))
       .build();
@@ -98,7 +99,7 @@ describe('Email controller get email tests', () => {
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(200)
@@ -112,17 +113,18 @@ describe('Email controller get email tests', () => {
       chainId: chain.chainId.toString(),
       // Should always call with the checksummed address
       safeAddress: getAddress(safeAddress),
-      signer: safe.owners[0],
+      signer: signerAddress,
     });
   });
 
   it('Returns 403 if no token is present', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .expect(403);
 
@@ -132,12 +134,13 @@ describe('Email controller get email tests', () => {
   it('returns 403 if token is not a valid JWT', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const accessToken = faker.string.alphanumeric();
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
@@ -148,9 +151,10 @@ describe('Email controller get email tests', () => {
   it('returns 403 is token it not yet valid', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', chain.chainId)
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const notBefore = faker.date.future();
     const accessToken = jwtService.sign(authPayload, {
@@ -160,7 +164,7 @@ describe('Email controller get email tests', () => {
     expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
@@ -171,9 +175,10 @@ describe('Email controller get email tests', () => {
   it('returns 403 if token has expired', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', chain.chainId)
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const accessToken = jwtService.sign(authPayload, {
       expiresIn: 0, // Now
@@ -183,7 +188,7 @@ describe('Email controller get email tests', () => {
     expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
@@ -194,6 +199,7 @@ describe('Email controller get email tests', () => {
   it('returns 403 if signer_address is not a valid Ethereum address', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', faker.string.numeric() as `0x${string}`)
@@ -203,7 +209,7 @@ describe('Email controller get email tests', () => {
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
@@ -214,16 +220,17 @@ describe('Email controller get email tests', () => {
   it('returns 403 if chain_id is not a valid chain ID', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', faker.string.alpha())
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const accessToken = jwtService.sign(authPayload);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
@@ -246,6 +253,7 @@ describe('Email controller get email tests', () => {
     async ({ signer_address }) => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
       const authPayload = authPayloadBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signer_address as `0x${string}`)
@@ -257,7 +265,7 @@ describe('Email controller get email tests', () => {
         .get(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
             // non-checksummed
-            safe.owners[0].toLowerCase()
+            signerAddress.toLowerCase()
           }`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
@@ -281,6 +289,7 @@ describe('Email controller get email tests', () => {
     async ({ signer_address }) => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
       const authPayload = authPayloadBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signer_address as `0x${string}`)
@@ -292,7 +301,7 @@ describe('Email controller get email tests', () => {
         .get(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
             // checksummed
-            getAddress(safe.owners[0])
+            getAddress(signerAddress)
           }`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
@@ -305,16 +314,17 @@ describe('Email controller get email tests', () => {
   it('Returns 401 if chain_id does not match the request', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const accessToken = jwtService.sign(authPayload);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(401);
@@ -325,19 +335,20 @@ describe('Email controller get email tests', () => {
   it('Returns 404 if signer has no emails', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
     const authPayload = authPayloadBuilder()
       .with('chain_id', chain.chainId)
-      .with('signer_address', safe.owners[0])
+      .with('signer_address', signerAddress)
       .build();
     const accessToken = jwtService.sign(authPayload);
     accountDataSource.getAccount.mockRejectedValue(
-      new AccountDoesNotExistError(chain.chainId, safe.address, safe.owners[0]),
+      new AccountDoesNotExistError(chain.chainId, safe.address, signerAddress),
     );
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(404)
