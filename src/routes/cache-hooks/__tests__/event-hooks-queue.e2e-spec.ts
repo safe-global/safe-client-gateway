@@ -86,7 +86,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -129,7 +129,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -172,7 +172,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -207,7 +207,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -247,7 +247,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -287,7 +287,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -322,7 +322,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -352,7 +352,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -407,7 +407,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -440,7 +440,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { address: safeAddress, chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -465,7 +465,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
@@ -489,7 +489,7 @@ describe('Events queue processing e2e tests', () => {
     );
     const data = { chainId, ...payload };
 
-    await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(data)));
+    await channel.sendToQueue(queueName, data);
 
     await retry(async () => {
       const cacheContent = await redisClient.hGet(
