@@ -125,6 +125,7 @@ describe('Email controller get email tests', () => {
         `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
       )
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -140,6 +141,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -162,6 +164,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -184,6 +187,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -203,6 +207,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -222,6 +227,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
@@ -256,6 +262,7 @@ describe('Email controller get email tests', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401);
+
       expect(accountDataSource.getAccount).not.toHaveBeenCalled();
     },
   );
@@ -290,6 +297,7 @@ describe('Email controller get email tests', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401);
+
       expect(accountDataSource.getAccount).not.toHaveBeenCalled();
     },
   );
@@ -310,6 +318,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(401);
+
     expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
