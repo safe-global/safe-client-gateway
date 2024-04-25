@@ -125,6 +125,7 @@ describe('Email controller get email tests', () => {
         `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${safe.owners[0]}`,
       )
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('returns 403 if token is not a valid JWT', async () => {
@@ -139,6 +140,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('returns 403 is token it not yet valid', async () => {
@@ -160,6 +162,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('returns 403 if token has expired', async () => {
@@ -181,6 +184,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('returns 403 if signer_address is not a valid Ethereum address', async () => {
@@ -199,6 +203,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('returns 403 if chain_id is not a valid chain ID', async () => {
@@ -217,6 +222,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(403);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   // Note: this could be removed as we checksum the :signer but for robustness we should keep it
@@ -250,6 +256,7 @@ describe('Email controller get email tests', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401);
+      expect(accountDataSource.getAccount).not.toHaveBeenCalled();
     },
   );
 
@@ -283,6 +290,7 @@ describe('Email controller get email tests', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401);
+      expect(accountDataSource.getAccount).not.toHaveBeenCalled();
     },
   );
 
@@ -302,6 +310,7 @@ describe('Email controller get email tests', () => {
       )
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(401);
+    expect(accountDataSource.getAccount).not.toHaveBeenCalled();
   });
 
   it('Returns 404 if signer has no emails', async () => {
