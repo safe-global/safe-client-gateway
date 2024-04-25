@@ -85,6 +85,7 @@ export class ConfigApi implements IConfigApi {
   async getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
+    onlyListed?: boolean;
     url?: string;
   }): Promise<SafeApp[]> {
     try {
@@ -92,6 +93,7 @@ export class ConfigApi implements IConfigApi {
       const params = {
         chainId: args.chainId,
         clientUrl: args.clientUrl,
+        onlyListed: args.onlyListed,
         url: args.url,
       };
       const cacheDir = CacheRouter.getSafeAppsCacheDir(args);

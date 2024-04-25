@@ -165,6 +165,33 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
+  it('should return the safe apps retrieved by chainId, clientUrl and onlyListed', async () => {
+    const chainId = faker.string.numeric();
+    const clientUrl = faker.internet.url({ appendSlash: false });
+    const onlyListed = faker.datatype.boolean();
+    const data = [safeAppBuilder().build(), safeAppBuilder().build()];
+    mockDataSource.get.mockResolvedValue(data);
+
+    const actual = await service.getSafeApps({
+      chainId,
+      clientUrl,
+      onlyListed,
+    });
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
+      url: `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: {
+        params: { chainId, clientUrl, onlyListed, url: undefined },
+      },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
   it('should forward error', async () => {
     const expected = new DataSourceError('some unexpected error');
     mockHttpErrorFactory.from.mockReturnValue(expected);
