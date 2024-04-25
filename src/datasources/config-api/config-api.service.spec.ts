@@ -165,17 +165,17 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
-  it('should return the safe apps retrieved by chainId, clientUrl and ignoreVisibility', async () => {
+  it('should return the safe apps retrieved by chainId, clientUrl and onlyListed', async () => {
     const chainId = faker.string.numeric();
     const clientUrl = faker.internet.url({ appendSlash: false });
-    const ignoreVisibility = faker.datatype.boolean();
+    const onlyListed = faker.datatype.boolean();
     const data = [safeAppBuilder().build(), safeAppBuilder().build()];
     mockDataSource.get.mockResolvedValue(data);
 
     const actual = await service.getSafeApps({
       chainId,
       clientUrl,
-      ignoreVisibility,
+      onlyListed,
     });
 
     expect(actual).toBe(data);
@@ -185,7 +185,7 @@ describe('ConfigApi', () => {
       url: `${baseUri}/api/v1/safe-apps/`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       networkRequest: {
-        params: { chainId, clientUrl, ignoreVisibility, url: undefined },
+        params: { chainId, clientUrl, onlyListed, url: undefined },
       },
       expireTimeSeconds: expirationTimeInSeconds,
     });

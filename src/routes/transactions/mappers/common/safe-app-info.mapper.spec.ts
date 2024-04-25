@@ -75,7 +75,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
       chainId,
-      ignoreVisibility: true,
+      onlyListed: false,
       url: transactionOrigin.url,
     });
   });
@@ -105,7 +105,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
       chainId,
-      ignoreVisibility: true,
+      onlyListed: false,
       url: transactionOrigin.url,
     });
   });
@@ -148,7 +148,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
     expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
       chainId,
-      ignoreVisibility: true,
+      onlyListed: false,
       url: transactionOrigin.url,
     });
   });

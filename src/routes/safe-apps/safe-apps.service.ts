@@ -20,7 +20,7 @@ export class SafeAppsService {
   }): Promise<SafeApp[]> {
     const result = await this.safeAppsRepository.getSafeApps({
       ...args,
-      ignoreVisibility: false,
+      onlyListed: true,
     });
 
     return result.map(
