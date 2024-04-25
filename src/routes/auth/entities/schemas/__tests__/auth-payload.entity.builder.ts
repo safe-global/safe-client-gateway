@@ -1,10 +1,10 @@
 import { IBuilder, Builder } from '@/__tests__/builder';
-import { JwtAccessTokenPayload } from '@/domain/auth/entities/jwt-access-token.payload.entity';
+import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-export function jwtAccessTokenPayloadBuilder(): IBuilder<JwtAccessTokenPayload> {
-  return new Builder<JwtAccessTokenPayload>()
+export function authPayloadBuilder(): IBuilder<AuthPayload> {
+  return new Builder<AuthPayload>()
     .with('chain_id', faker.string.numeric({ exclude: ['0'] }))
     .with('signer_address', getAddress(faker.finance.ethereumAddress()));
 }

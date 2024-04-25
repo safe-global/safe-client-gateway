@@ -1,9 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
-import { IJwtRepository } from '@/domain/jwt/jwt.repository.interface';
+import { IAuthRepository } from '@/routes/auth/auth.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import { JwtAccessTokenPayload } from '@/domain/auth/entities/jwt-access-token.payload.entity';
+import { AuthPayload } from '@/routes/auth/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
@@ -11,8 +11,8 @@ export class AuthService {
   constructor(
     @Inject(ISiweRepository)
     private readonly siweRepository: ISiweRepository,
-    @Inject(IJwtRepository)
-    private readonly jwtRepository: IJwtRepository,
+    @Inject(IAuthRepository)
+    private readonly authRepository: IAuthRepository,
   ) {}
 
   async getNonce(): Promise<{
@@ -32,12 +32,12 @@ export class AuthService {
 
     const { chainId, address, notBefore, expirationTime } = args.message;
 
-    const payload: JwtAccessTokenPayload = {
+    const payload: AuthPayload = {
       chain_id: chainId.toString(),
       signer_address: address,
     };
 
-    const accessToken = this.jwtRepository.signToken(payload, {
+    const accessToken = this.authRepository.signToken(payload, {
       ...(notBefore && {
         notBefore: getSecondsUntil(new Date(notBefore)),
       }),
@@ -53,7 +53,7 @@ export class AuthService {
 
   getTokenPayloadWithClaims(
     accessToken: string,
-  ): JwtPayloadWithClaims<JwtAccessTokenPayload> {
-    return this.jwtRepository.decodeToken(accessToken);
+  ): JwtPayloadWithClaims<AuthPayload> {
+    return this.authRepository.decodeToken(accessToken);
   }
 }
