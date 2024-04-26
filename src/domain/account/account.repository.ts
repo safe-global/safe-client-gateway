@@ -273,10 +273,18 @@ export class AccountRepository implements IAccountRepository {
   async deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+
+    this.authorizationRepository.assertChainAndSigner({
+      chainId: args.chainId,
+      signerAddress: signer,
+      authPayload: args.authPayload,
+    });
+
     try {
       const account = await this.accountDataSource.getAccount({
         chainId: args.chainId,

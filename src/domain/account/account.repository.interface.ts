@@ -76,7 +76,7 @@ export interface IAccountRepository {
   deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
   }): Promise<void>;
 
   /**
