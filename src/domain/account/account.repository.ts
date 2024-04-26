@@ -1,5 +1,5 @@
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import codeGenerator from '@/domain/account/code-generator';
 import {
   Account,
@@ -22,6 +22,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { IAuthorizationRepository } from '@/domain/auth/authorization.repository.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -38,6 +39,8 @@ export class AccountRepository implements IAccountRepository {
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IAuthorizationRepository)
+    private readonly authorizationRepository: IAuthorizationRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -64,13 +67,13 @@ export class AccountRepository implements IAccountRepository {
   }): Promise<Account> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
-    if (
-      !args.authPayload ||
-      args.authPayload.signer_address !== signer ||
-      args.authPayload.chain_id !== args.chainId
-    ) {
-      throw new UnauthorizedException();
-    }
+
+    this.authorizationRepository.assertChainAndSigner({
+      chainId: args.chainId,
+      signerAddress: signer,
+      authPayload: args.authPayload,
+    });
+
     return this.accountDataSource.getAccount({
       chainId: args.chainId,
       safeAddress,
