@@ -438,11 +438,12 @@ export class CacheRouter {
   static getSafeAppsCacheDir(args: {
     chainId?: string;
     clientUrl?: string;
+    onlyListed?: boolean;
     url?: string;
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.SAFE_APPS_KEY}`,
-      `${args.clientUrl}_${args.url}`,
+      `${args.clientUrl}_${args.onlyListed}_${args.url}`,
     );
   }
 
