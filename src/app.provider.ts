@@ -29,7 +29,7 @@ function configureSwagger(app: INestApplication): void {
   SwaggerModule.setup('api', app, document, {
     customfavIcon: '/favicon.png',
     customSiteTitle: 'Safe Client Gateway',
-    customCss: `.topbar-wrapper img { content:url(\'logo.svg\'); }`,
+    customCss: `.topbar-wrapper img { content:url('logo.svg'); }`,
   });
 }
 

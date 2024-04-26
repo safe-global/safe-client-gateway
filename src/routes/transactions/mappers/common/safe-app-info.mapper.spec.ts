@@ -37,15 +37,13 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toBeNull();
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(0);
   });
 
   it('should get a null SafeAppInfo for a transaction with no url into origin', async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        `{ \"${faker.word.sample()}\": \"${faker.word.sample()}\" }`,
-      )
+      .with('origin', `{ "${faker.word.sample()}": "${faker.word.sample()}" }`)
       .build();
     const safeApps = [safeAppBuilder().build(), safeAppBuilder().build()];
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
@@ -53,17 +51,30 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toBeNull();
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(0);
   });
 
   it('should return null if no SafeApp is found and origin is not null', async () => {
     const chainId = faker.string.numeric();
     const safeApps: Array<SafeApp> = [];
-    const transaction = multisigTransactionBuilder().build();
+    const transactionOrigin = {
+      url: faker.internet.url({ appendSlash: false }),
+      name: faker.word.words(),
+    };
+    const transaction = multisigTransactionBuilder()
+      .with('origin', JSON.stringify(transactionOrigin))
+      .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
 
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toBeNull();
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
+      chainId,
+      onlyListed: false,
+      url: transactionOrigin.url,
+    });
   });
 
   it('should get SafeAppInfo for a transaction with origin', async () => {
@@ -71,7 +82,13 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const safeApp = safeAppBuilder().build();
     const anotherSafeApp = safeAppBuilder().build();
     const safeApps = [safeApp, anotherSafeApp];
-    const transaction = multisigTransactionBuilder().build();
+    const transactionOrigin = {
+      url: faker.internet.url({ appendSlash: false }),
+      name: faker.word.words(),
+    };
+    const transaction = multisigTransactionBuilder()
+      .with('origin', JSON.stringify(transactionOrigin))
+      .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
     const expected = new SafeAppInfo(
       safeApp.name,
@@ -82,6 +99,12 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toEqual(expected);
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
+      chainId,
+      onlyListed: false,
+      url: transactionOrigin.url,
+    });
   });
 
   it('should return null origin on invalid JSON', async () => {
@@ -93,6 +116,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toBeNull();
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(0);
   });
 
   it('should replace IPFS origin urls', async () => {
@@ -101,7 +125,13 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const safeApp = safeAppBuilder().with('url', originUrl).build();
     const safeApps = [safeApp];
     const expectedUrl = 'https://cloudflare-ipfs.com/test';
-    const transaction = multisigTransactionBuilder().build();
+    const transactionOrigin = {
+      url: faker.internet.url({ appendSlash: false }),
+      name: faker.word.words(),
+    };
+    const transaction = multisigTransactionBuilder()
+      .with('origin', JSON.stringify(transactionOrigin))
+      .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
     const expected = new SafeAppInfo(
       safeApp.name,
@@ -112,5 +142,11 @@ describe('SafeAppInfo mapper (Unit)', () => {
     const actual = await mapper.mapSafeAppInfo(chainId, transaction);
 
     expect(actual).toEqual(expected);
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledTimes(1);
+    expect(safeAppsRepositoryMock.getSafeApps).toHaveBeenCalledWith({
+      chainId,
+      onlyListed: false,
+      url: transactionOrigin.url,
+    });
   });
 });

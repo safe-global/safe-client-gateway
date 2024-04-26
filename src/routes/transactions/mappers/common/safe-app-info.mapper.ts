@@ -26,6 +26,7 @@ export class SafeAppInfoMapper {
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps({
       chainId,
+      onlyListed: false,
       url: originUrl,
     });
     if (!safeApp) {

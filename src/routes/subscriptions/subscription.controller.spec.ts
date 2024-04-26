@@ -28,6 +28,11 @@ import {
   ALERTS_API_CONFIGURATION_MODULE,
 } from '@/datasources/alerts-api/configuration/alerts-api.configuration.module';
 import alertsApiConfiguration from '@/datasources/alerts-api/configuration/__tests__/alerts-api.configuration';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 describe('Subscription Controller tests', () => {
   let app: INestApplication;
@@ -49,6 +54,8 @@ describe('Subscription Controller tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration), EmailControllerModule],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(ALERTS_CONFIGURATION_MODULE)
       .useModule(AlertsConfigurationModule.register(alertsConfiguration))
       .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
