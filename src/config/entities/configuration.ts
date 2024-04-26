@@ -56,6 +56,7 @@ export default () => ({
             11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
             1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
             137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
+            196: { nativeCoin: 'okb', chainName: 'x1' },
             324: { nativeCoin: 'ethereum', chainName: 'zksync' },
             42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
             42220: { nativeCoin: 'celo', chainName: 'celo' },
