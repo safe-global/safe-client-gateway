@@ -27,7 +27,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: string;
+    signer: `0x${string}`;
   }): Promise<void>;
 
   /**

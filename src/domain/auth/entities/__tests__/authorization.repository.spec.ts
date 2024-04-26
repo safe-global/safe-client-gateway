@@ -1,11 +1,22 @@
 import { AuthorizationRepository } from '@/domain/auth/authorization.repository';
 import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
 
+const safeRepository = {
+  isOwner: jest.fn(),
+} as jest.MockedObjectDeep<ISafeRepository>;
+const safeRepositoryMocked = jest.mocked(safeRepository);
+
 describe('AuthorizationRepository', () => {
-  const target = new AuthorizationRepository();
+  let target: AuthorizationRepository;
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    target = new AuthorizationRepository(safeRepositoryMocked);
+  });
 
   describe('assertChainAndSigner', () => {
     it('should not throw if the chainId and signerAddress match that of the AuthPayload', () => {
@@ -131,6 +142,60 @@ describe('AuthorizationRepository', () => {
           }),
         ).toThrow(new UnauthorizedException());
       });
+    });
+  });
+
+  describe('assertSafeOwner', () => {
+    it('should not throw if the signer is an owner of the Safe', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = authPayloadBuilder().build();
+      safeRepositoryMocked.isOwner.mockResolvedValue(true);
+
+      await expect(
+        target.assertSafeOwner({
+          safeAddress,
+          authPayload,
+        }),
+      ).resolves.toBe(undefined);
+    });
+
+    it('should throw if there is no AuthPayload provided', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        target.assertSafeOwner({
+          safeAddress,
+          authPayload: undefined,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(safeRepositoryMocked.isOwner).not.toHaveBeenCalled();
+    });
+
+    it('should throw if the signer is not an owner of the Safe', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = authPayloadBuilder().build();
+      safeRepositoryMocked.isOwner.mockResolvedValue(false);
+
+      await expect(
+        target.assertSafeOwner({
+          safeAddress,
+          authPayload,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw if the isOwner call throws an error', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = authPayloadBuilder().build();
+      safeRepositoryMocked.isOwner.mockRejectedValue(new Error());
+
+      await expect(
+        target.assertSafeOwner({
+          safeAddress,
+          authPayload,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

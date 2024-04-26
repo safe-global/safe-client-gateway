@@ -5,20 +5,19 @@ import { AccountRepository } from '@/domain/account/account.repository';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
-import { AuthorizationRepository } from '@/domain/auth/authorization.repository';
-import { IAuthorizationRepository } from '@/domain/auth/authorization.repository.interface';
+import { AuthorizationRepositoryModule } from '@/domain/auth/authorization.repository.interface';
 
 @Module({
-  imports: [AccountDataSourceModule, EmailApiModule],
+  imports: [
+    AccountDataSourceModule,
+    EmailApiModule,
+    AuthorizationRepositoryModule,
+  ],
   providers: [
     { provide: IAccountRepository, useClass: AccountRepository },
     {
       provide: ISubscriptionRepository,
       useClass: SubscriptionRepository,
-    },
-    {
-      provide: IAuthorizationRepository,
-      useClass: AuthorizationRepository,
     },
   ],
   exports: [IAccountRepository],
