@@ -183,7 +183,6 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: false,
     zerionBalancesChainIds: ['137'],
-    locking: true,
     swapsDecoding: true,
     historyDebugLogs: false,
     auth: false,
