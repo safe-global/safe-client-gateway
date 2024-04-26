@@ -29,7 +29,7 @@ import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 
-describe('Delete Transaction - Transactions Controller (Unit)', () => {
+describe('Delete Transaction - Transactions Controller (Unit', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
