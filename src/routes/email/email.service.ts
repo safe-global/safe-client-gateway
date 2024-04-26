@@ -1,7 +1,6 @@
 import {
   Inject,
   Injectable,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
@@ -81,13 +80,6 @@ export class EmailService {
     signer: `0x${string}`;
     authPayload: AuthPayload | undefined;
   }): Promise<Email> {
-    if (
-      !args.authPayload ||
-      args.authPayload.signer_address !== args.signer ||
-      args.authPayload.chain_id !== args.chainId
-    ) {
-      throw new UnauthorizedException();
-    }
     const account = await this.repository
       .getAccount(args)
       .catch((e) => this._mapInvalidAddressError(e));

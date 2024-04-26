@@ -1,5 +1,5 @@
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import codeGenerator from '@/domain/account/code-generator';
 import {
   Account,
@@ -21,6 +21,7 @@ import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-n
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -59,9 +60,17 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<Account> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+    if (
+      !args.authPayload ||
+      args.authPayload.signer_address !== signer ||
+      args.authPayload.chain_id !== args.chainId
+    ) {
+      throw new UnauthorizedException();
+    }
     return this.accountDataSource.getAccount({
       chainId: args.chainId,
       safeAddress,
