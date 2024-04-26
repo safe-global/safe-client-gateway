@@ -1,9 +1,4 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
@@ -49,10 +44,7 @@ describe('PaginationDataDecorator', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestModule],
-    })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
-      .compile();
+    }).compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
     jwtService = app.get<IJwtService>(IJwtService);

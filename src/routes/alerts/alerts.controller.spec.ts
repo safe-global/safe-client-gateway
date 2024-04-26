@@ -1616,8 +1616,6 @@ describe('Alerts (Unit)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
           imports: [AppModule.register(testConfiguration)],
         })
-          .overrideModule(JWT_CONFIGURATION_MODULE)
-          .useModule(JwtConfigurationModule.register(jwtConfiguration))
           .overrideModule(AccountDataSourceModule)
           .useModule(TestAccountDataSourceModule)
           .overrideModule(CacheModule)

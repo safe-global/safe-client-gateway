@@ -28,11 +28,6 @@ import {
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 describe('Delete Transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication;
@@ -46,8 +41,6 @@ describe('Delete Transaction - Transactions Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)

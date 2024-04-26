@@ -26,11 +26,6 @@ import {
   zerionNFTInfoBuilder,
 } from '@/datasources/balances-api/entities/__tests__/zerion-collectible.entity.builder';
 import { getAddress } from 'viem';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication;
@@ -44,8 +39,6 @@ describe('Zerion Collectibles Controller', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
