@@ -183,7 +183,7 @@ export default (): ReturnType<typeof configuration> => ({
     relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
-    auth: true,
+    auth: false,
     confirmationView: false,
     eventsQueue: false,
   },
@@ -235,5 +235,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: faker.internet.url(),
     },
     explorerBaseUri: faker.internet.url(),
+    restrictApps: false,
+    allowedApps: [],
   },
 });

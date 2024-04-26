@@ -114,7 +114,10 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     expect(mockDataSource.get).toHaveBeenCalledWith({
-      cacheDir: new CacheDir(`${chainId}_safe_apps`, 'undefined_undefined'),
+      cacheDir: new CacheDir(
+        `${chainId}_safe_apps`,
+        'undefined_undefined_undefined',
+      ),
       url: `${baseUri}/api/v1/safe-apps/`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       networkRequest: {
@@ -136,7 +139,10 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     expect(mockDataSource.get).toHaveBeenCalledWith({
-      cacheDir: new CacheDir(`${chainId}_safe_apps`, `undefined_${url}`),
+      cacheDir: new CacheDir(
+        `${chainId}_safe_apps`,
+        `undefined_undefined_${url}`,
+      ),
       url: `${baseUri}/api/v1/safe-apps/`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       networkRequest: { params: { chainId, clientUrl: undefined, url } },
@@ -156,10 +162,43 @@ describe('ConfigApi', () => {
     expect(actual).toBe(data);
     expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     expect(mockDataSource.get).toHaveBeenCalledWith({
-      cacheDir: new CacheDir(`${chainId}_safe_apps`, `${clientUrl}_undefined`),
+      cacheDir: new CacheDir(
+        `${chainId}_safe_apps`,
+        `${clientUrl}_undefined_undefined`,
+      ),
       url: `${baseUri}/api/v1/safe-apps/`,
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       networkRequest: { params: { chainId, clientUrl, url: undefined } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the safe apps retrieved by chainId, clientUrl and onlyListed', async () => {
+    const chainId = faker.string.numeric();
+    const clientUrl = faker.internet.url({ appendSlash: false });
+    const onlyListed = faker.datatype.boolean();
+    const data = [safeAppBuilder().build(), safeAppBuilder().build()];
+    mockDataSource.get.mockResolvedValue(data);
+
+    const actual = await service.getSafeApps({
+      chainId,
+      clientUrl,
+      onlyListed,
+    });
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(
+        `${chainId}_safe_apps`,
+        `${clientUrl}_${onlyListed}_undefined`,
+      ),
+      url: `${baseUri}/api/v1/safe-apps/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: {
+        params: { chainId, clientUrl, onlyListed, url: undefined },
+      },
       expireTimeSeconds: expirationTimeInSeconds,
     });
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
