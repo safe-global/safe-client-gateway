@@ -235,5 +235,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: faker.internet.url(),
     },
     explorerBaseUri: faker.internet.url(),
+    restrictApps: false,
+    allowedApps: [],
   },
 });
