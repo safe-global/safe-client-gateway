@@ -190,7 +190,6 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
-    locking: process.env.FF_LOCKING?.toLowerCase() === 'true',
     relay: process.env.FF_RELAY?.toLowerCase() === 'true',
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     historyDebugLogs:
