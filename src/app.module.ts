@@ -55,7 +55,6 @@ export class AppModule implements NestModule {
     const {
       auth: isAuthFeatureEnabled,
       email: isEmailFeatureEnabled,
-      relay: isRelayFeatureEnabled,
       confirmationView: isConfirmationViewEnabled,
     } = configFactory()['features'];
 
@@ -86,7 +85,7 @@ export class AppModule implements NestModule {
         MessagesModule,
         NotificationsModule,
         OwnersModule,
-        ...(isRelayFeatureEnabled ? [RelayControllerModule] : []),
+        RelayControllerModule,
         RootModule,
         SafeAppsModule,
         SafesModule,
