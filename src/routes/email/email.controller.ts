@@ -14,7 +14,10 @@ import {
 import { EmailService } from '@/routes/email/email.service';
 import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
-import { SaveEmailDto } from '@/routes/email/entities/save-email-dto.entity';
+import {
+  SaveEmailDto,
+  SaveEmailDtoSchema,
+} from '@/routes/email/entities/save-email-dto.entity';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/account-does-not-exist.exception-filter';
@@ -60,7 +63,7 @@ export class EmailController {
   async saveEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Body() saveEmailDto: SaveEmailDto,
+    @Body(new ValidationPipe(SaveEmailDtoSchema)) saveEmailDto: SaveEmailDto,
     @Auth() authPayload: AuthPayload | undefined,
   ): Promise<void> {
     await this.service.saveEmail({
