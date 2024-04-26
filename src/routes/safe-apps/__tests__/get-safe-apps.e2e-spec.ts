@@ -34,7 +34,7 @@ describe('Get Safe Apps e2e test', () => {
 
   it('GET /chains/<chainId>/safe-apps', async () => {
     const safeAppsCacheKey = `${cacheKeyPrefix}-${chainId}_safe_apps`;
-    const safeAppsCacheField = 'undefined_undefined';
+    const safeAppsCacheField = 'undefined_true_undefined';
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safe-apps`)
@@ -71,7 +71,7 @@ describe('Get Safe Apps e2e test', () => {
   it('GET /chains/<chainId>/safe-apps?url=${transactionBuilderUrl}', async () => {
     const safeAppsCacheKey = `${cacheKeyPrefix}-${chainId}_safe_apps`;
     const transactionBuilderUrl = 'https://safe-apps.dev.5afe.dev/tx-builder';
-    const safeAppsCacheField = `undefined_${transactionBuilderUrl}`;
+    const safeAppsCacheField = `undefined_true_${transactionBuilderUrl}`;
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safe-apps/?url=${transactionBuilderUrl}`)
