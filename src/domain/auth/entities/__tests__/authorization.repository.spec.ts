@@ -1,4 +1,5 @@
 import { AuthorizationRepository } from '@/domain/auth/authorization.repository';
+import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
@@ -10,15 +11,16 @@ describe('AuthorizationRepository', () => {
     it('should not throw if the chainId and signerAddress match that of the AuthPayload', () => {
       const chainId = faker.string.numeric();
       const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = authPayloadBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', signerAddress)
+        .build();
 
       expect(() =>
         target.assertChainAndSigner({
           chainId,
           signerAddress,
-          authPayload: {
-            chain_id: chainId,
-            signer_address: signerAddress,
-          },
+          authPayload,
         }),
       ).not.toThrow();
     });
@@ -38,17 +40,17 @@ describe('AuthorizationRepository', () => {
 
     it("should throw if the chainId and AuthPayload['chain_id'] don't match", () => {
       const chainId = faker.string.numeric();
-      const chain_id = faker.string.numeric({ exclude: [chainId] });
       const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = authPayloadBuilder()
+        .with('chain_id', faker.string.numeric({ exclude: [chainId] }))
+        .with('signer_address', signerAddress)
+        .build();
 
       expect(() =>
         target.assertChainAndSigner({
           chainId,
           signerAddress,
-          authPayload: {
-            chain_id,
-            signer_address: signerAddress,
-          },
+          authPayload,
         }),
       ).toThrow(new UnauthorizedException());
     });
@@ -59,18 +61,19 @@ describe('AuthorizationRepository', () => {
         const signerAddress = faker.finance
           .ethereumAddress()
           .toLowerCase() as `0x${string}`;
-        const signer_address = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as `0x${string}`;
+        const authPayload = authPayloadBuilder()
+          .with('chain_id', chainId)
+          .with(
+            'signer_address',
+            faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+          )
+          .build();
 
         expect(() =>
           target.assertChainAndSigner({
             chainId,
             signerAddress,
-            authPayload: {
-              chain_id: chainId,
-              signer_address,
-            },
+            authPayload,
           }),
         ).toThrow(new UnauthorizedException());
       });
@@ -78,16 +81,16 @@ describe('AuthorizationRepository', () => {
       it('when both are checksummed', () => {
         const chainId = faker.string.numeric();
         const signerAddress = getAddress(faker.finance.ethereumAddress());
-        const signer_address = getAddress(faker.finance.ethereumAddress());
+        const authPayload = authPayloadBuilder()
+          .with('chain_id', chainId)
+          .with('signer_address', getAddress(faker.finance.ethereumAddress()))
+          .build();
 
         expect(() =>
           target.assertChainAndSigner({
             chainId,
             signerAddress,
-            authPayload: {
-              chain_id: chainId,
-              signer_address,
-            },
+            authPayload,
           }),
         ).toThrow(new UnauthorizedException());
       });
@@ -95,18 +98,19 @@ describe('AuthorizationRepository', () => {
       it("when signerAddress is checksummed and AuthPayload['signer_address'] is not", () => {
         const chainId = faker.string.numeric();
         const signerAddress = getAddress(faker.finance.ethereumAddress());
-        const signer_address = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as `0x${string}`;
+        const authPayload = authPayloadBuilder()
+          .with('chain_id', chainId)
+          .with(
+            'signer_address',
+            faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+          )
+          .build();
 
         expect(() =>
           target.assertChainAndSigner({
             chainId,
             signerAddress,
-            authPayload: {
-              chain_id: chainId,
-              signer_address,
-            },
+            authPayload,
           }),
         ).toThrow(new UnauthorizedException());
       });
@@ -114,16 +118,16 @@ describe('AuthorizationRepository', () => {
       it("when signerAddress is not checksummed and AuthPayload['signer_address'] is", () => {
         const chainId = faker.string.numeric();
         const signerAddress = faker.finance.ethereumAddress() as `0x${string}`;
-        const signer_address = getAddress(faker.finance.ethereumAddress());
+        const authPayload = authPayloadBuilder()
+          .with('chain_id', chainId)
+          .with('signer_address', getAddress(faker.finance.ethereumAddress()))
+          .build();
 
         expect(() =>
           target.assertChainAndSigner({
             chainId,
             signerAddress,
-            authPayload: {
-              chain_id: chainId,
-              signer_address,
-            },
+            authPayload,
           }),
         ).toThrow(new UnauthorizedException());
       });
