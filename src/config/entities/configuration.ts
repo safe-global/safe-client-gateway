@@ -268,6 +268,8 @@ export default () => ({
     restrictApps: process.env.SWAPS_RESTRICT_APPS?.toLowerCase() === 'true',
     // The comma-separated collection of allowed CoW Swap Apps.
     // In order for this collection to take effect, restrictApps should be set to true
+    // The app names should match the "App Code" of the metadata provided to CoW Swap.
+    // See https://explorer.cow.fi/appdata?tab=encode
     allowedApps: process.env.SWAPS_ALLOWED_APPS?.split(',') || [],
   },
 });
