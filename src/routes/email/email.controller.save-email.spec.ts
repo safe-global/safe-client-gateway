@@ -12,7 +12,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   INetworkService,
@@ -35,8 +35,6 @@ import {
   JWT_CONFIGURATION_MODULE,
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
 
 describe('Email controller save email tests', () => {
   let app: INestApplication;
@@ -45,7 +43,6 @@ describe('Email controller save email tests', () => {
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let safeConfigUrl: string | undefined;
-  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -73,7 +70,6 @@ describe('Email controller save email tests', () => {
     emailApi = moduleFixture.get(IEmailApi);
     accountDataSource = moduleFixture.get(IAccountDataSource);
     networkService = moduleFixture.get(NetworkService);
-    jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -95,22 +91,23 @@ describe('Email controller save email tests', () => {
   ])('stores email successfully', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const signerAddress = signer.address;
+    // Signer is owner of safe
     const safe = safeBuilder()
       // Allow test of non-checksummed address by casting
       .with('address', safeAddress as `0x${string}`)
+      .with('owners', [signerAddress])
       .build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', chain.chainId)
-      .with('signer_address', signerAddress)
-      .build();
-    const accessToken = jwtService.sign(authPayload);
+    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${signerAddress}-${timestamp}`;
+    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: chain, status: 200 });
-        // Schema validation checksums address of Safe
-        case `${chain.transactionService}/api/v1/safes/${getAddress(safe.address)}`:
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
           return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -137,13 +134,13 @@ describe('Email controller save email tests', () => {
       verificationCodeBuilder().build(),
     );
 
-    expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safeAddress}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        signer: signerAddress,
+        signer: signer.address,
       })
       .expect(201)
       .expect({});
@@ -162,7 +159,7 @@ describe('Email controller save email tests', () => {
       // Should always store the checksummed address
       safeAddress: getAddress(safeAddress),
       emailAddress: new EmailAddress(emailAddress),
-      signer: signerAddress,
+      signer: signer.address,
       code: expect.any(String),
       codeGenerationDate: expect.any(Date),
       unsubscriptionToken: expect.any(String),
@@ -176,213 +173,86 @@ describe('Email controller save email tests', () => {
     });
   });
 
-  it('returns 403 if no token is present', async () => {
+  it('returns 403 is message was signed with a timestamp older than 5 minutes', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .send({
-        emailAddress: emailAddress,
-        signer: signerAddress,
-      })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('returns 403 if token is not a valid JWT', async () => {
-    const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const accessToken = faker.string.alphanumeric();
-
-    expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({
-        emailAddress: emailAddress,
-        signer: signerAddress,
-      })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('returns 403 if token is not yet valid', async () => {
-    const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', chain.chainId)
-      .with('signer_address', signerAddress)
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const notBefore = faker.date.future();
-    const accessToken = jwtService.sign(authPayload, {
-      notBefore: getSecondsUntil(notBefore),
-    });
+    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
 
-    expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+    jest.advanceTimersByTime(5 * 60 * 1000);
+
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        signer: signerAddress,
+        account: account.address,
       })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 
-  it('returns 403 if token has expired', async () => {
+  it('returns 403 on wrong message signature', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', chain.chainId)
-      .with('signer_address', signerAddress)
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      .with('owners', [accountAddress])
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const accessToken = jwtService.sign(authPayload, {
-      expiresIn: 0, // Now
-    });
-    jest.advanceTimersByTime(1_000);
+    const message = `some-action-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
 
-    expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        signer: signerAddress,
+        account: account.address,
       })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 
-  it('returns 403 if signer_address is not a valid Ethereum address', async () => {
+  it('returns 403 if message not signed by owner', async () => {
     const chain = chainBuilder().build();
     const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', chain.chainId)
-      .with('signer_address', faker.string.numeric() as `0x${string}`)
+    const timestamp = jest.now();
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    const accountAddress = account.address;
+    // Signer is owner of safe
+    const safe = safeBuilder()
+      // Faker generates non-checksum addresses only
+      .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const accessToken = jwtService.sign(authPayload);
-
-    expect(() => jwtService.verify(accessToken)).not.toThrow();
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({
-        emailAddress: emailAddress,
-        signer: signerAddress,
-      })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('returns 403 if chain_id is not a valid chain ID', async () => {
-    const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', faker.string.alpha())
-      .with('signer_address', signerAddress)
-      .build();
-    const accessToken = jwtService.sign(authPayload);
-
-    expect(() => jwtService.verify(accessToken)).not.toThrow();
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({
-        emailAddress: emailAddress,
-        signer: signerAddress,
-      })
-      .expect(403);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('returns 401 if chain_id does not match the request', async () => {
-    const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
-      .with('signer_address', signerAddress)
-      .build();
-    const accessToken = jwtService.sign(authPayload);
-
-    expect(() => jwtService.verify(accessToken)).not.toThrow();
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({
-        emailAddress: emailAddress,
-        signer: signerAddress,
-      })
-      .expect(401);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('returns 401 if not an owner of the Safe', async () => {
-    const chain = chainBuilder().build();
-    const emailAddress = faker.internet.email();
-    const safe = safeBuilder().build();
-    const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
-      .with('chain_id', chain.chainId)
-      .build();
-    const accessToken = jwtService.sign(authPayload);
+    const message = `email-register-${chain.chainId}-${safe.address}-${emailAddress}-${accountAddress}-${timestamp}`;
+    const signature = await account.signMessage({ message });
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -394,21 +264,19 @@ describe('Email controller save email tests', () => {
       }
     });
 
-    expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/emails`)
-      .set('Cookie', [`access_token=${accessToken}`])
+      .set('Safe-Wallet-Signature', signature)
+      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
         emailAddress: emailAddress,
-        signer: signerAddress,
+        account: account.address,
       })
-      .expect(401);
-
-    expect(emailApi.createMessage).not.toHaveBeenCalled();
-    expect(
-      accountDataSource.setEmailVerificationSentDate,
-    ).not.toHaveBeenCalled();
-    expect(accountDataSource.createAccount).not.toHaveBeenCalled();
-    expect(accountDataSource.subscribe).not.toHaveBeenCalled();
+      .expect(403)
+      .expect({
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 });

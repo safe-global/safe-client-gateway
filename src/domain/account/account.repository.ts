@@ -98,24 +98,12 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    signer: string;
   }): Promise<void> {
     const email = new EmailAddress(args.emailAddress);
     const verificationCode = this._generateCode();
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
-
-    this.authorizationRepository.assertChainAndSigner({
-      chainId: args.chainId,
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-
-    await this.authorizationRepository.assertSafeOwner({
-      safeAddress,
-      authPayload: args.authPayload,
-    });
 
     try {
       await this.accountDataSource.createAccount({

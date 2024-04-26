@@ -25,8 +25,7 @@ export class EmailService {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    signer: string;
   }): Promise<void> {
     return this.repository
       .createAccount(args)
