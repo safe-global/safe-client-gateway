@@ -12,6 +12,7 @@ export interface ISafeAppsRepository {
   getSafeApps(args: {
     chainId?: string;
     clientUrl?: string;
+    onlyListed?: boolean;
     url?: string;
   }): Promise<SafeApp[]>;
 

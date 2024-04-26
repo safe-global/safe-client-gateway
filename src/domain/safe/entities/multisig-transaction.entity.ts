@@ -22,7 +22,7 @@ const ConfirmationSchema = z.object({
 export const MultisigTransactionSchema = z.object({
   safe: AddressSchema,
   to: AddressSchema,
-  value: NumericStringSchema.nullish().default(null),
+  value: NumericStringSchema,
   data: HexSchema.nullish().default(null),
   dataDecoded: DataDecodedSchema.nullish().default(null),
   operation: z.nativeEnum(Operation),
