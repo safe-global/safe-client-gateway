@@ -5,7 +5,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 /**
  * Route decorator that extracts the {@link AuthPayload}
  */
-export const AuthPayloadDecorator = createParamDecorator(
+export const Auth = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): AuthPayload | undefined => {
     const request: Request = ctx.switchToHttp().getRequest();
     return request.auth;
