@@ -43,10 +43,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
   it('should get a null SafeAppInfo for a transaction with no url into origin', async () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        `{ \"${faker.word.sample()}\": \"${faker.word.sample()}\" }`,
-      )
+      .with('origin', `{ "${faker.word.sample()}": "${faker.word.sample()}" }`)
       .build();
     const safeApps = [safeAppBuilder().build(), safeAppBuilder().build()];
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
