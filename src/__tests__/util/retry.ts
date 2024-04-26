@@ -11,7 +11,7 @@ export async function waitMilliseconds(milliseconds: number): Promise<void> {
  * If {@link maxAttempts} is reached, it throws the error returned by {@link fn} last execution.
  */
 export async function retry(
-  fn: () => void,
+  fn: () => Promise<void>,
   maxAttempts: number = 40,
   delayMs: number = 100,
 ): Promise<void> {

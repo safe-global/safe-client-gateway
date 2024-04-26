@@ -88,10 +88,10 @@ describe('CoingeckoAPI', () => {
     );
   });
 
-  it('should error if configuration is not defined', async () => {
+  it('should error if configuration is not defined', () => {
     const fakeConfigurationService = new FakeConfigurationService();
 
-    await expect(
+    expect(
       () =>
         new CoingeckoApi(
           fakeConfigurationService,
