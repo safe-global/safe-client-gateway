@@ -315,16 +315,27 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+
+    this.authorizationRepository.assertChainAndSigner({
+      chainId: args.chainId,
+      signerAddress: signer,
+      authPayload: args.authPayload,
+    });
+
     const account = await this.accountDataSource.getAccount({
       chainId: args.chainId,
       safeAddress,
       signer,
     });
     const newEmail = new EmailAddress(args.emailAddress);
+
+    console.log('newEmail', newEmail.value);
+    console.log('oldEmail', account.emailAddress.value);
 
     if (newEmail.value === account.emailAddress.value) {
       throw new EmailEditMatchesError(args);

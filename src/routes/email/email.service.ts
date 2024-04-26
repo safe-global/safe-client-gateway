@@ -68,8 +68,9 @@ export class EmailService {
   async editEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
     emailAddress: string;
+    authPayload: AuthPayload | undefined;
   }): Promise<void> {
     return this.repository
       .editEmail(args)

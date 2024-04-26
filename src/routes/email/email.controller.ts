@@ -12,7 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EmailService } from '@/routes/email/email.service';
-import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import {
   SaveEmailDto,
   SaveEmailDtoSchema,
@@ -21,7 +20,6 @@ import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { VerifyEmailDto } from '@/routes/email/entities/verify-email-dto.entity';
 import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-filters/account-does-not-exist.exception-filter';
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
-import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { Email } from '@/routes/email/entities/email.entity';
@@ -125,10 +123,7 @@ export class EmailController {
   }
 
   @Put(':signer')
-  @UseGuards(
-    EmailEditGuard,
-    TimestampGuard(5 * 60 * 1000), // 5 minutes
-  )
+  @UseGuards(AuthGuard)
   @UseFilters(
     EmailEditMatchesExceptionFilter,
     AccountDoesNotExistExceptionFilter,
@@ -137,14 +132,16 @@ export class EmailController {
   async editEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Param('signer') signer: string,
+    @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
     @Body() editEmailDto: EditEmailDto,
+    @Auth() authPayload: AuthPayload | undefined,
   ): Promise<void> {
     await this.service.editEmail({
       chainId,
       safeAddress,
       signer,
       emailAddress: editEmailDto.emailAddress,
+      authPayload,
     });
   }
 }
