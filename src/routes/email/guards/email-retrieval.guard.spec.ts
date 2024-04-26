@@ -91,7 +91,7 @@ describe('EmailRetrievalGuard tests', () => {
 
   it('returns 403 on an invalid signature', async () => {
     await request(app.getHttpServer())
-      .get(`/test/${chainId}/${safe}/${signer}`)
+      .get(`/test/${chainId}/${safe}/${signer.address}`)
       .set('Safe-Wallet-Signature', faker.string.sample(32))
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .expect(403)
