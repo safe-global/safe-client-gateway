@@ -12,7 +12,7 @@ import { Request } from 'express';
 declare module 'express' {
   // Inject AuthPayload to express.Request
   interface Request {
-    auth?: AuthPayload | undefined;
+    [AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]?: AuthPayload | undefined;
   }
 }
 
@@ -30,6 +30,8 @@ declare module 'express' {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  static readonly AUTH_PAYLOAD_REQUEST_PROPERTY = 'accessToken';
+
   constructor(
     @Inject(IAuthRepository) private readonly authRepository: IAuthRepository,
   ) {}
@@ -46,7 +48,8 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      request.auth = this.authRepository.verifyToken(accessToken);
+      request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY] =
+        this.authRepository.verifyToken(accessToken);
       return true;
     } catch {
       return false;
