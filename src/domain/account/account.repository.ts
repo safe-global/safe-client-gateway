@@ -22,7 +22,6 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -39,8 +38,6 @@ export class AccountRepository implements IAccountRepository {
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IAuthRepository)
-    private readonly authRepository: IAuthRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
