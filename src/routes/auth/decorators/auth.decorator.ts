@@ -7,7 +7,7 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
  * Route decorator that extracts the {@link AuthPayload}
  */
 export const Auth = createParamDecorator(
-  (_: unknown, ctx: ExecutionContext): AuthPayload | undefined => {
+  (_: unknown, ctx: ExecutionContext): AuthPayload => {
     const request: Request = ctx.switchToHttp().getRequest();
     return new AuthPayload(request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]);
   },

@@ -69,7 +69,6 @@ export class AccountRepository implements IAccountRepository {
     const signer = getAddress(args.signer);
 
     if (
-      !args.authPayload ||
       !args.authPayload.isForChain(args.chainId) ||
       !args.authPayload.isForSigner(signer)
     ) {
