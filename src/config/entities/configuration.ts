@@ -56,6 +56,7 @@ export default () => ({
             11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
             1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
             137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
+            196: { nativeCoin: 'okb', chainName: 'x1' },
             324: { nativeCoin: 'ethereum', chainName: 'zksync' },
             42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
             42220: { nativeCoin: 'celo', chainName: 'celo' },
@@ -189,8 +190,6 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
-    locking: process.env.FF_LOCKING?.toLowerCase() === 'true',
-    relay: process.env.FF_RELAY?.toLowerCase() === 'true',
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',

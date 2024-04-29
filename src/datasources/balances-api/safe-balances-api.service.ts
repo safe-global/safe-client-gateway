@@ -154,7 +154,7 @@ export class SafeBalancesApi implements IBalancesApi {
           );
           price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
         }
-        const fiatBalance = await this._getFiatBalance(price, balance);
+        const fiatBalance = this._getFiatBalance(price, balance);
         return {
           ...balance,
           fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,

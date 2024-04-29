@@ -71,7 +71,7 @@ describe('EmailEdit guard tests', () => {
 
   it('returns 403 on empty body', async () => {
     await request(app.getHttpServer())
-      .post(`/test/${chainId}/${safe}/${signer}`)
+      .post(`/test/${chainId}/${safe}/${signer.address}`)
       .expect(403)
       .expect({
         message: 'Forbidden resource',
@@ -172,7 +172,7 @@ describe('EmailEdit guard tests', () => {
 
   it('returns 403 on routes without safe address', async () => {
     await request(app.getHttpServer())
-      .post(`/test/invalid/2/chains/${chainId}}/${signer}`)
+      .post(`/test/invalid/2/chains/${chainId}}/${signer.address}`)
       .set('Safe-Wallet-Signature', signature)
       .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
       .send({
