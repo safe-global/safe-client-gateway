@@ -1,16 +1,14 @@
 import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
 import {
   BalanceSchema,
-  BalanceTokenSchema,
   Erc20BalanceSchema,
   NativeBalanceSchema,
-} from '@/domain/balances/entities/schemas/balance.schema';
+} from '@/domain/balances/entities/balance.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
-describe('Balances schema', () => {
+describe('Balance entity schemas', () => {
   describe('NativeBalanceSchema', () => {
     it('should validate a valid native balance', () => {
       const nativeBalance = balanceBuilder()
@@ -48,55 +46,6 @@ describe('Balances schema', () => {
             expected: 'string',
             received: 'undefined',
             path: ['balance'],
-            message: 'Required',
-          },
-        ]),
-      );
-    });
-  });
-
-  describe('BalanceTokenSchema', () => {
-    it('should validate a valid balance token', () => {
-      const balanceToken = balanceTokenBuilder().build();
-
-      const result = BalanceTokenSchema.safeParse(balanceToken);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should not allow an invalid balance token', () => {
-      const balanceToken = { invalid: 'balanceToken' };
-
-      const result = BalanceTokenSchema.safeParse(balanceToken);
-
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['name'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['symbol'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'number',
-            received: 'undefined',
-            path: ['decimals'],
-            message: 'Required',
-          },
-          {
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'undefined',
-            path: ['logoUri'],
             message: 'Required',
           },
         ]),
