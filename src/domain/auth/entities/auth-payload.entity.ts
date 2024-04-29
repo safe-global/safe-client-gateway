@@ -7,20 +7,12 @@ export type AuthPayloadDto = z.infer<typeof AuthPayloadSchema>;
 // This is Partial in order to allow `AuthPayload` instances to always be returned by
 // the `Auth` decorator, should there not be a payload
 export class AuthPayload implements Partial<AuthPayloadDto> {
-  private schema = AuthPayloadSchema;
-
   chain_id?: string;
   signer_address?: `0x${string}`;
 
-  constructor(props: unknown) {
-    const result = this.schema.safeParse(props);
-
-    if (!result.success) {
-      return;
-    }
-
-    this.chain_id = result.data.chain_id;
-    this.signer_address = result.data.signer_address;
+  constructor(props?: { signer_address?: `0x${string}`; chain_id?: string }) {
+    this.chain_id = props?.chain_id;
+    this.signer_address = props?.signer_address;
   }
 
   isForChain(chainId: string): boolean {
