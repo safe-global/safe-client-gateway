@@ -48,7 +48,7 @@ export class EmailController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
-    @Auth() authPayload: AuthPayload | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Email> {
     return this.service.getEmail({
       chainId,
@@ -64,7 +64,7 @@ export class EmailController {
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
     @Body(new ValidationPipe(SaveEmailDtoSchema)) saveEmailDto: SaveEmailDto,
-    @Auth() authPayload: AuthPayload | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     await this.service.saveEmail({
       chainId,

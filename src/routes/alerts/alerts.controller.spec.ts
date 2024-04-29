@@ -111,7 +111,6 @@ describe('Alerts (Unit)', () => {
         features: {
           ...defaultConfiguration.features,
           email: true,
-          auth: true,
         },
       });
 
