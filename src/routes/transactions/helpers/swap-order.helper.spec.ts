@@ -37,19 +37,24 @@ const multiSendDecoderMock = jest.mocked(multiSendDecoder);
 describe('Swap Order Helper tests', () => {
   let target: SwapOrderHelper;
   const explorerBaseUrl = faker.internet.url();
+  const restrictApps = false;
+  const allowedApps = [faker.company.buzzNoun()];
 
   beforeEach(() => {
     jest.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
+      if (key === 'swaps.restrictApps') return restrictApps;
       throw new Error(`Key ${key} not found.`);
     });
+
     target = new SwapOrderHelper(
       multiSendDecoderMock,
       setPreSignatureDecoderMock,
       tokenRepositoryMock,
       swapsRepositoryMock,
       configurationServiceMock,
+      new Set(allowedApps),
     );
   });
 
@@ -219,4 +224,42 @@ describe('Swap Order Helper tests', () => {
       );
     },
   );
+
+  describe('Allowed Apps', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+      configurationServiceMock.getOrThrow.mockImplementation((key) => {
+        if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
+        if (key === 'swaps.restrictApps') return true;
+        throw new Error(`Key ${key} not found.`);
+      });
+
+      target = new SwapOrderHelper(
+        multiSendDecoderMock,
+        setPreSignatureDecoderMock,
+        tokenRepositoryMock,
+        swapsRepositoryMock,
+        configurationServiceMock,
+        new Set(allowedApps),
+      );
+    });
+
+    it('should not allow app not in allowedApp', () => {
+      const order = orderBuilder().build();
+
+      const actual = target.isAppAllowed(order);
+
+      expect(actual).toBe(false);
+    });
+
+    it('should allow app in allowedApps', () => {
+      const order = orderBuilder()
+        .with('fullAppData', { appCode: allowedApps[0] })
+        .build();
+
+      const actual = target.isAppAllowed(order);
+
+      expect(actual).toBe(true);
+    });
+  });
 });
