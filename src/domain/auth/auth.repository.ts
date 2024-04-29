@@ -36,4 +36,19 @@ export class AuthRepository implements IAuthRepository {
     const decoded = this.jwtService.decode(accessToken);
     return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
   }
+
+  isChain(args: { chainId: string; authPayload?: AuthPayload }): boolean {
+    return args.authPayload?.chain_id === args.chainId;
+  }
+
+  isSigner(args: {
+    signerAddress: `0x${string}`;
+    authPayload?: AuthPayload;
+  }): boolean {
+    // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly
+    return (
+      args.authPayload?.signer_address.toLowerCase() ===
+      args.signerAddress.toLowerCase()
+    );
+  }
 }

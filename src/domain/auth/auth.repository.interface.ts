@@ -18,6 +18,16 @@ export interface IAuthRepository {
   verifyToken(accessToken: string): AuthPayload;
 
   decodeToken(accessToken: string): AuthPayloadWithClaims<AuthPayload>;
+
+  isChain(args: {
+    chainId: string;
+    authPayload: AuthPayload | undefined;
+  }): boolean;
+
+  isSigner(args: {
+    signerAddress: `0x${string}`;
+    authPayload: AuthPayload | undefined;
+  }): boolean;
 }
 
 @Module({
