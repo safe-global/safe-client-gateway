@@ -9,6 +9,6 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 export const Auth = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): AuthPayload | undefined => {
     const request: Request = ctx.switchToHttp().getRequest();
-    return request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY];
+    return new AuthPayload(request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]);
   },
 );

@@ -63,21 +63,16 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Account> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    const isChain = this.authRepository.isChain({
-      chainId: args.chainId,
-      authPayload: args.authPayload,
-    });
-    const isSigner = this.authRepository.isSigner({
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-
-    if (!isChain || !isSigner) {
+    if (
+      !args.authPayload ||
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
       throw new UnauthorizedException();
     }
 

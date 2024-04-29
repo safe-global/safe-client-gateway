@@ -6,7 +6,7 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
-import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
@@ -20,7 +20,7 @@ import {
 import { TestingModule, Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
-describe('PaginationDataDecorator', () => {
+describe('Auth decorator', () => {
   let app: INestApplication;
   let jwtService: IJwtService;
   let authPayloadFromDecoractor: AuthPayload;
@@ -62,18 +62,20 @@ describe('PaginationDataDecorator', () => {
   it('no token', async () => {
     await request(app.getHttpServer()).get('/open').expect(200);
 
-    expect(authPayloadFromDecoractor).toBe(undefined);
+    expect(authPayloadFromDecoractor).toStrictEqual(new AuthPayload({}));
   });
 
   it('with token', async () => {
-    const authPayload = authPayloadBuilder().build();
-    const accessToken = jwtService.sign(authPayload);
+    const authPayloadDto = authPayloadDtoBuilder().build();
+    const accessToken = jwtService.sign(authPayloadDto);
 
     await request(app.getHttpServer())
       .get('/auth')
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(200);
 
-    expect(authPayloadFromDecoractor).toStrictEqual(authPayload);
+    expect(authPayloadFromDecoractor).toStrictEqual(
+      new AuthPayload(authPayloadDto),
+    );
   });
 });

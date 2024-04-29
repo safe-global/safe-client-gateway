@@ -8,7 +8,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Account>;
 
   getAccounts(args: {

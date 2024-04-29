@@ -15,7 +15,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import * as request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { faker } from '@faker-js/faker';
@@ -84,7 +84,7 @@ describe('Email controller get email tests', () => {
       .with('address', safeAddress as `0x${string}`)
       .build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
@@ -152,7 +152,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
@@ -176,7 +176,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
@@ -200,7 +200,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', faker.string.numeric() as `0x${string}`)
       .build();
@@ -221,7 +221,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', faker.string.alpha())
       .with('signer_address', signerAddress)
       .build();
@@ -254,7 +254,7 @@ describe('Email controller get email tests', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayload = authPayloadBuilder()
+      const authPayload = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signer_address as `0x${string}`)
         .build();
@@ -290,7 +290,7 @@ describe('Email controller get email tests', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
-      const authPayload = authPayloadBuilder()
+      const authPayload = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
         .with('signer_address', signer_address as `0x${string}`)
         .build();
@@ -315,7 +315,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
       .with('signer_address', signerAddress)
       .build();
@@ -336,7 +336,7 @@ describe('Email controller get email tests', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayload = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();

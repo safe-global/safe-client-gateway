@@ -78,7 +78,7 @@ export class EmailService {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Email> {
     const account = await this.repository
       .getAccount(args)
