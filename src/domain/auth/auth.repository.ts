@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
-  AuthPayload,
-  AuthPayloadSchema,
+  AuthPayloadDto,
+  AuthPayloadDtoSchema,
 } from '@/domain/auth/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
@@ -17,23 +17,24 @@ export class AuthRepository implements IAuthRepository {
     private readonly jwtService: IJwtService,
   ) {}
 
-  signToken<T extends AuthPayload>(
+  signToken<T extends AuthPayloadDto>(
     payload: T,
     options?: {
       expiresIn?: number;
       notBefore?: number;
     },
   ): string {
+    // TODO: Verify payload before signing it
     return this.jwtService.sign(payload, options);
   }
 
-  verifyToken(accessToken: string): AuthPayload {
+  verifyToken(accessToken: string): AuthPayloadDto {
     const payload = this.jwtService.verify(accessToken);
-    return AuthPayloadSchema.parse(payload);
+    return AuthPayloadDtoSchema.parse(payload);
   }
 
-  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayload> {
+  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
+    return AuthPayloadDtoSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }

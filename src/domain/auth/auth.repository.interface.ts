@@ -1,13 +1,13 @@
 import { JwtModule } from '@/datasources/jwt/jwt.module';
 import { AuthRepository } from '@/domain/auth/auth.repository';
 import { Module } from '@nestjs/common';
-import { AuthPayload as AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
 import { JwtPayloadWithClaims as AuthPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 export const IAuthRepository = Symbol('IAuthRepository');
 
 export interface IAuthRepository {
-  signToken<T extends AuthPayload>(
+  signToken<T extends AuthPayloadDto>(
     payload: T,
     options?: {
       expiresIn?: number;
@@ -15,9 +15,9 @@ export interface IAuthRepository {
     },
   ): string;
 
-  verifyToken(accessToken: string): AuthPayload;
+  verifyToken(accessToken: string): AuthPayloadDto;
 
-  decodeToken(accessToken: string): AuthPayloadWithClaims<AuthPayload>;
+  decodeToken(accessToken: string): AuthPayloadWithClaims<AuthPayloadDto>;
 }
 
 @Module({
