@@ -1,6 +1,5 @@
 import {
   AuthPayload,
-  AuthPayloadDto,
   AuthPayloadDtoSchema,
 } from '@/domain/auth/entities/auth-payload.entity';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
