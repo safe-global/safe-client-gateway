@@ -24,12 +24,14 @@ export interface IAccountRepository {
    * @param args.safeAddress - the Safe address which we should create the account for
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the account to
+   * @param args.authPayload - the payload to use for authorization
    */
   createAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<void>;
 
   /**
