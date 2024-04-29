@@ -16,7 +16,7 @@ import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 
 @Injectable()
 export class SwapOrderHelper {
-  private readonly restrictApps =
+  private readonly restrictApps: boolean =
     this.configurationService.getOrThrow('swaps.restrictApps');
 
   private readonly swapsExplorerBaseUri: string =
@@ -125,7 +125,7 @@ export class SwapOrderHelper {
   /**
    * Checks if the app associated with an order is allowed.
    *
-   * @param order
+   * @param order - the order to which we should verify the app data with
    * @returns true if the app is allowed, false otherwise.
    */
   isAppAllowed(order: Order): boolean {
