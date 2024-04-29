@@ -65,12 +65,7 @@ describe('Auth decorator', () => {
   it('no token', async () => {
     await request(app.getHttpServer()).get('/open').expect(200);
 
-    expect(authPayloadFromDecoractor).toStrictEqual(
-      new AuthPayload({
-        chain_id: undefined,
-        signer_address: undefined,
-      }),
-    );
+    expect(authPayloadFromDecoractor).toStrictEqual(new AuthPayload());
   });
 
   it('with token', async () => {

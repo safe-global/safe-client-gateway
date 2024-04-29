@@ -15,7 +15,7 @@ export class AuthPayload implements Partial<AuthPayloadDto> {
   chain_id?: string;
   signer_address?: `0x${string}`;
 
-  constructor(props?: { signer_address?: `0x${string}`; chain_id?: string }) {
+  constructor(props?: AuthPayloadDto) {
     this.chain_id = props?.chain_id;
     this.signer_address = props?.signer_address;
   }
