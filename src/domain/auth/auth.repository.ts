@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
-  AuthPayload,
-  AuthPayloadSchema,
+  AuthPayloadDto,
+  AuthPayloadDtoSchema,
 } from '@/domain/auth/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
@@ -20,55 +20,24 @@ export class AuthRepository implements IAuthRepository {
     private readonly safeRepository: ISafeRepository,
   ) {}
 
-  signToken<T extends AuthPayload>(
+  signToken<T extends AuthPayloadDto>(
     payload: T,
     options?: {
       expiresIn?: number;
       notBefore?: number;
     },
   ): string {
+    // TODO: Verify payload before signing it
     return this.jwtService.sign(payload, options);
   }
 
-  verifyToken(accessToken: string): AuthPayload {
+  verifyToken(accessToken: string): AuthPayloadDto {
     const payload = this.jwtService.verify(accessToken);
-    return AuthPayloadSchema.parse(payload);
+    return AuthPayloadDtoSchema.parse(payload);
   }
 
-  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayload> {
+  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
-  }
-
-  isChain(args: { chainId: string; authPayload?: AuthPayload }): boolean {
-    return args.authPayload?.chain_id === args.chainId;
-  }
-
-  isSigner(args: {
-    signerAddress: `0x${string}`;
-    authPayload?: AuthPayload;
-  }): boolean {
-    // Lowercase ensures a mixture of (non-)checksummed addresses are compared correctly
-    return (
-      args.authPayload?.signer_address.toLowerCase() ===
-      args.signerAddress.toLowerCase()
-    );
-  }
-
-  async isSafeOwner(args: {
-    safeAddress: `0x${string}`;
-    authPayload?: AuthPayload;
-  }): Promise<boolean> {
-    if (!args.authPayload) {
-      return false;
-    }
-    return await this.safeRepository
-      .isOwner({
-        safeAddress: args.safeAddress,
-        chainId: args.authPayload.chain_id,
-        address: args.authPayload.signer_address,
-      })
-      // Swallow error so as to not leak information
-      .catch(() => false);
+    return AuthPayloadDtoSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }

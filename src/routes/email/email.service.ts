@@ -26,7 +26,7 @@ export class EmailService {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     return this.repository
       .createAccount(args)
@@ -58,7 +58,7 @@ export class EmailService {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     return this.repository
       .deleteAccount(args)
@@ -70,7 +70,7 @@ export class EmailService {
     safeAddress: string;
     signer: `0x${string}`;
     emailAddress: string;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     return this.repository
       .editEmail(args)
@@ -81,7 +81,7 @@ export class EmailService {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Email> {
     const account = await this.repository
       .getAccount(args)

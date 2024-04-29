@@ -8,7 +8,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Account>;
 
   getAccounts(args: {
@@ -31,7 +31,7 @@ export interface IAccountRepository {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void>;
 
   /**
@@ -82,7 +82,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void>;
 
   /**
@@ -92,6 +92,7 @@ export interface IAccountRepository {
    * @param args.safeAddress - the Safe address to which we should store the email address
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the email address to
+   * @param args.authPayload - the payload to use for authorization
    *
    * @throws {EmailEditMatchesError} - if trying to apply edit with same email address as current one
    */
@@ -100,5 +101,6 @@ export interface IAccountRepository {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void>;
 }

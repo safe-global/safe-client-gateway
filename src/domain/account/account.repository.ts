@@ -22,7 +22,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -39,8 +39,7 @@ export class AccountRepository implements IAccountRepository {
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IAuthRepository)
-    private readonly authRepository: IAuthRepository,
+    @Inject(ISafeRepository) private readonly safeRepository: ISafeRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -63,21 +62,15 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Account> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    const isChain = this.authRepository.isChain({
-      chainId: args.chainId,
-      authPayload: args.authPayload,
-    });
-    const isSigner = this.authRepository.isSigner({
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-
-    if (!isChain || !isSigner) {
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
       throw new UnauthorizedException();
     }
 
@@ -106,27 +99,30 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const email = new EmailAddress(args.emailAddress);
     const verificationCode = this._generateCode();
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    const isChain = this.authRepository.isChain({
-      chainId: args.chainId,
-      authPayload: args.authPayload,
-    });
-    const isSigner = this.authRepository.isSigner({
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-    const isSafeOwner = await this.authRepository.isSafeOwner({
-      safeAddress,
-      authPayload: args.authPayload,
-    });
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
+      throw new UnauthorizedException();
+    }
 
-    if (!isChain || !isSigner || !isSafeOwner) {
+    // Check after AuthPayload check to avoid unnecessary request
+    const isOwner = await this.safeRepository
+      .isOwner({
+        safeAddress,
+        chainId: args.chainId,
+        address: signer,
+      })
+      // Swallow error to avoid leaking information
+      .catch(() => false);
+    if (!isOwner) {
       throw new UnauthorizedException();
     }
 
@@ -287,21 +283,15 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    const isChain = this.authRepository.isChain({
-      chainId: args.chainId,
-      authPayload: args.authPayload,
-    });
-    const isSigner = this.authRepository.isSigner({
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-
-    if (!isChain || !isSigner) {
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
       throw new UnauthorizedException();
     }
 
@@ -336,21 +326,15 @@ export class AccountRepository implements IAccountRepository {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    const isChain = this.authRepository.isChain({
-      chainId: args.chainId,
-      authPayload: args.authPayload,
-    });
-    const isSigner = this.authRepository.isSigner({
-      signerAddress: signer,
-      authPayload: args.authPayload,
-    });
-
-    if (!isChain || !isSigner) {
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
       throw new UnauthorizedException();
     }
 

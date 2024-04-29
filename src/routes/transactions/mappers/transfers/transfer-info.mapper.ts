@@ -1,11 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import {
-  isERC20Transfer,
-  isERC721Transfer,
-  isNativeTokenTransfer,
-  Transfer as DomainTransfer,
-} from '@/domain/safe/entities/transfer.entity';
+import { Transfer as DomainTransfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
@@ -56,7 +51,7 @@ export class TransferInfoMapper {
     chainId: string,
     domainTransfer: DomainTransfer,
   ): Promise<Transfer> {
-    if (isERC20Transfer(domainTransfer)) {
+    if (domainTransfer.type === 'ERC20_TRANSFER') {
       const { tokenAddress, value } = domainTransfer;
       const token: Token | null = await this.getToken(
         chainId,
@@ -71,7 +66,7 @@ export class TransferInfoMapper {
         token?.decimals,
         token?.trusted,
       );
-    } else if (isERC721Transfer(domainTransfer)) {
+    } else if (domainTransfer.type === 'ERC721_TRANSFER') {
       const { tokenAddress, tokenId } = domainTransfer;
       const token = await this.getToken(chainId, tokenAddress).catch(
         () => null,
@@ -84,7 +79,7 @@ export class TransferInfoMapper {
         token?.logoUri,
         token?.trusted,
       );
-    } else if (isNativeTokenTransfer(domainTransfer)) {
+    } else if (domainTransfer.type === 'ETHER_TRANSFER') {
       return new NativeCoinTransfer(domainTransfer.value);
     } else {
       throw Error('Unknown transfer type');

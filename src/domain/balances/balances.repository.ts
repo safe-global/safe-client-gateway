@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { Balance } from '@/domain/balances/entities/balance.entity';
-import { BalanceSchema } from '@/domain/balances/entities/schemas/balance.schema';
+import { BalanceSchema } from '@/domain/balances/entities/balance.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 
 @Injectable()
