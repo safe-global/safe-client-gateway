@@ -3,7 +3,7 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
   AuthPayloadDto,
-  AuthPayloadSchema,
+  AuthPayloadDtoSchema,
 } from '@/domain/auth/entities/auth-payload.entity';
 import {
   JwtClaimsSchema,
@@ -24,17 +24,17 @@ export class AuthRepository implements IAuthRepository {
       notBefore?: number;
     },
   ): string {
-    // TODO: Validate here before signing
+    // TODO: Verify payload before signing it
     return this.jwtService.sign(payload, options);
   }
 
   verifyToken(accessToken: string): AuthPayloadDto {
     const payload = this.jwtService.verify(accessToken);
-    return AuthPayloadSchema.parse(payload);
+    return AuthPayloadDtoSchema.parse(payload);
   }
 
   decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
+    return AuthPayloadDtoSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }
