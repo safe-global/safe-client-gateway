@@ -1,4 +1,5 @@
 import { Account } from '@/domain/account/entities/account.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 export const IAccountRepository = Symbol('IAccountRepository');
 
@@ -7,6 +8,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<Account>;
 
   getAccounts(args: {
@@ -22,12 +24,14 @@ export interface IAccountRepository {
    * @param args.safeAddress - the Safe address which we should create the account for
    * @param args.emailAddress - the email address to store
    * @param args.signer - the owner address to which we should link the account to
+   * @param args.authPayload - the payload to use for authorization
    */
   createAccount(args: {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<void>;
 
   /**
@@ -72,11 +76,13 @@ export interface IAccountRepository {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the account to be removed
    * @param args.signer - the signer address of the account to be removed
+   * @param args.authPayload - the payload to use for authorization
    */
   deleteAccount(args: {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
+    authPayload: AuthPayload | undefined;
   }): Promise<void>;
 
   /**

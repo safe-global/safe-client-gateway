@@ -88,10 +88,6 @@ describe('Relay controller', () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        relay: true,
-      },
       relay: {
         ...defaultConfiguration.relay,
         limit: 5,

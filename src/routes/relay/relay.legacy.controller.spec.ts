@@ -20,17 +20,8 @@ describe('Relay controller', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        relay: true,
-      },
-    });
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(configuration)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)

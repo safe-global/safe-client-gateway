@@ -57,6 +57,10 @@ export default (): ReturnType<typeof configuration> => ({
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
             },
+            196: {
+              nativeCoin: faker.string.sample(),
+              chainName: faker.string.sample(),
+            },
             324: {
               nativeCoin: faker.string.sample(),
               chainName: faker.string.sample(),
@@ -179,8 +183,6 @@ export default (): ReturnType<typeof configuration> => ({
     richFragments: true,
     email: false,
     zerionBalancesChainIds: ['137'],
-    locking: true,
-    relay: true,
     swapsDecoding: true,
     historyDebugLogs: false,
     auth: false,
