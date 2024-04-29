@@ -135,10 +135,10 @@ describe('AuthGuard', () => {
   });
 
   it('should not allow access if a verified token is not that of a AuthPayload', async () => {
-    const authPayloadDto = {
+    const authPayload = {
       unknown: 'payload',
     };
-    const accessToken = jwtService.sign(authPayloadDto);
+    const accessToken = jwtService.sign(authPayload);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
 

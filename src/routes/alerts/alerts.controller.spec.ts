@@ -58,11 +58,6 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -111,15 +106,12 @@ describe('Alerts (Unit)', () => {
         features: {
           ...defaultConfiguration.features,
           email: true,
-          auth: true,
         },
       });
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(JWT_CONFIGURATION_MODULE)
-        .useModule(JwtConfigurationModule.register(jwtConfiguration))
         .overrideModule(ALERTS_CONFIGURATION_MODULE)
         .useModule(AlertsConfigurationModule.register(alertsConfiguration))
         .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
