@@ -1,5 +1,5 @@
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import codeGenerator from '@/domain/account/code-generator';
 import {
   Account,
@@ -22,7 +22,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { IAuthorizationRepository } from '@/domain/auth/authorization.repository.interface';
+import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -39,8 +39,8 @@ export class AccountRepository implements IAccountRepository {
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IAuthorizationRepository)
-    private readonly authorizationRepository: IAuthorizationRepository,
+    @Inject(IAuthRepository)
+    private readonly authRepository: IAuthRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -68,11 +68,18 @@ export class AccountRepository implements IAccountRepository {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    this.authorizationRepository.assertChainAndSigner({
+    const isChain = this.authRepository.isChain({
       chainId: args.chainId,
+      authPayload: args.authPayload,
+    });
+    const isSigner = this.authRepository.isSigner({
       signerAddress: signer,
       authPayload: args.authPayload,
     });
+
+    if (!isChain || !isSigner) {
+      throw new UnauthorizedException();
+    }
 
     return this.accountDataSource.getAccount({
       chainId: args.chainId,
@@ -106,16 +113,22 @@ export class AccountRepository implements IAccountRepository {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    this.authorizationRepository.assertChainAndSigner({
+    const isChain = this.authRepository.isChain({
       chainId: args.chainId,
+      authPayload: args.authPayload,
+    });
+    const isSigner = this.authRepository.isSigner({
       signerAddress: signer,
       authPayload: args.authPayload,
     });
-
-    await this.authorizationRepository.assertSafeOwner({
+    const isSafeOwner = await this.authRepository.isSafeOwner({
       safeAddress,
       authPayload: args.authPayload,
     });
+
+    if (!isChain || !isSigner || !isSafeOwner) {
+      throw new UnauthorizedException();
+    }
 
     try {
       await this.accountDataSource.createAccount({
@@ -279,11 +292,18 @@ export class AccountRepository implements IAccountRepository {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    this.authorizationRepository.assertChainAndSigner({
+    const isChain = this.authRepository.isChain({
       chainId: args.chainId,
+      authPayload: args.authPayload,
+    });
+    const isSigner = this.authRepository.isSigner({
       signerAddress: signer,
       authPayload: args.authPayload,
     });
+
+    if (!isChain || !isSigner) {
+      throw new UnauthorizedException();
+    }
 
     try {
       const account = await this.accountDataSource.getAccount({
@@ -321,11 +341,18 @@ export class AccountRepository implements IAccountRepository {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
 
-    this.authorizationRepository.assertChainAndSigner({
+    const isChain = this.authRepository.isChain({
       chainId: args.chainId,
+      authPayload: args.authPayload,
+    });
+    const isSigner = this.authRepository.isSigner({
       signerAddress: signer,
       authPayload: args.authPayload,
     });
+
+    if (!isChain || !isSigner) {
+      throw new UnauthorizedException();
+    }
 
     const account = await this.accountDataSource.getAccount({
       chainId: args.chainId,
@@ -333,9 +360,6 @@ export class AccountRepository implements IAccountRepository {
       signer,
     });
     const newEmail = new EmailAddress(args.emailAddress);
-
-    console.log('newEmail', newEmail.value);
-    console.log('oldEmail', account.emailAddress.value);
 
     if (newEmail.value === account.emailAddress.value) {
       throw new EmailEditMatchesError(args);

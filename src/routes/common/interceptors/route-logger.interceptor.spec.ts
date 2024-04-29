@@ -65,7 +65,7 @@ describe('RouteLoggerInterceptor tests', () => {
       controllers: [TestController],
     }).compile();
 
-    app = await moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication();
     app.useGlobalInterceptors(new RouteLoggerInterceptor(mockLoggingService));
     await app.init();
   });

@@ -18,6 +18,7 @@ import {
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 
 @Controller()
 class TestController {
@@ -50,6 +51,7 @@ describe('AuthGuard', () => {
         ConfigurationModule.register(testConfiguration),
         CacheModule,
         AuthRepositoryModule,
+        TestNetworkModule,
       ],
       controllers: [TestController],
     })
