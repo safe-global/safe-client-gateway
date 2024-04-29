@@ -8,7 +8,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<Account>;
 
   getAccounts(args: {
@@ -31,7 +31,7 @@ export interface IAccountRepository {
     safeAddress: string;
     emailAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void>;
 
   /**
@@ -82,7 +82,7 @@ export interface IAccountRepository {
     chainId: string;
     safeAddress: string;
     signer: `0x${string}`;
-    authPayload: AuthPayload | undefined;
+    authPayload: AuthPayload;
   }): Promise<void>;
 
   /**

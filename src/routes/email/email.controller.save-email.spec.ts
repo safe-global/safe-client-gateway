@@ -12,7 +12,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { authPayloadBuilder } from '@/domain/auth/entities/__tests__/auth-payload.entity.builder';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   INetworkService,
@@ -100,11 +100,11 @@ describe('Email controller save email tests', () => {
       .with('address', safeAddress as `0x${string}`)
       .build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
-    const accessToken = jwtService.sign(authPayload);
+    const accessToken = jwtService.sign(authPayloadDto);
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -120,7 +120,7 @@ describe('Email controller save email tests', () => {
       accountBuilder()
         .with('chainId', chain.chainId)
         .with('emailAddress', new EmailAddress(emailAddress))
-        .with('safeAddress', getAddress(safe.address))
+        .with('safeAddress', safe.address)
         .with('signer', signerAddress)
         .with('isVerified', false)
         .build(),
@@ -228,12 +228,12 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
     const notBefore = faker.date.future();
-    const accessToken = jwtService.sign(authPayload, {
+    const accessToken = jwtService.sign(authPayloadDto, {
       notBefore: getSecondsUntil(notBefore),
     });
 
@@ -260,11 +260,11 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', signerAddress)
       .build();
-    const accessToken = jwtService.sign(authPayload, {
+    const accessToken = jwtService.sign(authPayloadDto, {
       expiresIn: 0, // Now
     });
     jest.advanceTimersByTime(1_000);
@@ -292,11 +292,11 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .with('signer_address', faker.string.numeric() as `0x${string}`)
       .build();
-    const accessToken = jwtService.sign(authPayload);
+    const accessToken = jwtService.sign(authPayloadDto);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
@@ -321,11 +321,11 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', faker.string.alpha())
       .with('signer_address', signerAddress)
       .build();
-    const accessToken = jwtService.sign(authPayload);
+    const accessToken = jwtService.sign(authPayloadDto);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
@@ -350,11 +350,11 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
       .with('signer_address', signerAddress)
       .build();
-    const accessToken = jwtService.sign(authPayload);
+    const accessToken = jwtService.sign(authPayloadDto);
 
     expect(() => jwtService.verify(accessToken)).not.toThrow();
     await request(app.getHttpServer())
@@ -379,10 +379,10 @@ describe('Email controller save email tests', () => {
     const emailAddress = faker.internet.email();
     const safe = safeBuilder().build();
     const signerAddress = safe.owners[0];
-    const authPayload = authPayloadBuilder()
+    const authPayloadDto = authPayloadDtoBuilder()
       .with('chain_id', chain.chainId)
       .build();
-    const accessToken = jwtService.sign(authPayload);
+    const accessToken = jwtService.sign(authPayloadDto);
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
