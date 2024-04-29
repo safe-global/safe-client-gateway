@@ -3,7 +3,6 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import {
   AuthPayloadDto,
-  AuthPayload,
   AuthPayloadSchema,
 } from '@/domain/auth/entities/auth-payload.entity';
 import {
@@ -29,17 +28,13 @@ export class AuthRepository implements IAuthRepository {
     return this.jwtService.sign(payload, options);
   }
 
-  verifyToken(accessToken: string): AuthPayload {
+  verifyToken(accessToken: string): AuthPayloadDto {
     const payload = this.jwtService.verify(accessToken);
-    const data = AuthPayloadSchema.parse(payload);
-    return new AuthPayload(data);
+    return AuthPayloadSchema.parse(payload);
   }
 
-  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayload> {
+  decodeToken(accessToken: string): JwtPayloadWithClaims<AuthPayloadDto> {
     const decoded = this.jwtService.decode(accessToken);
-    const data = AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
-    // TODO: Clean this up to not use Object.assign, perhaps not reducing the
-    //        payload as this method is only used for retrieving the exp claim
-    return Object.assign(new AuthPayload(data), data);
+    return AuthPayloadSchema.merge(JwtClaimsSchema).parse(decoded);
   }
 }
