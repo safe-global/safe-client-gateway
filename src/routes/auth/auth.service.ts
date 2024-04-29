@@ -3,10 +3,7 @@ import { VerifyAuthMessageDto } from '@/routes/auth/entities/verify-auth-message
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import {
-  AuthPayload,
-  AuthPayloadDto,
-} from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 @Injectable()
@@ -56,7 +53,7 @@ export class AuthService {
 
   getTokenPayloadWithClaims(
     accessToken: string,
-  ): JwtPayloadWithClaims<AuthPayload> {
+  ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
   }
 }

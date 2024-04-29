@@ -6,13 +6,13 @@ import {
 } from '@nestjs/common';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
 import { AuthController } from '@/routes/auth/auth.controller';
-import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
 import { Request } from 'express';
 
 declare module 'express' {
   // Inject AuthPayload to express.Request
   interface Request {
-    [AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]?: AuthPayload | undefined;
+    [AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]?: AuthPayloadDto;
   }
 }
 
