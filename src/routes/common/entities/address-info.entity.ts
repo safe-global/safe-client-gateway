@@ -14,7 +14,8 @@ export class AddressInfo {
     logoUri: string | null = null,
   ) {
     this.value = value;
-    this.name = name;
+    // Return null if name is an empty string
+    this.name = name?.length === 0 ? null : name;
     this.logoUri = logoUri;
   }
 }
