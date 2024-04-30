@@ -14,8 +14,7 @@ export class AddressInfo {
     logoUri: string | null = null,
   ) {
     this.value = value;
-    this.name = typeof name === 'string' && name === '' ? null : name;
-    this.logoUri =
-      typeof logoUri === 'string' && logoUri === '' ? null : logoUri;
+    this.name = name === '' ? null : name;
+    this.logoUri = logoUri === '' ? null : logoUri;
   }
 }
