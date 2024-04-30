@@ -16,6 +16,9 @@ import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 
 @Injectable()
 export class SwapOrderHelper {
+  private readonly restrictApps: boolean =
+    this.configurationService.getOrThrow('swaps.restrictApps');
+
   private readonly swapsExplorerBaseUri: string =
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
@@ -27,6 +30,7 @@ export class SwapOrderHelper {
     @Inject(ISwapsRepository) private readonly swapsRepository: SwapsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
   ) {}
 
   /**
@@ -118,15 +122,44 @@ export class SwapOrderHelper {
     return url;
   }
 
+  /**
+   * Checks if the app associated with an order is allowed.
+   *
+   * @param order - the order to which we should verify the app data with
+   * @returns true if the app is allowed, false otherwise.
+   */
+  isAppAllowed(order: Order): boolean {
+    if (!this.restrictApps) return true;
+    const appCode = order.fullAppData?.appCode;
+    return !!appCode && this.allowedApps.has(appCode);
+  }
+
   private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
     if (!transaction.data) return false;
     return this.setPreSignatureDecoder.isSetPreSignature(transaction.data);
   }
 }
 
+function allowedAppsFactory(
+  configurationService: IConfigurationService,
+): Set<string> {
+  const allowedApps =
+    configurationService.getOrThrow<string[]>('swaps.allowedApps');
+  return new Set(allowedApps);
+}
+
 @Module({
   imports: [SwapsRepositoryModule, TokenRepositoryModule],
-  providers: [SwapOrderHelper, MultiSendDecoder, SetPreSignatureDecoder],
+  providers: [
+    SwapOrderHelper,
+    MultiSendDecoder,
+    SetPreSignatureDecoder,
+    {
+      provide: 'SWAP_ALLOWED_APPS',
+      useFactory: allowedAppsFactory,
+      inject: [IConfigurationService],
+    },
+  ],
   exports: [SwapOrderHelper],
 })
 export class SwapOrderHelperModule {}
