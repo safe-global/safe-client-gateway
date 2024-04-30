@@ -15,7 +15,9 @@ export class AddressInfo {
   ) {
     this.value = value;
     // Return null if name is an empty string
-    this.name = name?.length === 0 ? null : name;
-    this.logoUri = logoUri;
+    this.name = typeof name === 'string' && name === '' ? null : name;
+    // Return null if logoUri is an empty string
+    this.logoUri =
+      typeof logoUri === 'string' && logoUri === '' ? null : logoUri;
   }
 }
