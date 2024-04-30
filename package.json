@@ -47,7 +47,7 @@
     "semver": "^7.6.0",
     "viem": "^2.9.25",
     "winston": "^3.13.0",
-    "zod": "^3.23.3"
+    "zod": "^3.23.5"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
