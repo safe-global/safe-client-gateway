@@ -6,7 +6,7 @@ import { IMessagesRepository } from '@/domain/messages/messages.repository.inter
 import {
   MessagePageSchema,
   MessageSchema,
-} from '@/domain/messages/entities/schemas/message.schema';
+} from '@/domain/messages/entities/message.entity';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
