@@ -9,6 +9,8 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
 const swapsRepository = {
   getOrder: jest.fn(),
@@ -34,6 +36,11 @@ const configurationServiceMock = jest.mocked(configurationService);
 const multiSendDecoder = {} as jest.Mocked<MultiSendDecoder>;
 const multiSendDecoderMock = jest.mocked(multiSendDecoder);
 
+const chainsRepository = {
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>;
+const chainsRepositoryMock = jest.mocked(chainsRepository);
+
 describe('Swap Order Helper tests', () => {
   let target: SwapOrderHelper;
   const explorerBaseUrl = faker.internet.url();
@@ -55,6 +62,7 @@ describe('Swap Order Helper tests', () => {
       swapsRepositoryMock,
       configurationServiceMock,
       new Set(allowedApps),
+      chainsRepositoryMock,
     );
   });
 
@@ -225,6 +233,78 @@ describe('Swap Order Helper tests', () => {
     },
   );
 
+  it('maps to native token if buy token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const sellToken = tokenBuilder().build();
+    const order = orderBuilder()
+      .with(
+        'buyToken',
+        getAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'),
+      )
+      .with('sellToken', getAddress(sellToken.address))
+      .build();
+    swapsRepositoryMock.getOrder.mockResolvedValue(order);
+    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
+      if (address === order.sellToken) return Promise.resolve(sellToken);
+      return Promise.reject(new Error(`Token ${address} not found.`));
+    });
+    chainsRepositoryMock.getChain.mockResolvedValue(chain);
+
+    const actual = await target.getOrder({
+      chainId,
+      orderUid: order.uid as `0x${string}`,
+    });
+
+    expect(chainsRepository.getChain).toHaveBeenCalledTimes(1);
+    expect(chainsRepository.getChain).toHaveBeenCalledWith(chainId);
+    expect(actual.buyToken).toStrictEqual({
+      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      decimals: chain.nativeCurrency.decimals,
+      logoUri: chain.nativeCurrency.logoUri,
+      name: chain.nativeCurrency.name,
+      symbol: chain.nativeCurrency.symbol,
+      type: 'NATIVE_TOKEN',
+      trusted: true,
+    });
+  });
+
+  it('maps to native token if sell token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const buyToken = tokenBuilder().build();
+    const order = orderBuilder()
+      .with(
+        'sellToken',
+        getAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'),
+      )
+      .with('buyToken', getAddress(buyToken.address))
+      .build();
+    swapsRepositoryMock.getOrder.mockResolvedValue(order);
+    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
+      if (address === order.buyToken) return Promise.resolve(buyToken);
+      return Promise.reject(new Error(`Token ${address} not found.`));
+    });
+    chainsRepositoryMock.getChain.mockResolvedValue(chain);
+
+    const actual = await target.getOrder({
+      chainId,
+      orderUid: order.uid as `0x${string}`,
+    });
+
+    expect(chainsRepository.getChain).toHaveBeenCalledTimes(1);
+    expect(chainsRepository.getChain).toHaveBeenCalledWith(chainId);
+    expect(actual.sellToken).toStrictEqual({
+      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      decimals: chain.nativeCurrency.decimals,
+      logoUri: chain.nativeCurrency.logoUri,
+      name: chain.nativeCurrency.name,
+      symbol: chain.nativeCurrency.symbol,
+      type: 'NATIVE_TOKEN',
+      trusted: true,
+    });
+  });
+
   describe('Allowed Apps', () => {
     beforeEach(() => {
       jest.resetAllMocks();
@@ -241,6 +321,7 @@ describe('Swap Order Helper tests', () => {
         swapsRepositoryMock,
         configurationServiceMock,
         new Set(allowedApps),
+        chainsRepositoryMock,
       );
     });
 
