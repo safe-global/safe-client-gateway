@@ -1,6 +1,6 @@
 import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { SignatureType } from '@/domain/messages/entities/message-confirmation.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';

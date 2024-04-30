@@ -1,8 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
+import {
+  MessageConfirmation,
+  SignatureType,
+} from '@/domain/messages/entities/message-confirmation.entity';
 import { getAddress } from 'viem';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
   return new Builder<MessageConfirmation>()

@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { Confirmation } from '@/domain/safe/entities/multisig-transaction.entity';
 import { getAddress } from 'viem';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { SignatureType } from '@/domain/messages/entities/message-confirmation.entity';
 
 export function confirmationBuilder(): IBuilder<Confirmation> {
   return new Builder<Confirmation>()
