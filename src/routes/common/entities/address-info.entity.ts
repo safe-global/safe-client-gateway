@@ -14,9 +14,7 @@ export class AddressInfo {
     logoUri: string | null = null,
   ) {
     this.value = value;
-    // Return null if name is an empty string
     this.name = typeof name === 'string' && name === '' ? null : name;
-    // Return null if logoUri is an empty string
     this.logoUri =
       typeof logoUri === 'string' && logoUri === '' ? null : logoUri;
   }
