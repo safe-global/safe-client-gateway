@@ -169,7 +169,12 @@ export class SwapOrderHelper {
     chainId: string;
     address: `0x${string}`;
   }): Promise<Token> {
-    if (args.address === SwapOrderHelper.NATIVE_CURRENCY_ADDRESS) {
+    // We perform lower case comparison because the provided address (3rd party service)
+    // might not be checksummed.
+    if (
+      args.address.toLowerCase() ===
+      SwapOrderHelper.NATIVE_CURRENCY_ADDRESS.toLowerCase()
+    ) {
       const { nativeCurrency } = await this.chainsRepository.getChain(
         args.chainId,
       );
