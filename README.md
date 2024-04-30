@@ -15,7 +15,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node 20.12.2 – https://nodejs.org/en/
+- Node 22.0.0 – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
