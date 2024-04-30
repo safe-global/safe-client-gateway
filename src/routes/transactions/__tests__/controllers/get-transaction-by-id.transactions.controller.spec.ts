@@ -109,7 +109,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: chain, status: 200 });
-        case getModuleTransactionUrl:
+        case getModuleTransactionUrl: {
           const error = new NetworkResponseError(
             new URL(getModuleTransactionUrl),
             {
@@ -117,6 +117,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             } as Response,
           );
           return Promise.reject(error);
+        }
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -153,7 +154,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.resolve({ data: chain, status: 200 });
         case getSafeUrl:
           return Promise.resolve({ data: safe, status: 200 });
-        case getModuleTransactionUrl:
+        case getModuleTransactionUrl: {
           const error = new NetworkResponseError(
             new URL(getModuleTransactionUrl),
             {
@@ -161,6 +162,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             } as Response,
           );
           return Promise.reject(error);
+        }
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -418,7 +420,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('operation', 0)
-      .with('data', faker.string.hexadecimal({ length: 32 }))
+      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -583,7 +585,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const tx = multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('operation', 0)
-      .with('data', faker.string.hexadecimal({ length: 32 }))
+      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('executionDate', executionDate)
@@ -752,7 +754,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('safe', safe.address)
       .with('operation', 0)
       .with('nonce', 4)
-      .with('data', faker.string.hexadecimal({ length: 32 }))
+      .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', false)
       .with('isSuccessful', null)
       .with('executionDate', executionDate)

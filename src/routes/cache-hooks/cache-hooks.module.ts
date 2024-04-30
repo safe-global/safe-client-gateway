@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JsonSchemaService } from '@/validation/providers/json-schema.service';
 import { CacheHooksController } from '@/routes/cache-hooks/cache-hooks.controller';
 import { CacheHooksService } from '@/routes/cache-hooks/cache-hooks.service';
 import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
@@ -8,6 +7,7 @@ import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interf
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
 
 @Module({
   imports: [
@@ -17,8 +17,9 @@ import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repositor
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
+    QueuesRepositoryModule,
   ],
-  providers: [JsonSchemaService, CacheHooksService],
+  providers: [CacheHooksService],
   controllers: [CacheHooksController],
 })
 export class CacheHooksModule {}

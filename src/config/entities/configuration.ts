@@ -7,21 +7,21 @@ export default () => ({
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
   amqp: {
-    url: process.env.AMQP_URL,
+    url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {
-      name: process.env.AMQP_EXCHANGE_NAME,
+      name: process.env.AMQP_EXCHANGE_NAME || 'safe-transaction-service-events',
       // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
       // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
       // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
       mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
     },
-    queue: process.env.AMQP_QUEUE,
+    queue: process.env.AMQP_QUEUE || 'safe-client-gateway',
     // The AMQP Prefetch value defaults to 0.
     // Limits the number of unacknowledged messages delivered to a given channel/consumer.
     prefetch:
       process.env.AMQP_PREFETCH != null
         ? parseInt(process.env.AMQP_PREFETCH)
-        : 0,
+        : 100,
   },
   applicationPort: process.env.APPLICATION_PORT || '3000',
   auth: {
@@ -56,6 +56,7 @@ export default () => ({
             11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
             1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
             137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
+            196: { nativeCoin: 'okb', chainName: 'x1' },
             324: { nativeCoin: 'ethereum', chainName: 'zksync' },
             42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
             42220: { nativeCoin: 'celo', chainName: 'celo' },
@@ -189,8 +190,6 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
-    locking: process.env.FF_LOCKING?.toLowerCase() === 'true',
-    relay: process.env.FF_RELAY?.toLowerCase() === 'true',
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
@@ -263,5 +262,13 @@ export default () => ({
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',
+    // If set to true, it will restrict the Swap Feature to be used only
+    // with Apps contained in allowedApps
+    restrictApps: process.env.SWAPS_RESTRICT_APPS?.toLowerCase() === 'true',
+    // The comma-separated collection of allowed CoW Swap Apps.
+    // In order for this collection to take effect, restrictApps should be set to true
+    // The app names should match the "App Code" of the metadata provided to CoW Swap.
+    // See https://explorer.cow.fi/appdata?tab=encode
+    allowedApps: process.env.SWAPS_ALLOWED_APPS?.split(',') || [],
   },
 });

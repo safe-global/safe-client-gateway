@@ -5,7 +5,7 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
-} from '@/domain/safe/entities/schemas/module-transaction.schema';
+} from '@/domain/safe/entities/module-transaction.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

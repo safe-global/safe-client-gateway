@@ -4,6 +4,22 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export type Order = z.infer<typeof OrderSchema>;
 
+export enum OrderStatus {
+  PreSignaturePending = 'presignaturePending',
+  Open = 'open',
+  Fulfilled = 'fulfilled',
+  Cancelled = 'cancelled',
+  Expired = 'expired',
+  Unknown = 'unknown',
+}
+
+export enum OrderClass {
+  Market = 'market',
+  Limit = 'limit',
+  Liquidity = 'liquidity',
+  Unknown = 'unknown',
+}
+
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
@@ -26,7 +42,7 @@ export const OrderSchema = z.object({
   from: AddressSchema.nullish().default(null),
   quoteId: z.number().nullish().default(null),
   creationDate: z.coerce.date(),
-  class: z.enum(['market', 'limit', 'liquidity', 'unknown']).catch('unknown'),
+  class: z.nativeEnum(OrderClass).catch(OrderClass.Unknown),
   owner: AddressSchema,
   uid: z.string(),
   availableBalance: z.coerce.bigint().nullish().default(null),
@@ -35,16 +51,7 @@ export const OrderSchema = z.object({
   executedBuyAmount: z.coerce.bigint(),
   executedFeeAmount: z.coerce.bigint(),
   invalidated: z.boolean(),
-  status: z
-    .enum([
-      'presignaturePending',
-      'open',
-      'fulfilled',
-      'cancelled',
-      'expired',
-      'unknown',
-    ])
-    .catch('unknown'),
+  status: z.nativeEnum(OrderStatus).catch(OrderStatus.Unknown),
   fullFeeAmount: z.coerce.bigint(),
   isLiquidityOrder: z.boolean(),
   ethflowData: z
@@ -72,5 +79,20 @@ export const OrderSchema = z.object({
     .nullish()
     .default(null),
   executedSurplusFee: z.coerce.bigint().nullish().default(null),
-  fullAppData: z.string().nullish().default(null),
+  fullAppData: z
+    .string()
+    .nullish()
+    .default(null)
+    .transform((jsonString, ctx) => {
+      try {
+        if (!jsonString) return null;
+        return JSON.parse(jsonString);
+      } catch (error) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Not a valid JSON payload',
+        });
+        return z.NEVER;
+      }
+    }),
 });

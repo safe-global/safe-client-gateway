@@ -123,7 +123,7 @@ describe('Safes Controller Overview (Unit)', () => {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
-      const walletAddress = faker.finance.ethereumAddress();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
       const multisigTransactions = [
         multisigTransactionToJson(
           multisigTransactionBuilder()

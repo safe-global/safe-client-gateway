@@ -10,13 +10,11 @@ export class AddressInfo {
 
   constructor(
     value: string,
-    name?: string,
-    // TODO: Change to `string | null` when possible to match schema types
-    // https://github.com/safe-global/safe-client-gateway/blob/c032b43720cef3d316cc80ba439c36fb1b6fb9ea/src/routes/common/address-info/address-info.helper.ts#L105
-    logoUri?: string,
+    name: string | null = null,
+    logoUri: string | null = null,
   ) {
     this.value = value;
-    this.name = name || null;
-    this.logoUri = logoUri || null;
+    this.name = name;
+    this.logoUri = logoUri;
   }
 }

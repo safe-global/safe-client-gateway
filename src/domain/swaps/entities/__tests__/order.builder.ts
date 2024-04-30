@@ -1,4 +1,8 @@
-import { Order } from '@/domain/swaps/entities/order.entity';
+import {
+  Order,
+  OrderClass,
+  OrderStatus,
+} from '@/domain/swaps/entities/order.entity';
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -24,16 +28,24 @@ export function orderBuilder(): IBuilder<Order> {
       }),
     )
     .with('feeAmount', faker.number.bigInt({ min: 1 }))
-    .with('kind', faker.helpers.arrayElement(['buy', 'sell']))
+    .with('kind', faker.helpers.arrayElement(['buy', 'sell'] as const))
     .with('partiallyFillable', faker.datatype.boolean())
     .with(
       'sellTokenBalance',
-      faker.helpers.arrayElement(['erc20', 'internal', 'external']),
+      faker.helpers.arrayElement(['erc20', 'internal', 'external'] as const),
     )
-    .with('buyTokenBalance', faker.helpers.arrayElement(['erc20', 'internal']))
+    .with(
+      'buyTokenBalance',
+      faker.helpers.arrayElement(['erc20', 'internal'] as const),
+    )
     .with(
       'signingScheme',
-      faker.helpers.arrayElement(['eip712', 'ethsign', 'presign', 'eip1271']),
+      faker.helpers.arrayElement([
+        'eip712',
+        'ethsign',
+        'presign',
+        'eip1271',
+      ] as const),
     )
     .with('signature', faker.string.hexadecimal() as `0x${string}`)
     .with(
@@ -44,7 +56,14 @@ export function orderBuilder(): IBuilder<Order> {
     )
     .with('quoteId', faker.datatype.boolean() ? faker.number.int() : null)
     .with('creationDate', faker.date.recent())
-    .with('class', faker.helpers.arrayElement(['market', 'limit', 'liquidity']))
+    .with(
+      'class',
+      faker.helpers.arrayElement(
+        Object.values(OrderClass).filter(
+          (orderClass) => orderClass !== OrderClass.Unknown,
+        ),
+      ),
+    )
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with('uid', faker.string.hexadecimal({ length: 112 }))
     .with(
@@ -56,16 +75,7 @@ export function orderBuilder(): IBuilder<Order> {
     .with('executedBuyAmount', faker.number.bigInt({ min: 1 }))
     .with('executedFeeAmount', faker.number.bigInt({ min: 1 }))
     .with('invalidated', faker.datatype.boolean())
-    .with(
-      'status',
-      faker.helpers.arrayElement([
-        'presignaturePending',
-        'open',
-        'fulfilled',
-        'cancelled',
-        'expired',
-      ]),
-    )
+    .with('status', faker.helpers.arrayElement(Object.values(OrderStatus)))
     .with('fullFeeAmount', faker.number.bigInt({ min: 1 }))
     .with('isLiquidityOrder', faker.datatype.boolean())
     .with(
@@ -94,7 +104,7 @@ export function orderBuilder(): IBuilder<Order> {
               'QuoteNotFound',
               'ValidToTooFarInFuture',
               'PreValidationError',
-            ]),
+            ] as const),
           }
         : null,
     )
@@ -102,8 +112,5 @@ export function orderBuilder(): IBuilder<Order> {
       'executedSurplusFee',
       faker.datatype.boolean() ? faker.number.bigInt({ min: 1 }) : null,
     )
-    .with(
-      'fullAppData',
-      faker.datatype.boolean() ? faker.string.hexadecimal() : null,
-    );
+    .with('fullAppData', faker.datatype.boolean() ? JSON.stringify({}) : null);
 }

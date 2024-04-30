@@ -27,7 +27,6 @@ import { SafesModule } from '@/routes/safes/safes.module';
 import { NotificationsModule } from '@/routes/notifications/notifications.module';
 import { EstimationsModule } from '@/routes/estimations/estimations.module';
 import { MessagesModule } from '@/routes/messages/messages.module';
-import { ValidationModule } from '@/validation/validation.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middleware';
@@ -56,8 +55,6 @@ export class AppModule implements NestModule {
     const {
       auth: isAuthFeatureEnabled,
       email: isEmailFeatureEnabled,
-      locking: isLockingFeatureEnabled,
-      relay: isRelayFeatureEnabled,
       confirmationView: isConfirmationViewEnabled,
     } = configFactory()['features'];
 
@@ -84,11 +81,11 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
-        ...(isLockingFeatureEnabled ? [LockingModule] : []),
+        LockingModule,
         MessagesModule,
         NotificationsModule,
         OwnersModule,
-        ...(isRelayFeatureEnabled ? [RelayControllerModule] : []),
+        RelayControllerModule,
         RootModule,
         SafeAppsModule,
         SafesModule,
@@ -116,7 +113,6 @@ export class AppModule implements NestModule {
           // return 500 for files that do not exist instead of a 404
           exclude: ['/(.*)'],
         }),
-        ValidationModule,
       ],
       providers: [
         {

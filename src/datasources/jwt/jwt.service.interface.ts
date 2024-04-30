@@ -6,6 +6,7 @@ export interface IJwtService {
   sign<T extends object>(
     payload: T,
     options?: {
+      issuedAt?: number;
       expiresIn?: number;
       notBefore?: number;
     },

@@ -88,8 +88,8 @@ describe('Chains Controller (Unit)', () => {
         .expect(200)
         .expect({
           count: chainsResponse.count,
-          next: null,
-          previous: null,
+          next: chainsResponse.next,
+          previous: chainsResponse.previous,
           results: [
             {
               chainId: chainsResponse.results[0].chainId,
@@ -108,7 +108,9 @@ describe('Chains Controller (Unit)', () => {
               transactionService: chainsResponse.results[0].transactionService,
               theme: chainsResponse.results[0].theme,
               gasPrice: chainsResponse.results[0].gasPrice,
-              ensRegistryAddress: chainsResponse.results[0].ensRegistryAddress,
+              ensRegistryAddress: getAddress(
+                chainsResponse.results[0].ensRegistryAddress!,
+              ),
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
             },
@@ -129,7 +131,9 @@ describe('Chains Controller (Unit)', () => {
               transactionService: chainsResponse.results[1].transactionService,
               theme: chainsResponse.results[1].theme,
               gasPrice: chainsResponse.results[1].gasPrice,
-              ensRegistryAddress: chainsResponse.results[1].ensRegistryAddress,
+              ensRegistryAddress: getAddress(
+                chainsResponse.results[1].ensRegistryAddress!,
+              ),
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
             },

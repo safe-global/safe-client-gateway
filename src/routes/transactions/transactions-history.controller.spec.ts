@@ -193,11 +193,7 @@ describe('Transactions History Controller (Unit)', () => {
         `/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/history/`,
       )
       .expect(500)
-      .expect({
-        message: 'Validation failed',
-        code: 42,
-        arguments: [],
-      });
+      .expect({ statusCode: 500, message: 'Internal server error' });
   });
 
   it('Should return only creation transaction', async () => {

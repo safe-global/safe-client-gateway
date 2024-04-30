@@ -14,10 +14,17 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import * as request from 'supertest';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import {
+  IQueueReadiness,
+  QueueReadiness,
+} from '@/domain/interfaces/queue-readiness.interface';
 
 describe('Health Controller tests', () => {
   let app: INestApplication;
   let cacheService: FakeCacheService;
+  let queuesApi: jest.MockedObjectDeep<IQueueReadiness>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -33,11 +40,14 @@ describe('Health Controller tests', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
 
     cacheService = moduleFixture.get(CacheService);
+    queuesApi = moduleFixture.get(QueueReadiness);
 
     await app.init();
   });
@@ -45,6 +55,7 @@ describe('Health Controller tests', () => {
   describe('readiness tests', () => {
     it('cache service is not ready', async () => {
       cacheService.setReadyState(false);
+      queuesApi.isReady.mockReturnValue(true);
 
       await request(app.getHttpServer())
         .get(`/health/ready`)
@@ -52,8 +63,19 @@ describe('Health Controller tests', () => {
         .expect({ status: 'KO' });
     });
 
-    it('cache service is ready', async () => {
+    it('queues are not ready', async () => {
       cacheService.setReadyState(true);
+      queuesApi.isReady.mockReturnValue(false);
+
+      await request(app.getHttpServer())
+        .get(`/health/ready`)
+        .expect(503)
+        .expect({ status: 'KO' });
+    });
+
+    it('cache service and queues are ready', async () => {
+      cacheService.setReadyState(true);
+      queuesApi.isReady.mockReturnValue(true);
 
       await request(app.getHttpServer())
         .get(`/health/ready`)
