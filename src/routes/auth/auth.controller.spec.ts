@@ -27,6 +27,8 @@ import {
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
 
@@ -62,6 +64,8 @@ describe('AuthController', () => {
       .useModule(TestNetworkModule)
       .overrideModule(EmailApiModule)
       .useModule(TestEmailApiModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     cacheService = moduleFixture.get(CacheService);
