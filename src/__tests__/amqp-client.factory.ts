@@ -1,7 +1,7 @@
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { Channel } from 'amqplib';
 
-export async function amqpClientFactory(): Promise<{
+export async function amqpClientFactory(queue?: string): Promise<{
   channel: ChannelWrapper;
   queueName: string;
 }> {
@@ -12,6 +12,7 @@ export async function amqpClientFactory(): Promise<{
     throw new Error('Invalid amqpClientFactory configuration');
   }
 
+  const queueName = queue ?? AMQP_QUEUE;
   const connection = amqp.connect(AMQP_URL);
   const channel = connection.createChannel({
     json: true,
@@ -19,10 +20,10 @@ export async function amqpClientFactory(): Promise<{
       await ch.assertExchange(AMQP_EXCHANGE_NAME, AMQP_EXCHANGE_MODE, {
         durable: true,
       });
-      await ch.assertQueue(AMQP_QUEUE, { durable: true });
-      await ch.bindQueue(AMQP_QUEUE, AMQP_EXCHANGE_NAME, '');
+      await ch.assertQueue(queueName, { durable: true });
+      await ch.bindQueue(queueName, AMQP_EXCHANGE_NAME, '');
     },
   });
 
-  return { channel, queueName: AMQP_QUEUE };
+  return { channel, queueName };
 }
