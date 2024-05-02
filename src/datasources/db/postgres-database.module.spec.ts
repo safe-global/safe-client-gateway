@@ -10,6 +10,9 @@ describe('PostgresDatabaseModule tests', () => {
   let sql: postgres.Sql;
 
   beforeEach(async () => {
+    // We should not require an SSL connection if using the database provided
+    // by GitHub actions
+    const isCIContext = process.env.CI?.toLowerCase() === 'true';
     const baseConfiguration = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfiguration,
@@ -19,6 +22,7 @@ describe('PostgresDatabaseModule tests', () => {
           ...baseConfiguration.db.postgres,
           ssl: {
             ...baseConfiguration.db.postgres.ssl,
+            enabled: !isCIContext,
             caPath: join(__dirname, '../../../db_config/test/server.crt'),
           },
         },
