@@ -161,6 +161,106 @@ describe('Delegates controller', () => {
     });
   });
 
+  describe('GET delegates for a Safe (v2)', () => {
+    it('Success', async () => {
+      const safe = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const delegatesPage = pageBuilder()
+        .with('count', 2)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          delegateBuilder().with('safe', safe).build(),
+          delegateBuilder().with('safe', safe).build(),
+        ])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({ data: delegatesPage, status: 200 });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .expect(200)
+        .expect(delegatesPage);
+    });
+
+    it('Should return a validation error', async () => {
+      const safe = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const delegatesPage = pageBuilder()
+        .with('count', 2)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          delegateBuilder().with('safe', safe).build(),
+          { ...delegateBuilder().with('safe', safe).build(), label: true },
+        ])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({ data: delegatesPage, status: 200 });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('Should return empty result', async () => {
+      const safe = faker.finance.ethereumAddress();
+      const chain = chainBuilder().build();
+      const delegatesPage = pageBuilder()
+        .with('count', 0)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({ data: delegatesPage, status: 200 });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${chain.chainId}/delegates?safe=${safe}`)
+        .expect(200)
+        .expect(delegatesPage);
+    });
+
+    it('Should fail with bad request', async () => {
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/delegates`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'At least one property is required',
+          path: [],
+        });
+    });
+  });
+
   describe('POST delegates for a Safe', () => {
     it('Success', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();

@@ -45,6 +45,7 @@ import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
 import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
+import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -71,6 +72,7 @@ export class AppModule implements NestModule {
         ContractsModule,
         DataDecodedModule,
         DelegatesModule,
+        DelegatesV2Module,
         ...(isEmailFeatureEnabled
           ? [
               AlertsControllerModule,
