@@ -5,6 +5,7 @@ import {
   PaginationData,
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
+import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
 import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
 
@@ -43,5 +44,19 @@ export class DelegatesV2Service {
       previous: previousURL?.toString() ?? null,
       results: delegates.results,
     };
+  }
+
+  async postDelegate(args: {
+    chainId: string;
+    createDelegateDto: CreateDelegateDto;
+  }): Promise<void> {
+    await this.repository.postDelegate({
+      chainId: args.chainId,
+      safeAddress: args.createDelegateDto.safe,
+      delegate: args.createDelegateDto.delegate,
+      delegator: args.createDelegateDto.delegator,
+      signature: args.createDelegateDto.signature,
+      label: args.createDelegateDto.label,
+    });
   }
 }

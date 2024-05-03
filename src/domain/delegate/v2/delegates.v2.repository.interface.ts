@@ -16,6 +16,15 @@ export interface IDelegatesV2Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>>;
+
+  postDelegate(args: {
+    chainId: string;
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    signature: string;
+    label: string;
+  }): Promise<void>;
 }
 
 @Module({

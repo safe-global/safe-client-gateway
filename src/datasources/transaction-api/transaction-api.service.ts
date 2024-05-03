@@ -259,6 +259,30 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async postDelegateV2(args: {
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    signature: string;
+    label: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v2/delegates/`;
+      await this.networkService.post({
+        url,
+        data: {
+          safe: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          label: args.label,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async deleteDelegate(args: {
     delegate: string;
     delegator: string;
