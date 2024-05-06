@@ -38,6 +38,8 @@ import {
   JWT_CONFIGURATION_MODULE,
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -77,6 +79,8 @@ describe('Recovery (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

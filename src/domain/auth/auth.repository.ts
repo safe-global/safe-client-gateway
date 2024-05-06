@@ -9,15 +9,12 @@ import {
   JwtClaimsSchema,
   JwtPayloadWithClaims,
 } from '@/datasources/jwt/jwt-claims.entity';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
   constructor(
     @Inject(IJwtService)
     private readonly jwtService: IJwtService,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
   ) {}
 
   signToken<T extends AuthPayloadDto>(
