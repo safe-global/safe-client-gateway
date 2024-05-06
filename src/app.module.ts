@@ -71,6 +71,7 @@ export class AppModule implements NestModule {
         CollectiblesModule,
         ContractsModule,
         DataDecodedModule,
+        // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
         DelegatesModule,
         DelegatesV2Module,
         ...(isEmailFeatureEnabled
