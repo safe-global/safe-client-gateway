@@ -74,6 +74,10 @@ export class TransactionsViewService {
       orderUid,
     });
 
+    if (!this.swapOrderHelper.isAppAllowed(order)) {
+      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
+    }
+
     return new CowSwapConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,

@@ -9,13 +9,25 @@ import {
   ISwapsRepository,
   SwapsRepository,
 } from '@/domain/swaps/swaps.repository';
-import { Token } from '@/domain/tokens/entities/token.entity';
+import { Token, TokenType } from '@/domain/tokens/entities/token.entity';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
+import {
+  ChainsRepositoryModule,
+  IChainsRepository,
+} from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class SwapOrderHelper {
+  // This is the Native Currency address considered by CoW Swap
+  // https://docs.cow.fi/cow-protocol/reference/sdks/cow-sdk/modules#buy_eth_address
+  private static readonly NATIVE_CURRENCY_ADDRESS =
+    '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
+  private readonly restrictApps: boolean =
+    this.configurationService.getOrThrow('swaps.restrictApps');
+
   private readonly swapsExplorerBaseUri: string =
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
@@ -27,6 +39,9 @@ export class SwapOrderHelper {
     @Inject(ISwapsRepository) private readonly swapsRepository: SwapsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   /**
@@ -85,11 +100,11 @@ export class SwapOrderHelper {
     if (order.kind === 'unknown') throw new Error('Unknown order kind');
 
     const [buyToken, sellToken] = await Promise.all([
-      this.tokenRepository.getToken({
+      this.getToken({
         chainId: args.chainId,
         address: order.buyToken,
       }),
-      this.tokenRepository.getToken({
+      this.getToken({
         chainId: args.chainId,
         address: order.sellToken,
       }),
@@ -118,15 +133,93 @@ export class SwapOrderHelper {
     return url;
   }
 
+  /**
+   * Checks if the app associated with an order is allowed.
+   *
+   * @param order - the order to which we should verify the app data with
+   * @returns true if the app is allowed, false otherwise.
+   */
+  isAppAllowed(order: Order): boolean {
+    if (!this.restrictApps) return true;
+    const appCode = order.fullAppData?.appCode;
+    return !!appCode && this.allowedApps.has(appCode);
+  }
+
   private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
     if (!transaction.data) return false;
     return this.setPreSignatureDecoder.isSetPreSignature(transaction.data);
   }
+
+  /**
+   * Retrieves a token object based on the provided Ethereum chain ID and token address.
+   * If the specified address is the placeholder for the native currency of the chain,
+   * it fetches the chain's native currency details from the {@link IChainsRepository}.
+   * Otherwise, it fetches the token details from the {@link ITokenRepository}.
+   *
+   * @param args An object containing:
+   *   - `chainId`: A string representing the ID of the blockchain chain.
+   *   - `address`: A string representing the Ethereum address of the token, prefixed with '0x'.
+   * @returns {Promise<Token>} A promise that resolves to a Token object containing the details
+   * of either the native currency or the specified token.
+   * @throws {Error} Throws an error if the token data cannot be retrieved.
+   * @private
+   * @async
+   */
+  private async getToken(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<Token> {
+    // We perform lower case comparison because the provided address (3rd party service)
+    // might not be checksummed.
+    if (
+      args.address.toLowerCase() ===
+      SwapOrderHelper.NATIVE_CURRENCY_ADDRESS.toLowerCase()
+    ) {
+      const { nativeCurrency } = await this.chainsRepository.getChain(
+        args.chainId,
+      );
+      return {
+        address: SwapOrderHelper.NATIVE_CURRENCY_ADDRESS,
+        decimals: nativeCurrency.decimals,
+        logoUri: nativeCurrency.logoUri,
+        name: nativeCurrency.name,
+        symbol: nativeCurrency.symbol,
+        type: TokenType.NativeToken,
+        trusted: true,
+      };
+    } else {
+      return this.tokenRepository.getToken({
+        chainId: args.chainId,
+        address: args.address,
+      });
+    }
+  }
+}
+
+function allowedAppsFactory(
+  configurationService: IConfigurationService,
+): Set<string> {
+  const allowedApps =
+    configurationService.getOrThrow<string[]>('swaps.allowedApps');
+  return new Set(allowedApps);
 }
 
 @Module({
-  imports: [SwapsRepositoryModule, TokenRepositoryModule],
-  providers: [SwapOrderHelper, MultiSendDecoder, SetPreSignatureDecoder],
+  imports: [
+    ChainsRepositoryModule,
+    SwapsRepositoryModule,
+    TokenRepositoryModule,
+  ],
+  providers: [
+    SwapOrderHelper,
+    MultiSendDecoder,
+    SetPreSignatureDecoder,
+    {
+      provide: 'SWAP_ALLOWED_APPS',
+      useFactory: allowedAppsFactory,
+      inject: [IConfigurationService],
+    },
+  ],
   exports: [SwapOrderHelper],
 })
 export class SwapOrderHelperModule {}

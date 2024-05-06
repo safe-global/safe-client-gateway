@@ -1,4 +1,4 @@
-import { Inject, Injectable, Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -6,19 +6,12 @@ import {
   SwapOrderHelper,
   SwapOrderHelperModule,
 } from '@/routes/transactions/helpers/swap-order.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SwapOrderMapper {
-  private readonly restrictApps =
-    this.configurationService.getOrThrow('swaps.restrictApps');
-
   constructor(
     private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
     private readonly swapOrderHelper: SwapOrderHelper,
-    @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
   ) {}
 
   async mapSwapOrder(
@@ -36,11 +29,8 @@ export class SwapOrderMapper {
       orderUid,
     });
 
-    if (
-      this.restrictApps &&
-      !this.allowedApps.has(order.fullAppData['appCode'])
-    ) {
-      throw new Error(`Unsupported App: ${order.fullAppData['appCode']}`);
+    if (!this.swapOrderHelper.isAppAllowed(order)) {
+      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
     return new SwapOrderTransactionInfo({
@@ -78,25 +68,9 @@ export class SwapOrderMapper {
   }
 }
 
-function allowedAppsFactory(
-  configurationService: IConfigurationService,
-): Set<string> {
-  const allowedApps =
-    configurationService.getOrThrow<string[]>('swaps.allowedApps');
-  return new Set(allowedApps);
-}
-
 @Module({
   imports: [SwapOrderHelperModule],
-  providers: [
-    SwapOrderMapper,
-    SetPreSignatureDecoder,
-    {
-      provide: 'SWAP_ALLOWED_APPS',
-      useFactory: allowedAppsFactory,
-      inject: [IConfigurationService],
-    },
-  ],
+  providers: [SwapOrderMapper, SetPreSignatureDecoder],
   exports: [SwapOrderMapper],
 })
 export class SwapOrderMapperModule {}
