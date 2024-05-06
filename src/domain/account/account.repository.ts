@@ -22,6 +22,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { VerificationCodeDoesNotExistError } from '@/datasources/account/errors/verification-code-does-not-exist.error';
 import { getAddress } from 'viem';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
@@ -38,6 +39,7 @@ export class AccountRepository implements IAccountRepository {
     @Inject(ISubscriptionRepository)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(ISafeRepository) private readonly safeRepository: ISafeRepository,
   ) {
     this.verificationCodeResendLockWindowMs =
       this.configurationService.getOrThrow(
@@ -96,12 +98,33 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const email = new EmailAddress(args.emailAddress);
     const verificationCode = this._generateCode();
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
+      throw new UnauthorizedException();
+    }
+
+    // Check after AuthPayload check to avoid unnecessary request
+    const isOwner = await this.safeRepository
+      .isOwner({
+        safeAddress,
+        chainId: args.chainId,
+        address: signer,
+      })
+      // Swallow error to avoid leaking information
+      .catch(() => false);
+    if (!isOwner) {
+      throw new UnauthorizedException();
+    }
 
     try {
       await this.accountDataSource.createAccount({
