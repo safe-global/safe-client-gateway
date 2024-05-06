@@ -206,16 +206,19 @@ export class SafesService {
     transactions: Array<MultisigTransaction>;
     walletAddress: string;
   }): number {
-    return args.transactions.reduce((acc, { confirmationsRequired, confirmations }) => {
-      const isConfirmed = confirmationsRequired === 0
-      const isSignedByWallet = confirmations?.some((confirmation) => {
-        return confirmation.owner === args.walletAddress;
-      })
-      if (!isConfirmed && !isSignedByWallet) {
-        acc++
-      }
-      return acc;
-    }, 0);
+    return args.transactions.reduce(
+      (acc, { confirmationsRequired, confirmations }) => {
+        const isConfirmed = confirmationsRequired === 0;
+        const isSignedByWallet = confirmations?.some((confirmation) => {
+          return confirmation.owner === args.walletAddress;
+        });
+        if (!isConfirmed && !isSignedByWallet) {
+          acc++;
+        }
+        return acc;
+      },
+      0,
+    );
   }
 
   private toUnixTimestampInSecondsOrNull(date: Date | null): string | null {

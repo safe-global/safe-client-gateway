@@ -299,17 +299,23 @@ describe('Safes Controller Overview (Unit)', () => {
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
-              confirmationBuilder().with('owner', getAddress(faker.finance.ethereumAddress())).build(),
+              confirmationBuilder()
+                .with('owner', getAddress(faker.finance.ethereumAddress()))
+                .build(),
             ])
             .build(),
         ),
         multisigTransactionToJson(
           multisigTransactionBuilder()
-          .with('confirmationsRequired', 0)
-          .with('confirmations', [
-            // Not wallet address
-            confirmationBuilder().with('owner', getAddress(faker.finance.ethereumAddress())).build(),
-          ]).build())
+            .with('confirmationsRequired', 0)
+            .with('confirmations', [
+              // Not wallet address
+              confirmationBuilder()
+                .with('owner', getAddress(faker.finance.ethereumAddress()))
+                .build(),
+            ])
+            .build(),
+        ),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -421,7 +427,7 @@ describe('Safes Controller Overview (Unit)', () => {
       expect(networkService.get.mock.calls[6][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`,
       );
-    })
+    });
 
     it('overview of multiple Safes across different chains is correctly serialised', async () => {
       const chain1 = chainBuilder().with('chainId', '1').build();
