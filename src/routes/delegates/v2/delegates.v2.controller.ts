@@ -9,10 +9,13 @@ import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.ent
 import { CreateDelegateDtoSchema } from '@/routes/delegates/entities/schemas/create-delegate.dto.schema';
 import { GetDelegateDtoSchema } from '@/routes/delegates/entities/schemas/get-delegate.dto.schema';
 import { DelegatesV2Service } from '@/routes/delegates/v2/delegates.v2.service';
+import { DeleteDelegateV2Dto } from '@/routes/delegates/v2/entities/delete-delegate.v2.dto.entity';
+import { DeleteDelegateV2DtoSchema } from '@/routes/delegates/v2/entities/schemas/delete-delegate.v2.dto.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -76,5 +79,19 @@ export class DelegatesV2Controller {
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
     await this.service.postDelegate({ chainId, createDelegateDto });
+  }
+
+  @Delete('chains/:chainId/delegates/:delegateAddress')
+  async deleteDelegate(
+    @Param('chainId') chainId: string,
+    @Param('delegateAddress') delegateAddress: `0x${string}`,
+    @Body(new ValidationPipe(DeleteDelegateV2DtoSchema))
+    deleteDelegateV2Dto: DeleteDelegateV2Dto,
+  ): Promise<unknown> {
+    return this.service.deleteDelegate({
+      chainId,
+      delegateAddress,
+      deleteDelegateV2Dto: deleteDelegateV2Dto,
+    });
   }
 }

@@ -323,6 +323,27 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async deleteDelegateV2(args: {
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    safeAddress: `0x${string}` | null;
+    signature: string;
+  }): Promise<unknown> {
+    try {
+      const url = `${this.baseUrl}/api/v2/delegates/${args.delegate}`;
+      return await this.networkService.delete({
+        url,
+        data: {
+          safe: args.safeAddress,
+          delegator: args.delegator,
+          signature: args.signature,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getTransfer(transferId: string): Promise<Transfer> {

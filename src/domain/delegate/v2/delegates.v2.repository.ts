@@ -53,4 +53,21 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
       label: args.label,
     });
   }
+
+  async deleteDelegate(args: {
+    chainId: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    safeAddress: `0x${string}` | null;
+    signature: string;
+  }): Promise<unknown> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    return transactionService.deleteDelegateV2({
+      delegate: args.delegate,
+      delegator: args.delegator,
+      safeAddress: args.safeAddress,
+      signature: args.signature,
+    });
+  }
 }
