@@ -201,6 +201,40 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getDelegatesV2(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>> {
+    try {
+      const cacheDir = CacheRouter.getDelegatesCacheDir({
+        chainId: this.chainId,
+        ...args,
+      });
+      const url = `${this.baseUrl}/api/v2/delegates/`;
+      return await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            delegate: args.delegate,
+            delegator: args.delegator,
+            label: args.label,
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async postDelegate(args: {
     safeAddress: `0x${string}` | null;
     delegate: `0x${string}`;
@@ -210,6 +244,30 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/delegates/`;
+      await this.networkService.post({
+        url,
+        data: {
+          safe: args.safeAddress,
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          label: args.label,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async postDelegateV2(args: {
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    signature: string;
+    label: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v2/delegates/`;
       await this.networkService.post({
         url,
         data: {

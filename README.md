@@ -78,7 +78,7 @@ docker compose up -d db-test
 yarn run test
 
 # e2e tests
-yarn run test:e2e
+docker-compose up -d redis rabbitmq && yarn run test:e2e
 
 # test coverage
 yarn run test:cov
