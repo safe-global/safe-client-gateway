@@ -61,6 +61,8 @@ import { TransactionItem } from '@/routes/transactions/entities/transaction-item
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { getAddress } from 'viem';
 import { erc20TransferFromEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 function getVanityAddress(address: `0x${string}`): `0x${string}` {
   const VANITY_CHARS = 4;
@@ -105,6 +107,8 @@ describe('Transactions History Controller (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);

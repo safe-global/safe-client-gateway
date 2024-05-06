@@ -23,6 +23,8 @@ import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication;
@@ -43,6 +45,8 @@ describe('Notifications Controller (Unit)', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
       .compile();
 
     const configurationService = moduleFixture.get(IConfigurationService);
