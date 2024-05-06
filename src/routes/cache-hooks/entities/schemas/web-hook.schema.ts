@@ -12,6 +12,7 @@ import { OutgoingEtherEventSchema } from '@/routes/cache-hooks/entities/schemas/
 import { OutgoingTokenEventSchema } from '@/routes/cache-hooks/entities/schemas/outgoing-token.schema';
 import { PendingTransactionEventSchema } from '@/routes/cache-hooks/entities/schemas/pending-transaction.schema';
 import { SafeAppsUpdateEventSchema } from '@/routes/cache-hooks/entities/schemas/safe-apps-update.schema';
+import { SafeCreatedEventSchema } from '@/routes/cache-hooks/entities/schemas/safe-created.schema';
 
 export const WebHookSchema = z.discriminatedUnion('type', [
   ChainUpdateEventSchema,
@@ -27,4 +28,5 @@ export const WebHookSchema = z.discriminatedUnion('type', [
   OutgoingTokenEventSchema,
   PendingTransactionEventSchema,
   SafeAppsUpdateEventSchema,
+  SafeCreatedEventSchema,
 ]);
