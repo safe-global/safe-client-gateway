@@ -132,7 +132,7 @@ export class SafesService {
     addresses: Array<{ chainId: string; address: string }>;
     trusted: boolean;
     excludeSpam: boolean;
-    walletAddress?: string;
+    walletAddress?: `0x${string}`;
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
@@ -204,7 +204,7 @@ export class SafesService {
 
   private computeAwaitingConfirmation(args: {
     transactions: Array<MultisigTransaction>;
-    walletAddress: string;
+    walletAddress: `0x${string}`;
   }): number {
     return args.transactions.reduce((acc, { confirmations }) => {
       const isConfirmed = !!confirmations?.some((confirmation) => {
