@@ -176,6 +176,9 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'SAFE_APPS_UPDATE',
     },
+    {
+      type: 'SAFE_CREATED',
+    },
   ])('accepts $type', async (payload) => {
     const chainId = faker.string.numeric();
     const data = {
@@ -240,10 +243,11 @@ describe('Post Hook Events (Unit)', () => {
           'OUTGOING_TOKEN',
           'PENDING_MULTISIG_TRANSACTION',
           'SAFE_APPS_UPDATE',
+          'SAFE_CREATED',
         ],
         path: ['type'],
         message:
-          "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'SAFE_APPS_UPDATE'",
+          "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
       });
   });
 
