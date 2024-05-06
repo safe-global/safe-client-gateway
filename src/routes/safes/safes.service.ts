@@ -209,10 +209,12 @@ export class SafesService {
     return args.transactions.reduce(
       (acc, { confirmationsRequired, confirmations }) => {
         const isConfirmed = confirmationsRequired === 0;
-        const isSignedByWallet = confirmations?.some((confirmation) => {
-          return confirmation.owner === args.walletAddress;
-        });
-        if (!isConfirmed && !isSignedByWallet) {
+        const isSignable =
+          !isConfirmed &&
+          !confirmations?.some((confirmation) => {
+            return confirmation.owner === args.walletAddress;
+          });
+        if (isSignable) {
           acc++;
         }
         return acc;
