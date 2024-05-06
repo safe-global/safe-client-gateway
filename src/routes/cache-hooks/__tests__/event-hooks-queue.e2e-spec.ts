@@ -19,12 +19,17 @@ describe('Events queue processing e2e tests', () => {
   let channel: ChannelWrapper;
   let queueName: string;
   const cacheKeyPrefix = crypto.randomUUID();
+  const queue = crypto.randomUUID();
   const chainId = '1'; // Mainnet
 
   beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      amqp: {
+        ...defaultConfiguration.amqp,
+        queue,
+      },
       features: {
         ...defaultConfiguration.features,
         eventsQueue: true,
@@ -41,7 +46,7 @@ describe('Events queue processing e2e tests', () => {
     app = await new TestAppProvider().provide(moduleRef);
     await app.init();
     redisClient = await redisClientFactory();
-    const amqpClient = await amqpClientFactory();
+    const amqpClient = await amqpClientFactory(queue);
     channel = amqpClient.channel;
     queueName = amqpClient.queueName;
   });
