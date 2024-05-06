@@ -81,6 +81,7 @@ export class DelegatesController {
     });
   }
 
+  @ApiOperation({ deprecated: true })
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
