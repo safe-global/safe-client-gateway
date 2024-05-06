@@ -44,6 +44,15 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Page<Delegate>>;
 
+  getDelegatesV2(args: {
+    safeAddress?: string;
+    delegate?: string;
+    delegator?: string;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Delegate>>;
+
   postDelegate(args: {
     safeAddress: `0x${string}` | null;
     delegate: `0x${string}`;

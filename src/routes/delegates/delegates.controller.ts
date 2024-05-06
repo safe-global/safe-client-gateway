@@ -8,7 +8,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
@@ -33,6 +38,7 @@ import { DeleteSafeDelegateDtoSchema } from '@/routes/delegates/entities/schemas
 export class DelegatesController {
   constructor(private readonly service: DelegatesService) {}
 
+  @ApiOperation({ deprecated: true })
   @ApiOkResponse({ type: DelegatePage })
   @ApiQuery({
     name: 'safe',
