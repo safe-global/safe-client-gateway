@@ -1,4 +1,5 @@
 import { Account } from '@/domain/account/entities/account.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 export const IAccountRepository = Symbol('IAccountRepository');
 
@@ -6,7 +7,8 @@ export interface IAccountRepository {
   getAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<Account>;
 
   getAccounts(args: {

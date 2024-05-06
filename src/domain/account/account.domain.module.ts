@@ -5,9 +5,10 @@ import { AccountRepository } from '@/domain/account/account.repository';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
+import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 
 @Module({
-  imports: [AccountDataSourceModule, EmailApiModule],
+  imports: [AccountDataSourceModule, EmailApiModule, AuthRepositoryModule],
   providers: [
     { provide: IAccountRepository, useClass: AccountRepository },
     {

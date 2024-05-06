@@ -23,9 +23,13 @@ import { AccountDoesNotExistExceptionFilter } from '@/routes/email/exception-fil
 import { EditEmailDto } from '@/routes/email/entities/edit-email-dto.entity';
 import { EmailEditGuard } from '@/routes/email/guards/email-edit.guard';
 import { EmailEditMatchesExceptionFilter } from '@/routes/email/exception-filters/email-edit-matches.exception-filter';
-import { EmailRetrievalGuard } from '@/routes/email/guards/email-retrieval.guard';
+import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { Email } from '@/routes/email/entities/email.entity';
 import { UnauthenticatedExceptionFilter } from '@/routes/email/exception-filters/unauthenticated.exception-filter';
+import { Auth } from '@/routes/auth/decorators/auth.decorator';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('email')
 @Controller({
@@ -37,20 +41,19 @@ export class EmailController {
   constructor(private readonly service: EmailService) {}
 
   @Get(':signer')
-  @UseGuards(
-    EmailRetrievalGuard,
-    TimestampGuard(5 * 60 * 1000), // 5 minutes
-  )
+  @UseGuards(AuthGuard)
   @UseFilters(AccountDoesNotExistExceptionFilter)
   async getEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Param('signer') signer: string,
+    @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Email> {
     return this.service.getEmail({
       chainId,
       safeAddress,
       signer,
+      authPayload,
     });
   }
 

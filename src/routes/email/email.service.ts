@@ -6,6 +6,7 @@ import {
 import { IAccountRepository } from '@/domain/account/account.repository.interface';
 import { Email } from '@/routes/email/entities/email.entity';
 import { InvalidAddressError } from 'viem';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @Injectable()
 export class EmailService {
@@ -76,7 +77,8 @@ export class EmailService {
   async getEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<Email> {
     const account = await this.repository
       .getAccount(args)

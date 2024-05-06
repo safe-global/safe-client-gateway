@@ -29,6 +29,11 @@ import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
 import { accountBuilder } from '@/domain/account/entities/__tests__/account.builder';
 import { INestApplication } from '@nestjs/common';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import {
+  JWT_CONFIGURATION_MODULE,
+  JwtConfigurationModule,
+} from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
@@ -46,6 +51,8 @@ describe('Email controller delete email tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration), EmailControllerModule],
     })
+      .overrideModule(JWT_CONFIGURATION_MODULE)
+      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(EmailApiModule)
