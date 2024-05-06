@@ -34,4 +34,23 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
     return DelegatePageSchema.parse(page);
   }
+
+  async postDelegate(args: {
+    chainId: string;
+    safeAddress: `0x${string}` | null;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    signature: string;
+    label: string;
+  }): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    await transactionService.postDelegateV2({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      signature: args.signature,
+      label: args.label,
+    });
+  }
 }

@@ -2,13 +2,23 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { CreateDelegateDto } from '@/routes/delegates/entities/create-delegate.dto.entity';
 import { Delegate } from '@/routes/delegates/entities/delegate.entity';
 import { DelegatePage } from '@/routes/delegates/entities/delegate.page.entity';
 import { GetDelegateDto } from '@/routes/delegates/entities/get-delegate.dto.entity';
+import { CreateDelegateDtoSchema } from '@/routes/delegates/entities/schemas/create-delegate.dto.schema';
 import { GetDelegateDtoSchema } from '@/routes/delegates/entities/schemas/get-delegate.dto.schema';
 import { DelegatesV2Service } from '@/routes/delegates/v2/delegates.v2.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('delegates')
@@ -56,5 +66,15 @@ export class DelegatesV2Controller {
       getDelegateDto,
       paginationData,
     });
+  }
+
+  @HttpCode(200)
+  @Post('chains/:chainId/delegates')
+  async postDelegate(
+    @Param('chainId') chainId: string,
+    @Body(new ValidationPipe(CreateDelegateDtoSchema))
+    createDelegateDto: CreateDelegateDto,
+  ): Promise<void> {
+    await this.service.postDelegate({ chainId, createDelegateDto });
   }
 }
