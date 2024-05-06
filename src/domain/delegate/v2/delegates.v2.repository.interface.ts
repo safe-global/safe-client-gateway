@@ -25,6 +25,14 @@ export interface IDelegatesV2Repository {
     signature: string;
     label: string;
   }): Promise<void>;
+
+  deleteDelegate(args: {
+    chainId: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    safeAddress: `0x${string}` | null;
+    signature: string;
+  }): Promise<unknown>;
 }
 
 @Module({

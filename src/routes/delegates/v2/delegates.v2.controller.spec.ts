@@ -21,6 +21,7 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { createDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/create-delegate.dto.builder';
+import { deleteDelegateV2DtoBuilder } from '@/routes/delegates/v2/entities/__tests__/delete-delegate.v2.dto.builder';
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -60,7 +61,7 @@ describe('Delegates controller', () => {
   });
 
   describe('GET delegates for a Safe (v2)', () => {
-    it('Success', async () => {
+    it('success', async () => {
       const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
@@ -88,7 +89,7 @@ describe('Delegates controller', () => {
         .expect(delegatesPage);
     });
 
-    it('Should return a validation error', async () => {
+    it('should return a validation error', async () => {
       const safe = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
@@ -119,7 +120,7 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Should return empty result', async () => {
+    it('should return empty result', async () => {
       const safe = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
       const delegatesPage = pageBuilder()
@@ -144,11 +145,11 @@ describe('Delegates controller', () => {
         .expect(delegatesPage);
     });
 
-    it('Should fail with bad request', async () => {
+    it('should fail with bad request', async () => {
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
-        .get(`/v1/chains/${chain.chainId}/delegates`)
+        .get(`/v2/chains/${chain.chainId}/delegates`)
         .expect(422)
         .expect({
           statusCode: 422,
@@ -160,7 +161,7 @@ describe('Delegates controller', () => {
   });
 
   describe('POST delegates for a Safe', () => {
-    it('Success', async () => {
+    it('success', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       networkService.get.mockImplementation(({ url }) =>
@@ -197,7 +198,7 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Success with null safe', async () => {
+    it('success with null safe', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       createDelegateDto.safe = null;
       const chain = chainBuilder().build();
@@ -218,7 +219,7 @@ describe('Delegates controller', () => {
         .expect(200);
     });
 
-    it('Should return the tx-service error message', async () => {
+    it('should return the tx-service error message', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       networkService.get.mockImplementation(({ url }) =>
@@ -250,7 +251,7 @@ describe('Delegates controller', () => {
         });
     });
 
-    it('Should fail with An error occurred', async () => {
+    it('should fail with An error occurred', async () => {
       const createDelegateDto = createDelegateDtoBuilder().build();
       const chain = chainBuilder().build();
       networkService.get.mockImplementation(({ url }) =>
@@ -275,6 +276,228 @@ describe('Delegates controller', () => {
         .expect({
           message: 'An error occurred',
           code: 503,
+        });
+    });
+  });
+
+  describe('DELETE delegates for a Safe', () => {
+    it('should delete by delegate, delegator and safe', async () => {
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
+      const chain = chainBuilder().build();
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain, status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      networkService.delete.mockImplementation(({ url }) =>
+        url ===
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+          ? Promise.resolve({ data: {}, status: 204 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(200);
+
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        data: {
+          delegator: deleteDelegateV2Dto.delegator,
+          safe: deleteDelegateV2Dto.safe,
+          signature: deleteDelegateV2Dto.signature,
+        },
+      });
+    });
+
+    it('should delete by delegate and delegator', async () => {
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder()
+        .with('safe', null)
+        .build();
+      const chain = chainBuilder().build();
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain, status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      networkService.delete.mockImplementation(({ url }) =>
+        url ===
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+          ? Promise.resolve({ data: {}, status: 204 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(200);
+
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        data: {
+          delegator: deleteDelegateV2Dto.delegator,
+          safe: null,
+          signature: deleteDelegateV2Dto.signature,
+        },
+      });
+    });
+
+    it('should delete by delegate and safe', async () => {
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder()
+        .with('delegator', null)
+        .build();
+      const chain = chainBuilder().build();
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      const delegatorAddress = getAddress(faker.finance.ethereumAddress());
+      const delegatesPage = pageBuilder()
+        .with('count', 1)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [
+          delegateBuilder()
+            .with('delegate', delegateAddress)
+            .with('delegator', delegatorAddress)
+            .with('safe', deleteDelegateV2Dto.safe)
+            .build(),
+        ])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v2/delegates/`:
+            return Promise.resolve({ data: delegatesPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.delete.mockImplementation(({ url }) =>
+        url ===
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+          ? Promise.resolve({ data: {}, status: 204 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(200);
+
+      expect(networkService.delete).toHaveBeenCalledWith({
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        data: {
+          delegator: delegatorAddress,
+          safe: deleteDelegateV2Dto.safe,
+          signature: deleteDelegateV2Dto.signature,
+        },
+      });
+    });
+
+    it('should return the tx-service error message', async () => {
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
+      const chain = chainBuilder().build();
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain, status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}`;
+      const error = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        {
+          status: 400,
+        } as Response,
+        { message: errorMessage, status: 400 },
+      );
+      networkService.delete.mockImplementation(({ url }) =>
+        url === transactionServiceUrl
+          ? Promise.reject(error)
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(400)
+        .expect({
+          message: errorMessage,
+          code: 400,
+        });
+    });
+
+    it('should fail with An error occurred', async () => {
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
+      const chain = chainBuilder().build();
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: chain, status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}`;
+      const error = new NetworkResponseError(new URL(transactionServiceUrl), {
+        status: 503,
+      } as Response);
+      networkService.delete.mockImplementation(({ url }) =>
+        url ===
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+          ? Promise.reject(error)
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(503)
+        .expect({
+          message: 'An error occurred',
+          code: 503,
+        });
+    });
+
+    it('should get a validation error if the signature is not valid', async () => {
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send({ ...deleteDelegateV2Dto, signature: faker.number.int() })
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'number',
+          path: ['signature'],
+          message: 'Expected string, received number',
+        });
+    });
+
+    it('should get a validation error if both delegator and safe are not defined', async () => {
+      const delegateAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteDelegateV2Dto = deleteDelegateV2DtoBuilder().build();
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete deleteDelegateV2Dto.delegator;
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete deleteDelegateV2Dto.safe;
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(`/v2/chains/${chain.chainId}/delegates/${delegateAddress}`)
+        .send(deleteDelegateV2Dto)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message:
+            "At least one of the fields 'safe' or 'delegator' is required",
+          path: [],
         });
     });
   });

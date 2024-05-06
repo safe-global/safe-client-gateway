@@ -81,6 +81,13 @@ export interface ITransactionApi {
     signature: string;
   }): Promise<unknown>;
 
+  deleteDelegateV2(args: {
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
+    safeAddress: `0x${string}` | null;
+    signature: string;
+  }): Promise<unknown>;
+
   getTransfer(transferId: string): Promise<Transfer>;
 
   getTransfers(args: {
