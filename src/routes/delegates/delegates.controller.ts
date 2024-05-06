@@ -91,6 +91,7 @@ export class DelegatesController {
     await this.service.postDelegate({ chainId, createDelegateDto });
   }
 
+  @ApiOperation({ deprecated: true })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   async deleteDelegate(
     @Param('chainId') chainId: string,
@@ -105,6 +106,7 @@ export class DelegatesController {
     });
   }
 
+  @ApiOperation({ deprecated: true })
   @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
   async deleteSafeDelegate(
     @Param('chainId') chainId: string,
