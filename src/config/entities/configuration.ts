@@ -197,6 +197,7 @@ export default () => ({
     confirmationView:
       process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
     eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
+    delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

@@ -57,6 +57,7 @@ export class AppModule implements NestModule {
       auth: isAuthFeatureEnabled,
       email: isEmailFeatureEnabled,
       confirmationView: isConfirmationViewEnabled,
+      delegatesV2: isDelegatesV2Enabled,
     } = configFactory()['features'];
 
     return {
@@ -73,7 +74,7 @@ export class AppModule implements NestModule {
         DataDecodedModule,
         // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
         DelegatesModule,
-        DelegatesV2Module,
+        ...(isDelegatesV2Enabled ? [DelegatesV2Module] : []),
         ...(isEmailFeatureEnabled
           ? [
               AlertsControllerModule,
