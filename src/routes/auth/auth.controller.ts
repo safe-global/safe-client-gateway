@@ -43,8 +43,7 @@ export class AuthController {
     nonce: string;
   }> {
     // TODO: Remove after debugging
-    this.loggingService.info(req.originalUrl);
-    this.loggingService.info(req.headers);
+    this.loggingService.info(`/v1/auth/nonce, Origin: ${req.header('Origin')}`);
     return this.authService.getNonce();
   }
 
