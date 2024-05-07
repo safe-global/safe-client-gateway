@@ -36,9 +36,18 @@ describe('Delegates controller', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    const baseConfig = configuration();
+
+    const testConfiguration: typeof configuration = () => ({
+      ...baseConfig,
+      features: {
+        ...baseConfig.features,
+        delegatesV2: true,
+      },
+    });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
