@@ -17,7 +17,6 @@ import {
 } from '@/routes/auth/entities/verify-auth-message.dto.entity';
 import { Request, Response } from 'express';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 /**
  * The AuthController is responsible for handling authentication:
@@ -35,7 +34,6 @@ export class AuthController {
 
   constructor(
     private readonly authService: AuthService,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   @Get('nonce')
