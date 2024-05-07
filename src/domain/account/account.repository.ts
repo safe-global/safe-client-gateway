@@ -325,10 +325,19 @@ export class AccountRepository implements IAccountRepository {
     chainId: string;
     safeAddress: string;
     emailAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
+      throw new UnauthorizedException();
+    }
+
     const account = await this.accountDataSource.getAccount({
       chainId: args.chainId,
       safeAddress,
