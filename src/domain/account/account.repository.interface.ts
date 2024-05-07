@@ -76,11 +76,13 @@ export interface IAccountRepository {
    * @param args.chainId - the chain id of where the Safe is deployed
    * @param args.safeAddress - the Safe address of the account to be removed
    * @param args.signer - the signer address of the account to be removed
+   * @param args.authPayload - the payload to use for authorization
    */
   deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void>;
 
   /**

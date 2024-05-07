@@ -57,7 +57,8 @@ export class EmailService {
   async deleteEmail(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void> {
     return this.repository
       .deleteAccount(args)

@@ -12,7 +12,7 @@ import { AccountDataSourceModule } from '@/datasources/account/account.datasourc
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   INetworkService,
@@ -34,6 +34,8 @@ import {
   JWT_CONFIGURATION_MODULE,
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { getSecondsUntil } from '@/domain/common/utils/time';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 
@@ -43,6 +45,7 @@ describe('Email controller delete email tests', () => {
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -72,6 +75,7 @@ describe('Email controller delete email tests', () => {
     accountDataSource = moduleFixture.get(IAccountDataSource);
     emailApi = moduleFixture.get(IEmailApi);
     networkService = moduleFixture.get(NetworkService);
+    jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -92,17 +96,21 @@ describe('Email controller delete email tests', () => {
     { safeAddress: getAddress(faker.finance.ethereumAddress()) },
   ])('deletes email successfully', async ({ safeAddress }) => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const signerAddress = signer.address;
+    const safe = safeBuilder()
+      // Allow test of non-checksummed address by casting
+      .with('address', safeAddress as `0x${string}`)
+      .build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', signerAddress)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
     const account = accountBuilder()
       .with('signer', signerAddress)
-      .with('safeAddress', getAddress(safeAddress))
       .with('chainId', chain.chainId)
+      .with('safeAddress', safe.address)
       .build();
-    const message = `email-delete-${chain.chainId}-${safeAddress}-${signerAddress}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
     accountDataSource.getAccount.mockResolvedValue(account);
     accountDataSource.deleteAccount.mockResolvedValue(account);
     emailApi.deleteEmailAddress.mockResolvedValue();
@@ -111,8 +119,7 @@ describe('Email controller delete email tests', () => {
       .delete(
         `/v1/chains/${chain.chainId}/safes/${safeAddress}/emails/${account.signer}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(204)
       .expect({});
 
@@ -122,24 +129,20 @@ describe('Email controller delete email tests', () => {
       chainId: chain.chainId,
       // Should always call with the checksummed address
       safeAddress: getAddress(safeAddress),
-      signer: signer.address,
+      signer: signerAddress,
     });
   });
 
   it("returns 204 if trying to deleting an email that doesn't exist", async () => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const signerAddress = signer.address;
     // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [signerAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', signerAddress)
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
+    const accessToken = jwtService.sign(authPayloadDto);
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -156,10 +159,9 @@ describe('Email controller delete email tests', () => {
 
     await request(app.getHttpServer())
       .delete(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(204)
       .expect({});
 
@@ -167,108 +169,254 @@ describe('Email controller delete email tests', () => {
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
   });
 
-  it('returns 422 if Safe address is not a valid Ethereum address', async () => {
+  it('returns 403 if no token is present', async () => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const signerAddress = signer.address;
-    const invalidSafeAddress = faker.word.sample();
-    const message = `email-delete-${chain.chainId}-${invalidSafeAddress}-${signerAddress}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
+    // Signer is owner of safe
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
 
     await request(app.getHttpServer())
       .delete(
-        `/v1/chains/${chain.chainId}/safes/${invalidSafeAddress}/emails/${signer.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(422)
-      .expect({
-        message: `Address "${invalidSafeAddress}" is invalid.`,
-        error: 'Unprocessable Entity',
-        statusCode: 422,
-      });
+      .expect(403);
 
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
     expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
     expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
   });
 
-  it('returns 403 if message was signed with a timestamp older than 5 minutes', async () => {
+  it('returns 403 if token is not a valid JWT', async () => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
-    // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [accountAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const accessToken = faker.string.numeric();
 
-    jest.advanceTimersByTime(5 * 60 * 1000);
-
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
     await request(app.getHttpServer())
       .delete(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
   });
 
-  it('returns 403 on wrong message signature', async () => {
+  it('returns 403 if token is not yet valid', async () => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const accountAddress = account.address;
-    // Signer is owner of safe
-    const safe = safeBuilder()
-      .with('owners', [accountAddress])
-      // Faker generates non-checksum addresses only
-      .with('address', getAddress(faker.finance.ethereumAddress()))
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', signerAddress)
       .build();
-    const message = `some-action-${chain.chainId}-${safe.address}-${accountAddress}-${timestamp}`;
-    const signature = await account.signMessage({ message });
+    const notBefore = faker.date.future();
+    const accessToken = jwtService.sign(authPayloadDto, {
+      notBefore: getSecondsUntil(notBefore),
+    });
 
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
     await request(app.getHttpServer())
       .delete(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.address}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-      .expect(403)
-      .expect({
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-        statusCode: 403,
-      });
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+  });
+
+  it('returns 403 if token has expired', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', signerAddress)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto, {
+      expiresIn: 0, // Now
+    });
+    jest.advanceTimersByTime(1_000);
+
+    expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+    await request(app.getHttpServer())
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+  });
+
+  it('returns 403 if signer_address is not a valid Ethereum address', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', faker.string.numeric() as `0x${string}`)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
+    jest.advanceTimersByTime(1_000);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+  });
+
+  it('returns 403 if chain_id is not a valid chain ID', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', faker.string.alpha())
+      .with('signer_address', signerAddress)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(403);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+  });
+
+  // Note: this could be removed as we checksum the :signer but for robustness we should keep it
+  it.each([
+    // non-checksummed address
+    {
+      signer_address: faker.finance.ethereumAddress().toLowerCase(),
+    },
+    // checksummed address
+    {
+      signer_address: getAddress(faker.finance.ethereumAddress()),
+    },
+  ])(
+    'returns 401 if signer_address does not match a non-checksummed signer request',
+    async ({ signer_address }) => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signer_address as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
+            // non-checksummed
+            signerAddress.toLowerCase()
+          }`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+      expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+    },
+  );
+  it.each([
+    // non-checksummed address
+    {
+      signer_address: faker.finance.ethereumAddress().toLowerCase(),
+    },
+    // checksummed address
+    {
+      signer_address: getAddress(faker.finance.ethereumAddress()),
+    },
+  ])(
+    'returns 401 if signer_address does not match a checksummed signer request',
+    async ({ signer_address }) => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signer_address as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${
+            // checksummed
+            getAddress(signerAddress)
+          }`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+      expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
+    },
+  );
+
+  it('Returns 401 if chain_id does not match the request', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+      .with('signer_address', signerAddress)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
+
+    expect(() => jwtService.verify(accessToken)).not.toThrow();
+    await request(app.getHttpServer())
+      .delete(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
+      )
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(401);
+
+    expect(accountDataSource.getAccount).toHaveBeenCalledTimes(0);
+    expect(emailApi.deleteEmailAddress).toHaveBeenCalledTimes(0);
+    expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(0);
   });
 
   it('returns 500 if email api throws', async () => {
     const chain = chainBuilder().build();
-    const timestamp = jest.now();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const signerAddress = signer.address;
-    // Signer is owner of safe
-    const safe = safeBuilder().with('owners', [signerAddress]).build();
+    const safe = safeBuilder().build();
+    const signerAddress = safe.owners[0];
+    const authPayloadDto = authPayloadDtoBuilder()
+      .with('chain_id', chain.chainId)
+      .with('signer_address', signerAddress)
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
     const account = accountBuilder()
       .with('signer', signerAddress)
-      .with('safeAddress', getAddress(safe.address))
       .with('chainId', chain.chainId)
+      .with('safeAddress', safe.address)
       .build();
-    const message = `email-delete-${chain.chainId}-${safe.address}-${signerAddress}-${timestamp}`;
-    const signature = await signer.signMessage({ message });
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -284,10 +432,9 @@ describe('Email controller delete email tests', () => {
 
     await request(app.getHttpServer())
       .delete(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${account.signer}`,
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/emails/${signerAddress}`,
       )
-      .set('Safe-Wallet-Signature', signature)
-      .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
+      .set('Cookie', [`access_token=${accessToken}`])
       .expect(500)
       .expect({ code: 500, message: 'Internal server error' });
 

@@ -12,7 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EmailService } from '@/routes/email/email.service';
-import { EmailDeletionGuard } from '@/routes/email/guards/email-deletion.guard';
 import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
 import {
   SaveEmailDto,
@@ -108,21 +107,20 @@ export class EmailController {
   }
 
   @Delete(':signer')
-  @UseGuards(
-    EmailDeletionGuard,
-    TimestampGuard(5 * 60 * 1000), // 5 minutes
-  )
+  @UseGuards(AuthGuard)
   @UseFilters(AccountDoesNotExistExceptionFilter)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteEmail(
     @Param('chainId') chainId: string,
     @Param('safeAddress') safeAddress: string,
-    @Param('signer') signer: string,
+    @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
+    @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     await this.service.deleteEmail({
       chainId,
       safeAddress,
       signer,
+      authPayload,
     });
   }
 

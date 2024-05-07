@@ -282,10 +282,19 @@ export class AccountRepository implements IAccountRepository {
   async deleteAccount(args: {
     chainId: string;
     safeAddress: string;
-    signer: string;
+    signer: `0x${string}`;
+    authPayload: AuthPayload;
   }): Promise<void> {
     const safeAddress = getAddress(args.safeAddress);
     const signer = getAddress(args.signer);
+
+    if (
+      !args.authPayload.isForChain(args.chainId) ||
+      !args.authPayload.isForSigner(signer)
+    ) {
+      throw new UnauthorizedException();
+    }
+
     try {
       const account = await this.accountDataSource.getAccount({
         chainId: args.chainId,
