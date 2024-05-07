@@ -44,42 +44,23 @@ export class TransactionsHistoryMapper {
     if (transactionsDomain.length == 0) {
       return [];
     }
-    const previousTransaction = await (async (): Promise<
-      TransactionItem | undefined
-    > => {
-      const prevDomainTransaction = this.getPreviousItem(
-        offset,
-        transactionsDomain,
-      );
-      if (!prevDomainTransaction) {
-        return;
-      }
-      // We map in order to filter last list item against it
-      const mappedPreviousTransaction = await this.mapTransaction(
-        prevDomainTransaction,
-        chainId,
-        safe,
-        onlyTrusted,
-      );
-      // Remove first transaction that was requested to get previous day timestamp
-      transactionsDomain = transactionsDomain.slice(1);
+    // Must be retrieved before mapping others as we remove it from transactionsDomain
+    const previousTransaction = await this.getPreviousTransaction({
+      offset,
+      transactionsDomain,
+      chainId,
+      safe,
+      onlyTrusted,
+    });
 
-      return Array.isArray(mappedPreviousTransaction)
-        ? // All transfers should have same execution date but the last is "true" previous
-          mappedPreviousTransaction.at(-1)
-        : mappedPreviousTransaction;
-    })();
-
-    const transactions = await (async (): Promise<Array<TransactionItem>> => {
-      const mappedTransactions = await Promise.all(
-        transactionsDomain.map((transaction) => {
-          return this.mapTransaction(transaction, chainId, safe, onlyTrusted);
-        }),
-      );
-      return mappedTransactions
-        .filter(<T>(x: T): x is NonNullable<T> => x != null)
-        .flat();
-    })();
+    const mappedTransactions = await Promise.all(
+      transactionsDomain.map((transaction) => {
+        return this.mapTransaction(transaction, chainId, safe, onlyTrusted);
+      }),
+    );
+    const transactions = mappedTransactions
+      .filter(<T>(x: T): x is NonNullable<T> => x != null)
+      .flat();
 
     // The groups respect timezone offset – this was done for grouping only.
     const transactionsByDay = this.groupByDay(transactions, timezoneOffset);
@@ -102,13 +83,32 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private getPreviousItem(
-    offset: number,
-    transactions: TransactionDomain[],
-  ): TransactionDomain | null {
-    // More than 1 element is required to get the previous page date
-    if (offset <= 0 || transactions.length <= 1) return null;
-    return transactions[0];
+  private async getPreviousTransaction(args: {
+    offset: number;
+    transactionsDomain: TransactionDomain[];
+    chainId: string;
+    safe: Safe;
+    onlyTrusted: boolean;
+  }): Promise<TransactionItem | undefined> {
+    // More than 1 element is required to get the previous transaction
+    if (args.offset <= 0 || args.transactionsDomain.length <= 1) {
+      return;
+    }
+    const prevDomainTransaction = args.transactionsDomain[0];
+    // We map in order to filter last list item against it
+    const mappedPreviousTransaction = await this.mapTransaction(
+      prevDomainTransaction,
+      args.chainId,
+      args.safe,
+      args.onlyTrusted,
+    );
+    // Remove first transaction that was requested to get previous day timestamp
+    args.transactionsDomain = args.transactionsDomain.slice(1);
+
+    return Array.isArray(mappedPreviousTransaction)
+      ? // All transfers should have same execution date but the last is "true" previous
+        mappedPreviousTransaction.at(-1)
+      : mappedPreviousTransaction;
   }
 
   private groupByDay(
