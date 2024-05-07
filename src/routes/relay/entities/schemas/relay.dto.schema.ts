@@ -6,11 +6,9 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 export const RelayDtoSchema = z.object({
   to: AddressSchema,
   data: HexSchema,
-  version: z
-    .string()
-    .refine((value) => semver.parse(value) !== null, {
-      message: 'Invalid semver string',
-    }),
+  version: z.string().refine((value) => semver.parse(value) !== null, {
+    message: 'Invalid semver string',
+  }),
   gasLimit: z
     .string()
     .optional()

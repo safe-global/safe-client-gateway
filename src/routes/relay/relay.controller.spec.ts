@@ -1629,7 +1629,7 @@ describe('Relay controller', () => {
               .send({
                 to: safeAddress,
                 data,
-                version
+                version,
               });
           }
 
@@ -1638,7 +1638,7 @@ describe('Relay controller', () => {
             .send({
               to: safeAddress,
               data,
-              version
+              version,
             })
             .expect(429)
             .expect({
@@ -1679,7 +1679,7 @@ describe('Relay controller', () => {
           .send({
             to: safe.address,
             data,
-            version
+            version,
           })
           .expect(503);
       });
@@ -1731,7 +1731,7 @@ describe('Relay controller', () => {
             .send({
               to: safeAddress,
               data,
-              version
+              version,
             });
         }
 
