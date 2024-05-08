@@ -3,6 +3,7 @@ import { get } from 'lodash';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';
 const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';
+const HEADER_ORIGIN = 'Origin';
 
 export function formatRouteLogMessage(
   statusCode: number,
@@ -19,11 +20,12 @@ export function formatRouteLogMessage(
   safe_app_user_agent: string | null;
   status_code: number;
   detail: string | null;
+  origin: string | null;
 } {
   const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
-  const safe_app_user_agent =
-    request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
+  const safeAppUserAgent = request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
   const chainId = request.params['chainId'] ?? null;
+  const origin = request.header(HEADER_ORIGIN) ?? null;
 
   return {
     chain_id: chainId,
@@ -32,9 +34,10 @@ export function formatRouteLogMessage(
     response_time_ms: performance.now() - startTimeMs,
     route: request.route.path,
     path: request.url,
-    safe_app_user_agent: safe_app_user_agent,
+    safe_app_user_agent: safeAppUserAgent,
     status_code: statusCode,
     detail: detail ?? null,
+    origin,
   };
 }
 

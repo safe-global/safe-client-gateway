@@ -88,6 +88,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/server-error',
       safe_app_user_agent: null,
       status_code: 500,
+      origin: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -115,6 +116,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/server-data-source-error',
       safe_app_user_agent: null,
       status_code: 501,
+      origin: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -135,6 +137,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/client-error',
       safe_app_user_agent: null,
       status_code: 405,
+      origin: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -155,6 +158,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/success',
       safe_app_user_agent: null,
       status_code: 200,
+      origin: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -178,6 +182,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/success/:chainId',
       safe_app_user_agent: null,
       status_code: 200,
+      origin: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -200,6 +205,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/server-error-non-http',
       safe_app_user_agent: null,
       status_code: 500,
+      origin: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -224,6 +230,7 @@ describe('RouteLoggerInterceptor tests', () => {
       route: '/test/success',
       safe_app_user_agent: safeAppUserAgentHeader,
       status_code: 200,
+      origin: null,
     });
   });
 });
