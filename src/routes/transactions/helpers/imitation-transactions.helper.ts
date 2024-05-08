@@ -20,7 +20,7 @@ export class ImitationTransactionsHelper {
 
   /**
    * Filters out outgoing ERC20 transfers that imitate their direct predecessor in
-   * value and vanity (but not the exact) address of the recipient.
+   * value and have a recipient address that is not the same but matches in vanity.
    *
    * @param transactions - list of transactions to filter
    * @param previousTransaction - transaction to compare last {@link transactions} against
@@ -76,29 +76,29 @@ export class ImitationTransactionsHelper {
         return item;
       }
 
-      // ...from vanity (but not exact) recipient address
-      const isSameRecipient =
-        txInfo.recipient.value === prevTxInfo.recipient.value;
-      if (isSameRecipient) {
-        return item;
-      }
-      return !this.isVanityAddress(
+      // ...from recipient that has the same vanity but is not the same address
+      return !this.isImitatorAddress(
         txInfo.recipient.value,
         prevTxInfo.recipient.value,
       );
     });
   }
 
-  private isVanityAddress(address1: string, address2: string): boolean {
+  private isImitatorAddress(address1: string, address2: string): boolean {
     const a1 = address1.toLowerCase();
     const a2 = address2.toLowerCase();
 
-    const isVanityPrefix =
+    // Same address is not an imitation
+    if (a1 === a2) {
+      return false;
+    }
+
+    const isSamePrefix =
       // Ignore `0x` prefix
       a1.slice(2, this.vanityAddressChars) ===
       a2.slice(2, this.vanityAddressChars);
-    const isVanitySuffix =
+    const isSameSuffix =
       a1.slice(-this.vanityAddressChars) === a2.slice(-this.vanityAddressChars);
-    return isVanityPrefix && isVanitySuffix;
+    return isSamePrefix && isSameSuffix;
   }
 }
