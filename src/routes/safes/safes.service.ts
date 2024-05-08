@@ -208,7 +208,7 @@ export class SafesService {
   }): number {
     return args.transactions.reduce(
       (acc, { confirmationsRequired, confirmations }) => {
-        const isConfirmed = confirmationsRequired === 0;
+        const isConfirmed = !!confirmations && confirmations.length >= confirmationsRequired;
         const isSignable =
           !isConfirmed &&
           !confirmations?.some((confirmation) => {
