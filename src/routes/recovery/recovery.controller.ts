@@ -49,7 +49,8 @@ export class RecoveryController {
   @UseGuards(AuthGuard)
   async deleteRecoveryModule(
     @Param('chainId') chainId: string,
-    @Param('moduleAddress') moduleAddress: string,
+    @Param('moduleAddress', new ValidationPipe(AddressSchema))
+    moduleAddress: `0x${string}`,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @Auth() authPayload: AuthPayload,

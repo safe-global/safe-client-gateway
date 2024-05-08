@@ -1,4 +1,4 @@
 export type AlertsDeletion = {
   chainId: string;
-  address: string;
+  address: `0x${string}`;
 };

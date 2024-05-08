@@ -51,7 +51,7 @@ export class RecoveryService {
 
   async deleteRecoveryModule(args: {
     chainId: string;
-    moduleAddress: string;
+    moduleAddress: `0x${string}`;
     safeAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void> {

@@ -43,6 +43,7 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import { getAddress } from 'viem';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -414,7 +415,7 @@ describe('Recovery (Unit)', () => {
 
   describe('DELETE remove recovery module for a Safe', () => {
     it('Success', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress())
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
@@ -451,7 +452,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 403 if no token is present', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
 
@@ -466,7 +467,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 403 if token is not a JWT', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const accessToken = faker.string.alphanumeric();
@@ -484,7 +485,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 403 if token is not yet valid', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
@@ -510,7 +511,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 403 if token has expired', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
@@ -536,7 +537,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 401 if chain_id does not match that of the request', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
@@ -569,7 +570,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('should return 401 if token is not from that of a Safe owner', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
@@ -600,7 +601,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('Should return the alerts provider error message', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
@@ -653,7 +654,7 @@ describe('Recovery (Unit)', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
