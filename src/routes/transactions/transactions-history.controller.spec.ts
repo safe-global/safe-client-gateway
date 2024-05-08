@@ -62,11 +62,13 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { erc20TransferFromEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  const vanityAddressChars = 4;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -75,6 +77,12 @@ describe('Transactions History Controller (Unit)', () => {
       ...configuration(),
       mappings: {
         ...configuration().mappings,
+        imitationTransactions: {
+          vanityAddressChars,
+        },
+        features: {
+          imitationFiltering: true,
+        },
         history: {
           maxNestedTransfers: 5,
         },
@@ -1341,5 +1349,449 @@ describe('Transactions History Controller (Unit)', () => {
           },
         });
       });
+  });
+
+  describe('Address poisoning', () => {
+    function getVanityAddress(address: `0x${string}`): `0x${string}` {
+      const prefix = address.slice(0, 2 + vanityAddressChars);
+      const suffix = address.slice(-vanityAddressChars);
+
+      const vanityAddress =
+        prefix +
+        faker.finance
+          .ethereumAddress()
+          .slice(2 + vanityAddressChars, -vanityAddressChars) +
+        suffix;
+
+      return getAddress(vanityAddress);
+    }
+
+    it('should filter out outgoing ERC-20 transfers that imitate a `transfer` (multisig) predecessor', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder()
+        .with('owners', [
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
+        ])
+        .build();
+      const multisigTransactionToAddress = faker.finance.ethereumAddress();
+      const multisigTransactionValue = faker.string.numeric();
+      const multisigTransaction = multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('value', '0')
+        .with('operation', 0)
+        .with('safeTxGas', 0)
+        .with('executionDate', new Date('2022-11-16T07:31:11Z'))
+        .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
+        .with('isExecuted', true)
+        .with('isSuccessful', true)
+        .with('origin', null)
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'transfer')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', 'to')
+                .with('type', 'address')
+                .with('value', multisigTransactionToAddress)
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', 'value')
+                .with('type', 'uint256')
+                .with('value', multisigTransactionValue)
+                .build(),
+            ])
+            .build(),
+        )
+        .with('confirmationsRequired', 2)
+        .with('confirmations', [
+          confirmationBuilder().with('owner', safe.owners[0]).build(),
+          confirmationBuilder().with('owner', safe.owners[1]).build(),
+        ])
+        .build();
+      const multisigTransactionToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', getAddress(multisigTransaction.to))
+        .build();
+
+      const imitationTransactionExecutionDate = faker.date.future({
+        refDate: multisigTransaction.executionDate!,
+      });
+      const imitationTransaction = ethereumTransactionBuilder()
+        .with('executionDate', imitationTransactionExecutionDate)
+        .with('transfers', [
+          erc20TransferToJson(
+            erc20TransferBuilder()
+              .with('executionDate', imitationTransactionExecutionDate)
+              .with('from', safe.address)
+              .with(
+                'to',
+                getVanityAddress(getAddress(multisigTransactionToAddress)),
+              )
+              .with('value', multisigTransactionValue)
+              .build(),
+          ) as Transfer,
+        ])
+        .build();
+      const imitationTransactionToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', imitationTransaction.transfers![0].to)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getMultisigTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+        const getImitationTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${imitationTransaction.transfers![0].to}`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === getAllTransactions) {
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                ethereumTransactionToJson(imitationTransaction),
+                multisigTransactionToJson(multisigTransaction),
+              ])
+              .build(),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({ data: safe, status: 200 });
+        }
+        if (url === getMultisigTokenUrlPattern) {
+          return Promise.resolve({
+            data: multisigTransactionToken,
+            status: 200,
+          });
+        }
+        if (url === getImitationTokenUrlPattern) {
+          return Promise.resolve({
+            data: imitationTransactionToken,
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true`,
+        )
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toStrictEqual([
+            {
+              type: 'DATE_LABEL',
+              timestamp: expect.any(Number),
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                timestamp: 1668583871000,
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: {
+                    value: multisigTransaction.safe,
+                    logoUri: null,
+                    name: null,
+                  },
+                  recipient: {
+                    value: multisigTransactionToAddress,
+                    logoUri: null,
+                    name: null,
+                  },
+                  richDecodedInfo: null,
+                  humanDescription: null,
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'ERC20',
+                    tokenAddress: getAddress(multisigTransaction.to),
+                    tokenName: multisigTransactionToken.name,
+                    tokenSymbol: multisigTransactionToken.symbol,
+                    logoUri: multisigTransactionToken.logoUri,
+                    trusted: null,
+                    decimals: multisigTransactionToken.decimals,
+                    value: multisigTransactionValue,
+                  },
+                },
+                executionInfo: {
+                  type: 'MULTISIG',
+                  nonce: multisigTransaction.nonce,
+                  confirmationsRequired: 2,
+                  confirmationsSubmitted: 2,
+                  missingSigners: null,
+                },
+                safeAppInfo: null,
+              },
+              conflictType: 'None',
+            },
+          ]);
+        });
+    });
+
+    it('should filter out outgoing ERC-20 transfers that imitate a `transferFrom` (non-multisig) predecessor', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const executionDate = new Date('2022-11-16T07:31:11Z');
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const amount = faker.number.bigInt();
+      const erc20TransferFrom = erc20TransferFromEncoder()
+        .with('amount', amount)
+        .with('recipient', recipient);
+      const transfer = erc20TransferBuilder()
+        .with('executionDate', executionDate)
+        .with('from', safe.address)
+        .with('to', recipient)
+        .with('value', amount.toString())
+        .build();
+      const transaction = ethereumTransactionBuilder()
+        .with('executionDate', executionDate)
+        .with('data', erc20TransferFrom.encode())
+        .with('transfers', [erc20TransferToJson(transfer) as Transfer])
+        .build();
+      const token = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', transfer.tokenAddress)
+        .build();
+      const imitationRecipient = getVanityAddress(recipient);
+
+      const imitationErc20TransferFrom = erc20TransferFromEncoder()
+        .with('amount', amount)
+        .with('recipient', imitationRecipient);
+      const imitationExecutionDate = faker.date.future({
+        refDate: executionDate,
+      });
+      const imitationTransfer = erc20TransferBuilder()
+        .with('executionDate', imitationExecutionDate)
+        .with('from', safe.address)
+        .with('to', imitationRecipient)
+        .with('value', transfer.value)
+        .build();
+      const imitationTransaction = ethereumTransactionBuilder()
+        .with('executionDate', imitationExecutionDate)
+        .with('data', imitationErc20TransferFrom.encode())
+        .with('transfers', [erc20TransferToJson(imitationTransfer) as Transfer])
+        .build();
+      const imitationToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', imitationTransfer.tokenAddress)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transfer.tokenAddress}`;
+        const getImitationTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${imitationTransfer.tokenAddress}`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === getAllTransactions) {
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                ethereumTransactionToJson(imitationTransaction),
+                ethereumTransactionToJson(transaction),
+              ])
+              .build(),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({ data: safe, status: 200 });
+        }
+        if (url === getTokenUrl) {
+          return Promise.resolve({
+            data: token,
+            status: 200,
+          });
+        }
+        if (url === getImitationTokenUrlPattern) {
+          return Promise.resolve({
+            data: imitationToken,
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true`,
+        )
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results).toStrictEqual([
+            {
+              type: 'DATE_LABEL',
+              timestamp: expect.any(Number),
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `transfer_${safe.address}_${transfer.transferId}`,
+                timestamp: 1668583871000,
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: {
+                    value: safe.address,
+                    logoUri: null,
+                    name: null,
+                  },
+                  recipient: {
+                    value: transfer.to,
+                    logoUri: null,
+                    name: null,
+                  },
+                  richDecodedInfo: null,
+                  humanDescription: null,
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'ERC20',
+                    tokenAddress: transfer.tokenAddress,
+                    tokenName: token.name,
+                    tokenSymbol: token.symbol,
+                    logoUri: token.logoUri,
+                    trusted: token.trusted,
+                    decimals: token.decimals,
+                    value: transfer.value,
+                  },
+                },
+                executionInfo: null,
+                safeAppInfo: null,
+              },
+              conflictType: 'None',
+            },
+          ]);
+        });
+    });
+
+    it('should not filter imitation transfers if untrusted those untrusted are requested', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder()
+        .with('owners', [
+          getAddress(faker.finance.ethereumAddress()),
+          getAddress(faker.finance.ethereumAddress()),
+        ])
+        .build();
+      const multisigTransactionToAddress = faker.finance.ethereumAddress();
+      const multisigTransactionValue = faker.string.numeric();
+      const multisigTransaction = multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('value', '0')
+        .with('operation', 0)
+        .with('safeTxGas', 0)
+        .with('executionDate', new Date('2022-11-16T07:31:11Z'))
+        .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
+        .with('isExecuted', true)
+        .with('isSuccessful', true)
+        .with('origin', null)
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'transfer')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', 'to')
+                .with('type', 'address')
+                .with('value', multisigTransactionToAddress)
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', 'value')
+                .with('type', 'uint256')
+                .with('value', multisigTransactionValue)
+                .build(),
+            ])
+            .build(),
+        )
+        .with('confirmationsRequired', 2)
+        .with('confirmations', [
+          confirmationBuilder().with('owner', safe.owners[0]).build(),
+          confirmationBuilder().with('owner', safe.owners[1]).build(),
+        ])
+        .build();
+      const multisigTransactionToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', getAddress(multisigTransaction.to))
+        .build();
+
+      const imitationTransactionExecutionDate = faker.date.future({
+        refDate: multisigTransaction.executionDate!,
+      });
+      const imitationTransaction = ethereumTransactionBuilder()
+        .with('executionDate', imitationTransactionExecutionDate)
+        .with('transfers', [
+          erc20TransferToJson(
+            erc20TransferBuilder()
+              .with('executionDate', imitationTransactionExecutionDate)
+              .with('from', safe.address)
+              .with(
+                'to',
+                getVanityAddress(getAddress(multisigTransactionToAddress)),
+              )
+              .with('value', multisigTransactionValue)
+              .build(),
+          ) as Transfer,
+        ])
+        .build();
+      const imitationTransactionToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('address', imitationTransaction.transfers![0].to)
+        .build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getMultisigTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+        const getImitationTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${imitationTransaction.transfers![0].to}`;
+        if (url === getChainUrl) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        if (url === getAllTransactions) {
+          return Promise.resolve({
+            data: pageBuilder()
+              .with('results', [
+                ethereumTransactionToJson(imitationTransaction),
+                multisigTransactionToJson(multisigTransaction),
+              ])
+              .build(),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({ data: safe, status: 200 });
+        }
+        if (url === getMultisigTokenUrlPattern) {
+          return Promise.resolve({
+            data: multisigTransactionToken,
+            status: 200,
+          });
+        }
+        if (url === getImitationTokenUrlPattern) {
+          return Promise.resolve({
+            data: imitationTransactionToken,
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
+        )
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.results.length).toBe(4);
+        });
+    });
   });
 });
