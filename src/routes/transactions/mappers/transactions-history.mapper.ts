@@ -126,7 +126,7 @@ export class TransactionsHistoryMapper {
     safe: Safe;
     previousTransaction: TransactionItem | undefined;
     onlyTrusted: boolean;
-  }) {
+  }): Promise<TransactionItem[]> {
     const mappedTransactions = await Promise.all(
       args.transactionsDomain.map((transaction) => {
         return this.mapTransaction(
