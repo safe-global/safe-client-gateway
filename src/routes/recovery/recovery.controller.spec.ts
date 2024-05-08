@@ -415,7 +415,7 @@ describe('Recovery (Unit)', () => {
 
   describe('DELETE remove recovery module for a Safe', () => {
     it('Success', async () => {
-      const moduleAddress = getAddress(faker.finance.ethereumAddress())
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
