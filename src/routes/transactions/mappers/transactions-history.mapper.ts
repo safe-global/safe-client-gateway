@@ -141,7 +141,7 @@ export class TransactionsHistoryMapper {
       .filter(<T>(x: T): x is NonNullable<T> => x != null)
       .flat();
 
-    if (this.isImitationFilteringEnabled || !args.onlyTrusted) {
+    if (!this.isImitationFilteringEnabled || !args.onlyTrusted) {
       return transactionItems;
     }
 
