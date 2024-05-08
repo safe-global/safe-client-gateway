@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  HttpCode,
-  Res,
-  Inject,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpCode, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AuthService } from '@/routes/auth/auth.service';
@@ -15,9 +6,8 @@ import {
   VerifyAuthMessageDto,
   VerifyAuthMessageDtoSchema,
 } from '@/routes/auth/entities/verify-auth-message.dto.entity';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 /**
  * The AuthController is responsible for handling authentication:
@@ -33,17 +23,12 @@ import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
 
-  constructor(
-    private readonly authService: AuthService,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Get('nonce')
-  async getNonce(@Req() req: Request): Promise<{
+  async getNonce(): Promise<{
     nonce: string;
   }> {
-    // TODO: Remove after debugging
-    this.loggingService.info(`/v1/auth/nonce, Origin: ${req.header('Origin')}`);
     return this.authService.getNonce();
   }
 
