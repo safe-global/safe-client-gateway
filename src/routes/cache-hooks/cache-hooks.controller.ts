@@ -12,7 +12,6 @@ import { CacheHooksService } from '@/routes/cache-hooks/cache-hooks.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
-import { PreExecutionLogGuard } from '@/routes/cache-hooks/guards/pre-execution.guard';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -43,7 +42,7 @@ export class CacheHooksController {
     );
   }
 
-  @UseGuards(PreExecutionLogGuard, BasicAuthGuard)
+  @UseGuards(BasicAuthGuard)
   @Post('/hooks/events')
   @UseFilters(EventProtocolChangedFilter)
   @HttpCode(202)
