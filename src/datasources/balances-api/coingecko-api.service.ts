@@ -114,12 +114,11 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<number | null> {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
-      const nativeCoinId = args.chain.pricesProviderNativeCoin;
-      if (!nativeCoinId) {
-        throw new Error(
-          `pricesProviderNativeCoin not configured for chain ${args.chain.chainId}`,
+      const nativeCoinId =
+        args.chain.pricesProviderNativeCoin ??
+        this.configurationService.getOrThrow<string>(
+          `balances.providers.safe.prices.chains.${args.chain.chainId}.nativeCoin`,
         );
-      }
       const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
@@ -172,12 +171,11 @@ export class CoingeckoApi implements IPricesApi {
       const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
         address.toLowerCase(),
       );
-      const chainName = args.chain.pricesProviderChainName;
-      if (!chainName) {
-        throw new Error(
-          `pricesProviderChainName not configured for chain ${args.chain.chainId}`,
+      const chainName =
+        args.chain.pricesProviderChainName ??
+        this.configurationService.getOrThrow<string>(
+          `balances.providers.safe.prices.chains.${args.chain.chainId}.chainName`,
         );
-      }
       const pricesFromCache = await this._getTokenPricesFromCache({
         chainName,
         tokenAddresses: lowerCaseTokenAddresses,

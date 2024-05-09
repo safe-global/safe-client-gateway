@@ -250,6 +250,67 @@ describe('CoingeckoAPI', () => {
     );
   });
 
+  // TODO: remove this after the prices provider data is migrated to the Config Service
+  it('should return and cache one token price (using the fallback configuration)', async () => {
+    fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
+    const chain = chainBuilder().with('pricesProviderChainName', null).build();
+    const chainName = faker.string.sample();
+    const tokenAddress = faker.finance.ethereumAddress();
+    const fiatCode = faker.finance.currencyCode();
+    const lowerCaseFiatCode = fiatCode.toLowerCase();
+    const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
+    const coingeckoPrice: AssetPrice = {
+      [tokenAddress]: { [lowerCaseFiatCode]: price },
+    };
+    mockCacheService.get.mockResolvedValue(undefined);
+    mockNetworkService.get.mockResolvedValue({
+      data: coingeckoPrice,
+      status: 200,
+    });
+    fakeConfigurationService.set(
+      `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
+      chainName,
+    );
+    const service = new CoingeckoApi(
+      fakeConfigurationService,
+      mockCacheFirstDataSource,
+      mockNetworkService,
+      mockCacheService,
+      mockLoggingService,
+    );
+
+    const assetPrice = await service.getTokenPrices({
+      chain,
+      tokenAddresses: [tokenAddress],
+      fiatCode,
+    });
+
+    const expectedCacheDir = new CacheDir(
+      `${chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
+      '',
+    );
+    expect(assetPrice).toEqual([
+      { [tokenAddress]: { [lowerCaseFiatCode]: price } },
+    ]);
+    expect(mockNetworkService.get).toHaveBeenCalledWith({
+      url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+      networkRequest: {
+        params: {
+          contract_addresses: tokenAddress,
+          vs_currencies: lowerCaseFiatCode,
+        },
+      },
+    });
+    expect(mockCacheService.get).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.get).toHaveBeenCalledWith(expectedCacheDir);
+    expect(mockCacheService.set).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.set).toHaveBeenCalledWith(
+      expectedCacheDir,
+      JSON.stringify({ [tokenAddress]: { [lowerCaseFiatCode]: price } }),
+      pricesTtlSeconds,
+    );
+  });
+
   it('should return and cache multiple token prices', async () => {
     const chain = chainBuilder().build();
     const fiatCode = faker.finance.currencyCode();
@@ -700,6 +761,46 @@ describe('CoingeckoAPI', () => {
       networkRequest: {
         params: {
           ids: chain.pricesProviderNativeCoin,
+          vs_currencies: lowerCaseFiatCode,
+        },
+      },
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      expireTimeSeconds: nativeCoinPricesTtlSeconds,
+    });
+  });
+
+  // TODO: remove this after the prices provider data is migrated to the Config Service
+  it('should return the native coin price (using the fallback configuration)', async () => {
+    const chain = chainBuilder().with('pricesProviderNativeCoin', null).build();
+    const nativeCoinId = faker.string.sample();
+    const fiatCode = faker.finance.currencyCode();
+    const lowerCaseFiatCode = fiatCode.toLowerCase();
+    const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
+    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
+    fakeConfigurationService.set(
+      `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
+      nativeCoinId,
+    );
+    const service = new CoingeckoApi(
+      fakeConfigurationService,
+      mockCacheFirstDataSource,
+      mockNetworkService,
+      mockCacheService,
+      mockLoggingService,
+    );
+
+    await service.getNativeCoinPrice({ chain, fiatCode });
+
+    expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(
+        `${nativeCoinId}_native_coin_price_${lowerCaseFiatCode}`,
+        '',
+      ),
+      url: `${coingeckoBaseUri}/simple/price`,
+      networkRequest: {
+        params: {
+          ids: nativeCoinId,
           vs_currencies: lowerCaseFiatCode,
         },
       },
