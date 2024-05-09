@@ -76,6 +76,8 @@ export const ChainSchema = z.object({
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
   recommendedMasterCopyVersion: z.string(),
+  pricesProviderChainName: z.string().nullish().default(null),
+  pricesProviderNativeCoin: z.string().nullish().default(null),
 });
 
 export const ChainPageSchema = buildPageSchema(ChainSchema);

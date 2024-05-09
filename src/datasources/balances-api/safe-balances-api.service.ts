@@ -10,6 +10,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Injectable } from '@nestjs/common';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -39,6 +40,7 @@ export class SafeBalancesApi implements IBalancesApi {
   async getBalances(args: {
     safeAddress: string;
     fiatCode: string;
+    chain: Chain;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
@@ -61,7 +63,7 @@ export class SafeBalancesApi implements IBalancesApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
 
-      return this._mapBalances(data, args.fiatCode);
+      return this._mapBalances(data, args.fiatCode, args.chain);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -122,13 +124,14 @@ export class SafeBalancesApi implements IBalancesApi {
   private async _mapBalances(
     balances: Balance[],
     fiatCode: string,
+    chain: Chain,
   ): Promise<Balance[]> {
     const tokenAddresses = balances
       .map((balance) => balance.tokenAddress)
       .filter((address): address is `0x${string}` => address !== null);
 
     const assetPrices = await this.coingeckoApi.getTokenPrices({
-      chainId: this.chainId,
+      chain,
       fiatCode,
       tokenAddresses,
     });
@@ -145,7 +148,7 @@ export class SafeBalancesApi implements IBalancesApi {
         let price: number | null;
         if (tokenAddress === null) {
           price = await this.coingeckoApi.getNativeCoinPrice({
-            chainId: this.chainId,
+            chain,
             fiatCode,
           });
         } else {

@@ -311,17 +311,19 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
-      'should allow undefined %s and default to null',
-      (field) => {
-        const chain = chainBuilder().build();
-        delete chain[field];
+    it.each([
+      ['chainLogoUri' as const],
+      ['ensRegistryAddress' as const],
+      ['pricesProviderChainName' as const],
+      ['pricesProviderNativeCoin' as const],
+    ])('should allow undefined %s and default to null', (field) => {
+      const chain = chainBuilder().build();
+      delete chain[field];
 
-        const result = ChainSchema.safeParse(chain);
+      const result = ChainSchema.safeParse(chain);
 
-        expect(result.success && result.data[field]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[field]).toBe(null);
+    });
 
     it.each([
       ['chainId' as const],

@@ -3,6 +3,7 @@ import { IBalancesRepository } from '@/domain/balances/balances.repository.inter
 import { Balance } from '@/domain/balances/entities/balance.entity';
 import { BalanceSchema } from '@/domain/balances/entities/balance.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 @Injectable()
 export class BalancesRepository implements IBalancesRepository {
@@ -12,13 +13,15 @@ export class BalancesRepository implements IBalancesRepository {
   ) {}
 
   async getBalances(args: {
-    chainId: string;
+    chain: Chain;
     safeAddress: string;
     fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
+    const api = await this.balancesApiManager.getBalancesApi(
+      args.chain.chainId,
+    );
     const balances = await api.getBalances(args);
     return balances.map((balance) => BalanceSchema.parse(balance));
   }

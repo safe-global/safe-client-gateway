@@ -37,5 +37,7 @@ export function chainBuilder(): IBuilder<Chain> {
     )
     .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
     .with('features', [faker.word.sample(), faker.word.sample()])
-    .with('recommendedMasterCopyVersion', faker.system.semver());
+    .with('recommendedMasterCopyVersion', faker.system.semver())
+    .with('pricesProviderChainName', faker.company.name())
+    .with('pricesProviderNativeCoin', faker.finance.currencyName());
 }

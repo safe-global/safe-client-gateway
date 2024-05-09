@@ -227,10 +227,13 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
@@ -239,9 +242,6 @@ describe('Balances Controller (Unit)', () => {
             sort: 'value',
           },
         });
-        expect(networkService.get.mock.calls[1][0].url).toBe(
-          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-        );
       });
 
       it('returns large numbers as is (not in scientific notation)', async () => {
@@ -376,10 +376,13 @@ describe('Balances Controller (Unit)', () => {
 
         expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
@@ -388,9 +391,6 @@ describe('Balances Controller (Unit)', () => {
             sort: 'value',
           },
         });
-        expect(networkService.get.mock.calls[1][0].url).toBe(
-          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
-        );
       });
     });
 
