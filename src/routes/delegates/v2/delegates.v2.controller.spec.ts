@@ -26,11 +26,12 @@ import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { omit } from 'lodash';
+import { Server } from 'net';
 import * as request from 'supertest';
 import { getAddress } from 'viem';
 
 describe('Delegates controller', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 

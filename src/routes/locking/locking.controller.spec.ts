@@ -31,9 +31,10 @@ import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Locking (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let lockingBaseUri: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 

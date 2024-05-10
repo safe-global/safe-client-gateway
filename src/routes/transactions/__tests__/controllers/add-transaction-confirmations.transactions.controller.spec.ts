@@ -27,9 +27,10 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entities/add-confirmation.dto.builder';
 import { getAddress } from 'viem';
+import { Server } from 'net';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 

@@ -20,9 +20,10 @@ import {
   IQueueReadiness,
   QueueReadiness,
 } from '@/domain/interfaces/queue-readiness.interface';
+import { Server } from 'net';
 
 describe('Health Controller tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
   let queuesApi: jest.MockedObjectDeep<IQueueReadiness>;
 

@@ -65,6 +65,7 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -98,7 +99,7 @@ describe('Alerts (Unit)', () => {
     .build();
 
   describe('/alerts route enabled', () => {
-    let app: INestApplication;
+    let app: INestApplication<Server>;
     let signingKey: string;
     let networkService: jest.MockedObjectDeep<INetworkService>;
     let safeConfigUrl: string | undefined;
@@ -1602,7 +1603,7 @@ describe('Alerts (Unit)', () => {
     });
 
     describe('/alerts route disabled', () => {
-      let app: INestApplication;
+      let app: INestApplication<Server>;
 
       beforeEach(async () => {
         jest.resetAllMocks();

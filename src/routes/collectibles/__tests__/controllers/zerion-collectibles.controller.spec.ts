@@ -28,9 +28,10 @@ import {
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Zerion Collectibles Controller', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
   let zerionChainIds: string[];

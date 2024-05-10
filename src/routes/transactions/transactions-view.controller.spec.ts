@@ -26,9 +26,10 @@ import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encod
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { faker } from '@faker-js/faker';
+import { Server } from 'net';
 
 describe('TransactionsViewController tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let swapsApiUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -194,7 +195,9 @@ describe('TransactionsViewController tests', () => {
           },
           receiver: order.receiver,
           owner: order.owner,
-          fullAppData: JSON.parse(order.fullAppData),
+          fullAppData:
+            typeof order.fullAppData === 'string' &&
+            JSON.parse(order.fullAppData),
         }),
       );
   });

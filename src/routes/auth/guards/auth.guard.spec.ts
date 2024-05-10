@@ -18,6 +18,7 @@ import {
   JwtConfigurationModule,
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
+import { Server } from 'net';
 
 @Controller()
 class TestController {
@@ -29,7 +30,7 @@ class TestController {
 }
 
 describe('AuthGuard', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
   beforeEach(async () => {

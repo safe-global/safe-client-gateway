@@ -86,7 +86,12 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
 
       // Get the alias name
       const name = Object.entries(deploymentAliases).find(([, aliases]) => {
-        return aliases.includes(deployment.contractName);
+        if (typeof deployment.contractName === 'string') {
+          const contractName: string = deployment.contractName;
+          return aliases.includes(contractName);
+        } else {
+          throw new Error('contractName must be a string');
+        }
       })?.[0];
 
       if (!name) {
@@ -96,9 +101,16 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
       }
 
       // Add the version to the map
-      for (const chainId of Object.keys(deployment.networkAddresses)) {
-        versionsByDeploymentByChainId[name][chainId] ??= [];
-        versionsByDeploymentByChainId[name][chainId]?.push(deployment.version);
+      if (typeof deployment.networkAddresses === 'object') {
+        for (const chainId of Object.keys(deployment.networkAddresses)) {
+          if (typeof deployment.version === 'string') {
+            const version: string = deployment.version;
+            versionsByDeploymentByChainId[name][chainId] ??= [];
+            versionsByDeploymentByChainId[name][chainId]?.push(version);
+          } else {
+            throw new Error('version must be a string');
+          }
+        }
       }
     }
   }

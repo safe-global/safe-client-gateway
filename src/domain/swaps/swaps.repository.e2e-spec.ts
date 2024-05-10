@@ -9,6 +9,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import configuration from '@/config/entities/configuration';
+import { Server } from 'net';
 
 const orderIds = {
   '1': {
@@ -102,7 +103,7 @@ const orderIds = {
   },
 };
 describe('CowSwap E2E tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let repository: ISwapsRepository;
 
   beforeAll(async () => {

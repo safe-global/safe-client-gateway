@@ -62,9 +62,10 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Transactions History Controller (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   const prefixLength = 3;
@@ -827,8 +828,8 @@ describe('Transactions History Controller (Unit)', () => {
         expect(
           body.results.filter(
             (item: TransactionItem) => item.type === 'TRANSACTION',
-          ),
-        ).toHaveLength(maxNestedTransfers);
+          ).length,
+        ).toBe(maxNestedTransfers);
       });
   });
 

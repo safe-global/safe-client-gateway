@@ -7,9 +7,10 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
+import { Server } from 'net';
 
 describe('Get Safe Apps e2e test', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let redisClient: RedisClientType;
   const chainId = '1'; // Mainnet
   const cacheKeyPrefix = crypto.randomUUID();

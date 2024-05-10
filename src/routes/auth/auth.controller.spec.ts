@@ -29,11 +29,12 @@ import {
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
 
 describe('AuthController', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
 
   beforeEach(async () => {

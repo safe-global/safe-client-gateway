@@ -4,9 +4,10 @@ import * as request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { Server } from 'net';
 
 describe('Get health e2e test', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
 
   beforeAll(async () => {
     const cacheKeyPrefix = crypto.randomUUID();

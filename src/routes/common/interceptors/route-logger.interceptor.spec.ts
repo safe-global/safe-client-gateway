@@ -11,6 +11,7 @@ import * as request from 'supertest';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
+import { Server } from 'net';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -56,7 +57,7 @@ class TestController {
 }
 
 describe('RouteLoggerInterceptor tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
