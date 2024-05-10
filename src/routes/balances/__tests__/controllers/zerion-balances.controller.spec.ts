@@ -101,7 +101,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        const chainName = app
+        const chainName: string = app
           .get(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
@@ -249,7 +249,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        const chainName = app
+        const chainName: string = app
           .get(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
@@ -467,7 +467,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
         const currency = faker.finance.currencyCode();
-        const chainName = app
+        const chainName: string = app
           .get(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
@@ -537,7 +537,7 @@ describe('Balances Controller (Unit)', () => {
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
-        const chainName = app
+        const chainName: string = app
           .get(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,

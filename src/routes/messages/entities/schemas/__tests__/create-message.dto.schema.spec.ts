@@ -6,8 +6,9 @@ import { ZodError } from 'zod';
 
 describe('CreateMessageDtoSchema', () => {
   it('should validate a valid record message', () => {
+    const message: Record<string, unknown> = JSON.parse(fakeJson());
     const createMessageDto = createMessageDtoBuilder()
-      .with('message', JSON.parse(fakeJson()))
+      .with('message', message)
       .build();
 
     const result = CreateMessageDtoSchema.safeParse(createMessageDto);

@@ -25,7 +25,7 @@ export class TenderlySignatureGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest();
 
     const signature = this.getSignature(request.headers);
     const digest = this.getDigest(request);
