@@ -108,10 +108,9 @@ export class RedisCacheService
    */
   async onModuleDestroy(): Promise<void> {
     this.loggingService.info('Closing Redis connection');
-    const forceQuitTimeout = setTimeout(
-      this.forceQuit.bind(this),
-      this.quitTimeoutInSeconds * 1000,
-    );
+    const forceQuitTimeout = setTimeout(() => {
+      this.forceQuit.bind(this);
+    }, this.quitTimeoutInSeconds * 1000);
     await this.client.quit();
     clearTimeout(forceQuitTimeout);
     this.loggingService.info('Redis connection closed');
