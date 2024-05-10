@@ -162,12 +162,7 @@ describe('Swap Order Helper tests', () => {
     const error = new Error('Order not found');
     swapsRepositoryMock.getOrder.mockRejectedValue(error);
 
-    await expect(
-      target.getOrder({
-        chainId,
-        orderUid: orderUid,
-      }),
-    ).rejects.toThrow(error);
+    await expect(target.getOrder({ chainId, orderUid })).rejects.toThrow(error);
 
     expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(1);
     expect(swapsRepositoryMock.getOrder).toHaveBeenCalledWith(
