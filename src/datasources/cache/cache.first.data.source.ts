@@ -97,7 +97,7 @@ export class CacheFirstDataSource {
     this.loggingService.debug({ type: 'cache_hit', key, field });
     const cachedData = JSON.parse(cached);
     if (cachedData?.response?.status === 404) {
-      // TODO: create a CachedData type to avoid this these type assertions
+      // TODO: create a CachedData type to avoid these type assertions.
       const url: URL = cachedData.url;
       const response: Response = cachedData.response;
       throw new NetworkResponseError(url, response, cachedData?.data);
