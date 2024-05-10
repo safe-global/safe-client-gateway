@@ -780,7 +780,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Should limit the amount of nested transfers', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const maxNestedTransfers = app
+    const maxNestedTransfers: number = app
       .get(IConfigurationService)
       .getOrThrow('mappings.history.maxNestedTransfers');
     const date = new Date();
@@ -828,8 +828,8 @@ describe('Transactions History Controller (Unit)', () => {
         expect(
           body.results.filter(
             (item: TransactionItem) => item.type === 'TRANSACTION',
-          ).length,
-        ).toBe(maxNestedTransfers);
+          ),
+        ).toHaveLength(maxNestedTransfers);
       });
   });
 
