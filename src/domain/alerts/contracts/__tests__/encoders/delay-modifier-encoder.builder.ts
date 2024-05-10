@@ -44,15 +44,15 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
 
     const data = encodeAbiParameters(
       parseAbiParameters(TransactionAddedEventBuilder.NON_INDEXED_PARAMS),
-      [args.to!, args.value!, args.data!, args.operation!],
+      [args.to, args.value, args.data, args.operation],
     );
 
     const topics = encodeEventTopics({
       abi,
       eventName: 'TransactionAdded',
       args: {
-        queueNonce: args.queueNonce!,
-        txHash: args.txHash!,
+        queueNonce: args.queueNonce,
+        txHash: args.txHash,
       },
     }) as TransactionAddedEvent['topics'];
 

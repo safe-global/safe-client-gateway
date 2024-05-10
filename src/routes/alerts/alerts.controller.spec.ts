@@ -630,7 +630,7 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
             )
             .encode();
 
@@ -1171,7 +1171,7 @@ describe('Alerts (Unit)', () => {
           .with('data', multiSend.encode())
           .with(
             'to',
-            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
           )
           .encode();
 
@@ -1286,7 +1286,7 @@ describe('Alerts (Unit)', () => {
           .with('data', multiSend.encode())
           .with(
             'to',
-            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress!),
+            getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
           )
           .encode();
 

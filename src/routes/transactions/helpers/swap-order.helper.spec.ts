@@ -165,7 +165,7 @@ describe('Swap Order Helper tests', () => {
     await expect(
       target.getOrder({
         chainId,
-        orderUid: orderUid as `0x${string}`,
+        orderUid: orderUid,
       }),
     ).rejects.toThrow(error);
 
