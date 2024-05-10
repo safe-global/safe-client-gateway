@@ -256,7 +256,7 @@ export class CoingeckoApi implements IPricesApi {
       const { key, field } = cacheDir;
       if (cached != null) {
         this.loggingService.debug({ type: 'cache_hit', key, field });
-        const cachedAssetPrice = JSON.parse(cached);
+        const cachedAssetPrice: AssetPrice = JSON.parse(cached);
         result.push(cachedAssetPrice);
       } else {
         this.loggingService.debug({ type: 'cache_miss', key, field });

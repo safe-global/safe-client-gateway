@@ -102,7 +102,9 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
 
       // Add the version to the map
       if (typeof deployment.networkAddresses === 'object') {
-        for (const chainId of Object.keys(deployment.networkAddresses)) {
+        const networkAddresses: Record<string, string> =
+          deployment.networkAddresses;
+        for (const chainId of Object.keys(networkAddresses)) {
           if (typeof deployment.version === 'string') {
             const version: string = deployment.version;
             versionsByDeploymentByChainId[name][chainId] ??= [];
@@ -111,6 +113,8 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
             throw new Error('version must be a string');
           }
         }
+      } else {
+        throw new Error('networkAddresses must be an object');
       }
     }
   }

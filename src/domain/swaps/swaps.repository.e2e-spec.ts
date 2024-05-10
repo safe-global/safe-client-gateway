@@ -144,7 +144,7 @@ describe('CowSwap E2E tests', () => {
             ...expectedObject,
             fullAppData:
               typeof expectedObject.fullAppData === 'string' &&
-              JSON.parse(expectedObject.fullAppData),
+              JSON.parse(expectedObject.fullAppData as string),
           });
         });
       });

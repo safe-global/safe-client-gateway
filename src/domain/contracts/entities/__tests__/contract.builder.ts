@@ -10,6 +10,6 @@ export function contractBuilder(): IBuilder<Contract> {
     .with('name', faker.word.sample())
     .with('displayName', faker.word.words())
     .with('logoUri', faker.internet.url({ appendSlash: false }))
-    .with('contractAbi', JSON.parse(fakeJson()))
+    .with('contractAbi', JSON.parse(fakeJson()) as Record<string, unknown>)
     .with('trustedForDelegateCall', faker.datatype.boolean());
 }
