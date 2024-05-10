@@ -25,23 +25,23 @@ export class RequestScopedLoggingService implements ILoggingService {
     this.buildNumber = configurationService.get('about.buildNumber');
   }
 
-  info(message: string | unknown): void {
+  info(message: unknown): void {
     this.logger.log('info', this.formatMessage(message));
   }
 
-  error(message: string | unknown): void {
+  error(message: unknown): void {
     this.logger.log('error', this.formatMessage(message));
   }
 
-  warn(message: string | unknown): void {
+  warn(message: unknown): void {
     this.logger.log('warn', this.formatMessage(message));
   }
 
-  debug(message: string | unknown): void {
+  debug(message: unknown): void {
     this.logger.log('debug', this.formatMessage(message));
   }
 
-  private formatMessage(message: string | unknown): {
+  private formatMessage(message: unknown): {
     message: unknown;
     build_number: string | undefined;
     request_id: string;

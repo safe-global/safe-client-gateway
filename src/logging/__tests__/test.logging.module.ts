@@ -12,22 +12,22 @@ class TestLoggingService implements ILoggingService {
     this.isSilent = configurationService.getOrThrow<boolean>('log.silent');
   }
 
-  debug(message: string | unknown): void {
+  debug(message: unknown): void {
     if (this.isSilent) return;
     console.debug(message);
   }
 
-  error(message: string | unknown): void {
+  error(message: unknown): void {
     if (this.isSilent) return;
     console.error(message);
   }
 
-  info(message: string | unknown): void {
+  info(message: unknown): void {
     if (this.isSilent) return;
     console.info(message);
   }
 
-  warn(message: string | unknown): void {
+  warn(message: unknown): void {
     if (this.isSilent) return;
     console.warn(message);
   }
