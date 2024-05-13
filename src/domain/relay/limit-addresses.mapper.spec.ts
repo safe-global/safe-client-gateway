@@ -35,7 +35,7 @@ import {
   getSafeL2SingletonDeployment,
   getSafeSingletonDeployment,
 } from '@safe-global/safe-deployments';
-import { Hex, getAddress } from 'viem';
+import { getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 
@@ -97,7 +97,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('value', faker.number.bigInt())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -116,7 +116,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('data', erc20TransferEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -135,7 +135,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('data', erc20TransferFromEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -154,7 +154,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('data', erc20ApproveEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -174,7 +174,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', '0x')
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -194,7 +194,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', addOwnerWithThresholdEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -214,7 +214,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', changeThresholdEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -234,7 +234,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', enableModuleEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -254,7 +254,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', disableModuleEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -274,7 +274,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', removeOwnerEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -294,7 +294,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', setFallbackHandlerEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -314,7 +314,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', setGuardEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -334,7 +334,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', swapOwnerEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -353,7 +353,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('data', execTransactionEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -373,7 +373,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('value', faker.number.bigInt())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockRejectedValue(true);
 
@@ -398,7 +398,7 @@ describe('LimitAddressesMapper', () => {
                 'data',
                 erc20TransferEncoder().with('to', safeAddress).encode(),
               )
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -425,7 +425,7 @@ describe('LimitAddressesMapper', () => {
                   .with('recipient', safeAddress)
                   .encode(),
               )
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -453,7 +453,7 @@ describe('LimitAddressesMapper', () => {
                   .with('recipient', recipient)
                   .encode(),
               )
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -476,7 +476,7 @@ describe('LimitAddressesMapper', () => {
             const data = execTransactionEncoder()
               .with('to', safeAddress)
               .with('data', erc20ApproveEncoder().encode())
-              .encode() as Hex;
+              .encode();
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -498,7 +498,7 @@ describe('LimitAddressesMapper', () => {
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
               .with('to', safeAddress)
-              .encode() as Hex;
+              .encode();
             // Unofficial mastercopy
             mockSafeRepository.getSafe.mockRejectedValue(
               new Error('Not official mastercopy'),
@@ -523,7 +523,7 @@ describe('LimitAddressesMapper', () => {
         const version = '0.0.1';
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
-        const data = execTransactionEncoder().encode() as Hex;
+        const data = execTransactionEncoder().encode();
         // Official mastercopy
         mockSafeRepository.getSafe.mockResolvedValue(safe);
 
