@@ -37,14 +37,17 @@ export class ImitationTransactionsHelper {
     return transactions.filter((item, i, arr) => {
       // Executed by Safe - cannot be imitation
       if (item.transaction.executionInfo) {
-        return item;
+        return true;
       }
 
+      // Transaction list is in date-descending order. We compare each transaction with the next
+      // unless we are comparing the last transaction, in which case we compare it with the
+      // "previous transaction" (the first transaction of the subsequent page).
       const prevItem = i === arr.length - 1 ? previousTransaction : arr[i + 1];
 
       // No reference transaction to filter against
       if (!prevItem) {
-        return item;
+        return true;
       }
 
       const txInfo = item.transaction.txInfo;
@@ -58,7 +61,7 @@ export class ImitationTransactionsHelper {
         !isErc20Transfer(txInfo.transferInfo) ||
         !isErc20Transfer(prevTxInfo.transferInfo)
       ) {
-        return item;
+        return true;
       }
 
       // ...that are outgoing
@@ -66,14 +69,14 @@ export class ImitationTransactionsHelper {
       const isPrevOutgoing =
         prevTxInfo.direction === TransferDirection.Outgoing;
       if (!isOutgoing || !isPrevOutgoing) {
-        return item;
+        return true;
       }
 
       // Imitation transfers are of the same value...
       const isSameValue =
         txInfo.transferInfo.value === prevTxInfo.transferInfo.value;
       if (!isSameValue) {
-        return item;
+        return true;
       }
 
       // ...from recipient that has the same vanity but is not the same address
@@ -95,8 +98,8 @@ export class ImitationTransactionsHelper {
 
     const isSamePrefix =
       // Ignore `0x` prefix
-      a1.slice(2, this.vanityAddressChars) ===
-      a2.slice(2, this.vanityAddressChars);
+      a1.slice(2, 2 + this.vanityAddressChars) ===
+      a2.slice(2, 2 + this.vanityAddressChars);
     const isSameSuffix =
       a1.slice(-this.vanityAddressChars) === a2.slice(-this.vanityAddressChars);
     return isSamePrefix && isSameSuffix;
