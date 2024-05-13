@@ -212,7 +212,7 @@ export interface ITransactionApi {
 
   postMessage(args: {
     safeAddress: string;
-    message: string | unknown;
+    message: unknown;
     safeAppId: number | null;
     signature: string;
   }): Promise<Message>;
