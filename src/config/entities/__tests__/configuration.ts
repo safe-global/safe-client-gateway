@@ -201,7 +201,8 @@ export default (): ReturnType<typeof configuration> => ({
   },
   mappings: {
     imitationTransactions: {
-      vanityAddressChars: faker.number.int(),
+      prefixLength: faker.number.int(),
+      suffixLength: faker.number.int(),
     },
     history: {
       maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),

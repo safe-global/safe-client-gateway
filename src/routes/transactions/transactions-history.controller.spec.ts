@@ -67,7 +67,8 @@ describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  const vanityAddressChars = 4;
+  const prefixLength = 2;
+  const suffixLength = 4;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -77,7 +78,8 @@ describe('Transactions History Controller (Unit)', () => {
       mappings: {
         ...configuration().mappings,
         imitationTransactions: {
-          vanityAddressChars,
+          prefixLength,
+          suffixLength,
         },
         features: {
           imitationFiltering: true,
