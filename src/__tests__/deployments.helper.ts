@@ -86,12 +86,10 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
 
       // Get the alias name
       const name = Object.entries(deploymentAliases).find(([, aliases]) => {
-        if (typeof deployment.contractName === 'string') {
-          const contractName: string = deployment.contractName;
-          return aliases.includes(contractName);
-        } else {
+        if (typeof deployment.contractName !== 'string') {
           throw new Error('contractName must be a string');
         }
+        return aliases.includes(deployment.contractName);
       })?.[0];
 
       if (!name) {
