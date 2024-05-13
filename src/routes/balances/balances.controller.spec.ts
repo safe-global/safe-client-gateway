@@ -94,7 +94,7 @@ describe('Balances Controller (Unit)', () => {
         .getOrThrow('balances.providers.safe.prices.apiKey');
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProviderNativeCoin!]: {
+        [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -116,7 +116,7 @@ describe('Balances Controller (Unit)', () => {
               data: nativeCoinPriceProviderResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -195,7 +195,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`,
+        `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
@@ -213,7 +213,7 @@ describe('Balances Controller (Unit)', () => {
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
-          ids: chain.pricesProviderNativeCoin,
+          ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
       });
@@ -245,7 +245,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -282,7 +282,7 @@ describe('Balances Controller (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProviderNativeCoin!]: {
+        [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -356,7 +356,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -405,7 +405,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`,
+        `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
     });
 
@@ -456,7 +456,7 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`:
+            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.reject();
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -515,7 +515,7 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProviderChainName}`:
+            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.resolve({
                 data: tokenPriceProviderResponse,
                 status: 200,

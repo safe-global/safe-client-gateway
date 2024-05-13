@@ -54,6 +54,11 @@ export const GasPriceSchema = z.array(
   ]),
 );
 
+export const PricesProviderSchema = z.object({
+  chainName: z.string().nullish().default(null),
+  nativeCoin: z.string().nullish().default(null),
+});
+
 export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
@@ -67,6 +72,7 @@ export const ChainSchema = z.object({
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   nativeCurrency: NativeCurrencySchema,
+  pricesProvider: PricesProviderSchema,
   transactionService: z.string().url(),
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,
@@ -76,8 +82,6 @@ export const ChainSchema = z.object({
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
   recommendedMasterCopyVersion: z.string(),
-  pricesProviderChainName: z.string().nullish().default(null),
-  pricesProviderNativeCoin: z.string().nullish().default(null),
 });
 
 export const ChainPageSchema = buildPageSchema(ChainSchema);

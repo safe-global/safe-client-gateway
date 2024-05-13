@@ -114,8 +114,9 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<number | null> {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
+      // TODO: remove configurationService fallback when fully migrated.
       const nativeCoinId =
-        args.chain.pricesProviderNativeCoin ??
+        args.chain.pricesProvider.nativeCoin ??
         this.configurationService.getOrThrow<string>(
           `balances.providers.safe.prices.chains.${args.chain.chainId}.nativeCoin`,
         );
@@ -171,8 +172,9 @@ export class CoingeckoApi implements IPricesApi {
       const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
         address.toLowerCase(),
       );
+      // TODO: remove configurationService fallback when fully migrated.
       const chainName =
-        args.chain.pricesProviderChainName ??
+        args.chain.pricesProvider.chainName ??
         this.configurationService.getOrThrow<string>(
           `balances.providers.safe.prices.chains.${args.chain.chainId}.chainName`,
         );

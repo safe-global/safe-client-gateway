@@ -9,6 +9,7 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { sortBy } from 'lodash';
 import { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -167,14 +168,14 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
-      `${chain.pricesProviderChainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
       '',
     );
     expect(assetPrice).toEqual([
       { [tokenAddress]: { [lowerCaseFiatCode]: price } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
           'x-cg-pro-api-key': coingeckoApiKey,
@@ -225,14 +226,14 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
-      `${chain.pricesProviderChainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
+      `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
       '',
     );
     expect(assetPrice).toEqual([
       { [tokenAddress]: { [lowerCaseFiatCode]: price } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         params: {
           contract_addresses: tokenAddress,
@@ -253,7 +254,12 @@ describe('CoingeckoAPI', () => {
   // TODO: remove this after the prices provider data is migrated to the Config Service
   it('should return and cache one token price (using the fallback configuration)', async () => {
     fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
-    const chain = chainBuilder().with('pricesProviderChainName', null).build();
+    const chain = chainBuilder()
+      .with(
+        'pricesProvider',
+        pricesProviderBuilder().with('chainName', null).build(),
+      )
+      .build();
     const chainName = faker.string.sample();
     const tokenAddress = faker.finance.ethereumAddress();
     const fiatCode = faker.finance.currencyCode();
@@ -348,7 +354,7 @@ describe('CoingeckoAPI', () => {
       { [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
           'x-cg-pro-api-key': coingeckoApiKey,
@@ -366,26 +372,26 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.set).toHaveBeenCalledTimes(3);
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -395,7 +401,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -405,7 +411,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -459,7 +465,7 @@ describe('CoingeckoAPI', () => {
       { [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
           'x-cg-pro-api-key': coingeckoApiKey,
@@ -478,13 +484,13 @@ describe('CoingeckoAPI', () => {
     // high-refresh-rate token price is cached with highRefreshRateTokensTtlSeconds
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -495,13 +501,13 @@ describe('CoingeckoAPI', () => {
     // another token price is cached with pricesCacheTtlSeconds
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -558,7 +564,7 @@ describe('CoingeckoAPI', () => {
       ),
     );
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
           'x-cg-pro-api-key': coingeckoApiKey,
@@ -572,19 +578,19 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
@@ -592,7 +598,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenNthCalledWith(
       1,
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -603,7 +609,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenNthCalledWith(
       2,
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
       JSON.stringify({
@@ -660,7 +666,7 @@ describe('CoingeckoAPI', () => {
       ),
     );
     expect(mockNetworkService.get).toHaveBeenCalledWith({
-      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProviderChainName}`,
+      url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
           'x-cg-pro-api-key': coingeckoApiKey,
@@ -674,19 +680,19 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
-        `${chain.pricesProviderChainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
@@ -717,7 +723,7 @@ describe('CoingeckoAPI', () => {
 
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
-        `${chain.pricesProviderNativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
         '',
       ),
       url: `${coingeckoBaseUri}/simple/price`,
@@ -726,7 +732,7 @@ describe('CoingeckoAPI', () => {
           'x-cg-pro-api-key': coingeckoApiKey,
         },
         params: {
-          ids: chain.pricesProviderNativeCoin,
+          ids: chain.pricesProvider.nativeCoin,
           vs_currencies: lowerCaseFiatCode,
         },
       },
@@ -754,13 +760,13 @@ describe('CoingeckoAPI', () => {
 
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
-        `${chain.pricesProviderNativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
+        `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
         '',
       ),
       url: `${coingeckoBaseUri}/simple/price`,
       networkRequest: {
         params: {
-          ids: chain.pricesProviderNativeCoin,
+          ids: chain.pricesProvider.nativeCoin,
           vs_currencies: lowerCaseFiatCode,
         },
       },
@@ -771,7 +777,12 @@ describe('CoingeckoAPI', () => {
 
   // TODO: remove this after the prices provider data is migrated to the Config Service
   it('should return the native coin price (using the fallback configuration)', async () => {
-    const chain = chainBuilder().with('pricesProviderNativeCoin', null).build();
+    const chain = chainBuilder()
+      .with(
+        'pricesProvider',
+        pricesProviderBuilder().with('nativeCoin', null).build(),
+      )
+      .build();
     const nativeCoinId = faker.string.sample();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
