@@ -141,7 +141,9 @@ export class TransactionsHistoryMapper {
       .filter(<T>(x: T): x is NonNullable<T> => x != null)
       .flat();
 
-    if (!this.isImitationFilteringEnabled || !args.onlyTrusted) {
+    // TODO: Make conditional according to args.onlyTrusted if clients fetch
+    // trusted regardless of token lists
+    if (!this.isImitationFilteringEnabled) {
       return transactionItems;
     }
 
