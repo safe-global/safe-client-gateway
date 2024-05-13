@@ -41,6 +41,22 @@ export class RecoveryService {
       throw new UnauthorizedException();
     }
 
+    // After after owner check to avoid unnecessary request
+    const isEnabled = await this.safeRepository
+      .getSafesByModule({
+        chainId: args.chainId,
+        moduleAddress: args.addRecoveryModuleDto.moduleAddress,
+      })
+      .then(({ safes }) => {
+        return safes.some((safe) => safe === args.safeAddress);
+      })
+
+      // Swallow error to avoid leaking information
+      .catch(() => false);
+    if (!isEnabled) {
+      throw new UnauthorizedException();
+    }
+
     const contract: AlertsRegistration = {
       chainId: args.chainId,
       address: args.addRecoveryModuleDto.moduleAddress,
