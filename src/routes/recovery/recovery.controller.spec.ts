@@ -40,6 +40,10 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { getSecondsUntil } from '@/domain/common/utils/time';
+import { getAddress } from 'viem';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication;
@@ -48,6 +52,7 @@ describe('Recovery (Unit)', () => {
   let alertsProject: string;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -89,6 +94,7 @@ describe('Recovery (Unit)', () => {
     alertsProject = configurationService.get('alerts-api.project');
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -105,13 +111,14 @@ describe('Recovery (Unit)', () => {
   describe('POST add recovery module for a Safe', () => {
     it('Success', async () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -142,24 +149,164 @@ describe('Recovery (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
         .expect(200);
     });
 
-    it('should prevent requests for modules not on specified Safe', async () => {
+    it('should return 403 if no token is present', async () => {
       const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .send(addRecoveryModuleDto)
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if token is not a JWT', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const accessToken = faker.string.alphanumeric();
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if token is not yet valid', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const notBefore = faker.date.future();
+      const accessToken = jwtService.sign(authPayloadDto, {
+        notBefore: getSecondsUntil(notBefore),
+      });
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if token has expired', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto, {
+        expiresIn: 0, // Now
+      });
+      jest.advanceTimersByTime(1_000);
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if chain_id does not match that of the request', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ status: 200, data: chain });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+        ) {
+          return Promise.resolve({ status: 200, data: safe });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(401);
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if token is not from that of a Safe owner', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ status: 200, data: chain });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+        ) {
+          return Promise.resolve({ status: 200, data: safe });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(401);
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if module is not enabled on the Safe', async () => {
+      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -190,148 +337,30 @@ describe('Recovery (Unit)', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        })
-        .expect(403);
-    });
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
+        .expect(401);
 
-    it('should prevent requests older than 5 minutes', async () => {
-      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
-
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ status: 200, data: chain });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-
-      jest.advanceTimersByTime(5 * 60 * 1000);
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        })
-        .expect(403);
-    });
-
-    it('should prevent non-Safe owner requests', async () => {
-      const addRecoveryModuleDto = addRecoveryModuleDtoBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().build(); // Signer is not an owner
-      const timestamp = jest.now();
-      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
-
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ status: 200, data: chain });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        })
-        .expect(403);
+      expect(networkService.post).not.toHaveBeenCalled();
     });
 
     it('should get a validation error', async () => {
       const addRecoveryModuleDto = {
         moduleAddress: faker.number.int(), // Invalid address
       };
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
-
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ status: 200, data: chain });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/address`
-          ? Promise.resolve({ status: 200, data: {} })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(addRecoveryModuleDto)
         .expect(422)
         .expect({
           statusCode: 422,
@@ -341,6 +370,9 @@ describe('Recovery (Unit)', () => {
           path: ['moduleAddress'],
           message: 'Expected string, received number',
         });
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
     });
 
     it('Should return the alerts provider error message', async () => {
@@ -374,15 +406,6 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       networkService.post.mockImplementation(({ url }) =>
@@ -396,10 +419,7 @@ describe('Recovery (Unit)', () => {
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        });
+        .send(addRecoveryModuleDto);
     });
 
     it('Should fail with An error occurred', async () => {
@@ -432,15 +452,6 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${addRecoveryModuleDto.moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       networkService.post.mockImplementation(({ url }) =>
@@ -454,23 +465,21 @@ describe('Recovery (Unit)', () => {
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/recovery`)
         .set('Safe-Wallet-Signature', signature)
         .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          ...addRecoveryModuleDto,
-          signer: signer.address,
-        });
+        .send(addRecoveryModuleDto);
     });
   });
 
   describe('DELETE remove recovery module for a Safe', () => {
     it('Success', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -480,15 +489,6 @@ describe('Recovery (Unit)', () => {
           url === `${chain.transactionService}/api/v1/safes/${safe.address}`
         ) {
           return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
@@ -503,124 +503,105 @@ describe('Recovery (Unit)', () => {
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(204);
     });
 
-    it('should prevent requests for modules not on specified Safe', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+    it('should return 403 if no token is present', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
-
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ status: 200, data: chain });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [] },
-          });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-      networkService.delete.mockImplementation(({ url }) =>
-        url ===
-        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
-          ? Promise.resolve({ status: 204, data: {} })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
+      const safe = safeBuilder().build();
 
       await request(app.getHttpServer())
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
         .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.delete).not.toHaveBeenCalled();
     });
 
-    it('should prevent requests older than 5 minutes', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+    it('should return 403 if token is not a JWT', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const accessToken = faker.string.alphanumeric();
 
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ status: 200, data: chain });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ status: 200, data: safe });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
-        return Promise.reject(`No matching rule for url: ${url}`);
-      });
-      networkService.delete.mockImplementation(({ url }) =>
-        url ===
-        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
-          ? Promise.resolve({ status: 204, data: {} })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
-      jest.advanceTimersByTime(5 * 60 * 1000);
-
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       await request(app.getHttpServer())
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.delete).not.toHaveBeenCalled();
     });
 
-    it('should prevent non-Safe owner requests', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+    it('should return 403 if token is not yet valid', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().build(); // Signer is not an owner
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const notBefore = faker.date.future();
+      const accessToken = jwtService.sign(authPayloadDto, {
+        notBefore: getSecondsUntil(notBefore),
+      });
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.delete).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if token has expired', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto, {
+        expiresIn: 0, // Now
+      });
+      jest.advanceTimersByTime(1_000);
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.delete).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if chain_id does not match that of the request', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ status: 200, data: chain });
@@ -630,45 +611,61 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.delete.mockImplementation(({ url }) =>
-        url ===
-        `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`
-          ? Promise.resolve({ status: 204, data: {} })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
 
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
       await request(app.getHttpServer())
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
-        .expect(403);
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(networkService.delete).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if token is not from that of a Safe owner', async () => {
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ status: 200, data: chain });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+        ) {
+          return Promise.resolve({ status: 200, data: safe });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      expect(() => jwtService.verify(accessToken)).not.toThrow();
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(networkService.delete).not.toHaveBeenCalled();
     });
 
     it('Should return the alerts provider error message', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
       const error = new NetworkResponseError(
         new URL(
           `${alertsUrl}/api/v1/account/${alertsAccount}/project/${alertsProject}/contract/${chain.chainId}/${moduleAddress}`,
@@ -691,15 +688,6 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       networkService.delete.mockImplementation(({ url }) =>
@@ -713,11 +701,7 @@ describe('Recovery (Unit)', () => {
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(400)
         .expect({
           message: 'Malformed body',
@@ -726,14 +710,15 @@ describe('Recovery (Unit)', () => {
     });
 
     it('Should fail with An error occurred', async () => {
-      const moduleAddress = faker.finance.ethereumAddress();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
+      const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
-      const message = `disable-recovery-alerts-${chain.chainId}-${safe.address}-${moduleAddress}-${signer.address}-${timestamp}`;
-      const signature = await signer.signMessage({ message });
+      const safe = safeBuilder().build();
+      const signerAddress = safe.owners[0];
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', signerAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -755,15 +740,6 @@ describe('Recovery (Unit)', () => {
         ) {
           return Promise.resolve({ status: 200, data: safe });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/modules/${moduleAddress}/safes/`
-        ) {
-          return Promise.resolve({
-            status: 200,
-            data: { safes: [safe.address] },
-          });
-        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
       networkService.delete.mockImplementation(({ url }) =>
@@ -777,11 +753,7 @@ describe('Recovery (Unit)', () => {
         .delete(
           `/v1/chains/${chain.chainId}/safes/${safe.address}/recovery/${moduleAddress}`,
         )
-        .set('Safe-Wallet-Signature', signature)
-        .set('Safe-Wallet-Signature-Timestamp', timestamp.toString())
-        .send({
-          signer: signer.address,
-        })
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(statusCode);
     });
   });

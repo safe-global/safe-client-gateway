@@ -11,10 +11,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { AddRecoveryModuleDto } from '@/routes/recovery/entities/add-recovery-module.dto.entity';
 import { RecoveryService } from '@/routes/recovery/recovery.service';
 import { AddRecoveryModuleDtoSchema } from '@/routes/recovery/entities/schemas/add-recovery-module.dto.schema';
-import { EnableRecoveryAlertsGuard } from '@/routes/recovery/guards/enable-recovery-alerts.guard';
-import { OnlySafeOwnerGuard } from '@/routes/common/guards/only-safe-owner.guard';
-import { TimestampGuard } from '@/routes/email/guards/timestamp.guard';
-import { DisableRecoveryAlertsGuard } from '@/routes/recovery/guards/disable-recovery-alerts.guard';
+import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { Auth } from '@/routes/auth/decorators/auth.decorator';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('recovery')
@@ -27,38 +27,39 @@ export class RecoveryController {
 
   @HttpCode(200)
   @Post()
-  @UseGuards(
-    EnableRecoveryAlertsGuard,
-    TimestampGuard(5 * 60 * 1000), // 5 minutes
-    OnlySafeOwnerGuard,
-  )
+  @UseGuards(AuthGuard)
   async addRecoveryModule(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Body(new ValidationPipe(AddRecoveryModuleDtoSchema))
     addRecoveryModuleDto: AddRecoveryModuleDto,
+    @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return this.recoveryService.addRecoveryModule({
       chainId,
       safeAddress,
       addRecoveryModuleDto,
+      authPayload,
     });
   }
 
   @HttpCode(204)
   @Delete('/:moduleAddress')
-  @UseGuards(
-    DisableRecoveryAlertsGuard,
-    TimestampGuard(5 * 60 * 1000), // 5 minutes
-    OnlySafeOwnerGuard,
-  )
+  @UseGuards(AuthGuard)
   async deleteRecoveryModule(
     @Param('chainId') chainId: string,
-    @Param('moduleAddress') moduleAddress: string,
+    @Param('moduleAddress', new ValidationPipe(AddressSchema))
+    moduleAddress: `0x${string}`,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+    @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return this.recoveryService.deleteRecoveryModule({
       chainId,
       moduleAddress,
+      safeAddress,
+      authPayload,
     });
   }
 }
