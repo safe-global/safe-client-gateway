@@ -223,7 +223,8 @@ export default () => ({
   },
   mappings: {
     imitationTransactions: {
-      vanityAddressChars: parseInt(process.env.VANITY_ADDRESS_CHARS ?? `${4}`),
+      prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
+      suffixLength: parseInt(process.env.VANITY_ADDRESS_CHARS ?? `${4}`),
     },
     history: {
       maxNestedTransfers: parseInt(

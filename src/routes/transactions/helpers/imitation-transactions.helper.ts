@@ -8,13 +8,17 @@ import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-
 import { Inject } from '@nestjs/common';
 
 export class ImitationTransactionsHelper {
-  private readonly vanityAddressChars: number;
+  private readonly prefixLength: number;
+  private readonly suffixLength: number;
 
   constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
   ) {
-    this.vanityAddressChars = configurationService.getOrThrow(
-      'mappings.imitationTransactions.vanityAddressChars',
+    this.prefixLength = configurationService.getOrThrow(
+      'mappings.imitationTransactions.prefixLength',
+    );
+    this.suffixLength = configurationService.getOrThrow(
+      'mappings.imitationTransactions.suffixLength',
     );
   }
 
@@ -98,10 +102,9 @@ export class ImitationTransactionsHelper {
 
     const isSamePrefix =
       // Ignore `0x` prefix
-      a1.slice(2, 2 + this.vanityAddressChars) ===
-      a2.slice(2, 2 + this.vanityAddressChars);
+      a1.slice(2, 2 + this.prefixLength) === a2.slice(2, 2 + this.prefixLength);
     const isSameSuffix =
-      a1.slice(-this.vanityAddressChars) === a2.slice(-this.vanityAddressChars);
+      a1.slice(-this.suffixLength) === a2.slice(-this.suffixLength);
     return isSamePrefix && isSameSuffix;
   }
 }
