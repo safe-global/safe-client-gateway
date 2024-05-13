@@ -67,7 +67,7 @@ describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  const prefixLength = 2;
+  const prefixLength = 3;
   const suffixLength = 4;
 
   beforeEach(async () => {
