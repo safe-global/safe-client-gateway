@@ -364,6 +364,7 @@ export class TransactionsService {
     paginationData: PaginationData;
     timezoneOffsetMs: number;
     onlyTrusted: boolean;
+    showImitations: boolean;
   }): Promise<TransactionItemPage> {
     const paginationDataAdjusted = this.getAdjustedPaginationForHistory(
       args.paginationData,
@@ -395,6 +396,7 @@ export class TransactionsService {
       args.paginationData.offset,
       args.timezoneOffsetMs,
       args.onlyTrusted,
+      args.showImitations,
     );
 
     return {

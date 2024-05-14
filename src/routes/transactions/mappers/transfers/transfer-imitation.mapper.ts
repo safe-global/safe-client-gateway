@@ -7,7 +7,7 @@ import {
 import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
 import { Inject } from '@nestjs/common';
 
-export class ImitationTransactionsHelper {
+export class TransferImitationMapper {
   private readonly prefixLength: number;
   private readonly suffixLength: number;
 
@@ -15,33 +15,57 @@ export class ImitationTransactionsHelper {
     @Inject(IConfigurationService) configurationService: IConfigurationService,
   ) {
     this.prefixLength = configurationService.getOrThrow(
-      'mappings.imitationTransactions.prefixLength',
+      'mappings.imitation.prefixLength',
     );
     this.suffixLength = configurationService.getOrThrow(
-      'mappings.imitationTransactions.suffixLength',
+      'mappings.imitation.suffixLength',
     );
   }
 
+  mapImitations(args: {
+    transactions: Array<TransactionItem>;
+    previousTransaction: TransactionItem | undefined;
+    showImitations: boolean;
+  }): Array<TransactionItem> {
+    const transactions = this.mapTransferInfoImitation(
+      args.transactions,
+      args.previousTransaction,
+    );
+
+    if (args.showImitations) {
+      return transactions;
+    }
+
+    return transactions.filter(({ transaction }) => {
+      const { txInfo } = transaction;
+      return (
+        !isTransferTransactionInfo(txInfo) ||
+        !isErc20Transfer(txInfo.transferInfo) ||
+        // null by default or explicitly false if not imitation
+        txInfo.transferInfo?.imitation !== true
+      );
+    });
+  }
+
   /**
-   * Filters out outgoing ERC20 transfers that imitate their direct predecessor in
-   * value and have a recipient address that is not the same but matches in vanity.
+   * Flags outgoing ERC20 transfers that imitate their direct predecessor in value
+   * and have a recipient address that is not the same but matches in vanity.
    *
-   * @param transactions - list of transactions to filter
+   * @param transactions - list of transactions to map
    * @param previousTransaction - transaction to compare last {@link transactions} against
    *
    * Note: this only handles singular imitation transfers. It does not handle multiple
    * imitation transfers in a row, nor does it compare batched multiSend transactions
    * as the "distance" between those batched and their imitation may not be immediate.
    */
-  filterOutgoingErc20ImitationTransfers(
+  private mapTransferInfoImitation(
     transactions: Array<TransactionItem>,
-    previousTransaction: TransactionItem | undefined,
+    previousTransaction?: TransactionItem,
   ): Array<TransactionItem> {
-    // TODO: Instead of filtering, mark transactions so client can display them differently
-    return transactions.filter((item, i, arr) => {
+    return transactions.map((item, i, arr) => {
       // Executed by Safe - cannot be imitation
       if (item.transaction.executionInfo) {
-        return true;
+        return item;
       }
 
       // Transaction list is in date-descending order. We compare each transaction with the next
@@ -51,43 +75,43 @@ export class ImitationTransactionsHelper {
 
       // No reference transaction to filter against
       if (!prevItem) {
-        return true;
+        return item;
       }
-
-      const txInfo = item.transaction.txInfo;
-      const prevTxInfo = prevItem.transaction.txInfo;
 
       if (
         // Only consider transfers...
-        !isTransferTransactionInfo(txInfo) ||
-        !isTransferTransactionInfo(prevTxInfo) ||
+        !isTransferTransactionInfo(item.transaction.txInfo) ||
+        !isTransferTransactionInfo(prevItem.transaction.txInfo) ||
         // ...of ERC20s...
-        !isErc20Transfer(txInfo.transferInfo) ||
-        !isErc20Transfer(prevTxInfo.transferInfo)
+        !isErc20Transfer(item.transaction.txInfo.transferInfo) ||
+        !isErc20Transfer(prevItem.transaction.txInfo.transferInfo)
       ) {
-        return true;
+        return item;
       }
 
       // ...that are outgoing
-      const isOutgoing = txInfo.direction === TransferDirection.Outgoing;
+      const isOutgoing =
+        item.transaction.txInfo.direction === TransferDirection.Outgoing;
       const isPrevOutgoing =
-        prevTxInfo.direction === TransferDirection.Outgoing;
+        prevItem.transaction.txInfo.direction === TransferDirection.Outgoing;
       if (!isOutgoing || !isPrevOutgoing) {
-        return true;
+        return item;
       }
 
       // Imitation transfers are of the same value...
       const isSameValue =
-        txInfo.transferInfo.value === prevTxInfo.transferInfo.value;
+        item.transaction.txInfo.transferInfo.value ===
+        prevItem.transaction.txInfo.transferInfo.value;
       if (!isSameValue) {
-        return true;
+        return item;
       }
 
-      // ...from recipient that has the same vanity but is not the same address
-      return !this.isImitatorAddress(
-        txInfo.recipient.value,
-        prevTxInfo.recipient.value,
+      item.transaction.txInfo.transferInfo.imitation = this.isImitatorAddress(
+        item.transaction.txInfo.recipient.value,
+        prevItem.transaction.txInfo.recipient.value,
       );
+
+      return item;
     });
   }
 
