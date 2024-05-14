@@ -89,22 +89,14 @@ describe('Balances Controller (Unit)', () => {
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
       ];
-      const nativeCoinId = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
-        );
       const apiKey = app
         .get(IConfigurationService)
         .getOrThrow('balances.providers.safe.prices.apiKey');
-      const chainName = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-        );
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
+        [chain.pricesProvider.nativeCoin!]: {
+          [currency.toLowerCase()]: 1536.75,
+        },
       };
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
@@ -124,7 +116,7 @@ describe('Balances Controller (Unit)', () => {
               data: nativeCoinPriceProviderResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -203,7 +195,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${pricesProviderUrl}/simple/token_price/${chainName}`,
+        `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
@@ -220,7 +212,10 @@ describe('Balances Controller (Unit)', () => {
       );
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
-        params: { ids: nativeCoinId, vs_currencies: currency.toLowerCase() },
+        params: {
+          ids: chain.pricesProvider.nativeCoin,
+          vs_currencies: currency.toLowerCase(),
+        },
       });
     });
 
@@ -237,11 +232,6 @@ describe('Balances Controller (Unit)', () => {
       ];
       const excludeSpam = true;
       const trusted = true;
-      const chainName = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-        );
       const currency = faker.finance.currencyCode();
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
@@ -255,7 +245,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -291,13 +281,10 @@ describe('Balances Controller (Unit)', () => {
           .build(),
       ];
       const currency = faker.finance.currencyCode();
-      const nativeCoinId = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
-        );
       const nativeCoinPriceProviderResponse = {
-        [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },
+        [chain.pricesProvider.nativeCoin!]: {
+          [currency.toLowerCase()]: 1536.75,
+        },
       };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -356,11 +343,6 @@ describe('Balances Controller (Unit)', () => {
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
       ];
-      const chainName = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-        );
       const currency = faker.finance.currencyCode();
       const tokenPriceProviderResponse = {
         [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
@@ -374,7 +356,7 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+          case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
@@ -423,7 +405,7 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${pricesProviderUrl}/simple/token_price/${chainName}`,
+        `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
     });
 
@@ -465,11 +447,6 @@ describe('Balances Controller (Unit)', () => {
             .with('token', balanceTokenBuilder().with('decimals', 17).build())
             .build(),
         ];
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-          );
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -479,7 +456,7 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.reject();
             default:
               return Promise.reject(new Error(`Could not match ${url}`));
@@ -528,11 +505,6 @@ describe('Balances Controller (Unit)', () => {
             .with('token', balanceTokenBuilder().with('decimals', 17).build())
             .build(),
         ];
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-          );
         const tokenPriceProviderResponse = 'notAnObject';
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -543,7 +515,7 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            case `${pricesProviderUrl}/simple/token_price/${chainName}`:
+            case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.resolve({
                 data: tokenPriceProviderResponse,
                 status: 200,

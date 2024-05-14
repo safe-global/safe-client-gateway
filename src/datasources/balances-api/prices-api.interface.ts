@@ -1,15 +1,16 @@
 import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 export const IPricesApi = Symbol('IPricesApi');
 
 export interface IPricesApi {
   getNativeCoinPrice(args: {
-    chainId: string;
+    chain: Chain;
     fiatCode: string;
   }): Promise<number | null>;
 
   getTokenPrices(args: {
-    chainId: string;
+    chain: Chain;
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]>;

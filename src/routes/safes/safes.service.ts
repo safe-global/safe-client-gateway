@@ -138,13 +138,14 @@ export class SafesService {
 
     const settledOverviews = await Promise.allSettled(
       limitedSafes.map(async ({ chainId, address }) => {
+        const chain = await this.chainsRepository.getChain(chainId);
         const [safe, balances] = await Promise.all([
           this.safeRepository.getSafe({
             chainId,
             address,
           }),
           this.balancesRepository.getBalances({
-            chainId,
+            chain,
             safeAddress: address,
             trusted: args.trusted,
             fiatCode: args.currency,

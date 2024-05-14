@@ -17,6 +17,7 @@ import { difference, get } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { asError } from '@/logging/utils';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -99,15 +100,26 @@ export class CoingeckoApi implements IPricesApi {
       );
   }
 
+  /**
+   * Gets prices for a chain's native coin, trying to get it from cache first.
+   * If it's not found in the cache, it tries to retrieve it from the Coingecko API.
+   *
+   * @param args.chain Chain entity containing the chain-specific configuration
+   * @param args.fiatCode
+   * @returns number representing the native coin price, or null if not found.
+   */
   async getNativeCoinPrice(args: {
-    chainId: string;
+    chain: Chain;
     fiatCode: string;
   }): Promise<number | null> {
     try {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
-      const nativeCoinId = this.configurationService.getOrThrow<string>(
-        `balances.providers.safe.prices.chains.${args.chainId}.nativeCoin`,
-      );
+      // TODO: remove configurationService fallback when fully migrated.
+      const nativeCoinId =
+        args.chain.pricesProvider.nativeCoin ??
+        this.configurationService.getOrThrow<string>(
+          `balances.providers.safe.prices.chains.${args.chain.chainId}.nativeCoin`,
+        );
       const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
@@ -145,13 +157,13 @@ export class CoingeckoApi implements IPricesApi {
    * Gets prices for a set of token addresses, trying to get them from cache first.
    * For those not found in the cache, it tries to retrieve them from the Coingecko API.
    *
-   * @param args.chainName Coingecko's name for the chain (see configuration)
+   * @param args.chain Chain entity containing the chain-specific configuration
    * @param args.tokenAddresses Array of token addresses which prices are being retrieved
    * @param args.fiatCode
    * @returns Array of {@link AssetPrice}
    */
   async getTokenPrices(args: {
-    chainId: string;
+    chain: Chain;
     tokenAddresses: string[];
     fiatCode: string;
   }): Promise<AssetPrice[]> {
@@ -160,9 +172,12 @@ export class CoingeckoApi implements IPricesApi {
       const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
         address.toLowerCase(),
       );
-      const chainName = this.configurationService.getOrThrow<string>(
-        `balances.providers.safe.prices.chains.${args.chainId}.chainName`,
-      );
+      // TODO: remove configurationService fallback when fully migrated.
+      const chainName =
+        args.chain.pricesProvider.chainName ??
+        this.configurationService.getOrThrow<string>(
+          `balances.providers.safe.prices.chains.${args.chain.chainId}.chainName`,
+        );
       const pricesFromCache = await this._getTokenPricesFromCache({
         chainName,
         tokenAddresses: lowerCaseTokenAddresses,
