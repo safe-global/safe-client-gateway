@@ -85,10 +85,6 @@ describe('Transactions History Controller (Unit)', () => {
           suffixLength,
         },
       },
-      log: {
-        ...configuration().log,
-        silent: true,
-      },
       features: {
         ...configuration().features,
         imitationMapping: true,
