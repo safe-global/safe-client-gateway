@@ -1487,7 +1487,7 @@ describe('TransactionApi', () => {
     it('should delete a transaction', async () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v1/transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
         data: {},
@@ -1514,7 +1514,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v1/transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });

@@ -111,7 +111,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.resolve({ data: {}, status: 204 });
       }
@@ -146,7 +146,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.resolve({ data: {}, status: 204 });
       }
@@ -195,7 +195,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     networkService.delete.mockImplementation(({ url }) => {
       if (
         url ===
-        `${chain.transactionService}/api/v1/transactions/${tx.safeTxHash}`
+        `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}`
       ) {
         return Promise.reject(
           new NetworkResponseError(
