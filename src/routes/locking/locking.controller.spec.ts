@@ -120,7 +120,6 @@ describe('Locking (Unit)', () => {
             periodStart: campaign.periodStart.toISOString(),
             periodEnd: campaign.periodEnd.toISOString(),
             lastUpdated: campaign.lastUpdated.toISOString(),
-            activities: null,
           })),
         });
     });
@@ -183,7 +182,6 @@ describe('Locking (Unit)', () => {
             periodStart: campaign.periodStart.toISOString(),
             periodEnd: campaign.periodEnd.toISOString(),
             lastUpdated: campaign.lastUpdated.toISOString(),
-            activities: null,
           })),
         });
 
