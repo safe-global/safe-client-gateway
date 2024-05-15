@@ -363,6 +363,15 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
+    // TODO: remove when fully migrated.
+    it('should allow optional pricesProvider', () => {
+      const chain = chainBuilder().with('pricesProvider', undefined).build();
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(result.success).toBe(true);
+    });
+
     it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
       'should allow undefined %s and default to null',
       (field) => {

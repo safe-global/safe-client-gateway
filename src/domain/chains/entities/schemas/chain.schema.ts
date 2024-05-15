@@ -72,7 +72,8 @@ export const ChainSchema = z.object({
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   nativeCurrency: NativeCurrencySchema,
-  pricesProvider: PricesProviderSchema,
+  // TODO: remove optionality when fully migrated.
+  pricesProvider: PricesProviderSchema.optional(),
   transactionService: z.string().url(),
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,

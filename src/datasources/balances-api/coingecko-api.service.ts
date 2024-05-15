@@ -116,7 +116,7 @@ export class CoingeckoApi implements IPricesApi {
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       // TODO: remove configurationService fallback when fully migrated.
       const nativeCoinId =
-        args.chain.pricesProvider.nativeCoin ??
+        args.chain.pricesProvider?.nativeCoin ??
         this.configurationService.getOrThrow<string>(
           `balances.providers.safe.prices.chains.${args.chain.chainId}.nativeCoin`,
         );
@@ -174,7 +174,7 @@ export class CoingeckoApi implements IPricesApi {
       );
       // TODO: remove configurationService fallback when fully migrated.
       const chainName =
-        args.chain.pricesProvider.chainName ??
+        args.chain.pricesProvider?.chainName ??
         this.configurationService.getOrThrow<string>(
           `balances.providers.safe.prices.chains.${args.chain.chainId}.chainName`,
         );
