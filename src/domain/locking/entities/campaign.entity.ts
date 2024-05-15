@@ -10,7 +10,7 @@ export const CampaignSchema = z.object({
   description: z.string(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  lastUpdated: z.coerce.date(),
+  lastUpdated: z.coerce.date().nullish().default(null),
   activitiesMetadata: z.array(ActivityMetadataSchema).nullish().default(null),
 });
 

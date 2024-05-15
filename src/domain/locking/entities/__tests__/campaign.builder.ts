@@ -24,6 +24,6 @@ export function toJson(campaign: Campaign): unknown {
     ...campaign,
     startDate: campaign.startDate.toISOString(),
     endDate: campaign.endDate.toISOString(),
-    lastUpdated: campaign.lastUpdated.toISOString(),
+    lastUpdated: campaign.lastUpdated?.toISOString(),
   };
 }
