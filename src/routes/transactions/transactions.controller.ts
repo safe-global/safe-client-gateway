@@ -233,6 +233,8 @@ export class TransactionsController {
     timezoneOffsetMs: number,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
+    @Query('imitation', new DefaultValuePipe(true), ParseBoolPipe)
+    imitation: boolean,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({
       chainId,
@@ -241,6 +243,7 @@ export class TransactionsController {
       paginationData,
       timezoneOffsetMs,
       onlyTrusted: trusted,
+      showImitations: imitation,
     });
   }
 
