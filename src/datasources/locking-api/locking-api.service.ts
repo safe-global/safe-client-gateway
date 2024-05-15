@@ -25,6 +25,16 @@ export class LockingApi implements ILockingApi {
       this.configurationService.getOrThrow<string>('locking.baseUri');
   }
 
+  async getCampaignById(campaignId: string): Promise<Campaign> {
+    try {
+      const url = `${this.baseUri}/api/v1/campaigns/${campaignId}`;
+      const { data } = await this.networkService.get<Campaign>({ url });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getCampaigns(args: {
     limit?: number;
     offset?: number;
