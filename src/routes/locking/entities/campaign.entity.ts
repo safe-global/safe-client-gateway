@@ -10,11 +10,11 @@ export class Campaign implements DomainCampaign {
   @ApiProperty()
   description!: string;
   @ApiProperty({ type: String })
-  periodStart!: Date;
+  startDate!: Date;
   @ApiProperty({ type: String })
-  periodEnd!: Date;
+  endDate!: Date;
   @ApiProperty({ type: String })
   lastUpdated!: Date;
   @ApiProperty({ type: [ActivityMetadata] })
-  activities!: ActivityMetadata[] | null;
+  activitiesMetadata!: ActivityMetadata[] | null;
 }

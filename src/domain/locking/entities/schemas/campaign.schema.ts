@@ -5,8 +5,8 @@ export const CampaignSchema = z.object({
   campaignId: z.string(),
   name: z.string(),
   description: z.string(),
-  periodStart: z.coerce.date(),
-  periodEnd: z.coerce.date(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   lastUpdated: z.coerce.date(),
-  activities: z.array(ActivityMetadataSchema).nullish().default(null),
+  activitiesMetadata: z.array(ActivityMetadataSchema).nullish().default(null),
 });

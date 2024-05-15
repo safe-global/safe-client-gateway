@@ -11,19 +11,18 @@ describe('CampaignSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each([
-    'periodStart' as const,
-    'periodEnd' as const,
-    'lastUpdated' as const,
-  ])(`should coerce %s to a date`, (field) => {
-    const campaign = campaignBuilder().build();
+  it.each(['startDate' as const, 'endDate' as const, 'lastUpdated' as const])(
+    `should coerce %s to a date`,
+    (field) => {
+      const campaign = campaignBuilder().build();
 
-    const result = CampaignSchema.safeParse(campaign);
+      const result = CampaignSchema.safeParse(campaign);
 
-    expect(result.success && result.data[field]).toStrictEqual(
-      new Date(campaign[field]),
-    );
-  });
+      expect(result.success && result.data[field]).toStrictEqual(
+        new Date(campaign[field]),
+      );
+    },
+  );
 
   it('should not validate an invalid campaign', () => {
     const campaign = { invalid: 'campaign' };
@@ -55,12 +54,12 @@ describe('CampaignSchema', () => {
         },
         {
           code: 'invalid_date',
-          path: ['periodStart'],
+          path: ['startDate'],
           message: 'Invalid date',
         },
         {
           code: 'invalid_date',
-          path: ['periodEnd'],
+          path: ['endDate'],
           message: 'Invalid date',
         },
         {
