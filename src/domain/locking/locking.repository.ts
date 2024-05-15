@@ -29,7 +29,7 @@ export class LockingRepository implements ILockingRepository {
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Campaign>> {
-    const page = await this.getCampaigns(args);
+    const page = await this.lockingApi.getCampaigns(args);
     return CampaignPageSchema.parse(page);
   }
 

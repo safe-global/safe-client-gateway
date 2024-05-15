@@ -31,6 +31,8 @@ import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
+import { Campaign } from '@/domain/locking/entities/campaign.entity';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -65,6 +67,167 @@ describe('Locking (Unit)', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  describe('GET campaign', () => {
+    it('should get the campaign', async () => {
+      const campaign = campaignBuilder().build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`:
+            return Promise.resolve({ data: campaign, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns/${campaign.campaignId}`)
+        .expect(200)
+        .expect({
+          ...campaign,
+          periodStart: campaign.periodStart.toISOString(),
+          periodEnd: campaign.periodEnd.toISOString(),
+          lastUpdated: campaign.lastUpdated.toISOString(),
+        });
+    });
+
+    it('should get the list of campaigns', async () => {
+      const campaignsPage = pageBuilder<Campaign>()
+        .with('results', [campaignBuilder().build()])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns`:
+            return Promise.resolve({ data: campaignsPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns`)
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: campaignsPage.results.map((campaign) => ({
+            ...campaign,
+            periodStart: campaign.periodStart.toISOString(),
+            periodEnd: campaign.periodEnd.toISOString(),
+            lastUpdated: campaign.lastUpdated.toISOString(),
+            activities: null,
+          })),
+        });
+    });
+
+    it('should validate the list of campaigns', async () => {
+      const invalidCampaigns = [{ invalid: 'campaign' }];
+      const campaignsPage = pageBuilder()
+        .with('results', invalidCampaigns)
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns`:
+            return Promise.resolve({ data: campaignsPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns`)
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('should forward the pagination parameters', async () => {
+      const limit = faker.number.int({ min: 1, max: 10 });
+      const offset = faker.number.int({ min: 1, max: 10 });
+      const campaignsPage = pageBuilder<Campaign>()
+        .with('results', [campaignBuilder().build()])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns`:
+            return Promise.resolve({ data: campaignsPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/locking/campaigns?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        )
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: campaignsPage.results.map((campaign) => ({
+            ...campaign,
+            periodStart: campaign.periodStart.toISOString(),
+            periodEnd: campaign.periodEnd.toISOString(),
+            lastUpdated: campaign.lastUpdated.toISOString(),
+            activities: null,
+          })),
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward errors from the service', async () => {
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(`${lockingBaseUri}/api/v1/campaigns`),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
   });
 
   describe('GET rank', () => {
