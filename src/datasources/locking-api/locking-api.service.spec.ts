@@ -44,6 +44,45 @@ describe('LockingApi', () => {
     );
   });
 
+  describe('getCampaignById', () => {
+    it('should get a campaign by campaignId', async () => {
+      const campaign = campaignBuilder().build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaign,
+        status: 200,
+      });
+
+      const result = await service.getCampaignById(campaign.campaignId);
+
+      expect(result).toEqual(campaign);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`,
+      });
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const campaign = campaignBuilder().build();
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignById(campaign.campaignId),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('getCampaigns', () => {
     it('should get campaigns', async () => {
       const campaignsPage = pageBuilder()
