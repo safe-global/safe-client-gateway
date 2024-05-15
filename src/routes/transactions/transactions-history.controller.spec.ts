@@ -1356,7 +1356,7 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
-  describe('Address poisoning', () => {
+  describe('Imitation transactions', () => {
     describe('Trusted tokens', () => {
       it('should flag outgoing ERC-20 transfers that imitate a direct predecessor', async () => {
         const chain = chainBuilder().build();
