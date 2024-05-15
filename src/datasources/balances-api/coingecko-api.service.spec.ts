@@ -168,6 +168,7 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
+      // @ts-expect-error - TODO: remove after migration
       `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
       '',
     );
@@ -175,6 +176,7 @@ describe('CoingeckoAPI', () => {
       { [tokenAddress]: { [lowerCaseFiatCode]: price } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
@@ -226,6 +228,7 @@ describe('CoingeckoAPI', () => {
     });
 
     const expectedCacheDir = new CacheDir(
+      // @ts-expect-error - TODO: remove after migration
       `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}`,
       '',
     );
@@ -233,6 +236,7 @@ describe('CoingeckoAPI', () => {
       { [tokenAddress]: { [lowerCaseFiatCode]: price } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         params: {
@@ -354,6 +358,7 @@ describe('CoingeckoAPI', () => {
       { [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
@@ -372,18 +377,21 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -391,6 +399,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenCalledTimes(3);
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -401,6 +410,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -411,6 +421,7 @@ describe('CoingeckoAPI', () => {
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -465,6 +476,7 @@ describe('CoingeckoAPI', () => {
       { [anotherTokenAddress]: { [lowerCaseFiatCode]: anotherPrice } },
     ]);
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
@@ -484,12 +496,14 @@ describe('CoingeckoAPI', () => {
     // high-refresh-rate token price is cached with highRefreshRateTokensTtlSeconds
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${highRefreshRateTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -501,12 +515,14 @@ describe('CoingeckoAPI', () => {
     // another token price is cached with pricesCacheTtlSeconds
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.set).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${anotherTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -564,6 +580,7 @@ describe('CoingeckoAPI', () => {
       ),
     );
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
@@ -578,18 +595,21 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -598,6 +618,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenNthCalledWith(
       1,
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -609,6 +630,7 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.set).toHaveBeenNthCalledWith(
       2,
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -666,6 +688,7 @@ describe('CoingeckoAPI', () => {
       ),
     );
     expect(mockNetworkService.get).toHaveBeenCalledWith({
+      // @ts-expect-error - TODO: remove after migration
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
         headers: {
@@ -680,18 +703,21 @@ describe('CoingeckoAPI', () => {
     expect(mockCacheService.get).toHaveBeenCalledTimes(3);
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
     );
     expect(mockCacheService.get).toHaveBeenCalledWith(
       new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}`,
         '',
       ),
@@ -723,6 +749,7 @@ describe('CoingeckoAPI', () => {
 
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
         '',
       ),
@@ -732,6 +759,7 @@ describe('CoingeckoAPI', () => {
           'x-cg-pro-api-key': coingeckoApiKey,
         },
         params: {
+          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: lowerCaseFiatCode,
         },
@@ -760,12 +788,14 @@ describe('CoingeckoAPI', () => {
 
     expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
       cacheDir: new CacheDir(
+        // @ts-expect-error - TODO: remove after migration
         `${chain.pricesProvider.nativeCoin}_native_coin_price_${lowerCaseFiatCode}`,
         '',
       ),
       url: `${coingeckoBaseUri}/simple/price`,
       networkRequest: {
         params: {
+          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: lowerCaseFiatCode,
         },
