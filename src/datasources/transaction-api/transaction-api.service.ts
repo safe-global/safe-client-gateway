@@ -619,7 +619,7 @@ export class TransactionApi implements ITransactionApi {
     signature: string;
   }): Promise<void> {
     try {
-      const url = `${this.baseUrl}/api/v1/transactions/${args.safeTxHash}`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${args.safeTxHash}`;
       await this.networkService.delete({
         url,
         data: {
