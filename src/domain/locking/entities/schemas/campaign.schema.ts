@@ -1,4 +1,4 @@
-import { ActivityMetadataSchema } from '@/domain/locking/entities/schemas/activity-metadata.schema';
+import { ActivityMetadataSchema } from '@/domain/locking/entities/activity-metadata.entity';
 import { z } from 'zod';
 
 export const CampaignSchema = z.object({
