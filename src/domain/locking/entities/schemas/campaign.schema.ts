@@ -1,8 +1,6 @@
 import { ActivityMetadataSchema } from '@/domain/locking/entities/activity-metadata.entity';
 import { z } from 'zod';
 
-export type Campaign = z.infer<typeof CampaignSchema>;
-
 export const CampaignSchema = z.object({
   campaignId: z.string(),
   name: z.string(),
