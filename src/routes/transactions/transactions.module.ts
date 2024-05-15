@@ -5,7 +5,6 @@ import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/dat
 import { Erc20TransferMapper } from '@/routes/transactions/mappers/common/erc20-transfer.mapper';
 import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc721-transfer.mapper';
 import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/human-description.mapper';
-import { ImitationTransactionsHelper } from '@/routes/transactions/helpers/imitation-transactions.helper';
 import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
 import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
 import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
@@ -26,6 +25,7 @@ import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transac
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { TransferImitationMapper } from '@/routes/transactions/mappers/transfers/transfer-imitation.mapper';
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
@@ -58,7 +58,6 @@ import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.
     DataDecodedParamHelper,
     Erc20TransferMapper,
     Erc721TransferMapper,
-    ImitationTransactionsHelper,
     TransferMapper,
     ModuleTransactionDetailsMapper,
     ModuleTransactionMapper,
@@ -79,6 +78,7 @@ import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.
     TransactionsService,
     TransferDetailsMapper,
     TransferInfoMapper,
+    TransferImitationMapper,
     HumanDescriptionMapper,
   ],
 })
