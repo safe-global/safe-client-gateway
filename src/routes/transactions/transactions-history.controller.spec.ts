@@ -1536,7 +1536,7 @@ describe('Transactions History Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true&imitation=true`,
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true`,
           )
           .expect(200)
           .then(({ body }) => {
@@ -1837,7 +1837,7 @@ describe('Transactions History Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true`,
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=true&imitation=false`,
           )
           .expect(200)
           .then(({ body }) => {
@@ -2100,7 +2100,7 @@ describe('Transactions History Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=true`,
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
           )
           .expect(200)
           .then(({ body }) => {
@@ -2401,7 +2401,7 @@ describe('Transactions History Controller (Unit)', () => {
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=false`,
           )
           .expect(200)
           .then(({ body }) => {
