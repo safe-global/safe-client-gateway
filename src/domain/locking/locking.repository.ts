@@ -1,5 +1,9 @@
 import { Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
+import {
+  Campaign,
+  CampaignPageSchema,
+} from '@/domain/locking/entities/campaign.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 import { LockingEventPageSchema } from '@/domain/locking/entities/schemas/locking-event.schema';
@@ -16,6 +20,18 @@ export class LockingRepository implements ILockingRepository {
     @Inject(ILockingApi)
     private readonly lockingApi: ILockingApi,
   ) {}
+
+  async getCampaignById(campaignId: string): Promise<Campaign> {
+    return this.lockingApi.getCampaignById(campaignId);
+  }
+
+  async getCampaigns(args: {
+    limit?: number | undefined;
+    offset?: number | undefined;
+  }): Promise<Page<Campaign>> {
+    const page = await this.lockingApi.getCampaigns(args);
+    return CampaignPageSchema.parse(page);
+  }
 
   async getRank(safeAddress: `0x${string}`): Promise<Rank> {
     const rank = await this.lockingApi.getRank(safeAddress);
