@@ -136,7 +136,7 @@ describe('CreateMessageDtoSchema', () => {
       );
     });
 
-    it('should not validate optional safeAppId, defaulting to null', () => {
+    it('should validate without safeAppId, defaulting to null', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
       delete createMessageDto.safeAppId;
