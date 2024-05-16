@@ -7,7 +7,7 @@ import {
 import { Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { Holder } from '@/domain/locking/entities/holder.entity';
+import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 import { Inject } from '@nestjs/common';
@@ -88,14 +88,14 @@ export class LockingApi implements ILockingApi {
     }
   }
 
-  async getLeaderboardV2(args: {
+  async getCampaignLeaderboard(args: {
     campaignId: string;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Holder>> {
+  }): Promise<Page<CampaignRank>> {
     try {
-      const url = `${this.baseUri}/api/v2/leaderboard/${args.campaignId}`;
-      const { data } = await this.networkService.get<Page<Holder>>({
+      const url = `${this.baseUri}/api/v1/campaigns/${args.campaignId}/leaderboard`;
+      const { data } = await this.networkService.get<Page<CampaignRank>>({
         url,
         networkRequest: {
           params: {

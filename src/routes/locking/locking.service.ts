@@ -1,5 +1,6 @@
 import { Page } from '@/domain/entities/page.entity';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
+import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
@@ -53,6 +54,31 @@ export class LockingService {
     const result = await this.lockingRepository.getLeaderboard(
       args.paginationData,
     );
+
+    const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
+    const previousUrl = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      result.previous,
+    );
+
+    return {
+      count: result.count,
+      next: nextUrl?.toString() ?? null,
+      previous: previousUrl?.toString() ?? null,
+      results: result.results,
+    };
+  }
+
+  async getCampaignLeaderboard(args: {
+    campaignId: string;
+    routeUrl: URL;
+    paginationData: PaginationData;
+  }): Promise<Page<CampaignRank>> {
+    const result = await this.lockingRepository.getCampaignLeaderboard({
+      campaignId: args.campaignId,
+      limit: args.paginationData.limit,
+      offset: args.paginationData.offset,
+    });
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(

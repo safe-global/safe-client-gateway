@@ -3,7 +3,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 
-export const HolderSchema = z.object({
+export const CampaignRankSchema = z.object({
   holder: AddressSchema,
   position: z.number(),
   boost: NumericStringSchema,
@@ -11,6 +11,6 @@ export const HolderSchema = z.object({
   boostedPoints: NumericStringSchema,
 });
 
-export const HolderPageSchema = buildPageSchema(HolderSchema);
+export const CampaignRankPageSchema = buildPageSchema(CampaignRankSchema);
 
-export type Holder = z.infer<typeof HolderSchema>;
+export type CampaignRank = z.infer<typeof CampaignRankSchema>;
