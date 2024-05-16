@@ -88,13 +88,13 @@ export class LockingApi implements ILockingApi {
     }
   }
 
-  async getLeaderboardV2(args: {
+  async getCampaignLeaderboard(args: {
     campaignId: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Holder>> {
     try {
-      const url = `${this.baseUri}/api/v2/leaderboard/${args.campaignId}`;
+      const url = `${this.baseUri}/api/v1/campaigns/${args.campaignId}/leaderboard`;
       const { data } = await this.networkService.get<Page<Holder>>({
         url,
         networkRequest: {

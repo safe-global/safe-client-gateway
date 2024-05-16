@@ -15,6 +15,7 @@ import { getAddress } from 'viem';
 import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
 import { holderBuilder } from '@/domain/locking/entities/__tests__/holder.builder';
+import { Holder } from '@/domain/locking/entities/holder.entity';
 
 const networkService = {
   get: jest.fn(),
@@ -265,22 +266,22 @@ describe('LockingApi', () => {
     });
   });
 
-  describe('getLeaderboardV2', () => {
-    it('should get leaderboard v2', async () => {
+  describe('getCampaignLeaderboard', () => {
+    it('should get leaderboard by campaign', async () => {
       const campaignId = faker.string.uuid();
-      const leaderboardV2Page = pageBuilder()
+      const holderPage = pageBuilder<Holder>()
         .with('results', [holderBuilder().build(), holderBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
-        data: leaderboardV2Page,
+        data: holderPage,
         status: 200,
       });
 
-      const result = await service.getLeaderboardV2({ campaignId });
+      const result = await service.getCampaignLeaderboard({ campaignId });
 
-      expect(result).toEqual(leaderboardV2Page);
+      expect(result).toEqual(holderPage);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v2/leaderboard/${campaignId}`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`,
         networkRequest: {
           params: {
             limit: undefined,
@@ -294,18 +295,18 @@ describe('LockingApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const campaignId = faker.string.uuid();
-      const leaderboardV2Page = pageBuilder()
+      const holderPage = pageBuilder<Holder>()
         .with('results', [holderBuilder().build(), holderBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
-        data: leaderboardV2Page,
+        data: holderPage,
         status: 200,
       });
 
-      await service.getLeaderboardV2({ campaignId, limit, offset });
+      await service.getCampaignLeaderboard({ campaignId, limit, offset });
 
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v2/leaderboard/${campaignId}`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`,
         networkRequest: {
           params: {
             limit,
@@ -319,7 +320,7 @@ describe('LockingApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const campaignId = faker.string.uuid();
       const error = new NetworkResponseError(
-        new URL(`${lockingBaseUri}/api/v2/leaderboard/${campaignId}`),
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`),
         {
           status,
         } as Response,
@@ -329,9 +330,9 @@ describe('LockingApi', () => {
       );
       mockNetworkService.get.mockRejectedValueOnce(error);
 
-      await expect(service.getLeaderboardV2({ campaignId })).rejects.toThrow(
-        new DataSourceError('Unexpected error', status),
-      );
+      await expect(
+        service.getCampaignLeaderboard({ campaignId }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });

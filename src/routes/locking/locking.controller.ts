@@ -50,12 +50,12 @@ export class LockingController {
     type: String,
   })
   @Get('/campaigns/:campaignId/leaderboard')
-  async getLeaderBoardByCampaignId(
+  async getCampaignLeaderboard(
     @Param('campaignId') campaignId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<HolderPage> {
-    return this.lockingService.getLeaderBoardByCampaignId({
+    return this.lockingService.getCampaignLeaderboard({
       campaignId,
       routeUrl,
       paginationData,
