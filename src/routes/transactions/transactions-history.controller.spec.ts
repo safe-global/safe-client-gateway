@@ -1372,6 +1372,7 @@ describe('Transactions History Controller (Unit)', () => {
             .with('executionDate', multisigExecutionDate)
             .with('from', safe.address)
             .with('tokenAddress', multisigToken.address)
+            .with('value', faker.string.numeric({ exclude: ['0'] }))
             .build(),
           tokenInfo: multisigToken,
         };
@@ -1462,10 +1463,8 @@ describe('Transactions History Controller (Unit)', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[0].transfers[0].tokenAddress}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[1].transfers[0].tokenAddress}`;
+        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
         networkService.get.mockImplementation(({ url }) => {
           if (url === getChainUrl) {
             return Promise.resolve({ data: chain, status: 200 });
@@ -1606,6 +1605,7 @@ describe('Transactions History Controller (Unit)', () => {
             .with('executionDate', multisigExecutionDate)
             .with('from', safe.address)
             .with('tokenAddress', multisigToken.address)
+            .with('value', faker.string.numeric({ exclude: ['0'] }))
             .build(),
           tokenInfo: multisigToken,
         };
@@ -1696,10 +1696,8 @@ describe('Transactions History Controller (Unit)', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[0].transfers[0].tokenAddress}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[1].transfers[0].tokenAddress}`;
+        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
         networkService.get.mockImplementation(({ url }) => {
           if (url === getChainUrl) {
             return Promise.resolve({ data: chain, status: 200 });
@@ -1803,6 +1801,7 @@ describe('Transactions History Controller (Unit)', () => {
             .with('executionDate', multisigExecutionDate)
             .with('from', safe.address)
             .with('tokenAddress', multisigToken.address)
+            .with('value', faker.string.numeric({ exclude: ['0'] }))
             .build(),
           tokenInfo: multisigToken,
         };
@@ -1893,10 +1892,8 @@ describe('Transactions History Controller (Unit)', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[0].transfers[0].tokenAddress}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[1].transfers[0].tokenAddress}`;
+        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
         networkService.get.mockImplementation(({ url }) => {
           if (url === getChainUrl) {
             return Promise.resolve({ data: chain, status: 200 });
@@ -2037,6 +2034,7 @@ describe('Transactions History Controller (Unit)', () => {
             .with('executionDate', multisigExecutionDate)
             .with('from', safe.address)
             .with('tokenAddress', multisigToken.address)
+            .with('value', faker.string.numeric({ exclude: ['0'] }))
             .build(),
           tokenInfo: multisigToken,
         };
@@ -2127,10 +2125,8 @@ describe('Transactions History Controller (Unit)', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[0].transfers[0].tokenAddress}`;
-        // @ts-expect-error - Type does not contain transfers
-        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${results[1].transfers[0].tokenAddress}`;
+        const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+        const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
         networkService.get.mockImplementation(({ url }) => {
           if (url === getChainUrl) {
             return Promise.resolve({ data: chain, status: 200 });
