@@ -1,14 +1,14 @@
-import { holderBuilder } from '@/domain/locking/entities/__tests__/holder.builder';
-import { HolderSchema } from '@/domain/locking/entities/holder.entity';
+import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
+import { CampaignRankSchema } from '@/domain/locking/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
-describe('HolderSchema', () => {
+describe('CampaignRankSchema', () => {
   it('should validate a valid holder', () => {
-    const holder = holderBuilder().build();
+    const campaignRank = campaignRankBuilder().build();
 
-    const result = HolderSchema.safeParse(holder);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(result.success).toBe(true);
   });
@@ -17,11 +17,11 @@ describe('HolderSchema', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as `0x${string}`;
-    const holder = holderBuilder()
+    const campaignRank = campaignRankBuilder()
       .with('holder', nonChecksummedAddress)
       .build();
 
-    const result = HolderSchema.safeParse(holder);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(result.success && result.data.holder).toBe(
       getAddress(nonChecksummedAddress),
@@ -29,9 +29,9 @@ describe('HolderSchema', () => {
   });
 
   it('should not validate an invalid holder', () => {
-    const holder = { invalid: 'holder' };
+    const campaignRank = { invalid: 'campaignRank' };
 
-    const result = HolderSchema.safeParse(holder);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([

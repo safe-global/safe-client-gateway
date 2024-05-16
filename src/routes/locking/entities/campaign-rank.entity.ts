@@ -1,7 +1,7 @@
-import { Holder as DomainHolder } from '@/domain/locking/entities/holder.entity';
+import { CampaignRank as DomainCampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class Holder implements DomainHolder {
+export class CampaignRank implements DomainCampaignRank {
   @ApiProperty()
   holder!: `0x${string}`;
   @ApiProperty()

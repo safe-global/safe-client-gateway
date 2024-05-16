@@ -14,8 +14,8 @@ import {
 import { getAddress } from 'viem';
 import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
-import { holderBuilder } from '@/domain/locking/entities/__tests__/holder.builder';
-import { Holder } from '@/domain/locking/entities/holder.entity';
+import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
+import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
 
 const networkService = {
   get: jest.fn(),
@@ -269,17 +269,20 @@ describe('LockingApi', () => {
   describe('getCampaignLeaderboard', () => {
     it('should get leaderboard by campaign', async () => {
       const campaignId = faker.string.uuid();
-      const holderPage = pageBuilder<Holder>()
-        .with('results', [holderBuilder().build(), holderBuilder().build()])
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
-        data: holderPage,
+        data: campaignRankPage,
         status: 200,
       });
 
       const result = await service.getCampaignLeaderboard({ campaignId });
 
-      expect(result).toEqual(holderPage);
+      expect(result).toEqual(campaignRankPage);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`,
         networkRequest: {
@@ -295,11 +298,14 @@ describe('LockingApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const campaignId = faker.string.uuid();
-      const holderPage = pageBuilder<Holder>()
-        .with('results', [holderBuilder().build(), holderBuilder().build()])
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
-        data: holderPage,
+        data: campaignRankPage,
         status: 200,
       });
 

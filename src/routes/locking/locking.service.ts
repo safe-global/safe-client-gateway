@@ -1,6 +1,6 @@
 import { Page } from '@/domain/entities/page.entity';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { Holder } from '@/domain/locking/entities/holder.entity';
+import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
@@ -73,7 +73,7 @@ export class LockingService {
     campaignId: string;
     routeUrl: URL;
     paginationData: PaginationData;
-  }): Promise<Page<Holder>> {
+  }): Promise<Page<CampaignRank>> {
     const result = await this.lockingRepository.getCampaignLeaderboard({
       campaignId: args.campaignId,
       limit: args.paginationData.limit,

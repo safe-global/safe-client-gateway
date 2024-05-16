@@ -37,8 +37,8 @@ import {
   toJson as campaignToJson,
 } from '@/domain/locking/entities/__tests__/campaign.builder';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { Holder } from '@/domain/locking/entities/holder.entity';
-import { holderBuilder } from '@/domain/locking/entities/__tests__/holder.builder';
+import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
+import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -222,8 +222,11 @@ describe('Locking (Unit)', () => {
   describe('GET leaderboard by campaign', () => {
     it('should get the leaderboard by campaign', async () => {
       const campaign = campaignBuilder().build();
-      const holderPage = pageBuilder<Holder>()
-        .with('results', [holderBuilder().build(), holderBuilder().build()])
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
         .with('count', 2)
         .with('previous', null)
         .with('next', null)
@@ -231,7 +234,7 @@ describe('Locking (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
-            return Promise.resolve({ data: holderPage, status: 200 });
+            return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -244,23 +247,23 @@ describe('Locking (Unit)', () => {
           count: 2,
           next: null,
           previous: null,
-          results: holderPage.results,
+          results: campaignRankPage.results,
         });
     });
 
     it('should validate the response', async () => {
       const campaign = campaignBuilder().build();
-      const invalidHolders = [{ invalid: 'holder' }];
-      const holderPage = pageBuilder()
-        .with('results', invalidHolders)
-        .with('count', invalidHolders.length)
+      const invalidCampaignRanks = [{ invalid: 'campaignRank' }];
+      const campaignRankPage = pageBuilder()
+        .with('results', invalidCampaignRanks)
+        .with('count', invalidCampaignRanks.length)
         .with('previous', null)
         .with('next', null)
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
-            return Promise.resolve({ data: holderPage, status: 200 });
+            return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -279,8 +282,11 @@ describe('Locking (Unit)', () => {
       const limit = faker.number.int({ min: 1, max: 10 });
       const offset = faker.number.int({ min: 1, max: 10 });
       const campaign = campaignBuilder().build();
-      const holderPage = pageBuilder<Holder>()
-        .with('results', [holderBuilder().build(), holderBuilder().build()])
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
         .with('count', 2)
         .with('previous', null)
         .with('next', null)
@@ -288,7 +294,7 @@ describe('Locking (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
-            return Promise.resolve({ data: holderPage, status: 200 });
+            return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -303,7 +309,7 @@ describe('Locking (Unit)', () => {
           count: 2,
           next: null,
           previous: null,
-          results: holderPage.results,
+          results: campaignRankPage.results,
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
