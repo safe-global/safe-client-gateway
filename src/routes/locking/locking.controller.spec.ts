@@ -86,8 +86,8 @@ describe('Locking (Unit)', () => {
         .expect(200)
         .expect({
           ...campaign,
-          periodStart: campaign.periodStart.toISOString(),
-          periodEnd: campaign.periodEnd.toISOString(),
+          startDate: campaign.startDate.toISOString(),
+          endDate: campaign.endDate.toISOString(),
           lastUpdated: campaign.lastUpdated.toISOString(),
         });
     });
@@ -117,8 +117,8 @@ describe('Locking (Unit)', () => {
           previous: null,
           results: campaignsPage.results.map((campaign) => ({
             ...campaign,
-            periodStart: campaign.periodStart.toISOString(),
-            periodEnd: campaign.periodEnd.toISOString(),
+            startDate: campaign.startDate.toISOString(),
+            endDate: campaign.endDate.toISOString(),
             lastUpdated: campaign.lastUpdated.toISOString(),
           })),
         });
@@ -179,8 +179,8 @@ describe('Locking (Unit)', () => {
           previous: null,
           results: campaignsPage.results.map((campaign) => ({
             ...campaign,
-            periodStart: campaign.periodStart.toISOString(),
-            periodEnd: campaign.periodEnd.toISOString(),
+            startDate: campaign.startDate.toISOString(),
+            endDate: campaign.endDate.toISOString(),
             lastUpdated: campaign.lastUpdated.toISOString(),
           })),
         });

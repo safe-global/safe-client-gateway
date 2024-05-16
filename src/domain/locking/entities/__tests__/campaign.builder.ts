@@ -8,11 +8,11 @@ export function campaignBuilder(): IBuilder<Campaign> {
     .with('campaignId', faker.string.uuid())
     .with('name', faker.word.words())
     .with('description', faker.lorem.sentence())
-    .with('periodStart', faker.date.recent())
-    .with('periodEnd', faker.date.future())
+    .with('startDate', faker.date.recent())
+    .with('endDate', faker.date.future())
     .with('lastUpdated', faker.date.recent())
     .with(
-      'activities',
+      'activitiesMetadata',
       Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, () =>
         activityMetadataBuilder().build(),
       ),
