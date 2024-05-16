@@ -69,12 +69,12 @@ export class LockingService {
     };
   }
 
-  async getLeaderBoardByCampaignId(args: {
+  async getCampaignLeaderboard(args: {
     campaignId: string;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<Holder>> {
-    const result = await this.lockingRepository.getLeaderBoardByCampaignId({
+    const result = await this.lockingRepository.getCampaignLeaderboard({
       campaignId: args.campaignId,
       limit: args.paginationData.limit,
       offset: args.paginationData.offset,

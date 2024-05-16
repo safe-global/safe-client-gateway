@@ -230,7 +230,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
             return Promise.resolve({ data: holderPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -259,7 +259,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
             return Promise.resolve({ data: holderPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -287,7 +287,7 @@ describe('Locking (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
             return Promise.resolve({ data: holderPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -307,7 +307,7 @@ describe('Locking (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`,
         networkRequest: {
           params: {
             limit,
@@ -325,7 +325,7 @@ describe('Locking (Unit)', () => {
       const errorMessage = faker.word.words();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
             return Promise.reject(
               new NetworkResponseError(
                 new URL(url),

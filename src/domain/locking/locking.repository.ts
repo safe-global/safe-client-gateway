@@ -50,12 +50,12 @@ export class LockingRepository implements ILockingRepository {
     return RankPageSchema.parse(page);
   }
 
-  async getLeaderBoardByCampaignId(args: {
+  async getCampaignLeaderboard(args: {
     campaignId: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Holder>> {
-    const page = await this.lockingApi.getLeaderboardV2(args);
+    const page = await this.lockingApi.getCampaignLeaderboard(args);
     return HolderPageSchema.parse(page);
   }
 

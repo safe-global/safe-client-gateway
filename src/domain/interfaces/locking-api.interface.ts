@@ -21,7 +21,7 @@ export interface ILockingApi {
     offset?: number;
   }): Promise<Page<Rank>>;
 
-  getLeaderboardV2(args: {
+  getCampaignLeaderboard(args: {
     campaignId: string;
     limit?: number;
     offset?: number;

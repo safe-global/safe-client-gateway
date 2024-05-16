@@ -21,7 +21,7 @@ export interface ILockingRepository {
     offset?: number;
   }): Promise<Page<Rank>>;
 
-  getLeaderBoardByCampaignId(args: {
+  getCampaignLeaderboard(args: {
     campaignId: string;
     limit?: number;
     offset?: number;
