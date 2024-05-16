@@ -11,6 +11,7 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Campaign } from '@/routes/locking/entities/campaign.entity';
 import { CampaignPage } from '@/routes/locking/entities/campaign.page.entity';
+import { HolderPage } from '@/routes/locking/entities/holder.page.entity';
 
 @ApiTags('locking')
 @Controller({
@@ -40,6 +41,25 @@ export class LockingController {
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<CampaignPage> {
     return this.lockingService.getCampaigns({ routeUrl, paginationData });
+  }
+
+  @ApiOkResponse({ type: HolderPage })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+  })
+  @Get('/campaigns/:campaignId/leaderboard')
+  async getLeaderBoardByCampaignId(
+    @Param('campaignId') campaignId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @PaginationDataDecorator() paginationData: PaginationData,
+  ): Promise<HolderPage> {
+    return this.lockingService.getLeaderBoardByCampaignId({
+      campaignId,
+      routeUrl,
+      paginationData,
+    });
   }
 
   @ApiOkResponse({ type: Rank })

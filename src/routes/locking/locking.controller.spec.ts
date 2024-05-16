@@ -37,6 +37,8 @@ import {
   toJson as campaignToJson,
 } from '@/domain/locking/entities/__tests__/campaign.builder';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
+import { Holder } from '@/domain/locking/entities/holder.entity';
+import { holderBuilder } from '@/domain/locking/entities/__tests__/holder.builder';
 
 describe('Locking (Unit)', () => {
   let app: INestApplication;
@@ -209,6 +211,137 @@ describe('Locking (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/locking/campaigns`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
+
+  describe('GET leaderboard by campaign', () => {
+    it('should get the leaderboard by campaign', async () => {
+      const campaign = campaignBuilder().build();
+      const holderPage = pageBuilder<Holder>()
+        .with('results', [holderBuilder().build(), holderBuilder().build()])
+        .with('count', 2)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+            return Promise.resolve({ data: holderPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns/${campaign.campaignId}/leaderboard`)
+        .expect(200)
+        .expect({
+          count: 2,
+          next: null,
+          previous: null,
+          results: holderPage.results,
+        });
+    });
+
+    it('should validate the response', async () => {
+      const campaign = campaignBuilder().build();
+      const invalidHolders = [{ invalid: 'holder' }];
+      const holderPage = pageBuilder()
+        .with('results', invalidHolders)
+        .with('count', invalidHolders.length)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+            return Promise.resolve({ data: holderPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns/${campaign.campaignId}/leaderboard`)
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('should forward the pagination parameters', async () => {
+      const limit = faker.number.int({ min: 1, max: 10 });
+      const offset = faker.number.int({ min: 1, max: 10 });
+      const campaign = campaignBuilder().build();
+      const holderPage = pageBuilder<Holder>()
+        .with('results', [holderBuilder().build(), holderBuilder().build()])
+        .with('count', 2)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+            return Promise.resolve({ data: holderPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/locking/campaigns/${campaign.campaignId}/leaderboard?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        )
+        .expect(200)
+        .expect({
+          count: 2,
+          next: null,
+          previous: null,
+          results: holderPage.results,
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward errors from the service', async () => {
+      const campaign = campaignBuilder().build();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v2/leaderboard/${campaign.campaignId}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(url),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/locking/campaigns/${campaign.campaignId}/leaderboard`)
         .expect(statusCode)
         .expect({
           message: errorMessage,

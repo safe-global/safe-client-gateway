@@ -1,5 +1,6 @@
 import { Page } from '@/domain/entities/page.entity';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
+import { Holder } from '@/domain/locking/entities/holder.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 
@@ -19,6 +20,12 @@ export interface ILockingApi {
     limit?: number;
     offset?: number;
   }): Promise<Page<Rank>>;
+
+  getLeaderboardV2(args: {
+    campaignId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Holder>>;
 
   getLockingHistory(args: {
     safeAddress: `0x${string}`;

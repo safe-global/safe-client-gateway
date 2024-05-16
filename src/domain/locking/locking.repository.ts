@@ -4,6 +4,10 @@ import {
   Campaign,
   CampaignPageSchema,
 } from '@/domain/locking/entities/campaign.entity';
+import {
+  Holder,
+  HolderPageSchema,
+} from '@/domain/locking/entities/holder.entity';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { Rank } from '@/domain/locking/entities/rank.entity';
 import { LockingEventPageSchema } from '@/domain/locking/entities/schemas/locking-event.schema';
@@ -44,6 +48,15 @@ export class LockingRepository implements ILockingRepository {
   }): Promise<Page<Rank>> {
     const page = await this.lockingApi.getLeaderboard(args);
     return RankPageSchema.parse(page);
+  }
+
+  async getLeaderBoardByCampaignId(args: {
+    campaignId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<Holder>> {
+    const page = await this.lockingApi.getLeaderboardV2(args);
+    return HolderPageSchema.parse(page);
   }
 
   async getLockingHistory(args: {
