@@ -18,3 +18,12 @@ export function campaignBuilder(): IBuilder<Campaign> {
       ),
     );
 }
+
+export function toJson(campaign: Campaign): unknown {
+  return {
+    ...campaign,
+    startDate: campaign.startDate.toISOString(),
+    endDate: campaign.endDate.toISOString(),
+    lastUpdated: campaign.lastUpdated.toISOString(),
+  };
+}

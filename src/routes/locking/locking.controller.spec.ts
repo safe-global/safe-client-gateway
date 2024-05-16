@@ -22,6 +22,7 @@ import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
+  toJson as lockingEventToJson,
 } from '@/domain/locking/entities/__tests__/locking-event.builder';
 import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
@@ -31,7 +32,10 @@ import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
+import {
+  campaignBuilder,
+  toJson as campaignToJson,
+} from '@/domain/locking/entities/__tests__/campaign.builder';
 import { Campaign } from '@/domain/locking/entities/campaign.entity';
 
 describe('Locking (Unit)', () => {
@@ -84,12 +88,7 @@ describe('Locking (Unit)', () => {
       await request(app.getHttpServer())
         .get(`/v1/locking/campaigns/${campaign.campaignId}`)
         .expect(200)
-        .expect({
-          ...campaign,
-          startDate: campaign.startDate.toISOString(),
-          endDate: campaign.endDate.toISOString(),
-          lastUpdated: campaign.lastUpdated.toISOString(),
-        });
+        .expect(campaignToJson(campaign) as Campaign);
     });
 
     it('should get the list of campaigns', async () => {
@@ -115,12 +114,7 @@ describe('Locking (Unit)', () => {
           count: 1,
           next: null,
           previous: null,
-          results: campaignsPage.results.map((campaign) => ({
-            ...campaign,
-            startDate: campaign.startDate.toISOString(),
-            endDate: campaign.endDate.toISOString(),
-            lastUpdated: campaign.lastUpdated.toISOString(),
-          })),
+          results: campaignsPage.results.map(campaignToJson),
         });
     });
 
@@ -177,12 +171,7 @@ describe('Locking (Unit)', () => {
           count: 1,
           next: null,
           previous: null,
-          results: campaignsPage.results.map((campaign) => ({
-            ...campaign,
-            startDate: campaign.startDate.toISOString(),
-            endDate: campaign.endDate.toISOString(),
-            lastUpdated: campaign.lastUpdated.toISOString(),
-          })),
+          results: campaignsPage.results.map(campaignToJson),
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
@@ -476,10 +465,7 @@ describe('Locking (Unit)', () => {
           count: lockingHistoryPage.count,
           next: null,
           previous: null,
-          results: lockingHistoryPage.results.map((result) => ({
-            ...result,
-            executionDate: result.executionDate.toISOString(),
-          })),
+          results: lockingHistoryPage.results.map(lockingEventToJson),
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
@@ -527,10 +513,7 @@ describe('Locking (Unit)', () => {
           count: lockingHistoryPage.count,
           next: null,
           previous: null,
-          results: lockingHistoryPage.results.map((result) => ({
-            ...result,
-            executionDate: result.executionDate.toISOString(),
-          })),
+          results: lockingHistoryPage.results.map(lockingEventToJson),
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
