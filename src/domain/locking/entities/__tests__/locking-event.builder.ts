@@ -45,3 +45,12 @@ export function withdrawEventItemBuilder(): IBuilder<WithdrawEventItem> {
     .with('unlockIndex', faker.string.numeric())
     .with('logIndex', faker.string.numeric());
 }
+
+export function toJson(
+  event: LockEventItem | UnlockEventItem | WithdrawEventItem,
+): unknown {
+  return {
+    ...event,
+    executionDate: event.executionDate.toISOString(),
+  };
+}
