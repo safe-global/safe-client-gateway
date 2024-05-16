@@ -1,6 +1,6 @@
 import { Campaign as DomainCampaign } from '@/domain/locking/entities/campaign.entity';
 import { ActivityMetadata } from '@/routes/locking/entities/activity-metadata.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Campaign implements DomainCampaign {
   @ApiProperty()
@@ -13,8 +13,8 @@ export class Campaign implements DomainCampaign {
   startDate!: Date;
   @ApiProperty({ type: String })
   endDate!: Date;
-  @ApiProperty({ type: String })
-  lastUpdated!: Date;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  lastUpdated!: Date | null;
   @ApiProperty({ type: [ActivityMetadata] })
   activitiesMetadata!: ActivityMetadata[] | null;
 }

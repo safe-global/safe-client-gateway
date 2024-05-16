@@ -1,5 +1,6 @@
 import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
 import { CampaignSchema } from '@/domain/locking/entities/campaign.entity';
+import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
 describe('CampaignSchema', () => {
@@ -11,10 +12,12 @@ describe('CampaignSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['startDate' as const, 'endDate' as const, 'lastUpdated' as const])(
+  it.each(['startDate' as const, 'endDate' as const])(
     `should coerce %s to a date`,
     (field) => {
-      const campaign = campaignBuilder().build();
+      const campaign = campaignBuilder()
+        .with(field, faker.date.recent().toISOString() as unknown as Date)
+        .build();
 
       const result = CampaignSchema.safeParse(campaign);
 
@@ -23,6 +26,31 @@ describe('CampaignSchema', () => {
       );
     },
   );
+
+  it('should default lastUpdated to null', () => {
+    const campaign = campaignBuilder()
+      .with('lastUpdated', faker.date.recent())
+      .build();
+    // @ts-expect-error - inferred types don't allow optional fields
+    delete campaign.lastUpdated;
+
+    const result = CampaignSchema.safeParse(campaign);
+
+    expect(result.success && result.data.lastUpdated).toBe(null);
+  });
+
+  it('should coerce lastUpdated to a date', () => {
+    const lastUpdated = faker.date.recent().toISOString();
+    const campaign = campaignBuilder()
+      .with('lastUpdated', lastUpdated as unknown as Date)
+      .build();
+
+    const result = CampaignSchema.safeParse(campaign);
+
+    expect(result.success && result.data.lastUpdated).toStrictEqual(
+      new Date(lastUpdated),
+    );
+  });
 
   it('should not validate an invalid campaign', () => {
     const campaign = { invalid: 'campaign' };
@@ -60,11 +88,6 @@ describe('CampaignSchema', () => {
         {
           code: 'invalid_date',
           path: ['endDate'],
-          message: 'Invalid date',
-        },
-        {
-          code: 'invalid_date',
-          path: ['lastUpdated'],
           message: 'Invalid date',
         },
       ]),
