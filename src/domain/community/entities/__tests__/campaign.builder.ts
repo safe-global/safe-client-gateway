@@ -1,6 +1,6 @@
 import { IBuilder, Builder } from '@/__tests__/builder';
-import { activityMetadataBuilder } from '@/domain/locking/entities/__tests__/activity-metadata.builder';
-import { Campaign } from '@/domain/locking/entities/campaign.entity';
+import { activityMetadataBuilder } from '@/domain/community/entities/__tests__/activity-metadata.builder';
+import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { faker } from '@faker-js/faker';
 
 export function campaignBuilder(): IBuilder<Campaign> {

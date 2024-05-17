@@ -3,14 +3,14 @@ import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
-} from '@/domain/locking/entities/__tests__/locking-event.builder';
+} from '@/domain/community/entities/__tests__/locking-event.builder';
 import {
   LockEventItemSchema,
   LockingEventPageSchema,
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/domain/locking/entities/schemas/locking-event.schema';
+} from '@/domain/community/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

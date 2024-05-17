@@ -1,4 +1,4 @@
-import { Rank as DomainRank } from '@/domain/locking/entities/rank.entity';
+import { Rank as DomainRank } from '@/domain/community/entities/rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class Rank implements DomainRank {

@@ -1,5 +1,5 @@
-import { activityMetadataBuilder } from '@/domain/locking/entities/__tests__/activity-metadata.builder';
-import { ActivityMetadataSchema } from '@/domain/locking/entities/activity-metadata.entity';
+import { activityMetadataBuilder } from '@/domain/community/entities/__tests__/activity-metadata.builder';
+import { ActivityMetadataSchema } from '@/domain/community/entities/activity-metadata.entity';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 

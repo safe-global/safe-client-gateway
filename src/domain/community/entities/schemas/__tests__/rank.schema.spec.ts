@@ -1,5 +1,5 @@
-import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
-import { RankSchema } from '@/domain/locking/entities/schemas/rank.schema';
+import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
+import { RankSchema } from '@/domain/community/entities/schemas/rank.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

@@ -23,22 +23,22 @@ import {
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
   toJson as lockingEventToJson,
-} from '@/domain/locking/entities/__tests__/locking-event.builder';
-import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
+} from '@/domain/community/entities/__tests__/locking-event.builder';
+import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { getAddress } from 'viem';
-import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
+import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import {
   campaignBuilder,
   toJson as campaignToJson,
-} from '@/domain/locking/entities/__tests__/campaign.builder';
-import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
-import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
+} from '@/domain/community/entities/__tests__/campaign.builder';
+import { Campaign } from '@/domain/community/entities/campaign.entity';
+import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 
 describe('Community (Unit)', () => {
   let app: INestApplication;
