@@ -69,7 +69,7 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearBalances(args: { safeAddress: string }): Promise<void> {
+  async clearBalances(args: { safeAddress: `0x${string}` }): Promise<void> {
     const key = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,

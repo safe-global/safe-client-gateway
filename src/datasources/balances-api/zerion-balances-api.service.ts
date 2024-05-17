@@ -254,7 +254,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async clearBalances(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const key = CacheRouter.getZerionBalancesCacheKey(args);
     await this.cacheService.deleteByKey(key);
