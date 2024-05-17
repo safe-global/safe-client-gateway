@@ -220,8 +220,7 @@ describe('Community (Unit)', () => {
         .expect(campaignToJson(campaign) as Campaign);
     });
 
-    // TODO: Enable when validation is implemented
-    it.skip('should validate the response', async () => {
+    it('should validate the response', async () => {
       const invalidCampaign = {
         campaignId: faker.string.uuid(),
         invalid: 'campaign',
