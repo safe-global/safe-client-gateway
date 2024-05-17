@@ -44,7 +44,7 @@ export class CacheRouter {
 
   static getBalancesCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_BALANCES_KEY}_${args.safeAddress}`;
   }
@@ -63,7 +63,7 @@ export class CacheRouter {
 
   static getZerionBalancesCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.ZERION_BALANCES_KEY}_${args.safeAddress}`;
   }
