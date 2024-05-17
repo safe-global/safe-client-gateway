@@ -89,7 +89,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async getBalances(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
   }): Promise<Balance[]> {
     const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);

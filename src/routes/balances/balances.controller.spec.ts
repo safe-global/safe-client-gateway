@@ -69,7 +69,7 @@ describe('Balances Controller (Unit)', () => {
   describe('GET /balances', () => {
     it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const tokenAddress = faker.finance.ethereumAddress();
       const secondTokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
@@ -225,7 +225,7 @@ describe('Balances Controller (Unit)', () => {
 
     it(`excludeSpam and trusted params are forwarded to tx service`, async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder()
@@ -277,7 +277,7 @@ describe('Balances Controller (Unit)', () => {
 
     it(`maps native token correctly`, async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const transactionApiBalancesResponse = [
         balanceBuilder()
           .with('tokenAddress', null)
@@ -340,7 +340,7 @@ describe('Balances Controller (Unit)', () => {
 
     it('returns large numbers as is (not in scientific notation)', async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const tokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
         balanceBuilder()
@@ -420,7 +420,7 @@ describe('Balances Controller (Unit)', () => {
     describe('Config API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const error = new NetworkResponseError(
           new URL(
             `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`,
@@ -446,7 +446,7 @@ describe('Balances Controller (Unit)', () => {
     describe('Prices provider API Error', () => {
       it(`should return a 0-balance when an error is thrown by the provider`, async () => {
         const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const tokenAddress = faker.finance.ethereumAddress();
         const transactionApiBalancesResponse = [
           balanceBuilder()
@@ -505,7 +505,7 @@ describe('Balances Controller (Unit)', () => {
 
       it(`should return a 0-balance when a validation error happens`, async () => {
         const chain = chainBuilder().with('chainId', '10').build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const tokenAddress = getAddress(faker.finance.ethereumAddress());
         const transactionApiBalancesResponse = [
           balanceBuilder()
@@ -570,7 +570,7 @@ describe('Balances Controller (Unit)', () => {
     describe('Transaction API Error', () => {
       it(`500 error response`, async () => {
         const chainId = '1';
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
         networkService.get.mockImplementation(({ url }) => {
@@ -603,7 +603,7 @@ describe('Balances Controller (Unit)', () => {
 
     it(`500 error if validation fails`, async () => {
       const chainId = '1';
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       networkService.get.mockImplementation(({ url }) => {
         if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {

@@ -7,6 +7,7 @@ import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, Query } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import * as request from 'supertest';
+import { getAddress } from 'viem';
 
 @Controller()
 class TestController {
@@ -35,7 +36,7 @@ describe('Caip10AddressesPipe', () => {
     await app.close();
   });
 
-  it('returns parsed CAIP-10 addresses', async () => {
+  it('returns parsed, checksummed CAIP-10 addresses', async () => {
     const chainId1 = faker.string.numeric();
     const chainId2 = faker.string.numeric();
     const chainId3 = faker.string.numeric();
@@ -49,9 +50,9 @@ describe('Caip10AddressesPipe', () => {
       )
       .expect(200)
       .expect([
-        { chainId: chainId1, address: address1 },
-        { chainId: chainId2, address: address2 },
-        { chainId: chainId3, address: address3 },
+        { chainId: chainId1, address: getAddress(address1) },
+        { chainId: chainId2, address: getAddress(address2) },
+        { chainId: chainId3, address: getAddress(address3) },
       ]);
   });
 

@@ -38,7 +38,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }
 
   async getBalances(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
     chain: Chain;
     trusted?: boolean;

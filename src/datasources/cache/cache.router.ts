@@ -51,7 +51,7 @@ export class CacheRouter {
 
   static getBalancesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): CacheDir {
@@ -70,7 +70,7 @@ export class CacheRouter {
 
   static getZerionBalancesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
   }): CacheDir {
     return new CacheDir(

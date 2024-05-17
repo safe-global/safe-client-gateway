@@ -13,7 +13,7 @@ export interface IBalancesRepository {
    */
   getBalances(args: {
     chain: Chain;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;

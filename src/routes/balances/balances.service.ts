@@ -21,7 +21,7 @@ export class BalancesService {
 
   async getBalances(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
     trusted: boolean;
     excludeSpam: boolean;

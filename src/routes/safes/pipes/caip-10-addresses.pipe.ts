@@ -1,4 +1,5 @@
 import { PipeTransform, Injectable } from '@nestjs/common';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class Caip10AddressesPipe
@@ -11,7 +12,7 @@ export class Caip10AddressesPipe
     const addresses = data.split(',').map((caip10Address: string) => {
       const [chainId, address] = caip10Address.split(':');
 
-      return { chainId, address };
+      return { chainId, address: getAddress(address) };
     });
 
     if (addresses.length === 0 || !addresses[0].address) {
