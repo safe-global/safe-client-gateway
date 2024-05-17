@@ -6,8 +6,8 @@ import { CampaignRankPage } from '@/routes/locking/entities/campaign-rank.page.e
 import { Campaign } from '@/routes/locking/entities/campaign.entity';
 import { CampaignPage } from '@/routes/locking/entities/campaign.page.entity';
 import { LockingEventPage } from '@/routes/locking/entities/locking-event.page.entity';
-import { Rank } from '@/routes/locking/entities/rank.entity';
-import { RankPage } from '@/routes/locking/entities/rank.page.entity';
+import { LockingRank } from '@/routes/locking/entities/locking-rank.entity';
+import { LockingRankPage } from '@/routes/locking/entities/locking-rank.page.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { Controller, Get, Param } from '@nestjs/common';
@@ -62,7 +62,7 @@ export class CommunityController {
     });
   }
 
-  @ApiOkResponse({ type: RankPage })
+  @ApiOkResponse({ type: LockingRankPage })
   @ApiQuery({
     name: 'cursor',
     required: false,
@@ -72,19 +72,19 @@ export class CommunityController {
   async getLeaderboard(
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
-  ): Promise<RankPage> {
+  ): Promise<LockingRankPage> {
     return this.communityService.getLockingLeaderboard({
       routeUrl,
       paginationData,
     });
   }
 
-  @ApiOkResponse({ type: Rank })
+  @ApiOkResponse({ type: LockingRank })
   @Get('/locking/:safeAddress/rank')
-  async getRank(
+  async getLockingRank(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
-  ): Promise<Rank> {
+  ): Promise<LockingRank> {
     return this.communityService.getLockingRank(safeAddress);
   }
 

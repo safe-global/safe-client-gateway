@@ -10,12 +10,12 @@ import {
   CampaignRankPageSchema,
 } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import { Rank } from '@/domain/community/entities/rank.entity';
+import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import { LockingEventPageSchema } from '@/domain/community/entities/schemas/locking-event.schema';
 import {
-  RankPageSchema,
-  RankSchema,
-} from '@/domain/community/entities/schemas/rank.schema';
+  LockingRankPageSchema,
+  LockingRankSchema,
+} from '@/domain/community/entities/schemas/locking-rank.schema';
 import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
@@ -39,17 +39,17 @@ export class CommunityRepository implements ICommunityRepository {
     return CampaignPageSchema.parse(page);
   }
 
-  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
-    const rank = await this.lockingApi.getRank(safeAddress);
-    return RankSchema.parse(rank);
+  async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {
+    const lockingRank = await this.lockingApi.getLockingRank(safeAddress);
+    return LockingRankSchema.parse(lockingRank);
   }
 
   async getLeaderboard(args: {
     limit?: number;
     offset?: number;
-  }): Promise<Page<Rank>> {
+  }): Promise<Page<LockingRank>> {
     const page = await this.lockingApi.getLeaderboard(args);
-    return RankPageSchema.parse(page);
+    return LockingRankPageSchema.parse(page);
   }
 
   async getCampaignLeaderboard(args: {

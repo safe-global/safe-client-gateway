@@ -1,14 +1,14 @@
-import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
-import { RankSchema } from '@/domain/community/entities/schemas/rank.schema';
+import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
+import { LockingRankSchema } from '@/domain/community/entities/schemas/locking-rank.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('RankSchema', () => {
-  it('should validate a valid rank', () => {
-    const rank = rankBuilder().build();
+  it('should validate a valid locking rank', () => {
+    const lockingRank = lockingRankBuilder().build();
 
-    const result = RankSchema.safeParse(rank);
+    const result = LockingRankSchema.safeParse(lockingRank);
 
     expect(result.success).toBe(true);
   });
@@ -17,19 +17,21 @@ describe('RankSchema', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as `0x${string}`;
-    const rank = rankBuilder().with('holder', nonChecksummedAddress).build();
+    const lockingRank = lockingRankBuilder()
+      .with('holder', nonChecksummedAddress)
+      .build();
 
-    const result = RankSchema.safeParse(rank);
+    const result = LockingRankSchema.safeParse(lockingRank);
 
     expect(result.success && result.data.holder).toBe(
       getAddress(nonChecksummedAddress),
     );
   });
 
-  it('should not validate an invalid rank', () => {
-    const rank = { invalid: 'rank' };
+  it('should not validate an invalid locking rank', () => {
+    const lockingRank = { invalid: 'lockingRank' };
 
-    const result = RankSchema.safeParse(rank);
+    const result = LockingRankSchema.safeParse(lockingRank);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([

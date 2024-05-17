@@ -1,6 +1,6 @@
 import { LockingEventPage } from '@/routes/locking/entities/locking-event.page.entity';
-import { Rank } from '@/routes/locking/entities/rank.entity';
-import { RankPage } from '@/routes/locking/entities/rank.page.entity';
+import { LockingRank } from '@/routes/locking/entities/locking-rank.entity';
+import { LockingRankPage } from '@/routes/locking/entities/locking-rank.page.entity';
 import {
   Controller,
   Get,
@@ -24,7 +24,7 @@ import { Request } from 'express';
 })
 export class LockingController {
   @ApiOperation({ deprecated: true })
-  @ApiOkResponse({ type: Rank })
+  @ApiOkResponse({ type: LockingRank })
   @Redirect(undefined, HttpStatus.PERMANENT_REDIRECT)
   @Get('/leaderboard/rank/:safeAddress')
   getRank(
@@ -35,7 +35,7 @@ export class LockingController {
   }
 
   @ApiOperation({ deprecated: true })
-  @ApiOkResponse({ type: RankPage })
+  @ApiOkResponse({ type: LockingRankPage })
   @ApiQuery({
     name: 'cursor',
     required: false,

@@ -9,7 +9,7 @@ import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import { Rank } from '@/domain/community/entities/rank.entity';
+import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import { Inject } from '@nestjs/common';
 
 export class LockingApi implements ILockingApi {
@@ -57,10 +57,10 @@ export class LockingApi implements ILockingApi {
     }
   }
 
-  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
+  async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {
     try {
       const url = `${this.baseUri}/api/v1/leaderboard/${safeAddress}`;
-      const { data } = await this.networkService.get<Rank>({ url });
+      const { data } = await this.networkService.get<LockingRank>({ url });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -70,10 +70,10 @@ export class LockingApi implements ILockingApi {
   async getLeaderboard(args: {
     limit?: number;
     offset?: number;
-  }): Promise<Page<Rank>> {
+  }): Promise<Page<LockingRank>> {
     try {
       const url = `${this.baseUri}/api/v1/leaderboard`;
-      const { data } = await this.networkService.get<Page<Rank>>({
+      const { data } = await this.networkService.get<Page<LockingRank>>({
         url,
         networkRequest: {
           params: {
