@@ -102,7 +102,7 @@ export class HumanDescriptionTemplate {
     const value = args[index];
 
     switch (tokenType) {
-      case ValueType.TokenValue: {
+      case 'tokenValue': {
         if (typeof value !== 'bigint') {
           throw Error(
             `Invalid token type amount. tokenType=${tokenType}, amount=${value}`,
@@ -114,7 +114,7 @@ export class HumanDescriptionTemplate {
           value: { amount: value, address: to },
         };
       }
-      case ValueType.Address: {
+      case 'address': {
         if (!isHex(value)) {
           throw Error(
             `Invalid token type value. tokenType=${tokenType}, address=${value}`,
@@ -126,7 +126,7 @@ export class HumanDescriptionTemplate {
           value,
         };
       }
-      case ValueType.Number: {
+      case 'number': {
         if (typeof value !== 'bigint') {
           throw Error(
             `Invalid token type value. tokenType=${tokenType}, address=${value}`,

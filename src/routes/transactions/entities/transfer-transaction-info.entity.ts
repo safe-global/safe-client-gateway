@@ -19,14 +19,14 @@ export class TransferTransactionInfo extends TransactionInfo {
   @ApiProperty()
   recipient: AddressInfo;
   @ApiProperty()
-  direction: string;
+  direction: TransferDirection;
   @ApiProperty()
   transferInfo: Transfer;
 
   constructor(
     sender: AddressInfo,
     recipient: AddressInfo,
-    direction: string,
+    direction: TransferDirection,
     transferInfo: Transfer,
     humanDescription: string | null,
     richDecodedInfo: RichDecodedInfo | null | undefined,
