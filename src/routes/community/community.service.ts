@@ -2,7 +2,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import { Rank } from '@/domain/community/entities/rank.entity';
+import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import {
   PaginationData,
@@ -71,7 +71,7 @@ export class CommunityService {
   async getLockingLeaderboard(args: {
     routeUrl: URL;
     paginationData: PaginationData;
-  }): Promise<Page<Rank>> {
+  }): Promise<Page<LockingRank>> {
     const result = await this.communityRepository.getLeaderboard(
       args.paginationData,
     );
@@ -90,8 +90,8 @@ export class CommunityService {
     };
   }
 
-  async getLockingRank(safeAddress: `0x${string}`): Promise<Rank> {
-    return this.communityRepository.getRank(safeAddress);
+  async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {
+    return this.communityRepository.getLockingRank(safeAddress);
   }
 
   async getLockingHistory(args: {

@@ -28,7 +28,7 @@ import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { getAddress } from 'viem';
-import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
+import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
@@ -416,7 +416,7 @@ describe('Community (Unit)', () => {
   describe('GET /community/locking/leaderboard', () => {
     it('should get the leaderboard', async () => {
       const leaderboard = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -454,7 +454,7 @@ describe('Community (Unit)', () => {
       const limit = faker.number.int({ min: 1, max: 10 });
       const offset = faker.number.int({ min: 1, max: 10 });
       const leaderboard = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -545,21 +545,21 @@ describe('Community (Unit)', () => {
   });
 
   describe('GET /community/locking/:safeAddress/rank', () => {
-    it('should get the rank', async () => {
-      const rank = rankBuilder().build();
+    it('should get the locking rank', async () => {
+      const lockingRank = lockingRankBuilder().build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/leaderboard/${rank.holder}`:
-            return Promise.resolve({ data: rank, status: 200 });
+          case `${lockingBaseUri}/api/v1/leaderboard/${lockingRank.holder}`:
+            return Promise.resolve({ data: lockingRank, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/locking/${rank.holder}/rank`)
+        .get(`/v1/community/locking/${lockingRank.holder}/rank`)
         .expect(200)
-        .expect(rank);
+        .expect(lockingRank);
     });
 
     it('should validate the Safe address in URL', async () => {
@@ -578,11 +578,11 @@ describe('Community (Unit)', () => {
 
     it('should validate the response', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const rank = { invalid: 'rank' };
+      const lockingRank = { invalid: 'lockingRank' };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
-            return Promise.resolve({ data: rank, status: 200 });
+            return Promise.resolve({ data: lockingRank, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }

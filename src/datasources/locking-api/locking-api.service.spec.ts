@@ -12,7 +12,7 @@ import {
   withdrawEventItemBuilder,
 } from '@/domain/community/entities/__tests__/locking-event.builder';
 import { getAddress } from 'viem';
-import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
+import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
@@ -156,20 +156,18 @@ describe('LockingApi', () => {
     });
   });
 
-  describe('getRank', () => {
-    it('should get rank', async () => {
+  describe('getLockingRank', () => {
+    it('should get locking rank', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const rank = rankBuilder().build();
+      const lockingRank = lockingRankBuilder().build();
       mockNetworkService.get.mockResolvedValueOnce({
-        data: {
-          rank,
-        },
+        data: lockingRank,
         status: 200,
       });
 
-      const result = await service.getRank(safeAddress);
+      const result = await service.getLockingRank(safeAddress);
 
-      expect(result).toEqual({ rank });
+      expect(result).toEqual(lockingRank);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`,
       });
@@ -189,7 +187,7 @@ describe('LockingApi', () => {
       );
       mockNetworkService.get.mockRejectedValueOnce(error);
 
-      await expect(service.getRank(safeAddress)).rejects.toThrow(
+      await expect(service.getLockingRank(safeAddress)).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
 
@@ -200,7 +198,7 @@ describe('LockingApi', () => {
   describe('getLeaderboard', () => {
     it('should get leaderboard', async () => {
       const leaderboardPage = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
         data: leaderboardPage,
@@ -225,7 +223,7 @@ describe('LockingApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const leaderboardPage = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
         data: leaderboardPage,
