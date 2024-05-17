@@ -152,7 +152,7 @@ export class TransferImitationMapper {
    * @param txInfo - transaction info
    * @returns - address of sender or recipient
    */
-  private getReferenceAddress(txInfo: TransferTransactionInfo) {
+  private getReferenceAddress(txInfo: TransferTransactionInfo): string {
     return txInfo.direction === TransferDirection.Outgoing
       ? txInfo.recipient.value
       : txInfo.sender.value;
