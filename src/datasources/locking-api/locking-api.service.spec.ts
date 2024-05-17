@@ -10,12 +10,12 @@ import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
-} from '@/domain/locking/entities/__tests__/locking-event.builder';
+} from '@/domain/community/entities/__tests__/locking-event.builder';
 import { getAddress } from 'viem';
-import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
-import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
-import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
-import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
+import { rankBuilder } from '@/domain/community/entities/__tests__/rank.builder';
+import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
+import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
+import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 
 const networkService = {
   get: jest.fn(),

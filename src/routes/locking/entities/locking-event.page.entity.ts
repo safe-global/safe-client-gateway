@@ -2,8 +2,8 @@ import {
   LockEventItem as DomainLockEventItem,
   UnlockEventItem as DomainUnlockEventItem,
   WithdrawEventItem as DomainWithdrawEventItem,
-} from '@/domain/locking/entities/locking-event.entity';
-import { LockingEventType } from '@/domain/locking/entities/schemas/locking-event.schema';
+} from '@/domain/community/entities/locking-event.entity';
+import { LockingEventType } from '@/domain/community/entities/schemas/locking-event.schema';
 import { Page } from '@/routes/common/entities/page.entity';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 

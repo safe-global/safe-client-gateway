@@ -1,4 +1,4 @@
-import { ActivityMetadata as DomainActivityMetadata } from '@/domain/locking/entities/activity-metadata.entity';
+import { ActivityMetadata as DomainActivityMetadata } from '@/domain/community/entities/activity-metadata.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ActivityMetadata implements DomainActivityMetadata {

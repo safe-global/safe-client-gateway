@@ -1,5 +1,5 @@
 import { IBuilder, Builder } from '@/__tests__/builder';
-import { Rank } from '@/domain/locking/entities/rank.entity';
+import { Rank } from '@/domain/community/entities/rank.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

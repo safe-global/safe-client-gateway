@@ -1,12 +1,12 @@
 import { Page } from '@/domain/entities/page.entity';
-import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
-import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
-import { Rank } from '@/domain/locking/entities/rank.entity';
+import { Campaign } from '@/domain/community/entities/campaign.entity';
+import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
+import { Rank } from '@/domain/community/entities/rank.entity';
 
-export const ILockingRepository = Symbol('ILockingRepository');
+export const ICommunityRepository = Symbol('ICommunityRepository');
 
-export interface ILockingRepository {
+export interface ICommunityRepository {
   getCampaignById(campaignId: string): Promise<Campaign>;
 
   getCampaigns(args: {

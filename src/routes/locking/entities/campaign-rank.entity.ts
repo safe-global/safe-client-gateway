@@ -1,4 +1,4 @@
-import { CampaignRank as DomainCampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
+import { CampaignRank as DomainCampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CampaignRank implements DomainCampaignRank {

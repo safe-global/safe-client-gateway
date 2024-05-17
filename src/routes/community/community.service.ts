@@ -1,9 +1,9 @@
 import { Page } from '@/domain/entities/page.entity';
-import { Campaign } from '@/domain/locking/entities/campaign.entity';
-import { CampaignRank } from '@/domain/locking/entities/campaign-rank.entity';
-import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
-import { Rank } from '@/domain/locking/entities/rank.entity';
-import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
+import { Campaign } from '@/domain/community/entities/campaign.entity';
+import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
+import { Rank } from '@/domain/community/entities/rank.entity';
+import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import {
   PaginationData,
   cursorUrlFromLimitAndOffset,
@@ -13,15 +13,15 @@ import { Inject, Injectable } from '@nestjs/common';
 @Injectable()
 export class CommunityService {
   constructor(
-    @Inject(ILockingRepository)
-    private readonly lockingRepository: ILockingRepository,
+    @Inject(ICommunityRepository)
+    private readonly communityRepository: ICommunityRepository,
   ) {}
 
   async getCampaigns(args: {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<Campaign>> {
-    const result = await this.lockingRepository.getCampaigns(
+    const result = await this.communityRepository.getCampaigns(
       args.paginationData,
     );
 
@@ -40,7 +40,7 @@ export class CommunityService {
   }
 
   async getCampaignById(campaignId: string): Promise<Campaign> {
-    return this.lockingRepository.getCampaignById(campaignId);
+    return this.communityRepository.getCampaignById(campaignId);
   }
 
   async getCampaignLeaderboard(args: {
@@ -48,7 +48,7 @@ export class CommunityService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignRank>> {
-    const result = await this.lockingRepository.getCampaignLeaderboard({
+    const result = await this.communityRepository.getCampaignLeaderboard({
       campaignId: args.campaignId,
       limit: args.paginationData.limit,
       offset: args.paginationData.offset,
@@ -72,7 +72,7 @@ export class CommunityService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<Rank>> {
-    const result = await this.lockingRepository.getLeaderboard(
+    const result = await this.communityRepository.getLeaderboard(
       args.paginationData,
     );
 
@@ -91,7 +91,7 @@ export class CommunityService {
   }
 
   async getLockingRank(safeAddress: `0x${string}`): Promise<Rank> {
-    return this.lockingRepository.getRank(safeAddress);
+    return this.communityRepository.getRank(safeAddress);
   }
 
   async getLockingHistory(args: {
@@ -99,7 +99,7 @@ export class CommunityService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<LockingEvent>> {
-    const result = await this.lockingRepository.getLockingHistory({
+    const result = await this.communityRepository.getLockingHistory({
       safeAddress: args.safeAddress,
       limit: args.paginationData.limit,
       offset: args.paginationData.offset,

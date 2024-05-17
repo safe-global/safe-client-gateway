@@ -3,13 +3,13 @@ import {
   LockEventItem,
   UnlockEventItem,
   WithdrawEventItem,
-} from '@/domain/locking/entities/locking-event.entity';
+} from '@/domain/community/entities/locking-event.entity';
 import {
   LockEventItemSchema,
   LockingEventType,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/domain/locking/entities/schemas/locking-event.schema';
+} from '@/domain/community/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
 import { Hex, getAddress } from 'viem';
 import { z } from 'zod';

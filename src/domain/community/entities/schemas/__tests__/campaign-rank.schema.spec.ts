@@ -1,5 +1,5 @@
-import { campaignRankBuilder } from '@/domain/locking/entities/__tests__/campaign-rank.builder';
-import { CampaignRankSchema } from '@/domain/locking/entities/campaign-rank.entity';
+import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
+import { CampaignRankSchema } from '@/domain/community/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

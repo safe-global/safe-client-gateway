@@ -1,5 +1,5 @@
-import { campaignBuilder } from '@/domain/locking/entities/__tests__/campaign.builder';
-import { CampaignSchema } from '@/domain/locking/entities/campaign.entity';
+import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
+import { CampaignSchema } from '@/domain/community/entities/campaign.entity';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 

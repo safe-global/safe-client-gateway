@@ -4,23 +4,23 @@ import {
   Campaign,
   CampaignPageSchema,
   CampaignSchema,
-} from '@/domain/locking/entities/campaign.entity';
+} from '@/domain/community/entities/campaign.entity';
 import {
   CampaignRank,
   CampaignRankPageSchema,
-} from '@/domain/locking/entities/campaign-rank.entity';
-import { LockingEvent } from '@/domain/locking/entities/locking-event.entity';
-import { Rank } from '@/domain/locking/entities/rank.entity';
-import { LockingEventPageSchema } from '@/domain/locking/entities/schemas/locking-event.schema';
+} from '@/domain/community/entities/campaign-rank.entity';
+import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
+import { Rank } from '@/domain/community/entities/rank.entity';
+import { LockingEventPageSchema } from '@/domain/community/entities/schemas/locking-event.schema';
 import {
   RankPageSchema,
   RankSchema,
-} from '@/domain/locking/entities/schemas/rank.schema';
-import { ILockingRepository } from '@/domain/locking/locking.repository.interface';
+} from '@/domain/community/entities/schemas/rank.schema';
+import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class LockingRepository implements ILockingRepository {
+export class CommunityRepository implements ICommunityRepository {
   constructor(
     @Inject(ILockingApi)
     private readonly lockingApi: ILockingApi,

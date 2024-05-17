@@ -1,5 +1,5 @@
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { ActivityMetadataSchema } from '@/domain/locking/entities/activity-metadata.entity';
+import { ActivityMetadataSchema } from '@/domain/community/entities/activity-metadata.entity';
 import { z } from 'zod';
 
 export type Campaign = z.infer<typeof CampaignSchema>;
