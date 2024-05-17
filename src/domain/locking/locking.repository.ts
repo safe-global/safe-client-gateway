@@ -3,6 +3,7 @@ import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import {
   Campaign,
   CampaignPageSchema,
+  CampaignSchema,
 } from '@/domain/locking/entities/campaign.entity';
 import {
   CampaignRank,
@@ -26,7 +27,8 @@ export class LockingRepository implements ILockingRepository {
   ) {}
 
   async getCampaignById(campaignId: string): Promise<Campaign> {
-    return this.lockingApi.getCampaignById(campaignId);
+    const campaign = await this.lockingApi.getCampaignById(campaignId);
+    return CampaignSchema.parse(campaign);
   }
 
   async getCampaigns(args: {
