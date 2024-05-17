@@ -8,4 +8,5 @@ import { LockingRepository } from '@/domain/locking/locking.repository';
   providers: [{ provide: ILockingRepository, useClass: LockingRepository }],
   exports: [ILockingRepository],
 })
+// TODO: Convert to CommunityDomainModule
 export class LockingDomainModule {}

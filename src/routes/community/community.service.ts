@@ -11,15 +11,11 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class LockingService {
+export class CommunityService {
   constructor(
     @Inject(ILockingRepository)
     private readonly lockingRepository: ILockingRepository,
   ) {}
-
-  async getCampaignById(campaignId: string): Promise<Campaign> {
-    return this.lockingRepository.getCampaignById(campaignId);
-  }
 
   async getCampaigns(args: {
     routeUrl: URL;
@@ -43,30 +39,8 @@ export class LockingService {
     };
   }
 
-  async getRank(safeAddress: `0x${string}`): Promise<Rank> {
-    return this.lockingRepository.getRank(safeAddress);
-  }
-
-  async getLeaderboard(args: {
-    routeUrl: URL;
-    paginationData: PaginationData;
-  }): Promise<Page<Rank>> {
-    const result = await this.lockingRepository.getLeaderboard(
-      args.paginationData,
-    );
-
-    const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
-    const previousUrl = cursorUrlFromLimitAndOffset(
-      args.routeUrl,
-      result.previous,
-    );
-
-    return {
-      count: result.count,
-      next: nextUrl?.toString() ?? null,
-      previous: previousUrl?.toString() ?? null,
-      results: result.results,
-    };
+  async getCampaignById(campaignId: string): Promise<Campaign> {
+    return this.lockingRepository.getCampaignById(campaignId);
   }
 
   async getCampaignLeaderboard(args: {
@@ -92,6 +66,32 @@ export class LockingService {
       previous: previousUrl?.toString() ?? null,
       results: result.results,
     };
+  }
+
+  async getLockingLeaderboard(args: {
+    routeUrl: URL;
+    paginationData: PaginationData;
+  }): Promise<Page<Rank>> {
+    const result = await this.lockingRepository.getLeaderboard(
+      args.paginationData,
+    );
+
+    const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
+    const previousUrl = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      result.previous,
+    );
+
+    return {
+      count: result.count,
+      next: nextUrl?.toString() ?? null,
+      previous: previousUrl?.toString() ?? null,
+      results: result.results,
+    };
+  }
+
+  async getLockingRank(safeAddress: `0x${string}`): Promise<Rank> {
+    return this.lockingRepository.getRank(safeAddress);
   }
 
   async getLockingHistory(args: {

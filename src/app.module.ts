@@ -15,6 +15,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CacheHooksModule } from '@/routes/cache-hooks/cache-hooks.module';
 import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
+import { CommunityModule } from '@/routes/community/community.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
@@ -70,6 +71,7 @@ export class AppModule implements NestModule {
         CacheHooksModule,
         ChainsModule,
         CollectiblesModule,
+        CommunityModule,
         ContractsModule,
         DataDecodedModule,
         // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
