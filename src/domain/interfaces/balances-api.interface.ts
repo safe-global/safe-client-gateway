@@ -15,7 +15,7 @@ export interface IBalancesApi {
   clearBalances(args: { chainId: string; safeAddress: string }): Promise<void>;
 
   getCollectibles(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     chainId?: string;
     limit?: number;
     offset?: number;
@@ -25,7 +25,7 @@ export interface IBalancesApi {
 
   clearCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void>;
 
   getFiatCodes(): Promise<string[]>;

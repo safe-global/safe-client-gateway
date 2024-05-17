@@ -14,6 +14,8 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('collectibles')
 @Controller({
@@ -41,7 +43,8 @@ export class CollectiblesController {
   @Get('chains/:chainId/safes/:safeAddress/collectibles')
   async getCollectibles(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)

@@ -81,14 +81,14 @@ export class CacheRouter {
 
   static getZerionCollectiblesCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.ZERION_COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
   static getZerionCollectiblesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): CacheDir {
@@ -136,7 +136,7 @@ export class CacheRouter {
 
   static getCollectiblesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -150,7 +150,7 @@ export class CacheRouter {
 
   static getCollectiblesKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
