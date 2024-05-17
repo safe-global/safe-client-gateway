@@ -41,7 +41,7 @@ describe('CoingeckoAPI', () => {
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(

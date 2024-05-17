@@ -46,9 +46,7 @@ export class CacheHooksController {
   @Post('/hooks/events')
   @UseFilters(EventProtocolChangedFilter)
   @HttpCode(202)
-  async postEvent(
-    @Body(new ValidationPipe(WebHookSchema)) event: Event,
-  ): Promise<void> {
+  postEvent(@Body(new ValidationPipe(WebHookSchema)) event: Event): void {
     if (!this.isEventsQueueEnabled || this.isHttpEvent(event)) {
       this.service.onEvent(event).catch((error) => {
         this.loggingService.error(error);

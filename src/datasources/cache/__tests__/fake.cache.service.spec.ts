@@ -5,7 +5,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 describe('FakeCacheService', () => {
   let target: FakeCacheService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     target = new FakeCacheService();
   });
 

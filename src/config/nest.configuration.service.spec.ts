@@ -11,12 +11,12 @@ const configServiceMock = jest.mocked(configService);
 describe('NestConfigurationService', () => {
   let target: NestConfigurationService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     target = new NestConfigurationService(configServiceMock);
   });
 
-  it(`get key is successful`, async () => {
+  it(`get key is successful`, () => {
     const key = faker.string.sample();
     const value = { some: { value: 10 } };
     configServiceMock.get.mockReturnValue(value);
@@ -29,7 +29,7 @@ describe('NestConfigurationService', () => {
     expect(result).toBe(value);
   });
 
-  it(`get key returns undefined when no key is found`, async () => {
+  it(`get key returns undefined when no key is found`, () => {
     const key = faker.string.sample();
     configServiceMock.get.mockReturnValue(undefined);
 
@@ -41,7 +41,7 @@ describe('NestConfigurationService', () => {
     expect(result).toBe(undefined);
   });
 
-  it(`getOrThrow key is successful`, async () => {
+  it(`getOrThrow key is successful`, () => {
     const key = faker.string.sample();
     const value = { some: { value: 10 } };
     configServiceMock.getOrThrow.mockReturnValue(value);
@@ -54,7 +54,7 @@ describe('NestConfigurationService', () => {
     expect(result).toBe(value);
   });
 
-  it(`getOrThrow key throws error`, async () => {
+  it(`getOrThrow key throws error`, () => {
     const key = faker.string.sample();
     configServiceMock.getOrThrow.mockImplementation(() => {
       throw new Error('some error');

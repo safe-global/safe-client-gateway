@@ -21,7 +21,7 @@ describe('GelatoApi', () => {
   let ttlSeconds: number;
   let httpErrorFactory: HttpErrorFactory;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();

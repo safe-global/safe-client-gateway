@@ -222,7 +222,8 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    return this.fiatCodes;
+    // Resolving to conform with interface
+    return Promise.resolve(this.fiatCodes);
   }
 
   private _mapErc20Balance(

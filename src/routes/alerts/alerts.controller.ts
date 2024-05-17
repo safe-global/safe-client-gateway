@@ -37,10 +37,10 @@ export class AlertsController {
   @UseGuards(TenderlySignatureGuard)
   @Post()
   @HttpCode(202)
-  async postAlert(
+  postAlert(
     @Body(new ValidationPipe(AlertSchema))
     alertPayload: Alert,
-  ): Promise<void> {
+  ): void {
     // TODO: we return immediately but we should consider a pub/sub system to tackle received alerts
     //  which were not handled correctly (e.g. due to other 3rd parties being unavailable)
     this.alertsService

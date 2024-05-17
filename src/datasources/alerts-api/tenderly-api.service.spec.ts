@@ -25,7 +25,7 @@ describe('TenderlyApi', () => {
   let tenderlyAccount: string;
   let tenderlyProject: string;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
 
     tenderlyBaseUri = faker.internet.url({ appendSlash: false });
@@ -48,7 +48,7 @@ describe('TenderlyApi', () => {
     );
   });
 
-  it('should error if configuration is not defined', async () => {
+  it('should error if configuration is not defined', () => {
     const fakeConfigurationService = new FakeConfigurationService();
     const httpErrorFactory = new HttpErrorFactory();
 
