@@ -7,7 +7,7 @@ export function campaignRankBuilder(): IBuilder<CampaignRank> {
   return new Builder<CampaignRank>()
     .with('holder', getAddress(faker.finance.ethereumAddress()))
     .with('position', faker.number.int())
-    .with('boost', faker.string.numeric())
-    .with('points', faker.string.numeric())
-    .with('boostedPoints', faker.string.numeric());
+    .with('boost', faker.number.float())
+    .with('points', faker.number.float())
+    .with('boostedPoints', faker.number.float());
 }
