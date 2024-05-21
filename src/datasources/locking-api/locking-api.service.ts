@@ -26,9 +26,9 @@ export class LockingApi implements ILockingApi {
       this.configurationService.getOrThrow<string>('locking.baseUri');
   }
 
-  async getCampaignById(campaignId: string): Promise<Campaign> {
+  async getCampaignById(resourceId: string): Promise<Campaign> {
     try {
-      const url = `${this.baseUri}/api/v1/campaigns/${campaignId}`;
+      const url = `${this.baseUri}/api/v1/campaigns/${resourceId}`;
       const { data } = await this.networkService.get<Campaign>({ url });
       return data;
     } catch (error) {
@@ -89,12 +89,12 @@ export class LockingApi implements ILockingApi {
   }
 
   async getCampaignLeaderboard(args: {
-    campaignId: string;
+    resourceId: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignRank>> {
     try {
-      const url = `${this.baseUri}/api/v1/campaigns/${args.campaignId}/leaderboard`;
+      const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/leaderboard`;
       const { data } = await this.networkService.get<Page<CampaignRank>>({
         url,
         networkRequest: {

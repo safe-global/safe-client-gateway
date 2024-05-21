@@ -5,7 +5,7 @@ import { z } from 'zod';
 export type Campaign = z.infer<typeof CampaignSchema>;
 
 export const CampaignSchema = z.object({
-  campaignId: z.string(),
+  resourceId: z.string(),
   name: z.string(),
   description: z.string(),
   startDate: z.coerce.date(),

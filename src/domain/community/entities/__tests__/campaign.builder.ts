@@ -5,7 +5,7 @@ import { faker } from '@faker-js/faker';
 
 export function campaignBuilder(): IBuilder<Campaign> {
   return new Builder<Campaign>()
-    .with('campaignId', faker.string.uuid())
+    .with('resourceId', faker.string.uuid())
     .with('name', faker.word.words())
     .with('description', faker.lorem.sentence())
     .with('startDate', faker.date.recent())

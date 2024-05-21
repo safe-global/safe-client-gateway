@@ -39,17 +39,17 @@ export class CommunityService {
     };
   }
 
-  async getCampaignById(campaignId: string): Promise<Campaign> {
-    return this.communityRepository.getCampaignById(campaignId);
+  async getCampaignById(resourceId: string): Promise<Campaign> {
+    return this.communityRepository.getCampaignById(resourceId);
   }
 
   async getCampaignLeaderboard(args: {
-    campaignId: string;
+    resourceId: string;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignRank>> {
     const result = await this.communityRepository.getCampaignLeaderboard({
-      campaignId: args.campaignId,
+      resourceId: args.resourceId,
       limit: args.paginationData.limit,
       offset: args.paginationData.offset,
     });

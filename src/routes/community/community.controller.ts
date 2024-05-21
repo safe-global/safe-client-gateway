@@ -36,11 +36,11 @@ export class CommunityController {
   }
 
   @ApiOkResponse({ type: Campaign })
-  @Get('/campaigns/:campaignId')
+  @Get('/campaigns/:resourceId')
   async getCampaignById(
-    @Param('campaignId') campaignId: string,
+    @Param('resourceId') resourceId: string,
   ): Promise<Campaign> {
-    return this.communityService.getCampaignById(campaignId);
+    return this.communityService.getCampaignById(resourceId);
   }
 
   @ApiOkResponse({ type: CampaignRankPage })
@@ -49,14 +49,14 @@ export class CommunityController {
     required: false,
     type: String,
   })
-  @Get('/campaigns/:campaignId/leaderboard')
+  @Get('/campaigns/:resourceId/leaderboard')
   async getCampaignLeaderboard(
-    @Param('campaignId') campaignId: string,
+    @Param('resourceId') resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<CampaignRankPage> {
     return this.communityService.getCampaignLeaderboard({
-      campaignId,
+      resourceId,
       routeUrl,
       paginationData,
     });

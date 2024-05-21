@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Campaign implements DomainCampaign {
   @ApiProperty()
-  campaignId!: string;
+  resourceId!: string;
   @ApiProperty()
   name!: string;
   @ApiProperty()
