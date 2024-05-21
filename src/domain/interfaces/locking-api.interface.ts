@@ -27,6 +27,11 @@ export interface ILockingApi {
     offset?: number;
   }): Promise<Page<CampaignRank>>;
 
+  getCampaignRank(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CampaignRank>;
+
   getLockingHistory(args: {
     safeAddress: `0x${string}`;
     limit?: number;

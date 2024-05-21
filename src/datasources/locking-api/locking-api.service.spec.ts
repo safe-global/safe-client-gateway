@@ -156,6 +156,49 @@ describe('LockingApi', () => {
     });
   });
 
+  describe('getCampaignRank', () => {
+    it('should get campaign rank', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignRank = campaignRankBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignRank,
+        status: 200,
+      });
+
+      const result = await service.getCampaignRank({ resourceId, safeAddress });
+
+      expect(result).toEqual(campaignRank);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
+      });
+    });
+
+    it('should forward error', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(
+          `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
+        ),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignRank({ resourceId, safeAddress }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('getLockingRank', () => {
     it('should get locking rank', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
