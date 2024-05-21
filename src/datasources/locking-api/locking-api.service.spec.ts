@@ -170,7 +170,7 @@ describe('LockingApi', () => {
 
       expect(result).toEqual(campaignRank);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaign/${resourceId}/leaderboard/${safeAddress}`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
       });
     });
 
@@ -180,7 +180,7 @@ describe('LockingApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
-          `${lockingBaseUri}/api/v1/campaign/${resourceId}/leaderboard/${safeAddress}`,
+          `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
         ),
         {
           status,
