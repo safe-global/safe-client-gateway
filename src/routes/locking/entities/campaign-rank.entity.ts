@@ -9,7 +9,7 @@ export class CampaignRank implements DomainCampaignRank {
   @ApiProperty()
   boost!: number;
   @ApiProperty()
-  points!: number;
+  totalPoints!: number;
   @ApiProperty()
-  boostedPoints!: number;
+  totalBoostedPoints!: number;
 }

@@ -6,8 +6,8 @@ export const CampaignRankSchema = z.object({
   holder: AddressSchema,
   position: z.number(),
   boost: z.number(),
-  points: z.number(),
-  boostedPoints: z.number(),
+  totalPoints: z.number(),
+  totalBoostedPoints: z.number(),
 });
 
 export const CampaignRankPageSchema = buildPageSchema(CampaignRankSchema);
