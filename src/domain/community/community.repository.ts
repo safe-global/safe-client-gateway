@@ -8,6 +8,7 @@ import {
 import {
   CampaignRank,
   CampaignRankPageSchema,
+  CampaignRankSchema,
 } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
@@ -59,6 +60,14 @@ export class CommunityRepository implements ICommunityRepository {
   }): Promise<Page<CampaignRank>> {
     const page = await this.lockingApi.getCampaignLeaderboard(args);
     return CampaignRankPageSchema.parse(page);
+  }
+
+  async getCampaignRank(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CampaignRank> {
+    const campaignRank = await this.lockingApi.getCampaignRank(args);
+    return CampaignRankSchema.parse(campaignRank);
   }
 
   async getLockingHistory(args: {

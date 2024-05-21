@@ -27,6 +27,11 @@ export interface ICommunityRepository {
     offset?: number;
   }): Promise<Page<CampaignRank>>;
 
+  getCampaignRank(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CampaignRank>;
+
   getLockingHistory(args: {
     safeAddress: `0x${string}`;
     offset?: number;
