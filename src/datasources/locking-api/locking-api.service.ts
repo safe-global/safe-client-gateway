@@ -62,7 +62,7 @@ export class LockingApi implements ILockingApi {
     safeAddress: `0x${string}`;
   }): Promise<CampaignRank> {
     try {
-      const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/${args.safeAddress}`;
+      const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/leaderboard/${args.safeAddress}`;
       const { data } = await this.networkService.get<CampaignRank>({ url });
       return data;
     } catch (error) {
