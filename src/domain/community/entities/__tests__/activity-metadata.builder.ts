@@ -4,8 +4,7 @@ import { faker } from '@faker-js/faker';
 
 export function activityMetadataBuilder(): IBuilder<ActivityMetadata> {
   return new Builder<ActivityMetadata>()
-    .with('resourceId', faker.string.uuid())
     .with('name', faker.word.words())
     .with('description', faker.lorem.sentence())
-    .with('maxPoints', faker.string.numeric());
+    .with('maxPoints', faker.number.int());
 }

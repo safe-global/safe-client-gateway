@@ -1,6 +1,5 @@
 import { activityMetadataBuilder } from '@/domain/community/entities/__tests__/activity-metadata.builder';
 import { ActivityMetadataSchema } from '@/domain/community/entities/activity-metadata.entity';
-import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
 describe('ActivityMetadataSchema', () => {
@@ -12,24 +11,6 @@ describe('ActivityMetadataSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should not allow a non-numeric string for maxPoints', () => {
-    const activityMetadata = activityMetadataBuilder()
-      .with('maxPoints', faker.string.alpha())
-      .build();
-
-    const result = ActivityMetadataSchema.safeParse(activityMetadata);
-
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid base-10 numeric string',
-          path: ['maxPoints'],
-        },
-      ]),
-    );
-  });
-
   it('should not validate an invalid activity metadata', () => {
     const activityMetadata = { invalid: 'activity metadata' };
 
@@ -37,13 +18,6 @@ describe('ActivityMetadataSchema', () => {
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['resourceId'],
-          message: 'Required',
-        },
         {
           code: 'invalid_type',
           expected: 'string',
@@ -60,7 +34,7 @@ describe('ActivityMetadataSchema', () => {
         },
         {
           code: 'invalid_type',
-          expected: 'string',
+          expected: 'number',
           received: 'undefined',
           path: ['maxPoints'],
           message: 'Required',

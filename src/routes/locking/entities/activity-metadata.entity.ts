@@ -3,11 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ActivityMetadata implements DomainActivityMetadata {
   @ApiProperty()
-  resourceId!: string;
-  @ApiProperty()
   name!: string;
   @ApiProperty()
   description!: string;
   @ApiProperty()
-  maxPoints!: string;
+  maxPoints!: number;
 }
