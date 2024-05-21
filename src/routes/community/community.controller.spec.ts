@@ -413,6 +413,99 @@ describe('Community (Unit)', () => {
     });
   });
 
+  describe('GET /community/campaigns/:resourceId/leaderboard/:safeAddress', () => {
+    it('should get the campaign rank', async () => {
+      const resourceId = faker.string.uuid();
+      const campaignRank = campaignRankBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`:
+            return Promise.resolve({ data: campaignRank, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${resourceId}/leaderboard/${safeAddress}`)
+        .expect(200)
+        .expect(campaignRank);
+    });
+
+    it('should validate the Safe address in URL', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = faker.string.alphanumeric();
+
+      await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${resourceId}/leaderboard/${safeAddress}`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid address',
+          path: [],
+        });
+    });
+
+    it('should validate the response', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignRank = { invalid: 'campaignRank' };
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`:
+            return Promise.resolve({ data: campaignRank, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${resourceId}/leaderboard/${safeAddress}`)
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('should forward an error from the service', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(
+                  `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
+                ),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${resourceId}/leaderboard/${safeAddress}`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
+
   describe('GET /community/locking/leaderboard', () => {
     it('should get the leaderboard', async () => {
       const leaderboard = pageBuilder()

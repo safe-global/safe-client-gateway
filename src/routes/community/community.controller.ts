@@ -2,6 +2,7 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CommunityService } from '@/routes/community/community.service';
+import { CampaignRank } from '@/routes/locking/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/routes/locking/entities/campaign-rank.page.entity';
 import { Campaign } from '@/routes/locking/entities/campaign.entity';
 import { CampaignPage } from '@/routes/locking/entities/campaign.page.entity';
@@ -60,6 +61,16 @@ export class CommunityController {
       routeUrl,
       paginationData,
     });
+  }
+
+  @ApiOkResponse({ type: CampaignRank })
+  @Get('/campaigns/:resourceId/leaderboard/:safeAddress')
+  async getCampaignRank(
+    @Param('resourceId') resourceId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+  ): Promise<CampaignRank> {
+    return this.communityService.getCampaignRank({ resourceId, safeAddress });
   }
 
   @ApiOkResponse({ type: LockingRankPage })

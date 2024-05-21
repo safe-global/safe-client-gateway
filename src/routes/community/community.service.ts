@@ -68,6 +68,13 @@ export class CommunityService {
     };
   }
 
+  async getCampaignRank(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CampaignRank> {
+    return this.communityRepository.getCampaignRank(args);
+  }
+
   async getLockingLeaderboard(args: {
     routeUrl: URL;
     paginationData: PaginationData;
