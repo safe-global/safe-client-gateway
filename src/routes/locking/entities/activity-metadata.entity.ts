@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ActivityMetadata implements DomainActivityMetadata {
   @ApiProperty()
-  campaignId!: string;
+  resourceId!: string;
   @ApiProperty()
   name!: string;
   @ApiProperty()

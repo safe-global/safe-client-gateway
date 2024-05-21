@@ -202,12 +202,12 @@ describe('Community (Unit)', () => {
     });
   });
 
-  describe('GET /community/campaigns/:campaignId', () => {
+  describe('GET /community/campaigns/:resourceId', () => {
     it('should get a campaign by ID', async () => {
       const campaign = campaignBuilder().build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`:
             return Promise.resolve({ data: campaign, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -215,19 +215,19 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${campaign.campaignId}`)
+        .get(`/v1/community/campaigns/${campaign.resourceId}`)
         .expect(200)
         .expect(campaignToJson(campaign) as Campaign);
     });
 
     it('should validate the response', async () => {
       const invalidCampaign = {
-        campaignId: faker.string.uuid(),
+        resourceId: faker.string.uuid(),
         invalid: 'campaign',
       };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${invalidCampaign.campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${invalidCampaign.resourceId}`:
             return Promise.resolve({ data: invalidCampaign, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -235,7 +235,7 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${invalidCampaign.campaignId}`)
+        .get(`/v1/community/campaigns/${invalidCampaign.resourceId}`)
         .expect(500)
         .expect({
           statusCode: 500,
@@ -244,17 +244,17 @@ describe('Community (Unit)', () => {
     });
 
     it('should forward an error from the service', async () => {
-      const campaignId = faker.string.uuid();
+      const resourceId = faker.string.uuid();
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
       const errorMessage = faker.word.words();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaignId}`:
+          case `${lockingBaseUri}/api/v1/campaigns/${resourceId}`:
             return Promise.reject(
               new NetworkResponseError(
-                new URL(`${lockingBaseUri}/api/v1/campaigns/${campaignId}`),
+                new URL(`${lockingBaseUri}/api/v1/campaigns/${resourceId}`),
                 {
                   status: statusCode,
                 } as Response,
@@ -267,7 +267,7 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${campaignId}`)
+        .get(`/v1/community/campaigns/${resourceId}`)
         .expect(statusCode)
         .expect({
           message: errorMessage,
@@ -276,7 +276,7 @@ describe('Community (Unit)', () => {
     });
   });
 
-  describe('GET /community/campaigns/:campaignId/leaderboard', () => {
+  describe('GET /community/campaigns/:resourceId/leaderboard', () => {
     it('should get the leaderboard by campaign ID', async () => {
       const campaign = campaignBuilder().build();
       const campaignRankPage = pageBuilder<CampaignRank>()
@@ -290,7 +290,7 @@ describe('Community (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
             return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -298,7 +298,7 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${campaign.campaignId}/leaderboard`)
+        .get(`/v1/community/campaigns/${campaign.resourceId}/leaderboard`)
         .expect(200)
         .expect({
           count: 2,
@@ -319,7 +319,7 @@ describe('Community (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
             return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -327,7 +327,7 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${campaign.campaignId}/leaderboard`)
+        .get(`/v1/community/campaigns/${campaign.resourceId}/leaderboard`)
         .expect(500)
         .expect({
           statusCode: 500,
@@ -350,7 +350,7 @@ describe('Community (Unit)', () => {
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
             return Promise.resolve({ data: campaignRankPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
@@ -359,7 +359,7 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.campaignId}/leaderboard?cursor=limit%3D${limit}%26offset%3D${offset}`,
+          `/v1/community/campaigns/${campaign.resourceId}/leaderboard?cursor=limit%3D${limit}%26offset%3D${offset}`,
         )
         .expect(200)
         .expect({
@@ -370,7 +370,7 @@ describe('Community (Unit)', () => {
         });
 
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`,
         networkRequest: {
           params: {
             limit,
@@ -388,7 +388,7 @@ describe('Community (Unit)', () => {
       const errorMessage = faker.word.words();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}/leaderboard`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
             return Promise.reject(
               new NetworkResponseError(
                 new URL(url),
@@ -404,7 +404,7 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get(`/v1/community/campaigns/${campaign.campaignId}/leaderboard`)
+        .get(`/v1/community/campaigns/${campaign.resourceId}/leaderboard`)
         .expect(statusCode)
         .expect({
           message: errorMessage,

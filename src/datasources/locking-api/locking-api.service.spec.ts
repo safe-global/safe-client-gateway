@@ -47,7 +47,7 @@ describe('LockingApi', () => {
   });
 
   describe('getCampaignById', () => {
-    it('should get a campaign by campaignId', async () => {
+    it('should get a campaign by resourceId', async () => {
       const campaign = campaignBuilder().build();
 
       mockNetworkService.get.mockResolvedValueOnce({
@@ -55,11 +55,11 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      const result = await service.getCampaignById(campaign.campaignId);
+      const result = await service.getCampaignById(campaign.resourceId);
 
       expect(result).toEqual(campaign);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`,
       });
     });
 
@@ -67,7 +67,7 @@ describe('LockingApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const campaign = campaignBuilder().build();
       const error = new NetworkResponseError(
-        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaign.campaignId}`),
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`),
         {
           status,
         } as Response,
@@ -78,7 +78,7 @@ describe('LockingApi', () => {
       mockNetworkService.get.mockRejectedValueOnce(error);
 
       await expect(
-        service.getCampaignById(campaign.campaignId),
+        service.getCampaignById(campaign.resourceId),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
@@ -266,7 +266,7 @@ describe('LockingApi', () => {
 
   describe('getCampaignLeaderboard', () => {
     it('should get leaderboard by campaign', async () => {
-      const campaignId = faker.string.uuid();
+      const resourceId = faker.string.uuid();
       const campaignRankPage = pageBuilder<CampaignRank>()
         .with('results', [
           campaignRankBuilder().build(),
@@ -278,11 +278,11 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      const result = await service.getCampaignLeaderboard({ campaignId });
+      const result = await service.getCampaignLeaderboard({ resourceId });
 
       expect(result).toEqual(campaignRankPage);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`,
         networkRequest: {
           params: {
             limit: undefined,
@@ -295,7 +295,7 @@ describe('LockingApi', () => {
     it('should forward pagination queries', async () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
-      const campaignId = faker.string.uuid();
+      const resourceId = faker.string.uuid();
       const campaignRankPage = pageBuilder<CampaignRank>()
         .with('results', [
           campaignRankBuilder().build(),
@@ -307,10 +307,10 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      await service.getCampaignLeaderboard({ campaignId, limit, offset });
+      await service.getCampaignLeaderboard({ resourceId, limit, offset });
 
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`,
         networkRequest: {
           params: {
             limit,
@@ -322,9 +322,9 @@ describe('LockingApi', () => {
 
     it('should forward error', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const campaignId = faker.string.uuid();
+      const resourceId = faker.string.uuid();
       const error = new NetworkResponseError(
-        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaignId}/leaderboard`),
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`),
         {
           status,
         } as Response,
@@ -335,7 +335,7 @@ describe('LockingApi', () => {
       mockNetworkService.get.mockRejectedValueOnce(error);
 
       await expect(
-        service.getCampaignLeaderboard({ campaignId }),
+        service.getCampaignLeaderboard({ resourceId }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);

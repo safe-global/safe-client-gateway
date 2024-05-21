@@ -7,7 +7,7 @@ import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 export const ILockingApi = Symbol('ILockingApi');
 
 export interface ILockingApi {
-  getCampaignById(campaignId: string): Promise<Campaign>;
+  getCampaignById(resourceId: string): Promise<Campaign>;
 
   getCampaigns(args: {
     limit?: number;
@@ -22,7 +22,7 @@ export interface ILockingApi {
   }): Promise<Page<LockingRank>>;
 
   getCampaignLeaderboard(args: {
-    campaignId: string;
+    resourceId: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignRank>>;

@@ -26,8 +26,8 @@ export class CommunityRepository implements ICommunityRepository {
     private readonly lockingApi: ILockingApi,
   ) {}
 
-  async getCampaignById(campaignId: string): Promise<Campaign> {
-    const campaign = await this.lockingApi.getCampaignById(campaignId);
+  async getCampaignById(resourceId: string): Promise<Campaign> {
+    const campaign = await this.lockingApi.getCampaignById(resourceId);
     return CampaignSchema.parse(campaign);
   }
 
@@ -53,7 +53,7 @@ export class CommunityRepository implements ICommunityRepository {
   }
 
   async getCampaignLeaderboard(args: {
-    campaignId: string;
+    resourceId: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignRank>> {

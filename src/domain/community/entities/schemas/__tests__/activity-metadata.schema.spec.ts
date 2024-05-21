@@ -41,7 +41,7 @@ describe('ActivityMetadataSchema', () => {
           code: 'invalid_type',
           expected: 'string',
           received: 'undefined',
-          path: ['campaignId'],
+          path: ['resourceId'],
           message: 'Required',
         },
         {
