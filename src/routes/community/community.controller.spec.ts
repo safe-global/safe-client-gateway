@@ -473,7 +473,6 @@ describe('Community (Unit)', () => {
     it('should forward an error from the service', async () => {
       const resourceId = faker.string.uuid();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const campaignRank = { invalid: 'campaignRank' };
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
