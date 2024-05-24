@@ -44,14 +44,14 @@ export class CacheRouter {
 
   static getBalancesCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_BALANCES_KEY}_${args.safeAddress}`;
   }
 
   static getBalancesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): CacheDir {
@@ -63,14 +63,14 @@ export class CacheRouter {
 
   static getZerionBalancesCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.ZERION_BALANCES_KEY}_${args.safeAddress}`;
   }
 
   static getZerionBalancesCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
   }): CacheDir {
     return new CacheDir(

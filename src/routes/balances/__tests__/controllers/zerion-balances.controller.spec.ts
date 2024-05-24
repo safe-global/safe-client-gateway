@@ -98,7 +98,7 @@ describe('Balances Controller (Unit)', () => {
     describe('GET /balances (externalized)', () => {
       it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
         const chainName = app
           .get(IConfigurationService)
@@ -246,7 +246,7 @@ describe('Balances Controller (Unit)', () => {
 
       it('returns large numbers as is (not in scientific notation)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
         const chainName = app
           .get(IConfigurationService)
@@ -464,7 +464,7 @@ describe('Balances Controller (Unit)', () => {
     describe('Rate Limit error', () => {
       it('does not trigger a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
         const chainName = app
           .get(IConfigurationService)
@@ -535,7 +535,7 @@ describe('Balances Controller (Unit)', () => {
 
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const chainName = app
           .get(IConfigurationService)
           .getOrThrow(

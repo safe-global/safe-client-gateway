@@ -129,7 +129,7 @@ export class SafesService {
 
   async getSafeOverview(args: {
     currency: string;
-    addresses: Array<{ chainId: string; address: string }>;
+    addresses: Array<{ chainId: string; address: `0x${string}` }>;
     trusted: boolean;
     excludeSpam: boolean;
     walletAddress?: `0x${string}`;

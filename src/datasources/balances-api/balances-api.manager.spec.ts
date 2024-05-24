@@ -8,6 +8,7 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -121,7 +122,7 @@ describe('Balances API Manager Tests', () => {
       const safeBalancesApi = await balancesApiManager.getBalancesApi(
         chain.chainId,
       );
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const trusted = faker.datatype.boolean();
       const excludeSpam = faker.datatype.boolean();
 
