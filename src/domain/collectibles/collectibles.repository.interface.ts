@@ -9,7 +9,7 @@ export const ICollectiblesRepository = Symbol('ICollectiblesRepository');
 export interface ICollectiblesRepository {
   getCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -18,7 +18,7 @@ export interface ICollectiblesRepository {
 
   clearCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void>;
 }
 

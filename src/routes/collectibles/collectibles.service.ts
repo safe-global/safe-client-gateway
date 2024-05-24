@@ -16,7 +16,7 @@ export class CollectiblesService {
 
   async getCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
     trusted: boolean;

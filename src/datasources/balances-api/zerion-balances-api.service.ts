@@ -143,7 +143,7 @@ export class ZerionBalancesApi implements IBalancesApi {
    */
   async getCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<Collectible>> {
@@ -187,7 +187,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
   async clearCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const key = CacheRouter.getZerionCollectiblesCacheKey(args);
     await this.cacheService.deleteByKey(key);
