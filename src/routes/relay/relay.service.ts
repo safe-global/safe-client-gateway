@@ -30,7 +30,7 @@ export class RelayService {
 
   async getRelaysRemaining(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<{ remaining: number; limit: number }> {
     const currentCount = await this.relayRepository.getRelayCount({
       chainId: args.chainId,

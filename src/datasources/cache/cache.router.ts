@@ -420,13 +420,16 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
   }
 
-  static getRelayKey(args: { chainId: string; address: string }): string {
+  static getRelayKey(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): string {
     return `${args.chainId}_${CacheRouter.RELAY_KEY}_${args.address}`;
   }
 
   static getRelayCacheDir(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): CacheDir {
     return new CacheDir(CacheRouter.getRelayKey(args), '');
   }
