@@ -11,8 +11,6 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { getAddress } from 'viem';
 
 @Injectable()
 export class GelatoApi implements IRelayApi {
@@ -42,7 +40,7 @@ export class GelatoApi implements IRelayApi {
 
   async relay(args: {
     chainId: string;
-    to: string;
+    to: `0x${string}`;
     data: string;
     gasLimit: bigint | null;
   }): Promise<{ taskId: string }> {
@@ -76,34 +74,23 @@ export class GelatoApi implements IRelayApi {
 
   async getRelayCount(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): Promise<number> {
-    const cacheDir = this.getRelayCacheKey(args);
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
     const count = await this.cacheService.get(cacheDir);
     return count ? parseInt(count) : 0;
   }
 
   async setRelayCount(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
     count: number;
   }): Promise<void> {
-    const cacheDir = this.getRelayCacheKey(args);
+    const cacheDir = CacheRouter.getRelayCacheDir(args);
     await this.cacheService.set(
       cacheDir,
       args.count.toString(),
       this.ttlSeconds,
     );
-  }
-
-  private getRelayCacheKey(args: {
-    chainId: string;
-    address: string;
-  }): CacheDir {
-    return CacheRouter.getRelayCacheDir({
-      chainId: args.chainId,
-      // Ensure address is checksummed to always have a consistent cache key
-      address: getAddress(args.address),
-    });
   }
 }

@@ -64,14 +64,14 @@ export class RelayRepository {
 
   async getRelayCount(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): Promise<number> {
     return this.relayApi.getRelayCount(args);
   }
 
   private async canRelay(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): Promise<{ result: boolean; currentCount: number }> {
     const currentCount = await this.getRelayCount(args);
     return { result: currentCount < this.limit, currentCount };
@@ -79,7 +79,7 @@ export class RelayRepository {
 
   private async incrementRelayCount(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): Promise<void> {
     const currentCount = await this.getRelayCount(args);
     const incremented = currentCount + 1;

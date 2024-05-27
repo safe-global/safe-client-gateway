@@ -10,6 +10,7 @@ import { UnofficialMasterCopyExceptionFilter } from '@/domain/relay/exception-fi
 import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/domain/relay/exception-filters/unofficial-proxy-factory.exception-filter';
 import { RelayDtoSchema } from '@/routes/relay/entities/schemas/relay.dto.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('relay')
 @Controller({
@@ -39,7 +40,8 @@ export class RelayController {
   @Get(':safeAddress')
   async getRelaysRemaining(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
   ): Promise<{
     remaining: number;
     limit: number;

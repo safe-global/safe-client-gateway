@@ -1,4 +1,3 @@
-import { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
@@ -27,7 +26,7 @@ describe('ProxyFactoryDecoder', () => {
   });
 
   it('throws if the function call cannot be decoded', () => {
-    const data = faker.string.hexadecimal({ length: 138 }) as Hex;
+    const data = faker.string.hexadecimal({ length: 138 }) as `0x${string}`;
 
     expect(() => target.decodeFunctionData({ data })).toThrow();
   });
