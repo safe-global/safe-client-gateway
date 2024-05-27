@@ -41,7 +41,6 @@ import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
-import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
@@ -87,7 +86,6 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
-        LockingModule,
         MessagesModule,
         NotificationsModule,
         OwnersModule,
