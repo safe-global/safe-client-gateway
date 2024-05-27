@@ -1,21 +1,29 @@
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { PipeTransform, Injectable } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { z } from 'zod';
+
+const Caip10AddressPipeSchema = z.object({
+  chainId: NumericStringSchema,
+  address: AddressSchema,
+});
 
 @Injectable()
 export class Caip10AddressesPipe
-  implements PipeTransform<string, Array<{ chainId: string; address: string }>>
+  implements
+    PipeTransform<string, Array<{ chainId: string; address: `0x${string}` }>>
 {
   transform(data: string): Array<{
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }> {
     const addresses = data.split(',').map((caip10Address: string) => {
       const [chainId, address] = caip10Address.split(':');
 
-      return { chainId, address: getAddress(address) };
+      return Caip10AddressPipeSchema.parse({ chainId, address });
     });
 
-    if (addresses.length === 0 || !addresses[0].address) {
+    if (addresses.length === 0) {
       throw new Error(
         'Provided addresses do not conform to the CAIP-10 standard',
       );
