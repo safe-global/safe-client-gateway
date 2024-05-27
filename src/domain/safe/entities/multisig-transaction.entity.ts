@@ -46,7 +46,7 @@ export const MultisigTransactionSchema = z.object({
   gasUsed: z.number().nullish().default(null),
   fee: NumericStringSchema.nullish().default(null),
   origin: z.string().nullish().default(null),
-  confirmationsRequired: z.number().nullish().default(null),
+  confirmationsRequired: z.number(),
   confirmations: z.array(ConfirmationSchema).nullish().default(null),
   signatures: HexSchema.nullish().default(null),
   trusted: z.boolean(),

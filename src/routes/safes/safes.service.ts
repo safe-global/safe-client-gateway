@@ -165,7 +165,6 @@ export class SafesService {
           ? this.computeAwaitingConfirmation({
               transactions: queue.results,
               walletAddress: args.walletAddress,
-              threshold: safe.threshold,
             })
           : null;
 
@@ -207,13 +206,11 @@ export class SafesService {
   private computeAwaitingConfirmation(args: {
     transactions: Array<MultisigTransaction>;
     walletAddress: `0x${string}`;
-    threshold: number;
   }): number {
     return args.transactions.reduce(
       (acc, { confirmationsRequired, confirmations }) => {
         const isConfirmed =
-          !!confirmations &&
-          confirmations.length >= (confirmationsRequired ?? args.threshold);
+          !!confirmations && confirmations.length >= confirmationsRequired;
         const isSignable =
           !isConfirmed &&
           !confirmations?.some((confirmation) => {
