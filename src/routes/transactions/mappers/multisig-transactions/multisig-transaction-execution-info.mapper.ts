@@ -19,7 +19,7 @@ export class MultisigTransactionExecutionInfoMapper {
 
     return new MultisigExecutionInfo(
       transaction.nonce,
-      transaction.confirmationsRequired ?? safe.threshold,
+      transaction.confirmationsRequired,
       transaction?.confirmations?.length || 0,
       missingSigners,
     );
