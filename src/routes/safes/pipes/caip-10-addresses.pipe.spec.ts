@@ -56,6 +56,24 @@ describe('Caip10AddressesPipe', () => {
       ]);
   });
 
+  it('throws for non-numerical chainIds', async () => {
+    const chainId = faker.string.alpha();
+    const address = faker.finance.ethereumAddress();
+
+    await request(app.getHttpServer())
+      .get(`/test?addresses=${chainId}:${address}`)
+      .expect(500);
+  });
+
+  it('throws for non-address addresses', async () => {
+    const chainId = faker.string.numeric();
+    const address = faker.number.int();
+
+    await request(app.getHttpServer())
+      .get(`/test?addresses=${chainId}:${address}`)
+      .expect(500);
+  });
+
   it('throws for missing params', async () => {
     await request(app.getHttpServer()).get('/test?addresses=').expect(500);
   });
