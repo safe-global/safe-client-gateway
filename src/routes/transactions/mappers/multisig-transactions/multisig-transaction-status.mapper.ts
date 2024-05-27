@@ -19,7 +19,7 @@ export class MultisigTransactionStatusMapper {
     }
     if (
       (transaction.confirmations?.length || 0) <
-      transaction.confirmationsRequired
+      (transaction.confirmationsRequired ?? safe.threshold)
     ) {
       return TransactionStatus.AwaitingConfirmations;
     }

@@ -64,7 +64,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     );
   });
 
-  it('should return an AWAITING_EXECUTION status', () => {
+  it('should return an AWAITING_EXECUTION status based on confirmationsRequired', () => {
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 4)
@@ -75,6 +75,23 @@ describe('Multisig Transaction status mapper (Unit)', () => {
       .with('confirmationsRequired', 1)
       .build();
     const safe = { ...safeBuilder().build(), nonce: 3 };
+
+    expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
+      TransactionStatus.AwaitingExecution,
+    );
+  });
+
+  it('should return an AWAITING_EXECUTION status based on threshold if confirmationsRequired is null', () => {
+    const transaction = multisigTransactionBuilder()
+      .with('isExecuted', false)
+      .with('nonce', 4)
+      .with('confirmations', [
+        confirmationBuilder().build(),
+        confirmationBuilder().build(),
+      ])
+      .with('confirmationsRequired', null)
+      .build();
+    const safe = safeBuilder().with('nonce', 3).with('threshold', 1).build();
 
     expect(mapper.mapTransactionStatus(transaction, safe)).toBe(
       TransactionStatus.AwaitingExecution,
