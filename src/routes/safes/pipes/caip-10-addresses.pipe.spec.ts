@@ -12,10 +12,10 @@ import { getAddress } from 'viem';
 @Controller()
 class TestController {
   @Get('test')
-  async route(
+  route(
     @Query('addresses', new Caip10AddressesPipe())
     addresses: Array<{ chainId: string; address: string }>,
-  ): Promise<Array<{ chainId: string; address: string }>> {
+  ): Array<{ chainId: string; address: string }> {
     return addresses;
   }
 }

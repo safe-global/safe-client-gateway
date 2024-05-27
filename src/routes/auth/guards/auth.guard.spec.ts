@@ -23,7 +23,7 @@ import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.conf
 class TestController {
   @Get('valid')
   @UseGuards(AuthGuard)
-  async validRoute(): Promise<{ secret: string }> {
+  validRoute(): { secret: string } {
     return { secret: 'This is a secret message' };
   }
 }

@@ -32,7 +32,7 @@ describe('ConfigApi', () => {
   let fakeConfigurationService: FakeConfigurationService;
   let service: ConfigApi;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('safeConfig.baseUri', baseUri);
     fakeConfigurationService.set(
@@ -45,7 +45,7 @@ describe('ConfigApi', () => {
     );
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     service = new ConfigApi(
       dataSource,

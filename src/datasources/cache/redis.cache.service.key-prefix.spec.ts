@@ -35,7 +35,7 @@ describe('RedisCacheService with a Key Prefix', () => {
   let defaultExpirationTimeInSeconds: number;
   const keyPrefix = faker.string.uuid();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     clearAllMocks();
     defaultExpirationTimeInSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {

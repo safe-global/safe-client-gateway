@@ -8,7 +8,7 @@ import { faker } from '@faker-js/faker';
 describe('HttpErrorFactory', () => {
   const httpErrorFactory: HttpErrorFactory = new HttpErrorFactory();
 
-  it('should create an DataSourceError when there is an error with the response', async () => {
+  it('should create an DataSourceError when there is an error with the response', () => {
     const httpError = new NetworkResponseError(
       new URL(faker.internet.url()),
       {
@@ -27,7 +27,7 @@ describe('HttpErrorFactory', () => {
     );
   });
 
-  it('should create an DataSourceError with 503 status when there is an error with the request URL', async () => {
+  it('should create an DataSourceError with 503 status when there is an error with the request URL', () => {
     const httpError = new NetworkRequestError(null, undefined);
 
     const actual = httpErrorFactory.from(httpError);
@@ -36,7 +36,7 @@ describe('HttpErrorFactory', () => {
     expect(actual.message).toBe('Service unavailable');
   });
 
-  it('should create an DataSourceError with 503 status when there is an error with the request', async () => {
+  it('should create an DataSourceError with 503 status when there is an error with the request', () => {
     const httpError = new NetworkRequestError(
       new URL(faker.internet.url()),
       new Error('Failed to fetch'),
@@ -48,7 +48,7 @@ describe('HttpErrorFactory', () => {
     expect(actual.message).toBe('Service unavailable');
   });
 
-  it('should create an DataSourceError with 503 status when an arbitrary error happens', async () => {
+  it('should create an DataSourceError with 503 status when an arbitrary error happens', () => {
     const errMessage = 'Service unavailable';
     const randomError = new Error();
 

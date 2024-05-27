@@ -37,7 +37,6 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/unbound-method': 'off',
     },
   },

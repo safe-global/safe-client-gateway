@@ -17,7 +17,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 @Controller({})
 class TestController {
   @Get('http-exception')
-  async httpException(): Promise<void> {
+  httpException(): void {
     throw new HttpException(
       { message: 'Some http exception' },
       HttpStatus.BAD_GATEWAY,
@@ -25,7 +25,7 @@ class TestController {
   }
 
   @Get('non-http-exception')
-  async nonHttpException(): Promise<void> {
+  nonHttpException(): void {
     throw new Error('Some random error');
   }
 }

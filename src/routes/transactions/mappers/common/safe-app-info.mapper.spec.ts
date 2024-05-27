@@ -21,7 +21,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
 
   let mapper: SafeAppInfoMapper;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     mapper = new SafeAppInfoMapper(safeAppsRepositoryMock, mockLoggingService);
   });

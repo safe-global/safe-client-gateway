@@ -1,10 +1,10 @@
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { Channel } from 'amqplib';
 
-export async function amqpClientFactory(queue?: string): Promise<{
+export function amqpClientFactory(queue?: string): {
   channel: ChannelWrapper;
   queueName: string;
-}> {
+} {
   const { AMQP_URL, AMQP_EXCHANGE_NAME, AMQP_EXCHANGE_MODE, AMQP_QUEUE } =
     process.env;
 
