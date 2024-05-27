@@ -1,5 +1,5 @@
 import { Page } from '@/routes/common/entities/page.entity';
-import { CampaignRank } from '@/routes/locking/entities/campaign-rank.entity';
+import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CampaignRankPage extends Page<CampaignRank> {
