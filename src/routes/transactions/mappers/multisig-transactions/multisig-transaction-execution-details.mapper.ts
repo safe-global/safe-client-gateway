@@ -30,8 +30,6 @@ export class MultisigTransactionExecutionDetailsMapper {
   ): Promise<MultisigExecutionDetails> {
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
     const gasToken = transaction.gasToken ?? NULL_ADDRESS;
-    const confirmationsRequired =
-      transaction.confirmationsRequired ?? safe.threshold;
     const confirmations = !transaction.confirmations
       ? []
       : transaction.confirmations.map(
@@ -75,7 +73,7 @@ export class MultisigTransactionExecutionDetailsMapper {
       transaction.safeTxHash,
       executor,
       signers,
-      confirmationsRequired,
+      transaction.confirmationsRequired,
       confirmations,
       rejectors,
       gasTokenInfo,
