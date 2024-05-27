@@ -1,6 +1,6 @@
-import { LockingEventPage } from '@/routes/locking/entities/locking-event.page.entity';
-import { LockingRank } from '@/routes/locking/entities/locking-rank.entity';
-import { LockingRankPage } from '@/routes/locking/entities/locking-rank.page.entity';
+import { LockingEventPage } from '@/routes/community/entities/locking-event.page.entity';
+import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
+import { LockingRankPage } from '@/routes/community/entities/locking-rank.page.entity';
 import {
   Controller,
   Get,
