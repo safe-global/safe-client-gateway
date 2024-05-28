@@ -55,8 +55,8 @@ export const GasPriceSchema = z.array(
 );
 
 export const PricesProviderSchema = z.object({
-  chainName: z.string().nullish().default(null),
-  nativeCoin: z.string().nullish().default(null),
+  chainName: z.string(),
+  nativeCoin: z.string(),
 });
 
 export const ChainSchema = z.object({
@@ -72,8 +72,7 @@ export const ChainSchema = z.object({
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   nativeCurrency: NativeCurrencySchema,
-  // TODO: remove optionality when fully migrated.
-  pricesProvider: PricesProviderSchema.optional(),
+  pricesProvider: PricesProviderSchema,
   transactionService: z.string().url(),
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,

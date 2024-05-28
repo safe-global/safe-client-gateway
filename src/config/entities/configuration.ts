@@ -48,26 +48,6 @@ export default () => ({
           notFoundPriceTtlSeconds: parseInt(
             process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
           ),
-          chains: {
-            1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
-            100: { nativeCoin: 'xdai', chainName: 'xdai' },
-            1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
-            11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
-            137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
-            196: { nativeCoin: 'okb', chainName: 'x1' },
-            324: { nativeCoin: 'ethereum', chainName: 'zksync' },
-            42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
-            42220: { nativeCoin: 'celo', chainName: 'celo' },
-            43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
-            5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            534352: { nativeCoin: 'weth', chainName: 'scroll' },
-            56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
-            8453: { nativeCoin: 'ethereum', chainName: 'base' },
-            84531: { nativeCoin: 'ethereum', chainName: 'base' },
-            84532: { nativeCoin: 'ethereum', chainName: 'base' },
-          },
           highRefreshRateTokens:
             process.env.HIGH_REFRESH_RATE_TOKENS?.split(',') ?? [],
           highRefreshRateTokensTtlSeconds: parseInt(
