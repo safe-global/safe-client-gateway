@@ -9,7 +9,6 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { sortBy } from 'lodash';
 import { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
