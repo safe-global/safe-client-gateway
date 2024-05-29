@@ -26,7 +26,8 @@ export class SafesController {
   @Get('chains/:chainId/safes/:safeAddress')
   async getSafe(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
   ): Promise<SafeState> {
     return this.service.getSafeInfo({ chainId, safeAddress });
   }
@@ -35,7 +36,8 @@ export class SafesController {
   @Get('chains/:chainId/safes/:safeAddress/nonces')
   async getNonces(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
   ): Promise<SafeNonces> {
     return this.service.getNonces({ chainId, safeAddress });
   }

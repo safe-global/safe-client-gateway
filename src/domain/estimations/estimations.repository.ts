@@ -14,7 +14,7 @@ export class EstimationsRepository implements IEstimationsRepository {
 
   async getEstimation(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation> {
     const api = await this.transactionApiManager.getTransactionApi(

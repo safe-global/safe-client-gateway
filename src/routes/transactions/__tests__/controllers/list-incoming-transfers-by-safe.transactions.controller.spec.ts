@@ -112,7 +112,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     });
     const error = new NetworkResponseError(
       new URL(
-        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${safeAddress}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
+        // Param ValidationPipe checksums address
+        `${chainResponse.transactionService}/v1/chains/${chainId}/safes/${getAddress(safeAddress)}/incoming-transfers/?cursor=limit%3D${limit}%26offset%3D${offset}`,
       ),
       { status: 500 } as Response,
     );
@@ -133,7 +134,8 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
     });
     expect(networkService.get).toHaveBeenCalledWith({
-      url: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/incoming-transfers/`,
+      // Param ValidationPipe checksums address
+      url: `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/incoming-transfers/`,
       networkRequest: expect.objectContaining({
         params: expect.objectContaining({ offset, limit }),
       }),
