@@ -191,7 +191,7 @@ export interface ITransactionApi {
 
   deleteSafeRegistration(args: {
     uuid: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void>;
 
   getEstimation(args: {

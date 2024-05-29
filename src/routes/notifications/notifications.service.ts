@@ -95,7 +95,7 @@ export class NotificationsService {
   async unregisterSafe(args: {
     chainId: string;
     uuid: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     return this.notificationsRepository.unregisterSafe(args);
   }

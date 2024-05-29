@@ -810,7 +810,7 @@ export class TransactionApi implements ITransactionApi {
 
   async deleteSafeRegistration(args: {
     uuid: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/${args.uuid}/safes/${args.safeAddress}`;

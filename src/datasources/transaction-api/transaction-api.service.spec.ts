@@ -2066,7 +2066,7 @@ describe('TransactionApi', () => {
   describe('deleteSafeRegistration', () => {
     it('should delete Safe registration', async () => {
       const uuid = faker.string.uuid();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const deleteSafeRegistrationUrl = `${baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
@@ -2087,7 +2087,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const uuid = faker.string.uuid();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const deleteSafeRegistrationUrl = `${baseUrl}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
