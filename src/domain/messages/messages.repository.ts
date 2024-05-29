@@ -44,7 +44,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async createMessage(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     message: unknown;
     safeAppId: number | null;
     signature: string;

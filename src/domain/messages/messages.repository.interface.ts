@@ -14,14 +14,14 @@ export interface IMessagesRepository {
 
   getMessagesBySafe(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<Message>>;
 
   createMessage(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     message: unknown;
     safeAppId: number;
     signature: string;
@@ -35,7 +35,7 @@ export interface IMessagesRepository {
 
   clearMessagesBySafe(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void>;
 
   clearMessagesByHash(args: {
