@@ -168,9 +168,9 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getDelegates(args: {
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
@@ -202,9 +202,9 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getDelegatesV2(args: {
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
@@ -284,8 +284,8 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async deleteDelegate(args: {
-    delegate: string;
-    delegator: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
   }): Promise<unknown> {
     try {
@@ -304,8 +304,8 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async deleteSafeDelegate(args: {
-    delegate: string;
-    safeAddress: string;
+    delegate: `0x${string}`;
+    safeAddress: `0x${string}`;
     signature: string;
   }): Promise<unknown> {
     try {

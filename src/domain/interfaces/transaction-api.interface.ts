@@ -36,18 +36,18 @@ export interface ITransactionApi {
   getContract(contractAddress: `0x${string}`): Promise<Contract>;
 
   getDelegates(args: {
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>>;
 
   getDelegatesV2(args: {
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
@@ -70,14 +70,14 @@ export interface ITransactionApi {
   }): Promise<void>;
 
   deleteDelegate(args: {
-    delegate: string;
-    delegator: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
   }): Promise<unknown>;
 
   deleteSafeDelegate(args: {
-    delegate: string;
-    safeAddress: string;
+    delegate: `0x${string}`;
+    safeAddress: `0x${string}`;
     signature: string;
   }): Promise<unknown>;
 

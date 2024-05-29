@@ -64,7 +64,7 @@ export class DelegatesService {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegateAddress: string;
+    delegateAddress: `0x${string}`;
     deleteDelegateDto: DeleteDelegateDto;
   }): Promise<unknown> {
     return await this.repository.deleteDelegate({
