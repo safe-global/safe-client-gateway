@@ -30,6 +30,7 @@ import { GetDelegateDtoSchema } from '@/routes/delegates/entities/schemas/get-de
 import { CreateDelegateDtoSchema } from '@/routes/delegates/entities/schemas/create-delegate.dto.schema';
 import { DeleteDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-delegate.dto.schema';
 import { DeleteSafeDelegateDtoSchema } from '@/routes/delegates/entities/schemas/delete-safe-delegate.dto.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('delegates')
 @Controller({
@@ -96,7 +97,8 @@ export class DelegatesController {
   @Delete('chains/:chainId/delegates/:delegateAddress')
   async deleteDelegate(
     @Param('chainId') chainId: string,
-    @Param('delegateAddress') delegateAddress: string,
+    @Param('delegateAddress', new ValidationPipe(AddressSchema))
+    delegateAddress: `0x${string}`,
     @Body(new ValidationPipe(DeleteDelegateDtoSchema))
     deleteDelegateDto: DeleteDelegateDto,
   ): Promise<unknown> {
