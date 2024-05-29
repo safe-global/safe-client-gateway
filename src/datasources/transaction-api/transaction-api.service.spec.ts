@@ -2404,7 +2404,7 @@ describe('TransactionApi', () => {
 
   describe('postMessage', () => {
     it('should post message', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const message = faker.word.words();
       const safeAppId = faker.number.int();
       const signature = faker.string.hexadecimal();
@@ -2437,7 +2437,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const message = faker.word.words();
       const safeAppId = faker.number.int();
       const signature = faker.string.hexadecimal();

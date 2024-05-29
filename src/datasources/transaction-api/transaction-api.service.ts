@@ -918,7 +918,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async postMessage(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     message: unknown;
     safeAppId: number | null;
     signature: string;

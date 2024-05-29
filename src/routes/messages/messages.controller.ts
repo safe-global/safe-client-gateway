@@ -55,7 +55,8 @@ export class MessagesController {
   @Post('chains/:chainId/safes/:safeAddress/messages')
   async createMessage(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Body(new ValidationPipe(CreateMessageDtoSchema))
     createMessageDto: CreateMessageDto,
   ): Promise<unknown> {
