@@ -211,7 +211,7 @@ export class TransactionsService {
   async getModuleTransactions(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     to?: string;
     module?: string;
     paginationData?: PaginationData;

@@ -74,7 +74,7 @@ export interface ISafeRepository {
 
   clearModuleTransactions(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void>;
 
   /**

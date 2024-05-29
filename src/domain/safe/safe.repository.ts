@@ -149,7 +149,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getModuleTransactions(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     to?: string;
     module?: string;
     limit?: number;
@@ -163,7 +163,7 @@ export class SafeRepository implements ISafeRepository {
 
   async clearModuleTransactions(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);

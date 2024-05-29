@@ -213,7 +213,7 @@ export class CacheRouter {
 
   static getModuleTransactionsCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     to?: string;
     module?: string;
     limit?: number;
@@ -227,7 +227,7 @@ export class CacheRouter {
 
   static getModuleTransactionsCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }

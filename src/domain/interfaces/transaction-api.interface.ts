@@ -123,14 +123,14 @@ export interface ITransactionApi {
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
   getModuleTransactions(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     to?: string;
     module?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<ModuleTransaction>>;
 
-  clearModuleTransactions(safeAddress: string): Promise<void>;
+  clearModuleTransactions(safeAddress: `0x${string}`): Promise<void>;
 
   getMultisigTransaction(
     safeTransactionHash: string,
