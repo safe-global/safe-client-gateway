@@ -93,7 +93,7 @@ export class MultisigTransactionDetailsMapper {
    */
   private async _getRecipientAddressInfo(
     chainId: string,
-    address: string,
+    address: `0x${string}`,
   ): Promise<AddressInfo> {
     return await this.addressInfoHelper.getOrDefault(chainId, address, [
       'TOKEN',

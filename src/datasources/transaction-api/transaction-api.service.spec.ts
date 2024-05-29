@@ -352,7 +352,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const contract = faker.finance.ethereumAddress();
+      const contract = getAddress(faker.finance.ethereumAddress());
       const getContractUrl = `${baseUrl}/api/v1/contracts/${contract}`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],

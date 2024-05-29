@@ -118,7 +118,7 @@ export class CacheRouter {
 
   static getContractCacheDir(args: {
     chainId: string;
-    contractAddress: string;
+    contractAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_KEY}_${args.contractAddress}`,
