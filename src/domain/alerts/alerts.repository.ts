@@ -127,7 +127,7 @@ export class AlertsRepository implements IAlertsRepository {
    */
   private async _getSubscribedAccounts(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<Account[]> {
     const accounts = await this.accountRepository.getAccounts({
       chainId: args.chainId,
