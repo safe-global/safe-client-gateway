@@ -18,7 +18,7 @@ export class EstimationsController {
   @ApiOkResponse({ type: EstimationResponse })
   @HttpCode(200)
   @Post('chains/:chainId/safes/:address/multisig-transactions/estimations')
-  async getContract(
+  async getEstimation(
     @Param('chainId') chainId: string,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Body(new ValidationPipe(GetEstimationDtoSchema))
