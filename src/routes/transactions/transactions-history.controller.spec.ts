@@ -587,7 +587,10 @@ describe('Transactions History Controller (Unit)', () => {
                 txInfo: {
                   type: 'Transfer',
                   sender: { value: multisigTransaction.safe },
-                  recipient: { value: multisigTransactionToAddress },
+                  // Decoder checksums address (although Transaction Service likely returns it checksummed)
+                  recipient: {
+                    value: getAddress(multisigTransactionToAddress),
+                  },
                   direction: 'OUTGOING',
                   transferInfo: {
                     type: 'ERC20',

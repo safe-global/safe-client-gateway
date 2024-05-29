@@ -149,7 +149,7 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getContract(contractAddress: string): Promise<Contract> {
+  async getContract(contractAddress: `0x${string}`): Promise<Contract> {
     try {
       const cacheDir = CacheRouter.getContractCacheDir({
         chainId: this.chainId,

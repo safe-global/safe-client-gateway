@@ -13,7 +13,7 @@ export class ContractsRepository implements IContractsRepository {
 
   async getContract(args: {
     chainId: string;
-    contractAddress: string;
+    contractAddress: `0x${string}`;
   }): Promise<Contract> {
     const api = await this.transactionApiManager.getTransactionApi(
       args.chainId,

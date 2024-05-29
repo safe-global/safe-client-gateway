@@ -205,9 +205,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
         dataDecodedBuilder()
           .with('method', 'enableModule')
           .with('parameters', [
-            dataDecodedParameterBuilder()
-              .with('value', faker.string.numeric())
-              .build(),
+            dataDecodedParameterBuilder().with('value', moduleAddress).build(),
           ])
           .build(),
       )
@@ -234,7 +232,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
           .with('method', 'disableModule')
           .with('parameters', [
             dataDecodedParameterBuilder()
-              .with('value', faker.string.numeric())
+              .with('value', faker.finance.ethereumAddress())
               .build(),
             dataDecodedParameterBuilder().with('value', moduleAddress).build(),
           ])
