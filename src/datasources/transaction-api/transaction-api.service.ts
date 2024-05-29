@@ -500,7 +500,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getModuleTransactions(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     to?: string;
     module?: string;
     limit?: number;
@@ -531,7 +531,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearModuleTransactions(safeAddress: string): Promise<void> {
+  async clearModuleTransactions(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getModuleTransactionsCacheKey({
       chainId: this.chainId,
       safeAddress,

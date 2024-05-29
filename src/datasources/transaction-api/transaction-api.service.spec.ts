@@ -1264,7 +1264,7 @@ describe('TransactionApi', () => {
 
   describe('clearModuleTransactions', () => {
     it('should clear the module transactions cache', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       await service.clearModuleTransactions(safeAddress);
 

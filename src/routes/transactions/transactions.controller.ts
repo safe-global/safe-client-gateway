@@ -120,7 +120,8 @@ export class TransactionsController {
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Query('to') to?: string,
     @Query('module') module?: string,
   ): Promise<Page<ModuleTransaction>> {
