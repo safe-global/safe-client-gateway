@@ -357,7 +357,7 @@ export class CacheRouter {
 
   static getSafesByOwnerCacheDir(args: {
     chainId: string;
-    ownerAddress: string;
+    ownerAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${args.ownerAddress}`,

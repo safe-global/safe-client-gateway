@@ -1876,7 +1876,7 @@ describe('TransactionApi', () => {
 
   describe('getSafesByOwner', () => {
     it('should return retrieved safe', async () => {
-      const owner = faker.finance.ethereumAddress();
+      const owner = getAddress(faker.finance.ethereumAddress());
       const safeList = {
         safes: [
           faker.finance.ethereumAddress(),
@@ -1904,7 +1904,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const owner = faker.finance.ethereumAddress();
+      const owner = getAddress(faker.finance.ethereumAddress());
       const getSafesByOwnerUrl = `${baseUrl}/api/v1/owners/${owner}/safes/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
