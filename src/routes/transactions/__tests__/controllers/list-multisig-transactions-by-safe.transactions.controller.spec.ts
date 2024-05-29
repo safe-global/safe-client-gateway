@@ -109,7 +109,8 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     });
     const error = new NetworkResponseError(
       new URL(
-        `${safeConfigUrl}/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`,
+        // Param ValidationPipe checksums address
+        `${safeConfigUrl}/v1/chains/${chainId}/safes/${getAddress(safeAddress)}/multisig-transactions`,
       ),
       { status: 500 } as Response,
     );
@@ -128,11 +129,12 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
     });
     expect(networkService.get).toHaveBeenCalledWith({
-      url: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`,
+      // Param ValidationPipe checksums address
+      url: `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/multisig-transactions/`,
       networkRequest: expect.objectContaining({
         params: expect.objectContaining({
           ordering: '-nonce',
-          safe: safeAddress,
+          safe: getAddress(safeAddress),
           trusted: true,
         }),
       }),

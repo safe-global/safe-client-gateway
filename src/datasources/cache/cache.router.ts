@@ -104,14 +104,14 @@ export class CacheRouter {
 
   static getSafeCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(CacheRouter.getSafeCacheKey(args), '');
   }
 
   static getSafeCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_KEY}_${args.safeAddress}`;
   }
@@ -300,7 +300,7 @@ export class CacheRouter {
 
   static getCreationTransactionCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CREATION_TRANSACTION_KEY}_${args.safeAddress}`,
@@ -310,7 +310,7 @@ export class CacheRouter {
 
   static getAllTransactionsCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     ordering?: string;
     executed?: boolean;
     queued?: boolean;
@@ -325,7 +325,7 @@ export class CacheRouter {
 
   static getAllTransactionsKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.ALL_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
@@ -381,14 +381,14 @@ export class CacheRouter {
 
   static getMessagesBySafeCacheKey(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.MESSAGES_KEY}_${args.safeAddress}`;
   }
 
   static getMessagesBySafeCacheDir(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): CacheDir {

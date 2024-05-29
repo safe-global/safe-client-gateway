@@ -27,7 +27,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async getMessagesBySafe(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Message>> {
@@ -76,7 +76,7 @@ export class MessagesRepository implements IMessagesRepository {
 
   async clearMessagesBySafe(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const api = await this.transactionApiManager.getTransactionApi(
       args.chainId,

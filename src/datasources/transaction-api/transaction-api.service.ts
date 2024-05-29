@@ -121,7 +121,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getSafe(safeAddress: string): Promise<Safe> {
+  async getSafe(safeAddress: `0x${string}`): Promise<Safe> {
     try {
       const cacheDir = CacheRouter.getSafeCacheDir({
         chainId: this.chainId,
@@ -139,7 +139,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearSafe(safeAddress: string): Promise<void> {
+  async clearSafe(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getSafeCacheKey({
       chainId: this.chainId,
       safeAddress,
@@ -642,7 +642,7 @@ export class TransactionApi implements ITransactionApi {
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getCreationTransaction(
-    safeAddress: string,
+    safeAddress: `0x${string}`,
   ): Promise<CreationTransaction> {
     try {
       const cacheDir = CacheRouter.getCreationTransactionCacheDir({
@@ -662,7 +662,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getAllTransactions(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     ordering?: string;
     executed?: boolean;
     queued?: boolean;
@@ -696,7 +696,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearAllTransactions(safeAddress: string): Promise<void> {
+  async clearAllTransactions(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getAllTransactionsKey({
       chainId: this.chainId,
       safeAddress,
@@ -821,7 +821,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getEstimation(args: {
-    address: string;
+    address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation> {
     try {
@@ -860,7 +860,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getMessagesBySafe(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Page<Message>> {
@@ -957,7 +957,9 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearMessagesBySafe(args: { safeAddress: string }): Promise<void> {
+  async clearMessagesBySafe(args: {
+    safeAddress: `0x${string}`;
+  }): Promise<void> {
     const key = CacheRouter.getMessagesBySafeCacheKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,

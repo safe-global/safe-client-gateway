@@ -29,9 +29,9 @@ export interface ITransactionApi {
 
   getSingletons(): Promise<Singleton[]>;
 
-  getSafe(safeAddress: string): Promise<Safe>;
+  getSafe(safeAddress: `0x${string}`): Promise<Safe>;
 
-  clearSafe(address: string): Promise<void>;
+  clearSafe(address: `0x${string}`): Promise<void>;
 
   getContract(contractAddress: string): Promise<Contract>;
 
@@ -144,7 +144,7 @@ export interface ITransactionApi {
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 
   getMultisigTransactions(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     ordering?: string;
     executed?: boolean;
     trusted?: boolean;
@@ -160,10 +160,12 @@ export interface ITransactionApi {
 
   clearMultisigTransactions(safeAddress: string): Promise<void>;
 
-  getCreationTransaction(safeAddress: string): Promise<CreationTransaction>;
+  getCreationTransaction(
+    safeAddress: `0x${string}`,
+  ): Promise<CreationTransaction>;
 
   getAllTransactions(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     ordering?: string;
     executed?: boolean;
     queued?: boolean;
@@ -171,7 +173,7 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Page<Transaction>>;
 
-  clearAllTransactions(safeAddress: string): Promise<void>;
+  clearAllTransactions(safeAddress: `0x${string}`): Promise<void>;
 
   getToken(address: string): Promise<Token>;
 
@@ -193,14 +195,14 @@ export interface ITransactionApi {
   }): Promise<void>;
 
   getEstimation(args: {
-    address: string;
+    address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation>;
 
   getMessageByHash(messageHash: string): Promise<Message>;
 
   getMessagesBySafe(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<Message>>;
@@ -222,7 +224,7 @@ export interface ITransactionApi {
     signature: `0x${string}`;
   }): Promise<unknown>;
 
-  clearMessagesBySafe(args: { safeAddress: string }): Promise<void>;
+  clearMessagesBySafe(args: { safeAddress: `0x${string}` }): Promise<void>;
 
   clearMessagesByHash(args: { messageHash: string }): Promise<void>;
 }

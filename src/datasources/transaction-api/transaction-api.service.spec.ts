@@ -314,7 +314,7 @@ describe('TransactionApi', () => {
 
   describe('clearSafe', () => {
     it('should clear the Safe cache', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       await service.clearSafe(safeAddress);
 
@@ -1561,7 +1561,7 @@ describe('TransactionApi', () => {
 
   describe('getCreationTransaction', () => {
     it('should return the creation transaction retrieved', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const creationTransaction = creationTransactionBuilder().build();
       const getCreationTransactionUrl = `${baseUrl}/api/v1/safes/${safeAddress}/creation/`;
       const cacheDir = new CacheDir(
@@ -1587,7 +1587,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const getCreationTransactionUrl = `${baseUrl}/api/v1/safes/${safeAddress}/creation/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -1623,7 +1623,7 @@ describe('TransactionApi', () => {
 
   describe('getAllTransactions', () => {
     it('should return all transactions retrieved', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const ordering = faker.word.noun();
       const executed = faker.datatype.boolean();
       const queued = faker.datatype.boolean();
@@ -1675,7 +1675,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const ordering = faker.word.noun();
       const executed = faker.datatype.boolean();
       const queued = faker.datatype.boolean();
@@ -1733,7 +1733,7 @@ describe('TransactionApi', () => {
 
   describe('clearAllTransactions', () => {
     it('should clear the all transactions cache', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       await service.clearAllTransactions(safeAddress);
 
@@ -2116,7 +2116,7 @@ describe('TransactionApi', () => {
 
   describe('getEstimation', () => {
     it('should return the estimation received', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
       const data = faker.string.hexadecimal() as `0x${string}`;
@@ -2153,7 +2153,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const to = getAddress(faker.finance.ethereumAddress());
       const value = faker.string.numeric();
       const data = faker.string.hexadecimal() as `0x${string}`;
@@ -2251,7 +2251,7 @@ describe('TransactionApi', () => {
 
   describe('getMessagesBySafe', () => {
     it('should return the message hash received', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMessageBySafeUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
@@ -2289,7 +2289,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMessageBySafeUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
@@ -2542,7 +2542,7 @@ describe('TransactionApi', () => {
 
   describe('clearMessagesBySafe', () => {
     it('should clear the messages cache by Safe address', async () => {
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       await service.clearMessagesBySafe({ safeAddress });
 

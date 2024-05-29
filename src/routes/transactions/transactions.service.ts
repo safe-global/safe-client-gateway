@@ -35,6 +35,7 @@ import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transact
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class TransactionsService {
@@ -76,7 +77,8 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            address: safeAddress,
+            // We can't checksum outside of case as some IDs don't contain addresses
+            address: getAddress(safeAddress),
           }),
         ]);
         return this.transferDetailsMapper.mapDetails(
@@ -94,7 +96,8 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            address: safeAddress,
+            // We can't checksum outside of case as some IDs don't contain addresses
+            address: getAddress(safeAddress),
           }),
         ]);
         return this.multisigTransactionDetailsMapper.mapDetails(
@@ -127,7 +130,7 @@ export class TransactionsService {
     chainId: string;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
     to?: string;
@@ -250,7 +253,7 @@ export class TransactionsService {
   async getIncomingTransfers(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
     to?: string;
@@ -293,7 +296,7 @@ export class TransactionsService {
 
   async previewTransaction(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     previewTransactionDto: PreviewTransactionDto;
   }): Promise<TransactionPreview> {
     const safe = await this.safeRepository.getSafe({
@@ -310,7 +313,7 @@ export class TransactionsService {
   async getTransactionQueue(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     paginationData: PaginationData;
     trusted?: boolean;
   }): Promise<Page<QueuedItem>> {
@@ -360,7 +363,7 @@ export class TransactionsService {
   async getTransactionHistory(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     paginationData: PaginationData;
     timezoneOffsetMs: number;
     onlyTrusted: boolean;
@@ -409,7 +412,7 @@ export class TransactionsService {
 
   async proposeTransaction(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(args);
