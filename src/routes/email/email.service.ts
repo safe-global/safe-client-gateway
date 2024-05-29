@@ -23,7 +23,7 @@ export class EmailService {
 
   async saveEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: string;
     signer: `0x${string}`;
     authPayload: AuthPayload;
@@ -35,8 +35,8 @@ export class EmailService {
 
   async resendVerification(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<void> {
     return this.repository
       .resendEmailVerification(args)
@@ -45,8 +45,8 @@ export class EmailService {
 
   async verifyEmailAddress(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     code: string;
   }): Promise<void> {
     return this.repository
@@ -56,7 +56,7 @@ export class EmailService {
 
   async deleteEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     signer: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void> {
@@ -67,7 +67,7 @@ export class EmailService {
 
   async editEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     signer: `0x${string}`;
     emailAddress: string;
     authPayload: AuthPayload;
@@ -79,7 +79,7 @@ export class EmailService {
 
   async getEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     signer: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<Email> {
