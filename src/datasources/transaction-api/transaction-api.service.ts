@@ -755,7 +755,7 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [ownersExpirationTimeSeconds]
-  async getSafesByOwner(ownerAddress: string): Promise<SafeList> {
+  async getSafesByOwner(ownerAddress: `0x${string}`): Promise<SafeList> {
     try {
       const cacheDir = CacheRouter.getSafesByOwnerCacheDir({
         chainId: this.chainId,

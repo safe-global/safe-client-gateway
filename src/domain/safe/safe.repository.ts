@@ -368,7 +368,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getSafesByOwner(args: {
     chainId: string;
-    ownerAddress: string;
+    ownerAddress: `0x${string}`;
   }): Promise<SafeList> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
@@ -380,7 +380,7 @@ export class SafeRepository implements ISafeRepository {
   }
 
   async getAllSafesByOwner(args: {
-    ownerAddress: string;
+    ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
     // Note: does not take pagination into account but we do not support
     // enough chains for it to be an issue

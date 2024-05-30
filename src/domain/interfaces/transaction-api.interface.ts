@@ -179,7 +179,7 @@ export interface ITransactionApi {
 
   getTokens(args: { limit?: number; offset?: number }): Promise<Page<Token>>;
 
-  getSafesByOwner(ownerAddress: string): Promise<SafeList>;
+  getSafesByOwner(ownerAddress: `0x${string}`): Promise<SafeList>;
 
   postDeviceRegistration(args: {
     device: Device;
