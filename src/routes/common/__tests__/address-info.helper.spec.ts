@@ -123,55 +123,61 @@ describe('AddressInfoHelper', () => {
   describe('getCollection', () => {
     it('should return a collection of addresses', async () => {
       const chainId = faker.string.numeric();
-      const contract1 = contractBuilder().build();
-      const contract2 = contractBuilder().build();
+      const contract = contractBuilder().build();
       const token = tokenBuilder().build();
+      const address = getAddress(faker.finance.ethereumAddress());
       contractsRepository.getContract
-        .mockResolvedValueOnce(contract1)
-        .mockResolvedValueOnce(contract2)
+        .mockResolvedValueOnce(contract)
+        .mockRejectedValueOnce(new Error('Not found'))
         .mockRejectedValueOnce(new Error('Not found'));
-      tokenRepository.getToken.mockResolvedValue(token);
+      tokenRepository.getToken
+        .mockResolvedValueOnce(token)
+        .mockRejectedValueOnce(new Error('Not found'));
 
       const result = await target.getCollection(
         chainId,
-        [contract1.address, contract2.address, token.address],
+        [contract.address, token.address, address],
         ['CONTRACT', 'TOKEN'],
       );
 
       expect(result).toEqual([
         {
-          value: contract1.address,
-          name: contract1.displayName,
-          logoUri: contract1.logoUri,
-        },
-        {
-          value: contract2.address,
-          name: contract2.displayName,
-          logoUri: contract2.logoUri,
+          value: contract.address,
+          name: contract.displayName,
+          logoUri: contract.logoUri,
         },
         {
           value: token.address,
           name: token.name,
           logoUri: token.logoUri,
         },
+        {
+          value: address,
+          name: null,
+          logoUri: null,
+        },
       ]);
       expect(contractsRepository.getContract).toHaveBeenCalledTimes(3);
-      expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(2);
       expect(contractsRepository.getContract).toHaveBeenNthCalledWith(1, {
         chainId,
-        contractAddress: contract1.address,
+        contractAddress: contract.address,
       });
       expect(contractsRepository.getContract).toHaveBeenNthCalledWith(2, {
         chainId,
-        contractAddress: contract2.address,
+        contractAddress: token.address,
       });
       expect(contractsRepository.getContract).toHaveBeenNthCalledWith(3, {
         chainId,
-        contractAddress: token.address,
+        contractAddress: address,
       });
       expect(tokenRepository.getToken).toHaveBeenNthCalledWith(1, {
         chainId,
         address: token.address,
+      });
+      expect(tokenRepository.getToken).toHaveBeenNthCalledWith(2, {
+        chainId,
+        address,
       });
     });
   });
