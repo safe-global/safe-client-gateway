@@ -26,6 +26,7 @@ import { RegisterDeviceDto } from '@/routes/notifications/entities/register-devi
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { getAddress } from 'viem';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -322,7 +323,8 @@ describe('Notifications Controller (Unit)', () => {
       const uuid = faker.string.uuid();
       const safeAddress = faker.finance.ethereumAddress();
       const chain = chainBuilder().build();
-      const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${safeAddress}`;
+      // ValidationPipe checksums safeAddress param
+      const expectedProviderURL = `${chain.transactionService}/api/v1/notifications/devices/${uuid}/safes/${getAddress(safeAddress)}`;
       networkService.get.mockImplementation(({ url }) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: chain, status: 200 })

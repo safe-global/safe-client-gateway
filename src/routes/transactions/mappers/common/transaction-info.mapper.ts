@@ -5,7 +5,7 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { TokenType } from '@/routes/balances/entities/token-type.entity';
+import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
@@ -223,7 +223,7 @@ export class MultisigTransactionInfoMapper {
     dataSize: number,
     operation: Operation,
   ): boolean {
-    return (value > 0 && dataSize > 0) || operation !== 0;
+    return (value > 0 && dataSize > 0) || operation !== Operation.CALL;
   }
 
   private isNativeCoinTransfer(value: number, dataSize: number): boolean {

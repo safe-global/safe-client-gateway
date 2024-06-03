@@ -14,7 +14,7 @@ export class BalancesRepository implements IBalancesRepository {
 
   async getBalances(args: {
     chain: Chain;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
     trusted?: boolean;
     excludeSpam?: boolean;
@@ -28,7 +28,7 @@ export class BalancesRepository implements IBalancesRepository {
 
   async clearBalances(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     await api.clearBalances(args);

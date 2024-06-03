@@ -30,6 +30,7 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { getAddress } from 'viem';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -205,8 +206,9 @@ describe('Estimations Controller (Unit)', () => {
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
-      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
+      // Param ValidationPipe checksums address
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: chain, status: 200 });
       }
@@ -225,7 +227,8 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.post.mockImplementation(({ url }) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
+      // Param ValidationPipe checksums address
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation, status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
@@ -256,8 +259,9 @@ describe('Estimations Controller (Unit)', () => {
     const estimation = estimationBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
-      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
+      // Param ValidationPipe checksums address
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: chain, status: 200 });
       }
@@ -273,7 +277,8 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.post.mockImplementation(({ url }) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
+      // Param ValidationPipe checksums address
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation, status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
@@ -307,8 +312,9 @@ describe('Estimations Controller (Unit)', () => {
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${address}`;
-      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/`;
+      // Param ValidationPipe checksums address
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: chain, status: 200 });
       }
@@ -327,7 +333,8 @@ describe('Estimations Controller (Unit)', () => {
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.post.mockImplementation(({ url }) => {
-      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${address}/multisig-transactions/estimations/`;
+      // Param ValidationPipe checksums address
+      const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
         ? Promise.resolve({ data: estimation, status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);

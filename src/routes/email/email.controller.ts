@@ -43,7 +43,8 @@ export class EmailController {
   @UseFilters(AccountDoesNotExistExceptionFilter)
   async getEmail(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
     @Auth() authPayload: AuthPayload,
   ): Promise<Email> {
@@ -59,7 +60,8 @@ export class EmailController {
   @UseGuards(AuthGuard)
   async saveEmail(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Body(new ValidationPipe(SaveEmailDtoSchema)) saveEmailDto: SaveEmailDto,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
@@ -77,8 +79,9 @@ export class EmailController {
   @HttpCode(HttpStatus.ACCEPTED)
   async resendVerification(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
-    @Param('signer') signer: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+    @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
   ): Promise<void> {
     await this.service.resendVerification({
       chainId,
@@ -92,8 +95,9 @@ export class EmailController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyEmailAddress(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
-    @Param('signer') signer: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+    @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
     @Body() verifyEmailDto: VerifyEmailDto,
   ): Promise<void> {
     await this.service.verifyEmailAddress({
@@ -110,7 +114,8 @@ export class EmailController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteEmail(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
@@ -131,7 +136,8 @@ export class EmailController {
   @HttpCode(HttpStatus.ACCEPTED)
   async editEmail(
     @Param('chainId') chainId: string,
-    @Param('safeAddress') safeAddress: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
     @Param('signer', new ValidationPipe(AddressSchema)) signer: `0x${string}`,
     @Body() editEmailDto: EditEmailDto,
     @Auth() authPayload: AuthPayload,

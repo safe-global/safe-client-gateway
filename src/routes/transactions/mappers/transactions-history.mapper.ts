@@ -16,11 +16,11 @@ import { ModuleTransactionMapper } from '@/routes/transactions/mappers/module-tr
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ImitationTransactionsHelper } from '@/routes/transactions/helpers/imitation-transactions.helper';
+import { TransferImitationMapper } from '@/routes/transactions/mappers/transfers/transfer-imitation.mapper';
 
 @Injectable()
 export class TransactionsHistoryMapper {
-  private readonly isImitationFilteringEnabled: boolean;
+  private readonly isImitationMappingEnabled: boolean;
   private readonly maxNestedTransfers: number;
 
   constructor(
@@ -29,11 +29,11 @@ export class TransactionsHistoryMapper {
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly transferMapper: TransferMapper,
+    private readonly transferImitationMapper: TransferImitationMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
-    private readonly imitationTransactionsHelper: ImitationTransactionsHelper,
   ) {
-    this.isImitationFilteringEnabled = this.configurationService.getOrThrow(
-      'features.imitationFiltering',
+    this.isImitationMappingEnabled = this.configurationService.getOrThrow(
+      'features.imitationMapping',
     );
     this.maxNestedTransfers = this.configurationService.getOrThrow(
       'mappings.history.maxNestedTransfers',
@@ -47,6 +47,7 @@ export class TransactionsHistoryMapper {
     offset: number,
     timezoneOffset: number,
     onlyTrusted: boolean,
+    showImitations: boolean,
   ): Promise<Array<TransactionItem | DateLabel>> {
     if (transactionsDomain.length == 0) {
       return [];
@@ -66,6 +67,7 @@ export class TransactionsHistoryMapper {
       safe,
       previousTransaction,
       onlyTrusted,
+      showImitations,
     });
 
     // The groups respect timezone offset – this was done for grouping only.
@@ -126,6 +128,7 @@ export class TransactionsHistoryMapper {
     safe: Safe;
     previousTransaction: TransactionItem | undefined;
     onlyTrusted: boolean;
+    showImitations: boolean;
   }): Promise<TransactionItem[]> {
     const mappedTransactions = await Promise.all(
       args.transactionsDomain.map((transaction) => {
@@ -141,16 +144,15 @@ export class TransactionsHistoryMapper {
       .filter(<T>(x: T): x is NonNullable<T> => x != null)
       .flat();
 
-    // TODO: Make conditional according to args.onlyTrusted if clients fetch
-    // trusted regardless of token lists
-    if (!this.isImitationFilteringEnabled) {
+    if (!this.isImitationMappingEnabled) {
       return transactionItems;
     }
 
-    return this.imitationTransactionsHelper.filterOutgoingErc20ImitationTransfers(
-      transactionItems,
-      args.previousTransaction,
-    );
+    return this.transferImitationMapper.mapImitations({
+      transactions: transactionItems,
+      previousTransaction: args.previousTransaction,
+      showImitations: args.showImitations,
+    });
   }
 
   private groupByDay(

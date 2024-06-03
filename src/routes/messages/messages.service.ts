@@ -41,7 +41,7 @@ export class MessagesService {
 
   async getMessagesBySafe(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     paginationData: PaginationData;
     routeUrl: Readonly<URL>;
   }): Promise<Page<DateLabel | MessageItem>> {
@@ -123,7 +123,7 @@ export class MessagesService {
 
   async createMessage(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     createMessageDto: CreateMessageDto;
   }): Promise<unknown> {
     return await this.messagesRepository.createMessage({

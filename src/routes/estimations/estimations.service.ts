@@ -26,7 +26,7 @@ export class EstimationsService {
    */
   async getEstimation(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<EstimationResponse> {
     const estimation = await this.estimationsRepository.getEstimation(args);

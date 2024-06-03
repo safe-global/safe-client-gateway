@@ -314,9 +314,9 @@ describe('Chain schemas', () => {
     });
 
     it('should not validate an invalid prices provider chainName', () => {
-      const pricesProvider = {
-        chainName: 1,
-      };
+      const pricesProvider = pricesProviderBuilder()
+        .with('chainName', faker.number.int() as unknown as string)
+        .build();
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 
@@ -334,9 +334,9 @@ describe('Chain schemas', () => {
     });
 
     it('should not validate an invalid prices provider nativeCoin', () => {
-      const pricesProvider = {
-        nativeCoin: 1,
-      };
+      const pricesProvider = pricesProviderBuilder()
+        .with('nativeCoin', faker.number.int() as unknown as string)
+        .build();
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 

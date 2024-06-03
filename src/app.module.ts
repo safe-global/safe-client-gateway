@@ -15,6 +15,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CacheHooksModule } from '@/routes/cache-hooks/cache-hooks.module';
 import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
+import { CommunityModule } from '@/routes/community/community.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
@@ -40,7 +41,6 @@ import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
-import { LockingModule } from '@/routes/locking/locking.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
@@ -70,6 +70,7 @@ export class AppModule implements NestModule {
         CacheHooksModule,
         ChainsModule,
         CollectiblesModule,
+        CommunityModule,
         ContractsModule,
         DataDecodedModule,
         // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
@@ -85,7 +86,6 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
-        LockingModule,
         MessagesModule,
         NotificationsModule,
         OwnersModule,

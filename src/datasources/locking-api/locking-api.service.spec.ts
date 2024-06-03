@@ -10,9 +10,12 @@ import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
-} from '@/domain/locking/entities/__tests__/locking-event.builder';
+} from '@/domain/community/entities/__tests__/locking-event.builder';
 import { getAddress } from 'viem';
-import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
+import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
+import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
+import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
+import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 
 const networkService = {
   get: jest.fn(),
@@ -43,20 +46,171 @@ describe('LockingApi', () => {
     );
   });
 
-  describe('getRank', () => {
-    it('should get rank', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const rank = rankBuilder().build();
+  describe('getCampaignById', () => {
+    it('should get a campaign by resourceId', async () => {
+      const campaign = campaignBuilder().build();
+
       mockNetworkService.get.mockResolvedValueOnce({
-        data: {
-          rank,
-        },
+        data: campaign,
         status: 200,
       });
 
-      const result = await service.getRank(safeAddress);
+      const result = await service.getCampaignById(campaign.resourceId);
 
-      expect(result).toEqual({ rank });
+      expect(result).toEqual(campaign);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`,
+      });
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const campaign = campaignBuilder().build();
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignById(campaign.resourceId),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCampaigns', () => {
+    it('should get campaigns', async () => {
+      const campaignsPage = pageBuilder()
+        .with('results', [campaignBuilder().build(), campaignBuilder().build()])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignsPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaigns({});
+
+      expect(result).toEqual(campaignsPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns`,
+        networkRequest: {
+          params: {
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward pagination queries', async () => {
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const campaignsPage = pageBuilder()
+        .with('results', [campaignBuilder().build(), campaignBuilder().build()])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignsPage,
+        status: 200,
+      });
+
+      await service.getCampaigns({ limit, offset });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/campaigns`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(service.getCampaigns({})).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCampaignRank', () => {
+    it('should get campaign rank', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignRank = campaignRankBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignRank,
+        status: 200,
+      });
+
+      const result = await service.getCampaignRank({ resourceId, safeAddress });
+
+      expect(result).toEqual(campaignRank);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
+      });
+    });
+
+    it('should forward error', async () => {
+      const resourceId = faker.string.uuid();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(
+          `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`,
+        ),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignRank({ resourceId, safeAddress }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getLockingRank', () => {
+    it('should get locking rank', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const lockingRank = lockingRankBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: lockingRank,
+        status: 200,
+      });
+
+      const result = await service.getLockingRank(safeAddress);
+
+      expect(result).toEqual(lockingRank);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`,
       });
@@ -76,7 +230,7 @@ describe('LockingApi', () => {
       );
       mockNetworkService.get.mockRejectedValueOnce(error);
 
-      await expect(service.getRank(safeAddress)).rejects.toThrow(
+      await expect(service.getLockingRank(safeAddress)).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
 
@@ -87,7 +241,7 @@ describe('LockingApi', () => {
   describe('getLeaderboard', () => {
     it('should get leaderboard', async () => {
       const leaderboardPage = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
         data: leaderboardPage,
@@ -112,7 +266,7 @@ describe('LockingApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const leaderboardPage = pageBuilder()
-        .with('results', [rankBuilder().build()])
+        .with('results', [lockingRankBuilder().build()])
         .build();
       mockNetworkService.get.mockResolvedValueOnce({
         data: leaderboardPage,
@@ -148,6 +302,84 @@ describe('LockingApi', () => {
       await expect(service.getLeaderboard({})).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCampaignLeaderboard', () => {
+    it('should get leaderboard by campaign', async () => {
+      const resourceId = faker.string.uuid();
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
+        .build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignRankPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaignLeaderboard({ resourceId });
+
+      expect(result).toEqual(campaignRankPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`,
+        networkRequest: {
+          params: {
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward pagination queries', async () => {
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const resourceId = faker.string.uuid();
+      const campaignRankPage = pageBuilder<CampaignRank>()
+        .with('results', [
+          campaignRankBuilder().build(),
+          campaignRankBuilder().build(),
+        ])
+        .build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignRankPage,
+        status: 200,
+      });
+
+      await service.getCampaignLeaderboard({ resourceId, limit, offset });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward error', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const resourceId = faker.string.uuid();
+      const error = new NetworkResponseError(
+        new URL(`${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignLeaderboard({ resourceId }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });

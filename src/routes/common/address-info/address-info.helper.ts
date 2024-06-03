@@ -32,7 +32,7 @@ export class AddressInfoHelper {
 
   async get(
     chainId: string,
-    address: string,
+    address: `0x${string}`,
     sources: Source[],
   ): Promise<AddressInfo> {
     for (const source of sources) {
@@ -61,7 +61,7 @@ export class AddressInfoHelper {
    */
   getOrDefault(
     chainId: string,
-    address: string,
+    address: `0x${string}`,
     sources: Source[],
   ): Promise<AddressInfo> {
     return this.get(chainId, address, sources).catch(
@@ -78,7 +78,7 @@ export class AddressInfoHelper {
    */
   getCollection(
     chainId: string,
-    addresses: string[],
+    addresses: `0x${string}`[],
     sources: Source[],
   ): Promise<Array<AddressInfo>> {
     return Promise.allSettled(
@@ -93,7 +93,7 @@ export class AddressInfoHelper {
 
   private _getFromSource(
     chainId: string,
-    address: string,
+    address: `0x${string}`,
     source: Source,
   ): Promise<AddressInfo> {
     switch (source) {

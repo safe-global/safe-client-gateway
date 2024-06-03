@@ -1,35 +1,37 @@
-import { rankBuilder } from '@/domain/locking/entities/__tests__/rank.builder';
-import { RankSchema } from '@/domain/locking/entities/schemas/rank.schema';
+import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
+import { CampaignRankSchema } from '@/domain/community/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
-describe('RankSchema', () => {
-  it('should validate a valid rank', () => {
-    const rank = rankBuilder().build();
+describe('CampaignRankSchema', () => {
+  it('should validate a valid holder', () => {
+    const campaignRank = campaignRankBuilder().build();
 
-    const result = RankSchema.safeParse(rank);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(result.success).toBe(true);
   });
 
-  it('should checksum the holder', () => {
+  it('should checksum the holder address', () => {
     const nonChecksummedAddress = faker.finance
       .ethereumAddress()
       .toLowerCase() as `0x${string}`;
-    const rank = rankBuilder().with('holder', nonChecksummedAddress).build();
+    const campaignRank = campaignRankBuilder()
+      .with('holder', nonChecksummedAddress)
+      .build();
 
-    const result = RankSchema.safeParse(rank);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(result.success && result.data.holder).toBe(
       getAddress(nonChecksummedAddress),
     );
   });
 
-  it('should not validate an invalid rank', () => {
-    const rank = { invalid: 'rank' };
+  it('should not validate an invalid holder', () => {
+    const campaignRank = { invalid: 'campaignRank' };
 
-    const result = RankSchema.safeParse(rank);
+    const result = CampaignRankSchema.safeParse(campaignRank);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -49,23 +51,23 @@ describe('RankSchema', () => {
         },
         {
           code: 'invalid_type',
-          expected: 'string',
+          expected: 'number',
           received: 'undefined',
-          path: ['lockedAmount'],
+          path: ['boost'],
           message: 'Required',
         },
         {
           code: 'invalid_type',
-          expected: 'string',
+          expected: 'number',
           received: 'undefined',
-          path: ['unlockedAmount'],
+          path: ['totalPoints'],
           message: 'Required',
         },
         {
           code: 'invalid_type',
-          expected: 'string',
+          expected: 'number',
           received: 'undefined',
-          path: ['withdrawnAmount'],
+          path: ['totalBoostedPoints'],
           message: 'Required',
         },
       ]),

@@ -3,11 +3,11 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 describe('FakeConfigurationService', () => {
   let configurationService: FakeConfigurationService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     configurationService = new FakeConfigurationService();
   });
 
-  it(`Setting key should store its value`, async () => {
+  it(`Setting key should store its value`, () => {
     configurationService.set('aaa', 'bbb');
 
     const result = configurationService.get('aaa');
@@ -16,7 +16,7 @@ describe('FakeConfigurationService', () => {
     expect(result).toBe('bbb');
   });
 
-  it(`Retrieving unknown key should return undefined`, async () => {
+  it(`Retrieving unknown key should return undefined`, () => {
     configurationService.set('aaa', 'bbb');
 
     const result = configurationService.get('unknown_key');
@@ -24,7 +24,7 @@ describe('FakeConfigurationService', () => {
     expect(result).toBe(undefined);
   });
 
-  it(`Retrieving unknown key should throw`, async () => {
+  it(`Retrieving unknown key should throw`, () => {
     configurationService.set('aaa', 'bbb');
 
     const result = (): void => {

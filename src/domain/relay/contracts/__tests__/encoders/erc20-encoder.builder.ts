@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
-import { Hex, encodeFunctionData, getAddress, erc20Abi } from 'viem';
+import { encodeFunctionData, getAddress, erc20Abi } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
 
 // transfer
 
 type Erc20TransferArgs = {
-  to: Hex;
+  to: `0x${string}`;
   value: bigint;
 };
 
@@ -14,7 +14,7 @@ class Erc20TransferEncoder<T extends Erc20TransferArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): Hex {
+  encode(): `0x${string}` {
     const args = this.build();
 
     return encodeFunctionData({
@@ -34,8 +34,8 @@ export function erc20TransferEncoder(): Erc20TransferEncoder<Erc20TransferArgs> 
 // transferFrom
 
 type Erc20TransferFromArgs = {
-  sender: Hex;
-  recipient: Hex;
+  sender: `0x${string}`;
+  recipient: `0x${string}`;
   amount: bigint;
 };
 
@@ -43,7 +43,7 @@ class Erc20TransferFromEncoder<T extends Erc20TransferFromArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): Hex {
+  encode(): `0x${string}` {
     const args = this.build();
 
     return encodeFunctionData({
@@ -64,7 +64,7 @@ export function erc20TransferFromEncoder(): Erc20TransferFromEncoder<Erc20Transf
 // transferFrom
 
 type Erc20ApproveArgs = {
-  spender: Hex;
+  spender: `0x${string}`;
   amount: bigint;
 };
 
@@ -72,7 +72,7 @@ class Erc20ApproveEncoder<T extends Erc20ApproveArgs>
   extends Builder<T>
   implements IEncoder
 {
-  encode(): Hex {
+  encode(): `0x${string}` {
     const args = this.build();
 
     return encodeFunctionData({

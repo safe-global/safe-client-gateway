@@ -24,8 +24,8 @@ export class AuthRepository implements IAuthRepository {
       notBefore?: number;
     },
   ): string {
-    // TODO: Verify payload before signing it
-    return this.jwtService.sign(payload, options);
+    const authPayloadDto = AuthPayloadDtoSchema.parse(payload);
+    return this.jwtService.sign(authPayloadDto, options);
   }
 
   verifyToken(accessToken: string): AuthPayloadDto {

@@ -16,6 +16,7 @@ import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-tr
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class TransactionDataMapper {
@@ -73,7 +74,7 @@ export class TransactionDataMapper {
   async isTrustedDelegateCall(
     chainId: string,
     operation: Operation,
-    to: string,
+    to: `0x${string}`,
     dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
     if (operation !== Operation.DELEGATE) return null;
@@ -173,7 +174,7 @@ export class TransactionDataMapper {
   ): Promise<AddressInfo | null> {
     if (typeof value === 'string' && value !== NULL_ADDRESS) {
       const addressInfo = await this.addressInfoHelper
-        .get(chainId, value, ['TOKEN', 'CONTRACT'])
+        .get(chainId, getAddress(value), ['TOKEN', 'CONTRACT'])
         .catch(() => null);
       return addressInfo?.name ? addressInfo : null;
     }

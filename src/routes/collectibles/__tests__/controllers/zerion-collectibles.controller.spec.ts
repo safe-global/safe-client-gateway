@@ -75,7 +75,7 @@ describe('Zerion Collectibles Controller', () => {
     describe('GET /v2/collectibles', () => {
       it('successfully gets collectibles from Zerion', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const aTokenAddress = faker.finance.ethereumAddress();
         const aNFTName = faker.string.sample();
         const aUrl = faker.internet.url({ appendSlash: false });
@@ -255,7 +255,7 @@ describe('Zerion Collectibles Controller', () => {
       });
       it('successfully maps pagination option (no limit)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const inputPaginationCursor = `cursor=${encodeURIComponent(`&offset=10`)}`;
         const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=20&page%5Bafter%5D=IjMwIg==`;
         const expectedNext = `${encodeURIComponent(`limit=20&offset=30`)}`;
@@ -319,7 +319,7 @@ describe('Zerion Collectibles Controller', () => {
 
       it('successfully maps pagination option (no offset)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const paginationLimit = 4;
         const inputPaginationCursor = `cursor=${encodeURIComponent(`limit=${paginationLimit}`)}`;
         const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=4&page%5Bafter%5D=IjQi`;
@@ -383,7 +383,7 @@ describe('Zerion Collectibles Controller', () => {
 
       it('successfully maps pagination option (both limit and offset)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         const paginationLimit = 4;
         const inputPaginationCursor = `cursor=${encodeURIComponent(`limit=${paginationLimit}&offset=20`)}`;
         const zerionNext = `${faker.internet.url({ appendSlash: false })}?page%5Bsize%5D=4&page%5Bafter%5D=IjMwIg==`;
@@ -450,7 +450,7 @@ describe('Zerion Collectibles Controller', () => {
     describe('Zerion Balances API Error', () => {
       it(`500 error response`, async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
-        const safeAddress = faker.finance.ethereumAddress();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:

@@ -23,7 +23,7 @@ describe('PushwooshApi', () => {
   let pushwooshFromEmail: string;
   let pushwooshFromName: string;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
 
     pushwooshApplicationCode = faker.string.alphanumeric();
@@ -49,7 +49,7 @@ describe('PushwooshApi', () => {
     );
   });
 
-  it('should error if configuration is not defined', async () => {
+  it('should error if configuration is not defined', () => {
     const fakeConfigurationService = new FakeConfigurationService();
 
     expect(

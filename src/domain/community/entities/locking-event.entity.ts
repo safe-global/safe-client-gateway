@@ -3,7 +3,7 @@ import {
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/domain/locking/entities/schemas/locking-event.schema';
+} from '@/domain/community/entities/schemas/locking-event.schema';
 import { z } from 'zod';
 
 export type LockEventItem = z.infer<typeof LockEventItemSchema>;

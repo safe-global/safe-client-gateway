@@ -48,26 +48,6 @@ export default () => ({
           notFoundPriceTtlSeconds: parseInt(
             process.env.NOT_FOUND_PRICE_TTL_SECONDS ?? `${72 * 60 * 60}`,
           ),
-          chains: {
-            1: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            10: { nativeCoin: 'ethereum', chainName: 'optimistic-ethereum' },
-            100: { nativeCoin: 'xdai', chainName: 'xdai' },
-            1101: { nativeCoin: 'ethereum', chainName: 'polygon-zkevm' },
-            11155111: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            1313161554: { nativeCoin: 'ethereum', chainName: 'aurora' },
-            137: { nativeCoin: 'matic-network', chainName: 'polygon-pos' },
-            196: { nativeCoin: 'okb', chainName: 'x1' },
-            324: { nativeCoin: 'ethereum', chainName: 'zksync' },
-            42161: { nativeCoin: 'ethereum', chainName: 'arbitrum-one' },
-            42220: { nativeCoin: 'celo', chainName: 'celo' },
-            43114: { nativeCoin: 'avalanche-2', chainName: 'avalanche' },
-            5: { nativeCoin: 'ethereum', chainName: 'ethereum' },
-            534352: { nativeCoin: 'weth', chainName: 'scroll' },
-            56: { nativeCoin: 'binancecoin', chainName: 'binance-smart-chain' },
-            8453: { nativeCoin: 'ethereum', chainName: 'base' },
-            84531: { nativeCoin: 'ethereum', chainName: 'base' },
-            84532: { nativeCoin: 'ethereum', chainName: 'base' },
-          },
           highRefreshRateTokens:
             process.env.HIGH_REFRESH_RATE_TOKENS?.split(',') ?? [],
           highRefreshRateTokensTtlSeconds: parseInt(
@@ -193,8 +173,8 @@ export default () => ({
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     historyDebugLogs:
       process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
-    imitationFiltering:
-      process.env.FF_IMITATION_FILTERING?.toLowerCase() === 'true',
+    imitationMapping:
+      process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     confirmationView:
       process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
@@ -222,9 +202,10 @@ export default () => ({
     ownersTtlSeconds: parseInt(process.env.OWNERS_TTL_SECONDS ?? `${0}`),
   },
   mappings: {
-    imitationTransactions: {
+    imitation: {
+      lookupDistance: parseInt(process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`),
       prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
-      suffixLength: parseInt(process.env.VANITY_ADDRESS_CHARS ?? `${4}`),
+      suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
     },
     history: {
       maxNestedTransfers: parseInt(
@@ -265,6 +246,7 @@ export default () => ({
     api: {
       1: 'https://api.cow.fi/mainnet',
       100: 'https://api.cow.fi/xdai',
+      42161: 'https://api.cow.fi/arbitrum_one',
       11155111: 'https://api.cow.fi/sepolia',
     },
     explorerBaseUri:

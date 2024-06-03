@@ -38,7 +38,7 @@ export class NotificationsRepository implements INotificationsRepository {
   async unregisterSafe(args: {
     chainId: string;
     uuid: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const api = await this.transactionApiManager.getTransactionApi(
       args.chainId,

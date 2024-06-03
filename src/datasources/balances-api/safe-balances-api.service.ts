@@ -38,7 +38,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }
 
   async getBalances(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     fiatCode: string;
     chain: Chain;
     trusted?: boolean;
@@ -69,7 +69,7 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearBalances(args: { safeAddress: string }): Promise<void> {
+  async clearBalances(args: { safeAddress: `0x${string}` }): Promise<void> {
     const key = CacheRouter.getBalancesCacheKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,
@@ -78,7 +78,7 @@ export class SafeBalancesApi implements IBalancesApi {
   }
 
   async getCollectibles(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -109,7 +109,7 @@ export class SafeBalancesApi implements IBalancesApi {
     }
   }
 
-  async clearCollectibles(args: { safeAddress: string }): Promise<void> {
+  async clearCollectibles(args: { safeAddress: `0x${string}` }): Promise<void> {
     const key = CacheRouter.getCollectiblesKey({
       chainId: this.chainId,
       safeAddress: args.safeAddress,

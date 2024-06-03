@@ -50,7 +50,7 @@ export class SafesService {
 
   async getSafeInfo(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<SafeState> {
     const [safe, { recommendedMasterCopyVersion }, supportedSingletons] =
       await Promise.all([
@@ -129,7 +129,7 @@ export class SafesService {
 
   async getSafeOverview(args: {
     currency: string;
-    addresses: Array<{ chainId: string; address: string }>;
+    addresses: Array<{ chainId: string; address: `0x${string}` }>;
     trusted: boolean;
     excludeSpam: boolean;
     walletAddress?: `0x${string}`;
@@ -197,7 +197,7 @@ export class SafesService {
 
   public async getNonces(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<SafeNonces> {
     const nonce = await this.safeRepository.getNonces(args);
     return new SafeNonces(nonce);
@@ -231,7 +231,7 @@ export class SafesService {
 
   private async getCollectiblesTag(
     chainId: string,
-    safeAddress: string,
+    safeAddress: `0x${string}`,
   ): Promise<Date | null> {
     const lastCollectibleTransfer = await this.safeRepository
       .getCollectibleTransfers({
@@ -273,7 +273,7 @@ export class SafesService {
    */
   private async getTxHistoryTagDate(
     chainId: string,
-    safeAddress: string,
+    safeAddress: `0x${string}`,
   ): Promise<Date | null> {
     const txPages = await Promise.allSettled([
       this.safeRepository.getMultisigTransactions({
@@ -318,7 +318,7 @@ export class SafesService {
 
   private async modifiedMessageTag(
     chainId: string,
-    safeAddress: string,
+    safeAddress: `0x${string}`,
   ): Promise<Date | null> {
     const messages = await this.messagesRepository.getMessagesBySafe({
       chainId,

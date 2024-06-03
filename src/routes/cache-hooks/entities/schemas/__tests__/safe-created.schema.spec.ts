@@ -33,7 +33,7 @@ describe('SafeCreatedEventSchema', () => {
     );
   });
 
-  it('should not allow a missing chainId', async () => {
+  it('should not allow a missing chainId', () => {
     const safeCreatedEvent = safeCreatedEventBuilder().build();
     // @ts-expect-error - inferred types don't allow optional fields
     delete safeCreatedEvent.chainId;

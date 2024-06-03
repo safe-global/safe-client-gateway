@@ -33,6 +33,7 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { getAddress } from 'viem';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -72,7 +73,7 @@ describe('Collectibles Controller (Unit)', () => {
   describe('GET /v2/collectibles', () => {
     it('is successful', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const pageLimit = 1;
       const collectiblesResponse = pageBuilder<Collectible>()
@@ -113,7 +114,7 @@ describe('Collectibles Controller (Unit)', () => {
 
     it('pagination data is forwarded to tx service', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = 10;
       const offset = 20;
@@ -157,7 +158,7 @@ describe('Collectibles Controller (Unit)', () => {
 
     it('excludeSpam and trusted params are forwarded to tx service', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const excludeSpam = true;
       const trusted = true;
@@ -201,7 +202,7 @@ describe('Collectibles Controller (Unit)', () => {
 
     it('tx service collectibles returns 400', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
       const transactionServiceError = new NetworkResponseError(
@@ -234,7 +235,7 @@ describe('Collectibles Controller (Unit)', () => {
 
     it('tx service collectibles does not return a response', async () => {
       const chainId = faker.string.numeric();
-      const safeAddress = faker.finance.ethereumAddress();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
       const transactionServiceError = new NetworkRequestError(

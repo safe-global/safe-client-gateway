@@ -14,7 +14,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
 
   async getCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
     trusted?: boolean;
@@ -27,7 +27,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
 
   async clearCollectibles(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const api = await this.balancesApiManager.getBalancesApi(args.chainId);
     await api.clearCollectibles(args);

@@ -33,30 +33,30 @@ const ZodNestedUnionSchema = z.union([
 @Controller({})
 class TestController {
   @Post('zod-exception')
-  async zodError(
+  zodError(
     @Body(new ValidationPipe(ZodSchema)) body: z.infer<typeof ZodSchema>,
-  ): Promise<z.infer<typeof ZodSchema>> {
+  ): z.infer<typeof ZodSchema> {
     return body;
   }
 
   @Post('zod-union-exception')
-  async zodUnionError(
+  zodUnionError(
     @Body(new ValidationPipe(ZodUnionSchema))
     body: z.infer<typeof ZodUnionSchema>,
-  ): Promise<z.infer<typeof ZodUnionSchema>> {
+  ): z.infer<typeof ZodUnionSchema> {
     return body;
   }
 
   @Post('zod-nested-union-exception')
-  async zodNestedUnionError(
+  zodNestedUnionError(
     @Body(new ValidationPipe(ZodNestedUnionSchema))
     body: z.infer<typeof ZodNestedUnionSchema>,
-  ): Promise<z.infer<typeof ZodNestedUnionSchema>> {
+  ): z.infer<typeof ZodNestedUnionSchema> {
     return body;
   }
 
   @Get('non-zod-exception')
-  async nonZodException(): Promise<void> {
+  nonZodException(): void {
     throw new Error('Some random error');
   }
 }

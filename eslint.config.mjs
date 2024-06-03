@@ -33,11 +33,9 @@ export default tseslint.config(
       // TODO: Address these rules: (added to update to ESLint 9)
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-enum-comparison': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/unbound-method': 'off',
     },
   },

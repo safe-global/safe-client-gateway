@@ -9,9 +9,9 @@ export const IDelegateRepository = Symbol('IDelegateRepository');
 export interface IDelegateRepository {
   getDelegates(args: {
     chainId: string;
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
@@ -28,15 +28,15 @@ export interface IDelegateRepository {
 
   deleteDelegate(args: {
     chainId: string;
-    delegate: string;
-    delegator: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
   }): Promise<unknown>;
 
   deleteSafeDelegate(args: {
     chainId: string;
-    delegate: string;
-    safeAddress: string;
+    delegate: `0x${string}`;
+    safeAddress: `0x${string}`;
     signature: string;
   }): Promise<unknown>;
 }

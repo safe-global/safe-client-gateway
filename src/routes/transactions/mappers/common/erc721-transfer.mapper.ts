@@ -9,6 +9,7 @@ import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer
 import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-transfer.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class Erc721TransferMapper {
@@ -36,13 +37,13 @@ export class Erc721TransferMapper {
     const direction = getTransferDirection(transaction.safe, sender, recipient);
     const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      sender,
+      getAddress(sender),
       ['TOKEN', 'CONTRACT'],
     );
 
     const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      recipient,
+      getAddress(recipient),
       ['TOKEN', 'CONTRACT'],
     );
 

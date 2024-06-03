@@ -24,7 +24,7 @@ import { Server } from 'net';
 class TestController {
   @Get('valid')
   @UseGuards(AuthGuard)
-  async validRoute(): Promise<{ secret: string }> {
+  validRoute(): { secret: string } {
     return { secret: 'This is a secret message' };
   }
 }

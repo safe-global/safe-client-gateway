@@ -12,7 +12,7 @@ export class ContractsService {
 
   async getContract(args: {
     chainId: string;
-    contractAddress: string;
+    contractAddress: `0x${string}`;
   }): Promise<Contract> {
     return this.contractsRepository.getContract(args);
   }

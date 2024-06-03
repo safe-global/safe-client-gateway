@@ -12,6 +12,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MULTI_SEND_METHOD_NAME } from '@/routes/transactions/constants';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
+import { getAddress } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),
@@ -42,7 +43,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         0,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         dataDecodedBuilder().build(),
       );
       expect(actual).toBeNull();
@@ -57,7 +58,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         Operation.DELEGATE,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         null,
       );
 
@@ -69,7 +70,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         dataDecodedBuilder().build(),
       );
       expect(actual).toBe(false);
@@ -82,7 +83,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         dataDecodedBuilder().build(),
       );
       expect(actual).toBe(false);
@@ -96,7 +97,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         dataDecodedBuilder().build(),
       );
       expect(actual).toBe(true);
@@ -110,7 +111,7 @@ describe('Transaction Data Mapper (Unit)', () => {
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
-        faker.finance.ethereumAddress(),
+        getAddress(faker.finance.ethereumAddress()),
         dataDecodedBuilder().build(),
       );
       expect(actual).toBe(false);
@@ -316,7 +317,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     });
 
     it('should build an address info index for a nested multiSend (2)', async () => {
-      const contractAddress = faker.finance.ethereumAddress();
+      const contractAddress = getAddress(faker.finance.ethereumAddress());
       const contractAddressInfo = new AddressInfo(
         contractAddress,
         faker.word.sample(),

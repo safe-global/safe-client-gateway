@@ -8,14 +8,15 @@ import { Controller, Get, INestApplication, Query } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
 import * as request from 'supertest';
+import { getAddress } from 'viem';
 
 @Controller()
 class TestController {
   @Get('test')
-  async route(
+  route(
     @Query('addresses', new Caip10AddressesPipe())
     addresses: Array<{ chainId: string; address: string }>,
-  ): Promise<Array<{ chainId: string; address: string }>> {
+  ): Array<{ chainId: string; address: string }> {
     return addresses;
   }
 }
@@ -36,7 +37,7 @@ describe('Caip10AddressesPipe', () => {
     await app.close();
   });
 
-  it('returns parsed CAIP-10 addresses', async () => {
+  it('returns parsed, checksummed CAIP-10 addresses', async () => {
     const chainId1 = faker.string.numeric();
     const chainId2 = faker.string.numeric();
     const chainId3 = faker.string.numeric();
@@ -50,10 +51,28 @@ describe('Caip10AddressesPipe', () => {
       )
       .expect(200)
       .expect([
-        { chainId: chainId1, address: address1 },
-        { chainId: chainId2, address: address2 },
-        { chainId: chainId3, address: address3 },
+        { chainId: chainId1, address: getAddress(address1) },
+        { chainId: chainId2, address: getAddress(address2) },
+        { chainId: chainId3, address: getAddress(address3) },
       ]);
+  });
+
+  it('throws for non-numerical chainIds', async () => {
+    const chainId = faker.string.alpha();
+    const address = faker.finance.ethereumAddress();
+
+    await request(app.getHttpServer())
+      .get(`/test?addresses=${chainId}:${address}`)
+      .expect(500);
+  });
+
+  it('throws for non-address addresses', async () => {
+    const chainId = faker.string.numeric();
+    const address = faker.number.int();
+
+    await request(app.getHttpServer())
+      .get(`/test?addresses=${chainId}:${address}`)
+      .expect(500);
   });
 
   it('throws for missing params', async () => {

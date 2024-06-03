@@ -6,14 +6,14 @@ export const IAccountRepository = Symbol('IAccountRepository');
 export interface IAccountRepository {
   getAccount(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     signer: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<Account>;
 
   getAccounts(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     onlyVerified: boolean;
   }): Promise<Account[]>;
 
@@ -28,7 +28,7 @@ export interface IAccountRepository {
    */
   createAccount(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: string;
     signer: `0x${string}`;
     authPayload: AuthPayload;
@@ -48,8 +48,8 @@ export interface IAccountRepository {
    */
   resendEmailVerification(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
   }): Promise<void>;
 
   /**
@@ -65,8 +65,8 @@ export interface IAccountRepository {
    */
   verifyEmailAddress(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     code: string;
   }): Promise<void>;
 
@@ -80,7 +80,7 @@ export interface IAccountRepository {
    */
   deleteAccount(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     signer: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void>;
@@ -98,7 +98,7 @@ export interface IAccountRepository {
    */
   editEmail(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     emailAddress: string;
     signer: `0x${string}`;
     authPayload: AuthPayload;

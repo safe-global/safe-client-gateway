@@ -130,7 +130,8 @@ describe('Owners Controller (Unit)', () => {
       });
       const error = new NetworkResponseError(
         new URL(
-          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${ownerAddress}/safes`,
+          // ValidationPipe checksums ownerAddress param
+          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${getAddress(ownerAddress)}/safes`,
         ),
         {
           status: 500,
@@ -151,7 +152,8 @@ describe('Owners Controller (Unit)', () => {
         url: `${safeConfigUrl}/api/v1/chains/${chainId}`,
       });
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${chainResponse.transactionService}/api/v1/owners/${ownerAddress}/safes/`,
+        // ValidationPipe checksums ownerAddress param
+        url: `${chainResponse.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`,
       });
     });
 
@@ -229,14 +231,15 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
-          case `${chain1.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+          // ValidationPipe checksums ownerAddress param
+          case `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
               data: { safes: safesOnChain1 },
               status: 200,
             });
           }
 
-          case `${chain2.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+          case `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
               data: { safes: safesOnChain2 },
               status: 200,

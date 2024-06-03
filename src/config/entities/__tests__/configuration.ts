@@ -28,80 +28,6 @@ export default (): ReturnType<typeof configuration> => ({
           pricesTtlSeconds: faker.number.int(),
           nativeCoinPricesTtlSeconds: faker.number.int(),
           notFoundPriceTtlSeconds: faker.number.int(),
-          chains: {
-            1: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            10: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            100: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            1101: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            11155111: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            1313161554: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            137: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            196: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            324: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            42161: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            42220: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            43114: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            5: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            534352: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            56: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            8453: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            84531: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-            84532: {
-              nativeCoin: faker.string.sample(),
-              chainName: faker.string.sample(),
-            },
-          },
           highRefreshRateTokens: [],
           highRefreshRateTokensTtlSeconds: faker.number.int(),
         },
@@ -185,7 +111,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerionBalancesChainIds: ['137'],
     swapsDecoding: true,
     historyDebugLogs: false,
-    imitationFiltering: false,
+    imitationMapping: false,
     auth: false,
     confirmationView: false,
     eventsQueue: false,
@@ -200,7 +126,8 @@ export default (): ReturnType<typeof configuration> => ({
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
   },
   mappings: {
-    imitationTransactions: {
+    imitation: {
+      lookupDistance: faker.number.int(),
       prefixLength: faker.number.int(),
       suffixLength: faker.number.int(),
     },
@@ -240,6 +167,7 @@ export default (): ReturnType<typeof configuration> => ({
     api: {
       1: faker.internet.url(),
       100: faker.internet.url(),
+      42161: faker.internet.url(),
       11155111: faker.internet.url(),
     },
     explorerBaseUri: faker.internet.url(),

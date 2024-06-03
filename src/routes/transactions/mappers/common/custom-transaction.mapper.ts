@@ -10,6 +10,7 @@ import {
   TRANSACTIONS_PARAMETER_NAME,
 } from '@/routes/transactions/constants';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
@@ -77,7 +78,7 @@ export class CustomTransactionMapper {
         to === safe &&
         dataSize === 0 &&
         (!value || Number(value) === 0) &&
-        operation === 0 &&
+        operation === Operation.CALL &&
         (!baseGas || Number(baseGas) === 0) &&
         (!gasPrice || Number(gasPrice) === 0) &&
         (!gasToken || gasToken === NULL_ADDRESS) &&

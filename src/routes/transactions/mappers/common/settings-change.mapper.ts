@@ -17,6 +17,7 @@ import { SetGuard } from '@/routes/transactions/entities/settings-changes/set-gu
 import { SettingsChange } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/routes/transactions/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class SettingsChangeMapper {
@@ -58,7 +59,7 @@ export class SettingsChangeMapper {
     if (typeof handler !== 'string') return null;
     const addressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      handler,
+      getAddress(handler),
       ['CONTRACT'],
     );
     return new SetFallbackHandler(addressInfo);
@@ -123,7 +124,7 @@ export class SettingsChangeMapper {
 
     const implementationInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      implementation,
+      getAddress(implementation),
       ['CONTRACT'],
     );
     return new ChangeMasterCopy(implementationInfo);
@@ -142,7 +143,7 @@ export class SettingsChangeMapper {
 
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      module,
+      getAddress(module),
       ['CONTRACT'],
     );
     return new EnableModule(moduleInfo);
@@ -161,7 +162,7 @@ export class SettingsChangeMapper {
 
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
-      module,
+      getAddress(module),
       ['CONTRACT'],
     );
     return new DisableModule(moduleInfo);
@@ -193,7 +194,7 @@ export class SettingsChangeMapper {
     if (guardValue !== NULL_ADDRESS) {
       const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
         chainId,
-        guardValue,
+        getAddress(guardValue),
         ['CONTRACT'],
       );
       return new SetGuard(guardAddressInfo);

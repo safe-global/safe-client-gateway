@@ -1,8 +1,8 @@
 export class ResendVerificationTimespanError extends Error {
   constructor(args: {
     chainId: string;
-    safeAddress: string;
-    signer: string;
+    safeAddress: `0x${string}`;
+    signer: `0x${string}`;
     timespanMs: number;
     lockWindowMs: number;
   }) {

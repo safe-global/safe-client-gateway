@@ -9,7 +9,7 @@ export const IEstimationsRepository = Symbol('IEstimationsRepository');
 export interface IEstimationsRepository {
   getEstimation(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation>;
 }

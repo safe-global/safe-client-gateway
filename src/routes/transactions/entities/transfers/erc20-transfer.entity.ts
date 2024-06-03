@@ -19,6 +19,8 @@ export class Erc20Transfer extends Transfer {
   decimals: number | null;
   @ApiPropertyOptional({ type: Boolean, nullable: true })
   trusted: boolean | null;
+  @ApiProperty()
+  imitation: boolean;
 
   constructor(
     tokenAddress: `0x${string}`,
@@ -28,6 +30,7 @@ export class Erc20Transfer extends Transfer {
     logoUri: string | null = null,
     decimals: number | null = null,
     trusted: boolean | null = null,
+    imitation: boolean = false,
   ) {
     super(TransferType.Erc20);
     this.tokenAddress = tokenAddress;
@@ -37,6 +40,7 @@ export class Erc20Transfer extends Transfer {
     this.logoUri = logoUri;
     this.decimals = decimals;
     this.trusted = trusted;
+    this.imitation = imitation;
   }
 }
 

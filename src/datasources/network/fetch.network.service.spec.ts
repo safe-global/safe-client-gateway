@@ -19,7 +19,7 @@ const loggingServiceMock = jest.mocked(loggingService);
 describe('FetchNetworkService', () => {
   let target: FetchNetworkService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     target = new FetchNetworkService(fetchClientMock, loggingServiceMock);
   });

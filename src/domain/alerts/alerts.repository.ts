@@ -98,7 +98,7 @@ export class AlertsRepository implements IAlertsRepository {
         decodedEvent.args.data,
       );
 
-      const newSafeState = await this._mapSafeSetup({
+      const newSafeState = this._mapSafeSetup({
         safe,
         decodedTransactions,
       });
@@ -127,7 +127,7 @@ export class AlertsRepository implements IAlertsRepository {
    */
   private async _getSubscribedAccounts(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<Account[]> {
     const accounts = await this.accountRepository.getAccounts({
       chainId: args.chainId,
@@ -188,10 +188,10 @@ export class AlertsRepository implements IAlertsRepository {
     return decoded;
   }
 
-  private async _mapSafeSetup(args: {
+  private _mapSafeSetup(args: {
     safe: Safe;
     decodedTransactions: Array<ReturnType<SafeDecoder['decodeFunctionData']>>;
-  }): Promise<Safe> {
+  }): Safe {
     return args.decodedTransactions.reduce((newSafe, decodedTransaction) => {
       switch (decodedTransaction.functionName) {
         case 'addOwnerWithThreshold': {

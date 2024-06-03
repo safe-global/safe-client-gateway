@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex } from 'viem/types/misc';
 import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
@@ -32,9 +31,9 @@ export class LimitAddressesMapper {
   async getLimitAddresses(args: {
     version: string;
     chainId: string;
-    to: Hex;
-    data: Hex;
-  }): Promise<readonly Hex[]> {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<readonly `0x${string}`[]> {
     // Calldata matches that of execTransaction and meets validity requirements
     if (
       this.isValidExecTransactionCall({
@@ -109,7 +108,10 @@ export class LimitAddressesMapper {
     throw new InvalidTransferError();
   }
 
-  private isValidExecTransactionCall(args: { to: Hex; data: Hex }): boolean {
+  private isValidExecTransactionCall(args: {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  }): boolean {
     const execTransactionArgs = this.getExecTransactionArgs(args.data);
     // Not a valid execTransaction call
     if (!execTransactionArgs) {
@@ -149,10 +151,10 @@ export class LimitAddressesMapper {
     return isCancellation || this.safeDecoder.isCall(execTransactionArgs.data);
   }
 
-  private getExecTransactionArgs(data: Hex): {
-    to: Hex;
+  private getExecTransactionArgs(data: `0x${string}`): {
+    to: `0x${string}`;
     value: bigint;
-    data: Hex;
+    data: `0x${string}`;
   } | null {
     try {
       const safeDecodedData = this.safeDecoder.decodeFunctionData({
@@ -173,7 +175,10 @@ export class LimitAddressesMapper {
     }
   }
 
-  private isValidErc20Transfer(args: { to: Hex; data: Hex }): boolean {
+  private isValidErc20Transfer(args: {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -188,7 +193,10 @@ export class LimitAddressesMapper {
     return to !== args.to;
   }
 
-  private isValidErc20TransferFrom(args: { to: Hex; data: Hex }): boolean {
+  private isValidErc20TransferFrom(args: {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  }): boolean {
     // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
       data: args.data,
@@ -205,7 +213,7 @@ export class LimitAddressesMapper {
 
   private async isOfficialMastercopy(args: {
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): Promise<boolean> {
     try {
       await this.safeRepository.getSafe(args);
@@ -218,7 +226,7 @@ export class LimitAddressesMapper {
   private isOfficialMultiSendDeployment(args: {
     version: string;
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): boolean {
     const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
       version: args.version,
@@ -244,7 +252,9 @@ export class LimitAddressesMapper {
     );
   }
 
-  private getSafeAddressFromMultiSend = (data: Hex): Hex => {
+  private getSafeAddressFromMultiSend = (
+    data: `0x${string}`,
+  ): `0x${string}` => {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
@@ -274,7 +284,7 @@ export class LimitAddressesMapper {
   private isOfficialProxyFactoryDeployment(args: {
     version: string;
     chainId: string;
-    address: string;
+    address: `0x${string}`;
   }): boolean {
     const proxyFactoryDeployment = getProxyFactoryDeployment({
       version: args.version,
@@ -290,7 +300,7 @@ export class LimitAddressesMapper {
   private isValidCreateProxyWithNonceCall(args: {
     version: string;
     chainId: string;
-    data: Hex;
+    data: `0x${string}`;
   }): boolean {
     let singleton: string | null = null;
 
@@ -325,7 +335,9 @@ export class LimitAddressesMapper {
     return isL1Singleton || isL2Singleton;
   }
 
-  private getOwnersFromCreateProxyWithNonce(data: Hex): readonly Hex[] {
+  private getOwnersFromCreateProxyWithNonce(
+    data: `0x${string}`,
+  ): readonly `0x${string}`[] {
     const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
       data,
     });

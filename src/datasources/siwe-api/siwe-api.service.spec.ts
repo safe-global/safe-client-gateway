@@ -18,7 +18,7 @@ describe('SiweApiService', () => {
   let fakeCacheService: FakeCacheService;
   const nonceTtlInSeconds = faker.number.int();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeCacheService = new FakeCacheService();

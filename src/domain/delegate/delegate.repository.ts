@@ -14,9 +14,9 @@ export class DelegateRepository implements IDelegateRepository {
 
   async getDelegates(args: {
     chainId: string;
-    safeAddress?: string;
-    delegate?: string;
-    delegator?: string;
+    safeAddress?: `0x${string}`;
+    delegate?: `0x${string}`;
+    delegator?: `0x${string}`;
     label?: string;
     limit?: number;
     offset?: number;
@@ -56,8 +56,8 @@ export class DelegateRepository implements IDelegateRepository {
 
   async deleteDelegate(args: {
     chainId: string;
-    delegate: string;
-    delegator: string;
+    delegate: `0x${string}`;
+    delegator: `0x${string}`;
     signature: string;
   }): Promise<unknown> {
     const transactionService =
@@ -71,8 +71,8 @@ export class DelegateRepository implements IDelegateRepository {
 
   async deleteSafeDelegate(args: {
     chainId: string;
-    delegate: string;
-    safeAddress: string;
+    delegate: `0x${string}`;
+    safeAddress: `0x${string}`;
     signature: string;
   }): Promise<unknown> {
     const transactionService =

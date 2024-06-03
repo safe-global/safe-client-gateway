@@ -364,7 +364,8 @@ describe('TransactionsViewController tests', () => {
     const preSignature = preSignatureEncoder.build();
     const order = orderBuilder()
       .with('uid', preSignature.orderUid)
-      .with('fullAppData', `{ "appCode": "${faker.company.buzzNoun()}" }`)
+      // We don't use buzzNoun here as it can generate the same value as verifiedApp
+      .with('fullAppData', `{ "appCode": "restrited app code" }`)
       .build();
     const buyToken = tokenBuilder().with('address', order.buyToken).build();
     const sellToken = tokenBuilder().with('address', order.sellToken).build();
