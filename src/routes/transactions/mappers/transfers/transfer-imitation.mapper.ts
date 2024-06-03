@@ -86,6 +86,7 @@ export class TransferImitationMapper {
         .slice(0, this.lookupDistance);
 
       if (prevItems.length === 0) {
+        txInfo.transferInfo.imitation = false;
         mappedTransactions.unshift(item);
         continue;
       }

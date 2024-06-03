@@ -411,7 +411,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -494,7 +494,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -538,7 +538,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -719,7 +719,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -763,7 +763,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -807,7 +807,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -909,7 +909,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -953,7 +953,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -997,7 +997,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -1177,7 +1177,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -1221,7 +1221,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: notImitatedMultisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: notImitatedMultisigToken.logoUri,
                   tokenAddress: notImitatedMultisigToken.address,
                   tokenName: notImitatedMultisigToken.name,
@@ -1265,7 +1265,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
@@ -1446,7 +1446,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 },
                 transferInfo: {
                   decimals: multisigToken.decimals,
-                  imitation: null,
+                  imitation: false,
                   logoUri: multisigToken.logoUri,
                   tokenAddress: multisigToken.address,
                   tokenName: multisigToken.name,
