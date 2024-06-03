@@ -246,6 +246,7 @@ export class CoingeckoApi implements IPricesApi {
       const { key, field } = cacheDir;
       if (cached != null) {
         this.loggingService.debug({ type: 'cache_hit', key, field });
+        // TODO: build an AssetPrice validator or a type guard to ensure the cache value is valid.
         const cachedAssetPrice: AssetPrice = JSON.parse(cached);
         result.push(cachedAssetPrice);
       } else {

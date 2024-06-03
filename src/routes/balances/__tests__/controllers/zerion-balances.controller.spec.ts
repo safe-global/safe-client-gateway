@@ -101,11 +101,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName: string = configurationService.getOrThrow(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder().build(),
@@ -166,9 +164,9 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.zerion.apiKey`);
+        const apiKey = configurationService.getOrThrow(
+          `balances.providers.zerion.apiKey`,
+        );
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -249,11 +247,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder().build(),
@@ -315,9 +311,9 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.zerion.apiKey`);
+        const apiKey = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.apiKey`,
+        );
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -467,11 +463,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName: string = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder()
@@ -537,11 +531,9 @@ describe('Balances Controller (Unit)', () => {
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const chainName: string = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName: string = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder()
