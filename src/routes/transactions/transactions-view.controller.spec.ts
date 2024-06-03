@@ -195,9 +195,7 @@ describe('TransactionsViewController tests', () => {
           },
           receiver: order.receiver,
           owner: order.owner,
-          fullAppData:
-            typeof order.fullAppData === 'string' &&
-            JSON.parse(order.fullAppData),
+          fullAppData: JSON.parse(order.fullAppData as string),
         }),
       );
   });

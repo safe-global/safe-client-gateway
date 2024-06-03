@@ -66,8 +66,9 @@ import { Server } from 'net';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
-  let safeConfigUrl: string;
+  let safeConfigUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -97,7 +98,7 @@ describe('Transactions History Controller (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
+    configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
@@ -783,9 +784,9 @@ describe('Transactions History Controller (Unit)', () => {
   it('Should limit the amount of nested transfers', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const maxNestedTransfers: number = app
-      .get(IConfigurationService)
-      .getOrThrow('mappings.history.maxNestedTransfers');
+    const maxNestedTransfers: number = configurationService.getOrThrow<number>(
+      'mappings.history.maxNestedTransfers',
+    );
     const date = new Date();
     const transfers = faker.helpers.multiple(
       () =>
