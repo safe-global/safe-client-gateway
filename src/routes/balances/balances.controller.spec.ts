@@ -94,8 +94,7 @@ describe('Balances Controller (Unit)', () => {
         .getOrThrow('balances.providers.safe.prices.apiKey');
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -117,7 +116,6 @@ describe('Balances Controller (Unit)', () => {
               data: nativeCoinPriceProviderResponse,
               status: 200,
             });
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -197,7 +195,6 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
@@ -216,7 +213,6 @@ describe('Balances Controller (Unit)', () => {
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
-          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
@@ -249,7 +245,6 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -287,8 +282,7 @@ describe('Balances Controller (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -362,7 +356,6 @@ describe('Balances Controller (Unit)', () => {
               data: transactionApiBalancesResponse,
               status: 200,
             });
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -412,7 +405,6 @@ describe('Balances Controller (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
     });
@@ -464,7 +456,6 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            // @ts-expect-error - TODO: remove after migration
             case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.reject();
             default:
@@ -524,7 +515,6 @@ describe('Balances Controller (Unit)', () => {
                 data: transactionApiBalancesResponse,
                 status: 200,
               });
-            // @ts-expect-error - TODO: remove after migration
             case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`:
               return Promise.resolve({
                 data: tokenPriceProviderResponse,

@@ -111,8 +111,7 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -158,7 +157,6 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -219,7 +217,6 @@ describe('Safes Controller Overview (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[3][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
@@ -238,7 +235,6 @@ describe('Safes Controller Overview (Unit)', () => {
       expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
-          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
@@ -272,8 +268,7 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -331,7 +326,6 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -392,7 +386,6 @@ describe('Safes Controller Overview (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[3][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
@@ -411,7 +404,6 @@ describe('Safes Controller Overview (Unit)', () => {
       expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
-          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
@@ -485,12 +477,10 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        // @ts-expect-error - TODO: remove after migration
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -546,14 +536,13 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
+
           case `${pricesProviderUrl}/simple/token_price/${chain1.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain2.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -712,12 +701,10 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        // @ts-expect-error - TODO: remove after migration
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -773,14 +760,12 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain1.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain2.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -897,8 +882,7 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -935,7 +919,6 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -995,7 +978,6 @@ describe('Safes Controller Overview (Unit)', () => {
         params: { trusted: false, exclude_spam: true },
       });
       expect(networkService.get.mock.calls[3][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
@@ -1014,7 +996,6 @@ describe('Safes Controller Overview (Unit)', () => {
       expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
-          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
@@ -1048,8 +1029,7 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1087,7 +1067,6 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -1147,7 +1126,6 @@ describe('Safes Controller Overview (Unit)', () => {
         params: { trusted: true, exclude_spam: false },
       });
       expect(networkService.get.mock.calls[3][0].url).toBe(
-        // @ts-expect-error - TODO: remove after migration
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
       expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
@@ -1166,7 +1144,6 @@ describe('Safes Controller Overview (Unit)', () => {
       expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
-          // @ts-expect-error - TODO: remove after migration
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
         },
@@ -1242,12 +1219,10 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        // @ts-expect-error - TODO: remove after migration
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1309,14 +1284,12 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain1.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain2.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -1440,12 +1413,10 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        // @ts-expect-error - TODO: remove after migration
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1502,14 +1473,12 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain1.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain2.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -1644,12 +1613,10 @@ describe('Safes Controller Overview (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        // @ts-expect-error - TODO: remove after migration
-        [chain1.pricesProvider.nativeCoin!]: {
+        [chain1.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
-        // @ts-expect-error - TODO: remove after migration
-        [chain2.pricesProvider.nativeCoin!]: {
+        [chain2.pricesProvider.nativeCoin]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -1705,14 +1672,12 @@ describe('Safes Controller Overview (Unit)', () => {
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain1.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
               status: 200,
             });
           }
-          // @ts-expect-error - TODO: remove after migration
           case `${pricesProviderUrl}/simple/token_price/${chain2.pricesProvider.chainName}`: {
             return Promise.resolve({
               data: tokenPriceProviderResponse,
@@ -1800,16 +1765,8 @@ describe('Safes Controller Overview (Unit)', () => {
           .with('token', balanceTokenBuilder().with('decimals', 17).build())
           .build(),
       ];
-      const nativeCoinId = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.nativeCoin`,
-        );
-      const chainName = app
-        .get(IConfigurationService)
-        .getOrThrow(
-          `balances.providers.safe.prices.chains.${chain.chainId}.chainName`,
-        );
+      const nativeCoinId = chain.pricesProvider.nativeCoin;
+      const chainName = chain.pricesProvider.chainName;
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
         [nativeCoinId]: { [currency.toLowerCase()]: 1536.75 },

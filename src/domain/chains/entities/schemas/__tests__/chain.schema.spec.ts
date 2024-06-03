@@ -314,9 +314,9 @@ describe('Chain schemas', () => {
     });
 
     it('should not validate an invalid prices provider chainName', () => {
-      const pricesProvider = {
-        chainName: 1,
-      };
+      const pricesProvider = pricesProviderBuilder()
+        .with('chainName', faker.number.int() as unknown as string)
+        .build();
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 
@@ -334,9 +334,9 @@ describe('Chain schemas', () => {
     });
 
     it('should not validate an invalid prices provider nativeCoin', () => {
-      const pricesProvider = {
-        nativeCoin: 1,
-      };
+      const pricesProvider = pricesProviderBuilder()
+        .with('nativeCoin', faker.number.int() as unknown as string)
+        .build();
 
       const result = PricesProviderSchema.safeParse(pricesProvider);
 
@@ -357,15 +357,6 @@ describe('Chain schemas', () => {
   describe('ChainSchema', () => {
     it('should validate a valid chain', () => {
       const chain = chainBuilder().build();
-
-      const result = ChainSchema.safeParse(chain);
-
-      expect(result.success).toBe(true);
-    });
-
-    // TODO: remove when fully migrated.
-    it('should allow optional pricesProvider', () => {
-      const chain = chainBuilder().with('pricesProvider', undefined).build();
 
       const result = ChainSchema.safeParse(chain);
 
