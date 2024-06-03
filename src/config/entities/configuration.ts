@@ -203,6 +203,7 @@ export default () => ({
   },
   mappings: {
     imitation: {
+      lookupDistance: parseInt(process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`),
       prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
       suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
     },

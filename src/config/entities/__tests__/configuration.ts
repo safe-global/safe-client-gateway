@@ -127,6 +127,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   mappings: {
     imitation: {
+      lookupDistance: faker.number.int(),
       prefixLength: faker.number.int(),
       suffixLength: faker.number.int(),
     },
