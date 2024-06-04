@@ -34,6 +34,7 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { getAddress } from 'viem';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -76,6 +77,7 @@ describe('Collectibles Controller (Unit)', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const pageLimit = 1;
+      const safeResponse = safeBuilder().build();
       const collectiblesResponse = pageBuilder<Collectible>()
         .with('next', limitAndOffsetUrlFactory(pageLimit, 0))
         .with('previous', limitAndOffsetUrlFactory(pageLimit, 0))
@@ -90,6 +92,8 @@ describe('Collectibles Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: safeResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
@@ -118,7 +122,7 @@ describe('Collectibles Controller (Unit)', () => {
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const limit = 10;
       const offset = 20;
-
+      const safeResponse = safeBuilder().build();
       const collectiblesResponse = pageBuilder<Collectible>()
         .with('next', null)
         .with('previous', null)
@@ -133,6 +137,8 @@ describe('Collectibles Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: safeResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
@@ -146,7 +152,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: {
           limit: 10,
           offset: 20,
@@ -162,7 +168,7 @@ describe('Collectibles Controller (Unit)', () => {
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const excludeSpam = true;
       const trusted = true;
-
+      const safeResponse = safeBuilder().build();
       const collectiblesResponse = pageBuilder<Collectible>()
         .with('next', null)
         .with('previous', null)
@@ -177,6 +183,8 @@ describe('Collectibles Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: safeResponse, status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({ data: collectiblesResponse, status: 200 });
           default:
@@ -190,7 +198,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,
@@ -204,6 +212,7 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const safeResponse = safeBuilder().build();
       const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
       const transactionServiceError = new NetworkResponseError(
         new URL(transactionServiceUrl),
@@ -216,6 +225,8 @@ describe('Collectibles Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: safeResponse, status: 200 });
           case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
           default:
@@ -237,6 +248,7 @@ describe('Collectibles Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const safeResponse = safeBuilder().build();
       const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
       const transactionServiceError = new NetworkRequestError(
         new URL(transactionServiceUrl),
@@ -245,6 +257,8 @@ describe('Collectibles Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: chainResponse, status: 200 });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: safeResponse, status: 200 });
           case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
           default:

@@ -13,6 +13,7 @@ import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { intersection } from 'lodash';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -30,6 +31,8 @@ export class BalancesApiManager implements IBalancesApiManager {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IZerionBalancesApi) zerionBalancesApi: IBalancesApi,
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
+    @Inject(ITransactionApiManager)
+    private readonly transactionApiManager: ITransactionApiManager,
   ) {
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',
@@ -40,8 +43,20 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.zerionBalancesApi = zerionBalancesApi;
   }
 
-  async getBalancesApi(chainId: string): Promise<IBalancesApi> {
+  // TODO: document and refactor.
+  async getBalancesApi(
+    chainId: string,
+    safeAddress: `0x${string}`,
+  ): Promise<IBalancesApi> {
     if (this.zerionChainIds.includes(chainId)) {
+      return this.zerionBalancesApi;
+    }
+
+    try {
+      const transactionApi =
+        await this.transactionApiManager.getTransactionApi(chainId);
+      await transactionApi.getSafe(safeAddress);
+    } catch (err) {
       return this.zerionBalancesApi;
     }
 

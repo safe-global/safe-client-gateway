@@ -27,6 +27,7 @@ import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -107,6 +108,11 @@ describe('Balances Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
             return Promise.resolve({
               data: transactionApiBalancesResponse,
@@ -184,21 +190,24 @@ describe('Balances Controller (Unit)', () => {
         });
 
       // 4 Network calls are expected
-      // (1. Chain data, 2. Balances, 3. Coingecko native coin, 4. Coingecko tokens)
-      expect(networkService.get.mock.calls.length).toBe(4);
+      // (1. Chain data, 2. Safe data, 3. Balances, 4. Coingecko native coin, 5. Coingecko tokens)
+      expect(networkService.get.mock.calls.length).toBe(5);
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
+        `${chain.transactionService}/api/v1/safes/${safeAddress}`,
+      );
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[2][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -208,10 +217,10 @@ describe('Balances Controller (Unit)', () => {
           ].join(','),
         },
       });
-      expect(networkService.get.mock.calls[3][0].url).toBe(
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -241,6 +250,11 @@ describe('Balances Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
             return Promise.resolve({
               data: transactionApiBalancesResponse,
@@ -263,7 +277,7 @@ describe('Balances Controller (Unit)', () => {
         .expect(200);
 
       // trusted and exclude_spam params are passed
-      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: {
           trusted,
           exclude_spam: excludeSpam,
@@ -291,6 +305,11 @@ describe('Balances Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
             return Promise.resolve({
               data: transactionApiBalancesResponse,
@@ -352,6 +371,11 @@ describe('Balances Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
           case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
             return Promise.resolve({
               data: transactionApiBalancesResponse,
@@ -394,18 +418,21 @@ describe('Balances Controller (Unit)', () => {
         });
 
       // 3 Network calls are expected
-      // (1. Chain data, 2. Balances, 3. Coingecko token)
-      expect(networkService.get.mock.calls.length).toBe(3);
+      // (1. Chain data, 2. Safe data, 3. Balances, 4. Coingecko token)
+      expect(networkService.get.mock.calls.length).toBe(4);
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
+        `${chain.transactionService}/api/v1/safes/${safeAddress}`,
+      );
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[2][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
     });
@@ -452,6 +479,11 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              return Promise.resolve({
+                data: safeBuilder().build(),
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({
                 data: transactionApiBalancesResponse,
@@ -492,7 +524,7 @@ describe('Balances Controller (Unit)', () => {
             ],
           });
 
-        expect(networkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(4);
       });
 
       it(`should return a 0-balance when a validation error happens`, async () => {
@@ -511,6 +543,11 @@ describe('Balances Controller (Unit)', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: chain, status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              return Promise.resolve({
+                data: safeBuilder().build(),
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
               return Promise.resolve({
                 data: transactionApiBalancesResponse,
@@ -554,7 +591,7 @@ describe('Balances Controller (Unit)', () => {
             ],
           });
 
-        expect(networkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(4);
       });
     });
 
@@ -567,6 +604,14 @@ describe('Balances Controller (Unit)', () => {
         networkService.get.mockImplementation(({ url }) => {
           if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({ data: chainResponse, status: 200 });
+          } else if (
+            url ==
+            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
+          ) {
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
           } else if (url == transactionServiceUrl) {
             const error = new NetworkResponseError(
               new URL(transactionServiceUrl),
@@ -588,7 +633,7 @@ describe('Balances Controller (Unit)', () => {
             code: 500,
           });
 
-        expect(networkService.get.mock.calls.length).toBe(2);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
     });
 
@@ -607,6 +652,14 @@ describe('Balances Controller (Unit)', () => {
             data: [{ invalid: 'data' }],
             status: 200,
           });
+        } else if (
+          url ==
+          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
+        ) {
+          return Promise.resolve({
+            data: safeBuilder().build(),
+            status: 200,
+          });
         } else {
           return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -620,7 +673,7 @@ describe('Balances Controller (Unit)', () => {
           message: 'Internal server error',
         });
 
-      expect(networkService.get.mock.calls.length).toBe(3);
+      expect(networkService.get.mock.calls.length).toBe(4);
     });
   });
 

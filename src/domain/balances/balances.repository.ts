@@ -21,6 +21,7 @@ export class BalancesRepository implements IBalancesRepository {
   }): Promise<Balance[]> {
     const api = await this.balancesApiManager.getBalancesApi(
       args.chain.chainId,
+      args.safeAddress,
     );
     const balances = await api.getBalances(args);
     return balances.map((balance) => BalanceSchema.parse(balance));
@@ -30,7 +31,10 @@ export class BalancesRepository implements IBalancesRepository {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    const api = await this.balancesApiManager.getBalancesApi(args.chainId);
+    const api = await this.balancesApiManager.getBalancesApi(
+      args.chainId,
+      args.safeAddress,
+    );
     await api.clearBalances(args);
   }
 

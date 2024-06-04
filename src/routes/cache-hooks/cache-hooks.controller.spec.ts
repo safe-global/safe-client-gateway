@@ -25,6 +25,7 @@ import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;
@@ -274,14 +275,16 @@ describe('Post Hook Events (Unit)', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears balances', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric({
       exclude: configurationService.getOrThrow(
         'features.zerionBalancesChainIds',
       ),
     });
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder().build();
+    const safeAddress = getAddress(safe.address);
     const cacheDir = new CacheDir(
-      `${chainId}_safe_balances_${getAddress(safeAddress)}`,
+      `${chainId}_safe_balances_${safeAddress}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -298,9 +301,11 @@ describe('Post Hook Events (Unit)', () => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
+            data: chain,
             status: 200,
           });
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -495,14 +500,16 @@ describe('Post Hook Events (Unit)', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectibles', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric({
       exclude: configurationService.getOrThrow(
         'features.zerionBalancesChainIds',
       ),
     });
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder().build();
+    const safeAddress = getAddress(safe.address);
     const cacheDir = new CacheDir(
-      `${chainId}_safe_collectibles_${getAddress(safeAddress)}`,
+      `${chainId}_safe_collectibles_${safeAddress}`,
       faker.string.alpha(),
     );
     await fakeCacheService.set(
@@ -519,9 +526,11 @@ describe('Post Hook Events (Unit)', () => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
+            data: chain,
             status: 200,
           });
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          return Promise.resolve({ data: safe, status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

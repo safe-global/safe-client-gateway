@@ -22,6 +22,8 @@ describe('Events queue processing e2e tests', () => {
   const cacheKeyPrefix = crypto.randomUUID();
   const queue = crypto.randomUUID();
   const chainId = '1'; // Mainnet
+  // TODO: use a proper "test" safe address
+  const safeAddress = getAddress('0x9a8FEe232DCF73060Af348a1B62Cdb0a19852d13');
 
   beforeAll(async () => {
     const defaultConfiguration = configuration();
@@ -80,7 +82,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears balances', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_safe_balances_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -123,7 +124,6 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transactions', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -166,7 +166,6 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears multisig transaction', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
       faker.string.alpha(),
@@ -201,7 +200,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe info', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_safe_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -241,7 +239,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectibles', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_safe_collectibles_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -281,7 +278,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears safe collectible transfers', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -316,7 +312,6 @@ describe('Events queue processing e2e tests', () => {
       value: faker.string.numeric(),
     },
   ])('$type clears incoming transfers', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_incoming_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -346,7 +341,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears module transactions', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_module_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -401,7 +395,6 @@ describe('Events queue processing e2e tests', () => {
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears all transactions', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_all_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
@@ -434,7 +427,6 @@ describe('Events queue processing e2e tests', () => {
       messageHash: faker.string.hexadecimal({ length: 32 }),
     },
   ])('$type clears messages', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
     const cacheDir = new CacheDir(
       `${chainId}_messages_${getAddress(safeAddress)}`,
       faker.string.alpha(),

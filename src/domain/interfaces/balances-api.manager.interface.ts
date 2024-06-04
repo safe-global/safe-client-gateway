@@ -9,9 +9,13 @@ export interface IBalancesApiManager {
    * provider) via configuration.
    *
    * @param chainId - the chain identifier to check.
+   * @param safeAddress - the safe address to check.
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
-  getBalancesApi(chainId: string): Promise<IBalancesApi>;
+  getBalancesApi(
+    chainId: string,
+    safeAddress: `0x${string}`,
+  ): Promise<IBalancesApi>;
 
   /**
    * Gets the list of supported fiat codes.
