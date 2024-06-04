@@ -784,7 +784,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Should limit the amount of nested transfers', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const maxNestedTransfers: number = configurationService.getOrThrow<number>(
+    const maxNestedTransfers = configurationService.getOrThrow<number>(
       'mappings.history.maxNestedTransfers',
     );
     const date = new Date();

@@ -101,7 +101,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = configurationService.getOrThrow(
+        const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
@@ -164,7 +164,7 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = configurationService.getOrThrow(
+        const apiKey = configurationService.getOrThrow<string>(
           `balances.providers.zerion.apiKey`,
         );
         networkService.get.mockImplementation(({ url }) => {
@@ -463,7 +463,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = configurationService.getOrThrow<string>(
+        const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
@@ -531,7 +531,7 @@ describe('Balances Controller (Unit)', () => {
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const chainName: string = configurationService.getOrThrow<string>(
+        const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
