@@ -98,6 +98,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
+      // TODO: create a ZerionBalance type with guard to avoid these type assertions.
       const zerionBalances: ZerionBalance[] = JSON.parse(cached);
       return this._mapBalances(chainName, zerionBalances);
     }
@@ -153,6 +154,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
+      // TODO: create a ZerionCollectibles type with guard to avoid these type assertions.
       const data: ZerionCollectibles = JSON.parse(cached);
       return this._buildCollectiblesPage(data.links.next, data.data);
     } else {
