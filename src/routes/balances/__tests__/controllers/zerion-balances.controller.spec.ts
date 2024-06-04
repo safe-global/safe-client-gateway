@@ -531,7 +531,7 @@ describe('Balances Controller (Unit)', () => {
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const chainName: string = configurationService.getOrThrow<string>(
+        const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
