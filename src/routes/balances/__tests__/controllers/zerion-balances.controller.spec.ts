@@ -463,7 +463,7 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName: string = configurationService.getOrThrow<string>(
+        const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
