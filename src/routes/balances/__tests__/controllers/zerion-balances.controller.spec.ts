@@ -164,7 +164,7 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = configurationService.getOrThrow(
+        const apiKey = configurationService.getOrThrow<string>(
           `balances.providers.zerion.apiKey`,
         );
         networkService.get.mockImplementation(({ url }) => {
