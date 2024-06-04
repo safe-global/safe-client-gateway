@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
-import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import {
+  AssetPrice,
+  AssetPriceSchema,
+} from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -246,8 +249,7 @@ export class CoingeckoApi implements IPricesApi {
       const { key, field } = cacheDir;
       if (cached != null) {
         this.loggingService.debug({ type: 'cache_hit', key, field });
-        // TODO: build an AssetPrice validator or a type guard to ensure the cache value is valid.
-        const cachedAssetPrice: AssetPrice = JSON.parse(cached);
+        const cachedAssetPrice = AssetPriceSchema.parse(JSON.parse(cached));
         result.push(cachedAssetPrice);
       } else {
         this.loggingService.debug({ type: 'cache_miss', key, field });
