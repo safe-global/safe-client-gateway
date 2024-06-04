@@ -5,7 +5,7 @@ import configurationValidator from '@/config/configuration.validator';
 import { RootConfigurationSchema } from '@/config/configuration.module';
 
 describe('Configuration validator', () => {
-  const validConfiguration = {
+  const validConfiguration: Record<string, unknown> = {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
     ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
@@ -24,7 +24,7 @@ describe('Configuration validator', () => {
 
   it('should bypass this validation on test environment', () => {
     process.env.NODE_ENV = 'test';
-    const expected = JSON.parse(fakeJson());
+    const expected: Record<string, unknown> = JSON.parse(fakeJson());
     const validated = configurationValidator(expected, RootConfigurationSchema);
     expect(validated).toBe(expected);
   });
@@ -63,27 +63,25 @@ describe('Configuration validator', () => {
 
   it('should an invalid LOG_LEVEL configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
+    const invalidConfiguration: Record<string, unknown> = {
+      ...JSON.parse(fakeJson()),
+      AUTH_TOKEN: faker.string.uuid(),
+      LOG_LEVEL: faker.word.words(),
+      ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
+      ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
+      ALERTS_PROVIDER_ACCOUNT: faker.string.alphanumeric(),
+      ALERTS_PROVIDER_PROJECT: faker.string.alphanumeric(),
+      EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
+      EMAIL_API_FROM_EMAIL: faker.internet.email(),
+      EMAIL_API_KEY: faker.string.uuid(),
+      EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
+      EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
+      EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+      RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
+    };
     expect(() =>
-      configurationValidator(
-        {
-          ...JSON.parse(fakeJson()),
-          AUTH_TOKEN: faker.string.uuid(),
-          LOG_LEVEL: faker.word.words(),
-          ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
-          ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
-          ALERTS_PROVIDER_ACCOUNT: faker.string.alphanumeric(),
-          ALERTS_PROVIDER_PROJECT: faker.string.alphanumeric(),
-          EMAIL_API_APPLICATION_CODE: faker.string.alphanumeric(),
-          EMAIL_API_FROM_EMAIL: faker.internet.email(),
-          EMAIL_API_KEY: faker.string.uuid(),
-          EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
-          EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
-          EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
-          RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
-          RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
-        },
-        RootConfigurationSchema,
-      ),
+      configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
       /LOG_LEVEL Invalid enum value. Expected 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly', received/,
     );

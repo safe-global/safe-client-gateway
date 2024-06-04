@@ -25,9 +25,10 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { getAddress } from 'viem';
+import { Server } from 'net';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 

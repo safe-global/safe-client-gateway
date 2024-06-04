@@ -85,9 +85,9 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
       const deployment = JSON.parse(assetJson);
 
       // Get the alias name
-      const name = Object.entries(deploymentAliases).find(([, aliases]) => {
-        return aliases.includes(deployment.contractName);
-      })?.[0];
+      const name = Object.entries(deploymentAliases).find(([, aliases]) =>
+        aliases.includes(deployment.contractName as string),
+      )?.[0];
 
       if (!name) {
         throw new Error(
@@ -96,9 +96,13 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
       }
 
       // Add the version to the map
-      for (const chainId of Object.keys(deployment.networkAddresses)) {
+      for (const chainId of Object.keys(
+        deployment.networkAddresses as Record<string, string>,
+      )) {
         versionsByDeploymentByChainId[name][chainId] ??= [];
-        versionsByDeploymentByChainId[name][chainId]?.push(deployment.version);
+        versionsByDeploymentByChainId[name][chainId]?.push(
+          deployment.version as string,
+        );
       }
     }
   }

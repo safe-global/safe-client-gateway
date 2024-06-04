@@ -39,9 +39,10 @@ import {
 import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
+import { Server } from 'net';
 
 describe('Community (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let lockingBaseUri: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 

@@ -44,9 +44,10 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import { getAddress } from 'viem';
+import { Server } from 'net';
 
 describe('Recovery (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let alertsUrl: string;
   let alertsAccount: string;
   let alertsProject: string;

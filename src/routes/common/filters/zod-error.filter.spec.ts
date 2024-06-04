@@ -10,6 +10,7 @@ import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { z } from 'zod';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { faker } from '@faker-js/faker';
+import { Server } from 'net';
 
 const ZodSchema = z.object({
   value: z.string(),
@@ -61,7 +62,7 @@ class TestController {
 }
 
 describe('ZodErrorFilter tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

@@ -142,7 +142,9 @@ export class SwapOrderHelper {
   isAppAllowed(order: Order): boolean {
     if (!this.restrictApps) return true;
     const appCode = order.fullAppData?.appCode;
-    return !!appCode && this.allowedApps.has(appCode);
+    return (
+      !!appCode && typeof appCode === 'string' && this.allowedApps.has(appCode)
+    );
   }
 
   private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {

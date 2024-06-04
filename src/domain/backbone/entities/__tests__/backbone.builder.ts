@@ -16,5 +16,5 @@ export function backboneBuilder(): IBuilder<Backbone> {
         faker.word.sample(),
       ),
     )
-    .with('settings', JSON.parse(fakeJson()));
+    .with('settings', JSON.parse(fakeJson()) as Record<string, unknown>);
 }

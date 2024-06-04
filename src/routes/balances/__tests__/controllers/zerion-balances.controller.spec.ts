@@ -33,9 +33,10 @@ import {
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Balances Controller (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
@@ -100,11 +101,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder().build(),
@@ -165,9 +164,9 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.zerion.apiKey`);
+        const apiKey = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.apiKey`,
+        );
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -248,11 +247,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder().build(),
@@ -314,9 +311,9 @@ describe('Balances Controller (Unit)', () => {
               .build(),
           ])
           .build();
-        const apiKey = app
-          .get(IConfigurationService)
-          .getOrThrow(`balances.providers.zerion.apiKey`);
+        const apiKey = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.apiKey`,
+        );
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -466,11 +463,9 @@ describe('Balances Controller (Unit)', () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = faker.finance.currencyCode();
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder()
@@ -536,11 +531,9 @@ describe('Balances Controller (Unit)', () => {
       it('triggers a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const chainName = app
-          .get(IConfigurationService)
-          .getOrThrow(
-            `balances.providers.zerion.chains.${chain.chainId}.chainName`,
-          );
+        const chainName = configurationService.getOrThrow<string>(
+          `balances.providers.zerion.chains.${chain.chainId}.chainName`,
+        );
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
           .with('implementations', [
             zerionImplementationBuilder()

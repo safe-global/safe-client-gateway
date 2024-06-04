@@ -13,6 +13,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { Server } from 'net';
 
 @Controller({})
 class TestController {
@@ -31,7 +32,7 @@ class TestController {
 }
 
 describe('GlobalErrorFilter tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestLoggingModule, ConfigurationModule.register(configuration)],

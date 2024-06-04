@@ -35,12 +35,12 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     const startTimeMs: number = performance.now();
 
     const httpContext = context.switchToHttp();
-    const request = httpContext.getRequest();
-    const response = httpContext.getResponse();
+    const request: Request = httpContext.getRequest();
+    const response: Response = httpContext.getResponse();
 
     return next.handle().pipe(
       tap({
-        error: (e) => this.onError(request, e, startTimeMs),
+        error: (e: Error) => this.onError(request, e, startTimeMs),
         complete: () => this.onComplete(request, response, startTimeMs),
       }),
     );

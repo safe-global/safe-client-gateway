@@ -5,9 +5,10 @@ import { AppModule } from '@/app.module';
 import { expect } from '@jest/globals';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { Server } from 'net';
 
 describe('Get about e2e test', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
 
   beforeAll(async () => {
     const cacheKeyPrefix = crypto.randomUUID();

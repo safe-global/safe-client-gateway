@@ -6,6 +6,7 @@ import { Caip10AddressesPipe } from '@/routes/safes/pipes/caip-10-addresses.pipe
 import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, Query } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
+import { Server } from 'net';
 import * as request from 'supertest';
 import { getAddress } from 'viem';
 
@@ -21,7 +22,7 @@ class TestController {
 }
 
 describe('Caip10AddressesPipe', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

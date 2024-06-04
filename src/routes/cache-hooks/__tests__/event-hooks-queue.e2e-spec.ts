@@ -12,9 +12,10 @@ import { Test } from '@nestjs/testing';
 import { ChannelWrapper } from 'amqp-connection-manager';
 import { RedisClientType } from 'redis';
 import { getAddress } from 'viem';
+import { Server } from 'net';
 
 describe('Events queue processing e2e tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let redisClient: RedisClientType;
   let channel: ChannelWrapper;
   let queueName: string;

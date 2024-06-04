@@ -47,9 +47,10 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
 import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { Server } from 'net';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   const lookupDistance = 2;

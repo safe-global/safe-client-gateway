@@ -1,6 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { getRouteUrl } from '@/routes/common/decorators/utils';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { Request } from 'express';
 
 /**
  * Route decorator which parses {@link PaginationData} from a
@@ -10,7 +11,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
  */
 export const PaginationDataDecorator = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): PaginationData => {
-    const request = ctx.switchToHttp().getRequest();
+    const request: Request = ctx.switchToHttp().getRequest();
     return PaginationData.fromCursor(getRouteUrl(request));
   },
 );

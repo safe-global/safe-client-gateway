@@ -21,10 +21,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
+import { Server } from 'net';
 import * as request from 'supertest';
 
 describe('Auth decorator', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let authPayloadFromDecoractor: AuthPayloadDto;
 

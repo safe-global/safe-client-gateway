@@ -15,9 +15,10 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { fakeJson } from '@/__tests__/faker';
+import { Server } from 'net';
 
 describe('NetworkModule', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let fetchClient: FetchClient;
   let httpClientTimeout: number;
 

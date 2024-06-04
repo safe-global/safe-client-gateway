@@ -24,9 +24,10 @@ import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/tes
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Post Hook Events (Unit)', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let authToken: string;
   let safeConfigUrl: string;
   let fakeCacheService: FakeCacheService;

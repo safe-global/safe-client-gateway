@@ -53,6 +53,7 @@ import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -78,7 +79,7 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
 );
 
 describe('Relay controller', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let safeConfigUrl: string;

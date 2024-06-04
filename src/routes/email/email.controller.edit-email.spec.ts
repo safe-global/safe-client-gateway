@@ -39,11 +39,12 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 const verificationCodeTtlMs = 100;
 
 describe('Email controller edit email tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
   let networkService: jest.MockedObjectDeep<INetworkService>;

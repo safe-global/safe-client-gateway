@@ -39,9 +39,10 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 describe('Email controller save email tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let emailApi: jest.MockedObjectDeep<IEmailApi>;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;

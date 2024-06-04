@@ -24,12 +24,13 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { Server } from 'net';
 
 const resendLockWindowMs = 100;
 const ttlMs = 1000;
 
 describe('Email controller verify email tests', () => {
-  let app: INestApplication;
+  let app: INestApplication<Server>;
   let accountDataSource: jest.MockedObjectDeep<IAccountDataSource>;
 
   beforeEach(async () => {
