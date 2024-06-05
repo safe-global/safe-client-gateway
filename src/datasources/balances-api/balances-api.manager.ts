@@ -51,6 +51,8 @@ export class BalancesApiManager implements IBalancesApiManager {
       return this.zerionBalancesApi;
     }
 
+    // SafeBalancesApi will be returned only if TransactionApi returns the Safe data.
+    // Otherwise ZerionBalancesApi will be returned as the Safe is considered counterfactual/not deployed.
     try {
       const transactionApi =
         await this.transactionApiManager.getTransactionApi(chainId);
