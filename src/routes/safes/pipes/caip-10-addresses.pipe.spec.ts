@@ -75,6 +75,10 @@ describe('Caip10AddressesPipe', () => {
       .expect(500);
   });
 
+  it('throws for no params', async () => {
+    await request(app.getHttpServer()).get('/test').expect(500);
+  });
+
   it('throws for missing params', async () => {
     await request(app.getHttpServer()).get('/test?addresses=').expect(500);
   });
@@ -89,5 +93,9 @@ describe('Caip10AddressesPipe', () => {
     await request(app.getHttpServer())
       .get(`/test?addresses=${chainId}:`)
       .expect(500);
+  });
+
+  it('throws for splittable values', async () => {
+    await request(app.getHttpServer()).get('/test?addresses=,').expect(500);
   });
 });
