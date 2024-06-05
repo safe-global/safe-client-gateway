@@ -56,7 +56,7 @@ export class BalancesApiManager implements IBalancesApiManager {
         await this.transactionApiManager.getTransactionApi(chainId);
       await transactionApi.getSafe(safeAddress);
       return this._getSafeBalancesApi(chainId);
-    } catch (err) {
+    } catch {
       return this.zerionBalancesApi;
     }
   }
