@@ -43,7 +43,6 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.zerionBalancesApi = zerionBalancesApi;
   }
 
-  // TODO: document and refactor.
   async getBalancesApi(
     chainId: string,
     safeAddress: `0x${string}`,
@@ -56,10 +55,19 @@ export class BalancesApiManager implements IBalancesApiManager {
       const transactionApi =
         await this.transactionApiManager.getTransactionApi(chainId);
       await transactionApi.getSafe(safeAddress);
+      return this._getSafeBalancesApi(chainId);
     } catch (err) {
       return this.zerionBalancesApi;
     }
+  }
 
+  async getFiatCodes(): Promise<string[]> {
+    const zerionFiatCodes = await this.zerionBalancesApi.getFiatCodes();
+    const safeFiatCodes = await this.coingeckoApi.getFiatCodes();
+    return intersection(zerionFiatCodes, safeFiatCodes).sort();
+  }
+
+  private async _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {
     const safeBalancesApi = this.safeBalancesApiMap[chainId];
     if (safeBalancesApi !== undefined) return safeBalancesApi;
 
@@ -74,11 +82,5 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.coingeckoApi,
     );
     return this.safeBalancesApiMap[chainId];
-  }
-
-  async getFiatCodes(): Promise<string[]> {
-    const zerionFiatCodes = await this.zerionBalancesApi.getFiatCodes();
-    const safeFiatCodes = await this.coingeckoApi.getFiatCodes();
-    return intersection(zerionFiatCodes, safeFiatCodes).sort();
   }
 }

@@ -92,6 +92,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: `0x${string}`;
     fiatCode: string;
   }): Promise<Balance[]> {
+    // TODO: check the fiatCode is supported.
     const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
     const chainName = this._getChainName(args.chainId);
     const cached = await this.cacheService.get(cacheDir);
