@@ -47,6 +47,7 @@ export class MultisigTransactionMapper {
       txInfo,
       executionInfo,
       safeAppInfo,
+      transaction.transactionHash,
     );
   }
 }

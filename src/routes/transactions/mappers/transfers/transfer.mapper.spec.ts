@@ -66,6 +66,7 @@ describe('Transfer mapper (Unit)', () => {
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
             safeAppInfo: null,
+            txHash: transfer.transactionHash,
           },
         ]);
       });
@@ -106,6 +107,7 @@ describe('Transfer mapper (Unit)', () => {
             txInfo: expect.any(TransferTransactionInfo),
             executionInfo: null,
             safeAppInfo: null,
+            txHash: transfer.transactionHash,
           },
         ]);
       });
@@ -146,6 +148,7 @@ describe('Transfer mapper (Unit)', () => {
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
               safeAppInfo: null,
+              txHash: transfer.transactionHash,
             },
           ]);
         });
@@ -210,6 +213,7 @@ describe('Transfer mapper (Unit)', () => {
               txInfo: expect.any(TransferTransactionInfo),
               executionInfo: null,
               safeAppInfo: null,
+              txHash: transfer.transactionHash,
             },
           ]);
         });
@@ -323,6 +327,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          txHash: nativeTransfer.transactionHash,
         },
         expect.objectContaining({
           id: `transfer_${safe.address}_${erc721Transfer.transferId}`,
@@ -331,6 +336,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          txHash: erc721Transfer.transactionHash,
         }),
         expect.objectContaining({
           id: `transfer_${safe.address}_${trustedErc20TransferWithValue.transferId}`,
@@ -339,6 +345,7 @@ describe('Transfer mapper (Unit)', () => {
           txInfo: expect.any(TransferTransactionInfo),
           executionInfo: null,
           safeAppInfo: null,
+          txHash: trustedErc20TransferWithValue.transactionHash,
         }),
       ]);
     });

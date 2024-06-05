@@ -28,6 +28,8 @@ export class Transaction {
   @ApiProperty()
   id: string;
   @ApiProperty()
+  txHash: `0x${string}` | null;
+  @ApiProperty()
   timestamp: number | null;
   @ApiProperty()
   txStatus: string;
@@ -59,6 +61,7 @@ export class Transaction {
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
     safeAppInfo: SafeAppInfo | null = null,
+    txHash: `0x${string}` | null = null,
   ) {
     this.id = id;
     this.timestamp = timestamp;
@@ -66,5 +69,6 @@ export class Transaction {
     this.txInfo = txInfo;
     this.executionInfo = executionInfo;
     this.safeAppInfo = safeAppInfo;
+    this.txHash = txHash;
   }
 }
