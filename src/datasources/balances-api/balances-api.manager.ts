@@ -62,8 +62,10 @@ export class BalancesApiManager implements IBalancesApiManager {
   }
 
   async getFiatCodes(): Promise<string[]> {
-    const zerionFiatCodes = await this.zerionBalancesApi.getFiatCodes();
-    const safeFiatCodes = await this.coingeckoApi.getFiatCodes();
+    const [zerionFiatCodes, safeFiatCodes] = await Promise.all([
+      this.zerionBalancesApi.getFiatCodes(),
+      this.coingeckoApi.getFiatCodes(),
+    ]);
     return intersection(zerionFiatCodes, safeFiatCodes).sort();
   }
 
