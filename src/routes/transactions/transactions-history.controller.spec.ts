@@ -543,6 +543,7 @@ describe('Transactions History Controller (Unit)', () => {
               type: 'TRANSACTION',
               transaction: {
                 id: `module_${safe.address}_i5a6754140f0432d3b`,
+                txHash: moduleTransaction.transactionHash,
                 safeAppInfo: null,
                 timestamp: moduleTransaction.executionDate.getTime(),
                 txStatus: 'SUCCESS',
@@ -571,6 +572,7 @@ describe('Transactions History Controller (Unit)', () => {
               type: 'TRANSACTION',
               transaction: {
                 id: `multisig_${safe.address}_0x31d44c67`,
+                txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -610,6 +612,7 @@ describe('Transactions History Controller (Unit)', () => {
               type: 'TRANSACTION',
               transaction: {
                 id: `transfer_${safe.address}_e1015fc6905859c69`,
+                txHash: nativeTokenTransfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
                 timestamp: nativeTokenTransfer.executionDate.getTime(),
