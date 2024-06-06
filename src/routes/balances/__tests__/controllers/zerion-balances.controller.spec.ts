@@ -620,7 +620,7 @@ describe('Balances Controller (Unit)', () => {
 
         // Note: each request use a different currency code to avoid cache hits.
         // The last request will trigger the rate limit error.
-        // This assumes the configuration follow the rule: zerionCurrencies.length > limitCalls
+        // This assumes the test configuration follows the rule: zerionCurrencies.length > limitCalls
         for (let i = 0; i < limitCalls; i++) {
           await request(app.getHttpServer())
             .get(
