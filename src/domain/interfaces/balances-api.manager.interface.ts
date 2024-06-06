@@ -8,10 +8,17 @@ export interface IBalancesApiManager {
    * Each chain is associated with an implementation (i.e.: to a balances
    * provider) via configuration.
    *
+   * Note: if the Safe entity associated with the safeAddress cannot be retrieved
+   * from the TransactionApi for the chainId, then the ZerionApi will be used.
+   *
    * @param chainId - the chain identifier to check.
+   * @param safeAddress - the Safe address to check.
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
-  getBalancesApi(chainId: string): Promise<IBalancesApi>;
+  getBalancesApi(
+    chainId: string,
+    safeAddress: `0x${string}`,
+  ): Promise<IBalancesApi>;
 
   /**
    * Gets the list of supported fiat codes.

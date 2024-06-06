@@ -9,6 +9,10 @@ import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { sample } from 'lodash';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -34,6 +38,14 @@ const httpErrorFactory = {
   from: jest.fn(),
 } as jest.MockedObjectDeep<HttpErrorFactory>;
 
+const transactionApiManagerMock = {
+  getTransactionApi: jest.fn(),
+} as jest.MockedObjectDeep<ITransactionApiManager>;
+
+const transactionApiMock = {
+  getSafe: jest.fn(),
+} as jest.MockedObjectDeep<ITransactionApi>;
+
 const zerionBalancesApi = {
   getBalances: jest.fn(),
   clearBalances: jest.fn(),
@@ -51,17 +63,22 @@ const coingeckoApi = {
 } as IPricesApi;
 
 const coingeckoApiMock = jest.mocked(coingeckoApi);
+const ZERION_BALANCES_CHAIN_IDS: string[] = Array.from(
+  { length: faker.number.int({ min: 1, max: 10 }) },
+  () => faker.string.numeric(),
+);
 
 beforeEach(() => {
   jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'features.zerionBalancesChainIds') return ['1', '2', '3'];
+    if (key === 'features.zerionBalancesChainIds')
+      return ZERION_BALANCES_CHAIN_IDS;
   });
 });
 
 describe('Balances API Manager Tests', () => {
   describe('getBalancesApi checks', () => {
-    it('should return the Zerion API', async () => {
+    it('should return the Zerion API if the chainId is one of zerionBalancesChainIds', async () => {
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -70,9 +87,41 @@ describe('Balances API Manager Tests', () => {
         httpErrorFactory,
         zerionBalancesApiMock,
         coingeckoApiMock,
+        transactionApiManagerMock,
+      );
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      const result = await manager.getBalancesApi(
+        sample(ZERION_BALANCES_CHAIN_IDS) as string,
+        safeAddress,
       );
 
-      const result = await manager.getBalancesApi('2');
+      expect(result).toEqual(zerionBalancesApi);
+    });
+
+    it('should return the Zerion API if the Safe address is not known by the Safe Transaction Service', async () => {
+      const manager = new BalancesApiManager(
+        configurationService,
+        configApiMock,
+        dataSourceMock,
+        cacheService,
+        httpErrorFactory,
+        zerionBalancesApiMock,
+        coingeckoApiMock,
+        transactionApiManagerMock,
+      );
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      transactionApiManagerMock.getTransactionApi.mockResolvedValue(
+        transactionApiMock,
+      );
+      transactionApiMock.getSafe.mockImplementation(() => {
+        throw new Error();
+      });
+
+      const result = await manager.getBalancesApi(
+        faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
+        safeAddress,
+      );
 
       expect(result).toEqual(zerionBalancesApi);
     });
@@ -88,10 +137,12 @@ describe('Balances API Manager Tests', () => {
       [true, vpcTxServiceUrl],
       [false, txServiceUrl],
     ])('vpcUrl is %s', async (useVpcUrl, expectedUrl) => {
-      const zerionChainIds = ['1', '2', '3'];
       const fiatCode = faker.finance.currencyCode();
       const chain = chainBuilder()
-        .with('chainId', '4')
+        .with(
+          'chainId',
+          faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
+        )
         .with('transactionService', txServiceUrl)
         .with('vpcTransactionService', vpcTxServiceUrl)
         .build();
@@ -104,7 +155,7 @@ describe('Balances API Manager Tests', () => {
         else if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
         else if (key === 'features.zerionBalancesChainIds')
-          return zerionChainIds;
+          return ZERION_BALANCES_CHAIN_IDS;
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(chain);
@@ -117,12 +168,18 @@ describe('Balances API Manager Tests', () => {
         httpErrorFactory,
         zerionBalancesApiMock,
         coingeckoApiMock,
+        transactionApiManagerMock,
       );
+      transactionApiManagerMock.getTransactionApi.mockResolvedValue(
+        transactionApiMock,
+      );
+      transactionApiMock.getSafe.mockResolvedValue(safeBuilder().build());
 
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeBalancesApi = await balancesApiManager.getBalancesApi(
         chain.chainId,
+        safeAddress,
       );
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const trusted = faker.datatype.boolean();
       const excludeSpam = faker.datatype.boolean();
 
@@ -164,6 +221,7 @@ describe('Balances API Manager Tests', () => {
         httpErrorFactory,
         zerionBalancesApiMock,
         coingeckoApiMock,
+        transactionApiManagerMock,
       );
 
       const result = await manager.getFiatCodes();
