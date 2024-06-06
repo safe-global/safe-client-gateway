@@ -24,9 +24,7 @@ export class Caip10AddressesPipe
     });
 
     if (addresses.length === 0) {
-      throw new Error(
-        'Provided addresses do not conform to the CAIP-10 standard',
-      );
+      throw new Error('No addresses provided. At least one is required.');
     }
 
     return addresses;
