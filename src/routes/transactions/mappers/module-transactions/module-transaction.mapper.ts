@@ -40,6 +40,7 @@ export class ModuleTransactionMapper {
       txInfo,
       executionInfo,
       null,
+      transaction.transactionHash,
     );
   }
 }

@@ -208,6 +208,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
               type: 'TRANSACTION',
               transaction: {
                 id: `module_${moduleTransaction1.safe}_${moduleTransaction1.moduleTransactionId}`,
+                txHash: moduleTransaction1.transactionHash,
                 safeAppInfo: null,
                 timestamp: moduleTransaction1.executionDate.getTime(),
                 txStatus: expect.any(String),
@@ -225,6 +226,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
               type: 'TRANSACTION',
               transaction: {
                 id: `module_${moduleTransaction2.safe}_${moduleTransaction2.moduleTransactionId}`,
+                txHash: moduleTransaction2.transactionHash,
                 safeAppInfo: null,
                 timestamp: moduleTransaction2.executionDate.getTime(),
                 txStatus: expect.any(String),

@@ -235,6 +235,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
               type: 'TRANSACTION',
               transaction: {
                 id: `transfer_${safe.address}_e1015fc6905`,
+                txHash: erc20Transfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
@@ -319,6 +320,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
               type: 'TRANSACTION',
               transaction: {
                 id: `transfer_${safe.address}_e1015fc6905`,
+                txHash: erc20Transfer.transactionHash,
                 executionInfo: null,
                 safeAppInfo: null,
                 timestamp: erc20Transfer.executionDate.getTime(),
@@ -455,6 +457,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
               type: 'TRANSACTION',
               transaction: {
                 id: `transfer_${safe.address}_e1015fc6905`,
+                txHash: erc721Transfer.transactionHash,
                 timestamp: erc721Transfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -525,6 +528,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
               type: 'TRANSACTION',
               transaction: {
                 id: `transfer_${safe.address}_e1015fc690`,
+                txHash: nativeTokenTransfer.transactionHash,
                 timestamp: nativeTokenTransfer.executionDate.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {

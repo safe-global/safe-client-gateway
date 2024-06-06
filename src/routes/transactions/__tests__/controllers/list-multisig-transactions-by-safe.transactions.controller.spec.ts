@@ -262,6 +262,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
               type: 'TRANSACTION',
               transaction: {
                 id: `multisig_${safe.address}_0x31d44c6`,
+                txHash: multisigTransaction.transactionHash,
                 timestamp: multisigTransaction.executionDate?.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -385,6 +386,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
               type: 'TRANSACTION',
               transaction: {
                 id: `multisig_${safe.address}_0x0f9f1b72`,
+                txHash: multisigTransaction.transactionHash,
                 timestamp: 1655853152000,
                 txStatus: 'SUCCESS',
                 txInfo: {
@@ -483,6 +485,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
               type: 'TRANSACTION',
               transaction: {
                 id: `multisig_${domainTransaction.safe}_${domainTransaction.safeTxHash}`,
+                txHash: domainTransaction.transactionHash,
                 timestamp: domainTransaction.executionDate?.getTime(),
                 txStatus: 'SUCCESS',
                 txInfo: {
