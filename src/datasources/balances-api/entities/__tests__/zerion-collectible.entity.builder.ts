@@ -35,7 +35,7 @@ export function zerionCollectionInfoBuilder(): IBuilder<ZerionCollectionInfo> {
 export function zerionCollectibleAttributesBuilder(): IBuilder<ZerionCollectibleAttributes> {
   return new Builder<ZerionCollectibleAttributes>()
     .with('amount', faker.string.numeric())
-    .with('changed_at', faker.date.recent().toString())
+    .with('changed_at', faker.date.recent())
     .with('collection_info', zerionCollectionInfoBuilder().build())
     .with('nft_info', zerionNFTInfoBuilder().build())
     .with('price', faker.number.float())

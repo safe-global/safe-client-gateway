@@ -56,7 +56,7 @@ const ZerionNFTInfoSchema = z.object({
 
 const ZerionCollectibleAttributesSchema = z.object({
   amount: z.string(),
-  changed_at: z.string(), // Coerce?
+  changed_at: z.coerce.date(),
   collection_info: ZerionCollectionInfoSchema.nullable(),
   nft_info: ZerionNFTInfoSchema,
   price: z.number(),
