@@ -3,11 +3,14 @@ import { ChainAttributes } from '@/datasources/balances-api/entities/provider-ch
 import {
   ZerionAttributes,
   ZerionBalance,
+  ZerionBalanceSchema,
   ZerionBalances,
+  ZerionBalancesSchema,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import {
   ZerionCollectible,
   ZerionCollectibles,
+  ZerionCollectiblesSchema,
 } from '@/datasources/balances-api/entities/zerion-collectible.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -33,6 +36,7 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress } from 'viem';
+import { z } from 'zod';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -99,8 +103,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
-      // TODO: create a ZerionBalance type with guard to avoid these type assertions.
-      const zerionBalances: ZerionBalance[] = JSON.parse(cached);
+      const zerionBalances = z
+        .array(ZerionBalanceSchema)
+        .parse(JSON.parse(cached));
       return this._mapBalances(chainName, zerionBalances);
     }
 
@@ -121,9 +126,10 @@ export class ZerionBalancesApi implements IBalancesApi {
         url,
         networkRequest,
       });
+      const zerionBalances = ZerionBalancesSchema.parse(data);
       await this.cacheService.set(
         cacheDir,
-        JSON.stringify(data.data),
+        JSON.stringify(zerionBalances.data),
         this.defaultExpirationTimeInSeconds,
       );
       return this._mapBalances(chainName, data.data);
@@ -155,8 +161,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: 'cache_hit', key, field });
-      // TODO: create a ZerionCollectibles type with guard to avoid these type assertions.
-      const data: ZerionCollectibles = JSON.parse(cached);
+      const data = ZerionCollectiblesSchema.parse(JSON.parse(cached));
       return this._buildCollectiblesPage(data.links.next, data.data);
     } else {
       try {
@@ -293,7 +298,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Collectible[] {
     return zerionCollectibles.map(
       ({ attributes: { nft_info, collection_info } }) => ({
-        address: getAddress(nft_info.contract_address),
+        address: nft_info.contract_address,
         tokenName: nft_info.name ?? '',
         tokenSymbol: nft_info.name ?? '',
         logoUri: collection_info?.content?.icon.url ?? '',

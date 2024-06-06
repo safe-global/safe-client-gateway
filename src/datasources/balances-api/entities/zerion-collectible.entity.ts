@@ -1,40 +1,77 @@
-export interface ZerionCollectionInfo {
-  content: {
-    icon: { url: string };
-    banner: { url: string };
-  } | null;
-  description: string | null;
-  name: string | null;
-}
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { z } from 'zod';
 
-export interface ZerionNFTInfo {
-  content: {
-    preview: { url: string } | null;
-    detail: { url: string } | null;
-  } | null;
-  contract_address: string;
-  flags: { is_spam: boolean } | null;
-  interface: string | null;
-  name: string | null;
-  token_id: string;
-}
+export type ZerionCollectionInfo = z.infer<typeof ZerionCollectionInfoSchema>;
 
-export interface ZerionCollectibleAttributes {
-  amount: string;
-  changed_at: string;
-  collection_info: ZerionCollectionInfo | null;
-  nft_info: ZerionNFTInfo;
-  price: number;
-  value: number;
-}
+export type ZerionNFTInfo = z.infer<typeof ZerionNFTInfoSchema>;
 
-export interface ZerionCollectible {
-  attributes: ZerionCollectibleAttributes;
-  id: string;
-  type: 'nft_positions';
-}
+export type ZerionCollectibleAttributes = z.infer<
+  typeof ZerionCollectibleAttributesSchema
+>;
 
-export interface ZerionCollectibles {
-  data: ZerionCollectible[];
-  links: { next: string | null };
-}
+export type ZerionCollectible = z.infer<typeof ZerionCollectibleSchema>;
+
+export type ZerionCollectibles = z.infer<typeof ZerionCollectiblesSchema>;
+
+const ZerionCollectionInfoSchema = z.object({
+  content: z
+    .object({
+      icon: z.object({
+        url: z.string(),
+      }),
+      banner: z.object({
+        url: z.string(),
+      }),
+    })
+    .nullable(),
+  description: z.string().nullable(),
+  name: z.string().nullable(),
+});
+
+const ZerionNFTInfoSchema = z.object({
+  content: z
+    .object({
+      preview: z
+        .object({
+          url: z.string(),
+        })
+        .nullable(),
+      detail: z
+        .object({
+          url: z.string(),
+        })
+        .nullable(),
+    })
+    .nullable(),
+  contract_address: AddressSchema,
+  flags: z
+    .object({
+      is_spam: z.boolean(),
+    })
+    .nullable(),
+  interface: z.string().nullable(),
+  name: z.string().nullable(),
+  token_id: z.string(),
+});
+
+const ZerionCollectibleAttributesSchema = z.object({
+  amount: z.string(),
+  changed_at: z.coerce.date(),
+  collection_info: ZerionCollectionInfoSchema.nullable(),
+  nft_info: ZerionNFTInfoSchema,
+  price: z.number(),
+  value: z.number(),
+});
+
+const ZerionCollectibleSchema = z.object({
+  attributes: ZerionCollectibleAttributesSchema,
+  id: z.string(),
+  type: z.literal('nft_positions'),
+});
+
+export const ZerionCollectiblesSchema = z.object({
+  data: z.array(ZerionCollectibleSchema),
+  links: z.object({
+    next: z.string().nullable(),
+  }),
+});
