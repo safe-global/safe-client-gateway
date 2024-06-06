@@ -92,7 +92,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: `0x${string}`;
     fiatCode: string;
   }): Promise<Balance[]> {
-    // TODO: check the fiatCode is supported.
+    this._checkFiatCode(args.fiatCode);
     const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
     const chainName = this._getChainName(args.chainId);
     const cached = await this.cacheService.get(cacheDir);
@@ -353,5 +353,10 @@ export class ZerionBalancesApi implements IBalancesApi {
       this.limitPeriodSeconds,
     );
     if (current > this.limitCalls) throw new LimitReachedError();
+  }
+
+  private _checkFiatCode(fiatCode: string): void {
+    if (!this.fiatCodes.includes(fiatCode.toUpperCase()))
+      throw new DataSourceError(`Unsupported currency code: ${fiatCode}`, 400);
   }
 }
