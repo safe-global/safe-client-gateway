@@ -34,6 +34,7 @@ import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
+import { sample } from 'lodash';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -41,6 +42,7 @@ describe('Balances Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
   let zerionChainIds: string[];
+  let zerionCurrencies: string[];
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {
@@ -85,6 +87,10 @@ describe('Balances Controller (Unit)', () => {
     zerionChainIds = configurationService.getOrThrow(
       'features.zerionBalancesChainIds',
     );
+    zerionCurrencies = configurationService.getOrThrow(
+      'balances.providers.zerion.currencies',
+    );
+
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -96,11 +102,11 @@ describe('Balances Controller (Unit)', () => {
   });
 
   describe('Balances provider: Zerion', () => {
-    describe('GET /balances (externalized)', () => {
+    describe('GET /balances', () => {
       it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const currency = faker.finance.currencyCode();
+        const currency = sample(zerionCurrencies);
         const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
@@ -237,7 +243,7 @@ describe('Balances Controller (Unit)', () => {
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
-            currency: currency.toLowerCase(),
+            currency: currency?.toLowerCase(),
             sort: 'value',
           },
         });
@@ -246,7 +252,7 @@ describe('Balances Controller (Unit)', () => {
       it('returns large numbers as is (not in scientific notation)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const currency = faker.finance.currencyCode();
+        const currency = sample(zerionCurrencies);
         const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
@@ -384,10 +390,37 @@ describe('Balances Controller (Unit)', () => {
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
             'filter[chain_ids]': chainName,
-            currency: currency.toLowerCase(),
+            currency: currency?.toLowerCase(),
             sort: 'value',
           },
         });
+      });
+
+      it('fails when an unsupported fiatCode is provided', async () => {
+        const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const unsupportedCurrency = faker.string.alpha({
+          length: { min: 4, max: 4 },
+          exclude: zerionCurrencies,
+        });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${unsupportedCurrency}`,
+          )
+          .expect(400)
+          .expect({
+            code: 400,
+            message: `Unsupported currency code: ${unsupportedCurrency}`,
+          });
       });
     });
 
@@ -434,7 +467,7 @@ describe('Balances Controller (Unit)', () => {
       it(`500 error response`, async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = faker.finance.ethereumAddress();
-        const currency = faker.finance.currencyCode();
+        const currency = sample(zerionCurrencies);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -462,7 +495,7 @@ describe('Balances Controller (Unit)', () => {
       it('does not trigger a rate-limit error', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const currency = faker.finance.currencyCode();
+        const currency = sample(zerionCurrencies);
         const chainName = configurationService.getOrThrow<string>(
           `balances.providers.zerion.chains.${chain.chainId}.chainName`,
         );
@@ -584,17 +617,21 @@ describe('Balances Controller (Unit)', () => {
         const limitCalls = configurationService.getOrThrow<number>(
           'balances.providers.zerion.limitCalls',
         );
+
+        // Note: each request use a different currency code to avoid cache hits.
+        // The last request will trigger the rate limit error.
+        // This assumes the test configuration follows the rule: zerionCurrencies.length > limitCalls
         for (let i = 0; i < limitCalls; i++) {
           await request(app.getHttpServer())
             .get(
-              `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${crypto.randomUUID()}`,
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${zerionCurrencies[i]}`,
             )
             .expect(200);
         }
 
         await request(app.getHttpServer())
           .get(
-            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${crypto.randomUUID()}`,
+            `/v1/chains/${chain.chainId}/safes/${safeAddress}/balances/${zerionCurrencies[limitCalls]}`,
           )
           .expect(429);
 
