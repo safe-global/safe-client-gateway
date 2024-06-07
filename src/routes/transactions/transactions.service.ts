@@ -35,7 +35,7 @@ import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transact
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
-import { getAddress } from 'viem';
+import { getAddress, isAddress } from 'viem';
 
 @Injectable()
 export class TransactionsService {
@@ -70,13 +70,10 @@ export class TransactionsService {
       }
 
       case TRANSFER_PREFIX: {
-        // We can't checksum outside of case as some IDs don't contain addresses
-        let address;
-        try {
-          address = getAddress(safeAddress);
-        } catch (err) {
+        if (!isAddress(safeAddress)) {
           throw new BadRequestException('Invalid transaction ID');
         }
+
         const [transfer, safe] = await Promise.all([
           this.safeRepository.getTransfer({
             chainId: args.chainId,
@@ -84,7 +81,8 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            address,
+            // We can't checksum outside of case as some IDs don't contain addresses
+            address: getAddress(safeAddress),
           }),
         ]);
         return this.transferDetailsMapper.mapDetails(
@@ -95,13 +93,10 @@ export class TransactionsService {
       }
 
       case MULTISIG_TRANSACTION_PREFIX: {
-        // We can't checksum outside of case as some IDs don't contain addresses
-        let address;
-        try {
-          address = getAddress(safeAddress);
-        } catch (err) {
+        if (!isAddress(safeAddress)) {
           throw new BadRequestException('Invalid transaction ID');
         }
+
         const [tx, safe] = await Promise.all([
           this.safeRepository.getMultiSigTransaction({
             chainId: args.chainId,
@@ -109,7 +104,8 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            address,
+            // We can't checksum outside of case as some IDs don't contain addresses
+            address: getAddress(safeAddress),
           }),
         ]);
         return this.multisigTransactionDetailsMapper.mapDetails(
