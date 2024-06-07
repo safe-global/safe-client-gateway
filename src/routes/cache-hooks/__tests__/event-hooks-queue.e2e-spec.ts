@@ -22,8 +22,7 @@ describe('Events queue processing e2e tests', () => {
   const cacheKeyPrefix = crypto.randomUUID();
   const queue = crypto.randomUUID();
   const chainId = '1'; // Mainnet
-  // TODO: use a proper "test" safe address
-  const safeAddress = getAddress('0x9a8FEe232DCF73060Af348a1B62Cdb0a19852d13');
+  const safeAddress = getAddress('0x8675B754342754A30A2AeF474D114d8460bca19b');
 
   beforeAll(async () => {
     const defaultConfiguration = configuration();
