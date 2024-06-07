@@ -17,6 +17,7 @@ export default (): ReturnType<typeof configuration> => ({
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
+    maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
   },
   balances: {
     balancesTtlSeconds: faker.number.int(),

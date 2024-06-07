@@ -17,7 +17,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
-import { toSignableSiweMessage } from '@/datasources/siwe-api/utils/to-signable-siwe-message';
+import { createSiweMessage } from 'viem/siwe';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -30,12 +30,12 @@ import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.conf
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
-
-const MAX_VALIDITY_PERIOD_IN_MS = 15 * 60 * 1_000; // 15 minutes
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let maxValidityPeriodInMs: number;
 
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -70,6 +70,11 @@ describe('AuthController', () => {
       .compile();
 
     cacheService = moduleFixture.get(CacheService);
+    const configService: IConfigurationService = moduleFixture.get(
+      IConfigurationService,
+    );
+    maxValidityPeriodInMs =
+      configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
 
@@ -111,15 +116,17 @@ describe('AuthController', () => {
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const expirationTime = faker.date.between({
         from: new Date(),
-        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
       });
-      const message = siweMessageBuilder()
-        .with('address', signer.address)
-        .with('nonce', nonce)
-        .with('expirationTime', expirationTime.toISOString())
-        .build();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
       const signature = await signer.signMessage({
-        message: toSignableSiweMessage(message),
+        message,
       });
       const maxAge = getSecondsUntil(expirationTime);
       // jsonwebtoken sets expiration based on timespans, not exact dates
@@ -158,15 +165,17 @@ describe('AuthController', () => {
       const nonce: string = nonceResponse.body.nonce;
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const expirationTime = faker.date.future({
-        refDate: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+        refDate: new Date(Date.now() + maxValidityPeriodInMs),
       });
-      const message = siweMessageBuilder()
-        .with('address', signer.address)
-        .with('nonce', nonce)
-        .with('expirationTime', expirationTime.toISOString())
-        .build();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
       const signature = await signer.signMessage({
-        message: toSignableSiweMessage(message),
+        message,
       });
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
@@ -176,21 +185,17 @@ describe('AuthController', () => {
           message,
           signature,
         })
-        .expect(422)
+        .expect(401)
         .expect(({ headers, body }) => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            code: 'custom',
-            message: 'Must be within 900 seconds',
-            path: ['message', 'expirationTime'],
-            statusCode: 422,
+            message: 'Unauthorized',
+            statusCode: 401,
           });
         });
-      // Nonce not deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(
-        nonceResponse.body.nonce,
-      );
+      // Nonce deleted
+      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a signer if using an unsigned nonce', async () => {
@@ -198,15 +203,16 @@ describe('AuthController', () => {
       const signer = privateKeyToAccount(privateKey);
       const expirationTime = faker.date.between({
         from: new Date(),
-        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
       });
-      const message = siweMessageBuilder()
+      const siweMessage = siweMessageBuilder()
         .with('address', signer.address)
-        .with('expirationTime', expirationTime.toISOString())
+        .with('expirationTime', expirationTime)
         .build();
-      const cacheDir = new CacheDir(`auth_nonce_${message.nonce}`, '');
+      const message = createSiweMessage(siweMessage);
+      const cacheDir = new CacheDir(`auth_nonce_${siweMessage.nonce}`, '');
       const signature = await signer.signMessage({
-        message: toSignableSiweMessage(message),
+        message,
       });
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
@@ -239,15 +245,17 @@ describe('AuthController', () => {
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const expirationTime = faker.date.between({
         from: new Date(),
-        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
       });
-      const message = siweMessageBuilder()
-        .with('address', signer.address)
-        .with('nonce', nonce)
-        .with('expirationTime', expirationTime.toISOString())
-        .build();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
       const signature = await signer.signMessage({
-        message: toSignableSiweMessage(message),
+        message,
       });
       // Mimic ttl expiration
       await cacheService.deleteByKey(cacheDir.key);
@@ -282,13 +290,15 @@ describe('AuthController', () => {
       );
       const expirationTime = faker.date.between({
         from: new Date(),
-        to: new Date(Date.now() + MAX_VALIDITY_PERIOD_IN_MS),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
       });
       const nonce: string = nonceResponse.body.nonce;
-      const message = siweMessageBuilder()
-        .with('nonce', nonce)
-        .with('expirationTime', expirationTime.toISOString())
-        .build();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const signature = faker.string.hexadecimal();
 
@@ -320,14 +330,16 @@ describe('AuthController', () => {
       );
       const nonce: string = nonceResponse.body.nonce;
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
-      const expirationTime = faker.date.past();
-      const message = siweMessageBuilder()
-        .with('address', signer.address)
-        .with('nonce', nonce)
-        .with('expirationTime', expirationTime.toISOString())
-        .build();
+      const expirationTime = new Date();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
       const signature = await signer.signMessage({
-        message: toSignableSiweMessage(message),
+        message,
       });
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);

@@ -1,5 +1,5 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { SiweMessage } from '@/domain/siwe/entities/siwe-message.entity';
+import { SiweMessage } from 'viem/siwe';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
@@ -13,9 +13,9 @@ export function siweMessageBuilder(): IBuilder<SiweMessage> {
     .with('version', '1')
     .with('chainId', faker.number.int({ min: 1 }))
     .with('nonce', faker.string.alphanumeric({ length: 8 }))
-    .with('issuedAt', faker.date.recent().toISOString())
-    .with('expirationTime', faker.date.future().toISOString())
-    .with('notBefore', faker.date.past().toISOString())
+    .with('issuedAt', faker.date.recent())
+    .with('expirationTime', faker.date.future())
+    .with('notBefore', faker.date.past())
     .with('requestId', faker.string.uuid())
     .with(
       'resources',

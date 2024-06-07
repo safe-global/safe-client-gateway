@@ -2,10 +2,7 @@ import { Body, Controller, Get, Post, HttpCode, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AuthService } from '@/routes/auth/auth.service';
-import {
-  VerifyAuthMessageDto,
-  VerifyAuthMessageDtoSchema,
-} from '@/routes/auth/entities/verify-auth-message.dto.entity';
+import { SiweDtoSchema, SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
 import { Response } from 'express';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 
@@ -13,7 +10,7 @@ import { getMillisecondsUntil } from '@/domain/common/utils/time';
  * The AuthController is responsible for handling authentication:
  *
  * 1. Calling `/v1/auth/nonce` returns a unique nonce to be signed.
- * 2. The client signs this nonce in a SIWE message, sending it and
+ * 2. The client signs this nonce in a SiWe message, sending it and
  *    the signature to `/v1/auth/verify` for verification.
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
@@ -37,18 +34,17 @@ export class AuthController {
   async verify(
     @Res({ passthrough: true })
     res: Response,
-    @Body(new ValidationPipe(VerifyAuthMessageDtoSchema))
-    verifyAuthMessageDto: VerifyAuthMessageDto,
+    @Body(new ValidationPipe(SiweDtoSchema))
+    siweDto: SiweDto,
   ): Promise<void> {
-    const { accessToken } =
-      await this.authService.getAccessToken(verifyAuthMessageDto);
+    const { accessToken } = await this.authService.getAccessToken(siweDto);
 
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
-      // Extract maxAge from token as it may slightly differ to SIWE message
+      // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
     });
   }

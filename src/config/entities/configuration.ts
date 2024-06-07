@@ -29,6 +29,9 @@ export default () => ({
     nonceTtlSeconds: parseInt(
       process.env.AUTH_NONCE_TTL_SECONDS ?? `${5 * 60}`,
     ),
+    maxValidityPeriodSeconds: parseInt(
+      process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${15 * 60}`,
+    ),
   },
   balances: {
     balancesTtlSeconds: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${300}`),
