@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { MultisigTransaction as DomainMultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
@@ -70,6 +70,13 @@ export class TransactionsService {
       }
 
       case TRANSFER_PREFIX: {
+        // We can't checksum outside of case as some IDs don't contain addresses
+        let address;
+        try {
+          address = getAddress(safeAddress);
+        } catch (err) {
+          throw new BadRequestException('Invalid transaction ID');
+        }
         const [transfer, safe] = await Promise.all([
           this.safeRepository.getTransfer({
             chainId: args.chainId,
@@ -77,8 +84,7 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            // We can't checksum outside of case as some IDs don't contain addresses
-            address: getAddress(safeAddress),
+            address,
           }),
         ]);
         return this.transferDetailsMapper.mapDetails(
@@ -89,6 +95,13 @@ export class TransactionsService {
       }
 
       case MULTISIG_TRANSACTION_PREFIX: {
+        // We can't checksum outside of case as some IDs don't contain addresses
+        let address;
+        try {
+          address = getAddress(safeAddress);
+        } catch (err) {
+          throw new BadRequestException('Invalid transaction ID');
+        }
         const [tx, safe] = await Promise.all([
           this.safeRepository.getMultiSigTransaction({
             chainId: args.chainId,
@@ -96,8 +109,7 @@ export class TransactionsService {
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
-            // We can't checksum outside of case as some IDs don't contain addresses
-            address: getAddress(safeAddress),
+            address,
           }),
         ]);
         return this.multisigTransactionDetailsMapper.mapDetails(
