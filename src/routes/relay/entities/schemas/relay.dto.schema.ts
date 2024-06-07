@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import * as semver from 'semver';
+import semver from 'semver';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 

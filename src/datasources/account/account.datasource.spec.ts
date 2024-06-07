@@ -1,9 +1,9 @@
 import { AccountDataSource } from '@/datasources/account/account.datasource';
-import * as postgres from 'postgres';
+import postgres from 'postgres';
 import { PostgresError } from 'postgres';
 import { faker } from '@faker-js/faker';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
-import * as shift from 'postgres-shift';
+import shift from 'postgres-shift';
 import configuration from '@/config/entities/__tests__/configuration';
 import {
   Account,

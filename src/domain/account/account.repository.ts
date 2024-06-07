@@ -14,7 +14,7 @@ import { EmailAlreadyVerifiedError } from '@/domain/account/errors/email-already
 import { InvalidVerificationCodeError } from '@/domain/account/errors/invalid-verification-code.error';
 import { EmailEditMatchesError } from '@/domain/account/errors/email-edit-matches.error';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { ISubscriptionRepository } from '@/domain/subscriptions/subscription.repository.interface';
 import { SubscriptionRepository } from '@/domain/subscriptions/subscription.repository';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';

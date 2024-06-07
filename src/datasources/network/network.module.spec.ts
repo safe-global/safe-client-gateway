@@ -38,9 +38,13 @@ describe('NetworkModule', () => {
       ],
     }).compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
+    const configurationService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
     fetchClient = moduleFixture.get('FetchClient');
-    httpClientTimeout = configurationService.get('httpClient.requestTimeout');
+    httpClientTimeout = configurationService.getOrThrow(
+      'httpClient.requestTimeout',
+    );
 
     app = moduleFixture.createNestApplication();
     await app.init();

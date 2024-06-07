@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
@@ -42,6 +42,7 @@ describe('Get Safe Apps e2e test', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body).toBeInstanceOf(Array);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         body.forEach((safeApp: SafeApp) =>
           expect(safeApp).toEqual(
             expect.objectContaining({

@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Request } from 'express';
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()

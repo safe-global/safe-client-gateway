@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { ClsService } from 'nestjs-cls';
-import * as winston from 'winston';
+import winston from 'winston';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { RequestScopedLoggingService } from '@/logging/logging.service';
 

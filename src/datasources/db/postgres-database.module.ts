@@ -1,9 +1,9 @@
-import * as postgres from 'postgres';
+import postgres from 'postgres';
 import { Module } from '@nestjs/common';
 import { PostgresDatabaseShutdownHook } from '@/datasources/db/postgres-database.shutdown.hook';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
-import * as fs from 'fs';
+import fs from 'fs';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
   const caPath = configurationService.get<string>('db.postgres.ssl.caPath');

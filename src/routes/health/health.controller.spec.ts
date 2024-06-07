@@ -11,7 +11,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { INestApplication } from '@nestjs/common';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
