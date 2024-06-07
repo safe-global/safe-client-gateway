@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';

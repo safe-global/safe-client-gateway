@@ -22,7 +22,7 @@ import {
 } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Auth decorator', () => {
   let app: INestApplication<Server>;

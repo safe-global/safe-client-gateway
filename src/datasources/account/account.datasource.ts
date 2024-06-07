@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as postgres from 'postgres';
+import postgres from 'postgres';
 import { IAccountDataSource } from '@/domain/interfaces/account.datasource.interface';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
 import {

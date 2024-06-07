@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -54,11 +54,13 @@ describe('Zerion Collectibles Controller', () => {
       .useModule(TestQueuesApiModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
-    zerionBaseUri = configurationService.get(
+    const configurationService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
+    zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
     );
-    zerionChainIds = configurationService.get(
+    zerionChainIds = configurationService.getOrThrow(
       'features.zerionBalancesChainIds',
     );
     networkService = moduleFixture.get(NetworkService);
@@ -125,12 +127,12 @@ describe('Zerion Collectibles Controller', () => {
           ])
           .build();
         const chainName = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
           );
         const apiKey = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -267,12 +269,12 @@ describe('Zerion Collectibles Controller', () => {
           .with('links', { next: zerionNext })
           .build();
         const chainName = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
           );
         const apiKey = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -332,12 +334,12 @@ describe('Zerion Collectibles Controller', () => {
           .with('links', { next: zerionNext })
           .build();
         const chainName = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
           );
         const apiKey = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -396,12 +398,12 @@ describe('Zerion Collectibles Controller', () => {
           .with('links', { next: zerionNext })
           .build();
         const chainName = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(
             `balances.providers.zerion.chains.${chain.chainId}.chainName`,
           );
         const apiKey = app
-          .get(IConfigurationService)
+          .get<IConfigurationService>(IConfigurationService)
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {

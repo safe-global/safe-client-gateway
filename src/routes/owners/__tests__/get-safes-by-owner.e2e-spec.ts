@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';

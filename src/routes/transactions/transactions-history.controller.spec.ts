@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -831,8 +831,9 @@ describe('Transactions History Controller (Unit)', () => {
       )
       .expect(200)
       .then(({ body }) => {
-        // the amount of TransactionItems is limited to the max value
         expect(
+          // the amount of TransactionItems is limited to the max value
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           body.results.filter(
             (item: TransactionItem) => item.type === 'TRANSACTION',
           ),

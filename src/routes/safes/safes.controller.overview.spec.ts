@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import * as request from 'supertest';
+import request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -69,7 +69,9 @@ describe('Safes Controller Overview (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
+    const configurationService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     pricesProviderUrl = configurationService.getOrThrow(
       'balances.providers.safe.prices.baseUri',

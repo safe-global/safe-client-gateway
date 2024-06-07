@@ -1,4 +1,4 @@
-import * as request from 'supertest';
+import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -89,11 +89,13 @@ describe('Recovery (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
-    alertsUrl = configurationService.get('alerts-api.baseUri');
-    alertsAccount = configurationService.get('alerts-api.account');
-    alertsProject = configurationService.get('alerts-api.project');
-    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    const configurationService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
+    alertsUrl = configurationService.getOrThrow('alerts-api.baseUri');
+    alertsAccount = configurationService.getOrThrow('alerts-api.account');
+    alertsProject = configurationService.getOrThrow('alerts-api.project');
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
 

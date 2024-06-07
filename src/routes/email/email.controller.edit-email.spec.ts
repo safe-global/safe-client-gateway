@@ -10,7 +10,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import * as request from 'supertest';
+import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -86,8 +86,10 @@ describe('Email controller edit email tests', () => {
       .useModule(TestQueuesApiModule)
       .compile();
 
-    const configurationService = moduleFixture.get(IConfigurationService);
-    safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    const configurationService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     accountDataSource = moduleFixture.get(IAccountDataSource);
     networkService = moduleFixture.get(NetworkService);
     jwtService = moduleFixture.get<IJwtService>(IJwtService);

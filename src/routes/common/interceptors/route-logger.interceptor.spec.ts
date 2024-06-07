@@ -7,7 +7,7 @@ import {
   HttpStatus,
   INestApplication,
 } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';

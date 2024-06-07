@@ -10,7 +10,7 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import {

@@ -10,7 +10,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import * as request from 'supertest';
+import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';

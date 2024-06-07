@@ -11,7 +11,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import * as request from 'supertest';
+import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import { Subscription } from '@/domain/account/entities/subscription.entity';
 import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';

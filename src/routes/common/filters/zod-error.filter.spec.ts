@@ -1,7 +1,7 @@
 import { Body, Controller, Get, INestApplication, Post } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import * as request from 'supertest';
+import request from 'supertest';
 import { APP_FILTER } from '@nestjs/core';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';

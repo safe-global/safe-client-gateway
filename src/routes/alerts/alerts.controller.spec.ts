@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { faker } from '@faker-js/faker';
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';

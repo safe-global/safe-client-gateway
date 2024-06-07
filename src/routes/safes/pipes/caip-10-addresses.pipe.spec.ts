@@ -7,7 +7,7 @@ import { faker } from '@faker-js/faker';
 import { Controller, Get, INestApplication, Query } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import { Server } from 'net';
-import * as request from 'supertest';
+import request from 'supertest';
 import { getAddress } from 'viem';
 
 @Controller()

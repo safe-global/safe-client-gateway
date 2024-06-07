@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { Observable, tap } from 'rxjs';
 
 /**
@@ -17,7 +18,7 @@ export class CacheControlInterceptor implements NestInterceptor {
   ): Observable<unknown> | Promise<Observable<unknown>> {
     return next.handle().pipe(
       tap(() => {
-        const response = context.switchToHttp().getResponse();
+        const response: Response = context.switchToHttp().getResponse();
         response.header('Cache-Control', 'no-cache');
       }),
     );
