@@ -28,7 +28,7 @@ export class AuthService {
   async getAccessToken(args: SiweDto): Promise<{
     accessToken: string;
   }> {
-    const isValid = await this.siweRepository.verifyMessage(args);
+    const isValid = await this.siweRepository.isValidMessage(args);
 
     if (!isValid) {
       throw new UnauthorizedException();
