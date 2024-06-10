@@ -352,6 +352,12 @@ describe('TransactionApi', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${baseUrl}/api/v1/safes/${safe.address}`,
       });
+      expect(cacheService.set).toHaveBeenCalledTimes(1);
+      expect(cacheService.set).toHaveBeenCalledWith(
+        cacheDir,
+        'true',
+        indefiniteExpirationTime,
+      );
     });
 
     it('should return the cached value', async () => {
@@ -370,6 +376,7 @@ describe('TransactionApi', () => {
       expect(cacheService.get).toHaveBeenCalledTimes(1);
       expect(cacheService.get).toHaveBeenCalledWith(cacheDir);
       expect(networkService.get).not.toHaveBeenCalled();
+      expect(cacheService.set).not.toHaveBeenCalledTimes(1);
     });
 
     it('should return false if Safe does not exist', async () => {
@@ -390,6 +397,12 @@ describe('TransactionApi', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${baseUrl}/api/v1/safes/${safe.address}`,
       });
+      expect(cacheService.set).toHaveBeenCalledTimes(1);
+      expect(cacheService.set).toHaveBeenCalledWith(
+        cacheDir,
+        'false',
+        indefiniteExpirationTime,
+      );
     });
 
     const errorMessage = faker.word.words();
