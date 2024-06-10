@@ -59,7 +59,7 @@ describe('TransactionApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   let httpErrorFactory: HttpErrorFactory;
   let service: TransactionApi;
-  let indefiniteExpirationTime = -1;
+  const indefiniteExpirationTime = -1;
   let defaultExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
   let ownersTtlSeconds: number;

@@ -970,7 +970,7 @@ describe('Post Hook Events (Unit)', () => {
     {
       type: 'SAFE_CREATED',
     },
-  ])('$type clears Safe existence', async (payload) => {
+  ])('$type clears Safe existence', async () => {
     const data = safeCreatedEventBuilder().build();
     const cacheDir = new CacheDir(
       `${data.chainId}_safe_exists_${data.address}`,
